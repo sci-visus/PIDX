@@ -15,22 +15,24 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
+
 #include "PIDX_point.h"
 
-PIDX_return_code PIDX_create_point(PIDX_point point)
+PIDX_return_code PIDX_create_point(PIDX_point* point)
 {
-  point = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
-  memset(point, 0, sizeof(int) * PIDX_MAX_DIMENSIONS);
+  *point = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
+  memset(*point, 0, sizeof(int) * PIDX_MAX_DIMENSIONS);
+  
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_delete_point(PIDX_point point)
+PIDX_return_code PIDX_delete_point(PIDX_point* point)
 {
-  if(point == NULL)
+  if(*point == NULL)
     return PIDX_err_point;
   
-  free(point);
-  point = 0;
+  free(*point);
+  *point = 0;
   
   return PIDX_success;
 }
@@ -41,6 +43,10 @@ PIDX_return_code PIDX_set_point_1D(int x, PIDX_point point)
     return PIDX_err_point;
 
   point[0] = x;
+  point[1] = 0;
+  point[2] = 0;
+  point[3] = 0;
+  point[4] = 0;
   
   return PIDX_success;
 }
@@ -62,6 +68,9 @@ PIDX_return_code PIDX_set_point_2D(int  x, int  y, PIDX_point point)
 
   point[0] = x;
   point[1] = y;
+  point[2] = 0;
+  point[3] = 0;
+  point[4] = 0;
   
   return PIDX_success;
 }
@@ -85,6 +94,8 @@ PIDX_return_code PIDX_set_point_3D(int  x, int  y, int  z, PIDX_point point)
   point[0] = x;
   point[1] = y;
   point[2] = z;
+  point[3] = 0;
+  point[4] = 0;
   
   return PIDX_success;
 }
@@ -110,6 +121,7 @@ PIDX_return_code PIDX_set_point_4D(int  x, int  y, int  z, int u, PIDX_point poi
   point[1] = y;
   point[2] = z;
   point[3] = u;
+  point[4] = 0;
   
   return PIDX_success;
 }

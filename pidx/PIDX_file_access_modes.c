@@ -17,8 +17,8 @@
  *****************************************************/
 #include "PIDX_file_access_modes.h"
 
-const unsigned PIDX_file_excl = 1;             // Error creating a file that already exists.
-const unsigned PIDX_file_trunc = 2;           // Create the file if it does not exist.
-const unsigned PIDX_file_rdwr = 4;           // Read only.
-const unsigned PIDX_file_rdonly = 8;             // Reading and writing.
-const unsigned PIDX_file_wronly = 16;           // Write only. 
+PIDX_flags PIDX_file_excl = 1;             // Error creating a file that already exists.
+PIDX_flags PIDX_file_trunc = 2;           // Create the file if it does not exist.
+PIDX_flags PIDX_file_rdwr = 4;           // Read only.
+PIDX_flags PIDX_file_rdonly = 8;             // Reading and writing.
+PIDX_flags PIDX_file_wronly = 16;           // Write only. 

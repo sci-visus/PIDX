@@ -30,9 +30,12 @@
 #include <limits.h>
 #include <stdint.h>
 #include <arpa/inet.h>
-#include <mpi.h>
 #include <stdio.h>
 #include <math.h>
+
+// #if MPI
+#include <mpi.h>
+// #endif
 
 #define PIDX_MAX_DIMENSIONS 5
 

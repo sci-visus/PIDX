@@ -22,6 +22,9 @@
 #include "Generic_data_structs.h"
 #include "PIDX_utils.h"
 
+extern const int PIDX_reccommended_bits_per_block;
+extern const int PIDX_reccommended_blocks_per_file;
+
 struct block_layout
 {
   int    levels;                          // Total number of Levels

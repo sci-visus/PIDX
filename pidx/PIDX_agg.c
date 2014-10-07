@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
  
- #include "PIDX_agg.h"
+#include "PIDX_agg.h"
 
 struct PIDX_agg_struct 
 {

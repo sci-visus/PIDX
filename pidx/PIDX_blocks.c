@@ -16,7 +16,10 @@
  **                                                 **
  *****************************************************/
  
- #include "PIDX_blocks.h"
+#include "PIDX_blocks.h"
+
+const int PIDX_reccommended_bits_per_block       = 15;
+const int PIDX_reccommended_blocks_per_file      = 256;
 
 int is_block_present(int block_number, block_layout* layout)
 {

@@ -37,7 +37,7 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
   /* IDX variables */
   PIDX_variable variable = 0;                                       // variable descriptor
   double     *var1_double_scalar_data;
-  int sample_count = 1;
+  int sample_count = 3;
   
   //The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
@@ -58,19 +58,20 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
   local_offset[1] = (slice / sub_div[0]) * args.count_local[1];
   local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
 
-  PIDX_point global_bounding_box = 0, local_offset_point = 0, local_box_count_point = 0;
-  PIDX_create_point(global_bounding_box);
-  PIDX_create_point(local_offset_point);
-  PIDX_create_point(local_box_count_point);
-  PIDX_set_point_3D(args.extents[0], args.extents[1], args.extents[2], global_bounding_box);
-  PIDX_set_point_3D(local_offset[0], local_offset[1], local_offset[2], local_offset_point);
-  PIDX_set_point_3D(args.count_local[0], args.count_local[1], args.count_local[2], local_box_count_point);
+  PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
+  PIDX_create_point(&global_bounding_box);
+  PIDX_create_point(&local_offset_point);
+  PIDX_create_point(&local_box_count_point);
+  
+  PIDX_set_point_5D(args.extents[0], args.extents[1], args.extents[2], 1, 1, global_bounding_box);
+  PIDX_set_point_5D(local_offset[0], local_offset[1], local_offset[2], 0, 0, local_offset_point);
+  PIDX_set_point_5D(args.count_local[0], args.count_local[1], args.count_local[2], 1, 1, local_box_count_point);
   
   output_file = args.output_file_name;
     
   for (ts = 0; ts < args.time_step; ts++) 
   {
-    var1_double_scalar_data = malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]);
+    var1_double_scalar_data = malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2] * sample_count);
     for (k = 0; k < args.count_local[2]; k++)
       for (j = 0; j < args.count_local[1]; j++)
 	for (i = 0; i < args.count_local[0]; i++) 
@@ -80,21 +81,25 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
 	    var1_double_scalar_data[index * sample_count + spv] = (args.extents[0] * args.extents[1] * (local_offset[2] + k)) + (args.extents[0] * (local_offset[1] + j)) + (local_offset[0] + i);
 	}
     
-    PIDX_file_create(output_file, 0, file);
+    PIDX_file_create(output_file, PIDX_file_trunc, &file);
     PIDX_set_bounding_box_size(file, global_bounding_box);
     PIDX_set_communicator(file, MPI_COMM_WORLD);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_block_count(file, blocks_per_file);
     
-    PIDX_variable_create(file, "var1_double_scalar_data", sample_count * sizeof(double) * 8, "float64", variable);
+    PIDX_variable_create(file, "var1_double_scalar_data", sample_count * sizeof(double) * 8, "3*float64", &variable);
     PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, var1_double_scalar_data, PIDX_row_major);
+    PIDX_variable_set_box_metadata_on(variable);
     
-    PIDX_close(file);
+    PIDX_close(&file);
     free(var1_double_scalar_data);
   }
   
-  PIDX_delete_point(global_bounding_box);
+  PIDX_delete_point(&global_bounding_box);
+  PIDX_delete_point(&local_offset_point);
+  PIDX_delete_point(&local_box_count_point);
+  
   free(args.output_file_name);
   return 0;
 }

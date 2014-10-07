@@ -24,11 +24,15 @@
 #include "PIDX_error_codes.h"
 #include "Generic_data_structs.h"
 
+extern const int PIDX_reccommended_bits_per_block;
+extern const int PIDX_reccommended_blocks_per_file;
+
 typedef int* PIDX_point;
 
-// Utility functions to set or get the dimensions of an offset or a box (defined as points)
-PIDX_return_code PIDX_create_point(PIDX_point point);
-PIDX_return_code PIDX_delete_point(PIDX_point point);
+/// Utility functions to set or get the dimensions of an offset or a box (defined as points)
+
+PIDX_return_code PIDX_create_point(PIDX_point* point);
+PIDX_return_code PIDX_delete_point(PIDX_point* point);
 PIDX_return_code PIDX_set_point_1D(int  x, PIDX_point point);
 PIDX_return_code PIDX_get_point_1D(int* x, PIDX_point point);
 PIDX_return_code PIDX_set_point_2D(int  x,int  y, PIDX_point point);

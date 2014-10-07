@@ -87,13 +87,19 @@ int main(int argc, char **argv)
   switch (args.kind)
   {
     //case READER:          return test_reader(args, rank, nprocs);
-    case WRITER:          
+    case WRITER:
+      if(rank == 0)
+	printf("Performing test_writer\n");
       test_writer(args, rank, nprocs);
       break;
     case ONE_VAR_WRITER:  
+      if(rank == 0)
+	printf("Performing test_one_var_writer\n");
       test_one_var_writer(args, rank, nprocs);
       break;
     case MULTI_VAR_WRITER:  
+      if(rank == 0)
+	printf("Performing test_multi_var_writer\n");
       test_multi_var_writer(args, rank, nprocs);
       break;
     default:
@@ -144,8 +150,6 @@ int parse_args(struct Args *args, int argc, char **argv)
 	  return (-1);
     }
   }
-  
-  printf("COUNT = %d\n", args->variable_count);
   
   /* need positive dimensions */
   if (args->extents[0] < 1 || args->extents[1] < 1 || args->extents[2] < 1 || args->count_local[0] < 1 || args->count_local[1] < 1 || args->count_local[2] < 1) 

@@ -26,6 +26,8 @@ enum IO_MODE { PIDX_READ, PIDX_WRITE};
 
 struct PIDX_variable_struct
 {
+  int dump_meta_data_ON;
+  
   char* var_name;
   int bits_per_sample;
   int values_per_sample;
