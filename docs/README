@@ -1,0 +1,13 @@
+------------------------------------------------------------
+
+PIDX Documentation can be found online at:
+
+   http://cedmav.com/pidx/docs
+
+------------------------------------------------------------
+
+To generate documentation manually, install doxygen and run:
+
+   doxygen doxygen.cfg
+
+------------------------------------------------------------
