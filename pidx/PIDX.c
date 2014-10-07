@@ -1,4 +1,4 @@
-/*****************************************************
+/******************************************************
  **  PIDX Parallel I/O Library                      **
  **  Copyright (c) 2010-2014 University of Utah     **
  **  Scientific Computing and Imaging Institute     **
