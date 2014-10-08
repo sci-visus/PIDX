@@ -26,12 +26,15 @@ IF (PIDX_BUILD_TEST)
 
 
   # ////////////////////////////////////////
-  # includes
+  # includes and link libraries
   # ////////////////////////////////////////
 
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
-  INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-  INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
+  SET(PIDXTEST_LINK_LIBS pidx ${ZLIB_LIBRARY}) 
+  IF (MPI_C_FOUND)
+    INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
+    SET(PIDXTEST_LINK_LIBS ${PIDXTEST_LINK_LIBS} ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  ENDIF()
 
 
   # ////////////////////////////////////////
@@ -40,7 +43,7 @@ IF (PIDX_BUILD_TEST)
 
   PIDX_ADD_EXECUTABLE(pidxtest "${PIDXTEST_SOURCES}")
   ADD_DEPENDENCIES(pidxtest pidx)
-  TARGET_LINK_LIBRARIES(pidxtest pidx ${ZLIB_LIBRARY} ${MPI_C_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  TARGET_LINK_LIBRARIES(pidxtest ${PIDXTEST_LINK_LIBS})
 
 
 ENDIF()
