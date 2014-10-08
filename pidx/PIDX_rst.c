@@ -16,7 +16,10 @@
  **                                                 **
  *****************************************************/
 
+#if PIDX_HAVE_MPI
+
 #include "PIDX_rst.h"
+
 #define PIDX_MAX_NEIGHBOR_PROC 1024
 
 struct NDim_chunk_bound 
@@ -698,3 +701,5 @@ void PIDX_rst_print_error(char *error_message, char* file, int line)
   fprintf(stderr, "File [%s] Line [%d] Error [%s]\n", error_message, line, file);
   MPI_Abort(MPI_COMM_WORLD, -1);
 }
+
+#endif // PIDX_HAVE_MPI

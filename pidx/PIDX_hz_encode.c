@@ -592,6 +592,7 @@ int PIDX_hz_encode_finalize(PIDX_hz_encode_id id)
   return 0;
 }
 
+#if PIDX_HAVE_MPI
 int HELPER_Hz_encode(PIDX_hz_encode_id hz_id, HZ_buffer* out_hz_array, MPI_Datatype datatype, int values_per_sample)
 {
   int i = 0, k = 0, b = 0, rank;
@@ -667,3 +668,4 @@ int HELPER_Hz_encode(PIDX_hz_encode_id hz_id, HZ_buffer* out_hz_array, MPI_Datat
     
   return 0;
 }
+#endif

@@ -15,10 +15,12 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
-
-#include "PIDX_data_structs.h"
 #ifndef __PIDX_RST_NEW_H
 #define __PIDX_RST_NEW_H
+
+#if PIDX_HAVE_MPI
+
+#include "PIDX_data_structs.h"
 
 struct PIDX_rst_struct;
 typedef struct PIDX_rst_struct* PIDX_rst_id;
@@ -47,4 +49,5 @@ void PIDX_rst_print_error(char *error_message, char* file, int line);
 int HELPER_rst(Ndim_buffer_group* out_buf_array1, PIDX_rst_id rst_id, int num_output_buffers, int spv);
 //int HELPER_rst(Ndim_buffer* out_buf_array1, PIDX_rst_id rst_id, int num_output_buffers, int spv);
 
-#endif /* __PIDX_RST_NEW_H */
+#endif // PIDX_HAVE_MPI
+#endif // __PIDX_RST_NEW_H

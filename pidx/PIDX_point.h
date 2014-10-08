@@ -24,8 +24,8 @@
 #include "PIDX_error_codes.h"
 #include "Generic_data_structs.h"
 
-extern const int PIDX_reccommended_bits_per_block;
-extern const int PIDX_reccommended_blocks_per_file;
+extern const int PIDX_default_bits_per_block;
+extern const int PIDX_default_blocks_per_file;
 
 typedef int* PIDX_point;
 

@@ -16,13 +16,15 @@
  **                                                 **
  *****************************************************/
  
+#ifndef __PIDX_AGG_H
+#define __PIDX_AGG_H 
+
+#if PIDX_HAVE_MPI
+
 #include "PIDX_data_structs.h"
 #include "PIDX_utils.h"
 #include "PIDX_error_codes.h"
 #include "PIDX_point.h"
-
-#ifndef __PIDX_AGG_H
-#define __PIDX_AGG_H 
 
 struct PIDX_agg_struct;
 typedef struct PIDX_agg_struct* PIDX_agg_id;
@@ -41,4 +43,5 @@ int PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
 
 int PIDX_agg_finalize(PIDX_agg_id agg_id);
 
-#endif
+#endif //PIDX_HAVE_MPI
+#endif //__PIDX_AGG_H

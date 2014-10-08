@@ -22,7 +22,9 @@
 
 struct PIDX_io_struct 
 {
+#if PIDX_HAVE_MPI
   MPI_Comm comm;
+#endif
     
   //Contains all relevant IDX file info
   //Blocks per file, samples per block, bitmask, box, file name template and more
@@ -44,6 +46,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, unsigned lon
 
 static int generate_file_name(PIDX_io_id io_id, int file_number, char* filename, int maxlen);
 
+#if PIDX_HAVE_MPI
 static int populate_meta_data(PIDX_io_id io_id, int file_number, MPI_File fh)
 {
   int total_header_size, ret = 0, block_negative_offset = 0, block_limit = 0;
@@ -346,7 +349,7 @@ PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata 
 
 int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, int MODE) 
 {
-  int i = 0, l = 0, rank, nprocs, j, ret, N;
+  int i = 0, l = 0, rank = 0, nprocs = 1, j, ret, N;
   FILE* idx_file_p;
   MPI_File fh;
   char bin_file[PATH_MAX];
@@ -727,6 +730,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   }
   return 0;
 }
+#endif
 
 int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MODE)
 {
@@ -917,7 +921,9 @@ static int generate_file_name(PIDX_io_id io_id, int file_number, char* filename,
 
 int PIDX_io_finalize(PIDX_io_id io_id) 
 {
+#if PIDX_HAVE_MPI
   MPI_Comm_free(&io_id->comm);
+#endif
   
   free(io_id);
   io_id = 0;

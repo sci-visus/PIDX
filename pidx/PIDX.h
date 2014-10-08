@@ -3,7 +3,7 @@
  **  Copyright (c) 2010-2014 University of Utah     **
  **  Scientific Computing and Imaging Institute     **
  **  72 S Central Campus Drive, Room 3750           **
- **  Salt Lake City, UT 84112                       ***
+ **  Salt Lake City, UT 84112                       **
  **                                                 **
  **  PIDX is licensed under the Creative Commons    **
  **  Attribution-NonCommercial-NoDerivatives 4.0    **
@@ -15,7 +15,7 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
- 
+
 #ifndef __PIDX_H
 #define __PIDX_H
 
@@ -71,19 +71,19 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_f
 /// identifier should be closed by calling PIDX_File_close when it is no longer needed.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags  flags, PIDX_file file);
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_file file);
 
 
-/// Sets the bounding box of the IDX file.
+/// Sets the dims of the IDX file.
 /// \param file The IDX file handler.
-/// \param box_size The bounding box size.
-PIDX_return_code PIDX_set_bounding_box_size(PIDX_file file, PIDX_point box_size);
+/// \param dims Dimensions of the volume.
+PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims);
 
 
-/// Gets the bounding box of the IDX file.
+/// Gets the dims of the IDX file.
 /// \param file The IDX file handler.
-/// \return box_size The bounding box size.
-PIDX_return_code PIDX_get_bounding_box_size(PIDX_file file, PIDX_point box_size);
+/// \param dims Dimensions of the volume will be returned here.
+PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims);
 
 
 /// Sets the block size of the IDX file.
@@ -123,19 +123,19 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int time_step)
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
 
 
-/// Attach a communicator to a PIDX file descriptor.
+#if PIDX_HAVE_MPI
+/// Attach a communicator to a PIDX file.
 /// The function should be used ONLY in a MPI based parallel setting.
 /// \param file The IDX file handler.
 /// \param comm The communicator that needs to be attached to the IDX file.
 PIDX_return_code PIDX_set_communicator(PIDX_file file, MPI_Comm  comm);
 
-
-/// Returns the communicator used by PIDX file descriptor.
+/// Returns the communicator used by PIDX file.
 /// The function should be used ONLY in a MPI based parallel setting.
 /// \param file The IDX file handler.
 /// \return The communicator that PIDX is working on.
 PIDX_return_code PIDX_get_communicator(PIDX_file file, MPI_Comm* comm);
-
+#endif
 
 PIDX_return_code PIDX_variable_create(PIDX_file file, char* variable_name, unsigned int bits_per_sample, PIDX_type type_name, PIDX_variable* variable);
 
@@ -149,23 +149,23 @@ PIDX_return_code PIDX_get_bits_per_sample(PIDX_type type_name, unsigned int bits
 
 /// Write function used for dumping data from a simulation.
 /// This function is used to write data in increasing order, typically suited for dumping data from a simulation.
-/// \param variable The variale descriptor associated with a variable that needs to be written.
+/// \param variable The variable to be written.
 /// \param offset The local offset of the data chunk associated with a process.
-/// \param box_size The box size of the chunk associated with the process.
+/// \param dims The box size of the chunk associated with the process.
 /// \param read_from_this_buffer The data buffer that needs to be written by the process.
 /// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_point offset, PIDX_point box_size, const void* read_from_this_buffer, 
+PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, 
                                                 PIDX_data_layout layout);
 
 
 /// Read function used for restarting a simulation from checkpoint dump.
 /// This function is used to read data in the order in which the variables are laid out, typically suited for restarting a simulation from checkpoint.
-/// \param variable The variale descriptor associated with a variable that needs to be written.
+/// \param variable The variale to be read.
 /// \param offset The local offset of the data chunk associated with a process.
-/// \param box_size The box size of the chunk associated with the process.
+/// \param dims The box size of the chunk associated with the process.
 /// \param write_to_this_buffer The buffer to which data is read to.
 /// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_read_next_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point box_size, void* write_to_this_buffer, 
+PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* write_to_this_buffer, 
                                          PIDX_data_layout layout);
 
 
@@ -201,15 +201,15 @@ PIDX_return_code PIDX_get_box_count(PIDX_file file, int* box_coult);
 /// \param box_index The queried box index.
 /// \return The offset of the queried box.
 /// \return The length of the queried box.
-PIDX_return_code PIDX_get_box(PIDX_file file, int box_index, PIDX_point offset, PIDX_point box_size);
+PIDX_return_code PIDX_get_box(PIDX_file file, int box_index, PIDX_point offset, PIDX_point dims);
 
 
+#if PIDX_HAVE_MPI
 /// Gets the number of boxes associated with the given rank.
 /// \param file The file handler.
 /// \param MPI_rank  The rank for which one istrying to find the number of boxes.
 /// \return Number of boxes.
 PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int* box_coult);
-
 
 /// Gets the actual box meta-data associated with box_index and the MPI rank.
 /// \param file The file handler.
@@ -217,8 +217,8 @@ PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int*
 /// \param MPI_rank The rank for which one istrying to find the number of boxes.
 /// \return The offset of the queried box.
 /// \return The length of the queried box.
-PIDX_return_code PIDX_get_box_with_rank(PIDX_file file, int box_index, int MPI_rank, PIDX_point offset, PIDX_point box_size);
-
+PIDX_return_code PIDX_get_box_with_rank(PIDX_file file, int box_index, int MPI_rank, PIDX_point offset, PIDX_point dims);
+#endif
 
 /// Sets the number of variables in the IDX file.
 /// \param file The IDX file handler.
@@ -252,11 +252,11 @@ PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable variabl
 
 
 
-PIDX_return_code PIDX_read_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point box_size, 
+PIDX_return_code PIDX_read_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point dims, 
                                     const void* read_from_this_buffer, PIDX_data_layout layout);
 
 
-PIDX_return_code PIDX_write_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point box_size,
+PIDX_return_code PIDX_write_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point dims,
                                      const void* read_from_this_buffer, PIDX_data_layout layout);
 
 

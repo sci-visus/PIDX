@@ -30,6 +30,18 @@ SET(CMAKE_NUM_PROCS 8)
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 SET(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Use a verbose makefile")
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." FALSE)
+OPTION(ENABLE_MPI "Enable MPI." TRUE)
+
+
+# ///////////////////////////////////////////////
+# external packages
+# ///////////////////////////////////////////////
+
+FIND_PACKAGE(ZLIB REQUIRED)
+
+IF (ENABLE_MPI)
+   FIND_PACKAGE(MPI REQUIRED)
+ENDIF()
 
 
 # ///////////////////////////////////////////////
@@ -38,14 +50,6 @@ OPTION(BUILD_SHARED_LIBS "Build shared libraries." FALSE)
 
 INCLUDE(PIDXPlatform)
 INCLUDE(PIDXMacros)
-
-
-# ///////////////////////////////////////////////
-# external packages
-# ///////////////////////////////////////////////
-
-FIND_PACKAGE(ZLIB REQUIRED)
-FIND_PACKAGE(MPI REQUIRED)
 
 
 # ///////////////////////////////////////////////

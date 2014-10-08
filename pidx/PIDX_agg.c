@@ -18,6 +18,8 @@
  
 #include "PIDX_agg.h"
 
+#if PIDX_HAVE_MPI
+
 struct PIDX_agg_struct 
 {
   MPI_Comm comm;
@@ -412,3 +414,5 @@ int PIDX_agg_finalize(PIDX_agg_id agg_id)
 
   return 0;
 }
+
+#endif //__PIDX_AGG_H
