@@ -72,7 +72,7 @@ int serial_writer(struct Args args)
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_block_count(file, blocks_per_file);
     
-    PIDX_variable_create(file, "var1_double_scalar_data", sample_count * sizeof(double) * 8, "3*float64", &variable);
+    PIDX_variable_create(file, "var1_double_scalar_data", sample_count * sizeof(double) * 8, "1*float64", &variable);
     PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, var1_double_scalar_data, PIDX_row_major);
     //PIDX_variable_set_box_metadata_on(variable);
     
