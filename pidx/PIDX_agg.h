@@ -37,7 +37,7 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data,
 
 int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
 
-int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
+int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int MODE);
 
 int PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
 

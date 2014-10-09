@@ -28,11 +28,11 @@ struct PIDX_variable_struct
 {
   int dump_meta_data_ON;
   
-  char* var_name;
-  int bits_per_sample;
+  char var_name[1024];
+  //int bits_per_sample;
   int values_per_sample;
   int bits_per_value;
-  char* type_name;
+  char type_name[1024];
   int data_layout;
 
   int patch_count;

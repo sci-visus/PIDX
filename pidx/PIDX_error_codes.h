@@ -36,5 +36,6 @@ extern PIDX_return_code PIDX_err_type;
 extern PIDX_return_code PIDX_err_variable;
 extern PIDX_return_code PIDX_err_not_implemented;
 extern PIDX_return_code PIDX_err_point;
+extern PIDX_return_code PIDX_err_access;
 
 #endif

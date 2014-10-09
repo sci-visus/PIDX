@@ -27,7 +27,7 @@
 extern const int PIDX_default_bits_per_block;
 extern const int PIDX_default_blocks_per_file;
 
-typedef int* PIDX_point;
+typedef int PIDX_point[5];
 
 /// Utility functions to set or get the dimensions of an offset or a box (defined as points)
 

@@ -16,19 +16,8 @@
 # **                                                 **
 # *****************************************************/
 
-mpirun -n 8 ./PIDX-analysis-1 -g 64x64x64 -l 32x32x32 -f A1 -t 5 -b 256
+In Parallel Build Mode
+mpirun -n 8 ./pidxtest -k parallel -g 66x66x66 -l 33x33x33 -f Filename -t 1
 
-mpirun -n 16 ./PIDX-analysis-1 -g 128x64x64 -l 32x32x32 -f B1 -t 5 -b 256
-
-mpirun -n 32 ./PIDX-analysis-1 -g 128x128x64 -l 32x32x32 -f C1 -t 5 -b 256
-
-mpirun -n 64 ./PIDX-analysis-1 -g 128x128x128 -l 32x32x32 -f D1 -t 5 -b 256
-
-
-mpirun -n 8 ./PIDX-analysis-2 -g 64x64x64 -l 32x32x32 -f A2 -t 5 -b 256
-
-mpirun -n 16 ./PIDX-analysis-2 -g 128x64x64 -l 32x32x32 -f B2 -t 5 -b 256
-
-mpirun -n 32 ./PIDX-analysis-2 -g 128x128x64 -l 32x32x32 -f C2 -t 5 -b 256
-
-mpirun -n 64 ./PIDX-analysis-2 -g 128x128x128 -l 32x32x32 -f D2 -t 5 -b 256
+In Serial Build Mode
+./pidxtest -k serial -g 66x66x66 -l 66x66x66 -f Filename -t 1

@@ -100,9 +100,6 @@ MESSAGE("PIDX_OPTION_PNETCDF ${PIDX_OPTION_PNETCDF}")
 
 ADD_SUBDIRECTORY(pidx)
 ADD_SUBDIRECTORY(test)
-ADD_SUBDIRECTORY(profile)
-ADD_SUBDIRECTORY(tools)
-
 
 # ///////////////////////////////////////////////
 # installation

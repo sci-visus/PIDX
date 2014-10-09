@@ -26,7 +26,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
-#include <mpi.h>
+
+#if PIDX_HAVE_MPI
+  #include <mpi.h>
+#endif
 
 
 /*usage*/
@@ -36,25 +39,29 @@ static void usage(enum Kind kind)
 
   switch (kind)
   {
-  //case READER:          usage_reader();    break;
-  case WRITER:          usage_writer();    break;
-  case ONE_VAR_WRITER:  usage_one_var_writer();    break;
-  case MULTI_VAR_WRITER:  usage_multi_var_writer();    break;
+  //case READER:                 usage_reader();    break;
+  case SERIAL_WRITER:          usage_serial();    break;
+  case PARALLEL_WRITER:                 usage_writer();    break;
+  //case ONE_VAR_WRITER:         usage_one_var_writer();    break;
+  //case MULTI_VAR_WRITER:       usage_multi_var_writer();    break;
   case DEFAULT:
-  default:              usage_one_var_writer();
+  default:                     usage_one_var_writer();
   }
 }
 
 /*main*/
 int main(int argc, char **argv) 
 {
-  int ret, nprocs, rank;   /* process count and rank */
+  int ret, nprocs = 1, rank = 0;   /* process count and rank */
   struct Args args;        /* initialize args */
 
+  
+#if PIDX_HAVE_MPI
   /*MPI initialization*/
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+#endif
   
   /* Rank 0 parses the command line arguments */
   if (rank == 0) 
@@ -79,14 +86,20 @@ int main(int argc, char **argv)
       }
     }
   }
-  
+
+#if PIDX_HAVE_MPI
   MPI_Bcast(&args.kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  
+#endif
   /* run the specified test */
   
   switch (args.kind)
   {
-    //case READER:          return test_reader(args, rank, nprocs);
+    /*
+    case READER:          
+      if(rank == 0)
+	printf("Performing test_reader\n");
+      test_reader(args, rank, nprocs);
+      break;
     case WRITER:
       if(rank == 0)
 	printf("Performing test_writer\n");
@@ -97,16 +110,26 @@ int main(int argc, char **argv)
 	printf("Performing test_one_var_writer\n");
       test_one_var_writer(args, rank, nprocs);
       break;
-    case MULTI_VAR_WRITER:  
+    */
+    case PARALLEL_WRITER:  
       if(rank == 0)
-	printf("Performing test_multi_var_writer\n");
-      test_multi_var_writer(args, rank, nprocs);
+	printf("Performing Parallel Write....\n");
+      test_one_var_writer(args, rank, nprocs);
       break;
+    
+    case SERIAL_WRITER:  
+      if(rank == 0)
+	printf("Performing Serial Write....\n");
+      serial_writer(args);
+      break;
+    
     default:
       test_one_var_writer(args, rank, nprocs);
   }
   
+#if PIDX_HAVE_MPI
   MPI_Finalize();
+#endif
   return 0;
 }
 
@@ -175,7 +198,9 @@ int parse_args(struct Args *args, int argc, char **argv)
 int print_error(char *error_message, char* file, int line) 
 {
   fprintf(stderr, "File [%s] Line [%d] Error [%s]\n", error_message, line, file);
+#if PIDX_HAVE_MPI
   MPI_Abort(MPI_COMM_WORLD, -1);
+#endif
   return 0;
 }
 
@@ -184,21 +209,23 @@ char* kindToStr(enum Kind k)
 {
   switch (k)
   {
-    //case READER:          return "reader";
-    case WRITER:           return "writer";
-    case ONE_VAR_WRITER:   return "one_var";
-    case MULTI_VAR_WRITER:   return "multi_var";
+    //case READER:             return "reader";
+    //case WRITER:             return "writer";
+    //case ONE_VAR_WRITER:     return "one_var";
+    case PARALLEL_WRITER:   return "parallel";
+    case SERIAL_WRITER:      return "serial";
     case DEFAULT:
-    default:               return "default";
+    default:                 return "default";
   }
 }
 
 /*strToKind*/
 enum Kind strToKind(const char *str)
 {
-//   if (strcmp(str,"reader")    == 0) return READER;
-  if (strcmp(str,"writer")    == 0) return WRITER;
-  if (strcmp(str,"one_var")    == 0) return ONE_VAR_WRITER;
-  if (strcmp(str,"multi_var")    == 0) return MULTI_VAR_WRITER;
-  else                              return DEFAULT;
+  //if (strcmp(str,"reader")      == 0) return READER;
+  //if (strcmp(str,"writer")      == 0) return WRITER;
+  //if (strcmp(str,"one_var")     == 0) return ONE_VAR_WRITER;
+  if (strcmp(str,"parallel")   == 0) return PARALLEL_WRITER;
+  if (strcmp(str,"serial")      == 0) return SERIAL_WRITER;
+  else                                return DEFAULT;
 }

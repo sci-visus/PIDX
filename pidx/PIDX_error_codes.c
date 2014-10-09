@@ -33,3 +33,4 @@ PIDX_return_code PIDX_err_type = 2048;
 PIDX_return_code PIDX_err_variable = 4096;
 PIDX_return_code PIDX_err_not_implemented = 8192;
 PIDX_return_code PIDX_err_point = 16384;
+PIDX_return_code PIDX_err_access = 32768;

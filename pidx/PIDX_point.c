@@ -20,19 +20,19 @@
 
 PIDX_return_code PIDX_create_point(PIDX_point* point)
 {
-  *point = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
-  memset(*point, 0, sizeof(int) * PIDX_MAX_DIMENSIONS);
+  //*point = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
+  //memset(*point, 0, sizeof(int) * PIDX_MAX_DIMENSIONS);
   
   return PIDX_success;
 }
 
 PIDX_return_code PIDX_delete_point(PIDX_point* point)
 {
-  if(*point == NULL)
-    return PIDX_err_point;
+  //if(*point == NULL)
+  //  return PIDX_err_point;
   
-  free(*point);
-  *point = 0;
+  //free(*point);
+  //*point = 0;
   
   return PIDX_success;
 }

@@ -21,10 +21,8 @@
 
 #include <stdio.h>
 
-#define PIDX_MAX_DIMENSIONS 5
-
 /* Kind of test to run */
-enum Kind { DEFAULT = 0, READER, WRITER, ONE_VAR_WRITER, MULTI_VAR_WRITER };
+enum Kind { DEFAULT = 0, READER, WRITER, ONE_VAR_WRITER, MULTI_VAR_WRITER, SERIAL_WRITER, PARALLEL_WRITER};
 
 /*kindToStr*/
 char* kindToStr(enum Kind k);

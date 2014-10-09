@@ -16,6 +16,24 @@
  **                                                 **
  *****************************************************/
 
+/**
+ * \file PIDX.h
+ *
+ * \mainpage
+ *
+ * \author Sidharth Kumar
+ * \author Cameron Christensen
+ * \author Peer-Timo Bremer
+ * \author Giorgio Scorzelli
+ * \author Valerio Pascucci
+ * \date   10/09/14
+ *
+ * PIDX is an I/O library that enables HPC applications to write distributed 
+ * multi-dimensional data directly into a hierarchical multi-resolution 
+ * data format (IDX) with minimal overhead. 
+ *
+ */
+
 #ifndef __PIDX_H
 #define __PIDX_H
 
@@ -26,6 +44,7 @@
 #include "PIDX_agg.h"
 #include "PIDX_io.h"
 
+#include "PIDX_comm.h"
 #include "PIDX_file_access_modes.h"
 #include "PIDX_error_codes.h"
 #include "PIDX_file_access_modes.h"
@@ -57,7 +76,7 @@ typedef struct PIDX_file_descriptor* PIDX_file;
 /// file until it is closed using PIDX_File_close.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
-PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_file* file);
+PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
 
 /// Opens an existing IDX file.
 /// PIDX_file_open is the primary function for accessing existing IDX files.
@@ -71,7 +90,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_f
 /// identifier should be closed by calling PIDX_File_close when it is no longer needed.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_file file);
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
 
 
 /// Sets the dims of the IDX file.
@@ -83,7 +102,7 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims);
 /// Gets the dims of the IDX file.
 /// \param file The IDX file handler.
 /// \param dims Dimensions of the volume will be returned here.
-PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims);
+PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point* dims);
 
 
 /// Sets the block size of the IDX file.
@@ -137,8 +156,10 @@ PIDX_return_code PIDX_set_communicator(PIDX_file file, MPI_Comm  comm);
 PIDX_return_code PIDX_get_communicator(PIDX_file file, MPI_Comm* comm);
 #endif
 
+
 PIDX_return_code PIDX_variable_create(PIDX_file file, char* variable_name, unsigned int bits_per_sample, PIDX_type type_name, PIDX_variable* variable);
 
+PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable);
 
 /// Get the number of bits associated with a PIDX_type.
 /// This function can be used to find the number of bits associated with a particular PIDX type.
@@ -204,12 +225,12 @@ PIDX_return_code PIDX_get_box_count(PIDX_file file, int* box_coult);
 PIDX_return_code PIDX_get_box(PIDX_file file, int box_index, PIDX_point offset, PIDX_point dims);
 
 
-#if PIDX_HAVE_MPI
 /// Gets the number of boxes associated with the given rank.
 /// \param file The file handler.
 /// \param MPI_rank  The rank for which one istrying to find the number of boxes.
 /// \return Number of boxes.
 PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int* box_coult);
+
 
 /// Gets the actual box meta-data associated with box_index and the MPI rank.
 /// \param file The file handler.
@@ -218,7 +239,6 @@ PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int*
 /// \return The offset of the queried box.
 /// \return The length of the queried box.
 PIDX_return_code PIDX_get_box_with_rank(PIDX_file file, int box_index, int MPI_rank, PIDX_point offset, PIDX_point dims);
-#endif
 
 /// Sets the number of variables in the IDX file.
 /// \param file The IDX file handler.
@@ -248,8 +268,7 @@ PIDX_return_code PIDX_get_current_variable_index(PIDX_file file, int* variable_i
 PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variable);
 
 
-PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable variable);
-
+PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variable);
 
 
 PIDX_return_code PIDX_read_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point dims, 

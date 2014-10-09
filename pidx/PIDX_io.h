@@ -24,10 +24,12 @@
 struct PIDX_io_struct;
 typedef struct PIDX_io_struct* PIDX_io_id;
 
-#if PIDX_HAVE_MPI
+
 PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data,
 			idx_dataset_derived_metadata idx_derived_ptr,
+#if PIDX_HAVE_MPI
 			MPI_Comm in_comm,
+#endif
 			int start_var_index, int end_var_index
  		      );
 
@@ -35,12 +37,12 @@ int PIDX_io_file_create(PIDX_io_id io_id,
 			int time_step, 
 			char* data_set_path, int MODE);
 
+#if PIDX_HAVE_MPI
 int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE);
+#endif
 
 int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable_ptr, int MODE);
-#endif
 
 int PIDX_io_finalize(PIDX_io_id io_id);
 
 #endif
-
