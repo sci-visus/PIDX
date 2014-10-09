@@ -23,7 +23,6 @@
  *
  * \author Sidharth Kumar
  * \author Cameron Christensen
- * \author Peer-Timo Bremer
  * \author Giorgio Scorzelli
  * \author Valerio Pascucci
  * \date   10/09/14
