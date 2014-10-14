@@ -801,7 +801,7 @@ int dump_meta_data(PIDX_variable variable
 PIDX_return_code PIDX_write(PIDX_file file)
 { 
   int i = 0, p, var = 0;
-  int do_agg = 1;
+  int do_agg = 0;
   
   file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
   
