@@ -15,11 +15,28 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
-
+ /**
+ * \file PIDX_data_layout.h
+ *
+ * \mainpage
+ *
+ * \author Sidharth Kumar
+ * \author Cameron Christensen
+ * \author Giorgio Scorzelli
+ * \author Valerio Pascucci
+ * \date   10/09/14
+ *
+ * PIDX is an I/O library that enables HPC applications to write distributed 
+ * multi-dimensional data directly into a hierarchical multi-resolution 
+ * data format (IDX) with minimal overhead. 
+ *
+ */
+ 
 #ifndef __PIDX_DATA_LAYOUT_H
 #define __PIDX_DATA_LAYOUT_H
 
 typedef unsigned int PIDX_data_layout;
+
 
 extern PIDX_data_layout PIDX_row_major;
 extern PIDX_data_layout PIDX_column_major;
