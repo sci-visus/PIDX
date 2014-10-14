@@ -18,6 +18,7 @@
 
 #include "Generic_data_structs.h"
 #include "PIDX_blocks.h"
+#include "PIDX_data_layout.h"
 
 #ifndef __PIDX_DATA_STRUCTS_H
 #define __PIDX_DATA_STRUCTS_H
@@ -33,7 +34,7 @@ struct PIDX_variable_struct
   int values_per_sample;
   int bits_per_value;
   char type_name[1024];
-  int data_layout;
+  PIDX_data_layout data_layout;
 
   int patch_count;
   Ndim_buffer patch[1024];
