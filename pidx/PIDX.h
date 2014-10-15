@@ -172,9 +172,9 @@ PIDX_return_code PIDX_get_bits_per_sample(PIDX_type type_name, unsigned int bits
 /// \param variable The variable to be written.
 /// \param offset The local offset of the data chunk associated with a process.
 /// \param dims The box size of the chunk associated with the process.
-/// \param read_from_this_buffer The data buffer that needs to be written by the process.
+/// \param src_buffer The data buffer that needs to be written by the process.
 /// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, 
+PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* src_buffer, 
                                                 PIDX_data_layout layout);
 
 
@@ -183,9 +183,9 @@ PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_poi
 /// \param variable The variale to be read.
 /// \param offset The local offset of the data chunk associated with a process.
 /// \param dims The box size of the chunk associated with the process.
-/// \param write_to_this_buffer The buffer to which data is read to.
+/// \param dst_buffer The buffer to which data is read to.
 /// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* write_to_this_buffer, 
+PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* dst_buffer, 
                                          PIDX_data_layout layout);
 
 
@@ -270,12 +270,12 @@ PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variabl
 PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variable);
 
 
-PIDX_return_code PIDX_read_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point dims, 
-                                    const void* read_from_this_buffer, PIDX_data_layout layout);
+PIDX_return_code PIDX_read_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, 
+                                    const void*  dst_buffer, PIDX_data_layout layout);
 
 
-PIDX_return_code PIDX_write_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point dims,
-                                     const void* read_from_this_buffer, PIDX_data_layout layout);
+PIDX_return_code PIDX_write_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims,
+                                     const void* src_buffer, PIDX_data_layout layout);
 
 
 ///Actually write the IDX file for all variables associated with file 
