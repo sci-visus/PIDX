@@ -760,7 +760,6 @@ PIDX_return_code PIDX_read(PIDX_file file)
   return PIDX_success;
 }
 
-
 int dump_meta_data(PIDX_variable variable 
 #if PIDX_HAVE_MPI
 		   , MPI_Comm comm
@@ -799,9 +798,9 @@ int dump_meta_data(PIDX_variable variable
 }
 
 PIDX_return_code PIDX_write(PIDX_file file)
-{ 
+{
   int i = 0, p, var = 0;
-  int do_agg = 0;
+  int do_agg = 1;
   
   file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
   
@@ -897,7 +896,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_sync(PIDX_file pidx)
+PIDX_return_code PIDX_flush(PIDX_file pidx)
 {
   PIDX_write(pidx);
   PIDX_cleanup(pidx);
@@ -927,7 +926,7 @@ PIDX_return_code PIDX_cleanup(PIDX_file pidx)
 
 PIDX_return_code PIDX_close(PIDX_file* file) 
 {
-  PIDX_sync(*file);
+  PIDX_flush(*file);
   
   sim_end = PIDX_GetTime();
   

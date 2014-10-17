@@ -16,7 +16,7 @@
   #include <mpi.h>
 #endif
 
-#define H5FILE_NAME     "/home/sid/research/KAUST_data/Post2D_h2air_flame_0.0000E+00/Solution.h5"
+#define H5FILE_NAME     "/home/sid/research/KAUST_data/Post2D_h2air_flame_4.0000E-03/Solution.h5"
 
 int main(int argc, char **argv);
 

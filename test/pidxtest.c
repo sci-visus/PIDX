@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     case PARALLEL_WRITER:  
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
-      test_one_var_writer(args, rank, nprocs);
+      test_multi_var_writer(args, rank, nprocs);
       break;
     
     case SERIAL_WRITER:  
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
       break;
     
     default:
-      test_one_var_writer(args, rank, nprocs);
+      test_multi_var_writer(args, rank, nprocs);
   }
   
 #if PIDX_HAVE_MPI
