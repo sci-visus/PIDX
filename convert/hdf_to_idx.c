@@ -231,7 +231,7 @@ int main(int argc, char **argv)
  
   buffer = (double*)malloc(sizeof(double) * 512 * 256 * 256/nprocs);
   memset(buffer, 0, sizeof(double) * 512 * 256 * 256/nprocs);
-  
+  /*
   FILE *fp;
   fp = fopen("list", "r");
   char file_name[1024];
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
     printf("%s\n", file_name);
   }
   fclose(fp);
-  
+  */
   int g = 0, d = 0, t = 0, time_step = 1;
   for (t = 0; t < time_step; t++)
   {
