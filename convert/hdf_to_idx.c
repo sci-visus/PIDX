@@ -45,16 +45,20 @@ int main(int argc, char **argv)
   
   int time = 0;
     
-  int nprocs, rank, slice;
+  int nprocs=1, rank=0, slice;
+  
+#if PIDX_HAVE_MPI
   MPI_Comm comm  = MPI_COMM_WORLD;
   MPI_Info info  = MPI_INFO_NULL;
 
+  
   MPI_Init(&argc, &argv);
   MPI_Comm_size(comm, &nprocs);
   MPI_Comm_rank(comm, &rank); 
+#endif
   
   output_file_name = (char*) malloc(sizeof (char) * 512);
-  sprintf(output_file_name, "%s%s", "/media/My Passport/Kaust_data/F", ".idx");
+  sprintf(output_file_name, "%s%s", "HERE", ".idx");
   output_file = output_file_name;
   
   if (nprocs == 2)
@@ -224,10 +228,12 @@ int main(int argc, char **argv)
   pidx_dataset_name[5][2] = strdup("Velocity/W");
 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_mpio(plist_id, comm, info);
-  
   PIDX_create_access(&access);
-  PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+
+#if PIDX_HAVE_MPI  
+  H5Pset_fapl_mpio(plist_id, comm, info);
+  PIDX_set_default_access(access);
+#endif
  
   buffer = (double*)malloc(sizeof(double) * 512 * 256 * 256/nprocs);
   memset(buffer, 0, sizeof(double) * 512 * 256 * 256/nprocs);
@@ -253,11 +259,11 @@ int main(int argc, char **argv)
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_block_count(file, blocks_per_file);
     
-    for(g = 0; g < group_count; g++)
+    for(g = 0; g < /*group_count*/1; g++)
     {
       group_id = H5Gopen(file_id, group_name[g], H5P_DEFAULT);
       
-      for(d = 0; d < dataset_count[g]; d++)
+      for(d = 0; d < 1/*dataset_count[g]*/; d++)
       {
 	//printf("Opening [%d] Group %s with [%d] Dataset %s\n", g, group_name[g], d, dataset_name[g][d]);
 	dataset_id = H5Dopen2(group_id, dataset_name[g][d], H5P_DEFAULT);
@@ -294,6 +300,9 @@ int main(int argc, char **argv)
   free(buffer);
   buffer = 0;
   
+#if PIDX_HAVE_MPI    
   MPI_Finalize();
+#endif
+  
   return 0;
 }
