@@ -45,6 +45,10 @@
 #include <mpi.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct PIDX_access_struct
 {
   int parallel_access;
@@ -66,4 +70,9 @@ PIDX_return_code PIDX_set_default_access(PIDX_access access);
 #endif
 PIDX_return_code PIDX_close_access(PIDX_access* access);
 
+#ifdef __cplusplus
+} //extern C
 #endif
+
+#endif
+

@@ -36,6 +36,8 @@
 #ifndef __PIDX_H
 #define __PIDX_H
 
+#include "PIDX_comm.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -49,7 +51,6 @@ extern "C" {
 #include "PIDX_agg.h"
 #include "PIDX_io.h"
 
-#include "PIDX_comm.h"
 #include "PIDX_file_access_modes.h"
 #include "PIDX_error_codes.h"
 #include "PIDX_file_access_modes.h"
