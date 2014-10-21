@@ -399,7 +399,7 @@ PIDX_return_code PIDX_get_block_count(PIDX_file file, int* blocks_per_file)
   return PIDX_success;
 }
 
-#if PIDX_HAVE_MPI
+#if 1/*PIDX_HAVE_MPI*/
 PIDX_return_code PIDX_set_communicator(PIDX_file file, MPI_Comm comm)
 {
   if(!file)

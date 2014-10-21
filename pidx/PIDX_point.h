@@ -18,6 +18,10 @@
 #ifndef __PIDX_POINT_H
 #define __PIDX_POINT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -43,5 +47,9 @@ PIDX_return_code PIDX_set_point_4D(int  x,int  y,int  z,int  u, PIDX_point point
 PIDX_return_code PIDX_get_point_4D(int* x,int* y,int* z,int* u, PIDX_point point);
 PIDX_return_code PIDX_set_point_5D(int  x,int  y,int  z,int  u,int  v, PIDX_point point);
 PIDX_return_code PIDX_get_point_5D(int* x,int* y,int* z,int* u,int* v, PIDX_point point);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

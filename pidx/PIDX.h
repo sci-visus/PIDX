@@ -36,6 +36,12 @@
 #ifndef __PIDX_H
 #define __PIDX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define PIDX_HAVE_MPI 1
+
 #include "PIDX_data_structs.h"
 
 #include "PIDX_rst.h"
@@ -51,9 +57,6 @@
 #include "PIDX_data_types.h"
 #include "PIDX_data_layout.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 struct PIDX_file_descriptor;
 typedef struct PIDX_file_descriptor* PIDX_file;
@@ -141,7 +144,7 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int time_step)
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
 
 
-#if PIDX_HAVE_MPI
+#if 1/*PIDX_HAVE_MPI*/
 /// Attach a communicator to a PIDX file.
 /// The function should be used ONLY in a MPI based parallel setting.
 /// \param file The IDX file handler.
