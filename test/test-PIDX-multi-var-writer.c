@@ -134,16 +134,15 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
       sprintf(data_type, "%d*float64", values_per_sample[var]);
       PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
       PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      
+      PIDX_flush(file);
+      
+      free(double_data[var]);
+      double_data[var] = 0;
     }
     
     PIDX_close(&file);
     PIDX_close_access(&access);
-    
-    for(var = 0; var < variable_count; var++)
-    {
-      free(double_data[var]);
-      double_data[var] = 0;
-    }
     
     free(double_data);
     double_data = 0;
