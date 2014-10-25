@@ -504,7 +504,7 @@ int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, in
     fprintf(idx_file_p, "\n(bits)\n%s\n", io_id->idx_ptr->bitSequence);
     fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", io_id->idx_ptr->bits_per_block, io_id->idx_ptr->blocks_per_file);
     fprintf(idx_file_p, "(filename_template)\n./%s\n", io_id->filename_template);
-    fprintf(idx_file_p, "(time)\n0 %d time%%04d/", io_id->idx_ptr->current_time_step);
+    fprintf(idx_file_p, "(time)\n0 %d time%%06d/", io_id->idx_ptr->current_time_step);
     fclose(idx_file_p);
   }
   
@@ -524,7 +524,7 @@ int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, in
 #endif
   
   //printf("[%d] FS block: %d %d\n", (int)total_header_size, io_id->start_fs_block, io_id->fs_block_size);
-  total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * /*io_id->idx_ptr->variable_count*/34;
+  total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * /*io_id->idx_ptr->variable_count*/16;
   io_id->start_fs_block = total_header_size / io_id->fs_block_size;
     
   if (total_header_size % io_id->fs_block_size)
@@ -547,7 +547,7 @@ int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, in
   assert(data_set_path);
   strncpy(directory_path, data_set_path, strlen(data_set_path) - 4);
 
-  sprintf(data_set_path_copy, "%s/time%04d.idx", directory_path, io_id->idx_ptr->current_time_step);
+  sprintf(data_set_path_copy, "%s/time%06d.idx", directory_path, io_id->idx_ptr->current_time_step);
 
   nbits_blocknumber = (io_id->idx_derived_ptr->maxh - io_id->idx_ptr->bits_per_block - 1);
   VisusSplitFilename(data_set_path_copy, dirname, basename);

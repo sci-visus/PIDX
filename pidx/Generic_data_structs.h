@@ -33,9 +33,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#if PIDX_HAVE_MPI
-#include <mpi.h>
-#endif
+#include "PIDX_comm.h"
 
 #define PIDX_MAX_DIMENSIONS 5
 

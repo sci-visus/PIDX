@@ -50,7 +50,7 @@ struct PIDX_file_descriptor
   idx_dataset_derived_metadata idx_derived_ptr;
   
 #if PIDX_HAVE_MPI
-  PIDX_rst_id rst_id;
+  //  PIDX_rst_id rst_id;
   PIDX_agg_id agg_id;
 #endif
   

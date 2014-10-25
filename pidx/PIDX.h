@@ -36,17 +36,17 @@
 #ifndef __PIDX_H
 #define __PIDX_H
 
+#define PIDX_HAVE_MPI 1
+
 #include "PIDX_comm.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define PIDX_HAVE_MPI 1
-
 #include "PIDX_data_structs.h"
 
-#include "PIDX_rst.h"
+  /* #include "PIDX_rst.h"*/ 
 #include "PIDX_hz_encode.h"
 #include "PIDX_agg.h"
 #include "PIDX_io.h"
