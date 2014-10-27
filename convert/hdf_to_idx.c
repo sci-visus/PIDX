@@ -16,6 +16,8 @@
  **                                                 **
  *****************************************************/
 
+#if PIDX_OPTION_HDF5
+
 #include <PIDX.h>
 #include <Generic_data_structs.h>
 
@@ -306,3 +308,4 @@ int main(int argc, char **argv)
   
   return 0;
 }
+#endif //PIDX_OPTION_HDF5

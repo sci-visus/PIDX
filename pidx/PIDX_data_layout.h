@@ -37,7 +37,10 @@
 
 typedef unsigned int PIDX_data_layout;
 
-
+/// Data layout options 
+/// \param PIDX_row_major row major layout
+/// \param PIDX_column_major column major layout
+///
 extern PIDX_data_layout PIDX_row_major;
 extern PIDX_data_layout PIDX_column_major;
 

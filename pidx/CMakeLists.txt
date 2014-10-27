@@ -26,15 +26,15 @@ FILE(GLOB PIDX_SOURCES *.h *.c)
 # includes
 # ////////////////////////////////////////
 
-INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-
+IF (MPI_C_FOUND)
+  MESSAGE("Configuring pidx with MPI support")
+  INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
+  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${MPI_C_LIBRARIES})
+ENDIF()
 
 # ////////////////////////////////////////
 # library
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
-ADD_DEPENDENCIES(pidx ${ZLIB_LIBRARY})
-TARGET_LINK_LIBRARIES(pidx m ${MPI_C_LIBRARIES})
-
+TARGET_LINK_LIBRARIES(pidx m ${PIDX_LINK_LIBS})

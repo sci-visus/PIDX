@@ -39,6 +39,8 @@ struct PIDX_file_descriptor
   int IDX_READ;  // 0 for write 1 for read
 
   int flags;
+
+  PIDX_access access;
   
   int current_time_step;
   
@@ -114,8 +116,10 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_ptr->variable_count = 0;
   (*file)->idx_ptr->variable_index_tracker = 0;
 
+  (*file)->access = access_type;
 #if PIDX_HAVE_MPI
-  MPI_Comm_dup( access_type->comm , &((*file)->comm));
+  if (access_type->parallel)
+    MPI_Comm_dup( access_type->comm , &((*file)->comm));
 #endif
   
   (*file)->start_variable_index = 0;
@@ -170,8 +174,13 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   char *pch, *pch1;
   char line [ 512 ];
   
-  MPI_Comm_dup(access_type->comm, &((*file)->comm));
-  MPI_Comm_rank((*file)->comm, &rank);
+#if PIDX_HAVE_MPI
+  if ((*file)->access->parallel)
+  {
+    MPI_Comm_dup(access_type->comm, &((*file)->comm));
+    MPI_Comm_rank((*file)->comm, &rank);
+  }
+#endif
   
   if (rank == 0) 
   {
@@ -329,6 +338,19 @@ PIDX_return_code PIDX_validate(PIDX_file file)
   // other validations...
   // TODO
   
+  return PIDX_success;
+}
+
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_get_access(PIDX_file file, PIDX_access *access)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+  
+  if (!access)
+    return PIDX_err_access;
+
+  (*access) = file->access;
   return PIDX_success;
 }
 
@@ -974,9 +996,9 @@ PIDX_return_code PIDX_cleanup(PIDX_file pidx)
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_close(PIDX_file* file) 
+PIDX_return_code PIDX_close(PIDX_file file) 
 {
-  PIDX_flush(*file);
+  PIDX_flush(file);
   
   sim_end = PIDX_GetTime();
   
@@ -985,63 +1007,62 @@ PIDX_return_code PIDX_close(PIDX_file* file)
   int sample_sum = 0, var = 0, i = 0;
   
 #if PIDX_HAVE_MPI
-  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, (*file)->comm);
+  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
 #endif
 
   if (max_time == total_time) 
   {
-    if ((*file)->IDX_WRITE == 1 && (*file)->IDX_READ == 0)
+    if (file->IDX_WRITE == 1 && file->IDX_READ == 0)
       printf("\n------------- WRITE -------------\n");
 
-    if ((*file)->IDX_WRITE == 0 && (*file)->IDX_READ == 1)
+    if (file->IDX_WRITE == 0 && file->IDX_READ == 1)
       printf("\n------------- READ -------------\n");
       
-    for (var = 0; var < (*file)->idx_ptr->variable_count; var++)
-      sample_sum = sample_sum + (*file)->idx_ptr->variable[var]->values_per_sample;
+    for (var = 0; var < file->idx_ptr->variable_count; var++)
+      sample_sum = sample_sum + file->idx_ptr->variable[var]->values_per_sample;
     
-    long long total_data = (long long) (*file)->idx_ptr->global_bounds[0] * (*file)->idx_ptr->global_bounds[1] * (*file)->idx_ptr->global_bounds[2] * (*file)->idx_ptr->global_bounds[3] * (*file)->idx_ptr->global_bounds[4] * sample_sum * 8;
+    long long total_data = (long long) file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8;
     
-    printf("Global Data [%d %d %d] Variables [%d]\nTime Taken: %f Seconds Throughput %f MiB/sec\n", (*file)->idx_ptr->global_bounds[0], (*file)->idx_ptr->global_bounds[1], (*file)->idx_ptr->global_bounds[2], (*file)->idx_ptr->variable_count, max_time, (float) total_data / (1024 * 1024 * max_time));
+    printf("Global Data [%d %d %d] Variables [%d]\nTime Taken: %f Seconds Throughput %f MiB/sec\n", file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, max_time, (float) total_data / (1024 * 1024 * max_time));
   }
   
-  for (i = 0; i < (*file)->idx_ptr->variable_count; i++) 
+  for (i = 0; i < file->idx_ptr->variable_count; i++) 
   {
-    //free((*file)->idx_ptr->variable[i]->var_name);
-    //(*file)->idx_ptr->variable[i]->var_name = 0;
+    //free(file->idx_ptr->variable[i]->var_name);
+    //file->idx_ptr->variable[i]->var_name = 0;
     
-    //free((*file)->idx_ptr->variable[i]->type_name);
-    //(*file)->idx_ptr->variable[i]->type_name = 0;
+    //free(file->idx_ptr->variable[i]->type_name);
+    //file->idx_ptr->variable[i]->type_name = 0;
     
-    destroyBlockBitmap((*file)->idx_ptr->variable[i]->global_block_layout);
-    free((*file)->idx_ptr->variable[i]->global_block_layout);
-    (*file)->idx_ptr->variable[i]->global_block_layout = 0;
+    destroyBlockBitmap(file->idx_ptr->variable[i]->global_block_layout);
+    free(file->idx_ptr->variable[i]->global_block_layout);
+    file->idx_ptr->variable[i]->global_block_layout = 0;
   }
   
   for (i = 0; i < 1024; i++)
   {
-    free((*file)->idx_ptr->variable[i]);
-    (*file)->idx_ptr->variable[i] = 0; 
+    free(file->idx_ptr->variable[i]);
+    file->idx_ptr->variable[i] = 0; 
   }
-  (*file)->idx_ptr->variable_count = 0;
+  file->idx_ptr->variable_count = 0;
   
-  free((*file)->idx_ptr->filename);
-  (*file)->idx_ptr->filename = 0;
+  free(file->idx_ptr->filename);
+  file->idx_ptr->filename = 0;
 
-  free((*file)->idx_ptr->global_bounds);
-  (*file)->idx_ptr->global_bounds = 0;
+  free(file->idx_ptr->global_bounds);
+  file->idx_ptr->global_bounds = 0;
   
-  free((*file)->idx_ptr);
-  (*file)->idx_ptr = 0;
+  free(file->idx_ptr);
+  file->idx_ptr = 0;
   
-  free((*file)->idx_derived_ptr);
-  (*file)->idx_derived_ptr = 0;
+  free(file->idx_derived_ptr);
+  file->idx_derived_ptr = 0;
   
 #if PIDX_HAVE_MPI
-  MPI_Comm_free(&((*file)->comm));
+  MPI_Comm_free(&(file->comm));
 #endif
   
-  free(*file);
-  *file = 0;
+  free(file);
   
   return PIDX_success;
 }

@@ -95,6 +95,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// It is PIDX_success if the task is completed correctly.
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
 
+/// Get the PIDX_access associated with this file.
+PIDX_return_code PIDX_get_access(PIDX_file file, PIDX_access *access);
 
 /// Sets the dims of the IDX file.
 /// \param file The IDX file handler.
@@ -144,24 +146,10 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int time_step)
 /// \return time_step The current time step.
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
 
-
-#if 1/*PIDX_HAVE_MPI*/
-/// Attach a communicator to a PIDX file.
-/// The function should be used ONLY in a MPI based parallel setting.
-/// \param file The IDX file handler.
-/// \param comm The communicator that needs to be attached to the IDX file.
-PIDX_return_code PIDX_set_communicator(PIDX_file file, MPI_Comm  comm);
-
-/// Returns the communicator used by PIDX file.
-/// The function should be used ONLY in a MPI based parallel setting.
-/// \param file The IDX file handler.
-/// \return The communicator that PIDX is working on.
-PIDX_return_code PIDX_get_communicator(PIDX_file file, MPI_Comm* comm);
-#endif
-
-
+/// Creates a PIDX variable...
 PIDX_return_code PIDX_variable_create(PIDX_file file, char* variable_name, unsigned int bits_per_sample, PIDX_type type_name, PIDX_variable* variable);
 
+/// Gets the next PIDX variable...
 PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable);
 
 /// Get the number of bits associated with a PIDX_type.
@@ -287,7 +275,7 @@ PIDX_return_code PIDX_flush(PIDX_file file);
 
 
 ///Perform all the necessary cleanups
-PIDX_return_code PIDX_close(PIDX_file* file);
+PIDX_return_code PIDX_close(PIDX_file file);
 
 #ifdef __cplusplus
 }

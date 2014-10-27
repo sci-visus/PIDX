@@ -35,22 +35,19 @@ IF (PIDX_BUILD_CONVERT)
   
   if (PIDX_OPTION_HDF5)
     INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-  ENDIF()
-
 
   # ////////////////////////////////////////
   # executables
   # ////////////////////////////////////////
 
-  PIDX_ADD_EXECUTABLE(hdf5_to_idx "${HDF_TO_IDX_SOURCES}")
-  ADD_DEPENDENCIES(hdf5_to_idx pidx)
-  TARGET_LINK_LIBRARIES(hdf5_to_idx pidx)
+    PIDX_ADD_EXECUTABLE(hdf5_to_idx "${HDF_TO_IDX_SOURCES}")
+    ADD_DEPENDENCIES(hdf5_to_idx pidx)
+    TARGET_LINK_LIBRARIES(hdf5_to_idx pidx)
 
-  IF (MPI_C_FOUND)
-    TARGET_LINK_LIBRARIES(hdf5_to_idx ${MPI_C_LIBRARIES})
-  ENDIF()
+    IF (MPI_C_FOUND)
+      TARGET_LINK_LIBRARIES(hdf5_to_idx ${MPI_C_LIBRARIES})
+    ENDIF()
 
-  if (PIDX_OPTION_HDF5)  
     ADD_DEPENDENCIES(hdf5_to_idx ${HDF5_LIBRARIES})
     TARGET_LINK_LIBRARIES(hdf5_to_idx ${HDF5_LIBRARIES})
   ENDIF()

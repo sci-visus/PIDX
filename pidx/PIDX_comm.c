@@ -23,20 +23,10 @@ PIDX_return_code PIDX_create_access(PIDX_access* access)
   *access = malloc(sizeof (*(*access)));
   memset(*access, 0, sizeof (*(*access)));
   
-  (*access)->parallel_access = 0;
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_set_default_access(PIDX_access access)
-{
-  if(access == NULL)
-    return PIDX_err_access;
-  
-  access->parallel_access = 0;
+  (*access)->parallel = 0;
   
 #if PIDX_HAVE_MPI
-  access->comm = NULL;
+  (*access)->comm = NULL;
 #endif
   
   return PIDX_success;
@@ -48,7 +38,7 @@ PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm)
   if(access == NULL)
     return PIDX_err_access;
   
-  access->parallel_access = 1;
+  access->parallel = 1;
   
   MPI_Comm_dup(comm, &(access->comm));
   

@@ -30,7 +30,7 @@ IF (PIDX_BUILD_TEST)
   # ////////////////////////////////////////
 
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
-  SET(PIDXTEST_LINK_LIBS pidx ${ZLIB_LIBRARY}) 
+  SET(PIDXTEST_LINK_LIBS pidx) 
   IF (MPI_C_FOUND)
     MESSAGE("Configuring pidxtest with MPI support")
     INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})

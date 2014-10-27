@@ -1,6 +1,8 @@
 #ifndef _HDF_TO_IDX_H
 #define _HDF_TO_IDX_H
 
+#if PIDX_OPTION_HDF5
+
 #include <stdio.h>
 #include <getopt.h>
 #include <string.h>
@@ -20,4 +22,5 @@
 
 int main(int argc, char **argv);
 
+#endif
 #endif

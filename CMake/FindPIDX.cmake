@@ -31,28 +31,40 @@ FIND_PATH(PIDX_INCLUDE_DIR NAMES PIDX.h PATHS ${PIDX_DIR}/include NO_DEFAULT_PAT
 
 IF (PIDX_INCLUDE_DIR)
 
-   FIND_PACKAGE(ZLIB REQUIRED)
-   FIND_PACKAGE(MPI REQUIRED)
+  # Read pidx_config.h to see if we need to link MPI
+  FILE(STRINGS "${PIDX_INCLUDE_DIR}/pidx_config.h" config)
+  LIST(FIND config "PIDX_HAVE_MPI 1" idx)
+  IF (IDX GREATER 0)
+    FIND_PACKAGE(MPI REQUIRED)
+    IF (MPI_C_FOUND)
+      SET(PIDX_INCLUDE_DIR ${PIDX_INCLUDE_DIR} ${MPI_C_INCLUDE_PATH})
+      SET(PIDX_MPI_LIBS ${MPI_C_LIBRARIES})
+    ELSE()
+      MESSAGE("PIDX was configured with MPI support, but we could not locate MPI on your system!")
+    ENDIF()
+  ENDIF()
+    
+  FIND_LIBRARY(PIDX_LIB     pidx    ${PIDX_DIR}/lib)
 
-   FIND_LIBRARY(PIDX_LIB     pidx    ${PIDX_DIR}/lib)
+  SET(PIDX_LIBRARIES 
+    ${PIDX_LIB}
+    ${PIDX_MPI_LIBS}
+    )
 
-   SET(PIDX_LIBRARIES 
-       ${PIDX_LIB}
-       ${ZLIB_LIBRARY}
-       ${MPI_CXX_LIBRARIES}
-   )
+  SET(PIDX_FOUND "YES" CACHE BOOL "PIDX library found" FORCE)
 
-   SET(PIDX_FOUND "YES" CACHE BOOL "PIDX library found" FORCE)
-
-   IF (CMAKE_VERBOSE_MAKEFILE)
-      MESSAGE("Using PIDX_INCLUDE_DIR  = " ${PIDX_INCLUDE_DIR}) 
-      MESSAGE("Found PIDX_LIBRARIES    = " ${PIDX_LIBRARIES}) 
-      FOREACH(lib ${PIDX_LIBRARIES})
-         MESSAGE("is: " ${lib})
-      ENDFOREACH()
-   ENDIF (CMAKE_VERBOSE_MAKEFILE)
+  IF (CMAKE_VERBOSE_MAKEFILE)
+    MESSAGE("Using PIDX_INCLUDE_DIR  = ") 
+    FOREACH(inc ${PIDX_INCLUDE_DIR})
+      MESSAGE("  " ${inc})
+    ENDFOREACH()
+    MESSAGE("Found PIDX_LIBRARIES    = ")
+    FOREACH(lib ${PIDX_LIBRARIES})
+      MESSAGE("  " ${lib})
+    ENDFOREACH()
+  ENDIF (CMAKE_VERBOSE_MAKEFILE)
 
 ELSE ()
-   MESSAGE("ERROR PIDX library not found on the system")
+  MESSAGE("ERROR PIDX library not found on the system")
 ENDIF ()
                          

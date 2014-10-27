@@ -51,7 +51,7 @@ extern "C" {
 
 struct PIDX_access_struct
 {
-  int parallel_access;
+  int parallel;
   
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
@@ -59,20 +59,15 @@ struct PIDX_access_struct
 };
 typedef struct PIDX_access_struct* PIDX_access;
 
-/// Data layout options 
-/// \param PIDX_row_major row major layout
-/// \param PIDX_column_major column major layout
-///
 PIDX_return_code PIDX_create_access(PIDX_access* access);
-PIDX_return_code PIDX_set_default_access(PIDX_access access);
-#if PIDX_HAVE_MPI
-  PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm);
-#endif
 PIDX_return_code PIDX_close_access(PIDX_access* access);
+
+#if PIDX_HAVE_MPI
+PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm);
+#endif
 
 #ifdef __cplusplus
 } //extern C
 #endif
 
 #endif
-
