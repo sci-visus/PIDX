@@ -373,6 +373,8 @@ PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata 
   io_id->start_var_index = start_var_index;
   io_id->end_var_index = end_var_index;
     
+  io_id->fs_block_size == 0;
+
   return io_id;
 }
 
@@ -470,8 +472,15 @@ int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, in
     return 1;
   }
   
+  // only write idx file once (from first process, timestep 0, once all the variables have been added)
   if (rank == 0)
   {
+    fprintf(stderr, "current_time_step = %d, end_var_index = %d, variable_count = %d\n",io_id->idx_ptr->current_time_step, io_id->end_var_index, io_id->idx_ptr->variable_count);
+  }
+  if (rank == 0 && io_id->idx_ptr->current_time_step == 2 && io_id->end_var_index == 9/*godhelpus io_id->idx_ptr->variable_count - 1*/)
+  {
+    fprintf(stderr, "writing IDX file...\n", __FILE__, __LINE__);
+
     idx_file_p = fopen(idx_file, "w");
     if (!idx_file_p) 
     {
@@ -504,16 +513,19 @@ int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, in
     fprintf(idx_file_p, "\n(bits)\n%s\n", io_id->idx_ptr->bitSequence);
     fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", io_id->idx_ptr->bits_per_block, io_id->idx_ptr->blocks_per_file);
     fprintf(idx_file_p, "(filename_template)\n./%s\n", io_id->filename_template);
-    fprintf(idx_file_p, "(time)\n0 %d time%%06d/", io_id->idx_ptr->current_time_step);
+    fprintf(idx_file_p, "(time)\n1 %d time%%06d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, 99999 /*io_id->idx_ptr->current_time_step*/); //fix #1: need to add * notation to idx reader (because we can't write the .idx every time)
     fclose(idx_file_p);
   }
-  
-  if(rank == 0)
+
+  //determine hdd block size
+  if (rank == 0 && io_id->fs_block_size == 0)
   {
-    ret = stat(/*bin_file*/idx_file, &stat_buf);
+    FILE *dummy = fopen("dummy.txt", "w"); //TODO: close and delete the file (there is a way to do this automatically by fopen...)
+    fclose(dummy);
+    ret = stat("dummy.txt", &stat_buf);
     if (ret != 0)
     {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed on %s\n", __FILE__, __LINE__, bin_file);
+      fprintf(stderr, "[%s] [%d] MPI_File_open() failed on %s\n", __FILE__, __LINE__, "dummy.txt");
       return 1;
     }
     io_id->fs_block_size = stat_buf.st_blksize;

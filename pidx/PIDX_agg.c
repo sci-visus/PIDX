@@ -433,6 +433,10 @@ int PIDX_agg_finalize(PIDX_agg_id agg_id)
   free(agg_id->idx_derived_ptr);
   agg_id->idx_derived_ptr = 0;
   
+#if PIDX_HAVE_MPI
+  MPI_Comm_free(&agg_id->comm);
+#endif
+
   free(agg_id);
   agg_id = 0;
 

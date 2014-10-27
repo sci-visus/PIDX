@@ -18,25 +18,6 @@
 
 #include "PIDX_point.h"
 
-PIDX_return_code PIDX_create_point(PIDX_point* point)
-{
-  //*point = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
-  //memset(*point, 0, sizeof(int) * PIDX_MAX_DIMENSIONS);
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_delete_point(PIDX_point* point)
-{
-  //if(*point == NULL)
-  //  return PIDX_err_point;
-  
-  //free(*point);
-  //*point = 0;
-  
-  return PIDX_success;
-}
-
 PIDX_return_code PIDX_set_point_1D(int x, PIDX_point point)
 {
   if(point == NULL)
@@ -164,5 +145,15 @@ PIDX_return_code PIDX_get_point_5D(int* x, int* y, int* z, int* u, int* v, PIDX_
   *u = point[3];
   *v = point[4];
   
+  return PIDX_success;
+}
+
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_inner_product(PIDX_point point, long long *inner_product)
+{
+  *inner_product = point[0] * point[1] * point[2] * point[3] * point[4];
+  //safe_add, result=a+b overflow happens when (a+b)>MAX ---> b>MAX-a
+  //if ((b>0?+b:-b)>(NumericLimits<T>::highest()-(a>0?+a:-a))) return false;
+  //TODO: ensure there was no overflow
   return PIDX_success;
 }

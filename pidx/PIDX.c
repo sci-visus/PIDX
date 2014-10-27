@@ -28,6 +28,7 @@ static double sim_start = 0, sim_end = 0;
 static PIDX_return_code PIDX_cleanup(PIDX_file pidx);
 static PIDX_return_code PIDX_write(PIDX_file pidx);
 
+/////////////////////////////////////////////////
 struct PIDX_file_descriptor 
 {
 #if PIDX_HAVE_MPI
@@ -64,6 +65,7 @@ struct PIDX_file_descriptor
 };
 
 
+/////////////////////////////////////////////////
 double PIDX_GetTime()
 {
 #if PIDX_HAVE_MPI
@@ -76,10 +78,11 @@ double PIDX_GetTime()
 }
 
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
 {
   sim_start = PIDX_GetTime();
-  
+
   if(flags != PIDX_file_excl && flags != PIDX_file_trunc)
     return PIDX_err_unsopperted_flags;
     
@@ -106,6 +109,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx_ptr->filename = strdup(filename);
   (*file)->idx_ptr->global_bounds = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
+  { int i; for (i=0;i<PIDX_MAX_DIMENSIONS;i++) (*file)->idx_ptr->global_bounds[i]=65535; }
   
   (*file)->idx_ptr->variable_count = 0;
   (*file)->idx_ptr->variable_index_tracker = 0;
@@ -124,6 +128,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
 {
   /*
@@ -307,6 +312,27 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_validate(PIDX_file file)
+{
+  /// validate dims/blocksize
+  long long dims;
+  if (PIDX_inner_product(file->idx_ptr->global_bounds, &dims))
+    return PIDX_err_size;
+  if (dims < file->idx_derived_ptr->samples_per_block)
+  {
+    // ensure blocksize is a subset of the total volume.
+    file->idx_derived_ptr->samples_per_block = getPowerOf2(dims) >> 1;
+    file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block) - 1;
+  }
+
+  // other validations...
+  // TODO
+  
+  return PIDX_success;
+}
+
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
 {
   if(dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
@@ -316,9 +342,11 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
     return PIDX_err_file;
   
   memcpy(file->idx_ptr->global_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(int));
-  return PIDX_success;
+
+  return PIDX_validate(file);
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point* dims)
 {
   if(!file)
@@ -329,6 +357,7 @@ PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point* dims)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_time_step)
 {
   if(!file)
@@ -342,6 +371,7 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* current_time_step)
 {
   if(!file)
@@ -352,6 +382,7 @@ PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* current_time_st
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_block_size(PIDX_file file, const int bits_per_block)
 {
   if(!file)
@@ -363,9 +394,10 @@ PIDX_return_code PIDX_set_block_size(PIDX_file file, const int bits_per_block)
   file->idx_ptr->bits_per_block = bits_per_block;
   file->idx_derived_ptr->samples_per_block = pow(2, bits_per_block);
   
-  return PIDX_success;
+  return PIDX_validate(file);
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_block_size(PIDX_file file, int* bits_per_block)
 { 
   if(!file)
@@ -376,6 +408,7 @@ PIDX_return_code PIDX_get_block_size(PIDX_file file, int* bits_per_block)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_block_count(PIDX_file file, const int blocks_per_file)
 {
   if(!file)
@@ -389,6 +422,7 @@ PIDX_return_code PIDX_set_block_count(PIDX_file file, const int blocks_per_file)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_block_count(PIDX_file file, int* blocks_per_file)
 { 
   if(!file)
@@ -400,6 +434,7 @@ PIDX_return_code PIDX_get_block_count(PIDX_file file, int* blocks_per_file)
 }
 
 #if 1/*PIDX_HAVE_MPI*/
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_communicator(PIDX_file file, MPI_Comm comm)
 {
   if(!file)
@@ -413,6 +448,7 @@ PIDX_return_code PIDX_set_communicator(PIDX_file file, MPI_Comm comm)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_communicator(PIDX_file file, MPI_Comm* comm)
 {
   if(!file)
@@ -427,6 +463,7 @@ PIDX_return_code PIDX_get_communicator(PIDX_file file, MPI_Comm* comm)
 }
 #endif
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
 {
   if(!file)
@@ -440,6 +477,7 @@ PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
 { 
   if(!file)
@@ -450,6 +488,7 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
 {
   if(!file)
@@ -463,6 +502,7 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_variable_create(PIDX_file file, char* variable_name, unsigned int bits_per_sample, PIDX_type type_name, PIDX_variable* variable)
 {
   if(!file)
@@ -502,6 +542,7 @@ PIDX_return_code PIDX_variable_create(PIDX_file file, char* variable_name, unsig
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* write_to_this_buffer, PIDX_data_layout data_layout)
 {
   if(!variable)
@@ -526,6 +567,7 @@ PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offs
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout)
 {
   if(!variable)
@@ -551,6 +593,7 @@ PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_poi
   return PIDX_success; 
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code populate_idx_dataset(PIDX_file file)
 {
   int var, i, j, p, ctr, counter = 0, file_number = 0, level_count = 1;
@@ -693,6 +736,7 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_read(PIDX_file file)
 {
   int i = 0, p, var = 0;
@@ -760,6 +804,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 int dump_meta_data(PIDX_variable variable 
 #if PIDX_HAVE_MPI
 		   , MPI_Comm comm
@@ -797,6 +842,8 @@ int dump_meta_data(PIDX_variable variable
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_write(PIDX_file file)
 {
   int i = 0, p, var = 0;
@@ -896,6 +943,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_flush(PIDX_file pidx)
 {
   PIDX_write(pidx);
@@ -903,6 +951,7 @@ PIDX_return_code PIDX_flush(PIDX_file pidx)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_cleanup(PIDX_file pidx) 
 {
   int i, p;
@@ -924,6 +973,7 @@ PIDX_return_code PIDX_cleanup(PIDX_file pidx)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_close(PIDX_file* file) 
 {
   PIDX_flush(*file);
@@ -996,6 +1046,7 @@ PIDX_return_code PIDX_close(PIDX_file* file)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_variable_set_box_metadata_on (PIDX_variable variable)
 {
   if(!variable)
@@ -1006,6 +1057,7 @@ PIDX_return_code PIDX_variable_set_box_metadata_on (PIDX_variable variable)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_variable_set_box_metadata_off(PIDX_variable variable)
 {
   if(!variable)
@@ -1016,40 +1068,48 @@ PIDX_return_code PIDX_variable_set_box_metadata_off(PIDX_variable variable)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_variable_get_box_metadata(PIDX_variable variable, int* on_off_bool)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_bits_per_sample(PIDX_type type_name, unsigned int bits_per_sample)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_box_count(PIDX_file file, int* box_count)
 {
   return PIDX_err_not_implemented;
 }
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_box(PIDX_file file, int box_index, PIDX_point offset, PIDX_point dims)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int* box_count)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_box_with_rank(PIDX_file file, int box_index, int MPI_rank, PIDX_point offset, PIDX_point dims)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_current_variable_index(PIDX_file file, int* variable_index)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_index)
 {
   if(!file)
@@ -1065,6 +1125,7 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variable)
 {
   if(!file)
@@ -1078,16 +1139,19 @@ PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variab
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variable)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_read_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout layout)
 {
   return PIDX_err_not_implemented;
 }
 
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_write_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout layout)
 {
   return PIDX_err_not_implemented;
