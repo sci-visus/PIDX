@@ -86,7 +86,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   sim_start = PIDX_GetTime();
 
   if(flags != PIDX_file_excl && flags != PIDX_file_trunc)
-    return PIDX_err_unsopperted_flags;
+    return PIDX_err_unsupported_flags;
     
   if(flags == PIDX_file_excl)
   {
@@ -137,7 +137,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 {
   /*
   if(flags != PIDX_file_rdonly)
-    return PIDX_err_unsopperted_flags;
+    return PIDX_err_unsupported_flags;
     
   if(flags == PIDX_file_rdonly)
   {
@@ -369,12 +369,12 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point* dims)
+PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims)
 {
   if(!file)
     return PIDX_err_file;
   
-  memcpy(*dims, file->idx_ptr->global_bounds, (sizeof (int) * PIDX_MAX_DIMENSIONS));
+  memcpy(dims, file->idx_ptr->global_bounds, (sizeof (int) * PIDX_MAX_DIMENSIONS));
   
   return PIDX_success;
 }

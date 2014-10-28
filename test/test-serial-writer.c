@@ -76,7 +76,7 @@ int serial_writer(struct Args args)
     PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, var1_double_scalar_data, PIDX_row_major);
     //PIDX_variable_set_box_metadata_on(variable);
     
-    PIDX_close(&file);
+    PIDX_close(file);
     free(var1_double_scalar_data);
   }
   

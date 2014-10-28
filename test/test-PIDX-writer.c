@@ -381,7 +381,6 @@ int test_writer(struct Args args, int rank, int nprocs)
     }
     
     pidx_ptr = PIDX_file_create(output_file, gextent, 0);
-    PIDX_set_communicator(pidx_ptr, MPI_COMM_WORLD);
     PIDX_set_current_time_step(pidx_ptr, ts);
     PIDX_set_block_size(pidx_ptr, bits_per_block);
     PIDX_set_block_count(pidx_ptr, blocks_per_file);

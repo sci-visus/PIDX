@@ -137,8 +137,8 @@ int test_reader(struct Args args, int rank, int nprocs)
       PIDX_read_next_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
     }
     
-    PIDX_close(&file);
-    PIDX_close_access(&access);
+    PIDX_close(file);
+    PIDX_close_access(access);
     
     for(var = 0; var < variable_count; var++)
     {

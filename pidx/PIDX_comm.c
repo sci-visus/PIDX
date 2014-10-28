@@ -46,17 +46,16 @@ PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm)
 }
 #endif
 
-PIDX_return_code PIDX_close_access(PIDX_access* access)
+PIDX_return_code PIDX_close_access(PIDX_access access)
 {
-  if(*access == NULL)
+  if(access == NULL)
     return PIDX_err_access;
   
 #if PIDX_HAVE_MPI
-  MPI_Comm_free(&((*access)->comm));
+  MPI_Comm_free(&(access->comm));
 #endif  
   
-  free(*access);
-  *access = 0;
+  free(access);
   
   return PIDX_success;
 }

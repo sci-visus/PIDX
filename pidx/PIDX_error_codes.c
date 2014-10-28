@@ -18,7 +18,7 @@
 #include "PIDX_error_codes.h"
 
 PIDX_return_code PIDX_success = 0;
-PIDX_return_code PIDX_err_unsopperted_flags = 1;
+PIDX_return_code PIDX_err_unsupported_flags = 1;
 PIDX_return_code PIDX_err_file_exists = 2;
 PIDX_return_code PIDX_err_name = 4;
 PIDX_return_code PIDX_err_box = 8;

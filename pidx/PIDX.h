@@ -107,7 +107,7 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims);
 /// Gets the dims of the IDX file.
 /// \param file The IDX file handler.
 /// \param dims Dimensions of the volume will be returned here.
-PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point* dims);
+PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims);
 
 
 /// Sets the block size of the IDX file.

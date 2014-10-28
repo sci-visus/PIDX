@@ -141,8 +141,8 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
       double_data[var] = 0;
     }
     
-    PIDX_close(&file);
-    PIDX_close_access(&access);
+    PIDX_close(file);
+    PIDX_close_access(access);
     
     free(double_data);
     double_data = 0;

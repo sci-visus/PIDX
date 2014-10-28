@@ -21,7 +21,7 @@
 typedef unsigned int PIDX_return_code;
 
 extern PIDX_return_code PIDX_success;
-extern PIDX_return_code PIDX_err_unsopperted_flags;
+extern PIDX_return_code PIDX_err_unsupported_flags;
 extern PIDX_return_code PIDX_err_file_exists;
 extern PIDX_return_code PIDX_err_name;
 extern PIDX_return_code PIDX_err_box;

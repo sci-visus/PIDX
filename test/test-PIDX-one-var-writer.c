@@ -87,13 +87,10 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
 
 #if PIDX_HAVE_MPI
     PIDX_set_mpi_access(access, MPI_COMM_WORLD);
-#else
-    PIDX_set_default_access(access);
 #endif
     
     PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
     PIDX_set_dims(file, global_bounding_box);
-    PIDX_set_communicator(file, MPI_COMM_WORLD);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_block_count(file, blocks_per_file);
@@ -102,8 +99,8 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
     PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, var1_double_scalar_data, PIDX_row_major);
     //PIDX_variable_set_box_metadata_on(variable);
     
-    PIDX_close(&file);
-    PIDX_close_access(&access);
+    PIDX_close(file);
+    PIDX_close_access(access);
     free(var1_double_scalar_data);
   }
   

@@ -144,6 +144,7 @@ static int populate_meta_data(PIDX_io_id io_id, int file_number, char* bin_file)
   
   free(headers);
 
+#if 0 //sid: some problem detecting file size, temporarily disable this bit (or get rid of it)
   if (max_offset != 0) 
   {
 #if PIDX_HAVE_MPI
@@ -157,6 +158,7 @@ static int populate_meta_data(PIDX_io_id io_id, int file_number, char* bin_file)
     ftruncate(fh, max_offset);
 #endif
   }
+#endif
   
 #if PIDX_HAVE_MPI  
   ret = MPI_File_close(&fh);

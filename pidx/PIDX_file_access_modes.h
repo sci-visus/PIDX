@@ -20,10 +20,10 @@
 
 typedef const unsigned PIDX_flags;
 
-extern PIDX_flags PIDX_file_excl;             // Error creating a file that already exists.
-extern PIDX_flags PIDX_file_trunc;           // Create the file if it does not exist.
-extern PIDX_flags PIDX_file_rdwr;           // Read only.
-extern PIDX_flags PIDX_file_rdonly;             // Reading and writing.
-extern PIDX_flags PIDX_file_wronly;           // Write only. 
+extern PIDX_flags PIDX_file_excl;       // Error creating a file that already exists.
+extern PIDX_flags PIDX_file_trunc;      // Create the file if it does not exist.
+extern PIDX_flags PIDX_file_rdwr;       // Read only.
+extern PIDX_flags PIDX_file_rdonly;     // Reading and writing.
+extern PIDX_flags PIDX_file_wronly;     // Write only. 
 
 #endif
