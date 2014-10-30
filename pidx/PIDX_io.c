@@ -479,7 +479,7 @@ int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, in
   {
     fprintf(stderr, "current_time_step = %d, end_var_index = %d, variable_count = %d\n",io_id->idx_ptr->current_time_step, io_id->end_var_index, io_id->idx_ptr->variable_count);
   }
-  if (rank == 0 && io_id->idx_ptr->current_time_step == 2 && io_id->end_var_index == 9/*godhelpus io_id->idx_ptr->variable_count - 1*/)
+  if (rank == 0)
   {
     fprintf(stderr, "writing IDX file...\n", __FILE__, __LINE__);
 
