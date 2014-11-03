@@ -27,11 +27,12 @@ typedef struct PIDX_io_struct* PIDX_io_id;
 
 PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data,
 			idx_dataset_derived_metadata idx_derived_ptr,
-#if PIDX_HAVE_MPI
-			MPI_Comm in_comm,
-#endif
 			int start_var_index, int end_var_index
  		      );
+
+#if PIDX_HAVE_MPI
+int PIDX_io_set_communicator(PIDX_io_id io_id, MPI_Comm comm);
+#endif
 
 int PIDX_io_file_create(PIDX_io_id io_id, 
 			int time_step, 

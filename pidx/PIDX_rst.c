@@ -16,6 +16,17 @@
  **                                                 **
  *****************************************************/
 
+/**
+ * \file PIDX_rst.c
+ *
+ * \author Sidharth Kumar
+ * \date   10/09/14
+ *
+ * Implementation of all the functions 
+ * declared in PIDX_rst.h
+ *
+ */
+
 #if PIDX_HAVE_MPI
 
 #include "PIDX_rst.h"
@@ -65,10 +76,9 @@ struct PIDX_rst_struct
   
   int start_variable_index;
   int end_variable_index;
-  
 };
 
-//Function to check if NDimensional data chunks A and B intersects
+/// Function to check if NDimensional data chunks A and B intersects
 int intersectNDChunk(NDim_chunk A, NDim_chunk B) 
 {
   int d = 0, check_bit = 0;
@@ -78,8 +88,8 @@ int intersectNDChunk(NDim_chunk A, NDim_chunk B)
   return !(check_bit);
 }
 
-//Function to find the power of 2 of an integer value (example 5->8)
-int getPowerOftwo(int x) 
+/// Function to find the power of 2 of an integer value (example 5->8)
+int getPowerOftwo(int x)
 {
   int n = 1;
   while (n < x)
@@ -87,7 +97,7 @@ int getPowerOftwo(int x)
   return n;
 }
 
-//Function to find the dimension of the imposing regular box
+/// Function to find the dimension of the imposing regular box
 void set_default_box_size(PIDX_rst_id rst_id, int* process_bounds, int nprocs) 
 {
   int i = 0, average_count = 0, j = 0;
@@ -132,8 +142,8 @@ void set_default_box_size(PIDX_rst_id rst_id, int* process_bounds, int nprocs)
     rst_id->regular_box_dim[0] = average_count * 1;
     rst_id->regular_box_dim[1] = average_count * 1;
     rst_id->regular_box_dim[2] = average_count * 1;
-    rst_id->regular_box_dim[3] = average_count * 1;
-    rst_id->regular_box_dim[4] = average_count * 1;
+    rst_id->regular_box_dim[3] = 1;
+    rst_id->regular_box_dim[4] = 1;
   } 
   else 
   {
@@ -180,10 +190,10 @@ PIDX_rst_id PIDX_rst_init(MPI_Comm comm, idx_dataset idx_meta_data, idx_dataset_
 
 int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box_dim)
 {
-  int num_output_buffers;
+  int num_output_buffers = 0;
   int r, d, i, j, k, l, m, c, nprocs, rank, ret;
   int *rank_r_offset, *rank_r_count;
-  int max_rank, max_vol, regular_box_count;
+  int max_rank, max_vol, regular_box_count, edge_case = 0;
   
   ret = MPI_Comm_rank(rst_id->comm, &rank);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("Rank ", __FILE__, __LINE__);
@@ -202,29 +212,27 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   if (!rank_r_count) PIDX_rst_print_error("Memory : rank_r_count", __FILE__, __LINE__);
   memset(rank_r_count, 0, (sizeof (int) * nprocs * PIDX_MAX_DIMENSIONS));
 
-  //STEP 1 : Doing an all to all Communication to get extents of all processes.
-  ret = MPI_Allgather(rst_id->idx_ptr->variable[0]->patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_INT, rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_INT, MPI_COMM_WORLD);
+  /// STEP 1 : Doing an all to all Communication to get extents of all processes.
+  ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_INT, rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_INT, rst_id->comm);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Allgather : rank_r_offset", __FILE__, __LINE__);
 
-  ret = MPI_Allgather(rst_id->idx_ptr->variable[0]->patch[0]->count, PIDX_MAX_DIMENSIONS, MPI_INT, rank_r_count, PIDX_MAX_DIMENSIONS, MPI_INT, MPI_COMM_WORLD);
+  ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->count, PIDX_MAX_DIMENSIONS, MPI_INT, rank_r_count, PIDX_MAX_DIMENSIONS, MPI_INT, rst_id->comm);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Allgather : rank_r_count", __FILE__, __LINE__);
 
-  //STEP 2 : Compute the dimension of the regular BOX
+  /// STEP 2 : Compute the dimension of the regular BOX
   if(set_box_dim == 0)
    set_default_box_size(rst_id, rank_r_count, nprocs);
   else
     memcpy(rst_id->regular_box_dim, box_dim, PIDX_MAX_DIMENSIONS * sizeof(int));
     
-  if(rank == 0)
-    printf("[%d] Imposed Box Dimension : %d %d %d %d %d\n", rank, rst_id->regular_box_dim[0], rst_id->regular_box_dim[1], rst_id->regular_box_dim[2],
-	  rst_id->regular_box_dim[3], rst_id->regular_box_dim[4]);
+  //if (rank == 0)
+    //printf("[%d] Imposed Box Dimension : %d %d %d %d %d\n", rank, rst_id->regular_box_dim[0], rst_id->regular_box_dim[1], rst_id->regular_box_dim[2], rst_id->regular_box_dim[3], rst_id->regular_box_dim[4]);
   
   //extents for the local process(rank)
   NDim_chunk local_proc_bound = malloc(sizeof (*local_proc_bound));
   if (!local_proc_bound) 
   {
     fprintf(stderr, "[Rank : %d] [File : %s] [Line : %d] local_proc_bound\n", rank, __FILE__, __LINE__);
-    MPI_Abort(MPI_COMM_WORLD, -1);
   }
   memset(local_proc_bound, 0, sizeof (*local_proc_bound));
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++) 
@@ -268,7 +276,6 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
 	    if ((m + rst_id->regular_box_dim[4]) > rst_id->idx_ptr->global_bounds[4])
 		regular_box_bound->upper_bound[4] = rst_id->idx_ptr->global_bounds[4] - 1;
 
-	    //STEP 4: If local process intersects with regular box, then find all other process that intersects with the regular box.
 	    if (intersectNDChunk(regular_box_bound, local_proc_bound))
 	      rst_id->owned_regular_box_count++;
 	  }
@@ -276,7 +283,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   rst_id->regular_box_buffer = malloc(sizeof(*rst_id->regular_box_buffer) * rst_id->owned_regular_box_count);
   
   regular_box_count = 0;
-  //STEP 3 : iterate through extents of all imposed regular boxes, and find all the regular boxes a process (local_proc_bound) intersects with
+  /// STEP 3 : iterate through extents of all imposed regular boxes, and find all the regular boxes a process (local_proc_bound) intersects with
   for (i = 0; i < rst_id->idx_ptr->global_bounds[0]; i = i + rst_id->regular_box_dim[0])
     for (j = 0; j < rst_id->idx_ptr->global_bounds[1]; j = j + rst_id->regular_box_dim[1])
       for (k = 0; k < rst_id->idx_ptr->global_bounds[2]; k = k + rst_id->regular_box_dim[2])
@@ -300,22 +307,43 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
 	    regular_box_bound->upper_bound[4] = m + rst_id->regular_box_dim[4] - 1;
 
 	    //Edge regular boxes
+	    edge_case = 0;
 	    if ((i + rst_id->regular_box_dim[0]) > rst_id->idx_ptr->global_bounds[0])
-		regular_box_bound->upper_bound[0] = rst_id->idx_ptr->global_bounds[0] - 1;
+	    {
+	      regular_box_bound->upper_bound[0] = rst_id->idx_ptr->global_bounds[0] - 1;
+	      edge_case = 1;
+	    }
 	    if ((j + rst_id->regular_box_dim[1]) > rst_id->idx_ptr->global_bounds[1])
-		regular_box_bound->upper_bound[1] = rst_id->idx_ptr->global_bounds[1] - 1;
+	    {
+	      regular_box_bound->upper_bound[1] = rst_id->idx_ptr->global_bounds[1] - 1;
+	      edge_case = 1;
+	    }
 	    if ((k + rst_id->regular_box_dim[2]) > rst_id->idx_ptr->global_bounds[2])
-		regular_box_bound->upper_bound[2] = rst_id->idx_ptr->global_bounds[2] - 1;
+	    {
+	      regular_box_bound->upper_bound[2] = rst_id->idx_ptr->global_bounds[2] - 1;
+	      edge_case = 1;
+	    }
 	    if ((l + rst_id->regular_box_dim[3]) > rst_id->idx_ptr->global_bounds[3])
-		regular_box_bound->upper_bound[3] = rst_id->idx_ptr->global_bounds[3] - 1;
+	    {
+	      regular_box_bound->upper_bound[3] = rst_id->idx_ptr->global_bounds[3] - 1;
+	      edge_case = 1;
+	    }
 	    if ((m + rst_id->regular_box_dim[4]) > rst_id->idx_ptr->global_bounds[4])
-		regular_box_bound->upper_bound[4] = rst_id->idx_ptr->global_bounds[4] - 1;
+	    {
+	      regular_box_bound->upper_bound[4] = rst_id->idx_ptr->global_bounds[4] - 1;
+	      edge_case = 1;
+	    }
+	    //printf("[%d %d %d %d %d]\n");
 
-	    //STEP 4: If local process intersects with regular box, then find all other process that intersects with the regular box.
+	    /// STEP 4: If local process intersects with regular box, then find all other process that intersects with the regular box.
 	    if (intersectNDChunk(regular_box_bound, local_proc_bound))
 	    {      
 	      rst_id->regular_box_buffer[regular_box_count] = malloc(sizeof(*(rst_id->regular_box_buffer[regular_box_count])));
 	      rst_id->regular_box_buffer[regular_box_count]->count = 0;
+	      if(edge_case == 0)
+		rst_id->regular_box_buffer[regular_box_count]->type = 1;
+	      else
+		rst_id->regular_box_buffer[regular_box_count]->type = 2;
 	      
 	      //Iterate through all processes
 	      for (r = 0; r < nprocs; r++)
@@ -415,11 +443,11 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   return num_output_buffers;
 }
 
-/* actually do the restructuring, using pre-calculated data associated with the rst_id */
-int PIDX_rst_restructure(PIDX_rst_id rst_id, int samples_per_variable, MPI_Datatype datatype, Ndim_buffer* in_buf, Ndim_buffer_group* out_buf_array, int num_output_buffers) 
+/// actually do the restructuring, using pre-calculated data associated with the rst_id
+int PIDX_rst_restructure(PIDX_rst_id rst_id, PIDX_variable* variable) 
 {
-  int j = 0, i, cnt = 0, ret = 0;
-  int rank, nprocs, bytes_per_sample;
+  int j = 0, i, cnt = 0, ret = 0, var;
+  int rank, nprocs;
 
   //rank and nprocs
   ret = MPI_Comm_rank(rst_id->comm, &rank);
@@ -428,42 +456,48 @@ int PIDX_rst_restructure(PIDX_rst_id rst_id, int samples_per_variable, MPI_Datat
   MPI_Comm_size(rst_id->comm, &nprocs);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("nprocs ", __FILE__, __LINE__);
 
-  //Bytes per sample for this datatype
-  MPI_Type_size(datatype, &bytes_per_sample);
-
-  for (i = 0; i < rst_id->owned_regular_box_count; i++)
+  for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
   {
-    if (rank == rst_id->regular_box_buffer[i]->max_rank)
+    cnt = 0;
+    for (i = 0; i < rst_id->owned_regular_box_count; i++)
     {
-      //printf("[Cnt] %d: %d\n", rank, rst_id->regular_box_buffer[i]->count);
-      out_buf_array[cnt]->count = rst_id->regular_box_buffer[i]->count;
-      out_buf_array[cnt]->block = malloc(sizeof(*(out_buf_array[cnt]->block)) * rst_id->regular_box_buffer[i]->count);
-      for(j = 0; j < rst_id->regular_box_buffer[i]->count; j++)
+      if (rank == rst_id->regular_box_buffer[i]->max_rank)
       {
-	out_buf_array[cnt]->block[j] = malloc(sizeof(*(out_buf_array[cnt]->block[j])));
+	//printf("[%d] : [%d %d] [Cnt] %d: %d\n", cnt, rst_id->start_variable_index, rst_id->end_variable_index, rank, rst_id->regular_box_buffer[i]->count);
 	
-	//printf("i = %d j = %d cnt = %d\n", i, j, cnt);
-	//printf("O: %d %d %d %d %d\n", rst_id->regular_box_buffer[i]->block[j]->offset[0], rst_id->regular_box_buffer[i]->block[j]->offset[1], rst_id->regular_box_buffer[i]->block[j]->offset[2], rst_id->regular_box_buffer[i]->block[j]->offset[3], rst_id->regular_box_buffer[i]->block[j]->offset[4]);
-	//printf("C: %d %d %d %d %d\n", rst_id->regular_box_buffer[i]->block[j]->count[0], rst_id->regular_box_buffer[i]->block[j]->count[1], rst_id->regular_box_buffer[i]->block[j]->count[2], rst_id->regular_box_buffer[i]->block[j]->count[3], rst_id->regular_box_buffer[i]->block[j]->count[4]);
-	
-	memcpy(out_buf_array[cnt]->block[j]->offset, rst_id->regular_box_buffer[i]->block[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int));
-	memcpy(out_buf_array[cnt]->block[j]->count, rst_id->regular_box_buffer[i]->block[j]->count, PIDX_MAX_DIMENSIONS * sizeof(int));
-	out_buf_array[cnt]->block[j]->buffer = malloc(out_buf_array[cnt]->block[j]->count[0] * out_buf_array[cnt]->block[j]->count[1] * out_buf_array[cnt]->block[j]->count[2] * out_buf_array[cnt]->block[j]->count[3] * out_buf_array[cnt]->block[j]->count[4] * bytes_per_sample * samples_per_variable);
+	variable[var]->patch_group_ptr[cnt]->count = rst_id->regular_box_buffer[i]->count;
+	variable[var]->patch_group_ptr[cnt]->type = rst_id->regular_box_buffer[i]->type;
+	variable[var]->patch_group_ptr[cnt]->block = malloc(sizeof(*(variable[var]->patch_group_ptr[cnt]->block)) * rst_id->regular_box_buffer[i]->count);
+	for(j = 0; j < rst_id->regular_box_buffer[i]->count; j++)
+	{
+	  variable[var]->patch_group_ptr[cnt]->block[j] = malloc(sizeof(*(variable[var]->patch_group_ptr[cnt]->block[j])));
+	  
+	  //printf("i = %d j = %d cnt = %d\n", i, j, cnt);
+	  //printf("O: %d %d %d %d %d\n", rst_id->regular_box_buffer[i]->block[j]->offset[0], rst_id->regular_box_buffer[i]->block[j]->offset[1], rst_id->regular_box_buffer[i]->block[j]->offset[2], rst_id->regular_box_buffer[i]->block[j]->offset[3], rst_id->regular_box_buffer[i]->block[j]->offset[4]);
+	  //printf("C: %d %d %d %d %d\n", rst_id->regular_box_buffer[i]->block[j]->count[0], rst_id->regular_box_buffer[i]->block[j]->count[1], rst_id->regular_box_buffer[i]->block[j]->count[2], rst_id->regular_box_buffer[i]->block[j]->count[3], rst_id->regular_box_buffer[i]->block[j]->count[4]);
+	  
+	  memcpy(variable[var]->patch_group_ptr[cnt]->block[j]->offset, rst_id->regular_box_buffer[i]->block[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int));
+	  memcpy(variable[var]->patch_group_ptr[cnt]->block[j]->count, rst_id->regular_box_buffer[i]->block[j]->count, PIDX_MAX_DIMENSIONS * sizeof(int));
+	  
+	  //printf("TEST = %d %d %d %d %d\n", variable[var]->patch_group_ptr[cnt]->block[j]->count[0], variable[var]->patch_group_ptr[cnt]->block[j]->count[1], variable[var]->patch_group_ptr[cnt]->block[j]->count[2], variable[var]->patch_group_ptr[cnt]->block[j]->count[3], variable[var]->patch_group_ptr[cnt]->block[j]->count[4]);
+	  
+	  variable[var]->patch_group_ptr[cnt]->block[j]->buffer = malloc(variable[var]->patch_group_ptr[cnt]->block[j]->count[0] * variable[var]->patch_group_ptr[cnt]->block[j]->count[1] * variable[var]->patch_group_ptr[cnt]->block[j]->count[2] * variable[var]->patch_group_ptr[cnt]->block[j]->count[3] * variable[var]->patch_group_ptr[cnt]->block[j]->count[4] * variable[var]->values_per_sample * variable[var]->bits_per_value/8);
+	}
+	memcpy(variable[var]->patch_group_ptr[cnt]->power_two_offset, rst_id->regular_box_buffer[i]->power_two_offset, sizeof(int) * PIDX_MAX_DIMENSIONS);
+	memcpy(variable[var]->patch_group_ptr[cnt]->power_two_count, rst_id->regular_box_buffer[i]->power_two_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
+	cnt++;
       }
-      memcpy(out_buf_array[cnt]->power_two_offset, rst_id->regular_box_buffer[i]->power_two_offset, sizeof(int) * PIDX_MAX_DIMENSIONS);
-      memcpy(out_buf_array[cnt]->power_two_count, rst_id->regular_box_buffer[i]->power_two_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
-      cnt++;
     }
-  } 
-  assert(cnt == num_output_buffers);
+  }
+  //assert(cnt == num_output_buffers);
   return 0;
 }
 
-int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, int samples_per_variable, MPI_Datatype datatype, Ndim_buffer* in_buf, Ndim_buffer_group* out_buf_array, int num_output_buffers)
+int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable)
 {  
-  int i, j, a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0, index, count1 = 0, ret = 0, req_count = 0;
+  int i, j, var, a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0, index, count1 = 0, ret = 0, req_count = 0;
   int *send_count, *send_offset;
-  int rank, nprocs, send_c = 0, send_o = 0, counter = 0, req_counter = 0, bytes_per_sample;
+  int rank, nprocs, send_c = 0, send_o = 0, counter = 0, req_counter = 0;
 
   MPI_Request *req;
   MPI_Status *status;
@@ -474,18 +508,16 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, int samples_per_variable, MPI_Da
 
   MPI_Comm_size(rst_id->comm, &nprocs);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("nprocs", __FILE__, __LINE__);
-
-  MPI_Type_size(datatype, &bytes_per_sample);
   
   for (i = 0; i < rst_id->owned_regular_box_count; i++)
     for(j = 0; j < rst_id->regular_box_buffer[i]->count; j++)
       req_count++;
     
   //creating ample requests and statuses
-  req = (MPI_Request*) malloc(sizeof (*req) * req_count * 2);
+  req = (MPI_Request*) malloc(sizeof (*req) * req_count * 2 * (rst_id->end_variable_index - rst_id->start_variable_index + 1));
   if (!req) PIDX_rst_print_error("Memory Error : req", __FILE__, __LINE__);
 
-  status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2);
+  status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->end_variable_index - rst_id->start_variable_index + 1));
   if (!status) PIDX_rst_print_error("Memory Error : status", __FILE__, __LINE__);
 
   for (i = 0; i < rst_id->owned_regular_box_count; i++)
@@ -496,6 +528,7 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, int samples_per_variable, MPI_Da
       {
 	if(rank == rst_id->regular_box_buffer[i]->rank[j])
 	{
+	  
 	  count1 = 0;
 	  for (a1 = rst_id->regular_box_buffer[i]->block[j]->offset[4]; a1 < rst_id->regular_box_buffer[i]->block[j]->offset[4] + rst_id->regular_box_buffer[i]->block[j]->count[4]; a1++)
 	    for (b1 = rst_id->regular_box_buffer[i]->block[j]->offset[3]; b1 < rst_id->regular_box_buffer[i]->block[j]->offset[3] + rst_id->regular_box_buffer[i]->block[j]->count[3]; b1++)
@@ -503,24 +536,35 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, int samples_per_variable, MPI_Da
 		for (j1 = rst_id->regular_box_buffer[i]->block[j]->offset[1]; j1 < rst_id->regular_box_buffer[i]->block[j]->offset[1] + rst_id->regular_box_buffer[i]->block[j]->count[1]; j1++)
 		  for (i1 = rst_id->regular_box_buffer[i]->block[j]->offset[0]; i1 < rst_id->regular_box_buffer[i]->block[j]->offset[0] + rst_id->regular_box_buffer[i]->block[j]->count[0]; i1 = i1 + rst_id->regular_box_buffer[i]->block[j]->count[0]) 
 		  {
-		    index = (in_buf[0]->count[0] * in_buf[0]->count[1] * in_buf[0]->count[2] * in_buf[0]->count[3] * (a1 - in_buf[0]->offset[4])) +
-			    (in_buf[0]->count[0] * in_buf[0]->count[1] * in_buf[0]->count[2] * (b1 - in_buf[0]->offset[3])) +
-			    (in_buf[0]->count[0] * in_buf[0]->count[1] * (k1 - in_buf[0]->offset[2])) +
-			    (in_buf[0]->count[0] * (j1 - in_buf[0]->offset[1])) +
-			    (i1 - in_buf[0]->offset[0]);
-
-		    send_o = index * samples_per_variable;
-		    send_c = rst_id->regular_box_buffer[i]->block[j]->count[0] * samples_per_variable;
-		    memcpy(out_buf_array[counter]->block[j]->buffer + (count1 * send_c * bytes_per_sample), in_buf[0]->buffer + send_o * bytes_per_sample, send_c * bytes_per_sample);
+		    int *variable_patch_offset = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->offset;
+		    int *variable_patch_count = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->count;
+		    
+		    index = (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * variable_patch_count[3] * (a1 - variable_patch_offset[4])) +
+			    (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * (b1 - variable_patch_offset[3])) +
+			    (variable_patch_count[0] * variable_patch_count[1] * (k1 - variable_patch_offset[2])) +
+			    (variable_patch_count[0] * (j1 - variable_patch_offset[1])) +
+			    (i1 - variable_patch_offset[0]);
+			    
+		    for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
+		    {
+		      send_o = index * variable[var]->values_per_sample;
+		      send_c = rst_id->regular_box_buffer[i]->block[j]->count[0] * variable[var]->values_per_sample;
+		      
+		      //printf("Y");
+		      memcpy(variable[var]->patch_group_ptr[counter]->block[j]->buffer + (count1 * send_c * variable[var]->bits_per_value/8), rst_id->idx_ptr->variable[var]->patch[0]->buffer + send_o * variable[var]->bits_per_value/8, send_c * variable[var]->bits_per_value/8);
+		    }
 		    count1++;
 		  }
 	}
 	else
 	{
-	  ret = MPI_Irecv(out_buf_array[counter]->block[j]->buffer, (rst_id->regular_box_buffer[i]->block[j]->count[0] * rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]) * samples_per_variable, datatype, rst_id->regular_box_buffer[i]->rank[j], 123, rst_id->comm, &req[req_counter]);
-	  if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Irecv", __FILE__, __LINE__);
-	  
-	  req_counter++;
+	  for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
+	  {
+	    //printf("X");
+	    ret = MPI_Irecv(variable[var]->patch_group_ptr[counter]->block[j]->buffer, (rst_id->regular_box_buffer[i]->block[j]->count[0] * rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->regular_box_buffer[i]->rank[j], 123, rst_id->comm, &req[req_counter]);
+	    if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Irecv", __FILE__, __LINE__);
+	    req_counter++;
+	  }
 	}
       }
       counter++;
@@ -531,45 +575,52 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, int samples_per_variable, MPI_Da
       {
 	if(rank == rst_id->regular_box_buffer[i]->rank[j])
 	{
-	  send_offset = (int*) malloc(sizeof (int) * (rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]));
-	  if (!send_offset) PIDX_rst_print_error("Memory Error : send_offset", __FILE__, __LINE__);
-	  memset(send_offset, 0, sizeof (int) * (rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]));
+	  for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
+	  {
+	    int *count_ptr = rst_id->regular_box_buffer[i]->block[j]->count;
+	    int *offset_ptr = rst_id->regular_box_buffer[i]->block[j]->offset;
+	    
+	    send_offset = (int*) malloc(sizeof (int) * (count_ptr[1] * count_ptr[2] * count_ptr[3] * count_ptr[4]));
+	    if (!send_offset) PIDX_rst_print_error("Memory Error : send_offset", __FILE__, __LINE__);
+	    memset(send_offset, 0, sizeof (int) * (count_ptr[1] * count_ptr[2] * count_ptr[3] * count_ptr[4]));
 
-	  send_count = (int*) malloc(sizeof (int) * (rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]));
-	  if (!send_count) PIDX_rst_print_error("Memory Error : send_count", __FILE__, __LINE__);
-	  memset(send_count, 0, sizeof (int) * (rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]));
-	  
-	  count1 = 0;
-	  int tot_cnt = 0;
-	  for (a1 = rst_id->regular_box_buffer[i]->block[j]->offset[4]; a1 < rst_id->regular_box_buffer[i]->block[j]->offset[4] + rst_id->regular_box_buffer[i]->block[j]->count[4]; a1++)
-	    for (b1 = rst_id->regular_box_buffer[i]->block[j]->offset[3]; b1 < rst_id->regular_box_buffer[i]->block[j]->offset[3] + rst_id->regular_box_buffer[i]->block[j]->count[3]; b1++)
-	      for (k1 = rst_id->regular_box_buffer[i]->block[j]->offset[2]; k1 < rst_id->regular_box_buffer[i]->block[j]->offset[2] + rst_id->regular_box_buffer[i]->block[j]->count[2]; k1++)
-		for (j1 = rst_id->regular_box_buffer[i]->block[j]->offset[1]; j1 < rst_id->regular_box_buffer[i]->block[j]->offset[1] + rst_id->regular_box_buffer[i]->block[j]->count[1]; j1++)
-		  for (i1 = rst_id->regular_box_buffer[i]->block[j]->offset[0]; i1 < rst_id->regular_box_buffer[i]->block[j]->offset[0] + rst_id->regular_box_buffer[i]->block[j]->count[0]; i1 = i1 + rst_id->regular_box_buffer[i]->block[j]->count[0]) 
-		  {
-		    index = (in_buf[0]->count[0] * in_buf[0]->count[1] * in_buf[0]->count[2] * in_buf[0]->count[3] * (a1 - in_buf[0]->offset[4])) +
-			    (in_buf[0]->count[0] * in_buf[0]->count[1] * in_buf[0]->count[2] * (b1 - in_buf[0]->offset[3])) +
-			    (in_buf[0]->count[0] * in_buf[0]->count[1] * (k1 - in_buf[0]->offset[2])) +
-			    (in_buf[0]->count[0] * (j1 - in_buf[0]->offset[1])) +
-			    (i1 - in_buf[0]->offset[0]);
-		    send_offset[count1] = index * samples_per_variable;
-		    send_count[count1] = rst_id->regular_box_buffer[i]->block[j]->count[0] * samples_per_variable;
-		    tot_cnt = tot_cnt + send_count[count1];
-		    count1++;
-		  }
+	    send_count = (int*) malloc(sizeof (int) * (count_ptr[1] * count_ptr[2] * count_ptr[3] * count_ptr[4]));
+	    if (!send_count) PIDX_rst_print_error("Memory Error : send_count", __FILE__, __LINE__);
+	    memset(send_count, 0, sizeof (int) * (count_ptr[1] * count_ptr[2] * count_ptr[3] * count_ptr[4]));
+	    
+	    count1 = 0;
+	    for (a1 = offset_ptr[4]; a1 < offset_ptr[4] + count_ptr[4]; a1++)
+	      for (b1 = offset_ptr[3]; b1 < offset_ptr[3] + count_ptr[3]; b1++)
+		for (k1 = offset_ptr[2]; k1 < offset_ptr[2] + count_ptr[2]; k1++)
+		  for (j1 = offset_ptr[1]; j1 < offset_ptr[1] + count_ptr[1]; j1++)
+		    for (i1 = offset_ptr[0]; i1 < offset_ptr[0] + count_ptr[0]; i1 = i1 + count_ptr[0]) 
+		    {
+		      int *variable_patch_count  = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->count;
+		      int *variable_patch_offset = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->offset;
+		      
+		      index = (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * variable_patch_count[3] * (a1 - variable_patch_offset[4])) +
+			      (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * (b1 - variable_patch_offset[3])) +
+			      (variable_patch_count[0] * variable_patch_count[1] * (k1 - variable_patch_offset[2])) +
+			      (variable_patch_count[0] * (j1 - variable_patch_offset[1])) +
+			      (i1 - variable_patch_offset[0]);
+		      send_offset[count1] = index * variable[var]->values_per_sample * variable[var]->bits_per_value/8;
+		      send_count[count1] = count_ptr[0] * variable[var]->values_per_sample * variable[var]->bits_per_value/8;
+		      count1++;
+		    }
 
-	  MPI_Datatype chunk_data_type;
-	  MPI_Type_indexed(count1, send_count, send_offset, MPI_DOUBLE, &chunk_data_type);
-	  MPI_Type_commit(&chunk_data_type);
+	    MPI_Datatype chunk_data_type;
+	    MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type);
+	    MPI_Type_commit(&chunk_data_type);
 
-	  
-	  ret = MPI_Isend(in_buf[0]->buffer, 1, chunk_data_type, rst_id->regular_box_buffer[i]->max_rank, 123, rst_id->comm, &req[req_counter]);
-	  if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Isend", __FILE__, __LINE__);
-	  req_counter++;
-	  
-	  MPI_Type_free(&chunk_data_type);
-	  free(send_offset);
-	  free(send_count);
+	    //printf("Z");
+	    ret = MPI_Isend(rst_id->idx_ptr->variable[var]->patch[0]->buffer, 1, chunk_data_type, rst_id->regular_box_buffer[i]->max_rank, 123, rst_id->comm, &req[req_counter]);
+	    if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Isend", __FILE__, __LINE__);
+	    req_counter++;
+	      
+	    MPI_Type_free(&chunk_data_type);
+	    free(send_offset);
+	    free(send_count);
+	  }
 	}
       }
     }
@@ -586,28 +637,34 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, int samples_per_variable, MPI_Da
   return 0;
 }
 
-/* tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well */
-int PIDX_rst_buf_destroy(int count, Ndim_buffer_group* out_buf_array)
+/// tear down the various buffer structs. In the case of the output 
+/// structs this function should also free the memory buffers as well */
+int PIDX_rst_buf_destroy(PIDX_rst_id rst_id, PIDX_variable* variable)
 {
-  int i, j;
-  for(i = 0; i < count; i++)
+  int i, j, var;
+  for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
   {
-    for(j = 0; j < out_buf_array[i]->count; j++)
+    for(i = 0; i < variable[rst_id->start_variable_index]->patch_group_count; i++)
     {
-      free(out_buf_array[i]->block[j]->buffer);
-      out_buf_array[i]->block[j]->buffer = 0;
-      
-      free(out_buf_array[i]->block[j]);
-      out_buf_array[i]->block[j] = 0;
+      for(j = 0; j < variable[rst_id->start_variable_index]->patch_group_ptr[i]->count; j++)
+      {
+	free(variable[var]->patch_group_ptr[i]->block[j]->buffer);
+	variable[var]->patch_group_ptr[i]->block[j]->buffer = 0;
+	
+	free(variable[var]->patch_group_ptr[i]->block[j]);
+	variable[var]->patch_group_ptr[i]->block[j] = 0;
+      }
+      free(variable[var]->patch_group_ptr[i]->block);
+      variable[var]->patch_group_ptr[i]->block = 0;
     }
-    free(out_buf_array[i]->block);
-    out_buf_array[i]->block = 0;
   }
   
   return 0;
 }
 
-/* tear down whatever was calculated for this particular combination of dimensions and bounds */
+
+/// tear down whatever was calculated for this particular 
+/// combination of dimensions and bounds
 int PIDX_rst_finalize(PIDX_rst_id id) 
 {
   free(id->idx_ptr);
@@ -622,76 +679,70 @@ int PIDX_rst_finalize(PIDX_rst_id id)
   return 0;
 }
 
-int HELPER_rst(Ndim_buffer_group* out_buf_array1, PIDX_rst_id rst_id, int num_output_buffers, int spv)
+
+////////////////////////////////////////////////////////////////////////
+int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
 {
-  int i, j, k, rank = 0, v = 0, u = 0, s = 0, cnt = 0, m, n;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  int i, j, k, var, rank = 0, v = 0, u = 0, s = 0, m, n, bytes_for_datatype;
+  MPI_Comm_rank(rst_id->comm, &rank);
   long long element_count = 0;
   long long lost_element_count = 0;
-  long long per_process_exact = 0;
-  double **temp_buffer;
-  int buffer_count = 0;
+  int *count_ptr;
+  int *offset_ptr;
   
-  temp_buffer = (double**) malloc(sizeof (*temp_buffer) * buffer_count);
-  
-  for (m = 0; m < num_output_buffers; m++)
-    buffer_count = buffer_count + rst_id->regular_box_buffer[m]->count;
-  
-  for (m = 0; m < num_output_buffers; m++)
+  double dvalue_1, dvalue_2;
+  for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
   {
-    //printf("[%d] counts %d\n", rank, out_buf_array1[m]->count);
-    for(n = 0; n < out_buf_array1[m]->count; n++)
+    bytes_for_datatype = rst_id->idx_ptr->variable[var]->bits_per_value / 8;
+    for (m = 0; m < rst_id->idx_ptr->variable[var]->patch_group_count; m++)
     {
-      //temp_buffer[cnt] = (double*) out_buf_array1[m]->block[n]->buffer;
-      //printf("[A %d] [%d] Count: %d %d %d %d %d\n", rank, rst_id->regular_box_buffer[m]->count, out_buf_array1[m]->block[n]->count[0], out_buf_array1[m]->block[n]->count[1], out_buf_array1[m]->block[n]->count[2], out_buf_array1[m]->block[n]->count[3], out_buf_array1[m]->block[n]->count[4]);
-      
-      temp_buffer[cnt] = (double*) malloc(out_buf_array1[m]->block[n]->count[4] * out_buf_array1[m]->block[n]->count[3] * out_buf_array1[m]->block[n]->count[2] * out_buf_array1[m]->block[n]->count[1] * out_buf_array1[m]->block[n]->count[0] * sizeof(double));
-      
-      memcpy(temp_buffer[cnt], out_buf_array1[m]->block[n]->buffer, (out_buf_array1[m]->block[n]->count[4] * out_buf_array1[m]->block[n]->count[3] * out_buf_array1[m]->block[n]->count[2] * out_buf_array1[m]->block[n]->count[1] * out_buf_array1[m]->block[n]->count[0] * sizeof(double)));
-      
-      
-      for (v = 0; v < out_buf_array1[m]->block[n]->count[4]; v++) 
-	for (u = 0; u < out_buf_array1[m]->block[n]->count[3]; u++)
-	  for (k = 0; k < out_buf_array1[m]->block[n]->count[2]; k++) 
-	    for (j = 0; j < out_buf_array1[m]->block[n]->count[1]; j++) 
-	      for (i = 0; i < out_buf_array1[m]->block[n]->count[0]; i++) 
-	      {
-		int index = (out_buf_array1[m]->block[n]->count[0] * out_buf_array1[m]->block[n]->count[1] * out_buf_array1[m]->block[n]->count[2] * out_buf_array1[m]->block[n]->count[3] * v) +
-			(out_buf_array1[m]->block[n]->count[0] * out_buf_array1[m]->block[n]->count[1] * out_buf_array1[m]->block[n]->count[2] * u) +
-			(out_buf_array1[m]->block[n]->count[0] * out_buf_array1[m]->block[n]->count[1] * k) +
-			(out_buf_array1[m]->block[n]->count[0] * j) +
-			i;
-		int check_bit = 1;
-		for (s = 0; s < spv; s++)
-		    check_bit = check_bit && ((int) temp_buffer[cnt][spv * index + s] == s + 100 + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3]*(out_buf_array1[m]->block[n]->offset[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]*(out_buf_array1[m]->block[n]->offset[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (out_buf_array1[m]->block[n]->offset[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (out_buf_array1[m]->block[n]->offset[1] + j)) + out_buf_array1[m]->block[n]->offset[0] + i);
-
-		if (check_bit == 0) 
+      for(n = 0; n < rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->count; n++)
+      {
+	count_ptr = rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->count;
+	offset_ptr = rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->offset;
+	
+	for (v = 0; v < count_ptr[4]; v++) 
+	  for (u = 0; u < count_ptr[3]; u++)
+	    for (k = 0; k < count_ptr[2]; k++) 
+	      for (j = 0; j < count_ptr[1]; j++) 
+		for (i = 0; i < count_ptr[0]; i++) 
 		{
-		  lost_element_count++;
-		  printf("LOST Element : %f %d\n", temp_buffer[cnt][1 * index + 0], (s + 100 + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3]*(out_buf_array1[m]->block[n]->offset[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]*(out_buf_array1[m]->block[n]->offset[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (out_buf_array1[m]->block[n]->offset[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (out_buf_array1[m]->block[n]->offset[1] + j)) + out_buf_array1[m]->block[n]->offset[0] + i));
-		} 
-		else 
-		{
-		  element_count++;
-		  //printf("Element : %d %d\n", (int)temp_buffer[cnt][1 * index + 0], (s + 100 + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3]*(out_buf_array1[m]->block[n]->offset[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]*(out_buf_array1[m]->block[n]->offset[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (out_buf_array1[m]->block[n]->offset[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (out_buf_array1[m]->block[n]->offset[1] + j)) + out_buf_array1[m]->block[n]->offset[0] + i));
+		  int index = (count_ptr[0] * count_ptr[1] * count_ptr[2] * count_ptr[3] * v) + (count_ptr[0] * count_ptr[1] * count_ptr[2] * u) + (count_ptr[0] * count_ptr[1] * k) + (count_ptr[0] * j) + i;
+		  
+		  int check_bit = 1;
+		  for (s = 0; s < variable[var]->values_per_sample; s++)
+		  {
+		    dvalue_1 = s + 100 + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * (offset_ptr[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * (offset_ptr[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (offset_ptr[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i;
+		    
+		    memcpy(&dvalue_2, rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+		    
+		    check_bit = check_bit && (dvalue_1 == dvalue_2);
+		  }
+  
+		  if (check_bit == 0)
+		  {
+		    lost_element_count++;
+		    printf("LOST Element : %f %f\n", dvalue_1, dvalue_2);
+		  } 
+		  else 
+		  {
+		    //printf("%f %f\n", dvalue_1, dvalue_2);
+		    element_count++;
+		  }
 		}
-	      }
-      
+      }
     }
-    cnt++;
   }
   
   long long global_volume;
-  MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-  if (global_volume != (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]) 
-  {
-    fprintf(stderr, "[%d] RST Volume Error %lld %lld\n", rank, global_volume, (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]);
-      MPI_Abort(MPI_COMM_WORLD, -1);
-  }
+  MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, rst_id->comm);
+  printf("[RST] Volume [%lld] and Volume [%lld]\n", global_volume, (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4]));
   
-  if (rank == 0)
-    if (global_volume == (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2])
-      printf("[%d] RST Volume %lld %lld\n", rank, global_volume, (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]);
+  if (global_volume != (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4])
+  {
+    fprintf(stderr, "[%d] RST Volume Error %lld %lld\n", rank, global_volume, (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4]);
+      MPI_Abort(rst_id->comm, -1);
+  }
   
   return 1;
 }
@@ -699,7 +750,6 @@ int HELPER_rst(Ndim_buffer_group* out_buf_array1, PIDX_rst_id rst_id, int num_ou
 void PIDX_rst_print_error(char *error_message, char* file, int line) 
 {
   fprintf(stderr, "File [%s] Line [%d] Error [%s]\n", error_message, line, file);
-  MPI_Abort(MPI_COMM_WORLD, -1);
 }
 
 #endif // PIDX_HAVE_MPI

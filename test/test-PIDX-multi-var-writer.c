@@ -46,8 +46,6 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
   variable_count = args.variable_count;
-  
-  
   variable = malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
   
@@ -87,6 +85,8 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     {
       values_per_sample[var] = var + 1;
       double_data[var] = malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
+      
+      /*
       if(var % 2 == 0)
       {
 	for (k = 0; k < args.count_local[2]; k++)
@@ -100,16 +100,18 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
       }
       else
       {
+	*/
 	for (k = 0; k < args.count_local[2]; k++)
 	  for (j = 0; j < args.count_local[1]; j++)
 	    for (i = 0; i < args.count_local[0]; i++) 
 	    {
 	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
 	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		double_data[var][index * values_per_sample[var] + spv] = (rank + 1);
+		double_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+		//double_data[var][index * values_per_sample[var] + spv] = (rank + 1);
 	    }
       }
-    }
+    //}
     PIDX_access access;
     PIDX_create_access(&access);
 
@@ -136,7 +138,6 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
       PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
       
       PIDX_flush(file);
-      
       free(double_data[var]);
       double_data[var] = 0;
     }
@@ -144,8 +145,15 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     PIDX_close(file);
     PIDX_close_access(access);
     
+    /*
+    for(var = 0; var < variable_count; var++)
+    {
+      free(double_data[var]);
+      double_data[var] = 0;
+    }
     free(double_data);
     double_data = 0;
+    */
   }
   
   free(variable);

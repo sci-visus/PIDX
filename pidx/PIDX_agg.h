@@ -19,8 +19,6 @@
 #ifndef __PIDX_AGG_H
 #define __PIDX_AGG_H 
 
-#if PIDX_HAVE_MPI
-
 #include "PIDX_data_structs.h"
 #include "PIDX_utils.h"
 #include "PIDX_error_codes.h"
@@ -30,10 +28,13 @@ struct PIDX_agg_struct;
 typedef struct PIDX_agg_struct* PIDX_agg_id;
 
 PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, 
-			  idx_dataset_derived_metadata idx_derived_ptr, 
-			  MPI_Comm comm,
+			  idx_dataset_derived_metadata idx_derived_ptr,
 			  int start_var_index, 
 			  int end_var_index);
+
+#if PIDX_HAVE_MPI
+int PIDX_agg_set_communicator(PIDX_agg_id io_id, MPI_Comm comm);
+#endif
 
 int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
 
@@ -43,5 +44,4 @@ int PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
 
 int PIDX_agg_finalize(PIDX_agg_id agg_id);
 
-#endif //PIDX_HAVE_MPI
 #endif //__PIDX_AGG_H

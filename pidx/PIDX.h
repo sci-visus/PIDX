@@ -46,10 +46,11 @@ extern "C" {
 
 #include "PIDX_data_structs.h"
 
-  /* #include "PIDX_rst.h"*/ 
+#include "PIDX_rst.h"
 #include "PIDX_hz_encode.h"
 #include "PIDX_agg.h"
 #include "PIDX_io.h"
+#include "PIDX_header_io.h"
 
 #include "PIDX_file_access_modes.h"
 #include "PIDX_error_codes.h"

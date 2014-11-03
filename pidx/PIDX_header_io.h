@@ -15,27 +15,27 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
-#ifndef __PIDX_ERROR_CODES_H
-#define __PIDX_ERROR_CODES_H
 
-typedef unsigned int PIDX_return_code;
+#ifndef __PIDX_HEADER_IO_H
+#define __PIDX_HEADER_IO_H 
 
-extern PIDX_return_code PIDX_success;
-extern PIDX_return_code PIDX_err_unsupported_flags;
-extern PIDX_return_code PIDX_err_file_exists;
-extern PIDX_return_code PIDX_err_name;
-extern PIDX_return_code PIDX_err_box;
-extern PIDX_return_code PIDX_err_file;
-extern PIDX_return_code PIDX_err_time;
-extern PIDX_return_code PIDX_err_block;
-extern PIDX_return_code PIDX_err_comm;
-extern PIDX_return_code PIDX_err_count;
-extern PIDX_return_code PIDX_err_size;
-extern PIDX_return_code PIDX_err_offset;
-extern PIDX_return_code PIDX_err_type;
-extern PIDX_return_code PIDX_err_variable;
-extern PIDX_return_code PIDX_err_not_implemented;
-extern PIDX_return_code PIDX_err_point;
-extern PIDX_return_code PIDX_err_access;
+#include "PIDX_data_structs.h"
+
+struct PIDX_header_io_struct;
+typedef struct PIDX_header_io_struct* PIDX_header_io_id;
+
+PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data,
+			idx_dataset_derived_metadata idx_derived_ptr,
+			int start_var_index, int end_var_index );
+
+#if PIDX_HAVE_MPI
+int PIDX_header_io_set_communicator(PIDX_header_io_id header_io, MPI_Comm comm);
+#endif
+
+int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step);
+
+int PIDX_header_io_file_create(PIDX_header_io_id header_io);
+
+int PIDX_header_io_finalize(PIDX_header_io_id header_io);
 
 #endif

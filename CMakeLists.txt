@@ -78,6 +78,8 @@ MESSAGE("PIDX_BUILD_TEST ${PIDX_BUILD_TEST}")
 OPTION(PIDX_BUILD_CONVERT "Build pidx convert tools" TRUE)
 MESSAGE("PIDX_BUILD_CONVERT ${PIDX_BUILD_CONVERT}")
 
+OPTION(PIDX_BUILD_PROFILE "pidx profile tools" FALSE)
+MESSAGE("PIDX_BUILD_PROFILE ${PIDX_BUILD_PROFILE}")
 
 # ///////////////////////////////////////////////
 # PIDX_OPTION_XXXX
@@ -108,6 +110,7 @@ CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/pidx_config.h.in" "${PROJECT_BINARY_DIR}/p
 ADD_SUBDIRECTORY(pidx)
 ADD_SUBDIRECTORY(test)
 ADD_SUBDIRECTORY(convert)
+ADD_SUBDIRECTORY(profile)
 
 # ///////////////////////////////////////////////
 # installation

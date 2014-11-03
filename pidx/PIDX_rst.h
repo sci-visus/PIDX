@@ -15,6 +15,19 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
+
+/**
+ * \file PIDX_rst.h
+ *
+ * \author Sidharth Kumar
+ * \date   10/09/14
+ *
+ * Restructuring data from n cores to n' (n' <= n)
+ * while keeping the data in mult-dimensional 
+ * application layout
+ * 
+ */
+
 #ifndef __PIDX_RST_NEW_H
 #define __PIDX_RST_NEW_H
 
@@ -31,13 +44,13 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
 
 /* actually do the restructuring, using pre-calculated data associated with the id */
 //int PIDX_rst_restructure(PIDX_rst_id rst_id, int samples_per_variable, MPI_Datatype datatype, Ndim_buffer* in_buf, Ndim_buffer* out_buf_array, int num_output_buffers);
-int PIDX_rst_restructure(PIDX_rst_id rst_id, int samples_per_variable, MPI_Datatype datatype, Ndim_buffer* in_buf, Ndim_buffer_group* out_buf_array, int num_output_buffers);
+int PIDX_rst_restructure(PIDX_rst_id rst_id, PIDX_variable* variable);
 
-int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, int samples_per_variable, MPI_Datatype datatype, Ndim_buffer* in_buf, Ndim_buffer_group* out_buf_array, int num_output_buffers);
+int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable);
 //int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, Ndim_buffer* in_buf, Ndim_buffer* out_buf_array, int num_output_buffers);
   
 /* tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well */
-int PIDX_rst_buf_destroy(int count, Ndim_buffer_group* out_buf_array);
+int PIDX_rst_buf_destroy(PIDX_rst_id rst_id, PIDX_variable* variable);
 
 /* tear down whatever was calculated for this particular combination of dimensions and bounds */ 
 int PIDX_rst_finalize(PIDX_rst_id id);  
@@ -46,8 +59,7 @@ int* PIDX_rst_get_box_dimension(PIDX_rst_id id);
 
 void PIDX_rst_print_error(char *error_message, char* file, int line);
 
-int HELPER_rst(Ndim_buffer_group* out_buf_array1, PIDX_rst_id rst_id, int num_output_buffers, int spv);
-//int HELPER_rst(Ndim_buffer* out_buf_array1, PIDX_rst_id rst_id, int num_output_buffers, int spv);
+int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable);
 
 #endif // PIDX_HAVE_MPI
 #endif // __PIDX_RST_NEW_H

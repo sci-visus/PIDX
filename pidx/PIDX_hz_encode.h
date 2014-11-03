@@ -35,4 +35,6 @@ int PIDX_hz_encode_buf_destroy_var(PIDX_hz_encode_id id, PIDX_variable* variable
 
 int PIDX_hz_encode_finalize(PIDX_hz_encode_id id);
 
+int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable);
+
 #endif

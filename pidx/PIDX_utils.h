@@ -36,6 +36,7 @@
 #include <math.h>
 
 #define PIDX_MAX_DIMENSIONS 5
+#define MAX_TEMPLATE_DEPTH 6
 
 #define Min2ab(a,b)      (((a)<=(b))?(a):(b))
 #define Max2ab(a,b)      (((a)> (b))?(a):(b))
@@ -82,5 +83,7 @@ long long xyz_to_HZ(const char* bitmask, int maxh, PointND xyz);
 void Hz_to_xyz(const char* bitmask,  int maxh, long long hzaddress, long long* xyz);
 
 int VisusSplitFilename(const char* filename,char* dirname,char* basename);
+
+int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen);
 
 #endif

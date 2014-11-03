@@ -406,3 +406,112 @@ int VisusSplitFilename(const char* filename,char* dirname,char* basename)
   strcpy(basename,filename);
   return 1;
 }
+
+
+int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) 
+{
+  long long address = 0;
+  unsigned int segs[MAX_TEMPLATE_DEPTH] = {0};
+  int seg_count = 0;
+  char* pos;
+  int ret;
+
+  //printf("[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
+  // determine the first HZ address for the file in question 
+  address = file_number * blocks_per_file;
+
+  // walk backwards through the file name template to find places where we need to substitute strings
+  for (pos = &filename_template[strlen(filename_template) - 1];
+	  pos != filename_template;
+	  pos--) 
+  {
+    // be careful not to lo0 past the end of the array 
+    if (pos - filename_template > (strlen(filename_template) - 3))
+      continue;
+
+    if (pos[0] == '%' && pos[1] == '0' && pos[3] == 'x') 
+    {
+      // TODO: for now we have a hard coded max depth 
+      if (seg_count >= MAX_TEMPLATE_DEPTH) 
+      {
+	fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
+	return 1;
+      }
+
+      // found an occurance of %0 in the template; check the next character to see how many bits to use here 
+
+      switch (pos[2]) 
+      {
+	case '1':
+	    segs[seg_count] += address & 0xf;
+	    address = address >> 4;
+	    break;
+	case '2':
+	    segs[seg_count] += address & 0xff;
+	    address = address >> 8;
+	    break;
+	case '3':
+	    segs[seg_count] += address & 0xfff;
+	    address = address >> 12;
+	    break;
+	case '4':
+	    segs[seg_count] += address & 0xffff;
+	    address = address >> 16;
+	    break;
+	case '5':
+	    segs[seg_count] += address & 0xfffff;
+	    address = address >> 20;
+	    break;
+	default:
+	    // TODO: generalize this to work for any value 
+	    fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
+	    return 1;
+      }
+      seg_count++;
+    }
+  }
+  switch (seg_count) 
+  {
+    case 0:
+	ret = strlen(filename_template);
+	if (ret < maxlen) {
+	    strcpy(filename, filename_template);
+	}
+	break;
+    case 1:
+	ret = snprintf(filename, maxlen, filename_template, segs[0]);
+	break;
+    case 2:
+	ret = snprintf(filename, maxlen, filename_template,
+		segs[1], segs[0]);
+	break;
+    case 3:
+	ret = snprintf(filename, maxlen, filename_template,
+		segs[2], segs[1], segs[0]);
+	break;
+    case 4:
+	ret = snprintf(filename, maxlen, filename_template,
+		segs[3], segs[2], segs[1], segs[0]);
+	break;
+    case 5:
+	ret = snprintf(filename, maxlen, filename_template,
+		segs[4], segs[3], segs[2], segs[1], segs[0]);
+	break;
+    case 6:
+	ret = snprintf(filename, maxlen, filename_template,
+		segs[5], segs[4], segs[3], segs[2], segs[1], segs[0]);
+	break;
+    default:
+	// TODO: generalize this 
+	fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
+	return 1;
+	break;
+  }
+  // make sure that the resulting string fit into the buffer ok 
+  if (ret >= maxlen - 1) 
+  {
+    fprintf(stderr, "Error: filename too short in generate_filename()\n");
+    return 1;
+  }
+  return 0;
+}

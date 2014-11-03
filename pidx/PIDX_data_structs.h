@@ -40,6 +40,9 @@ struct PIDX_variable_struct
   Ndim_buffer patch[1024];
   HZ_buffer HZ_patch[1024];
   
+  int patch_group_count;
+  Ndim_buffer_group* patch_group_ptr;
+  
   block_layout* global_block_layout;
   int *blocks_per_file;
   int existing_file_count;
@@ -61,6 +64,9 @@ struct idx_file_struct
   int* global_bounds;
   char bitSequence[512];
   char bitPattern[512];
+  
+  /// Depends on the time step
+  char filename_template[1024];
 };
 typedef struct idx_file_struct* idx_dataset;
 
@@ -71,6 +77,9 @@ struct idx_dataset_derived_metadata_struct
   int samples_per_block;
   int maxh;
   int max_file_count;
+  
+  int fs_block_size;
+  off_t start_fs_block;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

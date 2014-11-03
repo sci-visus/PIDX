@@ -36,6 +36,7 @@
 #include "PIDX_comm.h"
 
 #define PIDX_MAX_DIMENSIONS 5
+#define PIDX_HAVE_MPI 1
 
 #ifndef __GENERIC_DATA_STRUCTS_H
 #define __GENERIC_DATA_STRUCTS_H
