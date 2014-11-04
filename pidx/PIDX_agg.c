@@ -400,8 +400,8 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
 	for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
 	{
 	  index = 0;
-	  count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i] + 1;
-	  aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+	  count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1;
+	  aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
 	}
       }
     }
@@ -413,8 +413,8 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
       {
 	for (var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
 	{
-	  start_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i] / agg_id->idx_derived_ptr->samples_per_block;
-	  end_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] / agg_id->idx_derived_ptr->samples_per_block;
+	  start_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] / agg_id->idx_derived_ptr->samples_per_block;
+	  end_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] / agg_id->idx_derived_ptr->samples_per_block;
 	  assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
 	  
 	  send_index = 0;
@@ -423,27 +423,27 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
 	    if (end_block_index == start_block_index) 
 	    {
 	      index = 0;
-	      count = (agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i] + 1);
+	      count = (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1);
 	    } 
 	    else
 	    {
 	      if (bl == start_block_index) 
 	      {
 		index = 0;
-		count = ((start_block_index + 1) * agg_id->idx_derived_ptr->samples_per_block) - agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i];
+		count = ((start_block_index + 1) * agg_id->idx_derived_ptr->samples_per_block) - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i];
 	      } 
 	      else if (bl == end_block_index) 
 	      {
-		index = (end_block_index * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i]);
-		count = agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] - ((end_block_index) * agg_id->idx_derived_ptr->samples_per_block) + 1;
+		index = (end_block_index * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
+		count = agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - ((end_block_index) * agg_id->idx_derived_ptr->samples_per_block) + 1;
 	      } 
 	      else 
 	      {
-		index = (bl * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i]);
+		index = (bl * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
 		count = agg_id->idx_derived_ptr->samples_per_block;
 	      }
 	    }
-	    aggregate_write_read(agg_id, agg_buffer, var, index + agg_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+	    aggregate_write_read(agg_id, agg_buffer, var, index + agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
 	    
 	    send_index = send_index + count;
 	  }

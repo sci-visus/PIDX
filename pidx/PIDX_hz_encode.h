@@ -27,9 +27,11 @@ typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 
 PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
     
-int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable_ptr, int MODE);
+int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable_ptr);
 
 int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable_ptr);
+
+int PIDX_hz_encode_read_var(PIDX_hz_encode_id id, PIDX_variable* variable);
 
 int PIDX_hz_encode_buf_destroy_var(PIDX_hz_encode_id id, PIDX_variable* variable_ptr);
 

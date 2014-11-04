@@ -111,7 +111,7 @@ int test_reader(struct Args args, int rank, int nprocs)
     PIDX_get_dims(file, global_bounding_box);
     
     if(rank == 0)
-      printf("Dimension = %d %d %d %d %d\n", global_bounding_box[0], global_bounding_box[1], global_bounding_box[2], global_bounding_box[3], global_bounding_box[4]);
+      printf("Dimension = %lld %lld %lld %lld %lld\n", global_bounding_box[0], global_bounding_box[1], global_bounding_box[2], global_bounding_box[3], global_bounding_box[4]);
     
     //PIDX_set_current_time_step(file, ts);
     PIDX_get_block_size(file, &bits_per_block);

@@ -18,7 +18,7 @@
 
 #include "PIDX_point.h"
 
-PIDX_return_code PIDX_set_point_1D(int x, PIDX_point point)
+PIDX_return_code PIDX_set_point_1D(long long x, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -32,7 +32,7 @@ PIDX_return_code PIDX_set_point_1D(int x, PIDX_point point)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_get_point_1D(int* x, PIDX_point point)
+PIDX_return_code PIDX_get_point_1D(long long* x, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -42,7 +42,7 @@ PIDX_return_code PIDX_get_point_1D(int* x, PIDX_point point)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_set_point_2D(int  x, int  y, PIDX_point point)
+PIDX_return_code PIDX_set_point_2D(long long  x, long long  y, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -56,7 +56,7 @@ PIDX_return_code PIDX_set_point_2D(int  x, int  y, PIDX_point point)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_get_point_2D(int* x, int* y, PIDX_point point)
+PIDX_return_code PIDX_get_point_2D(long long* x, long long* y, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -67,7 +67,7 @@ PIDX_return_code PIDX_get_point_2D(int* x, int* y, PIDX_point point)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_set_point_3D(int  x, int  y, int  z, PIDX_point point)
+PIDX_return_code PIDX_set_point_3D(long long  x, long long  y, long long  z, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -81,7 +81,7 @@ PIDX_return_code PIDX_set_point_3D(int  x, int  y, int  z, PIDX_point point)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_get_point_3D(int* x, int* y, int* z, PIDX_point point)
+PIDX_return_code PIDX_get_point_3D(long long* x, long long* y, long long* z, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -93,7 +93,7 @@ PIDX_return_code PIDX_get_point_3D(int* x, int* y, int* z, PIDX_point point)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_set_point_4D(int  x, int  y, int  z, int u, PIDX_point point)
+PIDX_return_code PIDX_set_point_4D(long long  x, long long  y, long long  z, long long u, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -107,7 +107,7 @@ PIDX_return_code PIDX_set_point_4D(int  x, int  y, int  z, int u, PIDX_point poi
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_get_point_4D(int* x, int* y, int* z, int* u, PIDX_point point)
+PIDX_return_code PIDX_get_point_4D(long long* x, long long* y, long long* z, long long* u, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -120,7 +120,7 @@ PIDX_return_code PIDX_get_point_4D(int* x, int* y, int* z, int* u, PIDX_point po
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_set_point_5D(int  x,int  y,int  z,int  u,int  v, PIDX_point point)
+PIDX_return_code PIDX_set_point_5D(long long  x, long long  y, long long  z, long long  u, long long  v, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -134,7 +134,7 @@ PIDX_return_code PIDX_set_point_5D(int  x,int  y,int  z,int  u,int  v, PIDX_poin
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_get_point_5D(int* x, int* y, int* z, int* u, int* v, PIDX_point point)
+PIDX_return_code PIDX_get_point_5D(long long* x, long long* y, long long* z, long long* u, long long* v, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;

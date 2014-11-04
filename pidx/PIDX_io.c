@@ -416,7 +416,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   
   char file_name[PATH_MAX];
   off_t data_offset;
-
   
   if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1) 
   {
@@ -442,11 +441,11 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 
 #if PIDX_HAVE_MPI
     if(MODE == PIDX_WRITE)
-      MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[k]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), MPI_BYTE, &status);
+      MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), MPI_BYTE, &status);
     else
-      MPI_File_read_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[k]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), MPI_BYTE, &status);
+      MPI_File_read_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), MPI_BYTE, &status);
 #else
-      pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[k]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), data_offset);
+      pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), data_offset);
 #endif
 
 #if PIDX_HAVE_MPI
@@ -544,9 +543,8 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
 	for(var = io_id->start_var_index; var <= io_id->end_var_index; var++)
 	{
 	  index = 0;
-	  count =  io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] - io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i] + 1;
-	  printf("[A%d] INDEX and COUNT %d %d\n", i, index, count);
-	  write_read_samples(io_id, var, io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+	  count =  io_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1;
+	  write_read_samples(io_id, var, io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
 	}
       }
     }
@@ -558,8 +556,8 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
       {
 	for (var = io_id->start_var_index; var <= io_id->end_var_index; var++)
 	{
-	  start_block_index = io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i] / io_id->idx_derived_ptr->samples_per_block;
-	  end_block_index = io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] / io_id->idx_derived_ptr->samples_per_block;
+	  start_block_index = io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] / io_id->idx_derived_ptr->samples_per_block;
+	  end_block_index = io_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] / io_id->idx_derived_ptr->samples_per_block;
 	  assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
 	  
 	  send_index = 0;
@@ -568,27 +566,27 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
 	    if (end_block_index == start_block_index) 
 	    {
 	      index = 0;
-	      count = (io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] - io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i] + 1);
+	      count = (io_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1);
 	    } 
 	    else
 	    {
 	      if (bl == start_block_index) 
 	      {
 		index = 0;
-		count = ((start_block_index + 1) * io_id->idx_derived_ptr->samples_per_block) - io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i];
+		count = ((start_block_index + 1) * io_id->idx_derived_ptr->samples_per_block) - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i];
 	      } 
 	      else if (bl == end_block_index) 
 	      {
-		index = (end_block_index * io_id->idx_derived_ptr->samples_per_block - io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i]);
-		count = io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_end_hz[i] - ((end_block_index) * io_id->idx_derived_ptr->samples_per_block) + 1;
+		index = (end_block_index * io_id->idx_derived_ptr->samples_per_block - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
+		count = io_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - ((end_block_index) * io_id->idx_derived_ptr->samples_per_block) + 1;
 	      }
 	      else 
 	      {
-		index = (bl * io_id->idx_derived_ptr->samples_per_block - io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i]);
+		index = (bl * io_id->idx_derived_ptr->samples_per_block - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
 		count = io_id->idx_derived_ptr->samples_per_block;
 	      }
 	    }
-	    //printf("[%d] Offset %d Count %d\n", i, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i], count);
+	    //printf("[%d] Offset %d Count %d\n", i, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count);
 	    //printf(" %d [B%d] INDEX and COUNT and SEND INDEX %d %d %d\n", bl, i, index, count, send_index); 
 	    if(bl == 14)
 	    {
@@ -597,7 +595,7 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
 	      printf("%d %d %d (%d) VALUE = %f\n", var, p, i, (send_index  * io_id->idx_ptr->variable[var]->values_per_sample), check);
 	    }
 	    
-	    write_read_samples(io_id, var, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->allign_start_hz[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+	    write_read_samples(io_id, var, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
 	    
 	    send_index = send_index + count;
 	  }

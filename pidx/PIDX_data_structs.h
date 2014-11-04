@@ -30,7 +30,6 @@ struct PIDX_variable_struct
   int dump_meta_data_ON;
   
   char var_name[1024];
-  //int bits_per_sample;
   int values_per_sample;
   int bits_per_value;
   char type_name[1024];
@@ -61,7 +60,7 @@ struct idx_file_struct
   char* filename;
   int bits_per_block;
   int blocks_per_file;
-  int* global_bounds;
+  long long* global_bounds;
   char bitSequence[512];
   char bitPattern[512];
   

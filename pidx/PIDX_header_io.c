@@ -77,14 +77,12 @@ int PIDX_header_io_set_communicator(PIDX_header_io_id header_io, MPI_Comm comm)
 
 int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step)
 {
-  int l = 0, rank = 0, nprocs = 1, N;
+  int l = 0, rank = 0, N;
   FILE* idx_file_p;
   char dirname[1024], basename[1024];
-  char* idx_file;
-
+  
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(header_io->comm, &rank);
-  MPI_Comm_size(header_io->comm, &nprocs);
 #endif
   
   int nbits_blocknumber = (header_io->idx_derived_ptr->maxh - header_io->idx_ptr->bits_per_block - 1);
@@ -147,19 +145,12 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
     fprintf(stderr, "[%s] [%d] Bad file name extension.\n", __FILE__, __LINE__);
     return 1;
   }
-  
-  idx_file = strdup(data_set_path);
-  if (!idx_file) 
-  {
-    fprintf(stderr, "[%s] [%d] idx_file is corrupt.\n", __FILE__, __LINE__);
-    return 1;
-  }
-  
+    
   if (rank == 0)
   {
     //fprintf(stderr, "writing IDX file...\n", __FILE__, __LINE__);
 
-    idx_file_p = fopen(idx_file, "w");
+    idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p) 
     {
       fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
@@ -167,13 +158,13 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
     }
 
     fprintf(idx_file_p, "(version)\n6\n");
-    fprintf(idx_file_p, "(box)\n0 %d 0 %d 0 %d 0 %d 0 %d\n", (header_io->idx_ptr->global_bounds[0] - 1), (header_io->idx_ptr->global_bounds[1] - 1), (header_io->idx_ptr->global_bounds[2] - 1), (header_io->idx_ptr->global_bounds[3] - 1), (header_io->idx_ptr->global_bounds[4] - 1));
+    fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (header_io->idx_ptr->global_bounds[0] - 1), (header_io->idx_ptr->global_bounds[1] - 1), (header_io->idx_ptr->global_bounds[2] - 1), (header_io->idx_ptr->global_bounds[3] - 1), (header_io->idx_ptr->global_bounds[4] - 1));
     fprintf(idx_file_p, "(fields)\n");  
     
     for (l = 0; l < header_io->end_var_index; l++) 
     {
       fprintf(idx_file_p, "%s %s", header_io->idx_ptr->variable[l]->var_name, header_io->idx_ptr->variable[l]->type_name);
-      if (l != header_io->idx_ptr->variable_count - 1)
+      if (l != header_io->end_var_index - 1)
 	fprintf(idx_file_p, " + \n");
     }
     
@@ -280,7 +271,6 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
   uint32_t little_data_offset;
   
   total_header_size = (10 + (10 * header_io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * header_io_id->end_var_index;
-  //printf("total header size = %d (%d x %d)\n", total_header_size, header_io_id->idx_ptr->blocks_per_file, header_io_id->end_var_index);
   headers = (uint32_t*)malloc(total_header_size);
   
 #if PIDX_HAVE_MPI      
@@ -335,7 +325,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
 	headers[13 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
 	headers[14 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
 	
-	//printf("[%d] [%d] :: [%d %d %d] Offste and Count %d %d\n", file_number, i, header_io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, header_io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
+	//printf("[%d] [%d] (%d) :: [%d %d %d] Offste and Count %d %d\n", file_number, i, header_io_id->idx_derived_ptr->start_fs_block, header_io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, header_io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
 	
 	for (m = 15; m < 20; m++)
 	  headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
@@ -349,7 +339,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
   }
 #if PIDX_HAVE_MPI
   ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
-  if (ret != MPI_SUCCESS) 
+  if (ret != MPI_SUCCESS)
   {
     fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
     return 1;

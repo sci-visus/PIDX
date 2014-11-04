@@ -39,13 +39,12 @@ static void usage(enum Kind kind)
 
   switch (kind)
   {
-  //case READER:                 usage_reader();    break;
   case SERIAL_WRITER:          usage_serial();    break;
-  case PARALLEL_WRITER:                 usage_writer();    break;
-  //case ONE_VAR_WRITER:         usage_one_var_writer();    break;
-  //case MULTI_VAR_WRITER:       usage_multi_var_writer();    break;
+  case PARALLEL_WRITER:        usage_multi_var_writer();    break;
+  case SERIAL_READER:          usage_reader();    break;
+  case PARALLEL_READER:        usage_reader();    break;
   case DEFAULT:
-  default:                     usage_one_var_writer();
+  default:                     usage_multi_var_writer();
   }
 }
 
@@ -55,7 +54,6 @@ int main(int argc, char **argv)
   int ret, nprocs = 1, rank = 0;   /* process count and rank */
   struct Args args;        /* initialize args */
 
-  
 #if PIDX_HAVE_MPI
   /*MPI initialization*/
   MPI_Init(&argc, &argv);
@@ -90,28 +88,23 @@ int main(int argc, char **argv)
 #if PIDX_HAVE_MPI
   MPI_Bcast(&args.kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-  /* run the specified test */
   
+  /* run the specified test */
   switch (args.kind)
   {
-    /*
-    case READER:          
+    case PARALLEL_READER:
       if(rank == 0)
-	printf("Performing test_reader\n");
+	printf("Performing Parallel Read....\n");
       test_reader(args, rank, nprocs);
       break;
-    case WRITER:
+    
+    case SERIAL_READER:  
       if(rank == 0)
-	printf("Performing test_writer\n");
-      test_writer(args, rank, nprocs);
+	printf("Performing Serial Read....\n");
+      //serial_reader(args);
       break;
-    case ONE_VAR_WRITER:  
-      if(rank == 0)
-	printf("Performing test_one_var_writer\n");
-      test_one_var_writer(args, rank, nprocs);
-      break;
-    */
-    case PARALLEL_WRITER:  
+    
+    case PARALLEL_WRITER:
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
       test_multi_var_writer(args, rank, nprocs);
@@ -209,11 +202,10 @@ char* kindToStr(enum Kind k)
 {
   switch (k)
   {
-    //case READER:             return "reader";
-    //case WRITER:             return "writer";
-    //case ONE_VAR_WRITER:     return "one_var";
-    case PARALLEL_WRITER:   return "parallel";
-    case SERIAL_WRITER:      return "serial";
+    case PARALLEL_READER:    return "parallel-reader";
+    case SERIAL_READER:      return "serial-reader";    
+    case PARALLEL_WRITER:    return "parallel-writer";
+    case SERIAL_WRITER:      return "serial-writer";
     case DEFAULT:
     default:                 return "default";
   }
@@ -222,10 +214,9 @@ char* kindToStr(enum Kind k)
 /*strToKind*/
 enum Kind strToKind(const char *str)
 {
-  //if (strcmp(str,"reader")      == 0) return READER;
-  //if (strcmp(str,"writer")      == 0) return WRITER;
-  //if (strcmp(str,"one_var")     == 0) return ONE_VAR_WRITER;
-  if (strcmp(str,"parallel")   == 0) return PARALLEL_WRITER;
-  if (strcmp(str,"serial")      == 0) return SERIAL_WRITER;
-  else                                return DEFAULT;
+  if (strcmp(str,"parallel-reader")   == 0) return PARALLEL_READER;
+  if (strcmp(str,"serial-reader")     == 0) return SERIAL_READER;
+  if (strcmp(str,"parallel-writer")   == 0) return PARALLEL_WRITER;
+  if (strcmp(str,"serial-writer")     == 0) return SERIAL_WRITER;
+  else                                      return DEFAULT;
 }
