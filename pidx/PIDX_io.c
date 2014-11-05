@@ -214,7 +214,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, unsigned lon
       ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
       if (ret != MPI_SUCCESS) 
       {
-	fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+	fprintf(stderr, "[%s] [%d] MPI_File_open() failed. (%s)\n", __FILE__, __LINE__, file_name);
 	return 1;
       }
     }
@@ -588,12 +588,12 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
 	    }
 	    //printf("[%d] Offset %d Count %d\n", i, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count);
 	    //printf(" %d [B%d] INDEX and COUNT and SEND INDEX %d %d %d\n", bl, i, index, count, send_index); 
-	    if(bl == 14)
-	    {
-	      double check;
-	      memcpy(&check, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i] + send_index * (io_id->idx_ptr->variable[var]->bits_per_value / 8) * io_id->idx_ptr->variable[var]->values_per_sample, sizeof(double));
-	      printf("%d %d %d (%d) VALUE = %f\n", var, p, i, (send_index  * io_id->idx_ptr->variable[var]->values_per_sample), check);
-	    }
+	    //if(bl == 14)
+	    //{
+	      //double check;
+	      //memcpy(&check, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i] + send_index * (io_id->idx_ptr->variable[var]->bits_per_value / 8) * io_id->idx_ptr->variable[var]->values_per_sample, sizeof(double));
+	      //printf("%d %d %d (%d) VALUE = %f\n", var, p, i, (send_index  * io_id->idx_ptr->variable[var]->values_per_sample), check);
+	    //}
 	    
 	    write_read_samples(io_id, var, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
 	    

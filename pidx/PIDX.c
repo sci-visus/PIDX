@@ -1198,7 +1198,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
   int rank = 0;
   int local_do_rst = 0, global_do_rst = 0;
   int var_used_in_binary_file, total_header_size;
-  static int header_io = 0;
+  //static int header_io = 0;
   
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(file->comm, &rank);
@@ -1239,6 +1239,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     PIDX_header_io_set_communicator(file->header_io_id, file->comm);
     PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
     PIDX_header_io_file_create(file->header_io_id);
+    PIDX_header_io_file_write(file->header_io_id);
     PIDX_header_io_finalize(file->header_io_id);
     write_init_end[hp] = PIDX_get_time();
     hp++;
@@ -1263,12 +1264,20 @@ PIDX_return_code PIDX_write(PIDX_file file)
   else
   {
     write_init_start[hp] = PIDX_get_time();
-    file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
+    //file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
+    
     file->header_io_id = PIDX_header_io_init(file->idx_ptr, file->idx_derived_ptr, 0, file->idx_ptr->variable_index_tracker);
     PIDX_header_io_set_communicator(file->header_io_id, file->comm);
     PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
-    PIDX_header_io_file_create(file->header_io_id);
+    
+    if(hp == 0)
+      PIDX_header_io_file_create(file->header_io_id);
+    
+    if(file->idx_ptr->variable_count == -1 || file->idx_ptr->variable_count == file->idx_ptr->variable_index_tracker)
+      PIDX_header_io_file_write(file->header_io_id);
+    
     PIDX_header_io_finalize(file->header_io_id);
+    
     write_init_end[hp] = PIDX_get_time();
     hp++;
   }
@@ -1369,7 +1378,6 @@ PIDX_return_code PIDX_write(PIDX_file file)
 	    
 	    memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->power_two_offset, file->idx_ptr->variable[var]->patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
 	    memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->power_two_count, file->idx_ptr->variable[var]->patch[p]->count, PIDX_MAX_DIMENSIONS * sizeof(long long));
-	    
 	    file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->buffer = file->idx_ptr->variable[var]->patch[p]->buffer;
 	  }
 	}
