@@ -135,6 +135,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
       PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
       PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
       PIDX_flush(file);
+      
       free(double_data[var]);
       double_data[var] = 0;
     }

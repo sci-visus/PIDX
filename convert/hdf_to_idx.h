@@ -1,7 +1,7 @@
 #ifndef _HDF_TO_IDX_H
 #define _HDF_TO_IDX_H
 
-#if PIDX_OPTION_HDF5
+#if 1
 
 #include <stdio.h>
 #include <getopt.h>
@@ -18,7 +18,7 @@
   #include <mpi.h>
 #endif
 
-#define H5FILE_NAME     "/home/sid/research/KAUST_data/Post2D_h2air_flame_4.0000E-03/Solution.h5"
+#define H5FILE_NAME     "/home/sid/data/Post2D_h2air_flame_4.0000E-03/Solution.h5"
 
 int main(int argc, char **argv);
 

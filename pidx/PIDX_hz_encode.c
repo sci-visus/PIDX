@@ -462,9 +462,9 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
     {
       for (b = 0; b < variable[id->start_var_index]->patch_group_ptr[y]->count; b++) 
       {
-	index_count = 0;
-	l_x = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[0];
-	l_y = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[1];
+        index_count = 0;
+        l_x = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[0];
+        l_y = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[1];
 	l_z = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[2];
 	l_u = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[3];
 	l_v = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[4];
@@ -581,14 +581,19 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		    
 		    index = (l_z * l_y * (i - variable[id->start_var_index]->patch[y]->offset[0])) + (l_z * (j - variable[id->start_var_index]->patch[y]->offset[1])) + (k - variable[id->start_var_index]->patch[y]->offset[2]);
 			
-		    hz_index = hz_order - variable[i]->HZ_patch[y]->start_hz_index[level];
 		    
 		    for(var = id->start_var_index; var <= id->end_var_index; var++)
 		    {
+		      hz_index = hz_order - variable[var]->HZ_patch[y]->start_hz_index[level];
 		      bytes_for_datatype = variable[var]->bits_per_value / 8;
-		      for (s = 0; s < variable[var]->values_per_sample; s++) 
+		      for (s = 0; s < variable[var]->values_per_sample; s++)
 		      {
-			memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((s * variable[var]->values_per_sample + i) * bytes_for_datatype), variable[var]->patch_group_ptr[y]->block[b]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+			bytes_for_datatype = variable[var]->bits_per_value / 8;
+			
+			memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), 
+			       variable[var]->patch_group_ptr[y]->block[b]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype,
+			       bytes_for_datatype);
+			
 		      }
 		    }
 		  }

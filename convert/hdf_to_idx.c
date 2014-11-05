@@ -16,10 +16,9 @@
  **                                                 **
  *****************************************************/
 
-#if PIDX_OPTION_HDF5
+#if 1//PIDX_OPTION_HDF5
 
 #include <PIDX.h>
-#include <Generic_data_structs.h>
 
 #include "hdf5.h"
 #include "hdf_to_idx.h"
@@ -59,8 +58,8 @@ int main(int argc, char **argv)
   MPI_Comm_rank(comm, &rank); 
 #endif
   
-  output_file_name = (char*) malloc(sizeof (char) * 512);
-  sprintf(output_file_name, "%s%s", "HERE", ".idx");
+  output_file_name = (char*) malloc(sizeof (char) * 1024);
+  sprintf(output_file_name, "%s%s", "/media/TOSHIBA EXT/kaust/Kaust", ".idx");
   output_file = output_file_name;
   
   if (nprocs == 2)
@@ -177,7 +176,7 @@ int main(int argc, char **argv)
 
   dataset_name[4][0] = strdup("H");
   dataset_name[4][1] = strdup("H2");
-  dataset_name[4][2] = strdup("H2)");
+  dataset_name[4][2] = strdup("H2O");
   dataset_name[4][3] = strdup("H2O2");
   dataset_name[4][4] = strdup("HO2");
   dataset_name[4][5] = strdup("N2");
@@ -215,89 +214,100 @@ int main(int argc, char **argv)
   pidx_dataset_name[3][1] = strdup("Most-extensive-eigenvector/Eig-13");
   pidx_dataset_name[3][2] = strdup("Most-extensive-eigenvector/Eig-13");
 
-  pidx_dataset_name[4][0] = strdup("Species/H");
-  pidx_dataset_name[4][1] = strdup("Species/H2");
-  pidx_dataset_name[4][2] = strdup("Species/H2)");
-  pidx_dataset_name[4][3] = strdup("Species/H2O2");
-  pidx_dataset_name[4][4] = strdup("Species/HO2");
-  pidx_dataset_name[4][5] = strdup("Species/N2");
-  pidx_dataset_name[4][6] = strdup("Species/O");
-  pidx_dataset_name[4][7] = strdup("Species/O2");
-  pidx_dataset_name[4][8] = strdup("Species/OH");
+  pidx_dataset_name[4][0] = strdup("Species-H");
+  pidx_dataset_name[4][1] = strdup("Species-H2");
+  pidx_dataset_name[4][2] = strdup("Species-H2O");
+  pidx_dataset_name[4][3] = strdup("Species-H2O2");
+  pidx_dataset_name[4][4] = strdup("Species-HO2");
+  pidx_dataset_name[4][5] = strdup("Species-N2");
+  pidx_dataset_name[4][6] = strdup("Species-O");
+  pidx_dataset_name[4][7] = strdup("Species-O2");
+  pidx_dataset_name[4][8] = strdup("Species-OH");
 
-  pidx_dataset_name[5][0] = strdup("Velocity/U");
-  pidx_dataset_name[5][1] = strdup("Velocity/V");
-  pidx_dataset_name[5][2] = strdup("Velocity/W");
+  pidx_dataset_name[5][0] = strdup("Velocity-U");
+  pidx_dataset_name[5][1] = strdup("Velocity-V");
+  pidx_dataset_name[5][2] = strdup("Velocity-W");
 
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
   PIDX_create_access(&access);
 
 #if PIDX_HAVE_MPI  
   H5Pset_fapl_mpio(plist_id, comm, info);
-  PIDX_set_default_access(access);
+  PIDX_set_mpi_access(access, comm);
 #endif
  
   buffer = (double*)malloc(sizeof(double) * 512 * 256 * 256/nprocs);
   memset(buffer, 0, sizeof(double) * 512 * 256 * 256/nprocs);
-  /*
+  
   FILE *fp;
   fp = fopen("list", "r");
-  char file_name[1024];
+  char file_name[1][1024];
+  int time_count = 0;
   while (!feof(fp)) 
   {
-    if (fscanf(fp, "%s", file_name) != 1)
+    if (fscanf(fp, "%s", file_name[time_count]) != 1)
       break;
-    printf("%s\n", file_name);
+    if(rank == 0)
+      printf("%s\n", file_name[time_count]);
+    time_count++;
   }
   fclose(fp);
-  */
-  int g = 0, d = 0, t = 0, time_step = 1;
+  
+  int g = 0, d = 0, t = 0, time_step;
+  time_step = time_count;
+  if (rank == 0)
+    printf("Number of timesteps = %d\n", time_step);
   for (t = 0; t < time_step; t++)
   {
-    file_id = H5Fopen(H5FILE_NAME, H5F_ACC_RDONLY, plist_id);
-    PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
+    file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
+    
+    PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_block_count(file, blocks_per_file);
+    PIDX_set_variable_count(file, 34);
     
-    for(g = 0; g < /*group_count*/1; g++)
+    
+    for(g = 0; g < group_count; g++)
     {
       group_id = H5Gopen(file_id, group_name[g], H5P_DEFAULT);
       
-      for(d = 0; d < 1/*dataset_count[g]*/; d++)
+      for(d = 0; d < dataset_count[g]; d++)
       {
-	//printf("Opening [%d] Group %s with [%d] Dataset %s\n", g, group_name[g], d, dataset_name[g][d]);
-	dataset_id = H5Dopen2(group_id, dataset_name[g][d], H5P_DEFAULT);
+        dataset_id = H5Dopen2(group_id, dataset_name[g][d], H5P_DEFAULT);
       
-	mem_dataspace = H5Screate_simple (3, count, NULL);
-	file_dataspace = H5Dget_space (dataset_id);
-	H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-	H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer);
-	
-	PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable);
-	PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, buffer, PIDX_column_major);
-	PIDX_flush(file);
-	
-	H5Sclose(mem_dataspace);
-	H5Sclose(file_dataspace);
-	H5Dclose(dataset_id);
-	if(rank == 0)
+        mem_dataspace = H5Screate_simple (3, count, NULL);
+        file_dataspace = H5Dget_space (dataset_id);
+        H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+        H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer);
+
+        PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable);
+        PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, buffer, PIDX_column_major);
+        PIDX_flush(file);
+      
+        H5Sclose(mem_dataspace);
+        H5Sclose(file_dataspace);
+        H5Dclose(dataset_id);
+        if(rank == 0)
 	  printf("Done writing [%d] Group %s [%d] Dataset %s\n", g, group_name[g], d, dataset_name[g][d]);
       }
       
       H5Gclose(group_id);
     }
-  }  
+  }
   
   //////////
   H5Pclose(plist_id);
   H5Fclose(file_id);
   
-  PIDX_close(&file);
-  PIDX_close_access(&access);
+  PIDX_close(file);
+  PIDX_close_access(access);
   
   //////////
+  
+  free(output_file_name);
+  output_file_name = 0;
   
   free(buffer);
   buffer = 0;
