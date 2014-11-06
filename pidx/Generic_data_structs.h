@@ -17,7 +17,10 @@
  *****************************************************/
  
  
-#define _XOPEN_SOURCE 600
+#ifdef BLUEGENEP
+  #define _XOPEN_SOURCE 600
+#endif
+
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
