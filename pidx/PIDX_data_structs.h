@@ -61,6 +61,7 @@ struct idx_file_struct
   int bits_per_block;
   int blocks_per_file;
   long long* global_bounds;
+  double transform[16];
   char bitSequence[512];
   char bitPattern[512];
   

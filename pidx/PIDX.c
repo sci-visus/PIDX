@@ -147,6 +147,12 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_ptr->filename = strdup(filename);
   (*file)->idx_ptr->global_bounds = malloc(sizeof(long long) * PIDX_MAX_DIMENSIONS);
   { int i; for (i=0;i<PIDX_MAX_DIMENSIONS;i++) (*file)->idx_ptr->global_bounds[i]=65535; }
+
+  //initialize logic_to_physic transform to identity
+  (*file)->idx_ptr->transform[0]  = 1.0;
+  (*file)->idx_ptr->transform[5]  = 1.0;
+  (*file)->idx_ptr->transform[10] = 1.0;
+  (*file)->idx_ptr->transform[15] = 1.0;
   
   (*file)->idx_ptr->variable_count = -1;
   (*file)->idx_ptr->variable_index_tracker = 0;
@@ -459,6 +465,29 @@ PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims)
   return PIDX_success;
 }
 
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_set_transform(PIDX_file file, double transform[16])
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  memcpy(file->idx_ptr->transform, transform, (sizeof(double) * 16));
+  
+  return PIDX_success;
+}
+
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16])
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  memcpy(transform, file->idx_ptr->transform, (sizeof(double) * 16));
+  
+  return PIDX_success;
+}
+
+/////////////////////////////////////////////////
 PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* filename, int current_time_step)
 {
   int N;

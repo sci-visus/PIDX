@@ -104,12 +104,25 @@ PIDX_return_code PIDX_get_access(PIDX_file file, PIDX_access *access);
 /// \param dims Dimensions of the volume.
 PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims);
 
-
 /// Gets the dims of the IDX file.
 /// \param file The IDX file handler.
 /// \param dims Dimensions of the volume will be returned here.
 PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims);
 
+/// Sets the transformation from logical dims to the physical coordinates (commonly used to visualize the volume)
+/// \param file The IDX file handler.
+/// \param transform standard 4x4 transformation matrix (right-handed / OpenGL style), see http://www.dirsig.org/docs/new/affine.html.
+PIDX_return_code PIDX_set_transform(PIDX_file file, double transform[16]);
+
+/// Gets the transformation from logical dims to the physical coordinates (commonly used to visualize the volume)
+/// \param file The IDX file handler.
+/// \param transform will return the standard 4x4 transformation matrix (right-handed / OpenGL style), see http://www.dirsig.org/docs/new/affine.html.
+PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16]);
+
+/// Gets the dims of the IDX file.
+/// \param file The IDX file handler.
+/// \param dims Dimensions of the volume will be returned here.
+PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims);
 
 /// Sets the block size of the IDX file.
 /// \param file The IDX file handler.

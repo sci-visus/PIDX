@@ -158,6 +158,7 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
     }
 
     fprintf(idx_file_p, "(version)\n6\n");
+    fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx_ptr->transform[0], header_io->idx_ptr->transform[1], header_io->idx_ptr->transform[2], header_io->idx_ptr->transform[3], header_io->idx_ptr->transform[4], header_io->idx_ptr->transform[5], header_io->idx_ptr->transform[6], header_io->idx_ptr->transform[7], header_io->idx_ptr->transform[8], header_io->idx_ptr->transform[9], header_io->idx_ptr->transform[10], header_io->idx_ptr->transform[11], header_io->idx_ptr->transform[12], header_io->idx_ptr->transform[13], header_io->idx_ptr->transform[14], header_io->idx_ptr->transform[15]);
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (header_io->idx_ptr->global_bounds[0] - 1), (header_io->idx_ptr->global_bounds[1] - 1), (header_io->idx_ptr->global_bounds[2] - 1), (header_io->idx_ptr->global_bounds[3] - 1), (header_io->idx_ptr->global_bounds[4] - 1));
     fprintf(idx_file_p, "(fields)\n");  
     

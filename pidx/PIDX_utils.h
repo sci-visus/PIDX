@@ -19,7 +19,6 @@
 #ifndef __PIDX_UTILS_H
 #define __PIDX_UTILS_H
 
-#define _XOPEN_SOURCE 600
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
