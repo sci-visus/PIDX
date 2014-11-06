@@ -1398,8 +1398,8 @@ PIDX_return_code PIDX_write(PIDX_file file)
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
     PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
-    if(global_do_rst == 1 && debug_hz == 1)
-      HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
+    //if(global_do_rst == 1 && debug_hz == 1)
+      //HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);
     hz_end[vp] = PIDX_get_time();
