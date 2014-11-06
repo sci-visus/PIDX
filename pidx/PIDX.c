@@ -1251,8 +1251,6 @@ PIDX_return_code PIDX_write(PIDX_file file)
   /// Variable Count maybe Set or not.
   if (file->local_variable_count == file->idx_ptr->variable_index_tracker && file->write_on_close == 1)
   {
-    if(rank == 0)
-      printf("XX\n");
     write_init_start[hp] = PIDX_get_time();
     if (file->idx_ptr->variable_count == -1)
       file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
@@ -1318,7 +1316,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
   //if (file->idx_ptr->variable[var]->dump_meta_data_ON == 1)
   //    dump_meta_data(file->idx_ptr->variable[var], file->comm);
   int start_index = 0, end_index = 0;
-  file->variable_pipelining_factor = 3;
+  file->variable_pipelining_factor = 0;
   for (start_index = file->local_variable_index; start_index < file->local_variable_index + file->local_variable_count; start_index = start_index + (file->variable_pipelining_factor + 1))
   {
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
@@ -1427,8 +1425,8 @@ PIDX_return_code PIDX_write(PIDX_file file)
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
     PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
-    //if(global_do_rst == 1 && debug_hz == 1)
-      //HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
+    if(global_do_rst == 1 && debug_hz == 1)
+      HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);
     hz_end[vp] = PIDX_get_time();

@@ -777,9 +777,9 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
   
   long long global_volume;
   MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, rst_id->comm);
-  printf("[RST] Volume [%lld] and Volume [%lld]\n", global_volume, (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4]));
+  printf("[RST] Volume [%lld] and Volume [%lld]\n", global_volume, (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4]) * (rst_id->end_variable_index - rst_id->start_variable_index + 1));
   
-  if (global_volume != (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4])
+  if (global_volume != (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4] * (rst_id->end_variable_index - rst_id->start_variable_index + 1))
   {
     fprintf(stderr, "[%d] RST Volume Error %lld %lld\n", rank, global_volume, (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4]);
       MPI_Abort(rst_id->comm, -1);

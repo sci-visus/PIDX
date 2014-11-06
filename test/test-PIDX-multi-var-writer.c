@@ -100,7 +100,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     char variable_name[512];
     char data_type[512];
     
-#if 1    
+#if 0    
     /// IO with Flush (memory efficient)
     for(var = 0; var < variable_count; var++)
     {
@@ -147,7 +147,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     double_data = 0;
 #endif
 
-#if 0    
+#if 1    
     /// IO with no Flush (high performance)
     for(var = 0; var < variable_count; var++)
     {
@@ -174,7 +174,8 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
 	    {
 	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
 	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		double_data[var][index * values_per_sample[var] + spv] = (rank + 1);
+		//double_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+		double_data[var][index * values_per_sample[var] + spv] = (rank + 1) + ts;
 	    }
       }
     }

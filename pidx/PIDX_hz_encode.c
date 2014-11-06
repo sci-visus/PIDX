@@ -822,7 +822,7 @@ int PIDX_hz_encode_finalize(PIDX_hz_encode_id id)
   return 0;
 }
 
-#if 0//PIDX_HAVE_MPI
+#if PIDX_HAVE_MPI
 int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
 {
   int i = 0, k = 0, b = 0, var = 0, rank;
@@ -874,17 +874,14 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
 
   long long global_volume = 0;
   MPI_Allreduce(&element_counts, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-  printf("[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (long long)(id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * id->idx_ptr->global_bounds[3] * id->idx_ptr->global_bounds[4]));
-  if (global_volume != (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]) 
+  printf("[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (long long)(id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * id->idx_ptr->global_bounds[3] * id->idx_ptr->global_bounds[4] * (id->end_var_index - id->start_var_index + 1)));
+  if (global_volume != (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1)) 
   {
     //if(rank == 0)
     fprintf(stderr, "Volume Error %lld %lld\n", global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
     MPI_Abort(MPI_COMM_WORLD, -1);
   }
-  assert(global_volume == (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
-  if (rank == 0)
-    if (global_volume == (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2])
-      printf("HZ : Volume %lld %lld\n", global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
+  assert(global_volume == (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
     
   return 0;
 }
