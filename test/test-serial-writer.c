@@ -35,8 +35,8 @@ int serial_writer(struct Args args)
   PIDX_variable variable = 0;                                       // variable descriptor
   double     *var1_double_scalar_data;
   int sample_count = 1;
-  int one_opt = 0;
-  int variable_count = 1;
+  //int one_opt = 0;
+  //int variable_count = 1;
 
   //   Creating the filename
   args.output_file_name = (char*) malloc(sizeof (char) * 512);

@@ -188,7 +188,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
   char* pos;
 #if PIDX_HAVE_MPI
   MPI_File fh;
-  MPI_Status status;
+  //MPI_Status status;
 #else
   int fh = 0;
 #endif  
@@ -311,7 +311,8 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
   int i = 0, m = 0, n = 0, b = 0;
   uint32_t* headers;
   long long initial_offset = 0;
-  off_t data_offset = 0, max_offset = 0;  
+  off_t data_offset = 0;
+  off_t max_offset = 0;  
   uint32_t little_data_offset;
   
   total_header_size = (10 + (10 * header_io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * header_io_id->end_var_index;

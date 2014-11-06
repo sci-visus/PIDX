@@ -34,6 +34,8 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
 
 int PIDX_header_io_file_create(PIDX_header_io_id header_io);
 
+int PIDX_header_io_file_write(PIDX_header_io_id header_io_id);
+
 int PIDX_header_io_finalize(PIDX_header_io_id header_io);
 
 #endif

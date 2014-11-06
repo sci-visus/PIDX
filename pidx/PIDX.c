@@ -731,7 +731,6 @@ PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offs
   if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
     return PIDX_err_count;
   
-  void *temp_buffer;
   variable->patch[variable->patch_count] = malloc(sizeof(*(variable->patch[variable->patch_count])));
   memcpy(variable->patch[variable->patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
   memcpy(variable->patch[variable->patch_count]->count, dims, PIDX_MAX_DIMENSIONS * sizeof(long long));

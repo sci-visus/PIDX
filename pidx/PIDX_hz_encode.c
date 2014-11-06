@@ -43,10 +43,10 @@ struct PIDX_hz_encode_struct
   
 };
 
-int compare( const hz_tupple* a, const hz_tupple* b)
+int compare( const void* a, const void* b)
 {
-  long long int_a = a->index;
-  long long int_b = b->index;
+  long long int_a = ((const hz_tupple*)a)->index;
+  long long int_b = ((const hz_tupple*)b)->index;
 
   if ( int_a == int_b ) return 0;
   else if ( int_a < int_b ) return -1;
