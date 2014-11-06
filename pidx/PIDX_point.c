@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_point.h"
+#include "PIDX_inc.h"
 
 PIDX_return_code PIDX_set_point_1D(long long x, PIDX_point point)
 {

@@ -16,11 +16,9 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_data_structs.h"
-#include "PIDX_utils.h"
-
 #ifndef __PIDX_HZ_ENCODE_H
 #define __PIDX_HZ_ENCODE_H
+
 
 struct PIDX_hz_encode_struct;
 typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;

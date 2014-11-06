@@ -19,22 +19,6 @@
 #ifndef __PIDX_UTILS_H
 #define __PIDX_UTILS_H
 
-#define _XOPEN_SOURCE 600
-#include <string.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdint.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <math.h>
-
 #define PIDX_MAX_DIMENSIONS 5
 #define MAX_TEMPLATE_DEPTH 6
 

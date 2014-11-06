@@ -33,8 +33,6 @@
 
 #if PIDX_HAVE_MPI
 
-#include "PIDX_data_structs.h"
-
 struct PIDX_rst_struct;
 typedef struct PIDX_rst_struct* PIDX_rst_id;
 

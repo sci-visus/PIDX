@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
  
-#include "PIDX_blocks.h"
+#include "PIDX_inc.h"
 
 const int PIDX_default_bits_per_block       = 15;
 const int PIDX_default_blocks_per_file      = 256;

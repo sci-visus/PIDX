@@ -1,7 +1,9 @@
 #ifndef _HDF_TO_IDX_H
 #define _HDF_TO_IDX_H
 
-#if 1
+#include "PIDX.h"
+
+#if PIDX_OPTION_HDF5
 
 #include <stdio.h>
 #include <getopt.h>

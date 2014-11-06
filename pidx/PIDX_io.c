@@ -16,8 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_io.h"
-#include "PIDX_utils.h"
+#include "PIDX_inc.h"
 
 struct PIDX_io_struct 
 {

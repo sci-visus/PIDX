@@ -36,14 +36,6 @@
 #ifndef __PIDX_COMM_H
 #define __PIDX_COMM_H 
 
-#include "PIDX_error_codes.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#if PIDX_HAVE_MPI
-#include <mpi.h>
-#endif
 
 #ifdef __cplusplus
 extern "C" {

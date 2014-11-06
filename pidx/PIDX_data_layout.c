@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_data_layout.h"
+#include "PIDX_inc.h"
 
 PIDX_data_layout PIDX_row_major = 0;
 PIDX_data_layout PIDX_column_major = 1;

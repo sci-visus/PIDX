@@ -35,6 +35,7 @@
 #ifndef __PIDX_DATA_LAYOUT_H
 #define __PIDX_DATA_LAYOUT_H
 
+
 typedef unsigned int PIDX_data_layout;
 
 /// Data layout options 

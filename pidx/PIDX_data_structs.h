@@ -16,12 +16,11 @@
  **                                                 **
  *****************************************************/
 
-#include "Generic_data_structs.h"
-#include "PIDX_blocks.h"
-#include "PIDX_data_layout.h"
+
 
 #ifndef __PIDX_DATA_STRUCTS_H
 #define __PIDX_DATA_STRUCTS_H
+
 
 enum IO_MODE { PIDX_READ, PIDX_WRITE};
 

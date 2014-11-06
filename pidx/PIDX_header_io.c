@@ -16,8 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_header_io.h"
-#include "PIDX_utils.h"
+#include "PIDX_inc.h"
 #define MAX_TEMPLATE_DEPTH 6
 
 static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, char* bin_file);

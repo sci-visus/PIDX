@@ -16,12 +16,13 @@
  **                                                 **
  *****************************************************/
 
-#if 1//PIDX_OPTION_HDF5
+#include "hdf_to_idx.h"
+
+#if PIDX_OPTION_HDF5
 
 #include <PIDX.h>
-
 #include "hdf5.h"
-#include "hdf_to_idx.h"
+
 
 static char *output_file_name;
 static double* buffer;

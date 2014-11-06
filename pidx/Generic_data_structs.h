@@ -16,28 +16,6 @@
  **                                                 **
  *****************************************************/
  
- 
-#define _XOPEN_SOURCE 600
-#include <string.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <errno.h>
-#include <limits.h>
-#include <stdint.h>
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <math.h>
-
-#include "PIDX_comm.h"
-
-#define PIDX_MAX_DIMENSIONS 5
-#define PIDX_HAVE_MPI 1
-
 #ifndef __GENERIC_DATA_STRUCTS_H
 #define __GENERIC_DATA_STRUCTS_H
 

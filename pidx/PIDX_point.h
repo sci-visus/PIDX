@@ -29,17 +29,6 @@
 #ifndef __PIDX_POINT_H
 #define __PIDX_POINT_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include <stdio.h>
-#include <stdlib.h>
-
-#include "PIDX_error_codes.h"
-#include "Generic_data_structs.h"
-
-//TODO: this should be longs
 typedef long long PIDX_point[5];
 
 /// Utility functions to set or get the dimensions of an offset or a box (defined as points)
@@ -56,8 +45,5 @@ PIDX_return_code PIDX_get_point_5D(long long* x,long long* y,long long* z,long l
 
 PIDX_return_code PIDX_inner_product(PIDX_point point, long long *inner_product);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif

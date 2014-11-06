@@ -102,7 +102,8 @@ MESSAGE("PIDX_OPTION_HDF5 ${PIDX_OPTION_HDF5}")
 # configuration
 # ///////////////////////////////////////////////
 
-CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/pidx_config.h.in" "${PROJECT_BINARY_DIR}/pidx_config.h" )
+CONFIGURE_FILE("${PROJECT_SOURCE_DIR}/PIDX_config.h.in" "${PROJECT_BINARY_DIR}/PIDX_config.h" )
+INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
 
 # ///////////////////////////////////////////////
 # subdirectories
@@ -120,4 +121,4 @@ ADD_SUBDIRECTORY(profile)
 MESSAGE("CMAKE_INSTALL_PREFIX is " ${CMAKE_INSTALL_PREFIX})
 INSTALL(DIRECTORY pidx/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 INSTALL(FILES     "${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindPIDX.cmake" DESTINATION .)
-INSTALL(FILES     "${PROJECT_BINARY_DIR}/pidx_config.h" DESTINATION include)
+INSTALL(FILES     "${PROJECT_BINARY_DIR}/PIDX_config.h" DESTINATION include)

@@ -29,10 +29,6 @@
 
 #include "PIDX.h"
 
-#if !PIDX_HAVE_MPI
-  #include <sys/time.h>
-#endif
-
 static int vp = 0;
 static int hp = 0;
 static double sim_start = 0, sim_end = 0;

@@ -15,7 +15,7 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
-#include "PIDX_error_codes.h"
+#include "PIDX_inc.h"
 
 PIDX_return_code PIDX_success = 0;
 PIDX_return_code PIDX_err_unsupported_flags = 1;

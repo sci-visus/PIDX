@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_hz_encode.h"
+#include "PIDX_inc.h"
 
 struct hz_tupple_double
 {
@@ -822,7 +822,7 @@ int PIDX_hz_encode_finalize(PIDX_hz_encode_id id)
   return 0;
 }
 
-#if PIDX_HAVE_MPI
+#if 0//PIDX_HAVE_MPI
 int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
 {
   int i = 0, k = 0, b = 0, var = 0, rank;

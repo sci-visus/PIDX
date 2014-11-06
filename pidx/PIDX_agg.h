@@ -19,10 +19,6 @@
 #ifndef __PIDX_AGG_H
 #define __PIDX_AGG_H 
 
-#include "PIDX_data_structs.h"
-#include "PIDX_utils.h"
-#include "PIDX_error_codes.h"
-#include "PIDX_point.h"
 
 struct PIDX_agg_struct;
 typedef struct PIDX_agg_struct* PIDX_agg_id;
