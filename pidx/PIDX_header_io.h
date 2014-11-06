@@ -17,9 +17,7 @@
  *****************************************************/
 
 #ifndef __PIDX_HEADER_IO_H
-#define __PIDX_HEADER_IO_H 
-
-#include "PIDX_data_structs.h"
+#define __PIDX_HEADER_IO_H
 
 struct PIDX_header_io_struct;
 typedef struct PIDX_header_io_struct* PIDX_header_io_id;

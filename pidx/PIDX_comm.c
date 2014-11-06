@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_comm.h"
+#include "PIDX_inc.h"
 
 PIDX_return_code PIDX_create_access(PIDX_access* access)
 {

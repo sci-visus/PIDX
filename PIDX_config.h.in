@@ -9,10 +9,12 @@
 
 #define PIDX_GIT_REVISION "@PIDX_GIT_REVISION@"
 
-#cmakedefine01 BUILD_SHARED_LIBS
+#define PIDX_MAX_DIMENSIONS 5
 
+#cmakedefine01 BUILD_SHARED_LIBS
 #cmakedefine01 PIDX_HAVE_MPI
 #cmakedefine01 PIDX_OPTION_PNETCDF
 #cmakedefine01 PIDX_OPTION_HDF5
+
 
 #endif //_PIDX_CONFIG_H_

@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#include "PIDX_utils.h"
+#include "PIDX_inc.h"
 
 unsigned int getNumBits ( unsigned int v )
 {

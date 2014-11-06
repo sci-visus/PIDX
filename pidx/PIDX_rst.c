@@ -27,9 +27,9 @@
  *
  */
 
-#if PIDX_HAVE_MPI
+#include "PIDX_inc.h"
 
-#include "PIDX_rst.h"
+#if PIDX_HAVE_MPI
 
 #define PIDX_MAX_NEIGHBOR_PROC 1024
 

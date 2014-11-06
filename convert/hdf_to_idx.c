@@ -16,12 +16,13 @@
  **                                                 **
  *****************************************************/
 
-#if 1//PIDX_OPTION_HDF5
+#include "hdf_to_idx.h"
+
+#if PIDX_OPTION_HDF5
 
 #include <PIDX.h>
-
 #include "hdf5.h"
-#include "hdf_to_idx.h"
+
 
 static char *output_file_name;
 static double* buffer;
@@ -59,7 +60,7 @@ int main(int argc, char **argv)
 #endif
   
   output_file_name = (char*) malloc(sizeof (char) * 1024);
-  sprintf(output_file_name, "%s%s", "/media/TOSHIBA EXT/kaust/Kaust", ".idx");
+  sprintf(output_file_name, "%s%s", "test", ".idx");
   output_file = output_file_name;
   
   if (nprocs == 2)

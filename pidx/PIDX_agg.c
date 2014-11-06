@@ -15,9 +15,8 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
- 
-#include "PIDX_agg.h"
 
+#include "PIDX_inc.h"
 
 struct PIDX_agg_struct 
 {

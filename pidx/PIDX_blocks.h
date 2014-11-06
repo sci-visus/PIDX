@@ -19,12 +19,6 @@
 #ifndef __PIDX_BLOCKS_H
 #define __PIDX_BLOCKS_H
 
-#include "Generic_data_structs.h"
-#include "PIDX_utils.h"
-
-extern const int PIDX_default_bits_per_block;
-extern const int PIDX_default_blocks_per_file;
-
 struct block_layout
 {
   int    levels;                          // Total number of Levels
@@ -32,6 +26,10 @@ struct block_layout
   int    ** hz_block_number_array;        // Indices of filled blocks
 };
 typedef struct block_layout block_layout;
+
+
+extern const int PIDX_default_bits_per_block;
+extern const int PIDX_default_blocks_per_file;
 
 int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout* layout);
 

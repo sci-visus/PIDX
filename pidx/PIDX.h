@@ -36,28 +36,11 @@
 #ifndef __PIDX_H
 #define __PIDX_H
 
-#define PIDX_HAVE_MPI 1
-
-#include "PIDX_comm.h"
+#include "PIDX_inc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "PIDX_data_structs.h"
-
-#include "PIDX_rst.h"
-#include "PIDX_hz_encode.h"
-#include "PIDX_agg.h"
-#include "PIDX_io.h"
-#include "PIDX_header_io.h"
-
-#include "PIDX_file_access_modes.h"
-#include "PIDX_error_codes.h"
-#include "PIDX_file_access_modes.h"
-#include "PIDX_point.h"
-#include "PIDX_data_types.h"
-#include "PIDX_data_layout.h"
 
 
 struct PIDX_file_descriptor;
