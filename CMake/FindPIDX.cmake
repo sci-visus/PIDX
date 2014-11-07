@@ -32,7 +32,7 @@ FIND_PATH(PIDX_INCLUDE_DIR NAMES PIDX.h PATHS ${PIDX_DIR}/include NO_DEFAULT_PAT
 IF (PIDX_INCLUDE_DIR)
 
   # Read pidx_config.h to see if we need to link MPI
-  FILE(STRINGS "${PIDX_INCLUDE_DIR}/pidx_config.h" config)
+  FILE(STRINGS "${PIDX_INCLUDE_DIR}/PIDX_config.h" config)
   LIST(FIND config "PIDX_HAVE_MPI 1" idx)
   IF (IDX GREATER 0)
     FIND_PACKAGE(MPI REQUIRED)
