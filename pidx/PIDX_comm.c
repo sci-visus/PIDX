@@ -26,7 +26,7 @@ PIDX_return_code PIDX_create_access(PIDX_access* access)
   (*access)->parallel = 0;
   
 #if PIDX_HAVE_MPI
-  (*access)->comm = NULL;
+  MPI_Comm_dup(MPI_COMM_WORLD, &(*access)->comm);
 #endif
   
   return PIDX_success;
