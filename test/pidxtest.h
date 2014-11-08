@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 /* Kind of test to run */
-enum Kind { DEFAULT = 0, SERIAL_READER, PARALLEL_READER, SERIAL_WRITER, PARALLEL_WRITER};
+enum Kind { DEFAULT = 0, SERIAL_READER, PARALLEL_READER, SERIAL_WRITER, PARALLEL_WRITER, PARALLEL_MULTI_PATCH_WRITER};
 
 /*kindToStr*/
 char* kindToStr(enum Kind k);

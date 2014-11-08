@@ -39,12 +39,13 @@ static void usage(enum Kind kind)
 
   switch (kind)
   {
-  case SERIAL_WRITER:          usage_serial();    break;
-  case PARALLEL_WRITER:        usage_multi_var_writer();    break;
-  case SERIAL_READER:          usage_reader();    break;
-  case PARALLEL_READER:        usage_reader();    break;
+  case SERIAL_WRITER:                      usage_serial();              break;
+  case PARALLEL_WRITER:                    usage_multi_var_writer();    break;
+  case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
+  case SERIAL_READER:                      usage_reader();              break;
+  case PARALLEL_READER:                    usage_reader();              break;
   case DEFAULT:
-  default:                     usage_multi_var_writer();
+  default:                                 usage_multi_var_writer();
   }
 }
 
@@ -108,6 +109,12 @@ int main(int argc, char **argv)
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
       test_multi_var_writer(args, rank, nprocs);
+      break;
+      
+    case PARALLEL_MULTI_PATCH_WRITER:
+      if(rank == 0)
+	printf("Performing Parallel Write....\n");
+      test_multi_patch_writer(args, rank, nprocs);
       break;
     
     case SERIAL_WRITER:  
@@ -202,21 +209,23 @@ char* kindToStr(enum Kind k)
 {
   switch (k)
   {
-    case PARALLEL_READER:    return "parallel-reader";
-    case SERIAL_READER:      return "serial-reader";    
-    case PARALLEL_WRITER:    return "parallel-writer";
-    case SERIAL_WRITER:      return "serial-writer";
+    case PARALLEL_READER:                return "parallel-reader";
+    case SERIAL_READER:                  return "serial-reader";    
+    case PARALLEL_WRITER:                return "parallel-writer";
+    case PARALLEL_MULTI_PATCH_WRITER:    return "parallel-multi-patch-writer";
+    case SERIAL_WRITER:                  return "serial-writer";
     case DEFAULT:
-    default:                 return "default";
+    default:                             return "default";
   }
 }
 
 /*strToKind*/
 enum Kind strToKind(const char *str)
 {
-  if (strcmp(str,"parallel-reader")   == 0) return PARALLEL_READER;
-  if (strcmp(str,"serial-reader")     == 0) return SERIAL_READER;
-  if (strcmp(str,"parallel-writer")   == 0) return PARALLEL_WRITER;
-  if (strcmp(str,"serial-writer")     == 0) return SERIAL_WRITER;
-  else                                      return DEFAULT;
+  if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
+  if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
+  if (strcmp(str,"parallel-writer")   == 0)             return PARALLEL_WRITER;
+  if (strcmp(str,"parallel-multi-patch-writer")   == 0) return PARALLEL_MULTI_PATCH_WRITER;
+  if (strcmp(str,"serial-writer")     == 0)             return SERIAL_WRITER;
+  else                                                  return DEFAULT;
 }

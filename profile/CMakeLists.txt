@@ -23,6 +23,7 @@ IF (PIDX_BUILD_PROFILE)
   # ////////////////////////////////////////
 
   SET(IDXCOMPARE_SOURCES idx-compare.c)
+  SET(DUMPHEADER_SOURCES dump-header.c)
 
 
   # ////////////////////////////////////////
@@ -39,5 +40,9 @@ IF (PIDX_BUILD_PROFILE)
   PIDX_ADD_EXECUTABLE(idxcompare "${IDXCOMPARE_SOURCES}")
   ADD_DEPENDENCIES(idxcompare pidx)
   TARGET_LINK_LIBRARIES(idxcompare pidx ${ZLIB_LIBRARY} ${MPI_CXX_LIBRARIES})
+
+  PIDX_ADD_EXECUTABLE(dumpheader "${DUMPHEADER_SOURCES}")
+  ADD_DEPENDENCIES(dumpheader pidx)
+  TARGET_LINK_LIBRARIES(dumpheader pidx ${ZLIB_LIBRARY} ${MPI_CXX_LIBRARIES})
 
 ENDIF()

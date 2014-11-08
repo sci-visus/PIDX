@@ -34,4 +34,7 @@ int usage_multi_var_writer();
 int serial_writer(struct Args args);
 int usage_serial();
 
+int test_multi_patch_writer(struct Args args, int rank, int nprocs);
+int usage_multi_patch_writer();
+
 #endif

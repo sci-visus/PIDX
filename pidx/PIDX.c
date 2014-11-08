@@ -1297,6 +1297,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     if(hp == 0)
       PIDX_header_io_file_create(file->header_io_id);
     
+    printf("variable index tracker = %d : variable count = %d\n", file->idx_ptr->variable_index_tracker, file->idx_ptr->variable_count);
     if (file->idx_ptr->variable_count == -1 || (file->idx_ptr->variable_count == file->idx_ptr->variable_index_tracker))
     {
       PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
@@ -1311,7 +1312,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
   
     
 #if PIDX_HAVE_MPI
-
+  
   //if (file->idx_ptr->variable[var]->dump_meta_data_ON == 1)
   //    dump_meta_data(file->idx_ptr->variable[var], file->comm);
   int start_index = 0, end_index = 0;
@@ -1319,7 +1320,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
   for (start_index = file->local_variable_index; start_index < file->local_variable_index + file->local_variable_count; start_index = start_index + (file->variable_pipelining_factor + 1))
   {
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
-    
+    printf("start and end index = %d %d\n", start_index, end_index);
     ///----------------------------------- RST init start----------------------------------------------///
     rst_init_start[vp] = PIDX_get_time();                                            
     if (file->idx_ptr->variable[var]->patch_count == 1)
@@ -1492,7 +1493,6 @@ PIDX_return_code PIDX_write(PIDX_file file)
     
     vp++;
   }
-  
 
 #else
 
