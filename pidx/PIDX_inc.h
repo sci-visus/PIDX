@@ -28,6 +28,10 @@
   #include <sys/time.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "PIDX_error_codes.h"
 #include "PIDX_file_access_modes.h"
 #include "PIDX_data_types.h"
@@ -45,5 +49,9 @@
 #include "PIDX_hz_encode.h"
 #include "PIDX_agg.h"
 #include "PIDX_io.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
