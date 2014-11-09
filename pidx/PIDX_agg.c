@@ -129,16 +129,16 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
     if(target_rank != rank)
     {
 #if PIDX_HAVE_MPI
-#ifndef ACTIVE_TARGET
-      MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//      MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , agg_id->win);
+//#endif
       if(MODE == PIDX_WRITE)
 	MPI_Put(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
       else
 	MPI_Get(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
-#ifndef ACTIVE_TARGET
-      MPI_Win_unlock(target_rank, agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//      MPI_Win_unlock(target_rank, agg_id->win);
+//#endif
 #endif
     } 
     else
@@ -152,17 +152,17 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 	if(target_rank != rank)
 	{
 #if PIDX_HAVE_MPI
-#ifndef ACTIVE_TARGET
-	  MPI_Win_lock(MPI_LOCK_SHARED, target_rank + agg_id->aggregator_interval, 0, agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//	  MPI_Win_lock(MPI_LOCK_SHARED, target_rank + agg_id->aggregator_interval, 0, agg_id->win);
+//#endif
 	  if(MODE == PIDX_WRITE)
 	    MPI_Put(hz_buffer + ((samples_in_file - target_disp) + (itr * samples_in_file)) * bytes_per_datatype, samples_in_file * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, samples_in_file * bytes_per_datatype, MPI_BYTE, agg_id->win);
 	  else
 	    MPI_Get(hz_buffer + ((samples_in_file - target_disp) + (itr * samples_in_file)) * bytes_per_datatype, samples_in_file * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, samples_in_file * bytes_per_datatype, MPI_BYTE, agg_id->win);
 
-#ifndef ACTIVE_TARGET
-	  MPI_Win_unlock(target_rank + agg_id->aggregator_interval, agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//	  MPI_Win_unlock(target_rank + agg_id->aggregator_interval, agg_id->win);
+//#endif
 #endif
 	}
 	else
@@ -175,18 +175,18 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       if(target_rank + agg_id->aggregator_interval != rank)
       {
 #if PIDX_HAVE_MPI
-#ifndef ACTIVE_TARGET
-	MPI_Win_lock(MPI_LOCK_SHARED, target_rank + agg_id->aggregator_interval, 0, agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//	MPI_Win_lock(MPI_LOCK_SHARED, target_rank + agg_id->aggregator_interval, 0, agg_id->win);
+//#endif
 	if(MODE == PIDX_WRITE)
 	  MPI_Put(hz_buffer + ((samples_in_file - target_disp) + ((end_agg_index - start_agg_index - 1) * samples_in_file)) * bytes_per_datatype, (target_count - (((end_agg_index - start_agg_index - 1) * (samples_in_file)) + ((samples_in_file) - target_disp))) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * samples_in_file - target_disp)) * bytes_per_datatype, 
 		MPI_BYTE, agg_id->win);
 	else
 	  MPI_Get(hz_buffer + ((samples_in_file - target_disp) + ((end_agg_index - start_agg_index - 1) * samples_in_file)) * bytes_per_datatype, (target_count - (((end_agg_index - start_agg_index - 1) * (samples_in_file)) + ((samples_in_file) - target_disp))) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * samples_in_file - target_disp)) * bytes_per_datatype, 
 		MPI_BYTE, agg_id->win);
-#ifndef ACTIVE_TARGET
-	MPI_Win_unlock(target_rank + agg_id->aggregator_interval, agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//	MPI_Win_unlock(target_rank + agg_id->aggregator_interval, agg_id->win);
+//#endif
 #endif
       }
       else
@@ -213,16 +213,16 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
     if(target_rank != rank)
     {
 #if PIDX_HAVE_MPI
-#ifndef ACTIVE_TARGET
-      MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//      MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , agg_id->win);
+//#endif
       if(MODE == PIDX_WRITE)
 	MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
       else
 	MPI_Get(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
-#ifndef ACTIVE_TARGET
-      MPI_Win_unlock(target_rank, agg_id->win);
-#endif
+//#ifndef ACTIVE_TARGET
+//      MPI_Win_unlock(target_rank, agg_id->win);
+//#endif
 #endif
     }
     else
@@ -318,11 +318,11 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   else
     MPI_Win_create(0, 0, 1, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));    
         
-#ifdef ACTIVE_TARGET
+//#ifdef ACTIVE_TARGET
   MPI_Win_fence(0, agg_id->win);
-#else
+//#else
   //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
-#endif
+//#endif
 #endif
   
   for (p = 0; p < agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count; p++)
@@ -452,11 +452,11 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   }
 
 #if PIDX_HAVE_MPI
-#ifdef ACTIVE_TARGET
+//#ifdef ACTIVE_TARGET
   MPI_Win_fence(0, agg_id->win);		//First Fence
-#else
+//#else
   // MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
-#endif
+//#endif
   MPI_Win_free(&(agg_id->win));
 #endif
   

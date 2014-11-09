@@ -24,6 +24,7 @@ IF (PIDX_BUILD_CONVERT)
 
   
   SET(HDF_TO_IDX_SOURCES hdf_to_idx.c)
+  SET(HDF_TO_IDX_FABRIZIO_SOURCES hdf_to_idx_fabrizio.c)
 
 
   # ////////////////////////////////////////
@@ -40,16 +41,26 @@ IF (PIDX_BUILD_CONVERT)
   # executables
   # ////////////////////////////////////////
 
+  
+  
+    PIDX_ADD_EXECUTABLE(hdf_to_idx_fabrizio "${HDF_TO_IDX_FABRIZIO_SOURCES}")
+    ADD_DEPENDENCIES(hdf_to_idx_fabrizio pidx)
+    TARGET_LINK_LIBRARIES(hdf_to_idx_fabrizio pidx)
+  
     PIDX_ADD_EXECUTABLE(hdf5_to_idx "${HDF_TO_IDX_SOURCES}")
     ADD_DEPENDENCIES(hdf5_to_idx pidx)
     TARGET_LINK_LIBRARIES(hdf5_to_idx pidx)
 
     IF (MPI_C_FOUND)
       TARGET_LINK_LIBRARIES(hdf5_to_idx ${MPI_C_LIBRARIES})
+      TARGET_LINK_LIBRARIES(hdf_to_idx_fabrizio ${MPI_C_LIBRARIES})
     ENDIF()
 
     ADD_DEPENDENCIES(hdf5_to_idx ${HDF5_LIBRARIES})
     TARGET_LINK_LIBRARIES(hdf5_to_idx ${HDF5_LIBRARIES})
+    
+    ADD_DEPENDENCIES(hdf_to_idx_fabrizio ${HDF5_LIBRARIES})
+    TARGET_LINK_LIBRARIES(hdf_to_idx_fabrizio ${HDF5_LIBRARIES})
   ENDIF()
 
 ENDIF()
