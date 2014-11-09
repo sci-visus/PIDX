@@ -31,7 +31,7 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   const char *output_file;                                                      // IDX File Name
   const int *gextent;                                                           // Global Extensions of the dataset (64 64 64 0 0)
   const int bits_per_block = 15;                                                // Total number of samples in each block = 2 ^ bits_per_block
-  const int blocks_per_file = 2;                                               // Total number of blocks per file
+  const int blocks_per_file = 32;                                               // Total number of blocks per file
   
   PIDX_variable *variable;                                       // variable descriptor
   int *values_per_sample;                                                       // values per variable (example, scalar=1, vector=3)
