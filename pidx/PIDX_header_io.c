@@ -171,7 +171,7 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
     fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx_ptr->bitSequence);
     fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx_ptr->bits_per_block, header_io->idx_ptr->blocks_per_file);
     fprintf(idx_file_p, "(filename_template)\n./%s\n", header_io->filename_template);
-    fprintf(idx_file_p, "(time)\n0 %d time%%06d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx_ptr->current_time_step); //fix #1: need to add * notation to idx reader (because we can't write the .idx every time)
+    fprintf(idx_file_p, "(time)\n1 %d time%%06d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx_ptr->current_time_step);
     fclose(idx_file_p);
   }
   

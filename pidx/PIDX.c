@@ -1326,7 +1326,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
       local_do_rst = 1;  
     
     MPI_Allreduce(&local_do_rst, &global_do_rst, 1, MPI_INT, MPI_LOR, file->comm);
-    global_do_rst = 0; //<ctc> make double sure this is always 0 since we don't yet support rst
+    global_do_rst = 0;
     if(global_do_rst == 1)
       file->rst_id = PIDX_rst_init(file->comm, file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     rst_init_end[vp] = PIDX_get_time();

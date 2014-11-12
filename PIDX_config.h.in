@@ -16,5 +16,8 @@
 #cmakedefine01 PIDX_OPTION_PNETCDF
 #cmakedefine01 PIDX_OPTION_HDF5
 
+//#NOTE: disable for shaheen (how should we control machine-specific settings like this?)
+#define PIDX_ACTIVE_TARGET ACTIVE_TARGET
+//#undef PIDX_ACTIVE_TARGET 
 
 #endif //_PIDX_CONFIG_H_
