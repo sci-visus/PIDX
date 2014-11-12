@@ -32,8 +32,8 @@ struct PIDX_Ndim_buffer_group_struct
   int type;
   int count;
   Ndim_buffer *block;
-  long power_two_offset[PIDX_MAX_DIMENSIONS];
-  long power_two_count[PIDX_MAX_DIMENSIONS];
+  long long power_two_offset[PIDX_MAX_DIMENSIONS];
+  long long power_two_count[PIDX_MAX_DIMENSIONS];
 };
 typedef struct PIDX_Ndim_buffer_group_struct* Ndim_buffer_group; 
 
