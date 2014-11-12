@@ -203,7 +203,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   ret = MPI_Comm_size(rst_id->comm, &nprocs);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("nprocs ", __FILE__, __LINE__);
 
-  //creating rank_r_count and rank_r_offset to hold the offset and count of every process
+  /// creating rank_r_count and rank_r_offset to hold the offset and count of every process
   rst_id->owned_regular_box_count = 0;
 
   rank_r_offset = malloc(sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS);
@@ -230,7 +230,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   //if (rank == 0)
     //printf("[%d] Imposed Box Dimension : %lld %lld %lld %lld %lld\n", rank, rst_id->regular_box_dim[0], rst_id->regular_box_dim[1], rst_id->regular_box_dim[2], rst_id->regular_box_dim[3], rst_id->regular_box_dim[4]);
   
-  //extents for the local process(rank)
+  /// extents for the local process(rank)
   NDim_chunk local_proc_bound = malloc(sizeof (*local_proc_bound));
   if (!local_proc_bound) 
   {

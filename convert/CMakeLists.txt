@@ -22,7 +22,8 @@ IF (PIDX_BUILD_CONVERT)
   # sources
   # ////////////////////////////////////////
 
-  
+
+  SET(PNETCDF_TO_IDX_SOURCES pnetcdf_to_idx.c)  
   SET(HDF_TO_IDX_SOURCES hdf_to_idx.c)
   SET(HDF_TO_IDX_FABRIZIO_SOURCES hdf_to_idx_fabrizio.c)
 
@@ -41,8 +42,7 @@ IF (PIDX_BUILD_CONVERT)
   # executables
   # ////////////////////////////////////////
 
-  
-  
+
     PIDX_ADD_EXECUTABLE(hdf_to_idx_fabrizio "${HDF_TO_IDX_FABRIZIO_SOURCES}")
     ADD_DEPENDENCIES(hdf_to_idx_fabrizio pidx)
     TARGET_LINK_LIBRARIES(hdf_to_idx_fabrizio pidx)
@@ -61,7 +61,23 @@ IF (PIDX_BUILD_CONVERT)
     
     ADD_DEPENDENCIES(hdf_to_idx_fabrizio ${HDF5_LIBRARIES})
     TARGET_LINK_LIBRARIES(hdf_to_idx_fabrizio ${HDF5_LIBRARIES})
+
   ENDIF()
+
+  if (PIDX_OPTION_PNETCDF)
+    INCLUDE_DIRECTORIES(${PNETCDF_INCLUDE_DIRS})
+
+    PIDX_ADD_EXECUTABLE(pnetcdf_to_idx "${PNETCDF_TO_IDX_SOURCES}")
+    ADD_DEPENDENCIES(pnetcdf_to_idx pidx)
+    TARGET_LINK_LIBRARIES(pnetcdf_to_idx pidx)  
+
+    IF (MPI_C_FOUND)
+      TARGET_LINK_LIBRARIES(pnetcdf_to_idx ${MPI_C_LIBRARIES})
+    ENDIF()
+
+    ADD_DEPENDENCIES(pnetcdf_to_idx ${PNETCDF_LIBRARIES})
+    TARGET_LINK_LIBRARIES(pnetcdf_to_idx ${PNETCDF_LIBRARIES})
+  ENDIF()  
 
 ENDIF()
 
