@@ -206,7 +206,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 {
   long long z_order = 0, hz_order = 0, index = 0;
   long long l_x, l_y, l_z, l_u, l_v;
-  int b = 0, level = 0, u = 0, v = 0, cnt = 0, c = 0, s = 0, y = 0, number_levels = 0, var = 0;
+  int b = 0, level = 0, cnt = 0, c = 0, s = 0, y = 0, number_levels = 0, var = 0;
   long long i = 0, j = 0, k = 0, u = 0, v = 0;
   int index_count = 0;
   int bytes_for_datatype;
