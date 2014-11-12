@@ -316,10 +316,9 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   int send_index = 0;
   long long index = 0, count = 0, hz_index = 0;
   
-  int nprocs = 1, rank = 0;
+  int rank = 0;
   
 #if PIDX_HAVE_MPI
-  MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
 #endif
 
@@ -358,8 +357,8 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
             {
               for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
               {
-                if (rank == 0)
-                  ;//printf("[A] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
+                //if (rank == 0)
+                //  printf("[A] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
                 aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
               }
             }
@@ -373,8 +372,8 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
               {
                 for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
                 {
-                  if (rank == 0)
-                    ;//printf("[B] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
+                  //if (rank == 0)
+                  //  printf("[B] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
                   aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
                 }
               }
@@ -383,8 +382,8 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
             {
               for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
               {
-                if (rank == 0)
-                  ;//printf("[C] Size %lld Offset %lld\n", count, index);
+                //if (rank == 0)
+                //  printf("[C] Size %lld Offset %lld\n", count, index);
                 aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
               }
 	      
@@ -392,8 +391,8 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
               {
                 for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
                 {
-                  if (rank == 0)
-                    ;//printf("[D] Size %lld Offset %lld\n", count, index);
+                  //if (rank == 0)
+                  //  printf("[D] Size %lld Offset %lld\n", count, index);
                   aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index], 1, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], e1, MODE);
                 }
               }

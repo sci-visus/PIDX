@@ -16,8 +16,10 @@
 #cmakedefine01 PIDX_OPTION_PNETCDF
 #cmakedefine01 PIDX_OPTION_HDF5
 
-//#NOTE: disable for shaheen (how should we control machine-specific settings like this?)
+//ACTIVE_TARGET is defined by MPI, but we may want to override it for specific configs
+//NOTE: disable for shaheen (how should we control machine-specific settings like this?)
+//NOTE: we want locks, not fences (ACTIVE_TARGET = 0) on ash (CHPC).
 #define PIDX_ACTIVE_TARGET ACTIVE_TARGET
-//#undef PIDX_ACTIVE_TARGET 
+#undef PIDX_ACTIVE_TARGET
 
 #endif //_PIDX_CONFIG_H_
