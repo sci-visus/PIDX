@@ -35,7 +35,7 @@ struct PIDX_variable_struct
   PIDX_data_layout data_layout;
 
   int patch_count;
-  Ndim_buffer patch[1024];
+  Ndim_box patch[1024];
   HZ_buffer HZ_patch[1024];
   
   int patch_group_count;

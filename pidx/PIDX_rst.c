@@ -44,7 +44,7 @@ struct Ndim_power_two_buffer_struct
 {
   int type;
   int count;
-  Ndim_buffer block[512];
+  Ndim_box block[512];
   int rank[512];
   int recieve[512];
   int max_rank;
@@ -203,7 +203,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   ret = MPI_Comm_size(rst_id->comm, &nprocs);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("nprocs ", __FILE__, __LINE__);
 
-  //creating rank_r_count and rank_r_offset to hold the offset and count of every process
+  /// creating rank_r_count and rank_r_offset to hold the offset and count of every process
   rst_id->owned_regular_box_count = 0;
 
   rank_r_offset = malloc(sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS);
@@ -215,10 +215,10 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   memset(rank_r_count, 0, (sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
   /// STEP 1 : Doing an all to all Communication to get extents of all processes.
-  ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rst_id->comm);
+  ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rst_id->comm);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Allgather : rank_r_offset", __FILE__, __LINE__);
 
-  ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rst_id->comm);
+  ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rst_id->comm);
   if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Allgather : rank_r_count", __FILE__, __LINE__);
 
   /// STEP 2 : Compute the dimension of the regular BOX
@@ -230,7 +230,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   //if (rank == 0)
     //printf("[%d] Imposed Box Dimension : %lld %lld %lld %lld %lld\n", rank, rst_id->regular_box_dim[0], rst_id->regular_box_dim[1], rst_id->regular_box_dim[2], rst_id->regular_box_dim[3], rst_id->regular_box_dim[4]);
   
-  //extents for the local process(rank)
+  /// extents for the local process(rank)
   NDim_chunk local_proc_bound = malloc(sizeof (*local_proc_bound));
   if (!local_proc_bound) 
   {
@@ -378,23 +378,23 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
 		    //STEP 5 : offset and count of intersecting chunk of process with rank r and regular box
 		    if (rank_r_bound->lower_bound[d] <= regular_box_bound->lower_bound[d] && rank_r_bound->upper_bound[d] <= regular_box_bound->upper_bound[d]) 
 		    {
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->offset[d] = regular_box_bound->lower_bound[d];
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->count[d] = rank_r_bound->upper_bound[d] - regular_box_bound->lower_bound[d] + 1;    
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_offset[d] = regular_box_bound->lower_bound[d];
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_size[d] = rank_r_bound->upper_bound[d] - regular_box_bound->lower_bound[d] + 1;    
 		    } 
 		    else if (regular_box_bound->lower_bound[d] <= rank_r_bound->lower_bound[d] && rank_r_bound->upper_bound[d] >= regular_box_bound->upper_bound[d]) 
 		    {
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->offset[d] = rank_r_bound->lower_bound[d];
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->count[d] = regular_box_bound->upper_bound[d] - rank_r_bound->lower_bound[d] + 1;
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_offset[d] = rank_r_bound->lower_bound[d];
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_size[d] = regular_box_bound->upper_bound[d] - rank_r_bound->lower_bound[d] + 1;
 		    } 
 		    else if (regular_box_bound->upper_bound[d] <= rank_r_bound->upper_bound[d] && regular_box_bound->lower_bound[d] >= rank_r_bound->lower_bound[d]) 
 		    {
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->offset[d] = regular_box_bound->lower_bound[d];
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->count[d] = regular_box_bound->upper_bound[d] - regular_box_bound->lower_bound[d] + 1;
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_offset[d] = regular_box_bound->lower_bound[d];
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_size[d] = regular_box_bound->upper_bound[d] - regular_box_bound->lower_bound[d] + 1;
 		    } 
 		    else if (rank_r_bound->upper_bound[d] <= regular_box_bound->upper_bound[d] && rank_r_bound->lower_bound[d] >= regular_box_bound->lower_bound[d]) 
 		    {
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->offset[d] = rank_r_bound->lower_bound[d];
-		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->count[d] = rank_r_bound->upper_bound[d] - rank_r_bound->lower_bound[d] + 1;
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_offset[d] = rank_r_bound->lower_bound[d];
+		      rst_id->regular_box_buffer[regular_box_count]->block[rst_id->regular_box_buffer[regular_box_count]->count]->Ndim_box_size[d] = rank_r_bound->upper_bound[d] - rank_r_bound->lower_bound[d] + 1;
 		    }
 		    //offset and count of intersecting regular box
 		    
@@ -411,13 +411,13 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
 	      max_rank = rst_id->regular_box_buffer[regular_box_count]->rank[0];
 	      max_vol = 1;
 	      for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-		max_vol = max_vol * rst_id->regular_box_buffer[regular_box_count]->block[0]->count[d];
+		max_vol = max_vol * rst_id->regular_box_buffer[regular_box_count]->block[0]->Ndim_box_size[d];
 	      long long c_vol = 1;
 	      for(c = 1; c < rst_id->regular_box_buffer[regular_box_count]->count ; c++)
 	      {
 		c_vol = 1;
 		for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-		  c_vol = c_vol * rst_id->regular_box_buffer[regular_box_count]->block[c]->count[d];
+		  c_vol = c_vol * rst_id->regular_box_buffer[regular_box_count]->block[c]->Ndim_box_size[d];
 		if(c_vol > max_vol)
 		{
 		  max_vol = c_vol;
@@ -479,15 +479,15 @@ int PIDX_rst_restructure(PIDX_rst_id rst_id, PIDX_variable* variable)
 	  variable[var]->patch_group_ptr[cnt]->block[j] = malloc(sizeof(*(variable[var]->patch_group_ptr[cnt]->block[j])));
 	  
 	  //printf("i = %d j = %d cnt = %d\n", i, j, cnt);
-	  //printf("O: %d %d %d %d %d\n", rst_id->regular_box_buffer[i]->block[j]->offset[0], rst_id->regular_box_buffer[i]->block[j]->offset[1], rst_id->regular_box_buffer[i]->block[j]->offset[2], rst_id->regular_box_buffer[i]->block[j]->offset[3], rst_id->regular_box_buffer[i]->block[j]->offset[4]);
+	  //printf("O: %d %d %d %d %d\n", rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[0], rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[1], rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[2], rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[3], rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[4]);
 	  //printf("C: %d %d %d %d %d\n", rst_id->regular_box_buffer[i]->block[j]->count[0], rst_id->regular_box_buffer[i]->block[j]->count[1], rst_id->regular_box_buffer[i]->block[j]->count[2], rst_id->regular_box_buffer[i]->block[j]->count[3], rst_id->regular_box_buffer[i]->block[j]->count[4]);
 	  
-	  memcpy(variable[var]->patch_group_ptr[cnt]->block[j]->offset, rst_id->regular_box_buffer[i]->block[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-	  memcpy(variable[var]->patch_group_ptr[cnt]->block[j]->count, rst_id->regular_box_buffer[i]->block[j]->count, PIDX_MAX_DIMENSIONS * sizeof(long long));
+	  memcpy(variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_offset, rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
+	  memcpy(variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size, rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(long long));
 	  
-	  //printf("TEST = %d %d %d %d %d\n", variable[var]->patch_group_ptr[cnt]->block[j]->count[0], variable[var]->patch_group_ptr[cnt]->block[j]->count[1], variable[var]->patch_group_ptr[cnt]->block[j]->count[2], variable[var]->patch_group_ptr[cnt]->block[j]->count[3], variable[var]->patch_group_ptr[cnt]->block[j]->count[4]);
+	  //printf("TEST = %d %d %d %d %d\n", variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[0], variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[1], variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[2], variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[3], variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[4]);
 	  
-	  variable[var]->patch_group_ptr[cnt]->block[j]->buffer = malloc(variable[var]->patch_group_ptr[cnt]->block[j]->count[0] * variable[var]->patch_group_ptr[cnt]->block[j]->count[1] * variable[var]->patch_group_ptr[cnt]->block[j]->count[2] * variable[var]->patch_group_ptr[cnt]->block[j]->count[3] * variable[var]->patch_group_ptr[cnt]->block[j]->count[4] * variable[var]->values_per_sample * variable[var]->bits_per_value/8);
+	  variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_buffer = malloc(variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[0] * variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[1] * variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[2] * variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[3] * variable[var]->patch_group_ptr[cnt]->block[j]->Ndim_box_size[4] * variable[var]->values_per_sample * variable[var]->bits_per_value/8);
 	}
 	memcpy(variable[var]->patch_group_ptr[cnt]->power_two_offset, rst_id->regular_box_buffer[i]->power_two_offset, sizeof(long long) * PIDX_MAX_DIMENSIONS);
 	memcpy(variable[var]->patch_group_ptr[cnt]->power_two_count, rst_id->regular_box_buffer[i]->power_two_count, sizeof(long long) * PIDX_MAX_DIMENSIONS);
@@ -536,14 +536,14 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
 	if(rank == rst_id->regular_box_buffer[i]->rank[j])
 	{ 
 	  count1 = 0;
-	  for (a1 = rst_id->regular_box_buffer[i]->block[j]->offset[4]; a1 < rst_id->regular_box_buffer[i]->block[j]->offset[4] + rst_id->regular_box_buffer[i]->block[j]->count[4]; a1++)
-	    for (b1 = rst_id->regular_box_buffer[i]->block[j]->offset[3]; b1 < rst_id->regular_box_buffer[i]->block[j]->offset[3] + rst_id->regular_box_buffer[i]->block[j]->count[3]; b1++)
-	      for (k1 = rst_id->regular_box_buffer[i]->block[j]->offset[2]; k1 < rst_id->regular_box_buffer[i]->block[j]->offset[2] + rst_id->regular_box_buffer[i]->block[j]->count[2]; k1++)
-		for (j1 = rst_id->regular_box_buffer[i]->block[j]->offset[1]; j1 < rst_id->regular_box_buffer[i]->block[j]->offset[1] + rst_id->regular_box_buffer[i]->block[j]->count[1]; j1++)
-		  for (i1 = rst_id->regular_box_buffer[i]->block[j]->offset[0]; i1 < rst_id->regular_box_buffer[i]->block[j]->offset[0] + rst_id->regular_box_buffer[i]->block[j]->count[0]; i1 = i1 + rst_id->regular_box_buffer[i]->block[j]->count[0]) 
+	  for (a1 = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[4]; a1 < rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[4] + rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[4]; a1++)
+	    for (b1 = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[3]; b1 < rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[3] + rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[3]; b1++)
+	      for (k1 = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[2]; k1 < rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[2] + rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[2]; k1++)
+		for (j1 = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[1]; j1 < rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[1] + rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[1]; j1++)
+		  for (i1 = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[0]; i1 < rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset[0] + rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[0]; i1 = i1 + rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[0]) 
 		  {
-		    long long *variable_patch_offset = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->offset;
-		    long long *variable_patch_count = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->count;
+		    long long *variable_patch_offset = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_offset;
+		    long long *variable_patch_count = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_size;
 		    
 		    index = (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * variable_patch_count[3] * (a1 - variable_patch_offset[4])) +
 			    (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * (b1 - variable_patch_offset[3])) +
@@ -554,14 +554,14 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
 		    for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
 		    {
 		      send_o = index * variable[var]->values_per_sample;
-		      send_c = rst_id->regular_box_buffer[i]->block[j]->count[0] * variable[var]->values_per_sample;
+		      send_c = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[0] * variable[var]->values_per_sample;
 		      
 		      if (MODE == PIDX_WRITE)
 		      {
-			memcpy(variable[var]->patch_group_ptr[counter]->block[j]->buffer + (count1 * send_c * variable[var]->bits_per_value/8), rst_id->idx_ptr->variable[var]->patch[0]->buffer + send_o * variable[var]->bits_per_value/8, send_c * variable[var]->bits_per_value/8);
+			memcpy(variable[var]->patch_group_ptr[counter]->block[j]->Ndim_box_buffer + (count1 * send_c * variable[var]->bits_per_value/8), rst_id->idx_ptr->variable[var]->patch[0]->Ndim_box_buffer + send_o * variable[var]->bits_per_value/8, send_c * variable[var]->bits_per_value/8);
 		      }
 		      else
-			memcpy(rst_id->idx_ptr->variable[var]->patch[0]->buffer + send_o * variable[var]->bits_per_value/8, variable[var]->patch_group_ptr[counter]->block[j]->buffer + (count1 * send_c * variable[var]->bits_per_value/8), send_c * variable[var]->bits_per_value/8);
+			memcpy(rst_id->idx_ptr->variable[var]->patch[0]->Ndim_box_buffer + send_o * variable[var]->bits_per_value/8, variable[var]->patch_group_ptr[counter]->block[j]->Ndim_box_buffer + (count1 * send_c * variable[var]->bits_per_value/8), send_c * variable[var]->bits_per_value/8);
 		    }
 		    count1++;
 		  }
@@ -572,13 +572,13 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
 	  {
 	    if (MODE == PIDX_WRITE)
 	    {
-	      ret = MPI_Irecv(variable[var]->patch_group_ptr[counter]->block[j]->buffer, (rst_id->regular_box_buffer[i]->block[j]->count[0] * rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->regular_box_buffer[i]->rank[j], 123, rst_id->comm, &req[req_counter]);
+	      ret = MPI_Irecv(variable[var]->patch_group_ptr[counter]->block[j]->Ndim_box_buffer, (rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[0] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[1] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[2] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[3] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->regular_box_buffer[i]->rank[j], 123, rst_id->comm, &req[req_counter]);
 	      if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Irecv", __FILE__, __LINE__);
 	      req_counter++;
 	    }
 	    else
 	    {
-	      ret = MPI_Isend(variable[var]->patch_group_ptr[counter]->block[j]->buffer, (rst_id->regular_box_buffer[i]->block[j]->count[0] * rst_id->regular_box_buffer[i]->block[j]->count[1] * rst_id->regular_box_buffer[i]->block[j]->count[2] * rst_id->regular_box_buffer[i]->block[j]->count[3] * rst_id->regular_box_buffer[i]->block[j]->count[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->regular_box_buffer[i]->rank[j], 123, rst_id->comm, &req[req_counter]);
+	      ret = MPI_Isend(variable[var]->patch_group_ptr[counter]->block[j]->Ndim_box_buffer, (rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[0] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[1] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[2] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[3] * rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->regular_box_buffer[i]->rank[j], 123, rst_id->comm, &req[req_counter]);
 	      if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Irecv", __FILE__, __LINE__);
 	      req_counter++;
 	    }
@@ -595,8 +595,8 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
 	{
 	  for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
 	  {
-	    long long *count_ptr = rst_id->regular_box_buffer[i]->block[j]->count;
-	    long long *offset_ptr = rst_id->regular_box_buffer[i]->block[j]->offset;
+	    long long *count_ptr = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_size;
+	    long long *offset_ptr = rst_id->regular_box_buffer[i]->block[j]->Ndim_box_offset;
 	    
 	    send_offset = (int*) malloc(sizeof (int) * (count_ptr[1] * count_ptr[2] * count_ptr[3] * count_ptr[4]));
 	    if (!send_offset) PIDX_rst_print_error("Memory Error : send_offset", __FILE__, __LINE__);
@@ -613,8 +613,8 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
 		  for (j1 = offset_ptr[1]; j1 < offset_ptr[1] + count_ptr[1]; j1++)
 		    for (i1 = offset_ptr[0]; i1 < offset_ptr[0] + count_ptr[0]; i1 = i1 + count_ptr[0]) 
 		    {
-		      long long *variable_patch_count  = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->count;
-		      long long *variable_patch_offset = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->offset;
+		      long long *variable_patch_count  = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_size;
+		      long long *variable_patch_offset = rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_offset;
 		      
 		      index = (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * variable_patch_count[3] * (a1 - variable_patch_offset[4])) +
 			      (variable_patch_count[0] * variable_patch_count[1] * variable_patch_count[2] * (b1 - variable_patch_offset[3])) +
@@ -632,13 +632,13 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
 
 	    if(MODE == PIDX_WRITE)
 	    {
-	      ret = MPI_Isend(rst_id->idx_ptr->variable[var]->patch[0]->buffer, 1, chunk_data_type, rst_id->regular_box_buffer[i]->max_rank, 123, rst_id->comm, &req[req_counter]);
+	      ret = MPI_Isend(rst_id->idx_ptr->variable[var]->patch[0]->Ndim_box_buffer, 1, chunk_data_type, rst_id->regular_box_buffer[i]->max_rank, 123, rst_id->comm, &req[req_counter]);
 	      if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Isend", __FILE__, __LINE__);
 	      req_counter++;
 	    }
 	    else
 	    {
-	      ret = MPI_Irecv(rst_id->idx_ptr->variable[var]->patch[0]->buffer, 1, chunk_data_type, rst_id->regular_box_buffer[i]->max_rank, 123, rst_id->comm, &req[req_counter]);
+	      ret = MPI_Irecv(rst_id->idx_ptr->variable[var]->patch[0]->Ndim_box_buffer, 1, chunk_data_type, rst_id->regular_box_buffer[i]->max_rank, 123, rst_id->comm, &req[req_counter]);
 	      if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Isend", __FILE__, __LINE__);
 	      req_counter++;
 	    }
@@ -674,8 +674,8 @@ int PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
     {
       for(j = 0; j < rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch_group_ptr[i]->count; j++)
       {
-	free(rst_id->idx_ptr->variable[var]->patch_group_ptr[i]->block[j]->buffer);
-	rst_id->idx_ptr->variable[var]->patch_group_ptr[i]->block[j]->buffer = 0;
+	free(rst_id->idx_ptr->variable[var]->patch_group_ptr[i]->block[j]->Ndim_box_buffer);
+	rst_id->idx_ptr->variable[var]->patch_group_ptr[i]->block[j]->Ndim_box_buffer = 0;
 	
 	free(rst_id->idx_ptr->variable[var]->patch_group_ptr[i]->block[j]);
 	rst_id->idx_ptr->variable[var]->patch_group_ptr[i]->block[j] = 0;
@@ -739,8 +739,8 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
     {
       for(n = 0; n < rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->count; n++)
       {
-	long long *count_ptr = rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->count;
-	long long *offset_ptr = rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->offset;
+	long long *count_ptr = rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->Ndim_box_size;
+	long long *offset_ptr = rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->Ndim_box_offset;
 	
 	for (v = 0; v < count_ptr[4]; v++) 
 	  for (u = 0; u < count_ptr[3]; u++)
@@ -755,7 +755,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
 		  {
 		    dvalue_1 = s + 100 + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * (offset_ptr[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * (offset_ptr[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (offset_ptr[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i;
 		    
-		    memcpy(&dvalue_2, rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+		    memcpy(&dvalue_2, rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->block[n]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
 		    
 		    check_bit = check_bit && (dvalue_1 == dvalue_2);
 		  }
