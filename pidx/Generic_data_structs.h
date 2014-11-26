@@ -15,28 +15,48 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
- 
+
 #ifndef __GENERIC_DATA_STRUCTS_H
 #define __GENERIC_DATA_STRUCTS_H
 
-struct PIDX_Ndim_buffer_struct
-{
-  long long offset[PIDX_MAX_DIMENSIONS];
-  long long count[PIDX_MAX_DIMENSIONS];
-  unsigned char* buffer;
-};
-typedef struct PIDX_Ndim_buffer_struct* Ndim_buffer;
 
+/// Struct to store the row/column major chunk of data given by application
+struct PIDX_Ndim_box_struct
+{
+  /// offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  long long Ndim_box_offset[PIDX_MAX_DIMENSIONS];
+  
+  /// size (extents) in each of the dimensions for the data chunk
+  long long Ndim_box_size[PIDX_MAX_DIMENSIONS];
+  
+  /// the data buffer
+  unsigned char* Ndim_box_buffer;
+};
+typedef struct PIDX_Ndim_box_struct* Ndim_box;
+
+
+/// Struct to store a group of Ndim_buffer
 struct PIDX_Ndim_buffer_group_struct
 {
+  /// decide the type of the group
   int type;
+  
+  /// how many Ndim_buffer are there in the group
   int count;
-  Ndim_buffer *block;
+  
+  /// Pointer to all the Ndim_buffer
+  Ndim_box *block;
+  
+  /// If restructuring used then this contains the offset of the power-two block
   long long power_two_offset[PIDX_MAX_DIMENSIONS];
+  
+  /// If restructuring used then this contains the extents of the power-two block
   long long power_two_count[PIDX_MAX_DIMENSIONS];
 };
 typedef struct PIDX_Ndim_buffer_group_struct* Ndim_buffer_group; 
 
+
+/// Struct to store the HZ encoded data and meta-data
 struct PIDX_HZ_buffer_struct
 {
   /// starting HZ level
@@ -57,19 +77,30 @@ struct PIDX_HZ_buffer_struct
   /// HZ indices of the data (used only when no restructuring phsae is used)
   long long *buffer_index;
   
-  // data buffer at all the HZ levels
+  /// data buffer at all the HZ levels
   unsigned char** buffer;
 };
 typedef struct PIDX_HZ_buffer_struct* HZ_buffer;
 
+
+/// Struct to store aggregated data and meta-data
 struct PIDX_HZ_Agg_buffer_struct
 {
+  /// Target file number for the aggregator
   int file_number;
+  
+  /// Target variable number for the aggregator
   int var_number;
+  
+  /// Target sample index for the aggregator
   int sample_number;
   
-  unsigned char* buffer;
+  /// Aggregator buffer size
   int buffer_size;
+  
+  /// The actual aggregator buffer
+  unsigned char* buffer;
+  
 };
 typedef struct PIDX_HZ_Agg_buffer_struct* Agg_buffer;
 

@@ -192,9 +192,9 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
     {
       if(variable[id->start_var_index]->patch_group_ptr[k]->type == 0)
       {
-	variable[i]->HZ_patch[k]->buffer_index = (long long*) malloc(((variable[i]->patch_group_ptr[k]->block[0]->count[0]) * (variable[i]->patch_group_ptr[k]->block[0]->count[1]) * (variable[i]->patch_group_ptr[k]->block[0]->count[2])) * sizeof (long long));
+	variable[i]->HZ_patch[k]->buffer_index = (long long*) malloc(((variable[i]->patch_group_ptr[k]->block[0]->Ndim_box_size[0]) * (variable[i]->patch_group_ptr[k]->block[0]->Ndim_box_size[1]) * (variable[i]->patch_group_ptr[k]->block[0]->Ndim_box_size[2])) * sizeof (long long));
 	
-	memset(variable[i]->HZ_patch[k]->buffer_index, 0, (variable[i]->patch_group_ptr[k]->block[0]->count[0]) * (variable[i]->patch_group_ptr[k]->block[0]->count[1]) * (variable[i]->patch_group_ptr[k]->block[0]->count[2]) * sizeof (long long));
+	memset(variable[i]->HZ_patch[k]->buffer_index, 0, (variable[i]->patch_group_ptr[k]->block[0]->Ndim_box_size[0]) * (variable[i]->patch_group_ptr[k]->block[0]->Ndim_box_size[1]) * (variable[i]->patch_group_ptr[k]->block[0]->Ndim_box_size[2]) * sizeof (long long));
       }
     }
   }
@@ -228,31 +228,31 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
   {
     if(variable[id->start_var_index]->patch_group_ptr[y]->type == 0)
     {
-      hz_tupple *tupple = malloc((variable[id->start_var_index]->patch[y]->count[0] * variable[id->start_var_index]->patch[y]->count[1] * variable[id->start_var_index]->patch[y]->count[2] * variable[id->start_var_index]->patch[y]->count[3] * variable[id->start_var_index]->patch[y]->count[4]) * sizeof (hz_tupple));
+      hz_tupple *tupple = malloc((variable[id->start_var_index]->patch[y]->Ndim_box_size[0] * variable[id->start_var_index]->patch[y]->Ndim_box_size[1] * variable[id->start_var_index]->patch[y]->Ndim_box_size[2] * variable[id->start_var_index]->patch[y]->Ndim_box_size[3] * variable[id->start_var_index]->patch[y]->Ndim_box_size[4]) * sizeof (hz_tupple));
       
       index_count = 0;
-      l_x = variable[id->start_var_index]->patch[y]->count[0];
-      l_y = variable[id->start_var_index]->patch[y]->count[1];
-      l_z = variable[id->start_var_index]->patch[y]->count[2];
-      l_u = variable[id->start_var_index]->patch[y]->count[3];
-      l_v = variable[id->start_var_index]->patch[y]->count[4];
+      l_x = variable[id->start_var_index]->patch[y]->Ndim_box_size[0];
+      l_y = variable[id->start_var_index]->patch[y]->Ndim_box_size[1];
+      l_z = variable[id->start_var_index]->patch[y]->Ndim_box_size[2];
+      l_u = variable[id->start_var_index]->patch[y]->Ndim_box_size[3];
+      l_v = variable[id->start_var_index]->patch[y]->Ndim_box_size[4];
       
-      //printf("Patch %d [%d]: %lld %lld %lld %lld %lld :: %d %d %d %d %d\n", y, id->idx_derived_ptr->patch_count, l_x, l_y, l_z, l_u, l_v, variable[id->start_var_index]->patch[y]->offset[0], variable[id->start_var_index]->patch[y]->offset[1], variable[id->start_var_index]->patch[y]->offset[2], variable[id->start_var_index]->patch[y]->offset[3], variable[id->start_var_index]->patch[y]->offset[4]);
+      //printf("Patch %d [%d]: %lld %lld %lld %lld %lld :: %d %d %d %d %d\n", y, id->idx_derived_ptr->patch_count, l_x, l_y, l_z, l_u, l_v, variable[id->start_var_index]->patch[y]->Ndim_box_offset[0], variable[id->start_var_index]->patch[y]->Ndim_box_offset[1], variable[id->start_var_index]->patch[y]->Ndim_box_offset[2], variable[id->start_var_index]->patch[y]->Ndim_box_offset[3], variable[id->start_var_index]->patch[y]->Ndim_box_offset[4]);
       
       number_levels = id->idx_derived_ptr->maxh - 1;
       PointND xyzuv_Index;
       
       if(variable[id->start_var_index]->data_layout == PIDX_row_major)
       {
-	for (v = variable[id->start_var_index]->patch[y]->offset[4]; v < variable[id->start_var_index]->patch[y]->offset[4] + variable[id->start_var_index]->patch[y]->count[4]; v++)
+	for (v = variable[id->start_var_index]->patch[y]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch[y]->Ndim_box_offset[4] + variable[id->start_var_index]->patch[y]->Ndim_box_size[4]; v++)
 	{
-	  for (u = variable[id->start_var_index]->patch[y]->offset[3]; u < variable[id->start_var_index]->patch[y]->offset[3] + variable[id->start_var_index]->patch[y]->count[3]; u++)
+	  for (u = variable[id->start_var_index]->patch[y]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch[y]->Ndim_box_offset[3] + variable[id->start_var_index]->patch[y]->Ndim_box_size[3]; u++)
 	  {
-	    for (k = variable[id->start_var_index]->patch[y]->offset[2]; k < variable[id->start_var_index]->patch[y]->offset[2] + variable[id->start_var_index]->patch[y]->count[2]; k++)
+	    for (k = variable[id->start_var_index]->patch[y]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch[y]->Ndim_box_offset[2] + variable[id->start_var_index]->patch[y]->Ndim_box_size[2]; k++)
 	    {
-	      for (j = variable[id->start_var_index]->patch[y]->offset[1]; j < variable[id->start_var_index]->patch[y]->offset[1] + variable[id->start_var_index]->patch[y]->count[1]; j++)
+	      for (j = variable[id->start_var_index]->patch[y]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch[y]->Ndim_box_offset[1] + variable[id->start_var_index]->patch[y]->Ndim_box_size[1]; j++)
 	      {
-		for (i = variable[id->start_var_index]->patch[y]->offset[0]; i < variable[id->start_var_index]->patch[y]->offset[0] + variable[id->start_var_index]->patch[y]->count[0]; i++) 
+		for (i = variable[id->start_var_index]->patch[y]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch[y]->Ndim_box_offset[0] + variable[id->start_var_index]->patch[y]->Ndim_box_size[0]; i++) 
 		{   
 		  xyzuv_Index.x = i;
 		  xyzuv_Index.y = j;
@@ -285,7 +285,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		  hz_order = z_order;
 		  level = getLeveL(hz_order);
 		  
-		  index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch[y]->offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch[y]->offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch[y]->offset[2])) + (l_x * (j - variable[id->start_var_index]->patch[y]->offset[1])) + (i - variable[id->start_var_index]->patch[y]->offset[0]);
+		  index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch[y]->Ndim_box_offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch[y]->Ndim_box_offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch[y]->Ndim_box_offset[2])) + (l_x * (j - variable[id->start_var_index]->patch[y]->Ndim_box_offset[1])) + (i - variable[id->start_var_index]->patch[y]->Ndim_box_offset[0]);
 		  
 		  tupple[index_count].value = malloc((id->end_var_index - id->start_var_index + 1)* sizeof(unsigned char**));
 		  variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
@@ -298,7 +298,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		    for (s = 0; s < variable[var]->values_per_sample; s++) 
 		    {
 		      tupple[index_count].value[var - id->start_var_index][s] = malloc(bytes_for_datatype);
-		      memcpy(tupple[index_count].value[var - id->start_var_index][s], variable[var]->patch[y]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+		      memcpy(tupple[index_count].value[var - id->start_var_index][s], variable[var]->patch[y]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
 		      
 		      //if(bytes_for_datatype == sizeof(double))
 		      //{
@@ -327,15 +327,15 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
       }
       else
       {
-	for (v = variable[id->start_var_index]->patch[y]->offset[4]; v < variable[id->start_var_index]->patch[y]->offset[4] + variable[id->start_var_index]->patch[y]->count[4]; v++)
+	for (v = variable[id->start_var_index]->patch[y]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch[y]->Ndim_box_offset[4] + variable[id->start_var_index]->patch[y]->Ndim_box_size[4]; v++)
 	{
-	  for (u = variable[id->start_var_index]->patch[y]->offset[3]; u < variable[id->start_var_index]->patch[y]->offset[3] + variable[id->start_var_index]->patch[y]->count[3]; u++)
+	  for (u = variable[id->start_var_index]->patch[y]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch[y]->Ndim_box_offset[3] + variable[id->start_var_index]->patch[y]->Ndim_box_size[3]; u++)
 	  {
-	    for (k = variable[id->start_var_index]->patch[y]->offset[2]; k < variable[id->start_var_index]->patch[y]->offset[2] + variable[id->start_var_index]->patch[y]->count[2]; k++)
+	    for (k = variable[id->start_var_index]->patch[y]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch[y]->Ndim_box_offset[2] + variable[id->start_var_index]->patch[y]->Ndim_box_size[2]; k++)
 	    {
-	      for (j = variable[id->start_var_index]->patch[y]->offset[1]; j < variable[id->start_var_index]->patch[y]->offset[1] + variable[id->start_var_index]->patch[y]->count[1]; j++)
+	      for (j = variable[id->start_var_index]->patch[y]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch[y]->Ndim_box_offset[1] + variable[id->start_var_index]->patch[y]->Ndim_box_size[1]; j++)
 	      {
-		for (i = variable[id->start_var_index]->patch[y]->offset[0]; i < variable[id->start_var_index]->patch[y]->offset[0] + variable[id->start_var_index]->patch[y]->count[0]; i++) 
+		for (i = variable[id->start_var_index]->patch[y]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch[y]->Ndim_box_offset[0] + variable[id->start_var_index]->patch[y]->Ndim_box_size[0]; i++) 
 		{   
 		  xyzuv_Index.x = i;
 		  xyzuv_Index.y = j;
@@ -368,7 +368,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		  hz_order = z_order;
 		  level = getLeveL(hz_order);
 				  
-		  index = (l_z * l_y * (i - variable[id->start_var_index]->patch[y]->offset[0])) + (l_z * (j - variable[id->start_var_index]->patch[y]->offset[1])) + (k - variable[id->start_var_index]->patch[y]->offset[2]);
+		  index = (l_z * l_y * (i - variable[id->start_var_index]->patch[y]->Ndim_box_offset[0])) + (l_z * (j - variable[id->start_var_index]->patch[y]->Ndim_box_offset[1])) + (k - variable[id->start_var_index]->patch[y]->Ndim_box_offset[2]);
 		  
 		  tupple[index_count].value = malloc((id->end_var_index - id->start_var_index + 1)* sizeof(unsigned char**));
 		  variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
@@ -381,7 +381,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		    for (s = 0; s < variable[var]->values_per_sample; s++) 
 		    {
 		      tupple[index_count].value[var - id->start_var_index][s] = malloc(bytes_for_datatype);
-		      memcpy(tupple[index_count].value[var - id->start_var_index][s], variable[var]->patch[y]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+		      memcpy(tupple[index_count].value[var - id->start_var_index][s], variable[var]->patch[y]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
 		      
 		      //if(bytes_for_datatype == sizeof(double))
 		      //{
@@ -464,22 +464,22 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
       for (b = 0; b < variable[id->start_var_index]->patch_group_ptr[y]->count; b++) 
       {
         index_count = 0;
-        l_x = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[0];
-        l_y = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[1];
-	l_z = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[2];
-	l_u = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[3];
-	l_v = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[4];
+        l_x = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[0];
+        l_y = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[1];
+	l_z = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[2];
+	l_u = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[3];
+	l_v = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[4];
       
 	number_levels = id->idx_derived_ptr->maxh - 1;
 	PointND xyzuv_Index;
 	
 	if(variable[id->start_var_index]->data_layout == PIDX_row_major)
 	{
-	  for (v = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[4] + l_v; v++)
-	    for (u = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[3] + l_u; u++)
-	      for (k = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[2] + l_z; k++)
-		for (j = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[1] + l_y; j++)
-		  for (i = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[0] + l_x; i++) 
+	  for (v = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4] + l_v; v++)
+	    for (u = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3] + l_u; u++)
+	      for (k = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2] + l_z; k++)
+		for (j = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1] + l_y; j++)
+		  for (i = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0] + l_x; i++) 
 		  {
 		    xyzuv_Index.x = i;
 		    xyzuv_Index.y = j;
@@ -512,7 +512,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		    hz_order = z_order;
 		    level = getLeveL(hz_order);
 		    
-		    index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[2])) + (l_x * (j - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[1])) + (i - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[0]);
+		    index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2])) + (l_x * (j - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1])) + (i - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0]);
 		    
 		    for(var = id->start_var_index; var <= id->end_var_index; var++)
 		    {
@@ -523,7 +523,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 			bytes_for_datatype = variable[var]->bits_per_value / 8;
 			
 			memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), 
-			       variable[var]->patch_group_ptr[y]->block[b]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype,
+			       variable[var]->patch_group_ptr[y]->block[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype,
 			       bytes_for_datatype);
 			
 #if 0
@@ -543,11 +543,11 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 	}
 	else
 	{
-	  for (v = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[4] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[4]; v++)
-	    for (u = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[3] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[3]; u++)
-	      for (k = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[2] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[2]; k++)
-		for (j = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[1] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[1]; j++)
-		  for (i = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[0] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[0]; i++)
+	  for (v = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[4]; v++)
+	    for (u = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[3]; u++)
+	      for (k = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[2]; k++)
+		for (j = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[1]; j++)
+		  for (i = variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_size[0]; i++)
 		  {
 		    xyzuv_Index.x = i;
 		    xyzuv_Index.y = j;
@@ -580,7 +580,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		    hz_order = z_order;
 		    level = getLeveL(hz_order);
 		    
-		    index = (l_z * l_y * (i - variable[id->start_var_index]->patch[y]->offset[0])) + (l_z * (j - variable[id->start_var_index]->patch[y]->offset[1])) + (k - variable[id->start_var_index]->patch[y]->offset[2]);
+		    index = (l_z * l_y * (i - variable[id->start_var_index]->patch[y]->Ndim_box_offset[0])) + (l_z * (j - variable[id->start_var_index]->patch[y]->Ndim_box_offset[1])) + (k - variable[id->start_var_index]->patch[y]->Ndim_box_offset[2]);
 			
 		    
 		    for(var = id->start_var_index; var <= id->end_var_index; var++)
@@ -591,9 +591,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		      {
 			bytes_for_datatype = variable[var]->bits_per_value / 8;
 			
-			memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), 
-			       variable[var]->patch_group_ptr[y]->block[b]->buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype,
-			       bytes_for_datatype);
+			memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), variable[var]->patch_group_ptr[y]->block[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
 			
 		      }
 		    }
@@ -716,10 +714,10 @@ int PIDX_hz_encode_read_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 	    if (p.x >= id->idx_ptr->global_bounds[0] || p.y >= id->idx_ptr->global_bounds[1] || p.z >= id->idx_ptr->global_bounds[2] || p.u >= id->idx_ptr->global_bounds[3] || p.v >= id->idx_ptr->global_bounds[4])
 	      continue;
 	    
-	    if (p.x < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[0] || p.y < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[1] || p.z < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[2] || p.u < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[3] || p.v < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[4]) 
+	    if (p.x < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0] || p.y < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1] || p.z < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2] || p.u < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3] || p.v < variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4]) 
 	      continue;
 	    
-	    if (p.x >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[0] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[0] || p.y >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[1] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[1] || p.z >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[2] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[2] || p.u >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[3] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[3] || p.v >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->offset[4] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[4]) 
+	    if (p.x >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[0] || p.y >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[1] || p.z >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[2] || p.u >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[3] || p.v >= variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4] + variable[id->start_var_index]->patch_group_ptr[y]->block[b]->count[4]) 
 	      continue;
 	    
 
