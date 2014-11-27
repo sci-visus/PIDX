@@ -1326,7 +1326,6 @@ PIDX_return_code PIDX_write(PIDX_file file)
       local_do_rst = 1;  
     
     MPI_Allreduce(&local_do_rst, &global_do_rst, 1, MPI_INT, MPI_LOR, file->comm);
-    
     if(global_do_rst == 1)
       file->rst_id = PIDX_rst_init(file->comm, file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     rst_init_end[vp] = PIDX_get_time();
@@ -1414,7 +1413,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     {
       PIDX_rst_restructure(file->rst_id, file->idx_ptr->variable);
       PIDX_rst_restructure_IO(file->rst_id, file->idx_ptr->variable, PIDX_WRITE);
-      if(global_do_rst == 1 && debug_rst == 1)
+      //if(global_do_rst == 1 && debug_rst == 1)
 	HELPER_rst(file->rst_id, file->idx_ptr->variable);
     }
     rst_end[vp] = PIDX_get_time();
@@ -1425,7 +1424,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
     PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
-    if(global_do_rst == 1 && debug_hz == 1)
+    //if(global_do_rst == 1 && debug_hz == 1)
       HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);

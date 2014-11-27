@@ -146,6 +146,15 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 	endXYZ.v = allign_count[j][4];
 	variable[i]->HZ_patch[k]->end_hz_index[j] = xyz_to_HZ(id->idx_ptr->bitPattern, id->idx_derived_ptr->maxh - 1, endXYZ); 
 	
+	int start_block_no, end_block_no, b;
+	start_block_no = variable[i]->HZ_patch[k]->start_hz_index[j] / id->idx_derived_ptr->samples_per_block;
+	end_block_no = variable[i]->HZ_patch[k]->end_hz_index[j] / id->idx_derived_ptr->samples_per_block;
+	for(b = start_block_no; b < end_block_no; b++)
+	{
+	  if (is_block_present(b, id->idx_ptr->variable[0]->global_block_layout) == 0)
+	    printf("%d ABSENT!!!!!!!!\n", b);
+	}
+	
 	free(allign_offset[j]);
 	free(allign_count[j]);
       }
@@ -162,11 +171,8 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
   
   for (k = 0; k < variable[id->start_var_index]->patch_group_count; k++) 
   {
-    if(variable[id->start_var_index]->patch_group_ptr[k]->type == 0)
-    {
-      variable[id->start_var_index]->HZ_patch[k]->samples_per_level = malloc( id->idx_derived_ptr->maxh * sizeof (long long));
-      memset(variable[id->start_var_index]->HZ_patch[k]->samples_per_level, 0, id->idx_derived_ptr->maxh * sizeof (long long));
-    }
+    variable[id->start_var_index]->HZ_patch[k]->samples_per_level = malloc( id->idx_derived_ptr->maxh * sizeof (long long));
+    memset(variable[id->start_var_index]->HZ_patch[k]->samples_per_level, 0, id->idx_derived_ptr->maxh * sizeof (long long)); 
   }
   
   for(i = id->start_var_index; i <= id->end_var_index; i++)
@@ -514,6 +520,8 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		    
 		    index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[2])) + (l_x * (j - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[1])) + (i - variable[id->start_var_index]->patch_group_ptr[y]->block[b]->Ndim_box_offset[0]);
 		    
+		    variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
+		    
 		    for(var = id->start_var_index; var <= id->end_var_index; var++)
 		    {
 		      hz_index = hz_order - variable[var]->HZ_patch[y]->start_hz_index[level];
@@ -582,7 +590,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
 		    
 		    index = (l_z * l_y * (i - variable[id->start_var_index]->patch[y]->Ndim_box_offset[0])) + (l_z * (j - variable[id->start_var_index]->patch[y]->Ndim_box_offset[1])) + (k - variable[id->start_var_index]->patch[y]->Ndim_box_offset[2]);
 			
-		    
+		    variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
 		    for(var = id->start_var_index; var <= id->end_var_index; var++)
 		    {
 		      hz_index = hz_order - variable[var]->HZ_patch[y]->start_hz_index[level];

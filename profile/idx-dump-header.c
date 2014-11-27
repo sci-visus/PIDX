@@ -33,13 +33,12 @@
 #include <inttypes.h>
 
 /**
- * \file idx-compare.c
+ * \file idx-dump-header.c
  *
  * \author Sidharth Kumar
  * \date   10/09/14
  *
- * Compares samples between two idx binary file, assumes that
- * the data is in double format
+ * Dumps header data
  *
  */
 

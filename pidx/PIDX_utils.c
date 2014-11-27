@@ -515,3 +515,84 @@ int generate_file_name(int blocks_per_file, char* filename_template, int file_nu
   }
   return 0;
 }
+
+/////////////////////////////////////////////////
+PIDX_return_code generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template)
+{
+  int N;
+  char dirname[1024], basename[1024];
+  int nbits_blocknumber;
+  char* directory_path;
+  char* data_set_path;
+  
+  directory_path = (char*) malloc(sizeof (char) * 1024);
+  assert(directory_path);
+  memset(directory_path, 0, sizeof (char) * 1024);
+
+  data_set_path = (char*) malloc(sizeof (char) * 1024);
+  assert(data_set_path);
+  memset(data_set_path, 0, sizeof (char) * 1024);
+
+  strncpy(directory_path, filename, strlen(filename) - 4);  
+  sprintf(data_set_path, "%s/time%06d.idx", directory_path, current_time_step);
+  
+  free(directory_path);
+
+  nbits_blocknumber = (maxh - bits_per_block - 1);
+  VisusSplitFilename(data_set_path, dirname, basename);
+
+  //remove suffix
+  for (N = strlen(basename) - 1; N >= 0; N--) 
+  {
+    int ch = basename[N];
+    basename[N] = 0;
+    if (ch == '.') break;
+  }
+
+#if 0
+  //if i put . as the first character, if I move files VisusOpen can do path remapping
+  sprintf(pidx->filename_template, "./%s", basename);
+#endif
+  //pidx does not do path remapping 
+  strcpy(filename_template, data_set_path);
+  for (N = strlen(filename_template) - 1; N >= 0; N--) 
+  {
+    int ch = filename_template[N];
+    filename_template[N] = 0;
+    if (ch == '.') break;
+  }
+
+  //can happen if I have only only one block
+  if (nbits_blocknumber == 0) 
+    strcat(filename_template, "/%01x.bin");
+   
+  else 
+  {
+    //approximate to 4 bits
+    if (nbits_blocknumber % 4) 
+    {
+      nbits_blocknumber += (4 - (nbits_blocknumber % 4));
+      assert(!(nbits_blocknumber % 4));
+    }
+    if (nbits_blocknumber <= 8) 
+      strcat(filename_template, "/%02x.bin"); //no directories, 256 files
+    else if (nbits_blocknumber <= 12) 
+      strcat(filename_template, "/%03x.bin"); //no directories, 4096 files
+    else if (nbits_blocknumber <= 16) 
+      strcat(filename_template, "/%04x.bin"); //no directories, 65536  files
+    else 
+    {
+      while (nbits_blocknumber > 16) 
+      {
+	strcat(filename_template, "/%02x"); //256 subdirectories
+	nbits_blocknumber -= 8;
+      }
+      strcat(filename_template, "/%04x.bin"); //max 65536  files
+      nbits_blocknumber -= 16;
+      assert(nbits_blocknumber <= 0);
+    }
+  }
+  
+  free(data_set_path);
+  return PIDX_success;
+}

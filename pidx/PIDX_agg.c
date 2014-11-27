@@ -217,22 +217,22 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 	else
 	{
 	  ret = MPI_Get(hz_buffer + ((samples_in_file - target_disp) + ((end_agg_index - start_agg_index - 1) * samples_in_file)) * bytes_per_datatype, (target_count - (((end_agg_index - start_agg_index - 1) * (samples_in_file)) + ((samples_in_file) - target_disp))) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * samples_in_file - target_disp)) * bytes_per_datatype, 
-		MPI_BYTE, agg_id->win);
-	  if(ret != MPI_SUCCESS)
-	  {
-	  
-	  }
-	}
+                MPI_BYTE, agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+          
+          }
+        }
 //#ifndef ACTIVE_TARGET
-//	MPI_Win_unlock(target_rank + agg_id->aggregator_interval, agg_id->win);
+//      MPI_Win_unlock(target_rank + agg_id->aggregator_interval, agg_id->win);
 //#endif
 #endif
       }
       else
-	if(MODE == PIDX_WRITE)
-	  memcpy( agg_buffer->buffer, hz_buffer + ((samples_in_file - target_disp) + ((end_agg_index - start_agg_index - 1) * samples_in_file)) * bytes_per_datatype, (target_count - ((end_agg_index - start_agg_index) * samples_in_file - target_disp)) * bytes_per_datatype);    
-	else
-	  memcpy( hz_buffer + ((samples_in_file - target_disp) + ((end_agg_index - start_agg_index - 1) * samples_in_file)) * bytes_per_datatype, agg_buffer->buffer, (target_count - ((end_agg_index - start_agg_index) * samples_in_file - target_disp)) * bytes_per_datatype);
+        if(MODE == PIDX_WRITE)
+          memcpy( agg_buffer->buffer, hz_buffer + ((samples_in_file - target_disp) + ((end_agg_index - start_agg_index - 1) * samples_in_file)) * bytes_per_datatype, (target_count - ((end_agg_index - start_agg_index) * samples_in_file - target_disp)) * bytes_per_datatype);    
+        else
+          memcpy( hz_buffer + ((samples_in_file - target_disp) + ((end_agg_index - start_agg_index - 1) * samples_in_file)) * bytes_per_datatype, agg_buffer->buffer, (target_count - ((end_agg_index - start_agg_index) * samples_in_file - target_disp)) * bytes_per_datatype);
   }
   else 
   {
@@ -245,19 +245,19 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       target_disp_address = target_disp;
       if(MODE == PIDX_WRITE)
       {
-	ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
-	if(ret != MPI_SUCCESS)
-	{
-	  
-	}
+        ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
+        if(ret != MPI_SUCCESS)
+        {
+          
+        }
       }
       else
       {
-	ret = MPI_Get(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
-	if(ret != MPI_SUCCESS)
-	{
-	  
-	}
+        ret = MPI_Get(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
+        if(ret != MPI_SUCCESS)
+        {
+          
+        }
       }
 //#ifndef ACTIVE_TARGET
 //      MPI_Win_unlock(target_rank, agg_id->win);
@@ -314,20 +314,20 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
     {
       for (k = 0; k < agg_id->idx_ptr->variable[i]->existing_file_count; k++)
       {
-	agg_id->rank_holder[i - agg_id->start_var_index][j][agg_id->idx_ptr->variable[i]->existing_file_index[k]] = rank_counter;
-	rank_counter = rank_counter + agg_id->aggregator_interval;
-	
-	if(rank == agg_id->rank_holder[i - agg_id->start_var_index][j][agg_id->idx_ptr->variable[i]->existing_file_index[k]])
-	{
-	  agg_buffer->file_number = agg_id->idx_ptr->variable[i]->existing_file_index[k];
-	  agg_buffer->var_number = i;
-	  agg_buffer->sample_number = j;
-	  
-	  agg_buffer->buffer_size = agg_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number] * agg_id->idx_derived_ptr->samples_per_block * (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
-	  agg_buffer->buffer = malloc(agg_buffer->buffer_size);
-	  memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
-	  //printf("Aggregator Rank %d Buffer Size %d (Var no: %d) (Sample no: %d) (File no: %d) (%d x %d x %d)\n", rank, agg_buffer->buffer_size, agg_buffer->var_number, agg_buffer->sample_number, agg_buffer->file_number, agg_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number], agg_id->idx_derived_ptr->samples_per_block, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
-	}
+        agg_id->rank_holder[i - agg_id->start_var_index][j][agg_id->idx_ptr->variable[i]->existing_file_index[k]] = rank_counter;
+        rank_counter = rank_counter + agg_id->aggregator_interval;
+        
+        if(rank == agg_id->rank_holder[i - agg_id->start_var_index][j][agg_id->idx_ptr->variable[i]->existing_file_index[k]])
+        {
+          agg_buffer->file_number = agg_id->idx_ptr->variable[i]->existing_file_index[k];
+          agg_buffer->var_number = i;
+          agg_buffer->sample_number = j;
+          
+          agg_buffer->buffer_size = agg_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number] * agg_id->idx_derived_ptr->samples_per_block * (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
+          agg_buffer->buffer = malloc(agg_buffer->buffer_size);
+          memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
+          //printf("Aggregator Rank %d Buffer Size %d (Var no: %d) (Sample no: %d) (File no: %d) (%d x %d x %d)\n", rank, agg_buffer->buffer_size, agg_buffer->var_number, agg_buffer->sample_number, agg_buffer->file_number, agg_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number], agg_id->idx_derived_ptr->samples_per_block, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
+        }
       }
     }
   }
@@ -364,60 +364,63 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
       
       for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
       {
-	for(e1 = 0; e1 < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] ; e1++)
-	{
-	  if(e1 == 0)
-	  {
-	    index = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index];
-	    send_index = e1;
-	    count = 1;
-	    
-	    if(agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] == 1)
-	    {
-	      for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-	      {
-		//printf("[A] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
-		aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
-	      }
-	    }
-	  }
-	  else
-	  {
-	    if(agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index] - agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index - 1] == 1)
-	    {
-	      count++;
-	      if(e1 == agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] - 1)
-	      {
-		for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-		{
-		  //printf("[B] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
-		  aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
-		}
-	      }
-	    }
-	    else
-	    {
-	      for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-	      {
-		//printf("[C] Size %lld Offset %lld\n", count, index);
-		aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
-	      }
-	      
-	      if(e1 == agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] - 1)
-	      {
-		for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-		{
-		  //printf("[D] Size %lld Offset %lld\n", count, index);
-		  aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index], 1, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], e1, MODE);
-		}
-	      }
-	      index = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index];
-	      count = 1;
-	      send_index = e1;
-	    }
-	  }
-	  hz_index++;
-	}
+        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        {
+          for(e1 = 0; e1 < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] ; e1++)
+          {
+            if(e1 == 0)
+            {
+              index = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index];
+              send_index = e1;
+              count = 1;
+              
+              if(agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] == 1)
+              {
+                for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+                {
+                  //printf("[A] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
+                  aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                }
+              }
+            }
+            else
+            {
+              if(agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index] - agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index - 1] == 1)
+              {
+                count++;
+                if(e1 == agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] - 1)
+                {
+                  for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+                  {
+                    //printf("[B] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
+                    aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                  }
+                }
+              }
+              else
+              {
+                for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+                {
+                  //printf("[C] Size %lld Offset %lld\n", count, index);
+                  aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                }
+                
+                if(e1 == agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] - 1)
+                {
+                  for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+                  {
+                    //printf("[D] Size %lld Offset %lld\n", count, index);
+                    aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index], 1, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], e1, MODE);
+                  }
+                }
+                index = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index];
+                count = 1;
+                send_index = e1;
+              }
+            }
+            hz_index++;
+          }
+        }
       }
     }
     
@@ -425,12 +428,15 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
     {
       for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
       {
-	for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-	{
-	  index = 0;
-	  count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1;
-	  aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
-	}
+        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        {
+          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          {
+            index = 0;
+            count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1;
+            aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+          }
+        }
       }
     }
     
@@ -439,43 +445,46 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
       int start_block_index, end_block_index, bl;
       for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
       {
-	for (var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-	{
-	  start_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] / agg_id->idx_derived_ptr->samples_per_block;
-	  end_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] / agg_id->idx_derived_ptr->samples_per_block;
-	  assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
-	  
-	  send_index = 0;
-	  for (bl = start_block_index; bl <= end_block_index; bl++) 
-	  {
-	    if (end_block_index == start_block_index) 
-	    {
-	      index = 0;
-	      count = (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1);
-	    } 
-	    else
-	    {
-	      if (bl == start_block_index) 
-	      {
-		index = 0;
-		count = ((start_block_index + 1) * agg_id->idx_derived_ptr->samples_per_block) - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i];
-	      } 
-	      else if (bl == end_block_index) 
-	      {
-		index = (end_block_index * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
-		count = agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - ((end_block_index) * agg_id->idx_derived_ptr->samples_per_block) + 1;
-	      } 
-	      else 
-	      {
-		index = (bl * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
-		count = agg_id->idx_derived_ptr->samples_per_block;
-	      }
-	    }
-	    aggregate_write_read(agg_id, agg_buffer, var, index + agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
-	    
-	    send_index = send_index + count;
-	  }
-	}
+        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        {
+          for (var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          {
+            start_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] / agg_id->idx_derived_ptr->samples_per_block;
+            end_block_index = agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] / agg_id->idx_derived_ptr->samples_per_block;
+            assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
+            
+            send_index = 0;
+            for (bl = start_block_index; bl <= end_block_index; bl++) 
+            {
+              if (end_block_index == start_block_index) 
+              {
+                index = 0;
+                count = (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1);
+              } 
+              else
+              {
+                if (bl == start_block_index) 
+                {
+                  index = 0;
+                  count = ((start_block_index + 1) * agg_id->idx_derived_ptr->samples_per_block) - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i];
+                } 
+                else if (bl == end_block_index) 
+                {
+                  index = (end_block_index * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
+                  count = agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - ((end_block_index) * agg_id->idx_derived_ptr->samples_per_block) + 1;
+                } 
+                else 
+                {
+                  index = (bl * agg_id->idx_derived_ptr->samples_per_block - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
+                  count = agg_id->idx_derived_ptr->samples_per_block;
+                }
+              }
+              aggregate_write_read(agg_id, agg_buffer, var, index + agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+              
+              send_index = send_index + count;
+            }
+          }
+        }
       }
     }
   }
