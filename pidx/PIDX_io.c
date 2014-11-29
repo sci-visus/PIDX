@@ -467,7 +467,7 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
   for (p = 0; p < io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_count; p++)
   {
     hz_index = 0, index = 0, count = 0, send_index = 0;
-    if(io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_ptr[p]->type == 0)
+    if(io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_ptr[p]->box_group_type == 0)
     {
       for (i = 0; i < variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_from; i++) 
 	hz_index = hz_index + variable[io_id->start_var_index]->HZ_patch[p]->samples_per_level[i];
@@ -535,7 +535,7 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
       }
     }
     
-    else if(io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_ptr[p]->type == 1)
+    else if(io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_ptr[p]->box_group_type == 1)
     {
       for (i = io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
       {
@@ -548,7 +548,7 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
       }
     }
     
-    else if(io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_ptr[p]->type == 2)
+    else if(io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_ptr[p]->box_group_type == 2)
     {
       int start_block_index, end_block_index, bl;
       for (i = io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)

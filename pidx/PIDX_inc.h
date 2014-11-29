@@ -43,6 +43,7 @@ extern "C" {
 #include "PIDX_data_structs.h"
 #include "PIDX_utils.h"
 #include "PIDX_point.h"
+#include "PIDX_file_name.h"
 
 #include "PIDX_header_io.h"
 #include "PIDX_rst.h"

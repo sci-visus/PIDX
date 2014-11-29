@@ -175,7 +175,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
 	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
 	      for (spv = 0; spv < values_per_sample[var]; spv++)
 		//double_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-		double_data[var][index * values_per_sample[var] + spv] = (rank + 1) + ts;
+		double_data[var][index * values_per_sample[var] + spv] = 80;//(rank + 1) + ts;
 	    }
       }
     }

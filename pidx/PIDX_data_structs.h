@@ -39,7 +39,7 @@ struct PIDX_variable_struct
   HZ_buffer HZ_patch[1024];
   
   int patch_group_count;
-  Ndim_buffer_group* patch_group_ptr;
+  Ndim_box_group* patch_group_ptr;
   
   block_layout* global_block_layout;
   int *blocks_per_file;

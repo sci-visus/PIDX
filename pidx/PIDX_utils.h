@@ -67,6 +67,4 @@ void Hz_to_xyz(const char* bitmask,  int maxh, long long hzaddress, long long* x
 
 int VisusSplitFilename(const char* filename,char* dirname,char* basename);
 
-int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen);
-
 #endif

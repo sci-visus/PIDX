@@ -16,6 +16,20 @@
  **                                                 **
  *****************************************************/
 
+/**
+ * \file Generic_data_structs.h
+ *
+ * \author Sidharth Kumar
+ * \date   10/09/14
+ *
+ * Defining some of the very basic data struct
+ * --N dimensional Box
+ * --Set of N dimension boxes
+ * --HZ encoded buffer
+ * --Aggregation buffer
+ *
+ */
+
 #ifndef __GENERIC_DATA_STRUCTS_H
 #define __GENERIC_DATA_STRUCTS_H
 
@@ -36,24 +50,30 @@ typedef struct PIDX_Ndim_box_struct* Ndim_box;
 
 
 /// Struct to store a group of Ndim_buffer
-struct PIDX_Ndim_buffer_group_struct
+struct PIDX_Ndim_box_group_struct
 {
   /// decide the type of the group
-  int type;
+  int box_group_type;
   
   /// how many Ndim_buffer are there in the group
-  int count;
+  int box_count;
   
   /// Pointer to all the Ndim_buffer
-  Ndim_box *block;
+  Ndim_box *box;
+  
+  ///
+  int *source_box_rank;
+  
+  ///
+  int max_box_rank;
   
   /// If restructuring used then this contains the offset of the power-two block
-  long long power_two_offset[PIDX_MAX_DIMENSIONS];
+  long long enclosing_box_offset[PIDX_MAX_DIMENSIONS];
   
   /// If restructuring used then this contains the extents of the power-two block
-  long long power_two_count[PIDX_MAX_DIMENSIONS];
+  long long enclosing_box_size[PIDX_MAX_DIMENSIONS];
 };
-typedef struct PIDX_Ndim_buffer_group_struct* Ndim_buffer_group; 
+typedef struct PIDX_Ndim_box_group_struct* Ndim_box_group; 
 
 
 /// Struct to store the HZ encoded data and meta-data
@@ -76,6 +96,12 @@ struct PIDX_HZ_buffer_struct
   
   /// HZ indices of the data (used only when no restructuring phsae is used)
   long long *buffer_index;
+  
+  /// 
+  int *missing_block_count_per_level;
+  
+  ///
+  int **missing_block_index_per_level;
   
   /// data buffer at all the HZ levels
   unsigned char** buffer;

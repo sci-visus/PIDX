@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   
   for (var = 0; var < variable_count; var++ )
   {
-    for (j = 0 ; j < /*blocks_per_file*/1; j++)
+    for (j = 0 ; j < blocks_per_file; j++)
     {
       data_length1 = ntohl(binheader1[(j + blocks_per_file * var) * 10 + 14]);
       data_offset1 = ntohl(binheader1[(j + blocks_per_file * var) * 10 + 12]);
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
       memset(data_buffer2, 0, data_length2);
       assert(data_buffer2 != NULL);
 
-      printf("%ld %ld :: %ld %ld\n", data_length1, data_offset1, data_length2, data_offset2);
+      //printf("%ld %ld :: %ld %ld\n", data_length1, data_offset1, data_length2, data_offset2);
       
       pread(fd1, data_buffer1, data_length1, data_offset1);
       pread(fd2, data_buffer2, data_length2, data_offset2);
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	  else
 	  {
 	    non_zero_unequal_count[var]++;
-	    //printf("Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+	    printf("Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
 	  }
 	}
       }
