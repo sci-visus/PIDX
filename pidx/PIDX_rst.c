@@ -500,6 +500,7 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
       {
         long long *power_two_box_offset = rst_id->power_two_box_group[i]->box[j]->Ndim_box_offset;
         long long *power_two_box_count  = rst_id->power_two_box_group[i]->box[j]->Ndim_box_size;
+        
         if(rank == rst_id->power_two_box_group[i]->source_box_rank[j])
         {
           count1 = 0;

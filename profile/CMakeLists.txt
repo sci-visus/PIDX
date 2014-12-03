@@ -30,8 +30,8 @@ IF (PIDX_BUILD_PROFILE)
   # includes
   # ////////////////////////////////////////
 
-  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
-  INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
+  #INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
+  #INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
   
   # ////////////////////////////////////////
   # executables
@@ -39,9 +39,7 @@ IF (PIDX_BUILD_PROFILE)
 
   PIDX_ADD_EXECUTABLE(idxcompare "${IDXCOMPARE_SOURCES}")
   PIDX_ADD_EXECUTABLE(idxdumpheader "${DUMPHEADER_SOURCES}")
-
   PIDX_ADD_EXECUTABLE(idxverify "${IDXVERIFY_SOURCES}")
-  ADD_DEPENDENCIES(idxverify pidx)
-  TARGET_LINK_LIBRARIES(idxverify pidx ${MPI_CXX_LIBRARIES})
+  TARGET_LINK_LIBRARIES(idxverify m)
 
 ENDIF()

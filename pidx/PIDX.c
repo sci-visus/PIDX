@@ -1220,7 +1220,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     
   int j = 0, p, var = 0;
   int do_agg = 1;
-  int debug_rst = 0, debug_hz = 0;
+  int debug_rst = 1, debug_hz = 0;
   int rank = 0;
   int local_do_rst = 0, global_do_rst = 0;
   int var_used_in_binary_file, total_header_size;
@@ -1265,7 +1265,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     PIDX_header_io_set_communicator(file->header_io_id, file->comm);
     PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
     PIDX_header_io_file_create(file->header_io_id);
-    PIDX_header_io_file_write(file->header_io_id);
+    //PIDX_header_io_file_write(file->header_io_id);
     PIDX_header_io_finalize(file->header_io_id);
     write_init_end[hp] = PIDX_get_time();
     hp++;
@@ -1316,7 +1316,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
   //if (file->idx_ptr->variable[var]->dump_meta_data_ON == 1)
   //    dump_meta_data(file->idx_ptr->variable[var], file->comm);
   int start_index = 0, end_index = 0;
-  file->variable_pipelining_factor = 0;
+  file->variable_pipelining_factor = 7;
   for (start_index = file->local_variable_index; start_index < file->local_variable_index + file->local_variable_count; start_index = start_index + (file->variable_pipelining_factor + 1))
   {
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
@@ -1329,6 +1329,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     MPI_Allreduce(&local_do_rst, &global_do_rst, 1, MPI_INT, MPI_LOR, file->comm);
     if(global_do_rst == 1)
       file->rst_id = PIDX_rst_init(file->comm, file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+    global_do_rst = 0;
     rst_init_end[vp] = PIDX_get_time();
     ///----------------------------------- RST init end------------------------------------------------///
     
@@ -1643,6 +1644,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     
     long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8;
     fprintf(stdout, "\n=======================================================================================\n");
+    fprintf(stdout, "Time step [%d] File name %s\n", file->idx_ptr->current_time_step, file->idx_ptr->filename);
     fprintf(stdout, "Global Data [%lld %lld %lld] Variables [%d]\nTime Taken: %f Seconds Throughput %f MiB/sec\n", file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, max_time, (float) total_data / (1024 * 1024 * max_time));
     fprintf(stdout, "---------------------------------------------------------------------------------------\n");
     //printf("File creation time %f\n", write_init_end - write_init_start);

@@ -18,7 +18,6 @@
 
 #include "pidxtest.h"
 #include <PIDX.h>
-#include <Generic_data_structs.h>
 
 int test_one_var_writer(struct Args args, int rank, int nprocs) 
 {
