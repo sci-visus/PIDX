@@ -564,21 +564,12 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
     else
     {
       agg_buffer->buffer = temp_buffer;
-      memcpy(agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)));
+      memmove(agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)));
       memcpy(agg_buffer->buffer, headers, total_header_size);
       memset(agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
     }
     free(headers);
     t4 = MPI_Wtime();
-    
-#if 1
-    double c1, c2, c3, c4;
-    memcpy(&c1, agg_buffer->buffer + ((io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size) + 0 * 8), 8);
-    memcpy(&c2, agg_buffer->buffer + ((io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size) + 32768 * 8), 8);
-    memcpy(&c3, agg_buffer->buffer + ((io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size) + 1 * 8), 8);
-    memcpy(&c4, agg_buffer->buffer + ((io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size) + 32769 * 8), 8);
-    printf("IO [%d] Agg Buffer: :: [FS %d %d] [F%d V%d S%d] (%f %f) (%f %f)\n", rank, io_id->idx_derived_ptr->start_fs_block, io_id->idx_derived_ptr->fs_block_size, agg_buffer->var_number, agg_buffer->sample_number, agg_buffer->file_number, c1, c2, c3, c4);
-#endif
     
 #if PIDX_HAVE_MPI
     if(MODE == PIDX_WRITE)
