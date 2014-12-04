@@ -458,6 +458,18 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   MPI_Win_free(&(agg_id->win));
 #endif
   
+#if 1
+  if(agg_buffer->file_number != -1 && agg_buffer->var_number != -1 && agg_buffer->sample_number != -1)
+  {
+    double c1, c2, c3, c4;
+    memcpy(&c1, agg_buffer->buffer, 8);
+    memcpy(&c2, agg_buffer->buffer + (32768 * 8), 8);
+    memcpy(&c3, agg_buffer->buffer + 8, 8);
+    memcpy(&c4, agg_buffer->buffer + (32769 * 8), 8);
+    printf("AGG [%d] Agg Buffer: :: [FS %d %d] [F%d V%d S%d] (%f %f) (%f %f)\n", rank, agg_id->idx_derived_ptr->start_fs_block, agg_id->idx_derived_ptr->fs_block_size, agg_buffer->var_number, agg_buffer->sample_number, agg_buffer->file_number, c1, c2, c3, c4);
+  }
+#endif
+  
   return PIDX_success;
 }
 

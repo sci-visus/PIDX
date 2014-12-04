@@ -577,7 +577,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
     memcpy(&c2, agg_buffer->buffer + ((io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size) + 32768 * 8), 8);
     memcpy(&c3, agg_buffer->buffer + ((io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size) + 1 * 8), 8);
     memcpy(&c4, agg_buffer->buffer + ((io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size) + 32769 * 8), 8);
-    printf("[%d] Agg Buffer: :: [FS %d %d] [F%d V%d S%d] (%f %f) (%f %f)\n", rank, io_id->idx_derived_ptr->start_fs_block, io_id->idx_derived_ptr->fs_block_size, agg_buffer->var_number, agg_buffer->sample_number, agg_buffer->file_number, c1, c2, c3, c4);
+    printf("IO [%d] Agg Buffer: :: [FS %d %d] [F%d V%d S%d] (%f %f) (%f %f)\n", rank, io_id->idx_derived_ptr->start_fs_block, io_id->idx_derived_ptr->fs_block_size, agg_buffer->var_number, agg_buffer->sample_number, agg_buffer->file_number, c1, c2, c3, c4);
 #endif
     
 #if PIDX_HAVE_MPI
