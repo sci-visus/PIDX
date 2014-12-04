@@ -1329,7 +1329,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     MPI_Allreduce(&local_do_rst, &global_do_rst, 1, MPI_INT, MPI_LOR, file->comm);
     if(global_do_rst == 1)
       file->rst_id = PIDX_rst_init(file->comm, file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-    global_do_rst = 0;
+    
     rst_init_end[vp] = PIDX_get_time();
     ///----------------------------------- RST init end------------------------------------------------///
     

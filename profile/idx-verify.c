@@ -144,7 +144,7 @@ int main(int argc, char **argv)
             len = strlen(pch1) - 1;
             if (pch1[len] == '\n')
               pch1[len] = 0;
-            if (strcmp(pch1, "float32") != 0)
+            if (strcmp(pch1, "float64") != 0)
             {
               fprintf(stderr, "Currently supporting only float64 types\n");
               return 0;
@@ -340,7 +340,7 @@ int main(int argc, char **argv)
         
       
         int bpf = 0;
-        float* data_buffer = NULL;
+        double* data_buffer = NULL;
         int check_bit = 1, s = 0;
         long long hz_index, hz_val;
         
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
               //printf("[%d] %ld and %ld\n", bpf, data_size, ret);
               assert(ret == data_size);
               
-              for (hz_val = 0; hz_val < data_size/(sizeof(float) * values_per_sample[var]); hz_val++) 
+              for (hz_val = 0; hz_val < data_size/(sizeof(double) * values_per_sample[var]); hz_val++) 
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
@@ -373,7 +373,7 @@ int main(int argc, char **argv)
 
                 check_bit = 1, s = 0;
                 for (s = 0; s < values_per_sample[var]; s++)
-                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == s + var + 100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]);
+                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == s + /*var*/ 100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]);
 
                 if (check_bit == 0)
                 {
