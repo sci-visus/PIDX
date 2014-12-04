@@ -31,7 +31,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   PIDX_file file;                                                // IDX file descriptor
   const char *output_file;                                                      // IDX File Name
   const int bits_per_block = 15;                                                // Total number of samples in each block = 2 ^ bits_per_block
-  const int blocks_per_file = 128;                                               // Total number of blocks per file
+  const int blocks_per_file = 256;                                               // Total number of blocks per file
   
   PIDX_variable* variable;                                       // variable descriptor
   double     **double_data;
@@ -185,6 +185,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     free(double_data);
     double_data = 0;
   }
+  PIDX_enable_time_step_caching_OFF();
   
   free(variable);
   free(values_per_sample);
