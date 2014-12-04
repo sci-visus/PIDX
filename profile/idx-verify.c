@@ -298,10 +298,11 @@ int main(int argc, char **argv)
   binheader = (uint32_t*) malloc(sizeof (*binheader)*(binheader_count));
     
   int fd;
-  long long ZYX[PIDX_MAX_DIMENSIONS], lost_element_count = 0, element_count = 0;
+  long long ZYX[PIDX_MAX_DIMENSIONS];
   
   for (t = start_time_step; t <= end_time_step; t++)
   {
+    long long lost_element_count = 0, element_count = 0;
     for (i = 0; i < max_files; i++) 
     {
       if (existing_file_index[i] == 1) 
@@ -355,6 +356,7 @@ int main(int argc, char **argv)
               data_offset = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 12]);
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
+              //if(var == 2 || var == 1)
               //printf("[%d] Offset %ld Count %ld\n", bpf, data_offset, data_size);
               data_buffer = malloc(data_size);
               memset(data_buffer, 0, data_size);
@@ -373,13 +375,13 @@ int main(int argc, char **argv)
 
                 check_bit = 1, s = 0;
                 for (s = 0; s < values_per_sample[var]; s++)
-                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == s + /*var*/ 100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]);
+                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]);
 
                 if (check_bit == 0)
                 {
                   lost_element_count++;
-                  printf("[%lld %lld] [%lld : %lld %lld %lld] Actual: %d Should Be %lld\n", lost_element_count, hz_index/samples_per_block, hz_index, ZYX[0], ZYX[1], ZYX[2], (int)data_buffer[hz_val * values_per_sample[var] + 0], (var + 100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
-                } 
+                  printf("[%d] [%lld %lld %lld] [%lld : %lld %lld %lld] Actual: %d Should Be %lld\n", var, lost_element_count, hz_index/samples_per_block, hz_val, hz_index, ZYX[0], ZYX[1], ZYX[2], (int)data_buffer[hz_val * values_per_sample[var] + 0], (100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                }
                 else 
                 {
                   element_count++;
@@ -393,18 +395,21 @@ int main(int argc, char **argv)
         }
       }
     }
+    
+    int total_samples = 0;
+    for (var = 0; var < variable_count; var++)
+      total_samples = total_samples + values_per_sample[var];
+
+    printf("%lld + %lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+    assert(element_count == (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+    
   }
   
   destroyBlockBitmap(global_block_layout);
   free(global_block_layout);
   global_block_layout = 0;
     
-  int total_samples = 0;
-  for (var = 0; var < variable_count; var++)
-    total_samples = total_samples + values_per_sample[var];
-
-  printf("%lld + %lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
-  assert(element_count == (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+  
   
   return 0;
 }

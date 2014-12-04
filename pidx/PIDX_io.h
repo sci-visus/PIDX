@@ -28,6 +28,8 @@ PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data,
 			int start_var_index, int end_var_index
  		      );
 
+int PIDX_io_cached_data(uint32_t* cached_header);
+
 #if PIDX_HAVE_MPI
 int PIDX_io_set_communicator(PIDX_io_id io_id, MPI_Comm comm);
 #endif

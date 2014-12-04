@@ -79,6 +79,10 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// It is PIDX_success if the task is completed correctly.
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
 
+PIDX_return_code PIDX_enable_time_step_caching_ON();
+
+PIDX_return_code PIDX_enable_time_step_caching_OFF();
+
 /// Get the PIDX_access associated with this file.
 PIDX_return_code PIDX_get_access(PIDX_file file, PIDX_access *access);
 

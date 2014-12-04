@@ -75,6 +75,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D((long long)local_offset[0], (long long)local_offset[1], (long long)local_offset[2], 0, 0, local_offset_point);
   PIDX_set_point_5D((long long)args.count_local[0], (long long)args.count_local[1], (long long)args.count_local[2], 1, 1, local_box_count_point);
   
+  PIDX_enable_time_step_caching_ON();
   for (ts = 0; ts < args.time_step; ts++) 
   {
     double_data = malloc(sizeof(*double_data) * variable_count);
@@ -166,7 +167,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     for(var = 0; var < variable_count; var++)
     {
       sprintf(variable_name, "variable_%d", var);
-      sprintf(data_type, "%d*double64", values_per_sample[var]);
+      sprintf(data_type, "%d*float64", values_per_sample[var]);
       PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
       PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
     }
