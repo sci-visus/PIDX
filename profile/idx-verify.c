@@ -609,7 +609,6 @@ static void revstr(char* str)
   strcpy(str, cpstr);
 }
 
-
 static void GuessBitmaskPattern(char* _bits, PointND dims)
 {
   int D,N,ordered;

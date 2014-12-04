@@ -1220,7 +1220,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     
   int j = 0, p, var = 0;
   int do_agg = 1;
-  int debug_rst = 1, debug_hz = 0;
+  int debug_rst = 0, debug_hz = 0;
   int rank = 0;
   int local_do_rst = 0, global_do_rst = 0;
   int var_used_in_binary_file, total_header_size;
@@ -1301,7 +1301,7 @@ PIDX_return_code PIDX_write(PIDX_file file)
     if (file->idx_ptr->variable_count == -1 || (file->idx_ptr->variable_count == file->idx_ptr->variable_index_tracker))
     {
       PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
-      PIDX_header_io_file_write(file->header_io_id);
+      //PIDX_header_io_file_write(file->header_io_id);
     }
         
     PIDX_header_io_finalize(file->header_io_id);
@@ -1625,10 +1625,11 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
   double total_time = sim_end - sim_start;
   double max_time = total_time;
-  int sample_sum = 0, var = 0, i = 0;
+  int sample_sum = 0, var = 0, i = 0, rank = 0;
   
 #if PIDX_HAVE_MPI
   MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
+  MPI_Comm_rank(file->comm, &rank);
 #endif
 
   if (max_time == total_time) 
@@ -1644,7 +1645,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     
     long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8;
     fprintf(stdout, "\n=======================================================================================\n");
-    fprintf(stdout, "Time step [%d] File name %s\n", file->idx_ptr->current_time_step, file->idx_ptr->filename);
+    fprintf(stdout, "[%d] Time step [%d] File name %s\n", rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
     fprintf(stdout, "Global Data [%lld %lld %lld] Variables [%d]\nTime Taken: %f Seconds Throughput %f MiB/sec\n", file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, max_time, (float) total_data / (1024 * 1024 * max_time));
     fprintf(stdout, "---------------------------------------------------------------------------------------\n");
     //printf("File creation time %f\n", write_init_end - write_init_start);

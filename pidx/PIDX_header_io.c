@@ -384,7 +384,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
         headers[14 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
 	
         //if (file_number == 13 || file_number == 12)
-        printf("[%d] [%d] [%d] (%ld) :: [%d %d %d] Offste and Count %d %d\n", file_number, n, i, header_io_id->idx_derived_ptr->start_fs_block, header_io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, header_io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
+        //printf("[%d] [%d] [%d] (%ld) :: [%d %d %d] Offste and Count %d %d\n", file_number, n, i, header_io_id->idx_derived_ptr->start_fs_block, header_io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, header_io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
 	
         for (m = 15; m < 20; m++)
           headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);

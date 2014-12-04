@@ -153,30 +153,14 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
       values_per_sample[var] = var + 1;
       float_data[var] = malloc(sizeof (float) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
-      if(var % 2 == 0)
-      {
-	for (k = 0; k < args.count_local[2]; k++)
-	  for (j = 0; j < args.count_local[1]; j++)
-	    for (i = 0; i < args.count_local[0]; i++) 
-	    {
-	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
-	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		float_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-	    }
-      }
-      else
-      {
-	
-	for (k = 0; k < args.count_local[2]; k++)
-	  for (j = 0; j < args.count_local[1]; j++)
-	    for (i = 0; i < args.count_local[0]; i++) 
-	    {
-	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
-	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		//float_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-		float_data[var][index * values_per_sample[var] + spv] = 80;//(rank + 1) + ts;
-	    }
-      }
+      for (k = 0; k < args.count_local[2]; k++)
+        for (j = 0; j < args.count_local[1]; j++)
+          for (i = 0; i < args.count_local[0]; i++) 
+          {
+            long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
+            for (spv = 0; spv < values_per_sample[var]; spv++)
+              float_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+          }
     }
     
     for(var = 0; var < variable_count; var++)
