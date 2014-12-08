@@ -278,6 +278,8 @@ PIDX_return_code PIDX_flush(PIDX_file file);
 ///Perform all the necessary cleanups
 PIDX_return_code PIDX_close(PIDX_file file);
 
+double PIDX_get_time();
+
 #ifdef __cplusplus
 }
 #endif

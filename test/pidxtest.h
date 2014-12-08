@@ -19,7 +19,7 @@
 #ifndef PIDXTEST_H
 #define PIDXTEST_H
 
-#include <stdio.h>
+#include <PIDX.h>
 
 /* Kind of test to run */
 enum Kind { DEFAULT = 0, SERIAL_READER, PARALLEL_READER, SERIAL_WRITER, PARALLEL_WRITER, PARALLEL_MULTI_PATCH_WRITER};

@@ -22,6 +22,7 @@ struct PIDX_agg_struct
 {
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
+  MPI_Win win;
 #endif
   
   //Contains all relevant IDX file info
@@ -38,7 +39,6 @@ struct PIDX_agg_struct
   int aggregator_interval;
   
   int ***rank_holder;
-  MPI_Win win;
 };
 
 PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index)
@@ -78,7 +78,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
   //unsigned char *local_addr;
   long long start_agg_index = 0, end_agg_index = 0, target_disp = 0, target_count = 0, hz_start = 0, samples_in_file = 0;
   long long samples_per_file = (long long) agg_id->idx_derived_ptr->samples_per_block * agg_id->idx_ptr->blocks_per_file;
-  MPI_Aint target_disp_address;
+  //MPI_Aint target_disp_address;
 
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(agg_id->comm, &rank);
@@ -134,10 +134,10 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 #ifndef PIDX_ACTIVE_TARGET
       MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , agg_id->win);
 #endif
-      target_disp_address = target_disp;
+      //target_disp_address = target_disp;
       if(MODE == PIDX_WRITE)
       {
-        ret = MPI_Put(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
+        ret = MPI_Put(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
           ;
@@ -145,7 +145,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       }
       else
       {
-        ret = MPI_Get(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
+        ret = MPI_Get(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
           ;
@@ -244,10 +244,10 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 #ifndef PIDX_ACTIVE_TARGET
       MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , agg_id->win);
 #endif
-      target_disp_address = target_disp;
+      //target_disp_address = target_disp;
       if(MODE == PIDX_WRITE)
       {
-        ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
+        ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
           ;
@@ -255,7 +255,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       }
       else
       {
-        ret = MPI_Get(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp_address, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
+        ret = MPI_Get(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
           ;
@@ -433,6 +433,32 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
     }
     else
     {
+#if 0
+      for (i = 0; i < (agg_id->idx_ptr->bits_per_block + 1) + 1; i++)
+      {
+        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        {
+          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          {
+          
+          }
+        }
+      }
+      
+      for (i = (agg_id->idx_ptr->bits_per_block + 1) + 1; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+      {
+        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        {
+          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          {
+            index = 0;
+            count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
+            
+            aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+          }
+        }
+      }
+#else
       for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
       {
         if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
@@ -446,6 +472,8 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
           }
         }
       }
+#endif
+
     }
   }
 
@@ -457,8 +485,6 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
 #endif
   MPI_Win_free(&(agg_id->win));
 #endif
-  
-
   
   return PIDX_success;
 }

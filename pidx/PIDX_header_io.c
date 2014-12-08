@@ -248,7 +248,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
           }
         }
       
-#if PIDX_HAVE_MPI      
+#if PIDX_HAVE_MPI
         MPI_File_open(MPI_COMM_SELF, bin_file, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
         MPI_File_close(&fh);
 #else
@@ -257,7 +257,11 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
 #endif
       }
   }
+  
+#if PIDX_HAVE_MPI
   MPI_Barrier(header_io_id->comm);
+#endif
+  
   return 0;
 }
 

@@ -17,10 +17,11 @@
  *****************************************************/
 
 #include "pidxtest.h"
-#include <PIDX.h>
+
 
 int test_multi_patch_writer(struct Args args, int rank, int nprocs) 
 {
+#if PIDX_HAVE_MPI
   int i = 0, j = 0, k = 0, u = 0, v = 0, p = 0, var, d;
   int spv = 0;
   int ts;
@@ -29,7 +30,6 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
 
   PIDX_file file;                                                // IDX file descriptor
   const char *output_file;                                                      // IDX File Name
-  const int *gextent;                                                           // Global Extensions of the dataset (64 64 64 0 0)
   const int bits_per_block = 15;                                                // Total number of samples in each block = 2 ^ bits_per_block
   const int blocks_per_file = 32;                                               // Total number of blocks per file
   
@@ -75,7 +75,6 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   sprintf(args.output_file_name, "%s%s", args.output_file_template, ".idx");
 
   //   Calculating every process's offset and count  
-  gextent = args.extents;
   sub_div[0] = (args.extents[0] / args.count_local[0]);
   sub_div[1] = (args.extents[1] / args.count_local[1]);
   sub_div[2] = (args.extents[2] / args.count_local[2]);
@@ -502,7 +501,7 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   variable = 0;
   free(values_per_sample);
   values_per_sample = 0;
-  
+#endif
   return 0;
 }
 

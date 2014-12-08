@@ -704,7 +704,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
   long long element_count = 0;
   long long lost_element_count = 0;
   
-  double dvalue_1, dvalue_2;
+  unsigned long long dvalue_1, dvalue_2;
   for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
   {
     bytes_for_datatype = rst_id->idx_ptr->variable[var]->bits_per_value / 8;
@@ -736,7 +736,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
                   if (check_bit == 0)
                   {
                     lost_element_count++;
-                    printf("LOST Element : %f %f\n", dvalue_1, dvalue_2);
+                    printf("[RST] LOST Element : %lld %lld\n", dvalue_1, dvalue_2);
                   } 
                   else 
                   {

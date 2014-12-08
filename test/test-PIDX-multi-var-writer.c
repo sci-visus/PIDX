@@ -17,7 +17,6 @@
  *****************************************************/
 
 #include "pidxtest.h"
-#include <PIDX.h>
 
 int test_multi_var_writer(struct Args args, int rank, int nprocs) 
 {
@@ -34,7 +33,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   const int blocks_per_file = 256;                                               // Total number of blocks per file
   
   PIDX_variable* variable;                                       // variable descriptor
-  double     **double_data;
+  unsigned long long     **long_data;
   int* values_per_sample;
   
   //The command line arguments are shared by all processes
@@ -78,8 +77,8 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   PIDX_enable_time_step_caching_ON();
   for (ts = 0; ts < args.time_step; ts++) 
   {
-    double_data = malloc(sizeof(*double_data) * variable_count);
-    memset(double_data, 0, sizeof(*double_data) * variable_count);
+    long_data = malloc(sizeof(*long_data) * variable_count);
+    memset(long_data, 0, sizeof(*long_data) * variable_count);
     
     PIDX_access access;
     PIDX_create_access(&access);
@@ -105,7 +104,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     for(var = 0; var < variable_count; var++)
     {
       values_per_sample[var] = var + 1;
-      double_data[var] = malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
+      long_data[var] = malloc(sizeof (unsigned long long) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
       if(var % 2 == 0)
       {
@@ -115,7 +114,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
 	    {
 	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
 	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		double_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+		long_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
 	    }
       }
       else
@@ -126,25 +125,25 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
 	    {
 	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
 	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		double_data[var][index * values_per_sample[var] + spv] = (rank + 1);
+		long_data[var][index * values_per_sample[var] + spv] = (rank + 1);
 	    }
       }
       
       sprintf(variable_name, "variable_%d", var);
       sprintf(data_type, "%d*double64", values_per_sample[var]);
-      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(unsigned long long) * 8, data_type, &variable[var]);
+      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
       PIDX_flush(file);
       
-      free(double_data[var]);
-      double_data[var] = 0;
+      free(long_data[var]);
+      long_data[var] = 0;
     }
     
     PIDX_close(file);
     PIDX_close_access(access);
     
-    free(double_data);
-    double_data = 0;
+    free(long_data);
+    long_data = 0;
 #endif
 
 #if 1    
@@ -152,7 +151,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     for(var = 0; var < variable_count; var++)
     {
       values_per_sample[var] = /*var + */1;
-      double_data[var] = malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
+      long_data[var] = malloc(sizeof (unsigned long long) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
       for (k = 0; k < args.count_local[2]; k++)
         for (j = 0; j < args.count_local[1]; j++)
@@ -160,7 +159,9 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
           {
             long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
             for (spv = 0; spv < values_per_sample[var]; spv++)
-              double_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+              long_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+            
+            
           }
     }
     
@@ -168,8 +169,8 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     {
       sprintf(variable_name, "variable_%d", var);
       sprintf(data_type, "%d*float64", values_per_sample[var]);
-      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(unsigned long long) * 8, data_type, &variable[var]);
+      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
     }
     
     PIDX_close(file);
@@ -177,13 +178,13 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     
     for(var = 0; var < variable_count; var++)
     {
-      free(double_data[var]);
-      double_data[var] = 0;
+      free(long_data[var]);
+      long_data[var] = 0;
     }
 #endif
 
-    free(double_data);
-    double_data = 0;
+    free(long_data);
+    long_data = 0;
   }
   PIDX_enable_time_step_caching_OFF();
   

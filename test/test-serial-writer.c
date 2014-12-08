@@ -16,7 +16,6 @@
  *****************************************************/
 
 #include "pidxtest.h"
-#include <PIDX.h>
 
 int serial_writer(struct Args args)
 {
