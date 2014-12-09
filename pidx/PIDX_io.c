@@ -586,18 +586,20 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #endif
     t6 = MPI_Wtime();
     
-    printf("[%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
+    printf("A. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
   }
   else if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1) 
   {
+    t1 = MPI_Wtime();
     generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
     adjust_file_name(file_name, adjusted_file_name);
+    t2 = MPI_Wtime();
 #if PIDX_HAVE_MPI
     MPI_File_open(MPI_COMM_SELF, adjusted_file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 #else
     fh = open(adjusted_file_name, O_WRONLY);
 #endif
-      
+    t3 = MPI_Wtime();
     data_offset = 0;
     data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
     
@@ -607,7 +609,8 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
     
     for (i = 0; i < agg_buffer->sample_number; i++)
       data_offset = data_offset + io_id->idx_ptr->variable[k]->blocks_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
-  
+    
+    t4 = MPI_Wtime();
 
 #if PIDX_HAVE_MPI
     if(MODE == PIDX_WRITE)
@@ -617,13 +620,15 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
       pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), data_offset);
 #endif
+    t5 = MPI_Wtime();
 
 #if PIDX_HAVE_MPI
     MPI_File_close(&fh);
 #else
     close(fh);
 #endif
-    
+    t6 = MPI_Wtime();
+    printf("B. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
   }
   return 0;
 }
