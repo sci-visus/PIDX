@@ -428,6 +428,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #if PIDX_HAVE_MPI
   MPI_File fh;
   MPI_Status status;
+  MPI_Comm_rank(io_id->comm, &rank);
 #else
   int fh;
 #endif
@@ -442,7 +443,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 
 #if PIDX_HAVE_MPI
     MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-    MPI_Comm_rank(io_id->comm, &rank);
 #else
     fh = open(file_name, O_WRONLY);
 #endif
