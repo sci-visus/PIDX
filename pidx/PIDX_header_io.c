@@ -184,8 +184,8 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
 {
   int i = 0, rank = 0, nprocs = 1, j, ret;
   char bin_file[PATH_MAX];
-  char adjusted_name[PATH_MAX];
-  char folder_name[PATH_MAX];
+  //char adjusted_name[PATH_MAX];
+  //char folder_name[PATH_MAX];
   char last_path[PATH_MAX] = {0};
   char this_path[PATH_MAX] = {0};
   char tmp_path[PATH_MAX] = {0};
@@ -251,7 +251,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
             }
           }
         }
-      
+        /*
         adjust_file_name(bin_file, adjusted_name);
         mira_create_folder_name(bin_file, folder_name);
         ret = mkdir(folder_name, S_IRWXU | S_IRWXG | S_IRWXO);
@@ -261,13 +261,14 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
           fprintf(stderr, "Error: failed to mkdir %s\n", folder_name);
           return 1;
         }
+        */
         //printf("[BEFORE] : [AFTER] :: %s : %s\n", bin_file, adjusted_name);
         //printf("[FOLDER NAME] : %s\n", folder_name);
 #if PIDX_HAVE_MPI
-        MPI_File_open(MPI_COMM_SELF, /*bin_file*/adjusted_name, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+        MPI_File_open(MPI_COMM_SELF, bin_file, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
         MPI_File_close(&fh);
 #else
-        fh = open(adjusted_name, O_CREAT, 0664);
+        fh = open(bin_file, O_CREAT, 0664);
         close(fh);
 #endif
       }
