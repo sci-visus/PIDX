@@ -433,16 +433,18 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #endif
   
   char file_name[PATH_MAX];
+  char adjusted_file_name[PATH_MAX];
   if (agg_buffer->var_number == 0 && agg_buffer->sample_number == 0)
   {
     t1 = MPI_Wtime();
     generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
+    adjust_file_name(file_name, adjusted_file_name);
 
 #if PIDX_HAVE_MPI
-    MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    MPI_File_open(MPI_COMM_SELF, adjusted_file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
     MPI_Comm_rank(io_id->comm, &rank);
 #else
-    fh = open(file_name, O_WRONLY);
+    fh = open(adjusted_file_name, O_WRONLY);
 #endif
       
     data_offset = 0;
@@ -589,11 +591,11 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   else if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1) 
   {
     generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
-
+    adjust_file_name(file_name, adjusted_file_name);
 #if PIDX_HAVE_MPI
-    MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    MPI_File_open(MPI_COMM_SELF, adjusted_file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 #else
-    fh = open(file_name, O_WRONLY);
+    fh = open(adjusted_file_name, O_WRONLY);
 #endif
       
     data_offset = 0;

@@ -23,4 +23,8 @@ int generate_file_name(int blocks_per_file, char* filename_template, int file_nu
 
 int generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template);
 
+void adjust_file_name(char* bin_file, char* adjusted_name);
+
+void mira_create_folder_name(char* bin_file, char* folder_name);
+
 #endif //__PIDX_FILE_NAME_H

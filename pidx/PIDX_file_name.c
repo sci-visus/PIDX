@@ -18,6 +18,60 @@
  
 #include "PIDX_inc.h"
 
+void mira_create_folder_name(char* bin_file, char* folder_name)
+{
+  char *ch_dot;
+  ch_dot=strrchr(bin_file,'.');
+  //printf ("Last occurence of '.' found at %d \n", (ch_dot - bin_file + 1) );
+  
+  char *ch_slash;
+  ch_slash=strrchr(bin_file,'/');
+  //printf ("Last occurence of '/' found at %d \n", (ch_slash - bin_file + 1) );
+  
+  //printf("Name length = %d\n", (ch_dot - ch_slash));
+  
+  char file_name[1024];
+  memset(file_name, 0, (ch_dot - ch_slash));
+  strncpy(file_name, bin_file + (ch_slash - bin_file + 1), (ch_dot - ch_slash - 1));
+  //printf("File name = %s\n", file_name);
+  
+  char bin_file_first_part[1024];
+  strncpy(bin_file_first_part, bin_file, (ch_slash - bin_file));
+  //printf("File name copy %s\n", bin_file_first_part);
+  
+  sprintf(folder_name, "%s/%s", bin_file_first_part, file_name, file_name);
+  //printf("Final File name = %s\n", folder_name);
+    
+  return;
+}
+
+void adjust_file_name(char* bin_file, char* adjusted_name)
+{
+  char *ch_dot;
+  ch_dot=strrchr(bin_file,'.');
+  //printf ("Last occurence of '.' found at %d \n", (ch_dot - bin_file + 1) );
+  
+  char *ch_slash;
+  ch_slash=strrchr(bin_file,'/');
+  //printf ("Last occurence of '/' found at %d \n", (ch_slash - bin_file + 1) );
+  
+  //printf("Name length = %d\n", (ch_dot - ch_slash));
+  
+  char file_name[1024];
+  memset(file_name, 0, (ch_dot - ch_slash));
+  strncpy(file_name, bin_file + (ch_slash - bin_file + 1), (ch_dot - ch_slash - 1));
+  //printf("File name = %s\n", file_name);
+  
+  char bin_file_first_part[1024];
+  strncpy(bin_file_first_part, bin_file, (ch_slash - bin_file));
+  //printf("File name copy %s\n", bin_file_first_part);
+  
+  sprintf(adjusted_name, "%s/%s/%s.bin", bin_file_first_part, file_name, file_name);
+  //printf("Final File name = %s\n", adjusted_name);
+    
+  return;
+}
+
 int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) 
 {
   long long address = 0;
