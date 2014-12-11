@@ -20,6 +20,7 @@
 
 static uint32_t *cached_header_copy;
 static int enable_caching = 0;
+static int PIDX_VAR = 0;
 
 struct PIDX_io_struct 
 {
@@ -42,135 +43,6 @@ struct PIDX_io_struct
 static int write_read_samples(PIDX_io_id io_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, long long buffer_offset, int MODE);
 
 //static int generate_file_name(PIDX_io_id io_id, int file_number, char* filename, int maxlen);
-
-static int populate_meta_data(PIDX_io_id io_id, int file_number, char* bin_file)
-{
-  int total_header_size, ret = 0, block_negative_offset = 0, block_limit = 0;
-  int bytes_per_sample, bytes_per_sample_previous;
-  
-#if PIDX_HAVE_MPI
-  MPI_File fh;
-  MPI_Status status;
-#else
-  int fh = 0;
-#endif  
-  
-  int i = 0, m = 0, n = 0, b = 0;
-  uint32_t* headers;
-  long long initial_offset = 0;
-  off_t data_offset = 0, max_offset = 0;  
-  uint32_t little_data_offset;
-  
-  total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * io_id->idx_ptr->variable_count;
-  headers = (uint32_t*)malloc(total_header_size);
-  
-#if PIDX_HAVE_MPI      
-  ret = MPI_File_open(MPI_COMM_SELF, bin_file, MPI_MODE_CREATE | MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-  if (ret != MPI_SUCCESS)
-  {
-    fprintf(stderr, "[%s] [%d] MPI_File_open() failed on %s\n", __FILE__, __LINE__, bin_file);
-    return 1;
-  }
-#else
-  fh = open(bin_file, O_CREAT | O_WRONLY, 0664);
-#endif
-  
-  //printf("FS block: %d %d\n", io_id->start_fs_block, io_id->idx_derived_ptr->fs_block_size);
-  for (m = 0; m < 10; m++)
-    headers[m] = htonl(0);
-  for (n = 0; n < io_id->idx_ptr->variable_count; n++)
-  {
-    bytes_per_sample = io_id->idx_ptr->variable[n]->bits_per_value / 8;
-    initial_offset = 0;
-    for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++) 
-    {
-      if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[n]->global_block_layout))
-      {
-	block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, (i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[n]->global_block_layout);
-	if (n == 0) 
-	{
-	  block_limit = i - block_negative_offset;
-	  data_offset = ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
-	  data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
-	}
-	else 
-	{
-	  if (i == 0)
-	    for (b = 0; b < n; b++)
-	    {
-	      bytes_per_sample_previous = io_id->idx_ptr->variable[b]->bits_per_value / 8;
-	      initial_offset = initial_offset + ((block_limit + 1) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample_previous * io_id->idx_ptr->variable[b]->values_per_sample);
-	    }
-
-	  data_offset = initial_offset + ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
-	  data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
-	}
-	max_offset = data_offset + io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
-	  
-	little_data_offset = 0;
-	little_data_offset += data_offset;
-
-	headers[10 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-	headers[11 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-	headers[12 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(little_data_offset);
-	headers[13 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-	headers[14 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample);
-	
-	//printf("[%d] [%d] :: [%d %d %d] Offste and Count %d %d\n", file_number, i, io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample);
-	
-	for (m = 15; m < 20; m++)
-	  headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-      } 
-      else 
-      {
-	for (m = 10; m < 20; m++)
-	  headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-      }
-    }
-  }
-  
-#if PIDX_HAVE_MPI
-  ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
-  if (ret != MPI_SUCCESS) 
-  {
-    fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-    return 1;
-  }
-#else
-  pwrite(fh, headers, total_header_size, 0);
-#endif
-  
-  free(headers);
-
-#if 1 //sid: some problem detecting file size, temporarily disable this bit (or get rid of it)
-  if (max_offset != 0) 
-  {
-#if PIDX_HAVE_MPI
-    ret = MPI_File_set_size(fh, max_offset);
-    if (ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_set_size() failed.\n", __FILE__, __LINE__);
-      return 1;
-    }
-#else
-    ftruncate(fh, max_offset);
-#endif
-  }
-#endif
-  
-#if PIDX_HAVE_MPI  
-  ret = MPI_File_close(&fh);
-  if (ret != MPI_SUCCESS) 
-  {
-    fprintf(stderr, "[%s] [%d] MPI_File_open() failed on %s\n", __FILE__, __LINE__, bin_file);
-    return 1;
-  }
-#else
-  close(fh);
-#endif
-  
-  return 0;
-}
 
 static int write_read_samples(PIDX_io_id io_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, long long buffer_offset, int MODE)
 {
@@ -237,16 +109,31 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, unsigned lon
     bytes_per_sample = io_id->idx_ptr->variable[variable_index]->bits_per_value / 8;
     data_offset = file_index * bytes_per_sample * io_id->idx_ptr->variable[variable_index]->values_per_sample;
     data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
-    block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_ptr->variable[variable_index]->global_block_layout);
+    if (PIDX_VAR == 1)
+      block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_ptr->variable[variable_index]->VAR_global_block_layout);
+    else
+      block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_derived_ptr->global_block_layout);
     data_offset -= block_negative_offset * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[variable_index]->values_per_sample;
       
-    //printf("NEGATIVE = %d\n", block_negative_offset);
-    for (l = 0; l < variable_index; l++) 
+    if (PIDX_VAR == 1)
     {
-      bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
-      for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
-	if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[l]->global_block_layout))
-	  data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
+      for (l = 0; l < variable_index; l++) 
+      {
+        bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
+        for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
+          if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[l]->VAR_global_block_layout))
+            data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
+      }
+    }
+    else
+    {
+      for (l = 0; l < variable_index; l++) 
+      {
+        bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
+        for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
+          if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_derived_ptr->global_block_layout))
+            data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
+      }
     }
     
 #if 0
@@ -423,7 +310,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   int bytes_per_sample, bytes_per_sample_previous;
   int HPC_writes = 1;
   int all_scalars = 1;
-  double t1, t2, t3, t4, t5, t6;
+  //double t1, t2, t3, t4, t5, t6;
   
 #if PIDX_HAVE_MPI
   MPI_File fh;
@@ -437,200 +324,371 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   //char adjusted_file_name[PATH_MAX];
   if (agg_buffer->var_number == 0 && agg_buffer->sample_number == 0)
   {
-    t1 = MPI_Wtime();
+    //t1 = MPI_Wtime();
     generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
-    //adjust_file_name(file_name, adjusted_file_name);
 
 #if PIDX_HAVE_MPI
     MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 #else
     fh = open(file_name, O_WRONLY);
 #endif
-      
+    
     data_offset = 0;
     total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * io_id->idx_ptr->variable_count;
     headers = (uint32_t*)malloc(total_header_size);
     memset(headers, 0, total_header_size);
     
-    t2 = MPI_Wtime();
-    if (HPC_writes == 1)
+    //t2 = MPI_Wtime();
+    if (PIDX_VAR == 1)
     {
-      if (enable_caching == 0)
+      if (HPC_writes == 1)
       {
-        for (n = 0; n < io_id->idx_ptr->variable_count; n++)
+        if (enable_caching == 0)
         {
-          if (io_id->idx_ptr->variable[n]->values_per_sample != 1)
+          for (n = 0; n < io_id->idx_ptr->variable_count; n++)
           {
-            all_scalars = 0;
-            break;
-          }
-        }
-        all_scalars = 0;
-        for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++) 
-        {
-          empty_blocks = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, ((io_id->idx_ptr->variable[0]->blocks_per_file[agg_buffer->file_number] - 1) + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[0]->global_block_layout);
-            
-          if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[0]->global_block_layout))
-          {
-            block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, (i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[0]->global_block_layout);
-            
-            for (n = 0; n < io_id->idx_ptr->variable_count; n++)
+            if (io_id->idx_ptr->variable[n]->values_per_sample != 1)
             {
-              base_offset = 0;
-              if (all_scalars == 0)
-                for (b = 0; b < n; b++)
-                  base_offset = base_offset + (io_id->idx_ptr->variable[0]->blocks_per_file[agg_buffer->file_number] - empty_blocks) * (io_id->idx_ptr->variable[b]->bits_per_value / 8) * io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->variable[b]->values_per_sample;
+              all_scalars = 0;
+              break;
+            }
+          }
+          all_scalars = 0;
+          for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++) 
+          {
+            empty_blocks = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, ((io_id->idx_ptr->variable[io_id->start_var_index]->VAR_blocks_per_file[agg_buffer->file_number] - 1) + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[io_id->start_var_index]->VAR_global_block_layout);
               
-              else
-                base_offset =  n * (io_id->idx_ptr->variable[0]->blocks_per_file[agg_buffer->file_number] - empty_blocks) * (io_id->idx_ptr->variable[0]->bits_per_value / 8) * io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->variable[0]->values_per_sample;
+            if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[io_id->start_var_index]->VAR_global_block_layout))
+            {
+              block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, (i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[io_id->start_var_index]->VAR_global_block_layout);
               
-              
-              data_offset = (((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block) * (io_id->idx_ptr->variable[n]->bits_per_value / 8) * io_id->idx_ptr->variable[n]->values_per_sample;
-              data_offset = base_offset + data_offset + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
-              
-              headers[12 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(data_offset);
-              headers[14 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[n]->bits_per_value / 8) * io_id->idx_ptr->variable[n]->values_per_sample);  
+              for (n = 0; n < io_id->idx_ptr->variable_count; n++)
+              {
+                base_offset = 0;
+                if (all_scalars == 0)
+                  for (b = 0; b < n; b++)
+                    base_offset = base_offset + (io_id->idx_ptr->variable[io_id->start_var_index]->VAR_blocks_per_file[agg_buffer->file_number] - empty_blocks) * (io_id->idx_ptr->variable[b]->bits_per_value / 8) * io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->variable[b]->values_per_sample;
+                
+                else
+                  base_offset =  n * (io_id->idx_ptr->variable[io_id->start_var_index]->VAR_blocks_per_file[agg_buffer->file_number] - empty_blocks) * (io_id->idx_ptr->variable[io_id->start_var_index]->bits_per_value / 8) * io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->variable[0]->values_per_sample;
+                
+                data_offset = (((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block) * (io_id->idx_ptr->variable[n]->bits_per_value / 8) * io_id->idx_ptr->variable[n]->values_per_sample;
+                data_offset = base_offset + data_offset + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+                
+                headers[12 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(data_offset);
+                headers[14 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[n]->bits_per_value / 8) * io_id->idx_ptr->variable[n]->values_per_sample);  
+              }
             }
           }
         }
+        else
+          memcpy (headers, cached_header_copy, total_header_size);
       }
       else
-        memcpy (headers, cached_header_copy, total_header_size);
-    }
-    else
-    {
-      for (m = 0; m < 10; m++)
-        headers[m] = htonl(0);
-      for (n = 0; n < io_id->idx_ptr->variable_count; n++)
       {
-        bytes_per_sample = io_id->idx_ptr->variable[n]->bits_per_value / 8;
-        initial_offset = 0;
-        for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++) 
+        for (m = 0; m < 10; m++)
+          headers[m] = htonl(0);
+        for (n = 0; n < io_id->idx_ptr->variable_count; n++)
         {
-          if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[n]->global_block_layout))
+          bytes_per_sample = io_id->idx_ptr->variable[n]->bits_per_value / 8;
+          initial_offset = 0;
+          for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++) 
           {
-            block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, (i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[n]->global_block_layout);
-            if (n == 0) 
+            if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[n]->VAR_global_block_layout))
             {
-              block_limit = i - block_negative_offset;
-              data_offset = ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
-              data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+              block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, (i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_ptr->variable[n]->VAR_global_block_layout);
+              if (n == 0) 
+              {
+                block_limit = i - block_negative_offset;
+                data_offset = ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
+                data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+              }
+              else 
+              {
+                if (i == 0)
+                  for (b = 0; b < n; b++)
+                  {
+                    bytes_per_sample_previous = io_id->idx_ptr->variable[b]->bits_per_value / 8;
+                    initial_offset = initial_offset + ((block_limit + 1) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample_previous * io_id->idx_ptr->variable[b]->values_per_sample);
+                  }
+
+                data_offset = initial_offset + ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
+                data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+              }
+                
+              little_data_offset = 0;
+              little_data_offset += data_offset;
+
+              headers[10 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+              headers[11 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+              headers[12 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(little_data_offset);
+              headers[13 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+              headers[14 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample);
+              
+              for (m = 15; m < 20; m++)
+                headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
             }
             else 
             {
-              if (i == 0)
-                for (b = 0; b < n; b++)
-                {
-                  bytes_per_sample_previous = io_id->idx_ptr->variable[b]->bits_per_value / 8;
-                  initial_offset = initial_offset + ((block_limit + 1) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample_previous * io_id->idx_ptr->variable[b]->values_per_sample);
-                }
-
-              data_offset = initial_offset + ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
-              data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+              for (m = 10; m < 20; m++)
+                headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
             }
-              
-            little_data_offset = 0;
-            little_data_offset += data_offset;
-
-            headers[10 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-            headers[11 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-            headers[12 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(little_data_offset);
-            headers[13 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-            headers[14 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample);
-            
-            for (m = 15; m < 20; m++)
-              headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-          }
-          else 
-          {
-            for (m = 10; m < 20; m++)
-              headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
           }
         }
       }
     }
-    t3 = MPI_Wtime();
-    
-    unsigned char* temp_buffer = realloc(agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
-    
-    if (temp_buffer == NULL)
-    {
-      ;
-    }
     else
     {
-      agg_buffer->buffer = temp_buffer;
-      memmove(agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)));
-      memcpy(agg_buffer->buffer, headers, total_header_size);
-      memset(agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
+      if (HPC_writes == 1)
+      {
+        if (enable_caching == 0)
+        {
+          for (n = 0; n < io_id->idx_ptr->variable_count; n++)
+          {
+            if (io_id->idx_ptr->variable[n]->values_per_sample != 1)
+            {
+              all_scalars = 0;
+              break;
+            }
+          }
+          all_scalars = 0;
+          for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++) 
+          {
+            empty_blocks = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] - 1) + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout);
+              
+            if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout))
+            {
+              block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, (i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout);
+              
+              for (n = 0; n < io_id->idx_ptr->variable_count; n++)
+              {
+                base_offset = 0;
+                if (all_scalars == 0)
+                  for (b = 0; b < n; b++)
+                    base_offset = base_offset + (io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] - empty_blocks) * (io_id->idx_ptr->variable[b]->bits_per_value / 8) * io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->variable[b]->values_per_sample;
+                
+                else
+                  base_offset =  n * (io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] - empty_blocks) * (io_id->idx_ptr->variable[io_id->start_var_index]->bits_per_value / 8) * io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->variable[0]->values_per_sample;
+                
+                data_offset = (((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block) * (io_id->idx_ptr->variable[n]->bits_per_value / 8) * io_id->idx_ptr->variable[n]->values_per_sample;
+                data_offset = base_offset + data_offset + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+                
+                headers[12 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(data_offset);
+                headers[14 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[n]->bits_per_value / 8) * io_id->idx_ptr->variable[n]->values_per_sample);  
+              }
+            }
+          }
+        }
+        else
+          memcpy (headers, cached_header_copy, total_header_size);
+      }
+      else
+      {
+        for (m = 0; m < 10; m++)
+          headers[m] = htonl(0);
+        for (n = 0; n < io_id->idx_ptr->variable_count; n++)
+        {
+          bytes_per_sample = io_id->idx_ptr->variable[n]->bits_per_value / 8;
+          initial_offset = 0;
+          for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++) 
+          {
+            if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout))
+            {
+              block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, (i + (io_id->idx_ptr->blocks_per_file * agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout);
+              if (n == 0) 
+              {
+                block_limit = i - block_negative_offset;
+                data_offset = ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
+                data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+              }
+              else 
+              {
+                if (i == 0)
+                  for (b = 0; b < n; b++)
+                  {
+                    bytes_per_sample_previous = io_id->idx_ptr->variable[b]->bits_per_value / 8;
+                    initial_offset = initial_offset + ((block_limit + 1) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample_previous * io_id->idx_ptr->variable[b]->values_per_sample);
+                  }
+
+                data_offset = initial_offset + ((i) - block_negative_offset) * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample;
+                data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+              }
+                
+              little_data_offset = 0;
+              little_data_offset += data_offset;
+
+              headers[10 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+              headers[11 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+              headers[12 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(little_data_offset);
+              headers[13 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+              headers[14 + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[n]->values_per_sample);
+              
+              for (m = 15; m < 20; m++)
+                headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+            }
+            else 
+            {
+              for (m = 10; m < 20; m++)
+                headers[m + ((i + (io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+            }
+          }
+        }
+      }
     }
-    free(headers);
-    t4 = MPI_Wtime();
+    //t3 = MPI_Wtime();
     
-    //printf("Aggregator Buffer size = %d [%d + %d]\n", (((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size)), ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
-    
-#if PIDX_HAVE_MPI
-    if(MODE == PIDX_WRITE)
-      MPI_File_write_at(fh, 0, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
-    else
-      MPI_File_read_at(fh, 0, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
-#else
-      pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
-#endif
+    if (PIDX_VAR == 1)
+    {
+      unsigned char* temp_buffer = realloc(agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
       
-    t5 = MPI_Wtime();
+      if (temp_buffer == NULL)
+      {
+        ;
+      }
+      else
+      {
+        agg_buffer->buffer = temp_buffer;
+        memmove(agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)));
+        memcpy(agg_buffer->buffer, headers, total_header_size);
+        memset(agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
+      }
+      free(headers);
+      //t4 = MPI_Wtime();
+      
 #if PIDX_HAVE_MPI
-    MPI_File_close(&fh);
+      if(MODE == PIDX_WRITE)
+        MPI_File_write_at(fh, 0, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
+      else
+        MPI_File_read_at(fh, 0, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
 #else
-    close(fh);
+        pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
 #endif
-    t6 = MPI_Wtime();
+        
+      //t5 = MPI_Wtime();
+#if PIDX_HAVE_MPI
+      MPI_File_close(&fh);
+#else
+      close(fh);
+#endif
+      //t6 = MPI_Wtime();
+      
+    }
+    else
+    {
+      unsigned char* temp_buffer = realloc(agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
+      
+      if (temp_buffer == NULL)
+      {
+        ;
+      }
+      else
+      {
+        agg_buffer->buffer = temp_buffer;
+        memmove(agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)));
+        memcpy(agg_buffer->buffer, headers, total_header_size);
+        memset(agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
+      }
+      free(headers);
+      //t4 = MPI_Wtime();
+#if PIDX_HAVE_MPI
+      if(MODE == PIDX_WRITE)
+        MPI_File_write_at(fh, 0, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
+      else
+        MPI_File_read_at(fh, 0, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
+#else
+        pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
+#endif
+        
+      //t5 = MPI_Wtime();
+#if PIDX_HAVE_MPI
+      MPI_File_close(&fh);
+#else
+      close(fh);
+#endif
+      //t6 = MPI_Wtime();
+    }
+
     
-    printf("A. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
+    //printf("Aggregator Buffer size = %d [%d + %d]\n", (((io_id->idx_ptr->variable[agg_buffer->var_number]->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size)), ((io_id->idx_ptr->variable[agg_buffer->var_number]->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
+    //printf("A. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
   }
   else if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1) 
   {
-    t1 = MPI_Wtime();
+    //t1 = MPI_Wtime();
     generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
-    //adjust_file_name(file_name, adjusted_file_name);
-    t2 = MPI_Wtime();
+    //t2 = MPI_Wtime();
+    
 #if PIDX_HAVE_MPI
     MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 #else
     fh = open(file_name, O_WRONLY);
 #endif
-    t3 = MPI_Wtime();
+    //t3 = MPI_Wtime();
     data_offset = 0;
     data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
     
-    for (k = 0; k < agg_buffer->var_number; k++) 
-      for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
-	data_offset = data_offset + io_id->idx_ptr->variable[k]->blocks_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8);
-    
-    for (i = 0; i < agg_buffer->sample_number; i++)
-      data_offset = data_offset + io_id->idx_ptr->variable[k]->blocks_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
-    
-    t4 = MPI_Wtime();
+    if (PIDX_VAR == 1)
+    {
+      for (k = 0; k < agg_buffer->var_number; k++) 
+        for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
+          data_offset = data_offset + io_id->idx_ptr->variable[k]->VAR_blocks_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8);
+      
+      for (i = 0; i < agg_buffer->sample_number; i++)
+        data_offset = data_offset + io_id->idx_ptr->variable[k]->VAR_blocks_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
+      
+      //t4 = MPI_Wtime();
 
 #if PIDX_HAVE_MPI
-    if(MODE == PIDX_WRITE)
-      MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) , MPI_BYTE, &status);
+      if(MODE == PIDX_WRITE)
+        MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) , MPI_BYTE, &status);
+      else
+        MPI_File_read_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), MPI_BYTE, &status);
+#else
+        pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), data_offset);
+#endif
+      //t5 = MPI_Wtime();
+
+#if PIDX_HAVE_MPI
+      MPI_File_close(&fh);
+#else
+      close(fh);
+#endif
+      //t6 = MPI_Wtime();
+      //printf("B. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
+    }
     else
-      MPI_File_read_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), MPI_BYTE, &status);
-#else
-      pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), data_offset);
-#endif
-    t5 = MPI_Wtime();
+    {
+      for (k = 0; k < agg_buffer->var_number; k++) 
+        for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
+          data_offset = data_offset + io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8);
+      
+      for (i = 0; i < agg_buffer->sample_number; i++)
+        data_offset = data_offset + io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
+      
+      //t4 = MPI_Wtime();
 
 #if PIDX_HAVE_MPI
-    MPI_File_close(&fh);
+      if(MODE == PIDX_WRITE)
+        MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) , MPI_BYTE, &status);
+      else
+        MPI_File_read_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), MPI_BYTE, &status);
 #else
-    close(fh);
+        pwrite(fh, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), data_offset);
 #endif
-    t6 = MPI_Wtime();
-    printf("B. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
+      //t5 = MPI_Wtime();
+
+#if PIDX_HAVE_MPI
+      MPI_File_close(&fh);
+#else
+      close(fh);
+#endif
+      //t6 = MPI_Wtime();
+      //printf("B. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
+    }
   }
+  
   return 0;
+  
 }
 
 int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MODE)

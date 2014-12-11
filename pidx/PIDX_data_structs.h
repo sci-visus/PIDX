@@ -41,10 +41,10 @@ struct PIDX_variable_struct
   int patch_group_count;
   Ndim_box_group* patch_group_ptr;
   
-  block_layout* global_block_layout;
-  int *blocks_per_file;
-  int existing_file_count;
-  int *existing_file_index;
+  block_layout* VAR_global_block_layout;
+  int *VAR_blocks_per_file;
+  int VAR_existing_file_count;
+  int *VAR_existing_file_index;
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -79,6 +79,11 @@ struct idx_dataset_derived_metadata_struct
   
   int fs_block_size;
   off_t start_fs_block;
+  
+  block_layout* global_block_layout;
+  int *existing_blocks_index_per_file;
+  int existing_file_count;
+  int *existing_file_index;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

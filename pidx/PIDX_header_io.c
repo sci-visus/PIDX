@@ -346,27 +346,25 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
 #endif
   
   int first_block = 0;
-  for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
-  {
-    if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->global_block_layout))
-    {
-      first_block = i;
-      break;
-    }
-  }
-  
-  //printf("FS block: %d %d\n", header_io_id->start_fs_block, header_io_id->idx_derived_ptr->fs_block_size);
   for (m = 0; m < 10; m++)
     headers[m] = htonl(0);
   for (n = 0; n < header_io_id->end_var_index; n++)
   {
+    for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
+    {
+      if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
+      {
+        first_block = i;
+        break;
+      }
+    }
     bytes_per_sample = header_io_id->idx_ptr->variable[n]->bits_per_value / 8;
     initial_offset = 0;
     for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
     {
-      if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->global_block_layout))
+      if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
       {
-        block_negative_offset = find_block_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->global_block_layout);
+        block_negative_offset = find_block_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout);
         if (n == 0) 
         {
           block_limit = i - block_negative_offset;

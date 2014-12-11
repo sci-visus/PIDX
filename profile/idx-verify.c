@@ -370,7 +370,8 @@ int main(int argc, char **argv)
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
                 
-                if (data_buffer[hz_val * values_per_sample[var] + 0] == 0)
+                //if (data_buffer[hz_val * values_per_sample[var] + 0] == 0 && (ZYX[2] < global_bounds[2]))
+                if (ZYX[2] >= global_bounds[2] || ZYX[1] >= global_bounds[1] || ZYX[0] >= global_bounds[0])
                   continue;
 
                 check_bit = 1, s = 0;
@@ -380,7 +381,11 @@ int main(int argc, char **argv)
                 if (check_bit == 0)
                 {
                   lost_element_count++;
-                  printf("[%d] [%lld %lld %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", var, lost_element_count, hz_index/samples_per_block, hz_val, hz_index, ZYX[0], ZYX[1], ZYX[2], (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  printf("[%d] [%lld %lld %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                         var,
+                         lost_element_count, hz_index/samples_per_block, hz_val, 
+                         hz_index, ZYX[0], ZYX[1], ZYX[2], 
+                         (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
                 else 
                 {

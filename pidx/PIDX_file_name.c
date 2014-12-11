@@ -39,7 +39,7 @@ void mira_create_folder_name(char* bin_file, char* folder_name)
   strncpy(bin_file_first_part, bin_file, (ch_slash - bin_file));
   //printf("File name copy %s\n", bin_file_first_part);
   
-  sprintf(folder_name, "%s/%s", bin_file_first_part, file_name, file_name);
+  sprintf(folder_name, "%s/%s", bin_file_first_part, file_name);
   //printf("Final File name = %s\n", folder_name);
     
   return;
