@@ -632,7 +632,7 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
 }
 
 /// tear down the various buffer structs. In the case of the output 
-/// structs this function should also free the memory buffers as well */
+/// structs this function should also free the memory buffers as well
 int PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
 {
   int i, j, var;

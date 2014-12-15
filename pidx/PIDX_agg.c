@@ -17,6 +17,7 @@
  *****************************************************/
 
 #include "PIDX_inc.h"
+#define PIDX_ACTIVE_TARGET 1
 
 static int PIDX_VAR = 0;
 
@@ -118,8 +119,6 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
     assert(samples_in_file <= samples_per_file);
   }
 
-  
-
   //Calculating the hz index of "hz_start" relative to the file to which it belongs also taking into account empty blocks in file
   assert(hz_start >= (samples_per_file * file_no) + (negative_block_offset * agg_id->idx_derived_ptr->samples_per_block));
   target_disp = ((hz_start - ((samples_per_file * file_no) + (negative_block_offset * agg_id->idx_derived_ptr->samples_per_block))) * values_per_sample)
@@ -156,7 +155,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         ret = MPI_Put(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          ;
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return (-1);
         }
       }
       else
@@ -164,7 +164,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         ret = MPI_Get(hz_buffer, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, (samples_in_file - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          ;
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return (-1);
         }
       }
 
@@ -192,7 +193,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
           ret = MPI_Put(hz_buffer + ((samples_in_file - target_disp) + (itr * samples_in_file)) * bytes_per_datatype, samples_in_file * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, samples_in_file * bytes_per_datatype, MPI_BYTE, agg_id->win);
           if (ret != MPI_SUCCESS)
           {
-            ;
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
           }
         }
         else
@@ -200,7 +202,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
           ret = MPI_Get(hz_buffer + ((samples_in_file - target_disp) + (itr * samples_in_file)) * bytes_per_datatype, samples_in_file * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, samples_in_file * bytes_per_datatype, MPI_BYTE, agg_id->win);
           if (ret != MPI_SUCCESS)
           {
-            ;
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
           }
         }
 #ifndef PIDX_ACTIVE_TARGET
@@ -229,7 +232,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
                       MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          ;
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return (-1);
         }
       }
       else
@@ -238,7 +242,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
                       MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          ;
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return (-1);
         }
       }
 #ifndef PIDX_ACTIVE_TARGET
@@ -266,7 +271,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          ;
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return (-1);
         }
       }
       else
@@ -274,7 +280,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         ret = MPI_Get(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          ;
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return (-1);
         }
       }
 #ifndef PIDX_ACTIVE_TARGET
@@ -392,9 +399,17 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
 
 int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int MODE)
 {
-  int i, p, e1, var;
+  int i, p, e1, var, ret = 0;
   int send_index = 0;
   long long index = 0, count = 0, hz_index = 0;
+  int variable_order = 1;
+  int aggregate_lower_levels = 1;
+  int existing_levels = 0;
+  int element_count = 0;
+  int **send_offset, **send_count;
+  unsigned char **data_buffer;
+  int counter = 0, dest_counter = 0;
+  MPI_Datatype *chunk_data_type;
   
   int rank = 0;
   
@@ -440,7 +455,12 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
                 for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
                 {
                   //printf("[A] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
-                  aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                  ret = aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                  if (ret == -1)
+                  {
+                    fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                    return (-1);
+                  }
                 }
               }
             }
@@ -455,6 +475,11 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
                   {
                     //printf("[B] Size %lld Offset %lld Send Index %d\n", count, index, send_index);
                     aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                    if (ret == -1)
+                    {
+                      fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                      return (-1);
+                    }
                   }
                 }
               }
@@ -464,6 +489,11 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
                 {
                   //printf("[C] Size %lld Offset %lld\n", count, index);
                   aggregate_write_read(agg_id, agg_buffer, var, index, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                  if (ret == -1)
+                  {
+                    fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                    return (-1);
+                  }
                 }
 
                 if(e1 == agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] - 1)
@@ -472,6 +502,11 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
                   {
                     //printf("[D] Size %lld Offset %lld\n", count, index);
                     aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index], 1, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], e1, MODE);
+                    if (ret == -1)
+                    {
+                      fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                      return (-1);
+                    }
                   }
                 }
                 index = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index];
@@ -486,47 +521,150 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
     }
     else
     {
-#if 0
-      for (i = 0; i < (agg_id->idx_ptr->bits_per_block + 1) + 1; i++)
+      if (aggregate_lower_levels == 1)
       {
-        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        
+        int intermediate_hz_level = ((agg_id->idx_ptr->bits_per_block + 1) >= agg_id->idx_derived_ptr->maxh) ? agg_id->idx_ptr->bits_per_block + 1 : agg_id->idx_ptr->bits_per_block + 2;
+        
+        for (i = 0; i < intermediate_hz_level; i++)
         {
-          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
           {
-          
+            existing_levels++;
+            element_count = element_count + agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->start_hz_index[i] + 1;
           }
         }
-      }
-      
-      for (i = (agg_id->idx_ptr->bits_per_block + 1) + 1; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
-      {
-        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        
+        data_buffer = malloc(sizeof(*data_buffer) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        memset(data_buffer, 0, sizeof(*data_buffer) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        
+        send_offset = malloc(sizeof(*send_offset) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        send_count = malloc(sizeof(*send_count) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        memset(send_offset, 0, sizeof(*send_offset) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        memset(send_count, 0, sizeof(*send_count) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        for (var = 0; var <= (agg_id->end_var_index - agg_id->start_var_index); var++)
         {
-          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-          {
-            index = 0;
-            count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
-            
-            aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
-          }
+          send_offset[var] = malloc(existing_levels * sizeof(*send_offset[var]));
+          send_count[var] = malloc(existing_levels * sizeof(*send_count[var]));
+          memset(send_offset[var], 0, existing_levels * sizeof(*send_offset[var]));
+          memset(send_count[var], 0, existing_levels * sizeof(*send_count[var]));
         }
-      }
-#else
-      for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
-      {
-        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        
+        int bytes_per_datatype;
+        chunk_data_type = malloc( sizeof(*chunk_data_type) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        
+        for (var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
         {
-          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          bytes_per_datatype = agg_id->idx_ptr->variable[var]->bits_per_value / 8;
+          data_buffer[var] = malloc( element_count * sizeof(*data_buffer[var]) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype );
+          memset(data_buffer[var], 0, element_count *  sizeof(*data_buffer[var]) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype);
+          counter = 0;
+          dest_counter = 0;
+          for (i = 0; i < intermediate_hz_level; i++)
           {
-            index = 0;
-            count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
-            
-            aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
-          }
-        }
-      }
-#endif
+            if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+            {
+              memcpy(data_buffer[var] + dest_counter, 
+                    agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 
+                    (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1) * agg_id->idx_ptr->variable[var]->values_per_sample  * bytes_per_datatype );
+              send_count[var][counter] = (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype;
+              dest_counter = dest_counter + send_count[var][counter];
 
+              send_offset[var][counter] = agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype;
+              
+              counter++;
+            }
+          }
+          
+          MPI_Type_indexed(existing_levels, send_count[var], send_offset[var], MPI_BYTE, &(chunk_data_type[var]));
+          MPI_Type_commit(&(chunk_data_type[var]));
+          
+          ret = MPI_Put(data_buffer[var], element_count * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->rank_holder[var - agg_id->start_var_index][0][0], 0, 1, chunk_data_type[var], agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
+        }
+        
+        if (variable_order == 0)
+        {
+          for (i = intermediate_hz_level; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+          {
+            if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+            {
+              for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+              {
+                index = 0;
+                count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
+                
+                aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+              }
+            }
+          }
+        }
+        else
+        {
+          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          {
+            for (i = intermediate_hz_level; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+            {
+              if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+              {
+                index = 0;
+                count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
+                
+                aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+              }
+            }
+          }
+        }
+      }
+      else
+      {
+        if (variable_order == 0)
+        {
+          for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+          {
+            if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+            {
+              for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+              {
+                index = 0;
+                count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
+                
+                aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+                if (ret == -1)
+                {
+                  fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                  return (-1);
+                }
+              }
+            }
+          }
+        }
+        else
+        {
+          for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+          {
+            for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+            {
+              if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+              {
+                index = 0;
+                count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
+                
+                aggregate_write_read(agg_id, agg_buffer, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+                if (ret == -1)
+                {
+                  fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                  return (-1);
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 
@@ -538,6 +676,30 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
 #endif
   MPI_Win_free(&(agg_id->win));
 #endif
+  
+  if (aggregate_lower_levels == 1)
+  {
+    for (var = 0; var <= (agg_id->end_var_index - agg_id->start_var_index); var++)
+    {
+      free(send_offset[var]);
+      send_offset[var] = 0;
+      free(send_count[var]);
+      send_count[var] = 0;
+    }
+    free(send_offset);
+    send_offset = 0;
+    free(send_count);
+    send_count = 0;
+    
+    free(chunk_data_type);
+    for (var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+    {
+      free(data_buffer[var]);
+      data_buffer[var] = 0;
+    }
+    free(data_buffer);
+    data_buffer = 0;
+  }
   
   return PIDX_success;
 }

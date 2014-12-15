@@ -1386,6 +1386,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(file->comm, &rank);
 #endif
+  
   populate_idx_dataset(file);
   
   /// Initialization ONLY ONCE per IDX file
@@ -1456,7 +1457,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     PIDX_header_io_set_communicator(file->header_io_id, file->comm);
 #endif
     
-    if(hp == 0)
+    if (hp == 0)
       PIDX_header_io_file_create(file->header_io_id);
     
     if (file->idx_ptr->variable_count == -1 || (file->idx_ptr->variable_count == file->idx_ptr->variable_index_tracker))

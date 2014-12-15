@@ -677,7 +677,6 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
             {
               variable[i]->HZ_patch[y]->buffer[j] = temp_buffer;
             }
-            
             //long long dvalue;
             //if (j == 20)
             //{

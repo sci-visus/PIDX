@@ -338,8 +338,7 @@ int main(int argc, char **argv)
           fprintf(stderr, "[File : %s] [Line : %d] read : size\n", __FILE__, __LINE__);
           return 0;
         }
-        
-      
+            
         int bpf = 0;
         unsigned long long* data_buffer = NULL;
         int check_bit = 1, s = 0;
