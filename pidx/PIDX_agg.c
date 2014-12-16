@@ -406,10 +406,10 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   int aggregate_lower_levels = 1;
   int existing_levels = 0;
   int element_count = 0;
-  int **send_offset, **send_count;
-  unsigned char **data_buffer;
+  int ***send_offset, ***send_count;
+  unsigned char ***data_buffer;
   int counter = 0, dest_counter = 0;
-  MPI_Datatype *chunk_data_type;
+  MPI_Datatype **chunk_data_type;
   
   int rank = 0;
   
@@ -429,6 +429,15 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
 #endif
 #endif
+  
+  send_offset = malloc(sizeof(*send_offset) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count);
+  memset(send_offset, 0, (sizeof(*send_offset) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count));
+  send_count = malloc(sizeof(*send_count) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count);
+  memset(send_count, 0, (sizeof(*send_count) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count));
+  data_buffer = malloc(sizeof(*data_buffer) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count);
+  memset(data_buffer, 0, (sizeof(*data_buffer) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count));
+  chunk_data_type = malloc(sizeof(*chunk_data_type) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count);
+  memset(chunk_data_type, 0, (sizeof(*chunk_data_type) * agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count));
   
   for (p = 0; p < agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count; p++)
   {
@@ -534,51 +543,51 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
             element_count = element_count + agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->start_hz_index[i] + 1;
           }
         }
-        data_buffer = malloc(sizeof(*data_buffer) * (agg_id->end_var_index - agg_id->start_var_index + 1));
-        memset(data_buffer, 0, sizeof(*data_buffer) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        data_buffer[p] = malloc(sizeof(*data_buffer[p]) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        memset(data_buffer[p], 0, sizeof(*data_buffer[p]) * (agg_id->end_var_index - agg_id->start_var_index + 1));
         
-        send_offset = malloc(sizeof(*send_offset) * (agg_id->end_var_index - agg_id->start_var_index + 1));
-        send_count = malloc(sizeof(*send_count) * (agg_id->end_var_index - agg_id->start_var_index + 1));
-        memset(send_offset, 0, sizeof(*send_offset) * (agg_id->end_var_index - agg_id->start_var_index + 1));
-        memset(send_count, 0, sizeof(*send_count) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        send_offset[p] = malloc(sizeof(*send_offset[p]) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        send_count[p] = malloc(sizeof(*send_count[p]) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        memset(send_offset[p], 0, sizeof(*send_offset[p]) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        memset(send_count[p], 0, sizeof(*send_count[p]) * (agg_id->end_var_index - agg_id->start_var_index + 1));
         for (var = 0; var <= (agg_id->end_var_index - agg_id->start_var_index); var++)
         {
-          send_offset[var] = malloc(existing_levels * sizeof(*send_offset[var]));
-          send_count[var] = malloc(existing_levels * sizeof(*send_count[var]));
-          memset(send_offset[var], 0, existing_levels * sizeof(*send_offset[var]));
-          memset(send_count[var], 0, existing_levels * sizeof(*send_count[var]));
+          send_offset[p][var] = malloc(existing_levels * sizeof(*send_offset[p][var]));
+          send_count[p][var] = malloc(existing_levels * sizeof(*send_count[p][var]));
+          memset(send_offset[p][var], 0, existing_levels * sizeof(*send_offset[p][var]));
+          memset(send_count[p][var], 0, existing_levels * sizeof(*send_count[p][var]));
         }
         
         int bytes_per_datatype;
-        chunk_data_type = malloc( sizeof(*chunk_data_type) * (agg_id->end_var_index - agg_id->start_var_index + 1));
+        chunk_data_type[p] = malloc( sizeof(*chunk_data_type[p]) * (agg_id->end_var_index - agg_id->start_var_index + 1));
         
         for (var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
         {
           bytes_per_datatype = agg_id->idx_ptr->variable[var]->bits_per_value / 8;
-          data_buffer[var] = malloc( element_count * sizeof(*data_buffer[var]) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype );
-          memset(data_buffer[var], 0, element_count *  sizeof(*data_buffer[var]) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype);
+          data_buffer[p][var] = malloc( element_count * sizeof(*data_buffer[p][var]) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype );
+          memset(data_buffer[p][var], 0, element_count *  sizeof(*data_buffer[p][var]) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype);
           counter = 0;
           dest_counter = 0;
           for (i = 0; i < intermediate_hz_level; i++)
           {
             if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
             {
-              memcpy(data_buffer[var] + dest_counter, 
+              memcpy(data_buffer[p][var] + dest_counter, 
                     agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 
                     (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1) * agg_id->idx_ptr->variable[var]->values_per_sample  * bytes_per_datatype );
-              send_count[var][counter] = (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype;
-              dest_counter = dest_counter + send_count[var][counter];
+              send_count[p][var][counter] = (agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1) * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype;
+              dest_counter = dest_counter + send_count[p][var][counter];
 
-              send_offset[var][counter] = agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype;
+              send_offset[p][var][counter] = agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype;
               
               counter++;
             }
           }
           
-          MPI_Type_indexed(existing_levels, send_count[var], send_offset[var], MPI_BYTE, &(chunk_data_type[var]));
-          MPI_Type_commit(&(chunk_data_type[var]));
+          MPI_Type_indexed(existing_levels, send_count[p][var], send_offset[p][var], MPI_BYTE, &(chunk_data_type[p][var]));
+          MPI_Type_commit(&(chunk_data_type[p][var]));
           
-          ret = MPI_Put(data_buffer[var], element_count * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->rank_holder[var - agg_id->start_var_index][0][0], 0, 1, chunk_data_type[var], agg_id->win);
+          ret = MPI_Put(data_buffer[p][var], element_count * agg_id->idx_ptr->variable[var]->values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->rank_holder[var - agg_id->start_var_index][0][0], 0, 1, chunk_data_type[p][var], agg_id->win);
           if(ret != MPI_SUCCESS)
           {
             fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
@@ -676,32 +685,36 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   MPI_Win_free(&(agg_id->win));
 #endif
   
-  
   if (aggregate_lower_levels == 1)
   {
-    
-    for (var = 0; var <= (agg_id->end_var_index - agg_id->start_var_index); var++)
+    for (p = 0; p < agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count; p++)
     {
-      free(send_offset[var]);
-      send_offset[var] = 0;
-      free(send_count[var]);
-      send_count[var] = 0;
+      for (var = 0; var <= (agg_id->end_var_index - agg_id->start_var_index); var++)
+      {
+        
+        free(send_offset[p][var]);
+        send_offset[p][var] = 0;
+        free(send_count[p][var]);
+        send_count[p][var] = 0;
+        free(data_buffer[p][var]);
+        data_buffer[p][var] = 0;
+        
+      }
+      free(send_offset[p]);
+      send_offset[p] = 0;
+      free(send_count[p]);
+      send_count[p] = 0;
+      free(data_buffer[p]);
+      data_buffer[p] = 0;
+      free(chunk_data_type[p]);
     }
-    
     free(send_offset);
     send_offset = 0;
     free(send_count);
     send_count = 0;
-    
     free(chunk_data_type);
-    for (var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-    {
-      free(data_buffer[var]);
-      data_buffer[var] = 0;
-    }
     free(data_buffer);
     data_buffer = 0;
-    
   }
   
   return PIDX_success;

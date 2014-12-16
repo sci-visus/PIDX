@@ -2036,7 +2036,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     {
       fprintf(stdout, "---------------------------------------VG %d (START)------------------------------------\n", var);
       fprintf(stdout, "Buffer init time %f\n", (var_init_end[var] - var_init_start[var]));
-      fprintf(stdout, "Init time [RST + HZ + AGG + IO] [%f + %f + %f + %f] = %f\n", (rst_init_end[var] - rst_init_start[var]), (hz_init_end[var] - hz_init_start[var]), (agg_init_end[var] - agg_init_start[var]), (io_init_end[var] - io_init_start[var]), (rst_init_end[var] - rst_init_start[var]) + (hz_init_end[var] - hz_init_start[var]) + (agg_init_end[var] - agg_init_start[var]) + (io_init_end[var] - io_init_start[var]));
+      fprintf(stdout, "Init time  [RST + HZ + AGG + IO] [%f + %f + %f + %f] = %f\n", (rst_init_end[var] - rst_init_start[var]), (hz_init_end[var] - hz_init_start[var]), (agg_init_end[var] - agg_init_start[var]), (io_init_end[var] - io_init_start[var]), (rst_init_end[var] - rst_init_start[var]) + (hz_init_end[var] - hz_init_start[var]) + (agg_init_end[var] - agg_init_start[var]) + (io_init_end[var] - io_init_start[var]));
       
       fprintf(stdout, "Write time [RST + HZ + AGG + IO] [%f + %f + %f + %f] = %f\n", (rst_end[var] - rst_start[var]), (hz_end[var] - hz_start[var]), (agg_end[var] - agg_start[var]), (io_end[var] - io_start[var]), (rst_end[var] - rst_start[var]) + (hz_end[var] - hz_start[var]) + (agg_end[var] - agg_start[var]) + (io_end[var] - io_start[var]));
       
