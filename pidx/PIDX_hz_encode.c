@@ -168,7 +168,7 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
           end_block_no = variable[i]->HZ_patch[k]->end_hz_index[j] / id->idx_derived_ptr->samples_per_block;
 
           count = 0;
-          for(b = start_block_no; b < end_block_no; b++)
+          for(b = start_block_no; b <= end_block_no; b++)
           {
             if (PIDX_VAR == 1)
             {
@@ -184,13 +184,19 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
             {
               if (is_block_present(b, id->idx_derived_ptr->global_block_layout) == 0)
               {
-                printf("[%d] missing blocks == %d\n", j, b);
                 variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
                 variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
+                printf("[%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count,  variable[i]->HZ_patch[k]->missing_block_count_per_level[j], variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, variable[i]->HZ_patch[k]->start_hz_index[j], variable[i]->HZ_patch[k]->end_hz_index[j], b);
                 count++;
               }
             }
           }
+          //if(j == 19)
+          //{
+            //variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
+            //variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = 15;
+            //printf("[%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count, variable[i]->HZ_patch[k]->missing_block_count_per_level[j], variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, variable[i]->HZ_patch[k]->start_hz_index[j], variable[i]->HZ_patch[k]->end_hz_index[j], b);
+          //}
         }
 
         free(allign_offset[j]);
@@ -573,7 +579,11 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
                                 bytes_for_datatype);
                         
 #if 0
-                        if (hz_order == 985668 || hz_order == 985669 || hz_order == 1971392 || hz_order == 1971394)
+                        //if (hz_order == 985668 || hz_order == 985669 || hz_order == 1971392 || hz_order == 1971394)
+                        //if (i == 31 && j == 127 && k == 155)
+                        long long dvalue;
+                        memcpy(&dvalue, variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+                        if(dvalue == 638051)
                         {
                           long long dvalue;
                           long long dvalue2;
@@ -655,15 +665,20 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
           {
             int adjusted_buffer_size = (variable[i]->HZ_patch[y]->end_hz_index[j] - variable[i]->HZ_patch[y]->start_hz_index[j] + 1 - (variable[i]->HZ_patch[y]->missing_block_count_per_level[j] * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * variable[i]->values_per_sample;
             
+            int initial_m = 0;
             for (n = 0; n < variable[i]->HZ_patch[y]->missing_block_count_per_level[j]; n++)
             {
-              for (m = 0; m < (variable[i]->HZ_patch[y]->end_hz_index[j] - variable[i]->HZ_patch[y]->start_hz_index[j] + 1); m++)
+              for (m = initial_m; m < (variable[i]->HZ_patch[y]->end_hz_index[j] - variable[i]->HZ_patch[y]->start_hz_index[j] + 1); m++)
               {
                 if (m + variable[i]->HZ_patch[y]->start_hz_index[j] == variable[i]->HZ_patch[y]->missing_block_index_per_level[j][n] * id->idx_derived_ptr->samples_per_block)
                 {
                   memmove(variable[i]->HZ_patch[y]->buffer[j] + (m - (level_blocks * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * variable[i]->values_per_sample, 
-                         variable[i]->HZ_patch[y]->buffer[j] + ((m + id->idx_derived_ptr->samples_per_block) - (level_blocks * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * variable[i]->values_per_sample, ((variable[i]->HZ_patch[y]->end_hz_index[j] - variable[i]->HZ_patch[y]->start_hz_index[j] + 1 - ((m + level_blocks) + id->idx_derived_ptr->samples_per_block) ) * bytes_for_datatype * variable[i]->values_per_sample));
+                          
+                         variable[i]->HZ_patch[y]->buffer[j] + ((m + id->idx_derived_ptr->samples_per_block) - (level_blocks * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * variable[i]->values_per_sample,
+                          
+                        ((variable[i]->HZ_patch[y]->end_hz_index[j] - variable[i]->HZ_patch[y]->start_hz_index[j] + 1 - ((m + level_blocks) + id->idx_derived_ptr->samples_per_block) ) * bytes_for_datatype * variable[i]->values_per_sample));
                   level_blocks++;
+                  initial_m = m;
                 }
               }
             }

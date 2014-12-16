@@ -534,7 +534,6 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
             element_count = element_count + agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->start_hz_index[i] + 1;
           }
         }
-        
         data_buffer = malloc(sizeof(*data_buffer) * (agg_id->end_var_index - agg_id->start_var_index + 1));
         memset(data_buffer, 0, sizeof(*data_buffer) * (agg_id->end_var_index - agg_id->start_var_index + 1));
         
@@ -677,8 +676,10 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   MPI_Win_free(&(agg_id->win));
 #endif
   
+  
   if (aggregate_lower_levels == 1)
   {
+    
     for (var = 0; var <= (agg_id->end_var_index - agg_id->start_var_index); var++)
     {
       free(send_offset[var]);
@@ -686,6 +687,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
       free(send_count[var]);
       send_count[var] = 0;
     }
+    
     free(send_offset);
     send_offset = 0;
     free(send_count);
@@ -699,6 +701,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
     }
     free(data_buffer);
     data_buffer = 0;
+    
   }
   
   return PIDX_success;

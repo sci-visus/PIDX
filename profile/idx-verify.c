@@ -380,9 +380,9 @@ int main(int argc, char **argv)
                 if (check_bit == 0)
                 {
                   lost_element_count++;
-                  printf("[%d] [%lld %lld %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                  printf("[%d] [%lld (%lld = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
                          var,
-                         lost_element_count, hz_index/samples_per_block, hz_val, 
+                         lost_element_count, bpf, hz_index/samples_per_block, hz_val, 
                          hz_index, ZYX[0], ZYX[1], ZYX[2], 
                          (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
