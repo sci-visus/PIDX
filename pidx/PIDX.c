@@ -1281,9 +1281,8 @@ PIDX_return_code PIDX_enable_time_step_caching_OFF()
 static PIDX_return_code PIDX_cache_headers(PIDX_file file)
 {
   int i = 0, j = 0, k = 0;
-  off_t data_offset = 0;  
-  uint32_t base_offset;
-  int empty_blocks = 0, block_negative_offset = 0;
+  off_t data_offset = 0, base_offset = 0;
+  int /* empty_blocks = 0, */ block_negative_offset = 0;
   int all_scalars = 1;
   int var_used_in_binary_file, total_header_size;
   
@@ -1310,7 +1309,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
   {
     for (i = 0; i < file->idx_ptr->blocks_per_file; i++)
     {
-      empty_blocks = find_block_negative_offset(file->idx_ptr->blocks_per_file, ((file->idx_ptr->variable[file->local_variable_index]->VAR_blocks_per_file[file->agg_buffer->file_number] - 1) + (file->idx_ptr->blocks_per_file * file->agg_buffer->file_number)), file->idx_ptr->variable[file->local_variable_index]->VAR_global_block_layout);
+      //empty_blocks = find_block_negative_offset(file->idx_ptr->blocks_per_file, ((file->idx_ptr->variable[file->local_variable_index]->VAR_blocks_per_file[file->agg_buffer->file_number] - 1) + (file->idx_ptr->blocks_per_file * file->agg_buffer->file_number)), file->idx_ptr->variable[file->local_variable_index]->VAR_global_block_layout);
       
       if (is_block_present((i + (file->idx_ptr->blocks_per_file * file->agg_buffer->file_number)), file->idx_ptr->variable[file->local_variable_index]->VAR_global_block_layout))
       {
@@ -1322,10 +1321,10 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
           if (all_scalars == 0)
           {
             for (k = 0; k < j; k++)
-              base_offset = base_offset + (file->idx_ptr->variable[file->local_variable_index]->VAR_blocks_per_file[file->agg_buffer->file_number] - empty_blocks) * (file->idx_ptr->variable[k]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[k]->values_per_sample;
+              base_offset = base_offset + (file->idx_ptr->variable[file->local_variable_index]->VAR_blocks_per_file[file->agg_buffer->file_number] /*- empty_blocks*/) * (file->idx_ptr->variable[k]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[k]->values_per_sample;
           }
           else
-            base_offset =  j * (file->idx_ptr->variable[file->local_variable_index]->VAR_blocks_per_file[file->agg_buffer->file_number] - empty_blocks) * (file->idx_ptr->variable[file->local_variable_index]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[file->local_variable_index]->values_per_sample;
+            base_offset =  j * (file->idx_ptr->variable[file->local_variable_index]->VAR_blocks_per_file[file->agg_buffer->file_number] /*- empty_blocks*/) * (file->idx_ptr->variable[file->local_variable_index]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[file->local_variable_index]->values_per_sample;
           
           data_offset = (((i) - block_negative_offset) * file->idx_derived_ptr->samples_per_block) * (file->idx_ptr->variable[j]->bits_per_value / 8) * file->idx_ptr->variable[j]->values_per_sample;
           data_offset = base_offset + data_offset + file->idx_derived_ptr->start_fs_block * file->idx_derived_ptr->fs_block_size;
@@ -1340,7 +1339,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
   {
     for (i = 0; i < file->idx_ptr->blocks_per_file; i++)
     {
-      empty_blocks = find_block_negative_offset(file->idx_ptr->blocks_per_file, ((file->idx_derived_ptr->existing_blocks_index_per_file[file->agg_buffer->file_number] - 1) + (file->idx_ptr->blocks_per_file * file->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout);
+      //empty_blocks = find_block_negative_offset(file->idx_ptr->blocks_per_file, ((file->idx_derived_ptr->existing_blocks_index_per_file[file->agg_buffer->file_number] - 1) + (file->idx_ptr->blocks_per_file * file->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout);
       
       if (is_block_present((i + (file->idx_ptr->blocks_per_file * file->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout))
       {
@@ -1352,14 +1351,19 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
           if (all_scalars == 0)
           {
             for (k = 0; k < j; k++)
-              base_offset = base_offset + (file->idx_derived_ptr->existing_blocks_index_per_file[file->agg_buffer->file_number] - empty_blocks) * (file->idx_ptr->variable[k]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[k]->values_per_sample;
+              base_offset = base_offset + (file->idx_derived_ptr->existing_blocks_index_per_file[file->agg_buffer->file_number] /*- empty_blocks*/) * (file->idx_ptr->variable[k]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[k]->values_per_sample;
           }
           else
-            base_offset =  j * (file->idx_derived_ptr->existing_blocks_index_per_file[file->agg_buffer->file_number] - empty_blocks) * (file->idx_ptr->variable[file->local_variable_index]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[file->local_variable_index]->values_per_sample;
+            base_offset =  j * (file->idx_derived_ptr->existing_blocks_index_per_file[file->agg_buffer->file_number] /*- empty_blocks*/) * (file->idx_ptr->variable[file->local_variable_index]->bits_per_value / 8) * file->idx_derived_ptr->samples_per_block * file->idx_ptr->variable[file->local_variable_index]->values_per_sample;
           
           data_offset = (((i) - block_negative_offset) * file->idx_derived_ptr->samples_per_block) * (file->idx_ptr->variable[j]->bits_per_value / 8) * file->idx_ptr->variable[j]->values_per_sample;
-          data_offset = base_offset + data_offset + file->idx_derived_ptr->start_fs_block * file->idx_derived_ptr->fs_block_size;
           
+          //if (j == 1)
+          //printf("%d Block %d: [BO %ld DO %ld = %ld] Offset %ld Count %d\n", j, i, 
+            //     base_offset, data_offset, (base_offset + data_offset), data_offset, (file->idx_derived_ptr->samples_per_block * (file->idx_ptr->variable[j]->bits_per_value / 8) * file->idx_ptr->variable[j]->values_per_sample));
+          
+          data_offset = base_offset + data_offset + file->idx_derived_ptr->start_fs_block * file->idx_derived_ptr->fs_block_size;
+          //printf("[%d]: (%d %d) O %ld (%ld) C %d\n", i, file->idx_derived_ptr->existing_blocks_index_per_file[file->agg_buffer->file_number], empty_blocks, data_offset, base_offset, (file->idx_derived_ptr->samples_per_block * (file->idx_ptr->variable[j]->bits_per_value / 8) * file->idx_ptr->variable[j]->values_per_sample));
           cached_header_copy[12 + ((i + (file->idx_ptr->blocks_per_file * j))*10)] = htonl(data_offset);
           cached_header_copy[14 + ((i + (file->idx_ptr->blocks_per_file * j))*10)] = htonl(file->idx_derived_ptr->samples_per_block * (file->idx_ptr->variable[j]->bits_per_value / 8) * file->idx_ptr->variable[j]->values_per_sample);  
         }
@@ -1605,7 +1609,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
     
         /// Initialization ONLY ONCE for all TIME STEPS (caching across time)
-        if (caching_state == 1)
+        if (caching_state == 1 && file->agg_buffer->var_number == 0 && file->agg_buffer->sample_number == 0)
         {
           PIDX_cache_headers(file);
           caching_state = 0;
@@ -1800,7 +1804,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
         
         /// Initialization ONLY ONCE for all TIME STEPS (caching across time)
-        if (caching_state == 1)
+        if (caching_state == 1 && file->agg_buffer->var_number == 0 && file->agg_buffer->sample_number == 0)
         {
           PIDX_cache_headers(file);
           caching_state = 0;         

@@ -356,7 +356,7 @@ int main(int argc, char **argv)
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
               //if(var == 2 || var == 1)
-              //printf("[%d] Offset %ld Count %ld\n", bpf, data_offset, data_size);
+              //printf("[%d] [%d] Offset %ld Count %ld\n", var, bpf, data_offset, data_size);
               data_buffer = malloc(data_size);
               memset(data_buffer, 0, data_size);
 
@@ -375,16 +375,16 @@ int main(int argc, char **argv)
 
                 check_bit = 1, s = 0;
                 for (s = 0; s < values_per_sample[var]; s++)
-                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]);
+                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]);
 
                 if (check_bit == 0)
                 {
                   lost_element_count++;
-                  printf("[%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
-                         var,
-                         lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
-                         hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                         (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //printf("[%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                  //       var,
+                  //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
+                  //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
+                  //       (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
                 else 
                 {
