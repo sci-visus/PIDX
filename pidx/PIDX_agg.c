@@ -533,7 +533,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
       if (aggregate_lower_levels == 1)
       { 
         int intermediate_hz_level = ((agg_id->idx_ptr->bits_per_block + 1) >= agg_id->idx_derived_ptr->maxh) ? agg_id->idx_ptr->bits_per_block + 1 : agg_id->idx_ptr->bits_per_block + 2;
-        intermediate_hz_level = 24;
+        //intermediate_hz_level = 24;
         
         for (i = 0; i < intermediate_hz_level; i++)
         {

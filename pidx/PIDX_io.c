@@ -771,13 +771,16 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
     
     else if(io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_ptr[p]->box_group_type == 1)
     {
-      for (i = io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+      for (i = /*io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_from*/io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_to - 1; i < io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
       {
-        for(var = io_id->start_var_index; var <= io_id->end_var_index; var++)
+        if (io_id->idx_ptr->variable[io_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
         {
-          index = 0;
-          count =  io_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1;
-          write_read_samples(io_id, var, io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+          for(var = io_id->start_var_index; var <= io_id->end_var_index; var++)
+          {
+            index = 0;
+            count =  io_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1;
+            write_read_samples(io_id, var, io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+          }
         }
       }
     }

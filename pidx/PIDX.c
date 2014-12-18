@@ -1380,7 +1380,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     return PIDX_success;
     
   int j = 0, p, var = 0;
-  int do_agg = 1;
+  int do_agg = 0;
   int debug_rst = 0, debug_hz = 0;
   int rank = 0;
   int local_do_rst = 0, global_do_rst = 0;

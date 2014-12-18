@@ -303,7 +303,7 @@ int main(int argc, char **argv)
   for (t = start_time_step; t <= end_time_step; t++)
   {
     long long lost_element_count = 0, element_count = 0;
-    for (i = 0; i < max_files; i++) 
+    for (i = 1; i < max_files; i++) 
     {
       if (existing_file_index[i] == 1) 
       {
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
                   //       var,
                   //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
                   //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                  //       (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //       (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
                 else 
                 {

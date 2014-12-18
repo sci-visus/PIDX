@@ -19,6 +19,7 @@
 #include "PIDX_inc.h"
 #define MAX_TEMPLATE_DEPTH 6
 
+static int PIDX_VAR = 0;
 static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, char* bin_file);
 
 struct PIDX_header_io_struct 
@@ -323,7 +324,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
 #else
   int fh = 0;
 #endif  
-  
+  int first_block = 0;
   int i = 0, m = 0, n = 0, b = 0;
   uint32_t* headers;
   off_t initial_offset = 0;
@@ -344,69 +345,137 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
 #else
   fh = open(bin_file, O_WRONLY, 0664);
 #endif
-  
-  int first_block = 0;
-  for (m = 0; m < 10; m++)
-    headers[m] = htonl(0);
-  for (n = 0; n < header_io_id->end_var_index; n++)
+  if (PIDX_VAR == 1)
   {
-    for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
+    for (m = 0; m < 10; m++)
+      headers[m] = htonl(0);
+    for (n = 0; n < header_io_id->end_var_index; n++)
     {
-      if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
+      for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
       {
-        first_block = i;
-        break;
-      }
-    }
-    bytes_per_sample = header_io_id->idx_ptr->variable[n]->bits_per_value / 8;
-    initial_offset = 0;
-    for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
-    {
-      if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
-      {
-        block_negative_offset = find_block_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout);
-        if (n == 0) 
+        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
         {
-          block_limit = i - block_negative_offset;
-          data_offset = ((i) - block_negative_offset) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
-          data_offset += header_io_id->idx_derived_ptr->start_fs_block * header_io_id->idx_derived_ptr->fs_block_size;
+          first_block = i;
+          break;
         }
+      }
+      bytes_per_sample = header_io_id->idx_ptr->variable[n]->bits_per_value / 8;
+      initial_offset = 0;
+      for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
+      {
+        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
+        {
+          block_negative_offset = find_block_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout);
+          if (n == 0) 
+          {
+            block_limit = i - block_negative_offset;
+            data_offset = ((i) - block_negative_offset) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+            data_offset += header_io_id->idx_derived_ptr->start_fs_block * header_io_id->idx_derived_ptr->fs_block_size;
+          }
+          else 
+          {
+            if (i == first_block)
+              for (b = 0; b < n; b++)
+              {
+                bytes_per_sample_previous = header_io_id->idx_ptr->variable[b]->bits_per_value / 8;
+                initial_offset = initial_offset + ((block_limit + 1) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample_previous * header_io_id->idx_ptr->variable[b]->values_per_sample);
+              }
+
+            data_offset = initial_offset + ((i) - block_negative_offset) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+            data_offset += header_io_id->idx_derived_ptr->start_fs_block * header_io_id->idx_derived_ptr->fs_block_size;
+            
+            //if (file_number == 13 || file_number == 12)
+            //printf("[%d] [%d] [%d] data_offset = %ld initial_offset = %ld block limit %d\n", file_number, n, i, data_offset, initial_offset, block_limit);
+          }
+          max_offset = data_offset + header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+            
+          little_data_offset = 0;
+          little_data_offset += data_offset;
+
+          headers[10 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+          headers[11 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+          headers[12 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(little_data_offset);
+          headers[13 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+          headers[14 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
+          
+          //if (file_number == 13 || file_number == 12)
+          //printf("[%d] [%d] [%d] (%ld) :: [%d %d %d] Offste and Count %d %d\n", file_number, n, i, header_io_id->idx_derived_ptr->start_fs_block, header_io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, header_io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
+          
+          for (m = 15; m < 20; m++)
+            headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+        } 
         else 
         {
-          if (i == first_block)
-            for (b = 0; b < n; b++)
-            {
-              bytes_per_sample_previous = header_io_id->idx_ptr->variable[b]->bits_per_value / 8;
-              initial_offset = initial_offset + ((block_limit + 1) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample_previous * header_io_id->idx_ptr->variable[b]->values_per_sample);
-            }
-
-          data_offset = initial_offset + ((i) - block_negative_offset) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
-          data_offset += header_io_id->idx_derived_ptr->start_fs_block * header_io_id->idx_derived_ptr->fs_block_size;
-	  
-          //if (file_number == 13 || file_number == 12)
-          //printf("[%d] [%d] [%d] data_offset = %ld initial_offset = %ld block limit %d\n", file_number, n, i, data_offset, initial_offset, block_limit);
+          for (m = 10; m < 20; m++)
+            headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
         }
-        max_offset = data_offset + header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
-	  
-        little_data_offset = 0;
-        little_data_offset += data_offset;
-
-        headers[10 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-        headers[11 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-        headers[12 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(little_data_offset);
-        headers[13 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-        headers[14 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
-	
-        //if (file_number == 13 || file_number == 12)
-        //printf("[%d] [%d] [%d] (%ld) :: [%d %d %d] Offste and Count %d %d\n", file_number, n, i, header_io_id->idx_derived_ptr->start_fs_block, header_io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, header_io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
-	
-        for (m = 15; m < 20; m++)
-          headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
-      } 
-      else 
+      }
+    }
+  }
+  else
+  {
+    for (m = 0; m < 10; m++)
+      headers[m] = htonl(0);
+    for (n = 0; n < header_io_id->end_var_index; n++)
+    {
+      for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
       {
-        for (m = 10; m < 20; m++)
-          headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout))
+        {
+          first_block = i;
+          break;
+        }
+      }
+      bytes_per_sample = header_io_id->idx_ptr->variable[n]->bits_per_value / 8;
+      initial_offset = 0;
+      for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
+      {
+        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout))
+        {
+          block_negative_offset = find_block_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout);
+          if (n == 0) 
+          {
+            block_limit = i - block_negative_offset;
+            data_offset = ((i) - block_negative_offset) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+            data_offset += header_io_id->idx_derived_ptr->start_fs_block * header_io_id->idx_derived_ptr->fs_block_size;
+          }
+          else 
+          {
+            if (i == first_block)
+              for (b = 0; b < n; b++)
+              {
+                bytes_per_sample_previous = header_io_id->idx_ptr->variable[b]->bits_per_value / 8;
+                initial_offset = initial_offset + ((block_limit + 1) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample_previous * header_io_id->idx_ptr->variable[b]->values_per_sample);
+              }
+
+            data_offset = initial_offset + ((i) - block_negative_offset) * header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+            data_offset += header_io_id->idx_derived_ptr->start_fs_block * header_io_id->idx_derived_ptr->fs_block_size;
+            
+            //if (file_number == 13 || file_number == 12)
+            //printf("[%d] [%d] [%d] data_offset = %ld initial_offset = %ld block limit %d\n", file_number, n, i, data_offset, initial_offset, block_limit);
+          }
+          max_offset = data_offset + header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+            
+          little_data_offset = 0;
+          little_data_offset += data_offset;
+
+          headers[10 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+          headers[11 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+          headers[12 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(little_data_offset);
+          headers[13 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+          headers[14 + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
+          
+          //if (file_number == 13 || file_number == 12)
+          //printf("[%d] [%d] [%d] (%ld) :: [%d %d %d] Offste and Count %d %d\n", file_number, n, i, header_io_id->idx_derived_ptr->start_fs_block, header_io_id->idx_derived_ptr->samples_per_block, bytes_per_sample, header_io_id->idx_ptr->variable[n]->values_per_sample, little_data_offset, header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample);
+          
+          for (m = 15; m < 20; m++)
+            headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+        } 
+        else 
+        {
+          for (m = 10; m < 20; m++)
+            headers[m + ((i + (header_io_id->idx_ptr->blocks_per_file * n))*10)] = htonl(0);
+        }
       }
     }
   }
@@ -423,7 +492,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
   
   free(headers);
 
-#if 1 //sid: some problem detecting file size, temporarily disable this bit (or get rid of it)
+#if 0 //sid: some problem detecting file size, temporarily disable this bit (or get rid of it)
   if (max_offset != 0) 
   {
 #if PIDX_HAVE_MPI
