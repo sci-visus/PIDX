@@ -303,7 +303,7 @@ int main(int argc, char **argv)
   for (t = start_time_step; t <= end_time_step; t++)
   {
     long long lost_element_count = 0, element_count = 0;
-    for (i = 1; i < max_files; i++) 
+    for (i = 0; i < max_files; i++) 
     {
       if (existing_file_index[i] == 1) 
       {
@@ -400,10 +400,6 @@ int main(int argc, char **argv)
       }
     }
     
-    int total_samples = 0;
-    for (var = 0; var < variable_count; var++)
-      total_samples = total_samples + values_per_sample[var];
-
     printf("%lld + %lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
     assert(element_count == (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
     

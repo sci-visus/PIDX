@@ -36,7 +36,7 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
 
 int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int MODE);
 
-int PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
+int PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
 
 int PIDX_agg_finalize(PIDX_agg_id agg_id);
 

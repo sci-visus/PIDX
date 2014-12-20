@@ -123,6 +123,9 @@ struct PIDX_HZ_Agg_buffer_struct
   
   /// Aggregator buffer size
   int buffer_size;
+
+  ///
+  int ***rank_holder;
   
   /// The actual aggregator buffer
   unsigned char* buffer;

@@ -74,7 +74,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D((long long)local_offset[0], (long long)local_offset[1], (long long)local_offset[2], 0, 0, local_offset_point);
   PIDX_set_point_5D((long long)args.count_local[0], (long long)args.count_local[1], (long long)args.count_local[2], 1, 1, local_box_count_point);
   
-  //PIDX_enable_time_step_caching_ON();
+  PIDX_enable_time_step_caching_ON();
   for (ts = 0; ts < args.time_step; ts++) 
   {
     long_data = malloc(sizeof(*long_data) * variable_count);
@@ -150,7 +150,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     /// IO with no Flush (high performance)
     for(var = 0; var < variable_count; var++)
     {
-      values_per_sample[var] = /*var + */1;
+      values_per_sample[var] = /*var +*/ 1;
       long_data[var] = malloc(sizeof (unsigned long long) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
       for (k = 0; k < args.count_local[2]; k++)
@@ -186,7 +186,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     free(long_data);
     long_data = 0;
   }
-  //PIDX_enable_time_step_caching_OFF();
+  PIDX_enable_time_step_caching_OFF();
   
   free(variable);
   free(values_per_sample);
