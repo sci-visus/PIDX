@@ -302,18 +302,16 @@ int PIDX_io_cached_data(uint32_t* cached_header)
 int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 {
   char file_name[PATH_MAX];
-  int i = 0, k = 0, m = 0, n = 0, b = 0, rank;
+  int i = 0, k = 0, rank;
   uint32_t *headers;
-  long long initial_offset = 0;
   off_t data_offset = 0;  
   size_t data_size = 0;
-  uint32_t base_offset, little_data_offset;
-  int total_header_size, /*empty_blocks = 0,*/ block_negative_offset = 0, block_limit = 0;
-  int bytes_per_sample, bytes_per_sample_previous;
+  int total_header_size;
+  int bytes_per_sample;
   MPI_Comm agg_comm;
   MPI_Group all_group, agg_group;
   int *ranks;
-  int MPI_collective_io = 1;
+  int MPI_collective_io = 0;
   int group_count = 0;
   //double t1, t2, t3, t4, t5, t6;
   
@@ -324,32 +322,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
   int fh;
 #endif
-  
-  if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
-    group_count = (io_id->end_var_index - io_id->start_var_index + 1);
-  else
-    group_count = 0;
-  
-  int count = 0;
-  if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
-  {
-    ranks = malloc(sizeof(*ranks) * (io_id->end_var_index - io_id->start_var_index + 1));
-    for (i = io_id->start_var_index; i <= io_id->end_var_index; i++) 
-    {
-#if RANK_ORDER
-      ranks[count] = agg_buffer->rank_holder[i - io_id->start_var_index][0][agg_buffer->file_number];
-#else
-      ranks[count] = agg_buffer->rank_holder[agg_buffer->file_number][i - io_id->start_var_index][0];
-      //printf("[%d] Var number %d File number %d Rank %d \n", rank, (i - io_id->start_var_index), agg_buffer->file_number, agg_buffer->rank_holder[agg_buffer->file_number][i - io_id->start_var_index][0]);
-#endif
-      count++;
-    }
-  }
-  
-  MPI_Comm_group(io_id->comm, &all_group);
-  MPI_Group_incl(all_group, group_count, ranks, &agg_group);
-  MPI_Comm_create(io_id->comm, agg_group, &agg_comm);
-  free(ranks);
   
   if (MPI_collective_io == 0)
   {
@@ -524,7 +496,35 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   }
   else
   {
-    if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1) 
+    if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
+      group_count = (io_id->end_var_index - io_id->start_var_index + 1);
+    else
+      group_count = 0;
+    
+    int count = 0;
+    if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
+    {
+      ranks = malloc(sizeof(*ranks) * (io_id->end_var_index - io_id->start_var_index + 1));
+      for (i = io_id->start_var_index; i <= io_id->end_var_index; i++) 
+      {
+  #if RANK_ORDER
+        ranks[count] = agg_buffer->rank_holder[i - io_id->start_var_index][0][agg_buffer->file_number];
+  #else
+        ranks[count] = agg_buffer->rank_holder[agg_buffer->file_number][i - io_id->start_var_index][0];
+        //printf("[%d] Var number %d File number %d Rank %d \n", rank, (i - io_id->start_var_index), agg_buffer->file_number, agg_buffer->rank_holder[agg_buffer->file_number][i - io_id->start_var_index][0]);
+  #endif
+        count++;
+      }
+    }
+    
+    MPI_Comm_group(io_id->comm, &all_group);
+    MPI_Group_incl(all_group, group_count, ranks, &agg_group);
+    MPI_Comm_create(io_id->comm, agg_group, &agg_comm);
+    
+    if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
+      free(ranks);
+    
+    if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
     {
       generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
       int nprocs, nrank;
@@ -595,10 +595,9 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #endif
       MPI_Comm_free(&agg_comm);
     }
+    MPI_Group_free(&agg_group);
+    MPI_Group_free(&all_group);
   }
-  
-  MPI_Group_free(&agg_group);
-  MPI_Group_free(&all_group);
   
   return 0;
 }

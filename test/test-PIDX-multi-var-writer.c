@@ -30,7 +30,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   PIDX_file file;                                                // IDX file descriptor
   const char *output_file;                                                      // IDX File Name
   const int bits_per_block = 15;                                                // Total number of samples in each block = 2 ^ bits_per_block
-  const int blocks_per_file = 256;                                               // Total number of blocks per file
+  const int blocks_per_file = 32;                                               // Total number of blocks per file
   
   PIDX_variable* variable;                                       // variable descriptor
   unsigned long long     **long_data;
@@ -150,7 +150,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     /// IO with no Flush (high performance)
     for(var = 0; var < variable_count; var++)
     {
-      values_per_sample[var] = /*var +*/ 1;
+      values_per_sample[var] = /*var +*/ 4;
       long_data[var] = malloc(sizeof (unsigned long long) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
       for (k = 0; k < args.count_local[2]; k++)
