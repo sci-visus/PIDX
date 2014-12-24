@@ -127,6 +127,9 @@ struct PIDX_HZ_Agg_buffer_struct
   ///
   int ***rank_holder;
   
+  ///
+  int agg_factor;
+  
   /// The actual aggregator buffer
   unsigned char* buffer;
   
