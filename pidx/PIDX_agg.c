@@ -457,7 +457,7 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
             agg_buffer->sample_number = j;
             
             agg_buffer->buffer_size = agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * agg_id->idx_derived_ptr->samples_per_block * (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8) / agg_buffer->agg_factor;
-            printf("[%d] [%d %d %d] : %d (%d %d %d %d)\n", rank, i, j, k, agg_buffer->buffer_size, agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], agg_id->idx_derived_ptr->samples_per_block, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8), agg_buffer->agg_factor);
+            //printf("[%d] [%d %d %d] : %d (%d %d %d %d)\n", rank, i, j, k, agg_buffer->buffer_size, agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], agg_id->idx_derived_ptr->samples_per_block, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8), agg_buffer->agg_factor);
             agg_buffer->buffer = malloc(agg_buffer->buffer_size);
             memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
           }
