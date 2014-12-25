@@ -17,6 +17,7 @@
  *****************************************************/
 
 #include "PIDX_inc.h"
+#define PIDX_RECORD_TIME 1
 //#define RANK_ORDER 1
 static uint32_t *cached_header_copy;
 static int enable_caching = 0;
@@ -313,7 +314,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   int *ranks;
   int MPI_collective_io = 0;
   int group_count = 0;
-  //double t1, t2, t3, t4, t5, t6;
+  double t1, t2, t3, t4, t5, t6;
   
 #if PIDX_HAVE_MPI
   MPI_File fh;
@@ -327,7 +328,10 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   {
     if (agg_buffer->var_number == 0 && agg_buffer->sample_number == 0)
     {
-      //t1 = MPI_Wtime();
+      
+#if PIDX_RECORD_TIME
+      t1 = MPI_Wtime();
+#endif
       generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
 
 #if PIDX_HAVE_MPI
@@ -336,15 +340,21 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
       fh = open(file_name, O_WRONLY);
 #endif
       
+#if PIDX_RECORD_TIME
+      t2 = MPI_Wtime();
+#endif
+      
       data_offset = 0;
       total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * io_id->idx_ptr->variable_count;
       headers = (uint32_t*)malloc(total_header_size);
       memset(headers, 0, total_header_size);
       
-      //t2 = MPI_Wtime();
       if (enable_caching == 1)
         memcpy (headers, cached_header_copy, total_header_size);
-      //t3 = MPI_Wtime();
+
+#if PIDX_RECORD_TIME
+      t3 = MPI_Wtime();
+#endif
       
       if (PIDX_VAR == 1)
       {
@@ -362,7 +372,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
           memset(agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
         }
         free(headers);
-        //t4 = MPI_Wtime();
+        
         
 #if PIDX_HAVE_MPI
         if(MODE == PIDX_WRITE)
@@ -372,15 +382,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
           pwrite(fh, agg_buffer->buffer, (((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) / agg_buffer->agg_factor) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
 #endif
-          
-        //t5 = MPI_Wtime();
-#if PIDX_HAVE_MPI
-        MPI_File_close(&fh);
-#else
-        close(fh);
-#endif
-        //t6 = MPI_Wtime();
-        
       }
       else
       {
@@ -398,7 +399,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
           memset(agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
         }
         free(headers);
-        //t4 = MPI_Wtime();
+        
 #if PIDX_HAVE_MPI
         if(MODE == PIDX_WRITE)
           MPI_File_write_at(fh, 0, agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) / agg_buffer->agg_factor) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
@@ -407,30 +408,43 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
           pwrite(fh, agg_buffer->buffer, (((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) / agg_buffer->agg_factor) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
 #endif
-          
-        //t5 = MPI_Wtime();
+      }
+#if PIDX_RECORD_TIME
+      t4 = MPI_Wtime();
+#endif
+
 #if PIDX_HAVE_MPI
         MPI_File_close(&fh);
 #else
         close(fh);
 #endif
-        //t6 = MPI_Wtime();
-      }
 
-      //printf("A. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
+#if PIDX_RECORD_TIME
+      t5 = MPI_Wtime();
+#endif
+
+#if PIDX_RECORD_TIME
+      printf("A. [R %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
+#endif
     }
     else if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1) 
     {
-      //t1 = MPI_Wtime();
+#if PIDX_RECORD_TIME
+      t1 = MPI_Wtime();
+#endif
       generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
-      //t2 = MPI_Wtime();
+      
       
 #if PIDX_HAVE_MPI
       MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
 #else
       fh = open(file_name, O_WRONLY);
 #endif
-      //t3 = MPI_Wtime();
+
+#if PIDX_RECORD_TIME
+      t2 = MPI_Wtime();
+#endif
+      
       data_offset = 0;
       data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
       
@@ -443,8 +457,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
         for (i = 0; i < agg_buffer->sample_number; i++)
           data_offset = data_offset + io_id->idx_ptr->variable[k]->VAR_blocks_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8) / agg_buffer->agg_factor;
         
-        //t4 = MPI_Wtime();
-
 #if PIDX_HAVE_MPI
         if(MODE == PIDX_WRITE)
           MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->VAR_blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) / agg_buffer->agg_factor , MPI_BYTE, &status);
@@ -453,15 +465,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
           pwrite(fh, agg_buffer->buffer, ((io_id->idx_ptr->variable[agg_buffer->var_number]->blocks_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) / agg_buffer->agg_factor, data_offset);
 #endif
-        //t5 = MPI_Wtime();
-
-#if PIDX_HAVE_MPI
-        MPI_File_close(&fh);
-#else
-        close(fh);
-#endif
-        //t6 = MPI_Wtime();
-        //printf("B. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
       }
       else
       {
@@ -472,8 +475,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
         for (i = 0; i < agg_buffer->sample_number; i++)
           data_offset = data_offset + io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8) / agg_buffer->agg_factor;
         
-        //t4 = MPI_Wtime();
-
 #if PIDX_HAVE_MPI
         if(MODE == PIDX_WRITE)
           MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) / agg_buffer->agg_factor , MPI_BYTE, &status);
@@ -482,16 +483,25 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
           pwrite(fh, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) / agg_buffer->agg_factor, data_offset);
 #endif
-        //t5 = MPI_Wtime();
-
+      }
+#if PIDX_RECORD_TIME
+      t3 = MPI_Wtime();
+#endif
+      
 #if PIDX_HAVE_MPI
         MPI_File_close(&fh);
 #else
         close(fh);
 #endif
-        //t6 = MPI_Wtime();
-        //printf("B. [%d] File Number %d Time %f %f %f %f %f\n", rank, agg_buffer->file_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4), (t6-t5));
-      }
+        
+#if PIDX_RECORD_TIME
+      t4 = MPI_Wtime();
+#endif
+      
+#if PIDX_RECORD_TIME
+      printf("B. [R %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
+#endif
+      
     }
   }
   else
