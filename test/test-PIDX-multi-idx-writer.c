@@ -18,15 +18,20 @@
 
 #include "pidxtest.h"
 
-int test_multi_var_writer(struct Args args, int rank, int nprocs) 
+int test_multi_idx_writer(struct Args args, int rank, int nprocs)
 {
 #if PIDX_HAVE_MPI
+  int idx_file_count = 2;
+  int color;
+  int *colors;
+  MPI_Comm newcomm;
   int i = 0, j = 0, k = 0;
   int ts, var, spv;
   int slice;
   int variable_count;
   int sub_div[3], local_offset[3];
 
+  
   PIDX_file file;                                                // IDX file descriptor
   const char *output_file;                                                      // IDX File Name
   const int bits_per_block = 17;                                                // Total number of samples in each block = 2 ^ bits_per_block
@@ -48,29 +53,52 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   memset(variable, 0, sizeof(*variable) * variable_count);
   
   values_per_sample = malloc(sizeof(*values_per_sample) * variable_count);
-  memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count);
+  memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count);    
+  
+  colors = malloc(sizeof(*colors) * idx_file_count);
+  memset(colors, 0, sizeof(*colors) * idx_file_count);
+  
+  for (i = 0; i < idx_file_count; i++)
+    colors[i] = i;
+  
+  for (i = 0; i < nprocs; i = i + (nprocs/idx_file_count))
+    if (rank < i + (nprocs / idx_file_count))
+      color = colors[rank / (nprocs / idx_file_count)];
+  
+  free(colors);
   
   //   Creating the filename 
   args.output_file_name = (char*) malloc(sizeof (char) * 512);
-  sprintf(args.output_file_name, "%s%s", args.output_file_template, ".idx");
-
-  //   Calculating every process's offset and count  
-  sub_div[0] = (args.extents[0] / args.count_local[0]);
-  sub_div[1] = (args.extents[1] / args.count_local[1]);
-  sub_div[2] = (args.extents[2] / args.count_local[2]);
-  local_offset[2] = (rank / (sub_div[0] * sub_div[1])) * args.count_local[2];
-  slice = rank % (sub_div[0] * sub_div[1]);
-  local_offset[1] = (slice / sub_div[0]) * args.count_local[1];
-  local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
-
-  output_file = args.output_file_name;    
+  sprintf(args.output_file_name, "%s_%d%s", args.output_file_template, color, ".idx");
+  output_file = args.output_file_name;
+  
+  //printf("rank %d has %d color\n", rank, color);
+  
+  MPI_Comm_split(MPI_COMM_WORLD, color, rank, &newcomm);
+  
+  int newrank, newnprocs;
+  
+  MPI_Comm_size(newcomm, &newnprocs);
+  MPI_Comm_rank(newcomm, &newrank);
+  
+  //printf("OLD [%d %d] NEW [%d %d]\n", rank, nprocs, newrank, newnprocs);
   
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
   //PIDX_create_point(&global_bounding_box);
   //PIDX_create_point(&local_offset_point);
   //PIDX_create_point(&local_box_count_point);
   
-  PIDX_set_point_5D((long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2], 1, 1, global_bounding_box);
+  
+  //   Calculating every process's offset and count  
+  sub_div[0] = (args.extents[0] / args.count_local[0]);
+  sub_div[1] = (args.extents[1] / args.count_local[1]);
+  sub_div[2] = (args.extents[2] / ( args.count_local[2] * idx_file_count));
+  local_offset[2] = (newrank / (sub_div[0] * sub_div[1])) * args.count_local[2];
+  slice = newrank % (sub_div[0] * sub_div[1]);
+  local_offset[1] = (slice / sub_div[0]) * args.count_local[1];
+  local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
+  
+  PIDX_set_point_5D((long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2] / idx_file_count, 1, 1, global_bounding_box);
   PIDX_set_point_5D((long long)local_offset[0], (long long)local_offset[1], (long long)local_offset[2], 0, 0, local_offset_point);
   PIDX_set_point_5D((long long)args.count_local[0], (long long)args.count_local[1], (long long)args.count_local[2], 1, 1, local_box_count_point);
   
@@ -84,7 +112,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
     PIDX_create_access(&access);
 
 #if PIDX_HAVE_MPI
-    PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+    PIDX_set_mpi_access(access, newcomm);
 #else
     PIDX_set_default_access(access);
 #endif
@@ -108,25 +136,25 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
       
       if(var % 2 == 0)
       {
-	for (k = 0; k < args.count_local[2]; k++)
-	  for (j = 0; j < args.count_local[1]; j++)
-	    for (i = 0; i < args.count_local[0]; i++) 
-	    {
-	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
-	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		long_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-	    }
+        for (k = 0; k < args.count_local[2]; k++)
+          for (j = 0; j < args.count_local[1]; j++)
+            for (i = 0; i < args.count_local[0]; i++) 
+            {
+              long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
+              for (spv = 0; spv < values_per_sample[var]; spv++)
+                long_data[var][index * values_per_sample[var] + spv] = 100 + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+            }
       }
       else
       {
-	for (k = 0; k < args.count_local[2]; k++)
-	  for (j = 0; j < args.count_local[1]; j++)
-	    for (i = 0; i < args.count_local[0]; i++) 
-	    {
-	      long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
-	      for (spv = 0; spv < values_per_sample[var]; spv++)
-		long_data[var][index * values_per_sample[var] + spv] = (rank + 1);
-	    }
+        for (k = 0; k < args.count_local[2]; k++)
+          for (j = 0; j < args.count_local[1]; j++)
+            for (i = 0; i < args.count_local[0]; i++) 
+            {
+              long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
+              for (spv = 0; spv < values_per_sample[var]; spv++)
+                long_data[var][index * values_per_sample[var] + spv] = (rank + 1);
+            }
       }
       
       sprintf(variable_name, "variable_%d", var);
@@ -147,10 +175,11 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
 #endif
 
 #if 1    
+    //printf("[%d] offset %d %d %d count %d %d %d %d %d\n", rank, local_offset[0], local_offset[1], local_offset[2], args.count_local[0], args.count_local[1], args.count_local[2], args.count_local[3], args.count_local[4]);
     /// IO with no Flush (high performance)
     for(var = 0; var < variable_count; var++)
     {
-      values_per_sample[var] = /*var +*/ 1;
+      values_per_sample[var] =  1;
       long_data[var] = malloc(sizeof (unsigned long long) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
       for (k = 0; k < args.count_local[2]; k++)
@@ -160,8 +189,6 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
             long long index = (long long) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
             for (spv = 0; spv < values_per_sample[var]; spv++)
               long_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-            
-            
           }
     }
     
@@ -191,14 +218,16 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   free(variable);
   free(values_per_sample);
   free(args.output_file_name);
+  MPI_Comm_free(&newcomm);
+  
 #endif
   return 0;
 }
 
 /*   prints usage instructions   */
-void usage_multi_var_writer(void) 
+void usage_multi_idx_writer(void) 
 {
-  printf("Usage: test-multi-var-PIDX-writer -g 4x4x4 -l 2x2x2 -f Filename_ -t 4\n");
+  printf("Usage: test-multi-idx-PIDX-writer -g 4x4x4 -l 2x2x2 -f Filename_ -t 4\n");
   printf("  -g: global dimensions\n");
   printf("  -l: local (per-process) dimensions\n");
   printf("  -f: IDX Filename\n");

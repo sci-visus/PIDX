@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     case PARALLEL_WRITER:
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
-      test_multi_var_writer(args, rank, nprocs);
+      test_multi_idx_writer(args, rank, nprocs);
       break;
       
     case PARALLEL_MULTI_PATCH_WRITER:

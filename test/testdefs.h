@@ -37,4 +37,7 @@ int usage_serial();
 int test_multi_patch_writer(struct Args args, int rank, int nprocs);
 int usage_multi_patch_writer();
 
+int test_multi_idx_writer(struct Args args, int rank, int nprocs);
+int usage_multi_idx_writer();
+
 #endif
