@@ -135,7 +135,7 @@ int main(int argc, char **argv)
 /*parse_args*/
 int parse_args(struct Args *args, int argc, char **argv) 
 {
-  char flags[] = "k:g:l:f:t:v:";
+  char flags[] = "k:g:l:f:t:v:p:";
   int one_opt = 0;
   char strkind[128];
 
@@ -168,6 +168,9 @@ int parse_args(struct Args *args, int argc, char **argv)
       case('v'):
 	  sscanf(optarg, "%d", &args->variable_count);
 	  break;
+      case('p'):
+          sscanf(optarg, "%d", &args->idx_count);
+          break;
       case('?'):
 	  return (-1);
     }

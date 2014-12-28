@@ -48,6 +48,8 @@ struct Args
   /* Number of Variables */
   int variable_count;
   
+  int idx_count;
+  
   /* output IDX file Name Template*/
   char output_file_template[512];
   char *output_file_name;

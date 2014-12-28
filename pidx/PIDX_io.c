@@ -17,7 +17,7 @@
  *****************************************************/
 
 #include "PIDX_inc.h"
-#define PIDX_RECORD_TIME 1
+//#define PIDX_RECORD_TIME 1
 //#define RANK_ORDER 1
 static uint32_t *cached_header_copy;
 static int enable_caching = 0;
@@ -314,7 +314,10 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   int *ranks;
   int MPI_collective_io = 0;
   int group_count = 0;
+  
+#if PIDX_RECORD_TIME
   double t1, t2, t3, t4, t5, t6;
+#endif
   
 #if PIDX_HAVE_MPI
   MPI_File fh;

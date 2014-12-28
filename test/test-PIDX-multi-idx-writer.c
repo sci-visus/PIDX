@@ -21,7 +21,6 @@
 int test_multi_idx_writer(struct Args args, int rank, int nprocs)
 {
 #if PIDX_HAVE_MPI
-  int idx_file_count = 2;
   int color;
   int *colors;
   MPI_Comm newcomm;
@@ -45,6 +44,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.idx_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
@@ -55,15 +55,15 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   values_per_sample = malloc(sizeof(*values_per_sample) * variable_count);
   memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count);    
   
-  colors = malloc(sizeof(*colors) * idx_file_count);
-  memset(colors, 0, sizeof(*colors) * idx_file_count);
+  colors = malloc(sizeof(*colors) * args.idx_count);
+  memset(colors, 0, sizeof(*colors) * args.idx_count);
   
-  for (i = 0; i < idx_file_count; i++)
+  for (i = 0; i < args.idx_count; i++)
     colors[i] = i;
   
-  for (i = 0; i < nprocs; i = i + (nprocs/idx_file_count))
-    if (rank < i + (nprocs / idx_file_count))
-      color = colors[rank / (nprocs / idx_file_count)];
+  for (i = 0; i < nprocs; i = i + (nprocs/args.idx_count))
+    if (rank < i + (nprocs / args.idx_count))
+      color = colors[rank / (nprocs / args.idx_count)];
   
   free(colors);
   
@@ -92,13 +92,13 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   //   Calculating every process's offset and count  
   sub_div[0] = (args.extents[0] / args.count_local[0]);
   sub_div[1] = (args.extents[1] / args.count_local[1]);
-  sub_div[2] = (args.extents[2] / ( args.count_local[2] * idx_file_count));
+  sub_div[2] = (args.extents[2] / ( args.count_local[2] * args.idx_count));
   local_offset[2] = (newrank / (sub_div[0] * sub_div[1])) * args.count_local[2];
   slice = newrank % (sub_div[0] * sub_div[1]);
   local_offset[1] = (slice / sub_div[0]) * args.count_local[1];
   local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
   
-  PIDX_set_point_5D((long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2] / idx_file_count, 1, 1, global_bounding_box);
+  PIDX_set_point_5D((long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2] / args.idx_count, 1, 1, global_bounding_box);
   PIDX_set_point_5D((long long)local_offset[0], (long long)local_offset[1], (long long)local_offset[2], 0, 0, local_offset_point);
   PIDX_set_point_5D((long long)args.count_local[0], (long long)args.count_local[1], (long long)args.count_local[2], 1, 1, local_box_count_point);
   
