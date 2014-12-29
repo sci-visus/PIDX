@@ -162,7 +162,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->access = access_type;
   (*file)->idx_ptr->current_time_step = 0;
-
+  (*file)->idx_derived_ptr->aggregation_factor = 1;
+  (*file)->idx_count = 1;
+  
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
   {
@@ -195,17 +197,17 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   {
     (*file)->idx_count = access_type->idx_count;
     
-    if (access_type->idx_count != 1)
+    if ((*file)->idx_count != 1)
     {      
-      colors = malloc(sizeof(*colors) * access_type->idx_count);
-      memset(colors, 0, sizeof(*colors) * access_type->idx_count);
+      colors = malloc(sizeof(*colors) * (*file)->idx_count);
+      memset(colors, 0, sizeof(*colors) * (*file)->idx_count);
       
-      for (i = 0; i < access_type->idx_count; i++)
+      for (i = 0; i < (*file)->idx_count; i++)
         colors[i] = i;
       
-      for (i = 0; i < nprocs; i = i + (nprocs/access_type->idx_count))
-        if (rank < i + (nprocs / access_type->idx_count))
-          (*file)->color = colors[rank / (nprocs / access_type->idx_count)];
+      for (i = 0; i < nprocs; i = i + (nprocs/(*file)->idx_count))
+        if (rank < i + (nprocs / (*file)->idx_count))
+          (*file)->color = colors[rank / (nprocs / (*file)->idx_count)];
       
       free(colors);
       MPI_Comm_split(access_type->comm, (*file)->color, rank, &((*file)->comm));

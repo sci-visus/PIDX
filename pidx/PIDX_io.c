@@ -762,7 +762,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 
 int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MODE)
 {
-  int e1 = 0, i = 0, p = 0, var = 0;
+  int e1 = 0, i = 0, p = 0, var = 0, ret;
   int send_index = 0;
   long long hz_index = 0;
   long long index = 0, count = 0;
@@ -789,7 +789,12 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
             {
               for(var = io_id->start_var_index; var <= io_id->end_var_index; var++)
               {
-                write_read_samples(io_id, var, index, count, variable[var]->HZ_patch[p]->buffer[i], (send_index), MODE);
+                ret = write_read_samples(io_id, var, index, count, variable[var]->HZ_patch[p]->buffer[i], (send_index), MODE);
+                if (ret == -1)
+                {
+                  fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                  return -1;
+                }
                 //printf("X");
                 //print_buffer(variable[var]->HZ_patch[p]->buffer[i], send_index, count, variable[var]->values_per_sample, variable[var]->bits_per_value, variable[var]->type_name);
               }
@@ -804,7 +809,12 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
               {
                 for(var = io_id->start_var_index; var <= io_id->end_var_index; var++)
                 {
-                  write_read_samples(io_id, var, index, count, variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                  ret = write_read_samples(io_id, var, index, count, variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                  if (ret == -1)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return -1;
+                  }
                   //printf("Y");
                   //print_buffer(variable[var]->HZ_patch[p]->buffer[i], send_index, count, variable[var]->values_per_sample, variable[var]->bits_per_value, variable[var]->type_name);
                 }
@@ -814,7 +824,12 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
             {
               for(var = io_id->start_var_index; var <= io_id->end_var_index; var++)
               {
-                write_read_samples(io_id, var, index, count, variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                ret = write_read_samples(io_id, var, index, count, variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+                if (ret == -1)
+                {
+                  fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                  return -1;
+                }
                 //printf("Z");
                 //print_buffer(variable[var]->HZ_patch[p]->buffer[i], send_index, count, variable[var]->values_per_sample, variable[var]->bits_per_value, variable[var]->type_name);
               }
@@ -823,7 +838,12 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
               {
                 for(var = io_id->start_var_index; var <= io_id->end_var_index; var++)
                 {
-                  write_read_samples(io_id, var, variable[io_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index], 1, variable[var]->HZ_patch[p]->buffer[i], e1, MODE);
+                  ret = write_read_samples(io_id, var, variable[io_id->start_var_index]->HZ_patch[p]->buffer_index[hz_index], 1, variable[var]->HZ_patch[p]->buffer[i], e1, MODE);
+                  if (ret == -1)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return -1;
+                  }
                   //printf("M");
                   //print_buffer(variable[var]->HZ_patch[p]->buffer[i], e1, 1, variable[var]->values_per_sample, variable[var]->bits_per_value, variable[var]->type_name);
                 }
@@ -848,7 +868,12 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
           {
             index = 0;
             count =  io_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1;
-            write_read_samples(io_id, var, io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+            ret = write_read_samples(io_id, var, io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, MODE);
+            if (ret == -1)
+            {
+              fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+              return -1;
+            }
           }
         }
       }
@@ -900,7 +925,12 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
 	      //printf("%d %d %d (%d) VALUE = %f\n", var, p, i, (send_index  * io_id->idx_ptr->variable[var]->values_per_sample), check);
 	    //}
 	    
-	    write_read_samples(io_id, var, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+	    ret = write_read_samples(io_id, var, index + io_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, io_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], send_index, MODE);
+            if (ret == -1)
+            {
+              fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+              return -1;
+            }
 	    
 	    send_index = send_index + count;
 	  }
