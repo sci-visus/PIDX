@@ -100,7 +100,7 @@ int test_reader(struct Args args, int rank, int nprocs)
     PIDX_create_access(&access);
 
 #if PIDX_HAVE_MPI
-    PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+    PIDX_set_mpi_access(access, 1, MPI_COMM_WORLD);
 #else
     PIDX_set_default_access(access);
 #endif

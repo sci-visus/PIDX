@@ -54,7 +54,7 @@ struct PIDX_rst_struct
   long long power_two_box_size[PIDX_MAX_DIMENSIONS];
   int power_two_box_group_count;
   Ndim_box_group *power_two_box_group;
-  
+  int color;
 };
 
 /// Function to check if NDimensional data chunks A and B intersects
@@ -74,6 +74,12 @@ int getPowerOftwo(int x)
   while (n < x)
     n <<= 1;
   return n;
+}
+
+void set_color(PIDX_rst_id rst_id, int color) 
+{
+  rst_id->color = color;
+  return;
 }
 
 /// Function to find the dimension of the imposing regular box
@@ -704,6 +710,8 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
   long long element_count = 0;
   long long lost_element_count = 0;
   
+  printf("Color = %d Extents %d %d %d\n", rst_id->color, rst_id->idx_ptr->global_bounds[0], rst_id->idx_ptr->global_bounds[1], rst_id->idx_ptr->global_bounds[2]);
+  
   unsigned long long dvalue_1, dvalue_2;
   for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
   {
@@ -726,7 +734,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
                   int check_bit = 1;
                   for (s = 0; s < variable[var]->values_per_sample; s++)
                   {
-                    dvalue_1 = s + 100 + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * (offset_ptr[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * (offset_ptr[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (offset_ptr[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i;
+                    dvalue_1 = s + 100 + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * (offset_ptr[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * (offset_ptr[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (offset_ptr[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->color * rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]);
                     
                     memcpy(&dvalue_2, rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->box[n]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
                     
@@ -750,7 +758,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
   
   long long global_volume;
   MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, rst_id->comm);
-  printf("[RST] Volume [%lld] and Volume [%lld]\n", global_volume, (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4]) * (rst_id->end_variable_index - rst_id->start_variable_index + 1));
+  printf("[RST] [Lost %lld] Volume [%lld] and Volume [%lld]\n", lost_element_count, global_volume, (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4]) * (rst_id->end_variable_index - rst_id->start_variable_index + 1));
   
   if (global_volume != (long long) rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * rst_id->idx_ptr->global_bounds[4] * (rst_id->end_variable_index - rst_id->start_variable_index + 1))
   {

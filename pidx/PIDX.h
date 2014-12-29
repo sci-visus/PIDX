@@ -278,6 +278,12 @@ PIDX_return_code PIDX_flush(PIDX_file file);
 ///Perform all the necessary cleanups
 PIDX_return_code PIDX_close(PIDX_file file);
 
+
+PIDX_return_code PIDX_set_aggregation_factor(PIDX_file file, int agg_factor);
+
+
+PIDX_return_code PIDX_get_aggregation_factor(PIDX_file file, int *agg_factor);
+
 double PIDX_get_time();
 
 #ifdef __cplusplus

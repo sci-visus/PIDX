@@ -83,12 +83,14 @@ int main(int argc, char **argv)
   int samples_per_block;
   int blocks_per_file;
   int start_time_step, end_time_step;
-  
+  int idx_data_offset;
   int global_bounds[PIDX_MAX_DIMENSIONS];
   int values_per_sample[MAX_VARIABLE_COUNT];
   char variable_name[MAX_VARIABLE_COUNT][1024];
   char filename_template[1024];
   int variable_count = 0;
+  
+  idx_data_offset = atoi(argv[2]);
   
   FILE *fp = fopen(argv[1], "r");
   while (fgets(line, sizeof (line), fp) != NULL) 
@@ -215,7 +217,7 @@ int main(int argc, char **argv)
   }
   fclose(fp);
   
-  printf("Finished Parsing %s\n", argv[1]);
+  printf("Finished Parsing %s %d\n", argv[1], idx_data_offset);
   printf("Starting time step %d and Ending time step %d\n", start_time_step, end_time_step);
   printf("(box)\n0 %d 0 %d 0 %d 0 %d 0 %d\n", global_bounds[0], global_bounds[1], global_bounds[2], global_bounds[3], global_bounds[4]);
   printf("(fields)\n");
@@ -356,7 +358,7 @@ int main(int argc, char **argv)
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
               //if(var == 2 || var == 1)
-              //printf("[%d] [%d] Offset %ld Count %ld\n", var, bpf, data_offset, data_size);
+              printf("[%d] [%d] Offset %ld Count %ld\n", var, bpf, data_offset, data_size);
               data_buffer = malloc(data_size);
               memset(data_buffer, 0, data_size);
 
@@ -375,7 +377,7 @@ int main(int argc, char **argv)
 
                 check_bit = 1, s = 0;
                 for (s = 0; s < values_per_sample[var]; s++)
-                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]);
+                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]) + idx_data_offset * (global_bounds[0] * global_bounds[1] * global_bounds[2]);
 
                 if (check_bit == 0)
                 {

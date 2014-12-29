@@ -16,11 +16,8 @@
  **                                                 **
  *****************************************************/
 
-
-
 #ifndef __PIDX_DATA_STRUCTS_H
 #define __PIDX_DATA_STRUCTS_H
-
 
 enum IO_MODE { PIDX_READ, PIDX_WRITE};
 
@@ -56,7 +53,7 @@ struct idx_file_struct
   
   PIDX_variable variable[1024];
   
-  char* filename;
+  char filename[1024];
   int bits_per_block;
   int blocks_per_file;
   long long* global_bounds;
@@ -84,6 +81,9 @@ struct idx_dataset_derived_metadata_struct
   int *existing_blocks_index_per_file;
   int existing_file_count;
   int *existing_file_index;
+  
+  int aggregation_factor;
+  Agg_buffer agg_buffer;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

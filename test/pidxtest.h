@@ -53,6 +53,13 @@ struct Args
   /* output IDX file Name Template*/
   char output_file_template[512];
   char *output_file_name;
+  
+  int aggregation_factor;
+  
+  int blocks_per_file;
+  
+  int bits_per_block;
+  
 };
 
 /*main*/

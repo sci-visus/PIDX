@@ -135,46 +135,53 @@ int main(int argc, char **argv)
 /*parse_args*/
 int parse_args(struct Args *args, int argc, char **argv) 
 {
-  char flags[] = "k:g:l:f:t:v:p:";
-  int one_opt = 0;
   char strkind[128];
-
+  FILE* config_file;
+  
   if (!args)
     return -1;
   
   memset(args, 0, sizeof(struct Args)); 
   
-  while ((one_opt = getopt(argc, argv, flags)) != EOF) 
+  config_file = fopen(argv[1], "r");
+  if (!config_file) 
   {
-    /* postpone error checking for after while loop */
-    switch (one_opt) 
-    {
-      case('k'):
-	  sprintf(strkind, "%s", optarg);
-	  args->kind = strToKind(strkind);
-	  break;
-      case('g'):
-	  sscanf(optarg, "%dx%dx%d", &args->extents[0], &args->extents[1], &args->extents[2]);
-	  break;
-      case('l'):
-	  sscanf(optarg, "%dx%dx%d", &args->count_local[0], &args->count_local[1], &args->count_local[2]);
-	  break;
-      case('f'):
-	  sprintf(args->output_file_template, "%s", optarg);
-	  break;
-      case('t'):
-	  sscanf(optarg, "%d", &args->time_step);
-	  break;
-      case('v'):
-	  sscanf(optarg, "%d", &args->variable_count);
-	  break;
-      case('p'):
-          sscanf(optarg, "%d", &args->idx_count);
-          break;
-      case('?'):
-	  return (-1);
-    }
+    fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
+    return 1;
   }
+  
+  fscanf(config_file, "(mode)\n");
+  fscanf(config_file, "%s\n", strkind);
+  args->kind = strToKind(strkind);
+  
+  fscanf(config_file, "(global box)\n");
+  fscanf(config_file, "%d %d %d\n", &args->extents[0], &args->extents[1], &args->extents[2]);
+  
+  fscanf(config_file, "(local box)\n");
+  fscanf(config_file, "%d %d %d\n", &args->count_local[0], &args->count_local[1], &args->count_local[2]);
+  
+  fscanf(config_file, "(file name)\n");
+  fscanf(config_file, "%s\n", args->output_file_template);
+
+  fscanf(config_file, "(fields)\n");
+  fscanf(config_file, "%d\n", &args->variable_count);
+  
+  fscanf(config_file, "(time steps)\n");
+  fscanf(config_file, "%d\n", &args->time_step);
+  
+  fscanf(config_file, "(blocks per file)\n");
+  fscanf(config_file, "%d\n", &args->blocks_per_file);
+  
+  fscanf(config_file, "(samples per block)\n");
+  fscanf(config_file, "%d\n", &args->bits_per_block);
+  
+  fscanf(config_file, "(aggregation factor)\n");
+  fscanf(config_file, "%d\n", &args->aggregation_factor);
+  
+  fscanf(config_file, "(idx count)\n");
+  fscanf(config_file, "%d\n", &args->idx_count);
+  
+  fclose(config_file);
   
   /* need positive dimensions */
   if (args->extents[0] < 1 || args->extents[1] < 1 || args->extents[2] < 1 || args->count_local[0] < 1 || args->count_local[1] < 1 || args->count_local[2] < 1) 
