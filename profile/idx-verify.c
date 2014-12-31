@@ -377,12 +377,12 @@ int main(int argc, char **argv)
 
                 check_bit = 1, s = 0;
                 for (s = 0; s < values_per_sample[var]; s++)
-                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]) + idx_data_offset * (global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]));
 
                 if (check_bit == 0)
                 {
                   lost_element_count++;
-                  //printf("[%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
                   //       var,
                   //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
                   //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
@@ -391,6 +391,11 @@ int main(int argc, char **argv)
                 else 
                 {
                   element_count++;
+                  //printf("F [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                  //       var,
+                  //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
+                  //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
+                  //       (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
               }
               
@@ -402,7 +407,7 @@ int main(int argc, char **argv)
       }
     }
     
-    printf("%lld + %lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+    printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
     assert(element_count == (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
     
   }

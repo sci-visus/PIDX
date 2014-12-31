@@ -57,8 +57,6 @@ int PIDX_rst_finalize(PIDX_rst_id id);
 
 long long* PIDX_rst_get_box_dimension(PIDX_rst_id id);
 
-void PIDX_rst_print_error(char *error_message, char* file, int line);
-
 int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable);
 
 #endif // PIDX_HAVE_MPI

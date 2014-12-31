@@ -19,17 +19,11 @@
  /**
  * \file PIDX_comm.h
  *
- * \mainpage
- *
  * \author Sidharth Kumar
- * \author Cameron Christensen
- * \author Giorgio Scorzelli
- * \author Valerio Pascucci
  * \date   10/09/14
  *
- * PIDX is an I/O library that enables HPC applications to write distributed 
- * multi-dimensional data directly into a hierarchical multi-resolution 
- * data format (IDX) with minimal overhead. 
+ * All communicator initialization related
+ * functions.
  *
  */
  
@@ -56,7 +50,7 @@ PIDX_return_code PIDX_create_access(PIDX_access* access);
 PIDX_return_code PIDX_close_access(PIDX_access access);
 
 #if PIDX_HAVE_MPI
-PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm);
+PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count, MPI_Comm comm);
 #endif
 
 #ifdef __cplusplus

@@ -88,12 +88,8 @@ void set_default_box_size(PIDX_rst_id rst_id, long long* process_bounds, int npr
   int i = 0, j = 0;
   long long average_count = 0;
   int check_bit = 0;
-  long long* max_dim_length;
+  long long max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
   int equal_partiton = 1;
-
-  max_dim_length = malloc(sizeof (long long) * PIDX_MAX_DIMENSIONS);
-  assert(max_dim_length);
-  memset(max_dim_length, 0, sizeof (long long) * PIDX_MAX_DIMENSIONS);
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
   {
@@ -139,8 +135,6 @@ void set_default_box_size(PIDX_rst_id rst_id, long long* process_bounds, int npr
     rst_id->power_two_box_size[3] = getPowerOftwo(process_bounds[3]) * 1;
     rst_id->power_two_box_size[4] = getPowerOftwo(process_bounds[4]) * 1;
   }
-  free(max_dim_length);
-  max_dim_length = 0;
   //power_two_box_size = power_two_box_size * 4;
 }
 
@@ -152,11 +146,14 @@ long long* PIDX_rst_get_box_dimension(PIDX_rst_id id)
 /* output value: num_output_buffers (number of buffers this process will hold after restructuring given the above parameters) */
 PIDX_rst_id PIDX_rst_init(MPI_Comm comm, idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int var_start_index, int var_end_index)
 {
-  int ret;
   //Creating the restructuring ID
   PIDX_rst_id rst_id;
   rst_id = (PIDX_rst_id)malloc(sizeof (*rst_id));
-  if (!rst_id) PIDX_rst_print_error("Error Creating Rst ID", __FILE__, __LINE__);
+  if (!rst_id) 
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return NULL;
+  }
   memset(rst_id, 0, sizeof (*rst_id));
 
   rst_id->idx_ptr = (idx_dataset)malloc(sizeof(*(rst_id->idx_ptr)));
@@ -168,8 +165,8 @@ PIDX_rst_id PIDX_rst_init(MPI_Comm comm, idx_dataset idx_meta_data, idx_dataset_
   rst_id->start_variable_index = var_start_index;
   rst_id->end_variable_index = var_end_index;
   
-  ret = MPI_Comm_dup(comm, &rst_id->comm);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("Communicator Duplication", __FILE__, __LINE__);
+  MPI_Comm_dup(comm, &rst_id->comm);
+  
 
   return (rst_id);
 }
@@ -182,29 +179,42 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   long long *rank_r_offset, *rank_r_count;
   int power_two_box_count, edge_case = 0;
   
-  ret = MPI_Comm_rank(rst_id->comm, &rank);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("Rank ", __FILE__, __LINE__);
-
-  ret = MPI_Comm_size(rst_id->comm, &nprocs);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("nprocs ", __FILE__, __LINE__);
-
+  MPI_Comm_rank(rst_id->comm, &rank);
+  MPI_Comm_size(rst_id->comm, &nprocs);
+  
   /// creating rank_r_count and rank_r_offset to hold the offset and count of every process
   rst_id->power_two_box_group_count = 0;
 
   rank_r_offset = malloc(sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS);
-  if (!rank_r_offset) PIDX_rst_print_error("Memory : rank_r_offset", __FILE__, __LINE__);
+  if (!rank_r_offset) 
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
   memset(rank_r_offset, 0, (sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
   rank_r_count =  malloc(sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS);
-  if (!rank_r_count) PIDX_rst_print_error("Memory : rank_r_count", __FILE__, __LINE__);
+  if (!rank_r_count) 
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
   memset(rank_r_count, 0, (sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
   /// STEP 1 : Doing an all to all Communication to get extents of all processes.
   ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rst_id->comm);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Allgather : rank_r_offset", __FILE__, __LINE__);
+  if (ret != MPI_SUCCESS) 
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
 
   ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rst_id->comm);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Allgather : rank_r_count", __FILE__, __LINE__);
+  if (ret != MPI_SUCCESS) 
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
 
   /// STEP 2 : Compute the dimension of the regular BOX
   if(set_box_dim == 0)
@@ -217,10 +227,6 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   
   /// extents for the local process(rank)
   Ndim_box local_proc_box = malloc(sizeof (*local_proc_box));
-  if (!local_proc_box) 
-  {
-    fprintf(stderr, "[Rank : %d] [File : %s] [Line : %d] local_proc_box\n", rank, __FILE__, __LINE__);
-  }
   memset(local_proc_box, 0, sizeof (*local_proc_box));
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++) 
   {
@@ -236,7 +242,6 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
           for (m = 0; m < rst_id->idx_ptr->global_bounds[4]; m = m + rst_id->power_two_box_size[4]) 
           {
             Ndim_box power_two_box = malloc(sizeof (*power_two_box));
-            if (!power_two_box) PIDX_rst_print_error("Memory : power_two_box", __FILE__, __LINE__);
             memset(power_two_box, 0, sizeof (*power_two_box));
 
             //Interior regular boxes
@@ -281,7 +286,6 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
           for (m = 0; m < rst_id->idx_ptr->global_bounds[4]; m = m + rst_id->power_two_box_size[4]) 
           {
             Ndim_box power_two_box = malloc(sizeof (*power_two_box));
-            if (!power_two_box) PIDX_rst_print_error("Memory : power_two_box", __FILE__, __LINE__);
             memset(power_two_box, 0, sizeof (*power_two_box));
 
             //Interior regular boxes
@@ -345,7 +349,6 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
               {
                 //Extent of process with rank r
                 Ndim_box rank_r_box = malloc(sizeof (*rank_r_box));
-                if (!rank_r_box) PIDX_rst_print_error("Memory : rank_r_box", __FILE__, __LINE__);
                 memset(rank_r_box, 0, sizeof (*rank_r_box));
 
                 for (d = 0; d < PIDX_MAX_DIMENSIONS; d++) 
@@ -431,16 +434,12 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
 /// actually do the restructuring, using pre-calculated data associated with the rst_id
 int PIDX_rst_restructure(PIDX_rst_id rst_id, PIDX_variable* variable)
 {
-  int j = 0, i, cnt = 0, ret = 0, var;
-  int rank, nprocs;
+  int j = 0, i, cnt = 0, var;
+  int rank;
 
   //rank and nprocs
-  ret = MPI_Comm_rank(rst_id->comm, &rank);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("Rank ", __FILE__, __LINE__);
-
-  MPI_Comm_size(rst_id->comm, &nprocs);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("nprocs ", __FILE__, __LINE__);
-
+  MPI_Comm_rank(rst_id->comm, &rank);
+  
   for (var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
   {
     cnt = 0;
@@ -475,17 +474,13 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
   long long a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
   int i, j, var, index, count1 = 0, ret = 0, req_count = 0;
   int *send_count, *send_offset;
-  int rank, nprocs, send_c = 0, send_o = 0, counter = 0, req_counter = 0;
+  int rank, send_c = 0, send_o = 0, counter = 0, req_counter = 0;
 
   MPI_Request *req;
   MPI_Status *status;
 
   //rank and nprocs
-  ret = MPI_Comm_rank(rst_id->comm, &rank);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("Rank", __FILE__, __LINE__);
-
-  MPI_Comm_size(rst_id->comm, &nprocs);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("nprocs", __FILE__, __LINE__);
+  MPI_Comm_rank(rst_id->comm, &rank);
   
   for (i = 0; i < rst_id->power_two_box_group_count; i++)
     for(j = 0; j < rst_id->power_two_box_group[i]->box_count; j++)
@@ -493,10 +488,18 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
     
   //creating ample requests and statuses
   req = (MPI_Request*) malloc(sizeof (*req) * req_count * 2 * (rst_id->end_variable_index - rst_id->start_variable_index + 1));
-  if (!req) PIDX_rst_print_error("Memory Error : req", __FILE__, __LINE__);
+  if (!req)
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
 
   status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->end_variable_index - rst_id->start_variable_index + 1));
-  if (!status) PIDX_rst_print_error("Memory Error : status", __FILE__, __LINE__);
+  if (!status) 
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
 
   for (i = 0; i < rst_id->power_two_box_group_count; i++)
   {
@@ -547,13 +550,21 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
             if (MODE == PIDX_WRITE)
             {
               ret = MPI_Irecv(variable[var]->patch_group_ptr[counter]->box[j]->Ndim_box_buffer, (power_two_box_count[0] * power_two_box_count[1] * power_two_box_count[2] * power_two_box_count[3] * power_two_box_count[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->power_two_box_group[i]->source_box_rank[j], 123, rst_id->comm, &req[req_counter]);
-              if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Irecv", __FILE__, __LINE__);
+              if (ret != MPI_SUCCESS) 
+              {
+                fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+                return (-1);
+              } 
               req_counter++;
             }
             else
             {
-              ret = MPI_Isend(variable[var]->patch_group_ptr[counter]->box[j]->Ndim_box_buffer, (power_two_box_count[0] * power_two_box_count[1] * power_two_box_count[2] * power_two_box_count[3] * power_two_box_count[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->power_two_box_group[i]->source_box_rank[j], 123, rst_id->comm, &req[req_counter]);
-              if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Irecv", __FILE__, __LINE__);
+              ret = MPI_Isend(variable[var]->patch_group_ptr[counter]->box[j]->Ndim_box_buffer, (power_two_box_count[0] * power_two_box_count[1] * power_two_box_count[2] * power_two_box_count[3] * power_two_box_count[4]) * variable[var]->values_per_sample * variable[var]->bits_per_value/8, MPI_BYTE, rst_id->power_two_box_group[i]->source_box_rank[j], 123, rst_id->comm, &req[req_counter]);              
+              if (ret != MPI_SUCCESS) 
+              {
+                fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+                return (-1);
+              }
               req_counter++;
             }
           }
@@ -573,11 +584,19 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
             long long *power_two_box_offset = rst_id->power_two_box_group[i]->box[j]->Ndim_box_offset;
             
             send_offset = (int*) malloc(sizeof (int) * (power_two_box_count[1] * power_two_box_count[2] * power_two_box_count[3] * power_two_box_count[4]));
-            if (!send_offset) PIDX_rst_print_error("Memory Error : send_offset", __FILE__, __LINE__);
+            if (!send_offset) 
+            {
+              fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+              return (-1);
+            }
             memset(send_offset, 0, sizeof (int) * (power_two_box_count[1] * power_two_box_count[2] * power_two_box_count[3] * power_two_box_count[4]));
 
             send_count = (int*) malloc(sizeof (int) * (power_two_box_count[1] * power_two_box_count[2] * power_two_box_count[3] * power_two_box_count[4]));
-            if (!send_count) PIDX_rst_print_error("Memory Error : send_count", __FILE__, __LINE__);
+            if (!send_count) 
+            {
+              fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+              return (-1);
+            }
             memset(send_count, 0, sizeof (int) * (power_two_box_count[1] * power_two_box_count[2] * power_two_box_count[3] * power_two_box_count[4]));
             
             count1 = 0;
@@ -607,13 +626,21 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
             if(MODE == PIDX_WRITE)
             {
               ret = MPI_Isend(rst_id->idx_ptr->variable[var]->patch[0]->Ndim_box_buffer, 1, chunk_data_type, rst_id->power_two_box_group[i]->max_box_rank, 123, rst_id->comm, &req[req_counter]);
-              if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Isend", __FILE__, __LINE__);
+              if (ret != MPI_SUCCESS) 
+              {
+                fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+                return (-1);
+              }
               req_counter++;
             }
             else
             {
               ret = MPI_Irecv(rst_id->idx_ptr->variable[var]->patch[0]->Ndim_box_buffer, 1, chunk_data_type, rst_id->power_two_box_group[i]->max_box_rank, 123, rst_id->comm, &req[req_counter]);
-              if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Isend", __FILE__, __LINE__);
+              if (ret != MPI_SUCCESS)
+              {
+                fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+                return (-1);
+              }
               req_counter++;
             }
               
@@ -627,7 +654,11 @@ int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MOD
   }
 
   ret = MPI_Waitall(req_counter, req, status);
-  if (ret != MPI_SUCCESS) PIDX_rst_print_error("MPI_Waitall", __FILE__, __LINE__);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
 
   free(req);
   req = 0;
@@ -710,7 +741,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
   long long element_count = 0;
   long long lost_element_count = 0;
   
-  printf("Color = %d Extents %d %d %d\n", rst_id->color, rst_id->idx_ptr->global_bounds[0], rst_id->idx_ptr->global_bounds[1], rst_id->idx_ptr->global_bounds[2]);
+  //printf("Color = %d Extents %d %d %d\n", rst_id->color, rst_id->idx_ptr->global_bounds[0], rst_id->idx_ptr->global_bounds[1], rst_id->idx_ptr->global_bounds[2]);
   
   unsigned long long dvalue_1, dvalue_2;
   for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
@@ -766,12 +797,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
       MPI_Abort(rst_id->comm, -1);
   }
   
-  return 1;
-}
-
-void PIDX_rst_print_error(char *error_message, char* file, int line) 
-{
-  fprintf(stderr, "File [%s] Line [%d] Error [%s]\n", error_message, line, file);
+  return 0;
 }
 
 #endif // PIDX_HAVE_MPI

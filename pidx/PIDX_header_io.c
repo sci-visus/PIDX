@@ -329,7 +329,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
   uint32_t* headers;
   off_t initial_offset = 0;
   off_t data_offset = 0;
-  off_t max_offset = 0;  
+  //off_t max_offset = 0;  
   uint32_t little_data_offset;
   
   total_header_size = (10 + (10 * header_io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * header_io_id->end_var_index;
@@ -387,7 +387,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
             //if (file_number == 13 || file_number == 12)
             //printf("[%d] [%d] [%d] data_offset = %ld initial_offset = %ld block limit %d\n", file_number, n, i, data_offset, initial_offset, block_limit);
           }
-          max_offset = data_offset + header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+          //max_offset = data_offset + header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
             
           little_data_offset = 0;
           little_data_offset += data_offset;
@@ -454,7 +454,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
             //if (file_number == 13 || file_number == 12)
             //printf("[%d] [%d] [%d] data_offset = %ld initial_offset = %ld block limit %d\n", file_number, n, i, data_offset, initial_offset, block_limit);
           }
-          max_offset = data_offset + header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
+          //max_offset = data_offset + header_io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * header_io_id->idx_ptr->variable[n]->values_per_sample;
             
           little_data_offset = 0;
           little_data_offset += data_offset;

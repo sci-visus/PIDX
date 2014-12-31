@@ -1541,15 +1541,19 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
       for (j = 0; j <= file->idx_ptr->global_bounds[2] * file->idx_count; j = j + (file->idx_ptr->global_bounds[2]))
       {
-        if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->global_bounds[2] / file->idx_count))
+        //if (rank == 23 && file->color == 1)
+          //printf("j %d :: %d >= %d && %d < %d\n", j, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2], j, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2],  j + (file->idx_ptr->global_bounds[2] /* file->idx_count */));
+        if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->global_bounds[2] /* file->idx_count */))
         {
           file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
           (j);
+          //if (rank == 23 && file->color == 1)
           //printf("X [%d] : [j %d] %d\n", rank, j, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2]);
           break;
         }
       }
         
+  //if (rank == 23 && file->color == 1)
   //printf("Y [%d] %d\n", rank, file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[2] );
 #if PIDX_HAVE_MPI
 
@@ -1852,7 +1856,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       {
         PIDX_rst_restructure(file->rst_id, file->idx_ptr->variable);
         PIDX_rst_restructure_IO(file->rst_id, file->idx_ptr->variable, PIDX_WRITE);
-        if(global_do_rst == 1 && debug_rst == 1  && file->color == 0)
+        if(global_do_rst == 1 && debug_rst == 1  && file->color == 1)
           HELPER_rst(file->rst_id, file->idx_ptr->variable);
       }
       rst_end[vp] = PIDX_get_time();

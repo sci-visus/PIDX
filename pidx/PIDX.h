@@ -257,16 +257,20 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int  variable_i
 PIDX_return_code PIDX_get_current_variable_index(PIDX_file file, int* variable_index);
 
 
+///
 PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variable);
 
 
+///
 PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variable);
 
 
+///
 PIDX_return_code PIDX_read_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point dims, 
                                     const void* read_from_this_buffer, PIDX_data_layout layout);
 
 
+///
 PIDX_return_code PIDX_write_variable(PIDX_variable variable_ptr, PIDX_point offset, PIDX_point dims,
                                      const void* read_from_this_buffer, PIDX_data_layout layout);
 
@@ -279,11 +283,14 @@ PIDX_return_code PIDX_flush(PIDX_file file);
 PIDX_return_code PIDX_close(PIDX_file file);
 
 
+///
 PIDX_return_code PIDX_set_aggregation_factor(PIDX_file file, int agg_factor);
 
-
+///
 PIDX_return_code PIDX_get_aggregation_factor(PIDX_file file, int *agg_factor);
 
+
+///
 double PIDX_get_time();
 
 #ifdef __cplusplus
