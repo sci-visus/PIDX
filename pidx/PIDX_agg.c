@@ -76,7 +76,7 @@ int PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
 int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
 {
   int ret;
-  int rank = 0, nprocs = 1, itr;
+  int rank = 0, itr;
   int bytes_per_datatype;
   int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, values_per_sample;
   int target_rank = 0;
@@ -87,7 +87,6 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(agg_id->comm, &rank);
-  MPI_Comm_size(agg_id->comm, &nprocs);
 #endif
 
   values_per_sample = agg_id->idx_ptr->variable[variable_index]->values_per_sample; //number of samples for variable j
@@ -155,6 +154,9 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       //target_disp_address = target_disp;
       if (MODE == PIDX_WRITE)
       {
+        if (rank == 0)
+          printf("[A] Count %lld Local Disp %d Target Disp %lld\n", ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp), 0, target_disp);
+        
         ret = MPI_Put(hz_buffer, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
@@ -179,7 +181,12 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
     } 
     else
       if (MODE == PIDX_WRITE)
+      {
+        if (rank == 0)
+          printf("[MA] Count %lld Local Disp %d Target Disp %lld\n", target_disp, 0, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp));
+        
         memcpy( agg_buffer->buffer + target_disp * bytes_per_datatype, hz_buffer, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype);
+      }
       else
         memcpy( hz_buffer, agg_buffer->buffer + target_disp * bytes_per_datatype, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype);
       
@@ -193,6 +200,9 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 #endif
         if (MODE == PIDX_WRITE)
         {
+          if (rank == 0)
+            printf("[B] Count %lld Local Dis %lld Target Disp %d\n", (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+          
           ret = MPI_Put(hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, agg_id->win);
           if (ret != MPI_SUCCESS)
           {
@@ -217,7 +227,12 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       else
       {
         if (MODE == PIDX_WRITE)
+        {
+          if (rank == 0)
+            printf("[MB] Count %lld Local Dis %lld Target Disp %d\n", (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+          
           memcpy( agg_buffer->buffer, hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, ( samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype);
+        }
         else
           memcpy( hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, agg_buffer->buffer, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype);
       }
@@ -231,6 +246,9 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 #endif
       if (MODE == PIDX_WRITE)
       {
+        if (rank == 0)
+          printf("[C] Count %lld Local Dis %lld Target Disp %d\n", (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+        
         ret = MPI_Put(hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp)) * bytes_per_datatype, 
                       MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
@@ -256,7 +274,12 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
     }
     else
       if(MODE == PIDX_WRITE)
+      {
+        if (rank == 0)
+          printf("[MC] Count %lld Local Dis %lld Target Disp %d\n", (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+        
         memcpy( agg_buffer->buffer, hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp)) * bytes_per_datatype);    
+      }
       else
         memcpy( hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, agg_buffer->buffer, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp)) * bytes_per_datatype);
   }
@@ -271,7 +294,9 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       //target_disp_address = target_disp;
       if(MODE == PIDX_WRITE)
       {
-        //printf("Target rank %d target disp %ld hz count %d\n", target_rank, target_disp, hz_count);
+        if (rank == 0)
+          printf("[D] Count %lld Local Dis %d Target Disp %lld\n", hz_count, 0, target_disp);
+        
         ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
@@ -296,7 +321,12 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
     else
     {
       if(MODE == PIDX_WRITE)
+      {
+        if (rank == 0)
+          printf("[MD] Count %lld Local Dis %d Target Disp %lld\n", hz_count, 0, target_disp);
+        
         memcpy( agg_buffer->buffer + target_disp * bytes_per_datatype, hz_buffer, hz_count * values_per_sample * bytes_per_datatype);
+      }
       else
         memcpy( hz_buffer, agg_buffer->buffer + target_disp * bytes_per_datatype, hz_count * values_per_sample * bytes_per_datatype);
     }
