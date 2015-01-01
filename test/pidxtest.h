@@ -60,6 +60,10 @@ struct Args
   
   int bits_per_block;
   
+  int debug_hz;
+  
+  int debug_rst;
+  
 };
 
 /*main*/

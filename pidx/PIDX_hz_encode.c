@@ -17,7 +17,6 @@
  *****************************************************/
 
 #include "PIDX_inc.h"
-static int PIDX_VAR = 0;
 
 struct hz_tupple_double
 {
@@ -42,7 +41,16 @@ struct PIDX_hz_encode_struct
   int start_var_index;
   int end_var_index;
   
+  MPI_Comm comm;
 };
+
+#if PIDX_HAVE_MPI
+int PIDX_hz_encode_set_communicator(PIDX_hz_encode_id id, MPI_Comm comm)
+{
+  id->comm = comm;
+  return 0;
+}
+#endif
 
 int compare( const void* a, const void* b)
 {
@@ -66,12 +74,16 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_der
   hz_id = (PIDX_hz_encode_id)malloc(sizeof (*hz_id));
   memset(hz_id, 0, sizeof (*hz_id));
 
+  /*
   hz_id->idx_ptr = (idx_dataset)malloc(sizeof(*(hz_id->idx_ptr)));
   memcpy(hz_id->idx_ptr, idx_meta_data, sizeof(*(hz_id->idx_ptr)));
   
   hz_id->idx_derived_ptr = (idx_dataset_derived_metadata)malloc(sizeof(*(hz_id->idx_derived_ptr)));
   memcpy(hz_id->idx_derived_ptr, idx_derived_ptr, sizeof(*(hz_id->idx_derived_ptr)));
+  */
   
+  hz_id->idx_ptr = idx_meta_data;
+  hz_id->idx_derived_ptr = idx_derived_ptr;
   hz_id->start_var_index = start_var_index;
   hz_id->end_var_index = end_var_index;
   
@@ -170,26 +182,23 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
           count = 0;
           for(b = start_block_no; b <= end_block_no; b++)
           {
-            if (PIDX_VAR == 1)
+#ifdef PIDX_VAR_SLOW_LOOP
+            if (is_block_present(b, id->idx_ptr->variable[id->start_var_index]->VAR_global_block_layout) == 0)
             {
-              if (is_block_present(b, id->idx_ptr->variable[id->start_var_index]->VAR_global_block_layout) == 0)
-              {
-                //printf("[%d] missing blocks == %d\n", j, b);
-                variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
-                variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
-                count++;
-              }
+              //printf("[%d] missing blocks == %d\n", j, b);
+              variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
+              variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
+              count++;
             }
-            else
+#else
+            if (is_block_present(b, id->idx_derived_ptr->global_block_layout) == 0)
             {
-              if (is_block_present(b, id->idx_derived_ptr->global_block_layout) == 0)
-              {
-                variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
-                variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
-                //printf("[%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count,  variable[i]->HZ_patch[k]->missing_block_count_per_level[j], variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, variable[i]->HZ_patch[k]->start_hz_index[j], variable[i]->HZ_patch[k]->end_hz_index[j], b);
-                count++;
-              }
+              variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
+              variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
+              //printf("[%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count,  variable[i]->HZ_patch[k]->missing_block_count_per_level[j], variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, variable[i]->HZ_patch[k]->start_hz_index[j], variable[i]->HZ_patch[k]->end_hz_index[j], b);
+              count++;
             }
+#endif
           }
           //if(j == 19)
           //{
@@ -920,17 +929,13 @@ int PIDX_hz_encode_buf_destroy_var(PIDX_hz_encode_id id, PIDX_variable* variable
 
 int PIDX_hz_encode_finalize(PIDX_hz_encode_id id) 
 {  
-  if(id == NULL)
-  {
-    fprintf(stderr, "[%s] [%d] hz id is null.\n", __FILE__, __LINE__);
-    return 1;
-  }
-  
+  /*
   free(id->idx_ptr);
   id->idx_ptr = 0;
   
   free(id->idx_derived_ptr);
   id->idx_derived_ptr = 0;
+  */
   
   free(id);
   id = 0;
@@ -941,13 +946,15 @@ int PIDX_hz_encode_finalize(PIDX_hz_encode_id id)
 #if PIDX_HAVE_MPI
 int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
 {
+  
   int i = 0, k = 0, b = 0, var = 0, rank;
-  long long global_hz, element_counts = 0, lost_element_count = 0;
+  long long global_hz, element_count = 0, lost_element_count = 0;
   long long ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
   unsigned long long dvalue_1, dvalue_2;
   
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_rank(id->comm, &rank);
+  
   for(var = id->start_var_index; var <= id->end_var_index; var++)
   {
     for (b = 0; b < id->idx_ptr->variable[var]->patch_group_count; b++)
@@ -966,38 +973,48 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
               check_bit = 1, s = 0;    
               for (s = 0; s < variable[var]->values_per_sample; s++)
               {
-                dvalue_1 = s + 100 + (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1]*(ZYX[2]))+(id->idx_ptr->global_bounds[0]*(ZYX[1])) + ZYX[0];
+                dvalue_1 = 100 + var + (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1]*(ZYX[2]))+(id->idx_ptr->global_bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_derived_ptr->color * id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
+                
                 dvalue_2 = *(*((unsigned long long**)id->idx_ptr->variable[var]->HZ_patch[b]->buffer + i) + ((k * variable[var]->values_per_sample) + s));
                 
                 check_bit = check_bit && (dvalue_1  == dvalue_2);
                 if (check_bit == 0)
                 {
-                  printf("[HZ] %lld %lld (%lld :: %lld %lld %lld)\n", dvalue_1, dvalue_2, global_hz, ZYX[0], ZYX[1], ZYX[2]);
+                  //printf("[HZ] %lld %lld (%lld :: %lld %lld %lld)\n", dvalue_1, dvalue_2, global_hz, ZYX[0], ZYX[1], ZYX[2]);
                   lost_element_count++;
                 }
                 else
                 {
                   //printf("%f %f\n", dvalue_1, dvalue_2);
-                  element_counts++;
+                  element_count++;
                 }
               }
             }
           }
         }
-      }    
+      }
     }
   }
-  //printf("[%d] lost element count = %d\n", rank, lost_element_count);
+  
   long long global_volume = 0;
-  MPI_Allreduce(&element_counts, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, MPI_COMM_WORLD);
-  printf("[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (long long)(id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * id->idx_ptr->global_bounds[3] * id->idx_ptr->global_bounds[4] * (id->end_var_index - id->start_var_index + 1)));
+  MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, id->comm);
+  
+  //printf("[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (long long)(id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * id->idx_ptr->global_bounds[3] * id->idx_ptr->global_bounds[4] * (id->end_var_index - id->start_var_index + 1)));
+  
   if (global_volume != (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1)) 
   {
-    //if(rank == 0)
-    fprintf(stderr, "Volume Error %lld %lld\n", global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
-    MPI_Abort(MPI_COMM_WORLD, -1);
+    if (rank == 0)
+      fprintf(stderr, "[HZ Debug FAILED!!!!] [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_derived_ptr->color, global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
+    
+    printf("[HZ]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", rank,  id->idx_derived_ptr->color, lost_element_count, element_count, (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * id->idx_ptr->global_bounds[3] * id->idx_ptr->global_bounds[4]) * (id->end_var_index - id->start_var_index + 1));
+    
+    return (-1);
   }
-  assert(global_volume == (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
+  else
+  {
+    if (rank == 0)
+      fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_derived_ptr->color, global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
+  }
     
   return 0;
 }

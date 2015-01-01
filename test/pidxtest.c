@@ -181,6 +181,12 @@ int parse_args(struct Args *args, int argc, char **argv)
   fscanf(config_file, "(idx count)\n");
   fscanf(config_file, "%d\n", &args->idx_count);
   
+  fscanf(config_file, "(debug_rst)\n");
+  fscanf(config_file, "%d\n", &args->debug_rst);
+  
+  fscanf(config_file, "(debug_hz)\n");
+  fscanf(config_file, "%d\n", &args->debug_hz);
+  
   fclose(config_file);
   
   /* need positive dimensions */

@@ -286,8 +286,17 @@ PIDX_return_code PIDX_close(PIDX_file file);
 ///
 PIDX_return_code PIDX_set_aggregation_factor(PIDX_file file, int agg_factor);
 
+
 ///
 PIDX_return_code PIDX_get_aggregation_factor(PIDX_file file, int *agg_factor);
+
+
+///
+PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst);
+
+
+///
+PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
 
 
 ///

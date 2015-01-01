@@ -84,6 +84,8 @@ struct idx_dataset_derived_metadata_struct
   
   int aggregation_factor;
   Agg_buffer agg_buffer;
+  
+  int color;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

@@ -37,6 +37,7 @@ int PIDX_hz_encode_finalize(PIDX_hz_encode_id id);
 
 #if PIDX_HAVE_MPI
 int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable);
+int PIDX_hz_encode_set_communicator(PIDX_hz_encode_id id, MPI_Comm comm);
 #endif
 
 #endif

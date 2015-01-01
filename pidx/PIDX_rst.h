@@ -38,8 +38,6 @@ typedef struct PIDX_rst_struct* PIDX_rst_id;
 
 PIDX_rst_id PIDX_rst_init( MPI_Comm comm, idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int var_start_index, int var_end_index);
 
-void set_color(PIDX_rst_id rst_id, int color) ;
-
 int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box_dim);
 
 /* actually do the restructuring, using pre-calculated data associated with the id */
