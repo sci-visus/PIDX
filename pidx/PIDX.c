@@ -69,7 +69,7 @@ struct PIDX_file_descriptor
 
   PIDX_access access;
   
-  int idx_count;
+  int idx_count[PIDX_MAX_DIMENSIONS];
   
   /// Contains all relevant IDX file info
   /// Blocks per file, samples per block, bitmask, box, file name template and more
@@ -132,9 +132,10 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
       return PIDX_err_file_exists;
   }
   
-  int i, ret, rank, nprocs;
+  int ret, rank, nprocs;
   int *colors;
   char file_name_skeleton[1024];
+  int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
   
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;
@@ -165,7 +166,11 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_ptr->current_time_step = 0;
   (*file)->idx_derived_ptr->aggregation_factor = 1;
   (*file)->idx_derived_ptr->color = 0;
-  (*file)->idx_count = 1;
+  (*file)->idx_count[0] = 1;
+  (*file)->idx_count[1] = 1;
+  (*file)->idx_count[2] = 1;
+  (*file)->idx_count[3] = 1;
+  (*file)->idx_count[4] = 1;
   
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
@@ -197,23 +202,107 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
   {
-    (*file)->idx_count = access_type->idx_count;
+    memcpy ((*file)->idx_count, access_type->idx_count, sizeof(int) * /*PIDX_MAX_DIMENSIONS*/3);
     
-    if ((*file)->idx_count != 1)
-    {      
-      colors = malloc(sizeof(*colors) * (*file)->idx_count);
-      memset(colors, 0, sizeof(*colors) * (*file)->idx_count);
+    //printf("%d %d %d\n", (*file)->idx_count[0], (*file)->idx_count[1], (*file)->idx_count[2]);
+    /*
+    if ((*file)->idx_count[0] == 1 && (*file)->idx_count[1] == 1 && (*file)->idx_count[2] != 1 )
+    {
+      colors = malloc(sizeof(*colors) * (*file)->idx_count[2]);
+      memset(colors, 0, sizeof(*colors) * (*file)->idx_count[2]);
       
-      for (i = 0; i < (*file)->idx_count; i++)
+      for (i = 0; i < (*file)->idx_count[2]; i++)
         colors[i] = i;
       
-      for (i = 0; i < nprocs; i = i + (nprocs/(*file)->idx_count))
-        if (rank < i + (nprocs / (*file)->idx_count))
-          (*file)->idx_derived_ptr->color = colors[rank / (nprocs / (*file)->idx_count)];
+      for (i = 0; i < nprocs; i = i + (nprocs/(*file)->idx_count[2]))
+        if (rank < i + (nprocs / (*file)->idx_count[2]))
+          (*file)->idx_derived_ptr->color = colors[rank / (nprocs / (*file)->idx_count[2])];
       
       free(colors);
       MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
       MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
+    }
+    else if ((*file)->idx_count[0] != 1 && (*file)->idx_count[1] == 1 && (*file)->idx_count[2] == 1 )
+    {
+      rank_z = rank / (access_type->sub_div[0] * access_type->sub_div[1]);
+      rank_slice = rank % (access_type->sub_div[0] * access_type->sub_div[1]);
+      rank_y = (rank_slice / access_type->sub_div[0]);
+      rank_x = (rank_slice % access_type->sub_div[0]);
+      
+      colors = malloc(sizeof(*colors) * (*file)->idx_count[0]);
+      memset(colors, 0, sizeof(*colors) * (*file)->idx_count[0]);
+      
+      for (i = 0; i < (*file)->idx_count[0]; i++)
+        colors[i] = i;
+      
+      for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_count[0]))
+      {
+        if (rank_x >= i && rank_x < i + (access_type->sub_div[0] / (*file)->idx_count[0]))
+        {
+          (*file)->idx_derived_ptr->color = colors[i / (access_type->sub_div[0] / (*file)->idx_count[0])];
+          break;
+        }
+      }
+      
+      printf("%d = %d %d %d :: %d\n", rank, rank_x, rank_y, rank_z, (*file)->idx_derived_ptr->color);
+      
+      MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
+      MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
+      //printf("Color for %d = %d\n", rank, (*file)->idx_derived_ptr->color);
+    }
+    */
+    if ((*file)->idx_count[0] != 1 || (*file)->idx_count[1] != 1 || (*file)->idx_count[2] != 1 )
+    {
+      int i = 0, j = 0, k = 0;
+      rank_z = rank / (access_type->sub_div[0] * access_type->sub_div[1]);
+      rank_slice = rank % (access_type->sub_div[0] * access_type->sub_div[1]);
+      rank_y = (rank_slice / access_type->sub_div[0]);
+      rank_x = (rank_slice % access_type->sub_div[0]);
+      
+      colors = malloc(sizeof(*colors) * (*file)->idx_count[0] * (*file)->idx_count[1] * (*file)->idx_count[2]);
+      memset(colors, 0, sizeof(*colors) * (*file)->idx_count[0] * (*file)->idx_count[1] * (*file)->idx_count[2]);
+      
+      for (k = 0; k < (*file)->idx_count[2]; k++)
+        for (j = 0; j < (*file)->idx_count[1]; j++)
+          for (i = 0; i < (*file)->idx_count[0]; i++)
+            colors[((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i] = ((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i;
+            
+      int index_x, index_y, index_z;
+      for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_count[0]))
+      {
+        if (rank_x >= i && rank_x < i + (access_type->sub_div[0] / (*file)->idx_count[0]))
+        {
+          index_x = i;
+          break;
+        }
+      }
+      for (i = 0; i < access_type->sub_div[1]; i = i + (access_type->sub_div[1] / (*file)->idx_count[1]))
+      {
+        if (rank_y >= i && rank_y < i + (access_type->sub_div[1] / (*file)->idx_count[1]))
+        {
+          index_y = i;
+          break;
+        }
+      }
+      for (i = 0; i < access_type->sub_div[2]; i = i + (access_type->sub_div[2] / (*file)->idx_count[2]))
+      {
+        if (rank_z >= i && rank_z < i + (access_type->sub_div[2] / (*file)->idx_count[2]))
+        {
+          index_z = i;
+          break;
+        }
+      }
+      
+      //((*file)->idx_count[0] * (*file)->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_count[2]))) + ((*file)->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_count[0]));
+      
+      (*file)->idx_derived_ptr->color = colors[((*file)->idx_count[0] * (*file)->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_count[2]))) + ((*file)->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_count[0]))];
+      
+      free(colors);
+      
+      //printf("%d = %d %d %d :: %d\n", rank, rank_x, rank_y, rank_z, (*file)->idx_derived_ptr->color);
+      MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
+      MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
+      
     }
     else
       MPI_Comm_dup( access_type->comm , &((*file)->comm));
@@ -224,7 +313,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   file_name_skeleton[strlen(filename) - 4] = '\0';
   sprintf((*file)->idx_ptr->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_derived_ptr->color);
   
-  
+  //printf("[%d = %d %d %d] Color == %d Filename = %s\n", rank, rank_x, rank_y, rank_z, (*file)->idx_derived_ptr->color, (*file)->idx_ptr->filename);
   (*file)->local_variable_index = 0;
   (*file)->local_variable_count = 0;
   (*file)->write_on_close = 0; 
@@ -258,7 +347,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   cleanup_end = malloc (sizeof(double) * 64);      memset(cleanup_end, 0, sizeof(double) * 64);
   finalize_start = malloc (sizeof(double) * 64);   memset(finalize_start, 0, sizeof(double) * 64);
   finalize_end = malloc (sizeof(double) * 64);     memset(finalize_end, 0, sizeof(double) * 64);
-    
+  
   return PIDX_success;
 }
 
@@ -365,7 +454,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 	    if (count == 1)
 	      (*file)->idx_ptr->variable[variable_counter]->values_per_sample = atoi(pch1);
 	      
-
 	    if (count == 2) 
 	    {
 	      len = strlen(pch1) - 1;
@@ -493,7 +581,23 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
     return PIDX_err_file;
   
   memcpy(file->idx_ptr->global_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(long long));
-  file->idx_ptr->global_bounds[2] = file->idx_ptr->global_bounds[2] / file->idx_count;
+  
+  /*
+  if (file->idx_count[0] == 1 && file->idx_count[1] == 1 && file->idx_count[2] != 1 )
+    file->idx_ptr->global_bounds[2] = file->idx_ptr->global_bounds[2] / file->idx_count[2];
+  
+  else if (file->idx_count[0] != 1 && file->idx_count[1] == 1 && file->idx_count[2] == 1 )
+    file->idx_ptr->global_bounds[0] = file->idx_ptr->global_bounds[0] / file->idx_count[0];
+  
+  else if (file->idx_count[0] == 1 && file->idx_count[1] != 1 && file->idx_count[2] == 1 )
+    file->idx_ptr->global_bounds[1] = file->idx_ptr->global_bounds[1] / file->idx_count[1];
+  */
+  //else if (file->idx_count[0] != 1 && file->idx_count[1] != 1 && file->idx_count[2] != 1 )
+  //{
+  file->idx_ptr->global_bounds[0] = file->idx_ptr->global_bounds[0] / file->idx_count[0];
+  file->idx_ptr->global_bounds[1] = file->idx_ptr->global_bounds[1] / file->idx_count[1];
+  file->idx_ptr->global_bounds[2] = file->idx_ptr->global_bounds[2] / file->idx_count[2];
+  //}
   
   return PIDX_validate(file);
 }
@@ -1552,25 +1656,94 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     hp++;
   }
   
-  
-  for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-    for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-      for (j = 0; j <= file->idx_ptr->global_bounds[2] * file->idx_count; j = j + (file->idx_ptr->global_bounds[2]))
-      {
-        //if (rank == 23 && file->color == 1)
-          //printf("j %d :: %d >= %d && %d < %d\n", j, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2], j, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2],  j + (file->idx_ptr->global_bounds[2] /* file->idx_count */));
-        if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->global_bounds[2] /* file->idx_count */))
+  /*
+  if (file->idx_count[0] == 1 && file->idx_count[1] == 1 && file->idx_count[2] != 1 )
+  {
+    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+        for (j = 0; j < file->idx_ptr->global_bounds[2] * file->idx_count[2]; j = j + (file->idx_ptr->global_bounds[2]))
         {
-          file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
-          (j);
-          //if (rank == 23 && file->color == 1)
-          //printf("X [%d] : [j %d] %d\n", rank, j, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2]);
-          break;
+          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->global_bounds[2] ))
+          {
+            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
+            (j);
+            break;
+          }
         }
-      }
+  }
+  else if (file->idx_count[0] != 1 && file->idx_count[1] == 1 && file->idx_count[2] == 1 )
+  {
+    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+        for (j = 0; j < file->idx_ptr->global_bounds[0] * file->idx_count[0]; j = j + (file->idx_ptr->global_bounds[0]))
+        {          
+          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] >= j && 
+              file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] < (j + file->idx_ptr->global_bounds[0]))
+          {
+            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] - 
+            (j);
+            break;
+          }
+        }
+  }
+  else if (file->idx_count[0] == 1 && file->idx_count[1] != 1 && file->idx_count[2] == 1 )
+  {
+    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+        for (j = 0; j <= file->idx_ptr->global_bounds[1] * file->idx_count[1]; j = j + (file->idx_ptr->global_bounds[1]))
+        {
+          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] < j + (file->idx_ptr->global_bounds[1] ))
+          {
+            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] - 
+            (j);
+            break;
+          }
+        }
+  }
+  */
+  /*else*/ if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
+  {
+    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+        for (j = 0; j < file->idx_ptr->global_bounds[0] * file->idx_count[0]; j = j + (file->idx_ptr->global_bounds[0]))
+        {          
+          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] >= j && 
+              file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] < (j + file->idx_ptr->global_bounds[0]))
+          {
+            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] - 
+            (j);
+            break;
+          }
+        }
         
-  //if (rank == 23 && file->color == 1)
-  //printf("Y [%d] %d\n", rank, file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[2] );
+    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+        for (j = 0; j <= file->idx_ptr->global_bounds[1] * file->idx_count[1]; j = j + (file->idx_ptr->global_bounds[1]))
+        {
+          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] < j + (file->idx_ptr->global_bounds[1] ))
+          {
+            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] - 
+            (j);
+            break;
+          }
+        }
+        
+    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+        for (j = 0; j < file->idx_ptr->global_bounds[2] * file->idx_count[2]; j = j + (file->idx_ptr->global_bounds[2]))
+        {
+          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->global_bounds[2] /* file->idx_count */))
+          {
+            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
+            (j);
+            break;
+          }
+        }
+  }
+  
+  //if (file->idx_derived_ptr->color == 0 && rank == 1)
+  //printf("[%d] OFF %d %d %d CNT %d %d %d\n", rank, file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[0], file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[1], file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[2], file->idx_ptr->variable[0]->patch[0]->Ndim_box_size[0], file->idx_ptr->variable[0]->patch[0]->Ndim_box_size[1], file->idx_ptr->variable[0]->patch[0]->Ndim_box_size[2]);
+        
 
 #if PIDX_HAVE_MPI
 
@@ -2113,7 +2286,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   MPI_Comm_size(file->comm, &nprocs);
 #endif
 
-  if (file->idx_count == 1)
+  if (file->idx_count[0] *  file->idx_count[1] * file->idx_count[2] == 1)
   {
     if (max_time == total_time)
     {
@@ -2129,7 +2302,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8;
       fprintf(stdout, "\n=======================================================================================\n");
       fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
-      fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d\n", nprocs, file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, file->idx_count);
+      fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d (%d %d %d)\n", nprocs, file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregator Count %d\n", file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->existing_file_count, file->idx_ptr->variable_count * file->idx_derived_ptr->existing_file_count * file->idx_derived_ptr->aggregation_factor );
       fprintf(stdout, "Time Taken: %f Seconds Throughput %f MiB/sec\n", max_time, (float) total_data / (1024 * 1024 * max_time));
       fprintf(stdout, "---------------------------------------------------------------------------------------\n");
@@ -2158,7 +2331,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     for (var = 0; var < file->idx_ptr->variable_count; var++)
         sample_sum = sample_sum + file->idx_ptr->variable[var]->values_per_sample;
     
-    long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8 * file->idx_count;
+    long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8 * file->idx_count[0] * file->idx_count[1] * file->idx_count[2];
     if (max_time == total_time)
       fprintf(stdout, "[EXTRA INFO] %d %s Time %f Seconds Throughput %f MiB/sec\n", file->idx_ptr->current_time_step, file->idx_ptr->filename, max_time, (float) total_data / (1024 * 1024 * max_time));
     
@@ -2178,7 +2351,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       
       fprintf(stdout, "\n=======================================================================================\n");
       fprintf(stdout, "[%d] Combined Time step %d File name %s\n", global_rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
-      fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX Count %d\n", global_nprocs, file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2] * file->idx_count, file->idx_ptr->variable_count, file->idx_count);
+      fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX Count %d (%d x %d x %d)\n", global_nprocs, file->idx_ptr->global_bounds[0] * file->idx_count[0], file->idx_ptr->global_bounds[1] * file->idx_count[1], file->idx_ptr->global_bounds[2] * file->idx_count[2], file->idx_ptr->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregator Count %d\n", file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->existing_file_count, file->idx_ptr->variable_count * file->idx_derived_ptr->existing_file_count * file->idx_derived_ptr->aggregation_factor );
       fprintf(stdout, "Time Taken: %f Seconds Throughput %f MiB/sec\n", global_max_time, (float) total_data / (1024 * 1024 * global_max_time));
       fprintf(stdout, "---------------------------------------------------------------------------------------\n");
@@ -2264,7 +2437,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
 #if PIDX_HAVE_MPI
   MPI_Comm_free(&(file->comm));
-  if (file->idx_count != 1)
+  if (file->idx_count[0] * file->idx_count[1] * file->idx_count[2] != 1)
     MPI_Comm_free(&(file->global_comm));
 #endif
   

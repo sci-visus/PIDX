@@ -736,7 +736,11 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
   
   //printf("Color = %d Extents %d %d %d\n", rst_id->idx_derived_ptr->color, rst_id->idx_ptr->global_bounds[0], rst_id->idx_ptr->global_bounds[1], rst_id->idx_ptr->global_bounds[2]);
   MPI_Comm_rank(rst_id->comm, &rank);
+#if long_buffer
   unsigned long long dvalue_1, dvalue_2;
+#else
+  double dvalue_1, dvalue_2;
+#endif
   for(var = rst_id->start_variable_index; var <= rst_id->end_variable_index; var++)
   {
     bytes_for_datatype = rst_id->idx_ptr->variable[var]->bits_per_value / 8;
@@ -758,7 +762,7 @@ int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable)
                   int check_bit = 1;
                   for (s = 0; s < variable[var]->values_per_sample; s++)
                   {
-                    dvalue_1 = 100 + var + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * (offset_ptr[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * (offset_ptr[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (offset_ptr[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_ptr->color * rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]);
+                    dvalue_1 = 100 + var + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * rst_id->idx_ptr->global_bounds[3] * (offset_ptr[4] + v)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2] * (offset_ptr[3] + u)) + (rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * (offset_ptr[2] + k)) + (rst_id->idx_ptr->global_bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( /* rst_id->idx_derived_ptr->color */0 * rst_id->idx_ptr->global_bounds[0] * rst_id->idx_ptr->global_bounds[1] * rst_id->idx_ptr->global_bounds[2]);
                     
                     memcpy(&dvalue_2, rst_id->idx_ptr->variable[var]->patch_group_ptr[m]->box[n]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
                     

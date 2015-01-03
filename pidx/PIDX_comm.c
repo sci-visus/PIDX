@@ -33,18 +33,34 @@ PIDX_return_code PIDX_create_access(PIDX_access* access)
 }
 
 #if PIDX_HAVE_MPI
-PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count, MPI_Comm comm)
+PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count_x, int idx_count_y, int idx_count_z, MPI_Comm comm)
 {
   if(access == NULL)
     return PIDX_err_access;
   
   access->parallel = 1;
   
-  access->idx_count = idx_count;
+  access->idx_count[0] = idx_count_x;
+  access->idx_count[1] = idx_count_y;
+  access->idx_count[2] = idx_count_z;
+  
   MPI_Comm_dup(comm, &(access->comm));
   
   return PIDX_success;
 }
+PIDX_return_code PIDX_set_process_extent(PIDX_access access, int sub_div_x, int sub_div_y, int sub_div_z)
+{
+  if(access == NULL)
+    return PIDX_err_access;
+  
+  access->sub_div[0] = sub_div_x;
+  access->sub_div[1] = sub_div_y;
+  access->sub_div[2] = sub_div_z;
+  
+  return PIDX_success;
+}
+
+
 #endif
 
 PIDX_return_code PIDX_close_access(PIDX_access access)

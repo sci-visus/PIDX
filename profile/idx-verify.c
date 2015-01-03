@@ -342,7 +342,8 @@ int main(int argc, char **argv)
         }
             
         int bpf = 0;
-        unsigned long long* data_buffer = NULL;
+        unsigned long long* long_long_buffer = NULL;
+        double* double_buffer = NULL;
         int check_bit = 1, s = 0;
         long long hz_index, hz_val;
         
@@ -359,25 +360,40 @@ int main(int argc, char **argv)
 
               //if(var == 2 || var == 1)
               printf("[%d] [%d] Offset %ld Count %ld\n", var, bpf, data_offset, data_size);
-              data_buffer = malloc(data_size);
-              memset(data_buffer, 0, data_size);
+              
+#if long_buffer
+              long_long_buffer = malloc(data_size);
+              memset(long_long_buffer, 0, data_size);
 
-              ret = pread(fd, data_buffer, data_size, data_offset);
+              ret = pread(fd, long_long_buffer, data_size, data_offset);
               //printf("[%d] %ld and %ld\n", bpf, data_size, ret);
               assert(ret == data_size);
+#else
+              double_buffer = malloc(data_size);
+              memset(double_buffer, 0, data_size);
+
+              ret = pread(fd, double_buffer, data_size, data_offset);
+              //printf("[%d] %ld and %ld\n", bpf, data_size, ret);
+              assert(ret == data_size);
+#endif
               
               for (hz_val = 0; hz_val < data_size/(sizeof(unsigned long long) * values_per_sample[var]); hz_val++) 
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
                 
-                //if (data_buffer[hz_val * values_per_sample[var] + 0] == 0 && (ZYX[2] < global_bounds[2]))
+                //if (long_long_buffer[hz_val * values_per_sample[var] + 0] == 0 && (ZYX[2] < global_bounds[2]))
                 if (ZYX[2] >= global_bounds[2] || ZYX[1] >= global_bounds[1] || ZYX[0] >= global_bounds[0])
                   continue;
 
                 check_bit = 1, s = 0;
+                
                 for (s = 0; s < values_per_sample[var]; s++)
-                  check_bit = check_bit && (data_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]));
+#if long_buffer
+                  check_bit = check_bit && (long_long_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]));
+#else
+                  check_bit = check_bit && (double_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]));
+#endif
 
                 if (check_bit == 0)
                 {
@@ -386,7 +402,7 @@ int main(int argc, char **argv)
                   //       var,
                   //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
                   //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                  //       (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //       (unsigned long long)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
                 else 
                 {
@@ -395,12 +411,17 @@ int main(int argc, char **argv)
                   //       var,
                   //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
                   //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                  //       (unsigned long long)data_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //       (unsigned long long)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
               }
               
-              free(data_buffer);
-              data_buffer = 0;
+#if long_buffer
+              free(long_long_buffer);
+              long_long_buffer = 0;
+#else
+              free(double_buffer);
+              double_buffer = 0;
+#endif
             }
           }
         }

@@ -951,7 +951,11 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
   long long global_hz, element_count = 0, lost_element_count = 0;
   long long ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
+#if long_buffer
   unsigned long long dvalue_1, dvalue_2;
+#else
+  double dvalue_1, dvalue_2;
+#endif
   
   MPI_Comm_rank(id->comm, &rank);
   
@@ -973,9 +977,12 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
               check_bit = 1, s = 0;    
               for (s = 0; s < variable[var]->values_per_sample; s++)
               {
-                dvalue_1 = 100 + var + (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1]*(ZYX[2]))+(id->idx_ptr->global_bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_derived_ptr->color * id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
-                
+                dvalue_1 = 100 + var + (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1]*(ZYX[2]))+(id->idx_ptr->global_bounds[0]*(ZYX[1])) + ZYX[0] + ( /* id->idx_derived_ptr->color */0 * id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
+#if long_buffer
                 dvalue_2 = *(*((unsigned long long**)id->idx_ptr->variable[var]->HZ_patch[b]->buffer + i) + ((k * variable[var]->values_per_sample) + s));
+#else
+                dvalue_2 = *(*((double**)id->idx_ptr->variable[var]->HZ_patch[b]->buffer + i) + ((k * variable[var]->values_per_sample) + s));
+#endif
                 
                 check_bit = check_bit && (dvalue_1  == dvalue_2);
                 if (check_bit == 0)

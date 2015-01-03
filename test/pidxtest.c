@@ -178,8 +178,14 @@ int parse_args(struct Args *args, int argc, char **argv)
   fscanf(config_file, "(aggregation factor)\n");
   fscanf(config_file, "%d\n", &args->aggregation_factor);
   
-  fscanf(config_file, "(idx count)\n");
-  fscanf(config_file, "%d\n", &args->idx_count);
+  fscanf(config_file, "(idx count_x)\n");
+  fscanf(config_file, "%d\n", &args->idx_count[0]);
+  
+  fscanf(config_file, "(idx count_y)\n");
+  fscanf(config_file, "%d\n", &args->idx_count[1]);
+  
+  fscanf(config_file, "(idx count_z)\n");
+  fscanf(config_file, "%d\n", &args->idx_count[2]);
   
   fscanf(config_file, "(debug_rst)\n");
   fscanf(config_file, "%d\n", &args->debug_rst);
