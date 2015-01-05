@@ -80,7 +80,6 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
   int bytes_per_datatype;
   int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, values_per_sample;
   int target_rank = 0;
-  //unsigned char *local_addr;
   long long start_agg_index = 0, end_agg_index = 0, target_disp = 0, target_count = 0, hz_start = 0, samples_in_file = 0;
   long long samples_per_file = (long long) agg_id->idx_derived_ptr->samples_per_block * agg_id->idx_ptr->blocks_per_file;
   //MPI_Aint target_disp_address;
@@ -338,7 +337,6 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         if (rank == 0)
           printf("[MD] Count %lld Local Dis %d Target Disp %lld\n", hz_count, 0, target_disp);
 #endif
-        
         memcpy( agg_buffer->buffer + target_disp * bytes_per_datatype, hz_buffer, hz_count * values_per_sample * bytes_per_datatype);
       }
       else
@@ -494,12 +492,21 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
           agg_buffer->sample_number = j;
           
           agg_buffer->buffer_size = agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
-          //printf("[%d] [%d %d %d] : %d (%d %d %d %d)\n", rank, i, j, k, agg_buffer->buffer_size, agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], agg_id->idx_derived_ptr->samples_per_block, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8), agg_id->idx_derived_ptr->aggregation_factor);
+          
+          printf("[%d] [%d %d %d] : %lld (%d %d (%d/%d) %d)\n", rank,
+                 i, j, k, 
+                 agg_buffer->buffer_size, 
+                 agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], 
+                 (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), 
+                 agg_id->idx_derived_ptr->samples_per_block, 
+                 agg_id->idx_derived_ptr->aggregation_factor, 
+                 (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
+          
           agg_buffer->buffer = malloc(agg_buffer->buffer_size);
           if (agg_buffer->buffer == NULL)
           {
-            fprintf(stderr, " Error in malloc: Line %d File %s\n", __LINE__, __FILE__);
-            return -1;
+            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", agg_buffer->buffer_size, __LINE__, __FILE__);
+            return (-1);
           }
           memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
         }
