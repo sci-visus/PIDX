@@ -310,7 +310,7 @@ int PIDX_io_cached_data(uint32_t* cached_header)
 
 int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 {
-  unsigned long long data_offset = 0;  
+  long long data_offset = 0;  
   char file_name[PATH_MAX];
   int i = 0, k = 0, rank, mpi_ret;
   uint32_t *headers;
@@ -574,10 +574,10 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
       for (k = 0; k < agg_buffer->var_number; k++) 
         for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
-          data_offset = data_offset + io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor */;
+          data_offset = (long long) data_offset + (long long) io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor */;
       
       for (i = 0; i < agg_buffer->sample_number; i++)
-        data_offset = data_offset + io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
+        data_offset = (long long) data_offset + (long long) io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
       
 #if PIDX_HAVE_MPI
       if(MODE == PIDX_WRITE)
