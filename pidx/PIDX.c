@@ -1656,52 +1656,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     hp++;
   }
   
-  /*
-  if (file->idx_count[0] == 1 && file->idx_count[1] == 1 && file->idx_count[2] != 1 )
-  {
-    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-        for (j = 0; j < file->idx_ptr->global_bounds[2] * file->idx_count[2]; j = j + (file->idx_ptr->global_bounds[2]))
-        {
-          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->global_bounds[2] ))
-          {
-            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
-            (j);
-            break;
-          }
-        }
-  }
-  else if (file->idx_count[0] != 1 && file->idx_count[1] == 1 && file->idx_count[2] == 1 )
-  {
-    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-        for (j = 0; j < file->idx_ptr->global_bounds[0] * file->idx_count[0]; j = j + (file->idx_ptr->global_bounds[0]))
-        {          
-          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] >= j && 
-              file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] < (j + file->idx_ptr->global_bounds[0]))
-          {
-            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] - 
-            (j);
-            break;
-          }
-        }
-  }
-  else if (file->idx_count[0] == 1 && file->idx_count[1] != 1 && file->idx_count[2] == 1 )
-  {
-    for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-        for (j = 0; j <= file->idx_ptr->global_bounds[1] * file->idx_count[1]; j = j + (file->idx_ptr->global_bounds[1]))
-        {
-          if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] < j + (file->idx_ptr->global_bounds[1] ))
-          {
-            file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] - 
-            (j);
-            break;
-          }
-        }
-  }
-  */
-  /*else*/ if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
+  if (rank == 0)
+    printf("Finished creating files and writing headers\n");
+
+  if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
   {
     for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
       for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
@@ -1741,6 +1699,9 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         }
   }
   
+  if (rank == 0)
+    printf("Finished adjusting global offsets\n");
+  
   //if (file->idx_derived_ptr->color == 0 && rank == 1)
   //printf("[%d] OFF %d %d %d CNT %d %d %d\n", rank, file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[0], file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[1], file->idx_ptr->variable[0]->patch[0]->Ndim_box_offset[2], file->idx_ptr->variable[0]->patch[0]->Ndim_box_size[0], file->idx_ptr->variable[0]->patch[0]->Ndim_box_size[1], file->idx_ptr->variable[0]->patch[0]->Ndim_box_size[2]);
         
@@ -1764,6 +1725,8 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if(global_do_rst == 1)
       file->rst_id = PIDX_rst_init(file->comm, file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     
+    if (rank == 0)
+      printf("Finished with RST intitialization\n");
     
     rst_init_end[vp] = PIDX_get_time();
     ///----------------------------------- RST init end------------------------------------------------///
@@ -1773,6 +1736,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     hz_init_start[vp] = PIDX_get_time();                                             
     file->hz_id = PIDX_hz_encode_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
+    
+    if (rank == 0)
+      printf("Finished with HZ intitialization\n");
+    
     hz_init_end[vp] = PIDX_get_time();
     ///------------------------------------HZ init end-------------------------------------------------///
     
@@ -1784,6 +1751,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
       PIDX_agg_set_communicator(file->agg_id, file->comm);
     }
+    
+    if (rank == 0)
+      printf("Finished with AGG intitialization\n");
+    
     agg_init_end[vp] = PIDX_get_time();
     ///-----------------------------------AGG init end-------------------------------------------------///
     
@@ -1792,6 +1763,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     io_init_start[vp] = PIDX_get_time();
     file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     PIDX_io_set_communicator(file->io_id, file->comm);
+    
+    if (rank == 0)
+      printf("Finished with IO intitialization\n");
+    
     io_init_end[vp] = PIDX_get_time();
     ///----------------------------------IO init end---------------------------------------------------///
     
@@ -1818,6 +1793,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         memset(file->idx_ptr->variable[var]->HZ_patch[p], 0, sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
       }
     }
+    
+    if (rank == 0)
+      printf("Finished with VAR Buffer intitialization\n");
+    
     var_init_end[vp] = PIDX_get_time();
     ///------------------------------Var buffer init end--------------------------------------------------///
     
@@ -1854,6 +1833,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       if(global_do_rst == 1 && file->debug_rst == 1)
         HELPER_rst(file->rst_id, file->idx_ptr->variable);
     }
+    
+    if (rank == 0)
+      printf("Finished with RST\n");
+    
     rst_end[vp] = PIDX_get_time();
     ///--------------------------------------RST end time---------------------------------------------------///
     
@@ -1866,6 +1849,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);
+    
+    if (rank == 0)
+      printf("Finished with HZ\n");
+    
     hz_end[vp] = PIDX_get_time();
     ///------------------------------------HZ end time------------------------------------------------------///
     
@@ -1875,9 +1862,17 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if(do_agg == 1)
     {
       file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
+      if (rank == 0)
+        printf("Finished with Agg - 1\n");
       PIDX_agg_aggregate(file->agg_id, file->idx_derived_ptr->agg_buffer);
+      if (rank == 0)
+        printf("Finished with Agg - 2\n");
       PIDX_agg_aggregate_write_read(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+      if (rank == 0)
+        printf("Finished with Agg - 3\n");
       PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
+      if (rank == 0)
+        printf("Finished with Agg - 4\n");
   
       /// Initialization ONLY ONCE for all TIME STEPS (caching across time)
       if (caching_state == 1 && file->idx_derived_ptr->agg_buffer->var_number == 0 && file->idx_derived_ptr->agg_buffer->sample_number == 0)
@@ -1886,6 +1881,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         caching_state = 0;
       }
     }
+    
+    if (rank == 0)
+      printf("Finished with AGG\n");
+    
     agg_end[vp] = PIDX_get_time();
     ///---------------------------------------Agg end time---------------------------------------------------///
     
@@ -1903,6 +1902,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     }
     else
       PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_WRITE);
+    
+    if (rank == 0)
+        printf("Finished with IO\n");
+    
     io_end[vp] = PIDX_get_time();
     ///---------------------------------------IO end time---------------------------------------------------///
     
@@ -2304,7 +2307,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d = %d x %d x %d\n", nprocs, file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregation Factor %d Aggregator Count %d\n", file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->existing_file_count, file->idx_derived_ptr->aggregation_factor, file->idx_ptr->variable_count * file->idx_derived_ptr->existing_file_count * file->idx_derived_ptr->aggregation_factor);
-      fprintf(stdout, "Time Taken: %f Seconds Throughput %f MiB/sec\n", max_time, (float) total_data / (1024 * 1024 * max_time));
+      fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", max_time, (float) total_data / (1000 * 1000 * max_time));
       fprintf(stdout, "---------------------------------------------------------------------------------------\n");
       //printf("File creation time %f\n", write_init_end - write_init_start);
       
@@ -2333,7 +2336,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     
     long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8 * file->idx_count[0] * file->idx_count[1] * file->idx_count[2];
     if (max_time == total_time)
-      fprintf(stdout, "[EXTRA INFO] %d %s Time %f Seconds Throughput %f MiB/sec\n", file->idx_ptr->current_time_step, file->idx_ptr->filename, max_time, (float) total_data / (1024 * 1024 * max_time));
+      fprintf(stdout, "[EXTRA INFO] %d %s Time %f Seconds Throughput %f MB/sec\n", file->idx_ptr->current_time_step, file->idx_ptr->filename, max_time, (float) total_data / (1000 * 1000 * max_time));
     
     int global_rank, global_nprocs;
     double global_max_time = 0;
@@ -2353,7 +2356,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "[%d] Combined Time step %d File name %s\n", global_rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX Count %d = %d x %d x %d\n", global_nprocs, file->idx_ptr->global_bounds[0] * file->idx_count[0], file->idx_ptr->global_bounds[1] * file->idx_count[1], file->idx_ptr->global_bounds[2] * file->idx_count[2], file->idx_ptr->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregation Factor %d Aggregator Count %d\n", file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->existing_file_count, file->idx_derived_ptr->aggregation_factor, file->idx_ptr->variable_count * file->idx_derived_ptr->existing_file_count * file->idx_derived_ptr->aggregation_factor );
-      fprintf(stdout, "Time Taken: %f Seconds Throughput %f MiB/sec\n", global_max_time, (float) total_data / (1024 * 1024 * global_max_time));
+      fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", global_max_time, (float) total_data / (1000 * 1000 * global_max_time));
       fprintf(stdout, "---------------------------------------------------------------------------------------\n");
       //printf("File creation time %f\n", write_init_end - write_init_start);
       

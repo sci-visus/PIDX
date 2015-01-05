@@ -122,7 +122,7 @@ struct PIDX_HZ_Agg_buffer_struct
   int sample_number;
   
   /// Aggregator buffer size
-  int buffer_size;
+  unsigned long long buffer_size;
 
   ///
   int ***rank_holder;
