@@ -436,7 +436,8 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
       
       if (temp_buffer == NULL)
       {
-        ;
+        fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+        return -1;
       }
       else
       {

@@ -99,6 +99,8 @@ struct PIDX_file_descriptor
   
   int debug_hz;
   int debug_rst;
+  int perform_agg;
+  int perform_hz;
 };
 
 ///
@@ -171,6 +173,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_count[2] = 1;
   (*file)->idx_count[3] = 1;
   (*file)->idx_count[4] = 1;
+  (*file)->perform_agg = 1;
+  (*file)->perform_hz = 1;
   
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
@@ -1435,6 +1439,26 @@ PIDX_return_code PIDX_enable_time_step_caching_OFF()
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_agg_disable(PIDX_file file, int agg)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  file->perform_agg = agg;
+  
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_hz_disable(PIDX_file file, int hz)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  file->perform_hz = hz;
+  
+  return PIDX_success;
+}
+
 PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst)
 {
   if(!file)
@@ -1844,9 +1868,13 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     ///-------------------------------------HZ start time---------------------------------------------------///
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
-    PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
+    
+    if (file->perform_hz == 1)
+      PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
+    
     if(global_do_rst == 1 && file->debug_hz == 1)
       HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
+    
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);
     
@@ -1862,14 +1890,21 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if(do_agg == 1)
     {
       file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
+      
       if (rank == 0)
         printf("Finished with Agg - 1\n");
+      
       PIDX_agg_aggregate(file->agg_id, file->idx_derived_ptr->agg_buffer);
+      
       if (rank == 0)
         printf("Finished with Agg - 2\n");
-      PIDX_agg_aggregate_write_read(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+      
+      if (file->perform_agg == 1)
+        PIDX_agg_aggregate_write_read(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+      
       if (rank == 0)
         printf("Finished with Agg - 3\n");
+      
       PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
       if (rank == 0)
         printf("Finished with Agg - 4\n");
@@ -2082,9 +2117,13 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     ///-------------------------------------HZ start time---------------------------------------------------///
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
-    PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
+        
+    if (file->perform_hz == 1)
+      PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
+    
     if(global_do_rst == 1 && file->debug_hz == 1)
       HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
+    
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);
     
@@ -2100,18 +2139,27 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if(do_agg == 1)
     {
       file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
+      
       if (rank == 0)
         printf("Finished with AGG - 1\n");
+      
       PIDX_agg_aggregate(file->agg_id, file->idx_derived_ptr->agg_buffer);
+      
       if (rank == 0)
         printf("Finished with AGG - 2\n");
-      PIDX_agg_aggregate_write_read(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+      
+      if (file->perform_agg == 1)
+        PIDX_agg_aggregate_write_read(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+      
       if (rank == 0)
         printf("Finished with AGG - 3\n");
+      
       PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
+      
       if (rank == 0)
         printf("Finished with AGG - 4\n");
       /// Initialization ONLY ONCE for all TIME STEPS (caching across time)
+      
       if (caching_state == 1 && file->idx_derived_ptr->agg_buffer->var_number == 0 && file->idx_derived_ptr->agg_buffer->sample_number == 0)
       {
         PIDX_cache_headers(file);

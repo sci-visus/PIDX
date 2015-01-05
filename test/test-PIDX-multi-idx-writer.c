@@ -38,6 +38,8 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   //The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_rst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -118,6 +120,8 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     
     PIDX_debug_rst(file, args.debug_rst);
     PIDX_debug_hz(file, args.debug_hz);
+    PIDX_agg_disable(file, args.perform_agg);
+    PIDX_hz_disable(file, args.perform_hz);
     
     char variable_name[512];
     char data_type[512];

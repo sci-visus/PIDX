@@ -64,6 +64,10 @@ struct Args
   
   int debug_rst;
   
+  int perform_agg;
+  
+  int perform_hz;
+  
 };
 
 /*main*/

@@ -300,6 +300,13 @@ PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
 
 
 ///
+PIDX_return_code PIDX_agg_disable(PIDX_file file, int agg);
+
+
+///
+PIDX_return_code PIDX_hz_disable(PIDX_file file, int hz);
+
+///
 double PIDX_get_time();
 
 #ifdef __cplusplus
