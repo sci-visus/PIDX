@@ -371,7 +371,7 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
 #endif
   
   agg_id->aggregator_interval = nprocs/ (no_of_aggregators * agg_id->idx_derived_ptr->aggregation_factor);
-  
+  assert(agg_id->aggregator_interval != 0);
     
 #if RANK_ORDER
   agg_buffer->rank_holder = malloc((agg_id->end_var_index - agg_id->start_var_index + 1) * sizeof (int**));
@@ -493,18 +493,11 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
           
           agg_buffer->buffer_size = agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
           
-          printf("[%d] [%d %d %d] : %lld (%d %d (%d/%d) %d)\n", rank,
-                 i, j, k, 
-                 agg_buffer->buffer_size, 
-                 agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], 
-                 (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), 
-                 agg_id->idx_derived_ptr->samples_per_block, 
-                 agg_id->idx_derived_ptr->aggregation_factor, 
-                 (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
-          
           agg_buffer->buffer = malloc(agg_buffer->buffer_size);
           if (agg_buffer->buffer == NULL)
           {
+            printf("[%d] [%d %d %d] : %lld (%d %d (%d/%d) %d)\n", rank, i, j, k, agg_buffer->buffer_size, agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), agg_id->idx_derived_ptr->samples_per_block, agg_id->idx_derived_ptr->aggregation_factor, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
+            
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", agg_buffer->buffer_size, __LINE__, __FILE__);
             return (-1);
           }
