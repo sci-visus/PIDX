@@ -1961,6 +1961,8 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if(global_do_rst == 1)
       file->rst_id = PIDX_rst_init(file->comm, file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     
+    if (rank == 0)
+      printf("Finished with RST intitialization\n");
     
     rst_init_end[vp] = PIDX_get_time();
     ///----------------------------------- RST init end------------------------------------------------///
@@ -1970,6 +1972,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     hz_init_start[vp] = PIDX_get_time();                                             
     file->hz_id = PIDX_hz_encode_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
+    
+    if (rank == 0)
+      printf("Finished with HZ intitialization\n");
+    
     hz_init_end[vp] = PIDX_get_time();
     ///------------------------------------HZ init end-------------------------------------------------///
     
@@ -1981,6 +1987,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
       PIDX_agg_set_communicator(file->agg_id, file->comm);
     }
+    
+    if (rank == 0)
+      printf("Finished with AGG intitialization\n");
+    
     agg_init_end[vp] = PIDX_get_time();
     ///-----------------------------------AGG init end-------------------------------------------------///
     
@@ -1989,6 +1999,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     io_init_start[vp] = PIDX_get_time();
     file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
     PIDX_io_set_communicator(file->io_id, file->comm);
+    
+    if (rank == 0)
+      printf("Finished with IO intitialization\n");
+    
     io_init_end[vp] = PIDX_get_time();
     ///----------------------------------IO init end---------------------------------------------------///
     
@@ -2017,6 +2031,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         memset(file->idx_ptr->variable[var]->HZ_patch[p], 0, sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
       }
     }
+    
+    if (rank == 0)
+      printf("Finished with Variable buffer intitialization\n");
+    
     var_init_end[vp] = PIDX_get_time();
     ///------------------------------Var buffer init end--------------------------------------------------///
     
@@ -2053,6 +2071,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       if(global_do_rst == 1 && file->debug_rst == 1)
         HELPER_rst(file->rst_id, file->idx_ptr->variable);
     }
+    
+    if (rank == 0)
+      printf("Finished with RST\n");
+    
     rst_end[vp] = PIDX_get_time();
     ///--------------------------------------RST end time---------------------------------------------------///
     
@@ -2065,6 +2087,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);
+    
+    if (rank == 0)
+      printf("Finished with HZ\n");
+    
     hz_end[vp] = PIDX_get_time();
     ///------------------------------------HZ end time------------------------------------------------------///
     
@@ -2074,10 +2100,17 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if(do_agg == 1)
     {
       file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
+      if (rank == 0)
+        printf("Finished with AGG - 1\n");
       PIDX_agg_aggregate(file->agg_id, file->idx_derived_ptr->agg_buffer);
+      if (rank == 0)
+        printf("Finished with AGG - 2\n");
       PIDX_agg_aggregate_write_read(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+      if (rank == 0)
+        printf("Finished with AGG - 3\n");
       PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
-      
+      if (rank == 0)
+        printf("Finished with AGG - 4\n");
       /// Initialization ONLY ONCE for all TIME STEPS (caching across time)
       if (caching_state == 1 && file->idx_derived_ptr->agg_buffer->var_number == 0 && file->idx_derived_ptr->agg_buffer->sample_number == 0)
       {
@@ -2085,6 +2118,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         caching_state = 0;         
       }
     }
+    
+    if (rank == 0)
+      printf("Finished with AGG\n");
+    
     agg_end[vp] = PIDX_get_time();
     ///---------------------------------------Agg end time---------------------------------------------------///
     
@@ -2102,6 +2139,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     }
     else
       PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_WRITE);
+    
+    if (rank == 0)
+      printf("Finished with IO\n");
+    
     io_end[vp] = PIDX_get_time();
     ///---------------------------------------IO end time---------------------------------------------------///
     
