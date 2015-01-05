@@ -501,7 +501,7 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", agg_buffer->buffer_size, __LINE__, __FILE__);
             return (-1);
           }
-          memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
+          //memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
         }
       }
     }
