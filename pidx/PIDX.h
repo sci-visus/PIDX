@@ -79,9 +79,22 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// It is PIDX_success if the task is completed correctly.
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
 
-PIDX_return_code PIDX_enable_time_step_caching_ON();
 
-PIDX_return_code PIDX_enable_time_step_caching_OFF();
+///
+PIDX_return_code PIDX_time_step_caching_ON();
+
+
+///
+PIDX_return_code PIDX_time_step_caching_OFF();
+
+
+///
+PIDX_return_code PIDX_hz_encoding_caching_ON();
+
+
+///
+PIDX_return_code PIDX_hz_encoding_caching_OFF();
+
 
 /// Get the PIDX_access associated with this file.
 PIDX_return_code PIDX_get_access(PIDX_file file, PIDX_access *access);
@@ -300,11 +313,16 @@ PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
 
 
 ///
-PIDX_return_code PIDX_agg_disable(PIDX_file file, int agg);
+PIDX_return_code PIDX_enable_hz(PIDX_file file, int hz);
 
 
 ///
-PIDX_return_code PIDX_hz_disable(PIDX_file file, int hz);
+PIDX_return_code PIDX_enable_agg(PIDX_file file, int agg);
+
+
+///
+PIDX_return_code PIDX_enable_io(PIDX_file file, int io);
+
 
 ///
 double PIDX_get_time();

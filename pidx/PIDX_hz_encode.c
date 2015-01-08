@@ -18,6 +18,9 @@
 
 #include "PIDX_inc.h"
 
+static int*** index_tupple;
+static int enable_caching = 0;
+
 struct hz_tupple_double
 {
   //pointer to variables -> pointer to samples per variable -> actual data
@@ -88,6 +91,101 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_der
   hz_id->end_var_index = end_var_index;
   
   return hz_id;
+}
+
+int PIDX_hz_encode_create_cache_buffers(PIDX_hz_encode_id id, PIDX_variable* variable)
+{
+  long long z_order = 0, hz_order = 0, index = 0;
+  long long l_x, l_y, l_z, l_u, l_v;
+  int b = 0, cnt = 0, y = 0, number_levels = 0;
+  long long i = 0, j = 0, k = 0, u = 0, v = 0;
+  
+  index_tupple = malloc(sizeof(*index_tupple) * variable[id->start_var_index]->patch_group_count);
+  memset(index_tupple, 0, sizeof(*index_tupple) * variable[id->start_var_index]->patch_group_count);
+  
+  for (k = 0; k < variable[id->start_var_index]->patch_group_count; k++)
+  {
+    if(variable[id->start_var_index]->patch_group_ptr[k]->box_group_type != 0)
+    {
+      index_tupple[k] = malloc(sizeof(*index_tupple[k]) * variable[id->start_var_index]->patch_group_ptr[k]->box_count);
+      memset(index_tupple[k], 0, sizeof(*index_tupple[k]) * variable[id->start_var_index]->patch_group_ptr[k]->box_count);
+      for (b = 0; b < variable[id->start_var_index]->patch_group_ptr[k]->box_count; b++)
+      {
+        index_tupple[k][b] = malloc(sizeof(*index_tupple[k][b]) * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[0] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[1] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[2] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[3] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[4]);
+        memset(index_tupple[k][b], 0, sizeof(*index_tupple[k][b]) * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[0] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[1] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[2] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[3] * variable[id->start_var_index]->patch_group_ptr[k]->box[b]->Ndim_box_size[4]);
+      }
+    }
+  }
+  
+  for (y = 0; y < variable[id->start_var_index]->patch_group_count; y++)
+  {
+    if(variable[id->start_var_index]->patch_group_ptr[y]->box_group_type != 0)
+    {
+      for (b = 0; b < variable[id->start_var_index]->patch_group_ptr[y]->box_count; b++) 
+      {
+        l_x = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_size[0];
+        l_y = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_size[1];
+        l_z = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_size[2];
+        l_u = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_size[3];
+        l_v = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_size[4];
+    
+        number_levels = id->idx_derived_ptr->maxh - 1;
+        PointND xyzuv_Index;
+      
+        if(variable[id->start_var_index]->data_layout == PIDX_row_major)
+        {
+          for (v = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4] + l_v; v++)
+            for (u = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3] + l_u; u++)
+              for (k = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2] + l_z; k++)
+                for (j = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1] + l_y; j++)
+                  for (i = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0] + l_x; i++) 
+                  {
+                    index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2])) + (l_x * (j - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1])) + (i - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]);
+                    
+                    xyzuv_Index.x = i;
+                    xyzuv_Index.y = j;
+                    xyzuv_Index.z = k;
+                    xyzuv_Index.u = u;
+                    xyzuv_Index.v = v;
+
+                    z_order = 0;
+                    PointND zero;
+                    zero.x = 0;
+                    zero.y = 0;
+                    zero.z = 0;
+                    zero.u = 0;
+                    zero.v = 0;
+                    memset(&zero, 0, sizeof (PointND));
+
+                    for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--) 
+                    {
+                      int bit = id->idx_ptr->bitPattern[number_levels];
+                      z_order |= ((long long) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      PGET(xyzuv_Index, bit) >>= 1;
+                    }
+
+                    number_levels = id->idx_derived_ptr->maxh - 1;
+                    long long lastbitmask = ((long long) 1) << number_levels;
+                    z_order |= lastbitmask;
+                    while (!(1 & z_order)) z_order >>= 1;
+                    z_order >>= 1;
+
+                    hz_order = z_order;
+                    index_tupple[y][b][index] = hz_order;
+                  }
+        }
+      }
+    }
+  }
+
+  enable_caching = 1;
+  
+  return 0;
+}
+
+int PIDX_hz_encode_delete_cache_buffers()
+{
+  return 0;
 }
 
 int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
@@ -222,6 +320,8 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
   free(userBox);
   userBox = 0;
   
+  
+  
   for (k = 0; k < variable[id->start_var_index]->patch_group_count; k++) 
   {
     variable[id->start_var_index]->HZ_patch[k]->samples_per_level = malloc( id->idx_derived_ptr->maxh * sizeof (long long));
@@ -239,6 +339,7 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
       {
         for(c = 0 ; c < id->idx_derived_ptr->maxh ; c++)
         {
+          
           bytes_for_datatype = variable[i]->bits_per_value / 8;
           variable[i]->HZ_patch[k]->buffer[c] = malloc(bytes_for_datatype * (variable[i]->HZ_patch[k]->end_hz_index[c] - variable[i]->HZ_patch[k]->start_hz_index[c] + 1) * variable[i]->values_per_sample);
           memset(variable[i]->HZ_patch[k]->buffer[c], 0, bytes_for_datatype * (variable[i]->HZ_patch[k]->end_hz_index[c] - variable[i]->HZ_patch[k]->start_hz_index[c] + 1) * variable[i]->values_per_sample);
@@ -285,6 +386,7 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
   
   for (y = 0; y < variable[id->start_var_index]->patch_group_count; y++)
   {
+    
     if(variable[id->start_var_index]->patch_group_ptr[y]->box_group_type == 0)
     {
       hz_tupple *tupple = malloc((variable[id->start_var_index]->patch[y]->Ndim_box_size[0] * variable[id->start_var_index]->patch[y]->Ndim_box_size[1] * variable[id->start_var_index]->patch[y]->Ndim_box_size[2] * variable[id->start_var_index]->patch[y]->Ndim_box_size[3] * variable[id->start_var_index]->patch[y]->Ndim_box_size[4]) * sizeof (hz_tupple));
@@ -534,76 +636,104 @@ int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable)
       
         if(variable[id->start_var_index]->data_layout == PIDX_row_major)
         {
-          for (v = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4] + l_v; v++)
-            for (u = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3] + l_u; u++)
-              for (k = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2] + l_z; k++)
-                for (j = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1] + l_y; j++)
-                  for (i = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0] + l_x; i++) 
-                  {
-                    xyzuv_Index.x = i;
-                    xyzuv_Index.y = j;
-                    xyzuv_Index.z = k;
-                    xyzuv_Index.u = u;
-                    xyzuv_Index.v = v;
-
-                    z_order = 0;
-                    PointND zero;
-                    zero.x = 0;
-                    zero.y = 0;
-                    zero.z = 0;
-                    zero.u = 0;
-                    zero.v = 0;
-                    memset(&zero, 0, sizeof (PointND));
-
-                    for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--) 
+          if (enable_caching == 1)
+          {
+            for (v = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4] + l_v; v++)
+              for (u = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3] + l_u; u++)
+                for (k = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2] + l_z; k++)
+                  for (j = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1] + l_y; j++)
+                    for (i = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0] + l_x; i++) 
                     {
-                      int bit = id->idx_ptr->bitPattern[number_levels];
-                      z_order |= ((long long) PGET(xyzuv_Index, bit) & 1) << cnt;
-                      PGET(xyzuv_Index, bit) >>= 1;
-                    }
-
-                    number_levels = id->idx_derived_ptr->maxh - 1;
-                    long long lastbitmask = ((long long) 1) << number_levels;
-                    z_order |= lastbitmask;
-                    while (!(1 & z_order)) z_order >>= 1;
-                    z_order >>= 1;
-
-                    hz_order = z_order;
-                    level = getLeveL(hz_order);
-                    
-                    index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2])) + (l_x * (j - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1])) + (i - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]);
-                    
-                    variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
-                    
-                    for(var = id->start_var_index; var <= id->end_var_index; var++)
-                    {
-                      hz_index = hz_order - variable[var]->HZ_patch[y]->start_hz_index[level];
-                      bytes_for_datatype = variable[var]->bits_per_value / 8;
-                      for (s = 0; s < variable[var]->values_per_sample; s++)
+                      index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2])) + (l_x * (j - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1])) + (i - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]);
+                      
+                      level = getLeveL(index_tupple[y][b][index]);
+                      
+                      variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
+                      hz_index = index_tupple[y][b][index] - variable[id->start_var_index]->HZ_patch[y]->start_hz_index[level];
+                      
+                      for(var = id->start_var_index; var <= id->end_var_index; var++)
                       {
                         bytes_for_datatype = variable[var]->bits_per_value / 8;
-                        
-                        memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), 
-                                variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype,
-                                bytes_for_datatype);
-                        
-#if 0
-                        //if (hz_order == 985668 || hz_order == 985669 || hz_order == 1971392 || hz_order == 1971394)
-                        //if (i == 31 && j == 127 && k == 155)
-                        long long dvalue;
-                        memcpy(&dvalue, variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
-                        if(dvalue == 638051)
-                        {
-                          long long dvalue;
-                          long long dvalue2;
-                          memcpy(&dvalue, variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
-                          memcpy(&dvalue2, variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), bytes_for_datatype);
-                          printf("HZD: [%lld %lld %lld] (%lld %lld) : (%lld %lld)\n", i, j, k, index, hz_order, dvalue, dvalue2);
+                        for (s = 0; s < variable[var]->values_per_sample; s++)
+                        {                        
+                          memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), 
+                                  variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype,
+                                  bytes_for_datatype);
                         }
-#endif
                       }
                     }
-                  }
+          }
+          else
+          {
+            for (v = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4]; v < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4] + l_v; v++)
+              for (u = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3]; u < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3] + l_u; u++)
+                for (k = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2]; k < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2] + l_z; k++)
+                  for (j = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1]; j < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1] + l_y; j++)
+                    for (i = variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]; i < variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0] + l_x; i++) 
+                    {
+                      index = (l_x * l_y * l_z * l_u * (v - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[4])) + (l_x * l_y * l_z * (u - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[3])) + (l_x * l_y * (k - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[2])) + (l_x * (j - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[1])) + (i - variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[0]);
+                      
+                      //printf("index = %lld\n", index);
+                      xyzuv_Index.x = i;
+                      xyzuv_Index.y = j;
+                      xyzuv_Index.z = k;
+                      xyzuv_Index.u = u;
+                      xyzuv_Index.v = v;
+
+                      z_order = 0;
+                      PointND zero;
+                      zero.x = 0;
+                      zero.y = 0;
+                      zero.z = 0;
+                      zero.u = 0;
+                      zero.v = 0;
+                      memset(&zero, 0, sizeof (PointND));
+
+                      for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--) 
+                      {
+                        int bit = id->idx_ptr->bitPattern[number_levels];
+                        z_order |= ((long long) PGET(xyzuv_Index, bit) & 1) << cnt;
+                        PGET(xyzuv_Index, bit) >>= 1;
+                      }
+
+                      number_levels = id->idx_derived_ptr->maxh - 1;
+                      long long lastbitmask = ((long long) 1) << number_levels;
+                      z_order |= lastbitmask;
+                      while (!(1 & z_order)) z_order >>= 1;
+                      z_order >>= 1;
+
+                      hz_order = z_order;
+                      
+                      level = getLeveL(hz_order);
+                      variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
+                      hz_index = hz_order - variable[id->start_var_index]->HZ_patch[y]->start_hz_index[level];
+                      for(var = id->start_var_index; var <= id->end_var_index; var++)
+                      {
+                        bytes_for_datatype = variable[var]->bits_per_value / 8;
+                        for (s = 0; s < variable[var]->values_per_sample; s++)
+                        {                        
+                          memcpy(variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), 
+                                  variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype,
+                                  bytes_for_datatype);
+                          
+  #if 0
+                          //if (hz_order == 985668 || hz_order == 985669 || hz_order == 1971392 || hz_order == 1971394)
+                          //if (i == 31 && j == 127 && k == 155)
+                          long long dvalue;
+                          memcpy(&dvalue, variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+                          if(dvalue == 638051)
+                          {
+                            long long dvalue;
+                            long long dvalue2;
+                            memcpy(&dvalue, variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * variable[var]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+                            memcpy(&dvalue2, variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * variable[var]->values_per_sample + s) * bytes_for_datatype), bytes_for_datatype);
+                            printf("HZD: [%lld %lld %lld] (%lld %lld) : (%lld %lld)\n", i, j, k, index, hz_order, dvalue, dvalue2);
+                          }
+  #endif
+                        }
+                      }
+                    }
+          }
         }
         else
         {

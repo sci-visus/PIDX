@@ -68,6 +68,8 @@ struct Args
   
   int perform_hz;
   
+  int perform_io;
+  
 };
 
 /*main*/

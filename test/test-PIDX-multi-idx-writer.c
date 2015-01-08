@@ -38,8 +38,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   //The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&args.perform_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_io, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_rst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -89,7 +90,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D((long long)local_offset[0], (long long)local_offset[1], (long long)local_offset[2], 0, 0, local_offset_point);
   PIDX_set_point_5D((long long)args.count_local[0], (long long)args.count_local[1], (long long)args.count_local[2], 1, 1, local_box_count_point);
   
-  PIDX_enable_time_step_caching_ON();
+  PIDX_time_step_caching_ON();
+  PIDX_hz_encoding_caching_ON();
+  
   for (ts = 0; ts < args.time_step; ts++) 
   {
 #if long_data
@@ -120,8 +123,10 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     
     PIDX_debug_rst(file, args.debug_rst);
     PIDX_debug_hz(file, args.debug_hz);
-    PIDX_agg_disable(file, args.perform_agg);
-    PIDX_hz_disable(file, args.perform_hz);
+    
+    PIDX_enable_hz(file, args.perform_hz);
+    PIDX_enable_agg(file, args.perform_agg);
+    PIDX_enable_io(file, args.perform_io);
     
     char variable_name[512];
     char data_type[512];
@@ -251,7 +256,8 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
 #endif
     
   }
-  PIDX_enable_time_step_caching_OFF();
+  PIDX_time_step_caching_OFF();
+  PIDX_hz_encoding_caching_OFF();
   
   free(variable);
   free(values_per_sample);

@@ -1,4 +1,4 @@
-/******************************************************
+/*****************************************************
  **  PIDX Parallel I/O Library                      **
  **  Copyright (c) 2010-2014 University of Utah     **
  **  Scientific Computing and Imaging Institute     **
@@ -44,6 +44,7 @@ static double *agg_1, *agg_2, *agg_3, *agg_4, *agg_5, *agg_6;
 
 static int caching_state = 0;
 static int time_step_caching = 0;
+static int hz_caching = 0;
 static uint32_t* cached_header_copy;
 
 static PIDX_return_code PIDX_cleanup(PIDX_file file);
@@ -100,8 +101,10 @@ struct PIDX_file_descriptor
   
   int debug_hz;
   int debug_rst;
-  int perform_agg;
+  
   int perform_hz;
+  int perform_agg;
+  int perform_io;
 };
 
 ///
@@ -174,8 +177,10 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_count[2] = 1;
   (*file)->idx_count[3] = 1;
   (*file)->idx_count[4] = 1;
-  (*file)->perform_agg = 1;
+  
   (*file)->perform_hz = 1;
+  (*file)->perform_agg = 1;
+  (*file)->perform_io = 1;
   
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
@@ -1429,8 +1434,22 @@ PIDX_return_code PIDX_read(PIDX_file file)
 
 }
 
+///
+PIDX_return_code PIDX_hz_encoding_caching_ON()
+{
+  hz_caching = 1;
+  return PIDX_success;
+}
+
+///
+PIDX_return_code PIDX_hz_encoding_caching_OFF()
+{
+  PIDX_hz_encode_delete_cache_buffers();
+  return PIDX_success;
+}
+
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_enable_time_step_caching_ON()
+PIDX_return_code PIDX_time_step_caching_ON()
 {
   caching_state = 1;
   time_step_caching = 1;
@@ -1439,7 +1458,7 @@ PIDX_return_code PIDX_enable_time_step_caching_ON()
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_enable_time_step_caching_OFF()
+PIDX_return_code PIDX_time_step_caching_OFF()
 {
   free(cached_header_copy);
   cached_header_copy = 0;
@@ -1447,7 +1466,17 @@ PIDX_return_code PIDX_enable_time_step_caching_OFF()
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_agg_disable(PIDX_file file, int agg)
+PIDX_return_code PIDX_enable_hz(PIDX_file file, int hz)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  file->perform_hz = hz;
+  
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_enable_agg(PIDX_file file, int agg)
 {
   if(!file)
     return PIDX_err_file;
@@ -1457,12 +1486,12 @@ PIDX_return_code PIDX_agg_disable(PIDX_file file, int agg)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_hz_disable(PIDX_file file, int hz)
+PIDX_return_code PIDX_enable_io(PIDX_file file, int io)
 {
   if(!file)
     return PIDX_err_file;
   
-  file->perform_hz = hz;
+  file->perform_io = io;
   
   return PIDX_success;
 }
@@ -1635,14 +1664,17 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       
       file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
     }
-    file->header_io_id = PIDX_header_io_init(file->idx_ptr, file->idx_derived_ptr, 0, file->idx_ptr->variable_count);
+    if (file->perform_io == 1)
+    {
+      file->header_io_id = PIDX_header_io_init(file->idx_ptr, file->idx_derived_ptr, 0, file->idx_ptr->variable_count);
 #if PIDX_HAVE_MPI
-    PIDX_header_io_set_communicator(file->header_io_id, file->comm);
+      PIDX_header_io_set_communicator(file->header_io_id, file->comm);
 #endif
-    PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
-    PIDX_header_io_file_create(file->header_io_id);
-    //PIDX_header_io_file_write(file->header_io_id);
-    PIDX_header_io_finalize(file->header_io_id);
+      PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
+      PIDX_header_io_file_create(file->header_io_id);
+      //PIDX_header_io_file_write(file->header_io_id);
+      PIDX_header_io_finalize(file->header_io_id);
+    }
     write_init_end[hp] = PIDX_get_time();
     hp++;
   }
@@ -1778,9 +1810,11 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     ///----------------------------------IO init start-------------------------------------------------///
     io_init_start[vp] = PIDX_get_time();
-    file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-    PIDX_io_set_communicator(file->io_id, file->comm);
-    
+    if (file->perform_io == 1)
+    {
+      file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+      PIDX_io_set_communicator(file->io_id, file->comm);
+    }
     io_init_end[vp] = PIDX_get_time();
     ///----------------------------------IO init end---------------------------------------------------///
     
@@ -1853,6 +1887,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
     
+    if (hz_caching == 1)
+    {
+      PIDX_hz_encode_create_cache_buffers(file->hz_id, file->idx_ptr->variable);
+      hz_caching = 0;
+    }
+      
     if (file->perform_hz == 1)
       PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
     
@@ -1892,18 +1932,20 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     ///---------------------------------------IO start time--------------------------------------------------///
     io_start[vp] = PIDX_get_time();
-    if(do_agg == 1)
+    if (file->perform_io == 1)
     {
-      if (time_step_caching == 1)
-        PIDX_io_cached_data(cached_header_copy);
-      
-      PIDX_io_aggregated_IO(file->io_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
-      PIDX_agg_buf_destroy(file->agg_id, file->idx_derived_ptr->agg_buffer);
-      free(file->idx_derived_ptr->agg_buffer);
+      if(do_agg == 1)
+      {
+        if (time_step_caching == 1)
+          PIDX_io_cached_data(cached_header_copy);
+        
+        PIDX_io_aggregated_IO(file->io_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+        PIDX_agg_buf_destroy(file->agg_id, file->idx_derived_ptr->agg_buffer);
+        free(file->idx_derived_ptr->agg_buffer);
+      }
+      else
+        PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_WRITE);
     }
-    else
-      PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_WRITE);
-    
     io_end[vp] = PIDX_get_time();
     ///---------------------------------------IO end time---------------------------------------------------///
     
@@ -1986,9 +2028,11 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     ///----------------------------------IO init start-------------------------------------------------///
     io_init_start[vp] = PIDX_get_time();
-    file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-    PIDX_io_set_communicator(file->io_id, file->comm);
-    
+    if (file->perform_io == 1)
+    {
+      file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+      PIDX_io_set_communicator(file->io_id, file->comm);
+    }
     io_init_end[vp] = PIDX_get_time();
     ///----------------------------------IO init end---------------------------------------------------///
     
@@ -2062,6 +2106,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     ///-------------------------------------HZ start time---------------------------------------------------///
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
+    
+    if (hz_caching == 1)
+    {
+      PIDX_hz_encode_create_cache_buffers(file->hz_id, file->idx_ptr->variable);
+      hz_caching = 0;
+    }
         
     if (file->perform_hz == 1)
       PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
@@ -2101,9 +2151,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         caching_state = 0;         
       }
       agg_6[vp] = PIDX_get_time();
-      
     }
-    
     agg_end[vp] = PIDX_get_time();
     ///---------------------------------------Agg end time---------------------------------------------------///
     
@@ -2112,16 +2160,22 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     io_start[vp] = PIDX_get_time();
     if(do_agg == 1)
     {
-      if (time_step_caching == 1)
-        PIDX_io_cached_data(cached_header_copy);
+      if (file->perform_io == 1)
+      {
+        if (time_step_caching == 1)
+          PIDX_io_cached_data(cached_header_copy);
       
-      PIDX_io_aggregated_IO(file->io_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+        PIDX_io_aggregated_IO(file->io_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
+      }
       PIDX_agg_buf_destroy(file->agg_id, file->idx_derived_ptr->agg_buffer);
       free(file->idx_derived_ptr->agg_buffer);
     }
     else
-      PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_WRITE);
-    
+    {
+      if (file->perform_io == 1)
+        PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_WRITE);
+    }
+
     io_end[vp] = PIDX_get_time();
     ///---------------------------------------IO end time---------------------------------------------------///
     
@@ -2342,7 +2396,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
         
         fprintf(stdout, "Write time [RST + HZ + AGG + IO] %f + %f + %f + %f = %f\n", (rst_end[var] - rst_start[var]), (hz_end[var] - hz_start[var]), (agg_end[var] - agg_start[var]), (io_end[var] - io_start[var]), (rst_end[var] - rst_start[var]) + (hz_end[var] - hz_start[var]) + (agg_end[var] - agg_start[var]) + (io_end[var] - io_start[var]));
         
-        fprintf(stdout, "Agg time %f = %f + %f + %f + %f = %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
+        fprintf(stdout, "Agg time %f = %f + %f + %f + %f + %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
         
         fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
         fprintf(stdout, "----------------------------------------VG %d (END)-------------------------------------\n", var);
