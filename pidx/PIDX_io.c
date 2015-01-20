@@ -324,7 +324,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   int group_count = 0;
   
 #if PIDX_RECORD_TIME
-  double t1, t2, t3, t4, t5, t6;
+  double t1, t2, t3, t4, t5;
 #endif
   
 #if PIDX_HAVE_MPI

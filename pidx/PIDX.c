@@ -99,17 +99,18 @@ struct PIDX_file_descriptor
   ///
   int one_time_initializations;
   
+  /// 
   int debug_hz;
   int debug_rst;
   
+  /// 
   int perform_hz;
   int perform_agg;
   int perform_io;
 };
 
-///
+
 /// Returns elapsed time
-///
 double PIDX_get_time()
 {
 #if PIDX_HAVE_MPI
@@ -214,53 +215,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   {
     memcpy ((*file)->idx_count, access_type->idx_count, sizeof(int) * /*PIDX_MAX_DIMENSIONS*/3);
     
-    //printf("%d %d %d\n", (*file)->idx_count[0], (*file)->idx_count[1], (*file)->idx_count[2]);
-    /*
-    if ((*file)->idx_count[0] == 1 && (*file)->idx_count[1] == 1 && (*file)->idx_count[2] != 1 )
-    {
-      colors = malloc(sizeof(*colors) * (*file)->idx_count[2]);
-      memset(colors, 0, sizeof(*colors) * (*file)->idx_count[2]);
-      
-      for (i = 0; i < (*file)->idx_count[2]; i++)
-        colors[i] = i;
-      
-      for (i = 0; i < nprocs; i = i + (nprocs/(*file)->idx_count[2]))
-        if (rank < i + (nprocs / (*file)->idx_count[2]))
-          (*file)->idx_derived_ptr->color = colors[rank / (nprocs / (*file)->idx_count[2])];
-      
-      free(colors);
-      MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
-      MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
-    }
-    else if ((*file)->idx_count[0] != 1 && (*file)->idx_count[1] == 1 && (*file)->idx_count[2] == 1 )
-    {
-      rank_z = rank / (access_type->sub_div[0] * access_type->sub_div[1]);
-      rank_slice = rank % (access_type->sub_div[0] * access_type->sub_div[1]);
-      rank_y = (rank_slice / access_type->sub_div[0]);
-      rank_x = (rank_slice % access_type->sub_div[0]);
-      
-      colors = malloc(sizeof(*colors) * (*file)->idx_count[0]);
-      memset(colors, 0, sizeof(*colors) * (*file)->idx_count[0]);
-      
-      for (i = 0; i < (*file)->idx_count[0]; i++)
-        colors[i] = i;
-      
-      for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_count[0]))
-      {
-        if (rank_x >= i && rank_x < i + (access_type->sub_div[0] / (*file)->idx_count[0]))
-        {
-          (*file)->idx_derived_ptr->color = colors[i / (access_type->sub_div[0] / (*file)->idx_count[0])];
-          break;
-        }
-      }
-      
-      printf("%d = %d %d %d :: %d\n", rank, rank_x, rank_y, rank_z, (*file)->idx_derived_ptr->color);
-      
-      MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
-      MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
-      //printf("Color for %d = %d\n", rank, (*file)->idx_derived_ptr->color);
-    }
-    */
     if ((*file)->idx_count[0] != 1 || (*file)->idx_count[1] != 1 || (*file)->idx_count[2] != 1 )
     {
       int i = 0, j = 0, k = 0;
@@ -1502,6 +1456,20 @@ PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst)
     return PIDX_err_file;
   
   file->debug_rst = debug_rst;
+  
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  char filename_skeleton[512];
+  file->idx_derived_ptr->dump_agg_info = dump_agg_info;
+  strncpy(filename_skeleton, file->idx_ptr->filename, strlen(file->idx_ptr->filename) - 4);
+  filename_skeleton[strlen(file->idx_ptr->filename) - 4] = '\0';
+  sprintf(file->idx_derived_ptr->agg_dump_dir_name, "%s_agg_dump", filename_skeleton);
   
   return PIDX_success;
 }

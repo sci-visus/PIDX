@@ -21,64 +21,86 @@
 
 #include <PIDX.h>
 
-/* Kind of test to run */
+/// Kind of test to run
 enum Kind { DEFAULT = 0, SERIAL_READER, PARALLEL_READER, SERIAL_WRITER, PARALLEL_WRITER, PARALLEL_MULTI_PATCH_WRITER};
 
-/*kindToStr*/
+/// kindToStr
 char* kindToStr(enum Kind k);
 
-/*strToKind*/
+/// strToKind
 enum Kind strToKind(const char *str);
 
-/*Args*/
+/// Args
 struct Args
 {
-  /* type of test to run */
+  /// type of test to run
   enum Kind kind;
 
-  /* global dimensions of 3D volume */
+  /// global dimensions of 3D volume
   int extents[5];
 
-  /* per-process dimensions of each sub-block */
+  /// per-process dimensions of each sub-block
   int count_local[5];
 
-  /* Number of time-steps */
+  /// Number of time-steps
   int time_step;
 
-  /* Number of Variables */
+  /// Number of Variables
   int variable_count;
   
+  /// Number of IDX files partitions in each direction (x, y, z)
   int idx_count[3];
   
-  /* output IDX file Name Template*/
+  /// output IDX file Name Template
   char output_file_template[512];
+  
+  /// output IDX filename
   char *output_file_name;
   
+  /// One of the parameters that controls the aggegator count
   int aggregation_factor;
   
+  /// Number of IDX blocks for every IDX file
   int blocks_per_file;
   
+  /// Controls the size of every IDX block
   int bits_per_block;
   
+  /// Works only for this test program verifies the functioning of the HZ encoding phase
+  /// Default is 0
   int debug_hz;
   
+  /// Works only for this test program verifies the functioning of the restructing phase
   int debug_rst;
   
+  /// Dumps all the reguired offsets and counts for the aggregation phase
+  /// Default is 0
+  int dump_agg;
+  
+  /// All the agg dumps will go here (file equal to number of processes will be ceated)
+  char agg_dump_dir_name[512];
+  
+  /// 0 for no aggregation (test IO only) and 1 for aggregation 
+  /// Default is 1
   int perform_agg;
   
+  /// 0 for no HZ encoding 1 for HZ encoding
+  /// Default is 0
   int perform_hz;
   
+  /// 0 for no IO (tests only aggregation phase) 1 for IO
+  /// Default is 0
   int perform_io;
   
 };
 
-/*main*/
+/// main
 int main(int argc, char **argv);
 
-/*parse_args*/
+/// parse_args
 int parse_args(struct Args *args, int argc, char **argv);
 
-/*print_error*/
+/// print_error
 int print_error(char *error_message, char* file, int line);
 
 #endif

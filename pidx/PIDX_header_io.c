@@ -154,7 +154,7 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
     if (!idx_file_p) 
     {
       fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
-      return 1;
+      return -1;
     }
 
     fprintf(idx_file_p, "(version)\n6\n");

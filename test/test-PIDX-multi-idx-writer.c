@@ -26,16 +26,20 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   int slice;
   int sub_div[3], local_offset[3];
 
+  /// IDX file descriptor
+  PIDX_file file;
   
-  PIDX_file file;                                                // IDX file descriptor
-  const char *output_file;                                                      // IDX File Name
+  /// IDX File Name
+  const char *output_file; 
   
   PIDX_variable* variable;                                       // variable descriptor
   unsigned long long     **long_data;
   double     **double_data;
   int* values_per_sample;
   
-  //The command line arguments are shared by all processes
+  PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
+  
+  /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -43,6 +47,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.perform_io, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_rst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.dump_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.blocks_per_file, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -51,25 +56,19 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
+  
   variable = malloc(sizeof(*variable) * args.variable_count);
   memset(variable, 0, sizeof(*variable) * args.variable_count);
   
   values_per_sample = malloc(sizeof(*values_per_sample) * args.variable_count);
-  memset(values_per_sample, 0, sizeof(*values_per_sample) * args.variable_count);    
+  memset(values_per_sample, 0, sizeof(*values_per_sample) * args.variable_count);      
   
-  
-  //   Creating the filename 
+  /// Creating the filename 
   args.output_file_name = (char*) malloc(sizeof (char) * 512);
   sprintf(args.output_file_name, "%s%s", args.output_file_template,".idx");
   output_file = args.output_file_name;
   
-  PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
-  //PIDX_create_point(&global_bounding_box);
-  //PIDX_create_point(&local_offset_point);
-  //PIDX_create_point(&local_box_count_point);
-  
-  
-  //   Calculating every process's offset and count  
+  /// Calculating every process's offset and count  
   sub_div[0] = (args.extents[0] / args.count_local[0]);
   sub_div[1] = (args.extents[1] / args.count_local[1]);
   sub_div[2] = (args.extents[2] / args.count_local[2]);
@@ -77,14 +76,6 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   slice = rank % (sub_div[0] * sub_div[1]);
   local_offset[1] = (slice / sub_div[0]) * args.count_local[1];
   local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
-  
-  //int rank_x, rank_y, rank_z, rank_slice;
-  //rank_z = rank / (sub_div[0] * sub_div[1]);
-  //rank_slice = rank % (sub_div[0] * sub_div[1]);
-  //rank_y = (rank_slice / sub_div[0]);
-  //rank_x = (rank_slice % sub_div[0]);
-  
-  //printf("Rank %d broken into %d %d %d\n", rank, rank_x, rank_y, rank_z);
   
   PIDX_set_point_5D((long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2], 1, 1, global_bounding_box);
   PIDX_set_point_5D((long long)local_offset[0], (long long)local_offset[1], (long long)local_offset[2], 0, 0, local_offset_point);
@@ -123,6 +114,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     
     PIDX_debug_rst(file, args.debug_rst);
     PIDX_debug_hz(file, args.debug_hz);
+    PIDX_dump_agg_info(file, args.dump_agg);
     
     PIDX_enable_hz(file, args.perform_hz);
     PIDX_enable_agg(file, args.perform_agg);

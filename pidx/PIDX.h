@@ -325,6 +325,10 @@ PIDX_return_code PIDX_enable_io(PIDX_file file, int io);
 
 
 ///
+PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info);
+
+
+///
 double PIDX_get_time();
 
 #ifdef __cplusplus

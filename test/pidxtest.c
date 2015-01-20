@@ -193,6 +193,9 @@ int parse_args(struct Args *args, int argc, char **argv)
   fscanf(config_file, "(debug_hz)\n");
   fscanf(config_file, "%d\n", &args->debug_hz);
   
+  fscanf(config_file, "(dump_agg_info)\n");
+  fscanf(config_file, "%d\n", &args->dump_agg);
+  
   fscanf(config_file, "(perform_hz)\n");
   fscanf(config_file, "%d\n", &args->perform_hz);
   
