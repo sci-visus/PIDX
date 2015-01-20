@@ -82,7 +82,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D((long long)args.count_local[0], (long long)args.count_local[1], (long long)args.count_local[2], 1, 1, local_box_count_point);
   
   PIDX_time_step_caching_ON();
-  PIDX_hz_encoding_caching_ON();
+  //PIDX_hz_encoding_caching_ON();
   
   for (ts = 0; ts < args.time_step; ts++) 
   {
@@ -249,7 +249,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     
   }
   PIDX_time_step_caching_OFF();
-  PIDX_hz_encoding_caching_OFF();
+  //PIDX_hz_encoding_caching_OFF();
   
   free(variable);
   free(values_per_sample);
