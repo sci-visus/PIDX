@@ -19,7 +19,7 @@
 #include "PIDX_inc.h"
 #define PIDX_ACTIVE_TARGET 1
 #define PIDX_DUMP_AGG 1
-#define RANK_ORDER 1
+//#define RANK_ORDER 1
 
 static FILE* agg_dump_fp;
 
