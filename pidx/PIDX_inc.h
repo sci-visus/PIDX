@@ -32,15 +32,11 @@
 extern "C" {
 #endif
 
-#include "PIDX_error_codes.h"
-#include "PIDX_file_access_modes.h"
-#include "PIDX_data_types.h"
-#include "PIDX_data_layout.h"
+#include "PIDX_typedefs.h"
 
-#include "Generic_data_structs.h"
-#include "PIDX_comm.h"
 #include "PIDX_blocks.h"
 #include "PIDX_data_structs.h"
+#include "PIDX_comm.h"
 #include "PIDX_utils.h"
 #include "PIDX_point.h"
 #include "PIDX_file_name.h"

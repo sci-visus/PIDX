@@ -53,7 +53,7 @@ int PIDX_rst_buf_destroy(PIDX_rst_id rst_id);
 /* tear down whatever was calculated for this particular combination of dimensions and bounds */ 
 int PIDX_rst_finalize(PIDX_rst_id id);  
 
-long long* PIDX_rst_get_box_dimension(PIDX_rst_id id);
+int64* PIDX_rst_get_box_dimension(PIDX_rst_id id);
 
 int HELPER_rst(PIDX_rst_id rst_id, PIDX_variable* variable);
 

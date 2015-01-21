@@ -112,9 +112,9 @@ int initialize_block_layout(block_layout* layout, int maxh, int bits_per_block)
 
 int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout* layout)
 {
-  long long hz_from = 0, hz_to = 0, block_number = 1;
+  int64 hz_from = 0, hz_to = 0, block_number = 1;
   int i, j, m, n_blocks = 1, ctr = 1;
-  long long *ZYX_from, *ZYX_to;
+  int64 *ZYX_from, *ZYX_to;
   
   if(maxH < bits_per_block)
     layout->levels = 1;
@@ -143,8 +143,8 @@ int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_
   }
   layout->hz_block_count_array[0] = 1;			//This block contains data upto level "bits_per_block"
   
-  hz_from = (long long)(block_number - 1) * pow(2, bits_per_block);
-  hz_to = (long long)(block_number * pow(2, bits_per_block)) - 1;
+  hz_from = (int64)(block_number - 1) * pow(2, bits_per_block);
+  hz_to = (int64)(block_number * pow(2, bits_per_block)) - 1;
   
   for(m = 1 ; m < (maxH - bits_per_block); m++)
   {
@@ -154,11 +154,11 @@ int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_
     {
       block_number = block_number + 1;
       
-      hz_from = (long long)(block_number - 1) * pow(2, bits_per_block);
-      hz_to = (long long)(block_number * pow(2, bits_per_block)) - 1;
+      hz_from = (int64)(block_number - 1) * pow(2, bits_per_block);
+      hz_to = (int64)(block_number * pow(2, bits_per_block)) - 1;
       
-      ZYX_to = malloc(sizeof(long long) * PIDX_MAX_DIMENSIONS);
-      ZYX_from = malloc(sizeof(long long) * PIDX_MAX_DIMENSIONS);
+      ZYX_to = malloc(sizeof(int64) * PIDX_MAX_DIMENSIONS);
+      ZYX_from = malloc(sizeof(int64) * PIDX_MAX_DIMENSIONS);
       
       Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
       Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);

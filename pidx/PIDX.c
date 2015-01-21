@@ -139,7 +139,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
       return PIDX_err_file_exists;
   }
   
-  int ret, rank, nprocs;
+  int ret, rank = 0, nprocs = 1;
   int *colors;
   char file_name_skeleton[1024];
   int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
@@ -157,7 +157,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_derived_ptr = (idx_dataset_derived_metadata)malloc(sizeof (*((*file)->idx_derived_ptr)));
   memset((*file)->idx_derived_ptr, 0, sizeof (*((*file)->idx_derived_ptr)));
   
-  (*file)->idx_ptr->global_bounds = malloc(sizeof(long long) * PIDX_MAX_DIMENSIONS);
+  (*file)->idx_ptr->global_bounds = malloc(sizeof(int64) * PIDX_MAX_DIMENSIONS);
   { int i; for (i=0;i<PIDX_MAX_DIMENSIONS;i++) (*file)->idx_ptr->global_bounds[i]=65535; }
 
   //initialize logic_to_physic transform to identity
@@ -231,7 +231,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
           for (i = 0; i < (*file)->idx_count[0]; i++)
             colors[((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i] = ((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i;
             
-      int index_x, index_y, index_z;
+      int index_x = 0, index_y = 0, index_z = 0;
       for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_count[0]))
       {
         if (rank_x >= i && rank_x < i + (access_type->sub_div[0] / (*file)->idx_count[0]))
@@ -350,7 +350,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset((*file)->idx_derived_ptr, 0, sizeof (*((*file)->idx_derived_ptr)));
 
   //(*file)->idx_ptr->filename = strdup(filename);
-  (*file)->idx_ptr->global_bounds = malloc(sizeof(long long) * PIDX_MAX_DIMENSIONS);
+  (*file)->idx_ptr->global_bounds = malloc(sizeof(int64) * PIDX_MAX_DIMENSIONS);
   
   (*file)->idx_ptr->variable_count = 0;
   (*file)->idx_ptr->variable_index_tracker = 0;
@@ -359,7 +359,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->local_variable_count = 0;
  
   int var = 0, variable_counter = 0, count = 0, len = 0;
-  int rank;
+  int rank = 0;
   char *pch, *pch1;
   char line [ 512 ];
   
@@ -513,7 +513,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 /// validate dims/blocksize
 PIDX_return_code PIDX_validate(PIDX_file file)
 {
-  long long dims;
+  int64 dims;
   if (PIDX_inner_product(file->idx_ptr->global_bounds, &dims))
     return PIDX_err_size;
   if (dims < file->idx_derived_ptr->samples_per_block)
@@ -551,7 +551,7 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
   if(file == NULL)
     return PIDX_err_file;
   
-  memcpy(file->idx_ptr->global_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(long long));
+  memcpy(file->idx_ptr->global_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(int64));
   
   /*
   if (file->idx_count[0] == 1 && file->idx_count[1] == 1 && file->idx_count[2] != 1 )
@@ -579,7 +579,7 @@ PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims)
   if(!file)
     return PIDX_err_file;
   
-  memcpy(dims, file->idx_ptr->global_bounds, (sizeof(long long) * PIDX_MAX_DIMENSIONS));
+  memcpy(dims, file->idx_ptr->global_bounds, (sizeof(int64) * PIDX_MAX_DIMENSIONS));
   
   return PIDX_success;
 }
@@ -875,8 +875,8 @@ PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offs
     return PIDX_err_count;
   
   variable->patch[variable->patch_count] = malloc(sizeof(*(variable->patch[variable->patch_count])));
-  memcpy(variable->patch[variable->patch_count]->Ndim_box_offset, offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-  memcpy(variable->patch[variable->patch_count]->Ndim_box_size, dims, PIDX_MAX_DIMENSIONS * sizeof(long long));
+  memcpy(variable->patch[variable->patch_count]->Ndim_box_offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+  memcpy(variable->patch[variable->patch_count]->Ndim_box_size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64));
   
   variable->patch[variable->patch_count]->Ndim_box_buffer = write_to_this_buffer;
   
@@ -901,8 +901,8 @@ PIDX_return_code PIDX_append_and_write_variable(PIDX_variable variable, PIDX_poi
   
   const void *temp_buffer;
   variable->patch[variable->patch_count] = malloc(sizeof(*(variable->patch[variable->patch_count])));
-  memcpy(variable->patch[variable->patch_count]->Ndim_box_offset, offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-  memcpy(variable->patch[variable->patch_count]->Ndim_box_size, dims, PIDX_MAX_DIMENSIONS * sizeof(long long));
+  memcpy(variable->patch[variable->patch_count]->Ndim_box_offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+  memcpy(variable->patch[variable->patch_count]->Ndim_box_size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64));
   
   temp_buffer = read_from_this_buffer;
   variable->patch[variable->patch_count]->Ndim_box_buffer = (unsigned char*)temp_buffer;
@@ -933,8 +933,8 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
   for (i = 0; i <= file->idx_derived_ptr->maxh; i++)
     file->idx_ptr->bitPattern[i] = RegExBitmaskBit(file->idx_ptr->bitSequence, i);
   
-  file->idx_derived_ptr->max_file_count = (getPowerOf2(file->idx_ptr->global_bounds[0]) * getPowerOf2(file->idx_ptr->global_bounds[1]) * getPowerOf2(file->idx_ptr->global_bounds[2]) * getPowerOf2(file->idx_ptr->global_bounds[3]) * getPowerOf2(file->idx_ptr->global_bounds[4])) / ((unsigned long long) file->idx_derived_ptr->samples_per_block * (unsigned long long) file->idx_ptr->blocks_per_file);
-  if ((getPowerOf2(file->idx_ptr->global_bounds[0]) * getPowerOf2(file->idx_ptr->global_bounds[1]) * getPowerOf2(file->idx_ptr->global_bounds[2]) * getPowerOf2(file->idx_ptr->global_bounds[3]) * getPowerOf2(file->idx_ptr->global_bounds[4])) % ((unsigned long long) file->idx_derived_ptr->samples_per_block * (unsigned long long) file->idx_ptr->blocks_per_file))
+  file->idx_derived_ptr->max_file_count = (getPowerOf2(file->idx_ptr->global_bounds[0]) * getPowerOf2(file->idx_ptr->global_bounds[1]) * getPowerOf2(file->idx_ptr->global_bounds[2]) * getPowerOf2(file->idx_ptr->global_bounds[3]) * getPowerOf2(file->idx_ptr->global_bounds[4])) / ((uint64) file->idx_derived_ptr->samples_per_block * (uint64) file->idx_ptr->blocks_per_file);
+  if ((getPowerOf2(file->idx_ptr->global_bounds[0]) * getPowerOf2(file->idx_ptr->global_bounds[1]) * getPowerOf2(file->idx_ptr->global_bounds[2]) * getPowerOf2(file->idx_ptr->global_bounds[3]) * getPowerOf2(file->idx_ptr->global_bounds[4])) % ((uint64) file->idx_derived_ptr->samples_per_block * (uint64) file->idx_ptr->blocks_per_file))
     file->idx_derived_ptr->max_file_count++;
   
   file->idx_derived_ptr->file_bitmap = (int*) malloc(file->idx_derived_ptr->max_file_count * sizeof (int));
@@ -1343,8 +1343,8 @@ PIDX_return_code PIDX_read(PIDX_file file)
 	for(j = 0; j < file->idx_ptr->variable[var]->patch_group_ptr[p]->count; j++)
 	{
 	  file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j])));
-	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->offset, file->idx_ptr->variable[var]->patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->count, file->idx_ptr->variable[var]->patch[p]->count, PIDX_MAX_DIMENSIONS * sizeof(long long));
+	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->offset, file->idx_ptr->variable[var]->patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->count, file->idx_ptr->variable[var]->patch[p]->count, PIDX_MAX_DIMENSIONS * sizeof(int64));
 	  file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->buffer = file->idx_ptr->variable[var]->patch[p]->buffer;
 	}
       }
@@ -1829,11 +1829,11 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           for(j = 0; j < file->idx_ptr->variable[var]->patch_group_ptr[p]->box_count; j++)
           {
             file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j])));
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(long long));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64));
             
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(long long));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64));
             file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch[p]->Ndim_box_buffer;
           }
         }
@@ -2049,11 +2049,11 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           for(j = 0; j < file->idx_ptr->variable[var]->patch_group_ptr[p]->box_count; j++)
           {
             file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j])));
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(long long));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64));
             
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(long long));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+            memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64));
             file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch[p]->Ndim_box_buffer;
           }
         }
@@ -2344,7 +2344,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       for (var = 0; var < file->idx_ptr->variable_count; var++)
         sample_sum = sample_sum + file->idx_ptr->variable[var]->values_per_sample;
       
-      long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8;
+      int64 total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8;
       fprintf(stdout, "\n=======================================================================================\n");
       fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d = %d x %d x %d\n", nprocs, file->idx_ptr->global_bounds[0], file->idx_ptr->global_bounds[1], file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
@@ -2378,7 +2378,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     for (var = 0; var < file->idx_ptr->variable_count; var++)
         sample_sum = sample_sum + file->idx_ptr->variable[var]->values_per_sample;
     
-    long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8 * file->idx_count[0] * file->idx_count[1] * file->idx_count[2];
+    int64 total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8 * file->idx_count[0] * file->idx_count[1] * file->idx_count[2];
     if (max_time == total_time)
       fprintf(stdout, "[EXTRA INFO] %d %s Time %f Seconds Throughput %f MB/sec\n", file->idx_ptr->current_time_step, file->idx_ptr->filename, max_time, (float) total_data / (1000 * 1000 * max_time));
     
@@ -2622,21 +2622,21 @@ int dump_meta_data(PIDX_variable variable
 {
   int i, nprocs = 1;
   FILE* meta_data_file;
-  long long *rank_r_offset, *rank_r_count;
+  int64 *rank_r_offset, *rank_r_count;
   
-  rank_r_offset = malloc(sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(rank_r_offset, 0, (sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS));
+  rank_r_offset = malloc(sizeof (int64) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(rank_r_offset, 0, (sizeof (int64) * nprocs * PIDX_MAX_DIMENSIONS));
 
-  rank_r_count = malloc(sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(rank_r_count, 0, (sizeof (long long) * nprocs * PIDX_MAX_DIMENSIONS));
+  rank_r_count = malloc(sizeof (int64) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(rank_r_count, 0, (sizeof (int64) * nprocs * PIDX_MAX_DIMENSIONS));
 
 #if PIDX_HAVE_MPI
   MPI_Comm_size(comm, &nprocs);
   MPI_Allgather(variable->patch[0]->Ndim_box_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, MPI_COMM_WORLD);
   MPI_Allgather(variable->patch[0]->Ndim_box_size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, MPI_COMM_WORLD);
 #else
-  memcpy(rank_r_offset, variable->patch[0]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(long long));
-  memcpy(rank_r_count, variable->patch[0]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(long long));
+  memcpy(rank_r_offset, variable->patch[0]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64));
+  memcpy(rank_r_count, variable->patch[0]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64));
 #endif
   
   meta_data_file = fopen("Box_info.txt", "w");

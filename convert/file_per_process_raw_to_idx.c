@@ -250,7 +250,7 @@ int main(int argc, char **argv)
           for (j = 0; j < fortran_count[1]; j++)
             for (i = 0; i < fortran_count[0]; i++) 
             {
-              long long index = (long long) (fortran_count[0] * fortran_count[1] * k) + (fortran_count[0] * j) + i;
+              int64 index = (int64) (fortran_count[0] * fortran_count[1] * k) + (fortran_count[0] * j) + i;
               for (spv = 0; spv < sample_per_variable[var]; spv++)
                 raw_write_buffer[var][index * sample_per_variable[var] + spv] = 100 + var + spv + (extents[0] * extents[1]*(pidx_offset[2] + k))+(extents[0]*(pidx_offset[1] + j)) + (pidx_offset[0] + i);
             }
@@ -417,9 +417,9 @@ int main(int argc, char **argv)
     
     PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
     
-    PIDX_set_point_5D((long long)gextent[0], (long long)gextent[1], (long long)gextent[2], 1, 1, global_bounding_box);
-    PIDX_set_point_5D((long long)pidx_offset[0], (long long)pidx_offset[1], (long long)pidx_offset[2], 0, 0, local_offset_point);
-    PIDX_set_point_5D((long long)pidx_count[0], (long long)pidx_count[1], (long long)pidx_count[2], 1, 1, local_box_count_point);
+    PIDX_set_point_5D((int64)gextent[0], (int64)gextent[1], (int64)gextent[2], 1, 1, global_bounding_box);
+    PIDX_set_point_5D((int64)pidx_offset[0], (int64)pidx_offset[1], (int64)pidx_offset[2], 0, 0, local_offset_point);
+    PIDX_set_point_5D((int64)pidx_count[0], (int64)pidx_count[1], (int64)pidx_count[2], 1, 1, local_box_count_point);
     
     for(t = 0 ; t < time_step ; t++)
     {
@@ -538,6 +538,7 @@ int main(int argc, char **argv)
   return 0;
 }
 
+/////////////////////////////////////////////////
 static int parse_args(int argc, char **argv) 
 {
   char flags[] = "g:f:p:i:o:t:";

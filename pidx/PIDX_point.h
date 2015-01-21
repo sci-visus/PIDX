@@ -29,21 +29,14 @@
 #ifndef __PIDX_POINT_H
 #define __PIDX_POINT_H
 
-typedef long long PIDX_point[5];
+typedef int64 PIDX_point[PIDX_MAX_DIMENSIONS];
 
 /// Utility functions to set or get the dimensions of an offset or a box (defined as points)
-PIDX_return_code PIDX_set_point_1D(long long  x, PIDX_point point);
-PIDX_return_code PIDX_get_point_1D(long long* x, PIDX_point point);
-PIDX_return_code PIDX_set_point_2D(long long  x,long long  y, PIDX_point point);
-PIDX_return_code PIDX_get_point_2D(long long* x,long long* y, PIDX_point point);
-PIDX_return_code PIDX_set_point_3D(long long  x,long long  y,long long  z, PIDX_point point);
-PIDX_return_code PIDX_get_point_3D(long long* x,long long* y,long long* z, PIDX_point point);
-PIDX_return_code PIDX_set_point_4D(long long  x,long long  y,long long  z,long long  u, PIDX_point point);
-PIDX_return_code PIDX_get_point_4D(long long* x,long long* y,long long* z,long long* u, PIDX_point point);
-PIDX_return_code PIDX_set_point_5D(long long  x,long long  y,long long  z,long long  u,long long  v, PIDX_point point);
-PIDX_return_code PIDX_get_point_5D(long long* x,long long* y,long long* z,long long* u,long long* v, PIDX_point point);
+PIDX_return_code PIDX_set_point_5D(PIDX_point point, int64  x,int64  y,int64  z,int64  u,int64  v);
+PIDX_return_code PIDX_get_point_5D(int64* x,int64* y,int64* z,int64* u,int64* v, PIDX_point point);
 
-PIDX_return_code PIDX_inner_product(PIDX_point point, long long *inner_product);
+/// PIDX_inner_product
+PIDX_return_code PIDX_inner_product(int64 *inner_product, PIDX_point point);
 
 
 #endif

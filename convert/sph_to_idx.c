@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   double *double_data, *double_ptr;
 
   int        int_val;
-  long long  long_val;
+  int64  long_val;
   float      float_val;
   double     double_val;
   //==========================
@@ -260,21 +260,21 @@ int main(int argc, char **argv)
   }
   else if ( is_double ) 
   {          
-    if ( fread( &long_val, sizeof(long long), 1, sph_file ) != SUCCESS ) 
+    if ( fread( &long_val, sizeof(int64), 1, sph_file ) != SUCCESS ) 
     {
       printf("<<< ERROR >>> Cannot read data information \n" );
       exit(FAIL);
     }
     i_max = ( int )long_val;
     
-    if ( fread( &long_val, sizeof(long long), 1, sph_file ) != SUCCESS ) 
+    if ( fread( &long_val, sizeof(int64), 1, sph_file ) != SUCCESS ) 
     {
       printf("<<< ERROR >>> Cannot read data information \n" );
       exit(FAIL);
     }
     j_max = ( int )long_val;
     
-    if ( fread( &long_val, sizeof(long long), 1, sph_file ) != SUCCESS ) 
+    if ( fread( &long_val, sizeof(int64), 1, sph_file ) != SUCCESS ) 
     {
       printf("<<< ERROR >>> Cannot read data information \n" );
       exit(FAIL);
