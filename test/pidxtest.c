@@ -155,7 +155,7 @@ int parse_args(struct Args *args, int argc, char **argv)
   args->kind = strToKind(strkind);
   
   fscanf(config_file, "(global box)\n");
-  fscanf(config_file, "%d %d %d\n", &args->extents[0], &args->extents[1], &args->extents[2]);
+  fscanf(config_file, "%lld %lld %lld\n", &args->extents[0], &args->extents[1], &args->extents[2]);
   
   fscanf(config_file, "(local box)\n");
   fscanf(config_file, "%d %d %d\n", &args->count_local[0], &args->count_local[1], &args->count_local[2]);

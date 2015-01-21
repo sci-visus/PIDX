@@ -40,7 +40,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
   
   /// The command line arguments are shared by all processes
-  MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);

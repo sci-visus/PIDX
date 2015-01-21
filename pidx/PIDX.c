@@ -514,7 +514,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 PIDX_return_code PIDX_validate(PIDX_file file)
 {
   int64_t dims;
-  if (PIDX_inner_product(file->idx_ptr->global_bounds, &dims))
+  if (PIDX_inner_product(&dims, file->idx_ptr->global_bounds))
     return PIDX_err_size;
   if (dims < file->idx_derived_ptr->samples_per_block)
   {
