@@ -124,7 +124,6 @@ double PIDX_get_time()
 
 ///
 /// Function to create IDX file descriptor (based on flags and access)
-///
 PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
 {
   sim_start = PIDX_get_time();
@@ -1989,7 +1988,6 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
       PIDX_agg_set_communicator(file->agg_id, file->comm);
     }
-    
     agg_init_end[vp] = PIDX_get_time();
     ///-----------------------------------AGG init end-------------------------------------------------///
     
@@ -2025,11 +2023,9 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
       {
         file->idx_ptr->variable[var]->HZ_patch[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
-        assert(file->idx_ptr->variable[var]->HZ_patch[p] != NULL);
         memset(file->idx_ptr->variable[var]->HZ_patch[p], 0, sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
       }
     }
-    
     var_init_end[vp] = PIDX_get_time();
     ///------------------------------Var buffer init end--------------------------------------------------///
     
@@ -2100,6 +2096,27 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     {
       agg_1[vp] = PIDX_get_time();
       file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
+      
+      int p;
+      file->idx_derived_ptr->agg_level_start = malloc(sizeof(*file->idx_derived_ptr->agg_level_start) * file->idx_ptr->variable[start_index]->patch_group_count);
+      memset(file->idx_derived_ptr->agg_level_start, 0, sizeof(*file->idx_derived_ptr->agg_level_start) * file->idx_ptr->variable[start_index]->patch_group_count);
+      file->idx_derived_ptr->agg_level_end = malloc(sizeof(*file->idx_derived_ptr->agg_level_end) * file->idx_ptr->variable[start_index]->patch_group_count);
+      memset(file->idx_derived_ptr->agg_level_end, 0, sizeof(*file->idx_derived_ptr->agg_level_end) * file->idx_ptr->variable[start_index]->patch_group_count);
+      for (p = 0; p < file->idx_ptr->variable[start_index]->patch_group_count; p++)
+      {
+        file->idx_derived_ptr->agg_level_start[p] = malloc(sizeof(*file->idx_derived_ptr->agg_level_start[p]) * (end_index - start_index + 1));
+        memset(file->idx_derived_ptr->agg_level_start[p], 0, sizeof(*file->idx_derived_ptr->agg_level_start[p]) * (end_index - start_index + 1));
+        file->idx_derived_ptr->agg_level_end[p] = malloc(sizeof(*file->idx_derived_ptr->agg_level_end[p]) * (end_index - start_index + 1));
+        memset(file->idx_derived_ptr->agg_level_end[p], 0, sizeof(*file->idx_derived_ptr->agg_level_end[p]) * (end_index - start_index + 1));
+        
+        for(var = start_index; var <= end_index; var++)
+        {
+          file->idx_derived_ptr->agg_level_start[p][var] = malloc(sizeof(*file->idx_derived_ptr->agg_level_start[p][var]) * (file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_to - file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_from));
+          memset(file->idx_derived_ptr->agg_level_start[p][var], 0, sizeof(*file->idx_derived_ptr->agg_level_start[p][var]) * (file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_to - file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_from));
+          file->idx_derived_ptr->agg_level_end[p][var] = malloc(sizeof(*file->idx_derived_ptr->agg_level_end[p][var]) * (file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_to - file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_from));
+          memset(file->idx_derived_ptr->agg_level_end[p][var], 0, sizeof(*file->idx_derived_ptr->agg_level_end[p][var]) * (file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_to - file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_from));
+        }
+      }
       
       agg_2[vp] = PIDX_get_time();
       PIDX_agg_aggregate(file->agg_id, file->idx_derived_ptr->agg_buffer);
@@ -2300,8 +2317,8 @@ static PIDX_return_code PIDX_cleanup(PIDX_file file)
     
     for(p = 0; p < file->idx_ptr->variable[i]->patch_count; p++)
     {
-      free(file->idx_ptr->variable[i]->HZ_patch[p]);
-      file->idx_ptr->variable[i]->HZ_patch[p] = 0;
+      //free(file->idx_ptr->variable[i]->HZ_patch[p]);
+      //file->idx_ptr->variable[i]->HZ_patch[p] = 0;
     
       free(file->idx_ptr->variable[i]->patch[p]);
       file->idx_ptr->variable[i]->patch[p] = 0;
@@ -2369,6 +2386,19 @@ PIDX_return_code PIDX_close(PIDX_file file)
         fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
         fprintf(stdout, "----------------------------------------VG %d (END)-------------------------------------\n", var);
       }
+      
+      int p;
+      double total_agg_time = 0;
+      for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
+        for (var = 0; var < file->idx_ptr->variable_count; var++)
+          for (i = file->idx_ptr->variable[var]->HZ_patch[p]->HZ_level_from; i < file->idx_ptr->variable[var]->HZ_patch[p]->HZ_level_to; i++)
+          {
+            printf("Aggregation Time for Patch Group %d Variable %d and Level %d = %f\n", p, var, i, (file->idx_derived_ptr->agg_level_end[p][var][i] - file->idx_derived_ptr->agg_level_start[p][var][i]));
+            total_agg_time = total_agg_time + (file->idx_derived_ptr->agg_level_end[p][var][i] - file->idx_derived_ptr->agg_level_start[p][var][i]);
+          }
+          
+      printf("Total Aggregation Time %f Window Creation time %f Window free time %f\n", total_agg_time, (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start), (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start));
+
       fprintf(stdout, "=======================================================================================\n");
     }
   }
@@ -2376,7 +2406,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   {
     
     for (var = 0; var < file->idx_ptr->variable_count; var++)
-        sample_sum = sample_sum + file->idx_ptr->variable[var]->values_per_sample;
+      sample_sum = sample_sum + file->idx_ptr->variable[var]->values_per_sample;
     
     long long total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8 * file->idx_count[0] * file->idx_count[1] * file->idx_count[2];
     if (max_time == total_time)

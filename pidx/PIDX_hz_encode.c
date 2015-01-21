@@ -1049,8 +1049,8 @@ int PIDX_hz_encode_buf_destroy_var(PIDX_hz_encode_id id, PIDX_variable* variable
       free(variable[var]->HZ_patch[p]->buffer);
       variable[var]->HZ_patch[p]->buffer = 0;
     
-      free(variable[var]->HZ_patch[p]);
-      variable[var]->HZ_patch[p] = 0;
+      //free(variable[var]->HZ_patch[p]);
+      //variable[var]->HZ_patch[p] = 0;
     }
   }
   

@@ -233,8 +233,10 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
         for (l = 0; l < rst_id->idx_ptr->global_bounds[3]; l = l + rst_id->power_two_box_size[3])
           for (m = 0; m < rst_id->idx_ptr->global_bounds[4]; m = m + rst_id->power_two_box_size[4]) 
           {
+            
             Ndim_box power_two_box = malloc(sizeof (*power_two_box));
             memset(power_two_box, 0, sizeof (*power_two_box));
+            printf("[XXXXx] sizeof %ld\n", sizeof(*power_two_box));
 
             //Interior regular boxes
             power_two_box->Ndim_box_offset[0] = i;

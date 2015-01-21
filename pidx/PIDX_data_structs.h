@@ -88,6 +88,13 @@ struct idx_dataset_derived_metadata_struct
   char agg_dump_dir_name[512];
   
   int color;
+  
+  double win_free_time_start;
+  double win_free_time_end;
+  double win_time_start;
+  double win_time_end;
+  double ***agg_level_start;
+  double ***agg_level_end;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 
