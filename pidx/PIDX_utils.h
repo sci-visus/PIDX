@@ -31,21 +31,21 @@ typedef struct {int x,y,z,u,v;} PointND;
 
 unsigned int getNumBits ( unsigned int v );
 
-unsigned long long getPowerOf2(int x);
+uint64_t getPowerOf2(int x);
 
-unsigned int getLevelFromBlock (long long block, int bits_per_block);
+unsigned int getLevelFromBlock (int64_t block, int bits_per_block);
 
-unsigned int getLeveL (unsigned long long index);
+unsigned int getLeveL (uint64_t index);
 
 int isValidBox(int** box);
 
-void Deinterleave(const char* bitmask, int maxh, unsigned long long zaddress, int* point);
+void Deinterleave(const char* bitmask, int maxh, uint64_t zaddress, int* point);
 
-unsigned long long ZBitmask(const char* bitmask,int maxh);
+uint64_t ZBitmask(const char* bitmask,int maxh);
 
-unsigned long long ZStart(const char* bitmask,int maxh,int BlockingH);
+uint64_t ZStart(const char* bitmask,int maxh,int BlockingH);
 
-unsigned long long ZEnd(const char* bitmask,int maxh,int BlockingH);
+uint64_t ZEnd(const char* bitmask,int maxh,int BlockingH);
 
 void ZDelta(const char* bitmask, int maxh, int BlockingH, int* point);
 
@@ -61,9 +61,9 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
 
 int RegExBitmaskBit(const char* bitmask_pattern,int N);
 
-long long xyz_to_HZ(const char* bitmask, int maxh, PointND xyz);
+int64_t xyz_to_HZ(const char* bitmask, int maxh, PointND xyz);
 
-void Hz_to_xyz(const char* bitmask,  int maxh, long long hzaddress, long long* xyz);
+void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz);
 
 int VisusSplitFilename(const char* filename,char* dirname,char* basename);
 

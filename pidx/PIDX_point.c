@@ -18,109 +18,8 @@
 
 #include "PIDX_inc.h"
 
-PIDX_return_code PIDX_set_point_1D(long long x, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  point[0] = x;
-  point[1] = 0;
-  point[2] = 0;
-  point[3] = 0;
-  point[4] = 0;
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_get_point_1D(long long* x, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  *x = point[0];
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_set_point_2D(long long  x, long long  y, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  point[0] = x;
-  point[1] = y;
-  point[2] = 0;
-  point[3] = 0;
-  point[4] = 0;
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_get_point_2D(long long* x, long long* y, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  *x = point[0];
-  *y = point[1];
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_set_point_3D(long long  x, long long  y, long long  z, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  point[0] = x;
-  point[1] = y;
-  point[2] = z;
-  point[3] = 0;
-  point[4] = 0;
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_get_point_3D(long long* x, long long* y, long long* z, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  *x = point[0];
-  *y = point[1];
-  *z = point[2];
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_set_point_4D(long long  x, long long  y, long long  z, long long u, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  point[0] = x;
-  point[1] = y;
-  point[2] = z;
-  point[3] = u;
-  point[4] = 0;
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_get_point_4D(long long* x, long long* y, long long* z, long long* u, PIDX_point point)
-{
-  if(point == NULL)
-    return PIDX_err_point;
-
-  *x = point[0];
-  *y = point[1];
-  *z = point[2];
-  *u = point[3];
-  
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_set_point_5D(long long  x, long long  y, long long  z, long long  u, long long  v, PIDX_point point)
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_set_point_5D(PIDX_point point, int64_t  x, int64_t  y, int64_t  z, int64_t  u, int64_t  v)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -134,7 +33,8 @@ PIDX_return_code PIDX_set_point_5D(long long  x, long long  y, long long  z, lon
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_get_point_5D(long long* x, long long* y, long long* z, long long* u, long long* v, PIDX_point point)
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_get_point_5D(int64_t* x, int64_t* y, int64_t* z, int64_t* u, int64_t* v, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -149,7 +49,7 @@ PIDX_return_code PIDX_get_point_5D(long long* x, long long* y, long long* z, lon
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_inner_product(PIDX_point point, long long *inner_product)
+PIDX_return_code PIDX_inner_product(int64_t *inner_product, PIDX_point point)
 {
   *inner_product = point[0] * point[1] * point[2] * point[3] * point[4];
   //safe_add, result=a+b overflow happens when (a+b)>MAX ---> b>MAX-a

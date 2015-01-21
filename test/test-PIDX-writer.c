@@ -317,7 +317,7 @@ int test_writer(struct Args args, int rank, int nprocs)
 		for (j = 0; j < var_count[var][p][1]; j++)
 		  for (i = 0; i < var_count[var][p][0]; i++) 
 		  {
-		    long long index = (long long) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
+		    int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
 				      (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
 				      (var_count[var][p][0] * j) + i;
 		    for (spv = 0; spv < var_sample_counts[var]; spv++)
@@ -336,7 +336,7 @@ int test_writer(struct Args args, int rank, int nprocs)
 		for (j = 0; j < var_count[var][p][1]; j++)
 		  for (i = 0; i < var_count[var][p][0]; i++) 
 		  {
-		    long long index = (long long) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
+		    int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
 				      (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
 				      (var_count[var][p][0] * j) + i;
 		    for (spv = 0; spv < var_sample_counts[var]; spv++)
@@ -352,7 +352,7 @@ int test_writer(struct Args args, int rank, int nprocs)
 		for (j = 0; j < var_count[var][p][1]; j++)
 		  for (i = 0; i < var_count[var][p][0]; i++) 
 		  {
-		    long long index = (long long) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
+		    int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
 				      (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
 				      (var_count[var][p][0] * j) + i;
 		    for (spv = 0; spv < var_sample_counts[var]; spv++)
@@ -368,7 +368,7 @@ int test_writer(struct Args args, int rank, int nprocs)
 		for (j = 0; j < var_count[var][p][1]; j++)
 		  for (i = 0; i < var_count[var][p][0]; i++) 
 		  {
-		    long long index = (long long) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
+		    int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
 				      (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
 				      (var_count[var][p][0] * j) + i;
 		    for (spv = 0; spv < var_sample_counts[var]; spv++)

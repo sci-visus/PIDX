@@ -58,9 +58,9 @@ static int is_block_present(int block_number, block_layout* layout);
 static void destroyBlockBitmap(block_layout* layout);
 static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout* layout);
 static int VisusSplitFilename(const char* filename,char* dirname,char* basename);
-static void Hz_to_xyz(const char* bitmask,  int maxh, long long hzaddress, long long* xyz);
+static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz);
 static int RegExBitmaskBit(const char* bitmask_pattern,int N);
-static unsigned long long getPowerOf2(int x);
+static uint64_t getPowerOf2(int x);
 
 int main(int argc, char **argv) 
 {  
@@ -274,8 +274,8 @@ int main(int argc, char **argv)
   }
   
   /// maximum number of files possible
-  max_files = (getPowerOf2(global_bounds[0]) * getPowerOf2(global_bounds[1]) * getPowerOf2(global_bounds[2]) * getPowerOf2(global_bounds[3]) * getPowerOf2(global_bounds[4])) / ((long long) pow(2, bits_per_block) * (long long) blocks_per_file);
-  if ((getPowerOf2(global_bounds[0]) * getPowerOf2(global_bounds[1]) * getPowerOf2(global_bounds[2]) * getPowerOf2(global_bounds[3]) * getPowerOf2(global_bounds[4])) % ((long long) pow(2, bits_per_block) * (long long) blocks_per_file))
+  max_files = (getPowerOf2(global_bounds[0]) * getPowerOf2(global_bounds[1]) * getPowerOf2(global_bounds[2]) * getPowerOf2(global_bounds[3]) * getPowerOf2(global_bounds[4])) / ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file);
+  if ((getPowerOf2(global_bounds[0]) * getPowerOf2(global_bounds[1]) * getPowerOf2(global_bounds[2]) * getPowerOf2(global_bounds[3]) * getPowerOf2(global_bounds[4])) % ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file))
     max_files++;
   assert(max_files != 0);
 
@@ -300,11 +300,11 @@ int main(int argc, char **argv)
   binheader = (uint32_t*) malloc(sizeof (*binheader)*(binheader_count));
     
   int fd;
-  long long ZYX[PIDX_MAX_DIMENSIONS];
+  int64_t ZYX[PIDX_MAX_DIMENSIONS];
   
   for (t = start_time_step; t <= end_time_step; t++)
   {
-    long long lost_element_count = 0, element_count = 0;
+    int64_t lost_element_count = 0, element_count = 0;
     for (i = 0; i < max_files; i++) 
     {
       if (existing_file_index[i] == 1) 
@@ -342,10 +342,10 @@ int main(int argc, char **argv)
         }
             
         int bpf = 0;
-        unsigned long long* long_long_buffer = NULL;
+        //uint64_t* long_long_buffer = NULL;
         double* double_buffer = NULL;
         int check_bit = 1, s = 0;
-        long long hz_index, hz_val;
+        int64_t hz_index, hz_val;
         
         size_t data_size;
         off_t data_offset;
@@ -359,7 +359,7 @@ int main(int argc, char **argv)
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
               //if(var == 2 || var == 1)
-              printf("[%d] [%d] Offset %ld Count %ld\n", var, bpf, data_offset, data_size);
+              printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, data_offset, data_size);
               
 #if long_buffer
               long_long_buffer = malloc(data_size);
@@ -377,7 +377,7 @@ int main(int argc, char **argv)
               assert(ret == data_size);
 #endif
               
-              for (hz_val = 0; hz_val < data_size/(sizeof(unsigned long long) * values_per_sample[var]); hz_val++) 
+              for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var]); hz_val++) 
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
@@ -400,18 +400,18 @@ int main(int argc, char **argv)
                   lost_element_count++;
                   //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
                   //       var,
-                  //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
+                  //       lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val, 
                   //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                  //       (unsigned long long)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //       (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
                 else 
                 {
                   element_count++;
                   //printf("F [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
                   //       var,
-                  //       lost_element_count, bpf, (long long)hz_index/samples_per_block, hz_val, 
+                  //       lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val, 
                   //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                  //       (unsigned long long)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //       (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
               }
               
@@ -428,8 +428,8 @@ int main(int argc, char **argv)
       }
     }
     
-    printf("[(=)%lld + (!=)%lld] = %lld : %lld\n", (long long) (element_count), (long long)lost_element_count, element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
-    assert(element_count == (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+    printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (int64_t) (element_count), (int64_t)lost_element_count, element_count + lost_element_count, (int64_t) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+    assert(element_count == (int64_t) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
     
   }
   
@@ -444,7 +444,7 @@ int main(int argc, char **argv)
 
 static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) 
 {
-  long long address = 0;
+  int64_t address = 0;
   unsigned int segs[MAX_TEMPLATE_DEPTH] = {0};
   int seg_count = 0;
   char* pos;
@@ -633,7 +633,7 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
 
 static void revstr(char* str)
 {
-  long long i;
+  int64_t i;
   char cpstr[strlen(str)+1];
   for(i=0; i < strlen(str); i++)
     cpstr[i] = str[strlen(str)-i-1];
@@ -739,9 +739,9 @@ static void destroyBlockBitmap(block_layout* layout)
 
 static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout* layout)
 {
-  long long hz_from = 0, hz_to = 0, block_number = 1;
+  int64_t hz_from = 0, hz_to = 0, block_number = 1;
   int i, j, m, n_blocks = 1, ctr = 1;
-  long long *ZYX_from, *ZYX_to;
+  int64_t *ZYX_from, *ZYX_to;
   
   if(maxH < bits_per_block)
     layout->levels = 1;
@@ -770,8 +770,8 @@ static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bi
   }
   layout->hz_block_count_array[0] = 1;                  //This block contains data upto level "bits_per_block"
   
-  hz_from = (long long)(block_number - 1) * pow(2, bits_per_block);
-  hz_to = (long long)(block_number * pow(2, bits_per_block)) - 1;
+  hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
+  hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
   
   for(m = 1 ; m < (maxH - bits_per_block); m++)
   {
@@ -781,11 +781,11 @@ static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bi
     {
       block_number = block_number + 1;
       
-      hz_from = (long long)(block_number - 1) * pow(2, bits_per_block);
-      hz_to = (long long)(block_number * pow(2, bits_per_block)) - 1;
+      hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
+      hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
       
-      ZYX_to = malloc(sizeof(long long) * PIDX_MAX_DIMENSIONS);
-      ZYX_from = malloc(sizeof(long long) * PIDX_MAX_DIMENSIONS);
+      ZYX_to = malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+      ZYX_from = malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       
       Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
       Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
@@ -831,9 +831,9 @@ static int RegExBitmaskBit(const char* bitmask_pattern,int N)
 }
 
 
-static void Hz_to_xyz(const char* bitmask,  int maxh, long long hzaddress, long long* xyz)
+static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz)
 {
-  long long lastbitmask=((long long)1)<<maxh;
+  int64_t lastbitmask=((int64_t)1)<<maxh;
   
   hzaddress <<= 1;
   hzaddress  |= 1;
@@ -885,7 +885,7 @@ static int VisusSplitFilename(const char* filename,char* dirname,char* basename)
   return 1;
 }
 
-static unsigned long long getPowerOf2(int x)
+static uint64_t getPowerOf2(int x)
 {
   /*  find the power of 2 of an integer value (example 5->8) */
   int n = 1;

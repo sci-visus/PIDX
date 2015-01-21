@@ -37,7 +37,7 @@ struct Args
   enum Kind kind;
 
   /// global dimensions of 3D volume
-  int extents[5];
+  int64_t extents[5];
 
   /// per-process dimensions of each sub-block
   int count_local[5];

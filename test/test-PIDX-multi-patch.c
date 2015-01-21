@@ -291,12 +291,12 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
     local_box_count_point[var] = malloc(sizeof(PIDX_point) * var_patch_count[var]);
     for(p = 0 ; p < var_patch_count[var] ; p++)
     {
-      PIDX_set_point_5D((long long)var_offset[var][p][0], (long long)var_offset[var][p][1], (long long)var_offset[var][p][2], 0, 0, local_offset_point[var][p]);
-      PIDX_set_point_5D((long long)var_count[var][p][0], (long long)var_count[var][p][1], (long long)var_count[var][p][2], 1, 1, local_box_count_point[var][p]);       
+      PIDX_set_point_5D(local_offset_point[var][p], (int64_t)var_offset[var][p][0], (int64_t)var_offset[var][p][1], (int64_t)var_offset[var][p][2], 0, 0);
+      PIDX_set_point_5D(local_box_count_point[var][p], (int64_t)var_count[var][p][0], (int64_t)var_count[var][p][1], (int64_t)var_count[var][p][2], 1, 1);       
     }
   }
   
-  PIDX_set_point_5D((long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2], 1, 1, global_bounding_box);
+  PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
   
   for (ts = 0; ts < args.time_step; ts++) 
   {
@@ -328,7 +328,7 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
 	      for (j = 0; j < var_count[var][p][1]; j++)
 		for (i = 0; i < var_count[var][p][0]; i++) 
 		{
-		  long long index = (long long) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
+		  int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
 				    (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
 				    (var_count[var][p][0] * j) + i;
 		  for (spv = 0; spv < values_per_sample[var]; spv++)
@@ -385,7 +385,7 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
 	      for (j = 0; j < var_count[var][p][1]; j++)
 		for (i = 0; i < var_count[var][p][0]; i++) 
 		{
-		  long long index = (long long) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
+		  int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
 				    (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
 				    (var_count[var][p][0] * j) + i;
 		  for (spv = 0; spv < values_per_sample[var]; spv++)
@@ -441,7 +441,7 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
 	      for (j = 0; j < var_count[var][p][1]; j++)
 		for (i = 0; i < var_count[var][p][0]; i++) 
 		{
-		  long long index = (long long) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
+		  int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
 				    (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
 				    (var_count[var][p][0] * j) + i;
 		  for (spv = 0; spv < values_per_sample[var]; spv++)

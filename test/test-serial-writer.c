@@ -45,9 +45,9 @@ int serial_writer(struct Args args)
   //PIDX_create_point(&local_offset_point);
   //PIDX_create_point(&local_box_count_point);
   
-  PIDX_set_point_5D(args.extents[0], args.extents[1], args.extents[2], 1, 1, global_bounding_box);
-  PIDX_set_point_5D(0, 0, 0, 0, 0, local_offset_point);
-  PIDX_set_point_5D(args.extents[0], args.extents[1], args.extents[2], 1, 1, local_box_count_point);
+  PIDX_set_point_5D(global_bounding_box, args.extents[0], args.extents[1], args.extents[2], 1, 1);
+  PIDX_set_point_5D(local_offset_point, 0, 0, 0, 0, 0);
+  PIDX_set_point_5D(local_box_count_point, args.extents[0], args.extents[1], args.extents[2], 1, 1);
   
   output_file = args.output_file_name;
     
@@ -58,7 +58,7 @@ int serial_writer(struct Args args)
       for (j = 0; j < args.extents[1]; j++)
 	for (i = 0; i < args.extents[0]; i++) 
 	{
-	  long long index = (long long) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
+	  int64_t index = (int64_t) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
 	  for (spv = 0; spv < sample_count; spv++)
 	    var1_double_scalar_data[index * sample_count + spv] = (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
 	}

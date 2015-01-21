@@ -220,7 +220,7 @@ int main(int argc, char **argv) {
                 for (j = 0; j < count[1]; j++)
                     for (i = 0; i < count[0]; i++) 
                     {
-                        long long index = (long long) (count[0] * count[1] * k) + (count[0] * j) + i;
+                        int64_t index = (int64_t) (count[0] * count[1] * k) + (count[0] * j) + i;
                         for (spv = 0; spv < sample_per_variable_buffer[vc]; spv++) 
                                 write_data[vc][index * sample_per_variable_buffer[vc] + spv] = 100 + spv + (extents[0] * extents[1]*(offset[2] + k))+(extents[0]*(offset[1] + j)) + (offset[0] + i);
                     }
@@ -811,7 +811,7 @@ int main(int argc, char **argv) {
                 for (k = 0; k < count[2]; k++)
             for (j = 0; j < count[1]; j++)
                 for (i = 0; i < count[0]; i++) {
-                    long long index = (long long) (count[0] * count[1] * k) + (count[0] * j) + i;
+                    int64_t index = (int64_t) (count[0] * count[1] * k) + (count[0] * j) + i;
                     for (spv = 0; spv < sample_per_variable_buffer[vc]; spv++){
                         //write_data[vc][index * sample_per_variable_buffer[vc] + spv] = 100 + spv + (extents[0] * extents[1]*(offset[2] + k))+(extents[0]*(offset[1] + j)) + (offset[0] + i);
                         //if(vc == 0)
@@ -824,7 +824,7 @@ int main(int argc, char **argv) {
                 for (k = 0; k < count[2]; k++)
                     for (j = 0; j < count[1]; j++)
                         for (i = 0; i < count[0]; i++) {
-                            long long index = (long long) (count[0] * count[1] * k) + (count[0] * j) + i;
+                            int64_t index = (int64_t) (count[0] * count[1] * k) + (count[0] * j) + i;
                             for (spv = 0; spv < sample_per_variable_buffer[vc]; spv++) {
                                 if ((int) write_data[vc][index * sample_per_variable_buffer[vc] + spv] != 100 + spv + (extents[0] * extents[1]*(offset[2] + k))+(extents[0]*(offset[1] + j)) + (offset[0] + i)) {
                                     printf("[%d] SCREAM!!!!!!!! : %d : %d\n", vc, (int) write_data[vc][index * sample_per_variable_buffer[vc] + spv], (100 + spv + (extents[0] * extents[1]*(offset[2] + k))+(extents[0]*(offset[1] + j)) + (offset[0] + i)));
@@ -851,7 +851,7 @@ int main(int argc, char **argv) {
         write_data = 0;
     }
     double max_time = 0, total_time = 0;
-    long long total_data = 0;
+    int64_t total_data = 0;
     int var = 0, sample_sum = 0;
     for (var = 0; var < number_of_variables; var++) {
         sample_sum = sample_sum + sample_per_variable_buffer[var];
@@ -874,7 +874,7 @@ int main(int argc, char **argv) {
                         (var3_io_end[ts] - var3_io_start[ts]), 
                         (var4_io_end[ts] - var4_io_start[ts]), 
                         (close_end[ts] - close_start[ts]), 
-                        gextent[0], gextent[1], gextent[2], sample_sum, (float) ((long long)total_data / (1024 * 1024 * max_time)));
+                        gextent[0], gextent[1], gextent[2], sample_sum, (float) ((int64_t)total_data / (1024 * 1024 * max_time)));
             else
                 printf("[R] [Rank %d Nproc %d] [Time Step %d] [Total Time : %2.4f [%2.4f = %2.4f + %2.4f] = %2.4f + [%2.4f + %2.4f]  + [%2.4f  + %2.4f]  + [%2.4f + %2.4f]  + [%2.4f  + %2.4f] + %2.4f] [Total Volume %d x %d x %d x %d] [Throughput %2.4f MiB/sec]\n", 
                         rank, nprocs, ts, max_time, 
@@ -887,7 +887,7 @@ int main(int argc, char **argv) {
                         (var3_rst_end[ts] - var3_rst_start[ts]), (var3_io_end[ts] - var3_io_start[ts]), 
                         (var4_rst_end[ts] - var4_rst_start[ts]), (var4_io_end[ts] - var4_io_start[ts]), 
                         (close_end[ts] - close_start[ts]), 
-                        gextent[0], gextent[1], gextent[2], sample_sum, (float) ((long long)total_data / (1024 * 1024 * max_time)));
+                        gextent[0], gextent[1], gextent[2], sample_sum, (float) ((int64_t)total_data / (1024 * 1024 * max_time)));
         }
     }
 

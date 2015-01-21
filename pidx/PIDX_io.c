@@ -40,11 +40,11 @@ struct PIDX_io_struct
   int end_var_index;
 };
 
-static int write_read_samples(PIDX_io_id io_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, long long buffer_offset, int MODE);
+static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, int MODE);
 
 //static int generate_file_name(PIDX_io_id io_id, int file_number, char* filename, int maxlen);
 
-static int write_read_samples(PIDX_io_id io_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, long long buffer_offset, int MODE)
+static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, int MODE)
 {
   int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
   int mpi_ret;
@@ -311,7 +311,7 @@ int PIDX_io_cached_data(uint32_t* cached_header)
 
 int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 {
-  long long data_offset = 0;  
+  int64_t data_offset = 0;  
   char file_name[PATH_MAX];
   int i = 0, k = 0, rank, mpi_ret;
   uint32_t *headers;
@@ -320,7 +320,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   int write_count;
   MPI_Comm agg_comm;
   MPI_Group all_group, agg_group;
-  int *ranks;
+  int *ranks = 0;
   int MPI_collective_io = 0;
   int group_count = 0;
   
@@ -570,10 +570,10 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #else
       for (k = 0; k < agg_buffer->var_number; k++) 
         for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
-          data_offset = (long long) data_offset + (long long) io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor */;
+          data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor */;
       
       for (i = 0; i < agg_buffer->sample_number; i++)
-        data_offset = (long long) data_offset + (long long) io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
+        data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
       
 #if PIDX_HAVE_MPI
       if(MODE == PIDX_WRITE)
@@ -761,8 +761,8 @@ int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable, int MO
 {
   int e1 = 0, i = 0, p = 0, var = 0, ret;
   int send_index = 0;
-  long long hz_index = 0;
-  long long index = 0, count = 0;
+  int64_t hz_index = 0;
+  int64_t index = 0, count = 0;
   
   for (p = 0; p < io_id->idx_ptr->variable[io_id->start_var_index]->patch_group_count; p++)
   {

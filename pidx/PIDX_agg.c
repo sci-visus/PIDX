@@ -76,15 +76,15 @@ int PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
 }
 #endif
 
-int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
+int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
 {
   int ret;
   int rank = 0, itr;
   int bytes_per_datatype;
   int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, values_per_sample;
   int target_rank = 0;
-  long long start_agg_index = 0, end_agg_index = 0, target_disp = 0, target_count = 0, hz_start = 0, samples_in_file = 0;
-  long long samples_per_file = (long long) agg_id->idx_derived_ptr->samples_per_block * agg_id->idx_ptr->blocks_per_file;
+  int64_t start_agg_index = 0, end_agg_index = 0, target_disp = 0, target_count = 0, hz_start = 0, samples_in_file = 0;
+  int64_t samples_per_file = (int64_t) agg_id->idx_derived_ptr->samples_per_block * agg_id->idx_ptr->blocks_per_file;
   //MPI_Aint target_disp_address;
 
 #if PIDX_HAVE_MPI
@@ -141,8 +141,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
   bytes_per_datatype = agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8;
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
   
-  start_agg_index = target_disp / (long long) (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor);
-  end_agg_index = ((target_disp + target_count - 1) / (long long) (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor));
+  start_agg_index = target_disp / (int64_t) (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor);
+  end_agg_index = ((target_disp + target_count - 1) / (int64_t) (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor));
   assert(start_agg_index >= 0 && end_agg_index >= 0 && end_agg_index >= start_agg_index);
   
   if (start_agg_index != end_agg_index)
@@ -583,7 +583,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
 {
   int i, p, e1, var, ret = 0;
   int send_index = 0;
-  long long index = 0, count = 0, hz_index = 0;
+  int64_t index = 0, count = 0, hz_index = 0;
   int variable_order = 1;
   int aggregate_lower_levels = 0;
   int existing_levels = 0;
