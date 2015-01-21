@@ -75,7 +75,7 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
       for (j = 0; j < args.count_local[1]; j++)
 	for (i = 0; i < args.count_local[0]; i++) 
 	{
-	  int64 index = (int64) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
+	  int64_t index = (int64_t) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
 	  for (spv = 0; spv < sample_count; spv++)
 	    var1_double_scalar_data[index * sample_count + spv] = (args.extents[0] * args.extents[1] * (local_offset[2] + k)) + (args.extents[0] * (local_offset[1] + j)) + (local_offset[0] + i);
 	}

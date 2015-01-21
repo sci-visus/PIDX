@@ -41,10 +41,10 @@
 struct PIDX_Ndim_box_struct
 {
   /// offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
-  int64 Ndim_box_offset[PIDX_MAX_DIMENSIONS];
+  int64_t Ndim_box_offset[PIDX_MAX_DIMENSIONS];
   
   /// size (extents) in each of the dimensions for the data chunk
-  int64 Ndim_box_size[PIDX_MAX_DIMENSIONS];
+  int64_t Ndim_box_size[PIDX_MAX_DIMENSIONS];
   
   /// the data buffer
   unsigned char* Ndim_box_buffer;
@@ -71,10 +71,10 @@ struct PIDX_Ndim_box_group_struct
   int max_box_rank;
   
   /// If restructuring used then this contains the offset of the power-two block
-  int64 enclosing_box_offset[PIDX_MAX_DIMENSIONS];
+  int64_t enclosing_box_offset[PIDX_MAX_DIMENSIONS];
   
   /// If restructuring used then this contains the extents of the power-two block
-  int64 enclosing_box_size[PIDX_MAX_DIMENSIONS];
+  int64_t enclosing_box_size[PIDX_MAX_DIMENSIONS];
 };
 typedef struct PIDX_Ndim_box_group_struct* Ndim_box_group; 
 
@@ -89,16 +89,16 @@ struct PIDX_HZ_buffer_struct
   int HZ_level_to;
   
   /// number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
-  int64 *samples_per_level;
+  int64_t *samples_per_level;
   
   /// Starting HZ index at of the data at all the HZ levels
-  int64 *start_hz_index;
+  int64_t *start_hz_index;
   
   /// Ending HZ index at of the data at all the HZ levels
-  int64 *end_hz_index;
+  int64_t *end_hz_index;
   
   /// HZ indices of the data (used only when no restructuring phsae is used)
-  int64 *buffer_index;
+  int64_t *buffer_index;
   
   /// 
   int *missing_block_count_per_level;
@@ -125,7 +125,7 @@ struct PIDX_HZ_Agg_buffer_struct
   int sample_number;
   
   /// Aggregator buffer size
-  uint64 buffer_size;
+  uint64_t buffer_size;
 
   ///
   int ***rank_holder;
@@ -179,7 +179,7 @@ struct idx_file_struct
   char filename[1024];
   int bits_per_block;
   int blocks_per_file;
-  int64* global_bounds;
+  int64_t* global_bounds;
   double transform[16];
   char bitSequence[512];
   char bitPattern[512];

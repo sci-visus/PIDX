@@ -53,7 +53,7 @@ int main(int argc, char **argv)
   size_t data_length1, data_length2;
   off_t data_offset1, data_offset2;
   double *data_buffer1, *data_buffer2;
-  int64 *zero_count = 0, *non_zero_equal_count = 0, *non_zero_unequal_count = 0;
+  int64_t *zero_count = 0, *non_zero_equal_count = 0, *non_zero_unequal_count = 0;
 
   if ( argv[1] == NULL || argv[2] == NULL || argv[3] == NULL || argv[4] == NULL )
   {
@@ -78,12 +78,12 @@ int main(int argc, char **argv)
   blocks_per_file = atoi(argv[3]);
   variable_count = atoi(argv[4]);
   
-  zero_count = malloc(sizeof(int64) * variable_count);
-  non_zero_equal_count = malloc(sizeof(int64) * variable_count);
-  non_zero_unequal_count = malloc(sizeof(int64) * variable_count);
-  memset(zero_count, 0, sizeof(int64) * variable_count);
-  memset(non_zero_equal_count, 0, sizeof(int64) * variable_count);
-  memset(non_zero_unequal_count, 0, sizeof(int64) * variable_count);
+  zero_count = malloc(sizeof(int64_t) * variable_count);
+  non_zero_equal_count = malloc(sizeof(int64_t) * variable_count);
+  non_zero_unequal_count = malloc(sizeof(int64_t) * variable_count);
+  memset(zero_count, 0, sizeof(int64_t) * variable_count);
+  memset(non_zero_equal_count, 0, sizeof(int64_t) * variable_count);
+  memset(non_zero_unequal_count, 0, sizeof(int64_t) * variable_count);
   
   binheader_count = 10 + 10 * blocks_per_file * variable_count;
   binheader1 = malloc(sizeof(*binheader1)*(binheader_count));

@@ -58,7 +58,7 @@ int serial_writer(struct Args args)
       for (j = 0; j < args.extents[1]; j++)
 	for (i = 0; i < args.extents[0]; i++) 
 	{
-	  int64 index = (int64) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
+	  int64_t index = (int64_t) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
 	  for (spv = 0; spv < sample_count; spv++)
 	    var1_double_scalar_data[index * sample_count + spv] = (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
 	}
