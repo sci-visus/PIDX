@@ -147,7 +147,7 @@ int main(int argc, char **argv)
   close(fd2);
 
   for (var = 0; var < variable_count; var++ )
-    printf("[%d] Zero Equal %lld Non-Zero Equal %lld Non-Zero Non Equal %lld\n", var, zero_count[var], non_zero_equal_count[var], non_zero_unequal_count[var]);
+    printf("[%d] Zero Equal %lld Non-Zero Equal %lld Non-Zero Non Equal %lld\n", var, (long long)zero_count[var], (long long)non_zero_equal_count[var], (long long)non_zero_unequal_count[var]);
   
   return(0);
 }

@@ -81,8 +81,8 @@ int main(int argc, char **argv)
   char bitPattern[512];
   int bits_per_block;
   int samples_per_block;
-  int blocks_per_file;
-  int start_time_step, end_time_step;
+  int blocks_per_file = 0;
+  int start_time_step = 0, end_time_step = 1;
   int idx_data_offset;
   int global_bounds[PIDX_MAX_DIMENSIONS];
   int values_per_sample[MAX_VARIABLE_COUNT];
@@ -359,7 +359,7 @@ int main(int argc, char **argv)
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
               //if(var == 2 || var == 1)
-              printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, data_offset, data_size);
+              printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, (long long)data_offset, (long)data_size);
               
 #if long_buffer
               long_long_buffer = malloc(data_size);
@@ -428,7 +428,7 @@ int main(int argc, char **argv)
       }
     }
     
-    printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (int64_t) (element_count), (int64_t)lost_element_count, element_count + lost_element_count, (int64_t) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+    printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
     assert(element_count == (int64_t) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
     
   }

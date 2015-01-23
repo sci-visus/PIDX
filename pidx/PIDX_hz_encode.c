@@ -1141,16 +1141,16 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable)
   if (global_volume != (int64_t) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1)) 
   {
     if (rank == 0)
-      fprintf(stderr, "[HZ Debug FAILED!!!!] [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_derived_ptr->color, global_volume, (int64_t) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
+      fprintf(stderr, "[HZ Debug FAILED!!!!] [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_derived_ptr->color, (long long) global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
     
-    printf("[HZ]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", rank,  id->idx_derived_ptr->color, lost_element_count, element_count, (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * id->idx_ptr->global_bounds[3] * id->idx_ptr->global_bounds[4]) * (id->end_var_index - id->start_var_index + 1));
+    printf("[HZ]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", rank,  id->idx_derived_ptr->color, (long long) lost_element_count, (long long) element_count, (long long) (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * id->idx_ptr->global_bounds[3] * id->idx_ptr->global_bounds[4]) * (id->end_var_index - id->start_var_index + 1));
     
     return (-1);
   }
   else
   {
     if (rank == 0)
-      fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_derived_ptr->color, global_volume, (int64_t) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
+      fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_derived_ptr->color, (long long) global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
   }
     
   return 0;

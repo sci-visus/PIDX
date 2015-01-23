@@ -18,10 +18,12 @@
 
 #include "PIDX_inc.h"
 //#define PIDX_ACTIVE_TARGET
-#define PIDX_DUMP_AGG 0
+#define PIDX_DUMP_AGG
 //#define RANK_ORDER 1
 
+#ifdef PIDX_DUMP_AGG
 static FILE* agg_dump_fp;
+#endif
 
 struct PIDX_agg_struct 
 {
@@ -158,13 +160,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       {
 #if PIDX_PRINT_AGG
         if (rank == 0)
-          printf("[A] Count %lld Local Disp %d Target Disp %lld\n", ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp), 0, target_disp);
+          printf("[A] Count %lld Local Disp %d Target Disp %lld\n", (long long)((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp), 0, (long long)target_disp);
 #endif
           
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
         if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
         {
-          fprintf(agg_dump_fp, "[A] Target Rank %d Count %lld Local Disp %d Target Disp %lld\n", target_rank, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp), 0, target_disp);
+          fprintf(agg_dump_fp, "[A] Target Rank %d Count %lld Local Disp %d Target Disp %lld\n", target_rank, (long long)((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp), 0, (long long)target_disp);
           fflush(agg_dump_fp);
         }
 #endif
@@ -195,13 +197,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       {
 #if PIDX_PRINT_AGG
         if (rank == 0)
-          printf("[MA] Count %lld Local Disp %d Target Disp %lld\n", target_disp, 0, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp));
+          printf("[MA] Count %lld Local Disp %d Target Disp %lld\n", (long long)target_disp, 0, (long long)((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp));
 #endif
 
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
         if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
         {
-          fprintf(agg_dump_fp, "[MA] Count %lld Local Disp %d Target Disp %lld\n", target_disp, 0, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp));
+          fprintf(agg_dump_fp, "[MA] Count %lld Local Disp %d Target Disp %lld\n", (long long)((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp), 0, (long long) target_disp);
           fflush(agg_dump_fp);
         }
 #endif        
@@ -222,13 +224,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         {
 #if PIDX_PRINT_AGG
           if (rank == 0)
-            printf("[B] Count %lld Local Disp %lld Target Disp %d\n", (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+            printf("[B] Count %lld Local Disp %lld Target Disp %d\n", (long long)(samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (long long)(((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
 #endif
 
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
           if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
           {
-            fprintf(agg_dump_fp, "[B] Target Rank %d Count %lld Local Disp %lld Target Disp %d\n", (target_rank + agg_id->aggregator_interval), (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+            fprintf(agg_dump_fp, "[B] Target Rank %d Count %lld Local Disp %lld Target Disp %d\n", (target_rank + agg_id->aggregator_interval), (long long)(samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (long long)(( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
             fflush(agg_dump_fp);
           }
 #endif
@@ -260,13 +262,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         {
 #if PIDX_PRINT_AGG
           if (rank == 0)
-            printf("[MB] Count %lld Local Disp %lld Target Disp %d\n", (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+            printf("[MB] Count %lld Local Disp %lld Target Disp %d\n", (long long)(samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (long long)(((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
 #endif
 
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
           if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
           {
-            fprintf(agg_dump_fp, "[MB] Count %lld Local Disp %lld Target Disp %d\n", (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+            fprintf(agg_dump_fp, "[MB] Count %lld Local Disp %lld Target Disp %d\n", (long long)(samples_in_file / agg_id->idx_derived_ptr->aggregation_factor), (long long)(((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
             fflush(agg_dump_fp);
           }
 #endif
@@ -287,13 +289,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       {
 #if PIDX_PRINT_AGG
         if (rank == 0)
-          printf("[C] Count %lld Local Disp %lld Target Disp %d\n", (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+          printf("[C] Count %lld Local Disp %lld Target Disp %d\n", (long long)(target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (long long)(((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
 #endif
 
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
         if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
         {
-          fprintf(agg_dump_fp, "[C] Target Rank %d Count %lld Local Disp %lld Target Disp %d\n", (target_rank + agg_id->aggregator_interval), (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+          fprintf(agg_dump_fp, "[C] Target Rank %d Count %lld Local Disp %lld Target Disp %d\n", (target_rank + agg_id->aggregator_interval), (long long)(target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (long long)(((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
           fflush(agg_dump_fp);
         }
 #endif
@@ -325,13 +327,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       {
 #if PIDX_PRINT_AGG
         if (rank == 0)
-          printf("[MC] Count %lld Local Disp %lld Target Disp %d\n", (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+          printf("[MC] Count %lld Local Disp %lld Target Disp %d\n", (long long)(target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (long long)(((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
 #endif
           
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
         if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
         {
-          fprintf(agg_dump_fp, "[MC] Count %lld Local Disp %lld Target Disp %d\n", (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
+          fprintf(agg_dump_fp, "[MC] Count %lld Local Disp %lld Target Disp %d\n", (long long)(target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))), (long long)(((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))), 0);
           fflush(agg_dump_fp);
         }
 #endif
@@ -354,13 +356,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       {
 #if PIDX_PRINT_AGG
         if (rank == 0)
-          printf("[D] Count %lld Local Disp %d Target Disp %lld\n", hz_count, 0, target_disp);
+          printf("[D] Count %lld Local Disp %d Target Disp %lld\n", (long long)hz_count, 0, (long long)target_disp);
 #endif
 
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
         if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
         {
-          fprintf(agg_dump_fp, "[D] Target Rank %d Count %lld Local Disp %d Target Disp %lld\n", target_rank,  hz_count, 0, target_disp);
+          fprintf(agg_dump_fp, "[D] Target Rank %d Count %lld Local Disp %d Target Disp %lld\n", target_rank,  (long long)hz_count, 0, (long long)target_disp);
           fflush(agg_dump_fp);
         }
 #endif
@@ -392,13 +394,13 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
       {
 #if PIDX_PRINT_AGG
         if (rank == 0)
-          printf("[MD] Count %lld Local Disp %d Target Disp %lld\n", hz_count, 0, target_disp);
+          printf("[MD] Count %lld Local Disp %d Target Disp %lld\n", (long long)hz_count, 0, (long long)target_disp);
 #endif
           
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
         if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
         {
-          fprintf(agg_dump_fp, "[MD] Count %lld Local Disp %d Target Disp %lld\n", hz_count, 0, target_disp);
+          fprintf(agg_dump_fp, "[MD] Count %lld Local Disp %d Target Disp %lld\n", (long long)hz_count, 0, (long long)target_disp);
           fflush(agg_dump_fp);
         }
 #endif
@@ -562,9 +564,9 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
           agg_buffer->buffer = malloc(agg_buffer->buffer_size);
           if (agg_buffer->buffer == NULL)
           {
-            printf("[%d] [%d %d %d] : %lld (%d %d (%d/%d) %d)\n", rank, i, j, k, agg_buffer->buffer_size, agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), agg_id->idx_derived_ptr->samples_per_block, agg_id->idx_derived_ptr->aggregation_factor, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
+            printf("[%d] [%d %d %d] : %lld (%d %d (%d/%d) %d)\n", rank, i, j, k, (long long) agg_buffer->buffer_size, agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), agg_id->idx_derived_ptr->samples_per_block, agg_id->idx_derived_ptr->aggregation_factor, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
             
-            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", agg_buffer->buffer_size, __LINE__, __FILE__);
+            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_buffer->buffer_size, __LINE__, __FILE__);
             return (-1);
           }
           memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
@@ -599,7 +601,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   MPI_Comm_rank(agg_id->comm, &rank);
 #endif
 
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
   if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
   {
     char agg_file_name[1024];
@@ -869,7 +871,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
         {
           for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
           {
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
             if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
             {
               fprintf(agg_dump_fp, "Variable %d\n", var);
@@ -890,7 +892,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
                   printf("[AGG] [Color %d] [VAR %d] [HZ %d] Size %lld Send Offset %lld\n", agg_id->idx_derived_ptr->color, var, i, count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i]);
 #endif
 
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
                 if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
                 {
                   fprintf(agg_dump_fp, "[%d]: ", i);
@@ -926,7 +928,7 @@ int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int
   agg_id->idx_derived_ptr->win_free_time_end = MPI_Wtime();
 #endif
   
-#if PIDX_DUMP_AGG
+#ifdef PIDX_DUMP_AGG
   if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
   {
     fprintf(agg_dump_fp, "\n");

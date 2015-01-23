@@ -581,7 +581,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
         mpi_ret = MPI_File_write_at(fh, data_offset, agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)) , MPI_BYTE, &status);
         if (mpi_ret != MPI_SUCCESS) 
         {
-          fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", data_offset, __FILE__, __LINE__);
+          fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
           return -1;
         }
         
@@ -629,7 +629,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #endif
       
 #if PIDX_RECORD_TIME
-      printf("B. [R %d] [OS %lld %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, data_offset, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
+      printf("B. [R %d] [OS %lld %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8)), agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
 #endif
     }
   }
