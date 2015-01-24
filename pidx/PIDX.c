@@ -2101,6 +2101,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       memset(file->idx_derived_ptr->agg_level_start, 0, sizeof(*file->idx_derived_ptr->agg_level_start) * file->idx_ptr->variable[start_index]->patch_group_count);
       file->idx_derived_ptr->agg_level_end = malloc(sizeof(*file->idx_derived_ptr->agg_level_end) * file->idx_ptr->variable[start_index]->patch_group_count);
       memset(file->idx_derived_ptr->agg_level_end, 0, sizeof(*file->idx_derived_ptr->agg_level_end) * file->idx_ptr->variable[start_index]->patch_group_count);
+      
       for (p = 0; p < file->idx_ptr->variable[start_index]->patch_group_count; p++)
       {
         file->idx_derived_ptr->agg_level_start[p] = malloc(sizeof(*file->idx_derived_ptr->agg_level_start[p]) * (end_index - start_index + 1));
@@ -2339,7 +2340,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
   double total_time = sim_end - sim_start;
   double max_time = total_time;
-  int sample_sum = 0, var = 0, i = 0, rank = 0, nprocs = 1;
+  int sample_sum = 0, var = 0, i = 0, p =0, rank = 0, nprocs = 1;
   
 #if PIDX_HAVE_MPI
   MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
@@ -2386,7 +2387,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
         fprintf(stdout, "----------------------------------------VG %d (END)-------------------------------------\n", var);
       }
       
-      int p;
       double total_agg_time = 0, all_time = 0;
       for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
         for (var = 0; var < file->idx_ptr->variable_count; var++)
@@ -2398,6 +2398,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       
       all_time = total_agg_time + (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start) + (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start);
       printf("Total Agg Time %f = [Network + Win_Create + Win_free] %f + %f + %f\n", all_time, total_agg_time, (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start), (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start));
+      
 
       fprintf(stdout, "=======================================================================================\n");
     }
@@ -2412,7 +2413,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     if (max_time == total_time)
       fprintf(stdout, "[EXTRA INFO] %d %s Time %f Seconds Throughput %f MB/sec\n", file->idx_ptr->current_time_step, file->idx_ptr->filename, max_time, (float) total_data / (1000 * 1000 * max_time));
     
-    int global_rank, global_nprocs;
+    int global_rank = 0, global_nprocs = 1;
     double global_max_time = 0;
     MPI_Allreduce(&max_time, &global_max_time, 1, MPI_DOUBLE, MPI_MAX, file->global_comm);
     MPI_Comm_rank(file->global_comm, &global_rank);
@@ -2454,8 +2455,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     }
     
   }
-  
-  int p;
+  /*
   for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
   {
     for(var = 0; var < file->idx_ptr->variable_count; var++)
@@ -2469,7 +2469,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   }
   free(file->idx_derived_ptr->agg_level_start);
   free(file->idx_derived_ptr->agg_level_end);
-  
+  */
   vp = 0;
   hp = 0;
   
