@@ -108,4 +108,3 @@ extern PIDX_data_layout PIDX_row_major;
 extern PIDX_data_layout PIDX_column_major;
 
 #endif
-
