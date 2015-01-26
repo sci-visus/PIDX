@@ -42,21 +42,21 @@
 #define PGET(_Point_,_Coordinate_) ((&((_Point_).x))[(_Coordinate_)])
 
 typedef struct {int x,y,z,u,v;} PointND;
-struct block_layout
+struct block_layout_struct
 {
   int    levels;                          // Total number of Levels
   int    *hz_block_count_array;           // Number of filled blocks per level
   int    ** hz_block_number_array;        // Indices of filled blocks
 };
-typedef struct block_layout block_layout;
+typedef struct block_layout_struct* block_layout;
 
 static void revstr(char* str);
 static void GuessBitmaskPattern(char* _bits, PointND dims);
 static int generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template);
 static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen);
-static int is_block_present(int block_number, block_layout* layout);
-static void destroyBlockBitmap(block_layout* layout);
-static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout* layout);
+static int is_block_present(int block_number, block_layout layout);
+static void destroyBlockBitmap(block_layout layout);
+static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout layout);
 static int VisusSplitFilename(const char* filename,char* dirname,char* basename);
 static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz);
 static int RegExBitmaskBit(const char* bitmask_pattern,int N);
@@ -228,8 +228,8 @@ int main(int argc, char **argv)
       if(var != variable_count - 1)
 	printf(" + \n");
   }
-  printf("(bitsperblock)\n%d\n(blocksperfile)\n%d\n", bits_per_block, blocks_per_file);
-  printf("(filename_template)\n%s\n", filename_template);
+  printf("\n(bitsperblock)\n%d\n(blocksperfile)\n%d\n", bits_per_block, blocks_per_file);
+  printf("(filename)\n%s\n", argv[1]);
     
   
   int bounding_box[2][5] = {
@@ -255,7 +255,9 @@ int main(int argc, char **argv)
   for (i = 0; i <= maxh; i++)
     bitPattern[i] = RegExBitmaskBit(bitSequence, i);
 
-  block_layout* global_block_layout =  malloc(sizeof (global_block_layout));
+  block_layout global_block_layout =  malloc(sizeof (*global_block_layout));
+  memset(global_block_layout, 0, sizeof (*global_block_layout));
+  
   createBlockBitmap(bounding_box, blocks_per_file, bits_per_block, maxh, bitPattern, global_block_layout);
   
   k = 1;
@@ -716,7 +718,7 @@ static void GuessBitmaskPattern(char* _bits, PointND dims)
   //strrev(_bits+1)
 }
 
-static int is_block_present(int block_number, block_layout* layout)
+static int is_block_present(int block_number, block_layout layout)
 {
   long i, j;
   
@@ -732,7 +734,7 @@ static int is_block_present(int block_number, block_layout* layout)
 }
 
 
-static void destroyBlockBitmap(block_layout* layout)
+static void destroyBlockBitmap(block_layout layout)
 {
   int j = 0;
   free(layout->hz_block_count_array);
@@ -746,7 +748,7 @@ static void destroyBlockBitmap(block_layout* layout)
   layout->levels = 0;
 }
 
-static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout* layout)
+static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout layout)
 {
   int64_t hz_from = 0, hz_to = 0, block_number = 1;
   int i, j, m, n_blocks = 1, ctr = 1;
