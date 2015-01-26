@@ -1058,7 +1058,7 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
   }
   
   file->idx_derived_ptr->global_block_layout =  malloc(sizeof (*file->idx_derived_ptr->global_block_layout));
-  createBlockBitmap(bounding_box, file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->maxh, file->idx_ptr->bitPattern, file->idx_derived_ptr->global_block_layout);
+  PIDX_blocks_create_layout(bounding_box, file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->maxh, file->idx_ptr->bitPattern, file->idx_derived_ptr->global_block_layout);
   
   int k = 1;
   for (i = 1; i < (file->idx_derived_ptr->global_block_layout->levels); i++)
@@ -1074,7 +1074,7 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
     }
     k = k * 2;
   }
-  
+    
   int *temp_file_index = malloc(sizeof(int) * (file->idx_derived_ptr->max_file_count));
   memset(temp_file_index, 0, sizeof(int) * (file->idx_derived_ptr->max_file_count));
   
@@ -1095,6 +1095,8 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
       file->idx_derived_ptr->existing_blocks_index_per_file[file_number]++;
     }
   }
+  
+  PIDX_blocks_print_layout(file->idx_derived_ptr->global_block_layout);
   
   file->idx_derived_ptr->existing_file_count = 0;
   for (i = 0; i < file->idx_derived_ptr->max_file_count; i++)
@@ -1547,10 +1549,9 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
   for (i = 0; i < file->idx_ptr->blocks_per_file; i++)
   {
     //empty_blocks = find_block_negative_offset(file->idx_ptr->blocks_per_file, ((file->idx_derived_ptr->existing_blocks_index_per_file[file->idx_derived_ptr->agg_buffer->file_number] - 1) + (file->idx_ptr->blocks_per_file * file->idx_derived_ptr->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout);
-    
-    if (is_block_present((i + (file->idx_ptr->blocks_per_file * file->idx_derived_ptr->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout))
+    if (PIDX_blocks_is_block_present((i + (file->idx_ptr->blocks_per_file * file->idx_derived_ptr->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout))
     {
-      block_negative_offset = find_block_negative_offset(file->idx_ptr->blocks_per_file, (i + (file->idx_ptr->blocks_per_file * file->idx_derived_ptr->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout);
+      block_negative_offset = PIDX_blocks_find_negative_offset(file->idx_ptr->blocks_per_file, (i + (file->idx_ptr->blocks_per_file * file->idx_derived_ptr->agg_buffer->file_number)), file->idx_derived_ptr->global_block_layout);
       
       for (j = 0; j < file->idx_ptr->variable_count; j++)
       {
@@ -2535,7 +2536,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_derived_ptr->existing_blocks_index_per_file);
   file->idx_derived_ptr->existing_blocks_index_per_file = 0;
   
-  destroyBlockBitmap(file->idx_derived_ptr->global_block_layout);
+  PIDX_blocks_free_layout(file->idx_derived_ptr->global_block_layout);
   free(file->idx_derived_ptr->global_block_layout);
   file->idx_derived_ptr->global_block_layout = 0;
 #endif

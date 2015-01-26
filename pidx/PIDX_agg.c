@@ -106,14 +106,14 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 
   //number of empty blocks befor block "block_no" in the file "file_no"
 #ifdef PIDX_VAR_SLOW_LOOP
-  negative_block_offset = find_block_negative_offset(agg_id->idx_ptr->blocks_per_file, block_no, agg_id->idx_ptr->variable[variable_index]->VAR_global_block_layout);
+  negative_block_offset = PIDX_blocks_find_negative_offset(agg_id->idx_ptr->blocks_per_file, block_no, agg_id->idx_ptr->variable[variable_index]->VAR_global_block_layout);
   assert(negative_block_offset >= 0);
   
   //number of samples in file "file_no"
   samples_in_file = agg_id->idx_ptr->variable[variable_index]->VAR_blocks_per_file[file_no] * agg_id->idx_derived_ptr->samples_per_block;
   assert(samples_in_file <= samples_per_file);
 #else
-  negative_block_offset = find_block_negative_offset(agg_id->idx_ptr->blocks_per_file, block_no, agg_id->idx_derived_ptr->global_block_layout);
+  negative_block_offset = PIDX_blocks_find_negative_offset(agg_id->idx_ptr->blocks_per_file, block_no, agg_id->idx_derived_ptr->global_block_layout);
   assert(negative_block_offset >= 0);
   
   //number of samples in file "file_no"

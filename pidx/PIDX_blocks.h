@@ -19,28 +19,39 @@
 #ifndef __PIDX_BLOCKS_H
 #define __PIDX_BLOCKS_H
 
-struct block_layout
-{
-  int    levels;                          // Total number of Levels
-  int    *hz_block_count_array;           // Number of filled blocks per level
-  int    ** hz_block_number_array;        // Indices of filled blocks
-};
-typedef struct block_layout block_layout;
-
-
 extern const int PIDX_default_bits_per_block;
 extern const int PIDX_default_blocks_per_file;
 
-int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout* layout);
 
-int initialize_block_layout(block_layout* layout, int maxh, int bits_per_block);
+struct PIDX_block_layout_struct
+{
+  int levels;                          // Total number of Levels
+  int *hz_block_count_array;           // Number of filled blocks per level
+  int ** hz_block_number_array;        // Indices of filled blocks
+};
+typedef struct PIDX_block_layout_struct* PIDX_block_layout;
 
-void print_block_layout(block_layout* layout);
+///
+int PIDX_blocks_initialize_layout(PIDX_block_layout layout, int maxh, int bits_per_block);
 
-int find_block_negative_offset(int blocks_per_file, int block_number, block_layout* layout );
 
-int is_block_present(int block_number, block_layout* layout);
+///
+int PIDX_blocks_create_layout(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, PIDX_block_layout layout);
 
-void destroyBlockBitmap(block_layout* layout);
+
+///
+void PIDX_blocks_print_layout(PIDX_block_layout layout);
+
+
+///
+int PIDX_blocks_is_block_present(int block_number, PIDX_block_layout layout);
+
+
+///
+int PIDX_blocks_find_negative_offset(int blocks_per_file, int block_number, PIDX_block_layout layout );
+
+
+///
+void PIDX_blocks_free_layout(PIDX_block_layout layout);
 
 #endif

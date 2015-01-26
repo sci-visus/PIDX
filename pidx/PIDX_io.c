@@ -112,9 +112,9 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
     data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
     
 #ifdef PIDX_VAR_SLOW_LOOP
-    block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_ptr->variable[variable_index]->VAR_global_block_layout);
+    block_negative_offset = PIDX_blocks_find_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_ptr->variable[variable_index]->VAR_global_block_layout);
 #else
-    block_negative_offset = find_block_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_derived_ptr->global_block_layout);
+    block_negative_offset = PIDX_blocks_find_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_derived_ptr->global_block_layout);
 #endif
       
     data_offset -= block_negative_offset * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[variable_index]->values_per_sample;
@@ -124,7 +124,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
     {
       bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
       for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
-        if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[l]->VAR_global_block_layout))
+        if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[l]->VAR_global_block_layout))
           data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
     }
 #else
@@ -132,7 +132,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
     {
       bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
       for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
-        if (is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_derived_ptr->global_block_layout))
+        if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_derived_ptr->global_block_layout))
           data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
     }
 #endif

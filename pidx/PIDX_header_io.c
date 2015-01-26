@@ -353,7 +353,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
     {
       for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
       {
-        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
+        if (PIDX_blocks_is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
         {
           first_block = i;
           break;
@@ -363,9 +363,9 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
       initial_offset = 0;
       for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
       {
-        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
+        if (PIDX_blocks_is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout))
         {
-          block_negative_offset = find_block_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout);
+          block_negative_offset = PIDX_blocks_find_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_ptr->variable[n]->VAR_global_block_layout);
           if (n == 0) 
           {
             block_limit = i - block_negative_offset;
@@ -420,7 +420,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
     {
       for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
       {
-        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout))
+        if (PIDX_blocks_is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout))
         {
           first_block = i;
           break;
@@ -430,9 +430,9 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
       initial_offset = 0;
       for (i = 0; i < header_io_id->idx_ptr->blocks_per_file; i++) 
       {
-        if (is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout))
+        if (PIDX_blocks_is_block_present((i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout))
         {
-          block_negative_offset = find_block_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout);
+          block_negative_offset = PIDX_blocks_find_negative_offset(header_io_id->idx_ptr->blocks_per_file, (i + (header_io_id->idx_ptr->blocks_per_file * file_number)), header_io_id->idx_derived_ptr->global_block_layout);
           if (n == 0) 
           {
             block_limit = i - block_negative_offset;

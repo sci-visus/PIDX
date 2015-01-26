@@ -281,7 +281,7 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
           for(b = start_block_no; b <= end_block_no; b++)
           {
 #ifdef PIDX_VAR_SLOW_LOOP
-            if (is_block_present(b, id->idx_ptr->variable[id->start_var_index]->VAR_global_block_layout) == 0)
+            if (PIDX_blocks_is_block_present(b, id->idx_ptr->variable[id->start_var_index]->VAR_global_block_layout) == 0)
             {
               //printf("[%d] missing blocks == %d\n", j, b);
               variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
@@ -289,7 +289,7 @@ int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable)
               count++;
             }
 #else
-            if (is_block_present(b, id->idx_derived_ptr->global_block_layout) == 0)
+            if (PIDX_blocks_is_block_present(b, id->idx_derived_ptr->global_block_layout) == 0)
             {
               variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
               variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
