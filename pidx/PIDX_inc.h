@@ -3,8 +3,9 @@
 
 #include "PIDX_config.h"
 
-#ifdef BLUEGENEP
+#ifdef __bg__
   #define _XOPEN_SOURCE 600
+  #define _GNU_SOURCE
 #endif
 
 #include <string.h>
