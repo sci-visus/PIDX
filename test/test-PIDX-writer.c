@@ -446,5 +446,3 @@ void usage_writer(void)
   printf("\n");
   return;
 }
-
-
