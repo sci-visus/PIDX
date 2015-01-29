@@ -179,8 +179,7 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
   return 0;
 }
 
-
-
+///
 int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
 {
   int i = 0, rank = 0, nprocs = 1, j, ret;

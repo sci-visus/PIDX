@@ -1096,7 +1096,7 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
     }
   }
   
-  PIDX_blocks_print_layout(file->idx_derived_ptr->global_block_layout);
+  //PIDX_blocks_print_layout(file->idx_derived_ptr->global_block_layout);
   
   file->idx_derived_ptr->existing_file_count = 0;
   for (i = 0; i < file->idx_derived_ptr->max_file_count; i++)
@@ -1736,7 +1736,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
 #ifdef PIDX_VAR_SLOW_LOOP
   
   int start_index = 0, end_index = 0;
-  file->variable_pipelining_factor = 7;
+  file->variable_pipelining_factor = 15;
   for (start_index = file->local_variable_index; start_index < file->local_variable_index + file->local_variable_count; start_index = start_index + (file->variable_pipelining_factor + 1))
   {
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
@@ -1954,7 +1954,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
 #else
   
   int start_index = 0, end_index = 0;
-  file->variable_pipelining_factor = 7;
+  file->variable_pipelining_factor = 15;
   for (start_index = file->local_variable_index; start_index < file->local_variable_index + file->local_variable_count; start_index = start_index + (file->variable_pipelining_factor + 1))
   {
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
@@ -2388,6 +2388,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
         fprintf(stdout, "----------------------------------------VG %d (END)-------------------------------------\n", var);
       }
       
+      /*
       double total_agg_time = 0, all_time = 0;
       for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
         for (var = 0; var < file->idx_ptr->variable_count; var++)
@@ -2399,7 +2400,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       
       all_time = total_agg_time + (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start) + (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start);
       printf("Total Agg Time %f = [Network + Win_Create + Win_free] %f + %f + %f\n", all_time, total_agg_time, (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start), (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start));
-      
+      */
 
       fprintf(stdout, "=======================================================================================\n");
     }

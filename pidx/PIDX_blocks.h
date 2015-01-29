@@ -22,14 +22,19 @@
 extern const int PIDX_default_bits_per_block;
 extern const int PIDX_default_blocks_per_file;
 
-
 struct PIDX_block_layout_struct
 {
-  int levels;                          // Total number of Levels
-  int *hz_block_count_array;           // Number of filled blocks per level
-  int ** hz_block_number_array;        // Indices of filled blocks
+  /// Total number of Levels
+  int levels;           
+  
+  /// Number of filled blocks per level
+  int *hz_block_count_array;
+  
+  /// Indices of filled blocks
+  int ** hz_block_number_array;
 };
 typedef struct PIDX_block_layout_struct* PIDX_block_layout;
+
 
 ///
 int PIDX_blocks_initialize_layout(PIDX_block_layout layout, int maxh, int bits_per_block);
