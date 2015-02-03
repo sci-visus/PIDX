@@ -24,11 +24,11 @@
 #define PIDX_IO
 
 #define PIDX_IO
-#include <PIDX.h>
+  #include <PIDX.h>
 #endif
 
 #ifdef HDF_IO
-#include "hdf5.h"
+  #include "hdf5.h"
 #endif
 
 static char *output_file_name;
@@ -123,11 +123,11 @@ int main(int argc, char **argv)
   offset[2] = local_offset[2];
 #endif
   
-  // P
-  // U
-  // V
-  // W
-  // ZMIX
+  /// P
+  /// U
+  /// V
+  /// W
+  /// ZMIX
   
 #ifdef HDF_IO
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
