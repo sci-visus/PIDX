@@ -39,6 +39,16 @@ int main(int argc, char **argv)
   int sub_div[3], local_offset[3], count_local[3];
   int t = 0, time_count = 0;
   
+  sub_div[0] = 0;
+  sub_div[1] = 0;
+  sub_div[2] = 0;
+  local_offset[0] = 0;
+  local_offset[1] = 0;
+  local_offset[2] = 0;
+  count_local[0] = 0;
+  count_local[1] = 0;
+  count_local[2] = 0;
+  
 #if HDF_IO
   hid_t file_id;
   hid_t plist_id;     
