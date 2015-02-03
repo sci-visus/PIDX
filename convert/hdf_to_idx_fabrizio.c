@@ -161,7 +161,7 @@ int main(int argc, char **argv)
     PIDX_debug_hz(file, 0);
     PIDX_dump_agg_info(file, 0);
     
-    PIDX_enable_hz(file, 1;
+    PIDX_enable_hz(file, 1);
     PIDX_enable_agg(file, 1);
     PIDX_enable_io(file, 1);
     
