@@ -36,7 +36,11 @@ struct PIDX_block_layout_struct
 typedef struct PIDX_block_layout_struct* PIDX_block_layout;
 
 
-///
+/// Initialize the block layout structure.
+/// \param  layout create block layout
+/// \param maxh  maximum HZ levels
+/// \param bits_per_block  block size = pow (2, bits_per_block)
+/// \return Error code
 int PIDX_blocks_initialize_layout(PIDX_block_layout layout, int maxh, int bits_per_block);
 
 
