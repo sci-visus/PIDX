@@ -218,7 +218,7 @@ int main(int argc, char **argv)
     PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, buffer, PIDX_column_major);
     
     if (rank == 0)
-      printf("Starting to Write IDX %s Time Step %d\n", output_file_name t);
+      printf("Starting to Write IDX %s Time Step %d\n", output_file_name, t);
     
     PIDX_close(file);
 #endif
