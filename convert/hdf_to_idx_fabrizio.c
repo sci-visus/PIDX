@@ -23,7 +23,7 @@
 #define HDF_IO 1
 #define PIDX_IO 1
 
-#define PIDX_IO
+#if PIDX_IO
   #include <PIDX.h>
 #endif
 
