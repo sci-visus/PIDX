@@ -16,5 +16,6 @@
 # **                                                 **
 # *****************************************************/
 
-# In Parallel Build Mode
-mpirun -n 8 ./pidxtest -k parallel -g 66x66x66 -l 33x33x33 -f Filename -t 1
+# In Serial Build Mode
+# For serial Build disable MPI during cmake (-DENABLE_MPI=OFF)
+./pidxtest -k serial -g 66x66x66 -l 66x66x66 -f Filename -t 1
