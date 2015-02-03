@@ -152,8 +152,18 @@ int main(int argc, char **argv)
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);
     PIDX_set_block_size(file, bits_per_block);
+    PIDX_set_aggregation_factor(file, 1);
     PIDX_set_block_count(file, blocks_per_file);
     PIDX_set_variable_count(file, 1);
+    
+    PIDX_debug_rst(file, 0);
+    PIDX_debug_hz(file, 0);
+    PIDX_dump_agg_info(file, 0);
+    
+    PIDX_enable_hz(file, 1;
+    PIDX_enable_agg(file, 1);
+    PIDX_enable_io(file, 1);
+    
     
 #if HDF_IO
     group_id = H5Gopen(file_id, "/data", H5P_DEFAULT);
