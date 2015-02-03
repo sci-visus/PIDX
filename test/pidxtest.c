@@ -32,55 +32,65 @@
 #endif
 
 
-/*usage*/
+/// usage
 static void usage(enum Kind kind) 
 {
   printf("Usage for pidxtest -k %s:\n\n",kindToStr(kind));
 
   switch (kind)
   {
-  case SERIAL_WRITER:                      usage_serial();              break;
-  case PARALLEL_WRITER:                    usage_multi_var_writer();    break;
-  case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
-  case SERIAL_READER:                      usage_reader();              break;
-  case PARALLEL_READER:                    usage_reader();              break;
+  //case SERIAL_WRITER:                      usage_serial();              break;
+  case PARALLEL_WRITER:                    usage_multi_idx_writer();    break;
+  //case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
+  //case SERIAL_READER:                      usage_reader();              break;
+  //case PARALLEL_READER:                    usage_reader();              break;
   case DEFAULT:
-  default:                                 usage_multi_var_writer();
+  default:                                 usage_multi_idx_writer();
   }
 }
 
-/*main*/
+/// main
 int main(int argc, char **argv) 
 {
-  int ret, nprocs = 1, rank = 0;   /* process count and rank */
-  struct Args args;        /* initialize args */
+  int ret, nprocs = 1, rank = 0;
+  struct Args args;
 
 #if PIDX_HAVE_MPI
-  /*MPI initialization*/
+  /// MPI initialization
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
-  /* Rank 0 parses the command line arguments */
+  
+  /// Rank 0 parses the command line arguments
   if (rank == 0) 
   {
     ret = parse_args(&args, argc, argv);
     if (ret < 0) 
     {
       usage(args.kind);
-      print_error("ret error", __FILE__, __LINE__);
+      fprintf(stderr, "File [%s] Line [%d] Error [usage]\n", __FILE__, __LINE__);
+#if PIDX_HAVE_MPI
+      MPI_Abort(MPI_COMM_WORLD, -1);
+#endif
     }
     if (args.count_local[0] == 0 || args.count_local[1] == 0 || args.count_local[2] == 0) 
     {
       usage(args.kind);
-      print_error("Local Dimension cannot be 0", __FILE__, __LINE__);
+      fprintf(stderr, "File [%s] Line [%d] Error [Local Dimension cannot be 0]\n", __FILE__, __LINE__);
+#if PIDX_HAVE_MPI
+      MPI_Abort(MPI_COMM_WORLD, -1);
+#endif
     } 
     else 
     {
       if ((args.extents[0] / args.count_local[0]) * (args.extents[1] / args.count_local[1]) * (args.extents[2] / args.count_local[2]) != nprocs) 
       {
 	usage(args.kind);
-	print_error("Wrong Number of Processes\n", __FILE__, __LINE__);
+        fprintf(stderr, "File [%s] Line [%d] Error [Wrong Number of Processes]\n", __FILE__, __LINE__);
+#if PIDX_HAVE_MPI
+        MPI_Abort(MPI_COMM_WORLD, -1);
+#endif
       }
     }
   }
@@ -89,9 +99,10 @@ int main(int argc, char **argv)
   MPI_Bcast(&args.kind, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
   
-  /* run the specified test */
+  /// run the specified test
   switch (args.kind)
   {
+    /*
     case PARALLEL_READER:
       if(rank == 0)
 	printf("Performing Parallel Read....\n");
@@ -103,13 +114,13 @@ int main(int argc, char **argv)
 	printf("Performing Serial Read....\n");
       //serial_reader(args);
       break;
-    
+    */
     case PARALLEL_WRITER:
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
       test_multi_idx_writer(args, rank, nprocs);
       break;
-      
+    /*  
     case PARALLEL_MULTI_PATCH_WRITER:
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
@@ -121,9 +132,9 @@ int main(int argc, char **argv)
 	printf("Performing Serial Write....\n");
       serial_writer(args);
       break;
-    
+    */
     default:
-      test_multi_var_writer(args, rank, nprocs);
+      test_multi_idx_writer(args, rank, nprocs);
   }
   
 #if PIDX_HAVE_MPI
@@ -227,17 +238,8 @@ int parse_args(struct Args *args, int argc, char **argv)
   return (0);
 }
 
-/*print_error*/
-int print_error(char *error_message, char* file, int line) 
-{
-  fprintf(stderr, "File [%s] Line [%d] Error [%s]\n", error_message, line, file);
-#if PIDX_HAVE_MPI
-  MPI_Abort(MPI_COMM_WORLD, -1);
-#endif
-  return 0;
-}
 
-/*kindToStr*/
+/// kindToStr
 char* kindToStr(enum Kind k)
 {
   switch (k)
@@ -252,7 +254,7 @@ char* kindToStr(enum Kind k)
   }
 }
 
-/*strToKind*/
+/// strToKind
 enum Kind strToKind(const char *str)
 {
   if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;

@@ -20,7 +20,7 @@
 
 PIDX_return_code PIDX_create_access(PIDX_access* access)
 {
-  *access = malloc(sizeof (*(*access)));
+  *access = (PIDX_access)malloc(sizeof (*(*access)));
   memset(*access, 0, sizeof (*(*access)));
   
   (*access)->parallel = 0;

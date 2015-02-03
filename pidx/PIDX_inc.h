@@ -23,10 +23,16 @@
 #include <stdio.h>
 #include <math.h>
 
+
 #if PIDX_HAVE_MPI
   #include <mpi.h>
 #else
   #include <sys/time.h>
+#endif
+
+#if PIDX_HAVE_LOSSY_ZFP
+  #include "zfp.h"
+  #include "fpzip.h"
 #endif
 
 #ifdef __cplusplus
@@ -45,6 +51,8 @@ extern "C" {
 #include "PIDX_header_io.h"
 #include "PIDX_rst.h"
 #include "PIDX_hz_encode.h"
+#include "PIDX_box_restructure.h"
+#include "PIDX_compression.h"
 #include "PIDX_agg.h"
 #include "PIDX_io.h"
 

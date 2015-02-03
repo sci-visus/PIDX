@@ -17,6 +17,7 @@
  *****************************************************/
 
 #include "PIDX_inc.h"
+
 #define PIDX_RECORD_TIME 1
 //#define RANK_ORDER 1
 static uint32_t *cached_header_copy;
@@ -72,7 +73,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
     file_index = hz_start_index % samples_per_file;
     file_count = samples_per_file - file_index;
     
-    if (file_count > hz_count)
+    if ((int64_t)file_count > hz_count)
       file_count = hz_count;
 
     // build file name
@@ -234,10 +235,9 @@ PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata 
   io_id = (PIDX_io_id)malloc(sizeof (*io_id)); 
   memset(io_id, 0, sizeof (*io_id));
   
-  
   io_id->idx_ptr = idx_meta_data;
   io_id->idx_derived_ptr = idx_derived_ptr;
-  
+
   /*
   io_id->idx_ptr = (idx_dataset)malloc(sizeof(*(io_id->idx_ptr)));
   memcpy(io_id->idx_ptr, idx_meta_data, sizeof(*(io_id->idx_ptr)));
@@ -336,7 +336,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
   int fh;
 #endif
   
-  
   if (MPI_collective_io == 0)
   {
     if (agg_buffer->var_number == 0 && agg_buffer->sample_number == 0)
@@ -429,7 +428,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #endif
       
 #else
-      unsigned char* temp_buffer = realloc(agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
+      unsigned char* temp_buffer = (unsigned char*)realloc(agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
       
       if (temp_buffer == NULL)
       {
@@ -498,7 +497,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
 #endif
 
 #if PIDX_RECORD_TIME
-      printf("A. [R %d] [OS 0 %ld %d %ld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long int)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), (long int)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))), (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
+      printf("A. [R %d] [OS 0 %ld %ld %ld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long int)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), (long int)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))), (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
 #endif
     }
     else if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1) 
@@ -643,7 +642,7 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
     int count = 0;
     if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
     {
-      ranks = malloc(sizeof(*ranks) * (io_id->end_var_index - io_id->start_var_index + 1));
+      ranks = (int*)malloc(sizeof(*ranks) * (io_id->end_var_index - io_id->start_var_index + 1));
       for (i = io_id->start_var_index; i <= io_id->end_var_index; i++) 
       {
   #if RANK_ORDER
@@ -666,15 +665,15 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
     if (agg_buffer->var_number != -1 && agg_buffer->sample_number != -1 && agg_buffer->file_number != -1)
     {
       generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) agg_buffer->file_number, file_name, PATH_MAX);
+      
       int nprocs, nrank;
       MPI_Comm_size(agg_comm, &nprocs);
       MPI_Comm_rank(agg_comm, &nrank);
-
       //printf("[%d %d] :: %d %d\n", agg_buffer->file_number, rank, nrank, nprocs);
     
 #if PIDX_HAVE_MPI
       mpi_ret = MPI_File_open(agg_comm, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-      if (mpi_ret != MPI_SUCCESS) 
+      if (mpi_ret != MPI_SUCCESS)
       {
         fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
         return -1;
@@ -693,11 +692,12 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
         if (enable_caching == 1)
           memcpy (headers, cached_header_copy, total_header_size);
         
-        unsigned char* temp_buffer = realloc(agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
+        unsigned char* temp_buffer = (unsigned char*)realloc(agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (io_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
         
         if (temp_buffer == NULL)
         {
-          ;
+          fprintf(stderr, "[%s] [%d] realloc failed\n", __FILE__, __LINE__);
+          return -1;
         }
         else
         {
@@ -738,7 +738,6 @@ int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE)
         }
       }
 #endif
-      
 
 #if PIDX_HAVE_MPI
       mpi_ret = MPI_File_close(&fh);

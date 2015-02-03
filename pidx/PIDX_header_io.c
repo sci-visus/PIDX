@@ -48,7 +48,7 @@ PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data,
   PIDX_header_io_id header_io_id;
 
   //Creating the IO ID
-  header_io_id = malloc(sizeof (*header_io_id));
+  header_io_id = (PIDX_header_io_id)malloc(sizeof (*header_io_id));
   if (!header_io_id) 
     memset(header_io_id, 0, sizeof (*header_io_id));
   
@@ -235,7 +235,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
             strcpy(last_path, this_path);
             memset(tmp_path, 0, PATH_MAX * sizeof (char));
             //walk up path and mkdir each segment 
-            for (j = 0; j < strlen(this_path); j++) 
+            for (j = 0; j < (int)strlen(this_path); j++) 
             {
               if (j > 0 && this_path[j] == '/') 
               {

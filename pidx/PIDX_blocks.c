@@ -111,8 +111,8 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int 
       hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
       hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
       
-      ZYX_to = malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-      ZYX_from = malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+      ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+      ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       
       Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
       Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);

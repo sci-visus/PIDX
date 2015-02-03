@@ -40,17 +40,15 @@ PIDX_rst_id PIDX_rst_init( MPI_Comm comm, idx_dataset idx_meta_data, idx_dataset
 
 int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box_dim);
 
-/* actually do the restructuring, using pre-calculated data associated with the id */
-//int PIDX_rst_restructure(PIDX_rst_id rst_id, int samples_per_variable, MPI_Datatype datatype, Ndim_buffer* in_buf, Ndim_buffer* out_buf_array, int num_output_buffers);
+/// actually do the restructuring, using pre-calculated data associated with the id
 int PIDX_rst_restructure(PIDX_rst_id rst_id, PIDX_variable* variable);
 
 int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, PIDX_variable* variable, int MODE);
-//int PIDX_rst_restructure_IO(PIDX_rst_id rst_id, Ndim_buffer* in_buf, Ndim_buffer* out_buf_array, int num_output_buffers);
   
-/* tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well */
+/// tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well
 int PIDX_rst_buf_destroy(PIDX_rst_id rst_id);
 
-/* tear down whatever was calculated for this particular combination of dimensions and bounds */ 
+/// tear down whatever was calculated for this particular combination of dimensions and bounds
 int PIDX_rst_finalize(PIDX_rst_id id);  
 
 int64_t* PIDX_rst_get_box_dimension(PIDX_rst_id id);

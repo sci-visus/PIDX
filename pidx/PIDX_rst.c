@@ -53,7 +53,7 @@ struct PIDX_rst_struct
   //dimension of the power-two volume imposed box
   int64_t power_two_box_size[PIDX_MAX_DIMENSIONS];
   int power_two_box_group_count;
-  Ndim_box_group *power_two_box_group;
+  Ndim_box_group* power_two_box_group;
 };
 
 /// Function to check if NDimensional data chunks A and B intersects
@@ -177,7 +177,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   /// creating rank_r_count and rank_r_offset to hold the offset and count of every process
   rst_id->power_two_box_group_count = 0;
 
-  rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
+  rank_r_offset = (int64_t*)malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
   if (!rank_r_offset) 
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -185,7 +185,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
   }
   memset(rank_r_offset, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
 
-  rank_r_count =  malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
+  rank_r_count =  (int64_t*)malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
   if (!rank_r_count) 
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -218,7 +218,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
     //printf("[%d] Imposed Box Dimension : %lld %lld %lld %lld %lld\n", rank, rst_id->power_two_box_size[0], rst_id->power_two_box_size[1], rst_id->power_two_box_size[2], rst_id->power_two_box_size[3], rst_id->power_two_box_size[4]);
   
   /// extents for the local process(rank)
-  Ndim_box local_proc_box = malloc(sizeof (*local_proc_box));
+  Ndim_box local_proc_box = (Ndim_box)malloc(sizeof (*local_proc_box));
   memset(local_proc_box, 0, sizeof (*local_proc_box));
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++) 
   {
@@ -234,7 +234,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
           for (m = 0; m < rst_id->idx_ptr->global_bounds[4]; m = m + rst_id->power_two_box_size[4]) 
           {
             
-            Ndim_box power_two_box = malloc(sizeof (*power_two_box));
+            Ndim_box power_two_box = (Ndim_box)malloc(sizeof (*power_two_box));
             memset(power_two_box, 0, sizeof (*power_two_box));
             
             //Interior regular boxes
@@ -267,7 +267,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
             free(power_two_box);
           }
   
-  rst_id->power_two_box_group = malloc(sizeof(*rst_id->power_two_box_group) * rst_id->power_two_box_group_count);
+  rst_id->power_two_box_group = (Ndim_box_group*)malloc(sizeof(*rst_id->power_two_box_group) * rst_id->power_two_box_group_count);
   memset(rst_id->power_two_box_group, 0, sizeof(*rst_id->power_two_box_group) * rst_id->power_two_box_group_count);
   
   power_two_box_count = 0;
@@ -278,7 +278,7 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
         for (l = 0; l < rst_id->idx_ptr->global_bounds[3]; l = l + rst_id->power_two_box_size[3])
           for (m = 0; m < rst_id->idx_ptr->global_bounds[4]; m = m + rst_id->power_two_box_size[4]) 
           {
-            Ndim_box power_two_box = malloc(sizeof (*power_two_box));
+            Ndim_box power_two_box = (Ndim_box)malloc(sizeof (*power_two_box));
             memset(power_two_box, 0, sizeof (*power_two_box));
 
             //Interior regular boxes
@@ -324,8 +324,8 @@ int PIDX_rst_set_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int* box
             /// STEP 4: If local process intersects with regular box, then find all other process that intersects with the regular box.
             if (intersectNDChunk(power_two_box, local_proc_box))
             {      
-              rst_id->power_two_box_group[power_two_box_count] = malloc(sizeof(*(rst_id->power_two_box_group[power_two_box_count])));
-              rst_id->power_two_box_group[power_two_box_count]->source_box_rank = malloc(sizeof(int) * maximum_neighbor_count);
+              rst_id->power_two_box_group[power_two_box_count] = (Ndim_box_group)malloc(sizeof(*(rst_id->power_two_box_group[power_two_box_count])));
+              rst_id->power_two_box_group[power_two_box_count]->source_box_rank = (int*)malloc(sizeof(int) * maximum_neighbor_count);
               rst_id->power_two_box_group[power_two_box_count]->box = malloc(sizeof(*rst_id->power_two_box_group[power_two_box_count]->box) * maximum_neighbor_count);
               memset(rst_id->power_two_box_group[power_two_box_count]->source_box_rank, 0, sizeof(int) * maximum_neighbor_count);
               memset(rst_id->power_two_box_group[power_two_box_count]->box, 0, sizeof(*rst_id->power_two_box_group[power_two_box_count]->box) * maximum_neighbor_count);

@@ -40,6 +40,10 @@ static double *io_init_start, *io_init_end, *io_start, *io_end;
 static double *var_init_start, *var_init_end;
 static double *cleanup_start, *cleanup_end;
 static double *finalize_start, *finalize_end;
+static double *block_rst_init_start, *block_rst_init_end;
+static double *block_rst_start, *block_rst_end;
+static double *compression_init_start, *compression_init_end;
+static double *compression_start, *compression_end;
 static double *agg_1, *agg_2, *agg_3, *agg_4, *agg_5, *agg_6;
 
 static int caching_state = 0;
@@ -84,7 +88,9 @@ struct PIDX_file_descriptor
 #if PIDX_HAVE_MPI
   PIDX_rst_id rst_id;
 #endif
+  PIDX_block_rst_id block_rst_id;
   PIDX_hz_encode_id hz_id;
+  PIDX_compression_id compression_id;
   PIDX_agg_id agg_id;
   PIDX_io_id io_id;
   
@@ -285,37 +291,46 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_derived_ptr->samples_per_block = pow(2, PIDX_default_bits_per_block);
   (*file)->idx_ptr->blocks_per_file = PIDX_default_blocks_per_file;
     
-  write_init_start = malloc (sizeof(double) * 64); memset(write_init_start, 0, sizeof(double) * 64);
-  write_init_end = malloc (sizeof(double) * 64);   memset(write_init_end, 0, sizeof(double) * 64);
-  rst_init_start = malloc (sizeof(double) * 64);   memset(rst_init_start, 0, sizeof(double) * 64);
-  rst_init_end = malloc (sizeof(double) * 64);     memset(rst_init_end, 0, sizeof(double) * 64);
-  hz_init_start = malloc (sizeof(double) * 64);    memset(hz_init_start, 0, sizeof(double) * 64);
-  hz_init_end = malloc (sizeof(double) * 64);      memset(hz_init_end, 0, sizeof(double) * 64);
-  agg_init_start = malloc (sizeof(double) * 64);   memset(agg_init_start, 0, sizeof(double) * 64);
-  agg_init_end = malloc (sizeof(double) * 64);     memset(agg_init_end, 0, sizeof(double) * 64);
-  io_init_start = malloc (sizeof(double) * 64);    memset(io_init_start, 0, sizeof(double) * 64);
-  io_init_end = malloc (sizeof(double) * 64);      memset(io_init_end, 0, sizeof(double) * 64);
-  var_init_start = malloc (sizeof(double) * 64);   memset(var_init_start, 0, sizeof(double) * 64);
-  var_init_end = malloc (sizeof(double) * 64);     memset(var_init_end, 0, sizeof(double) * 64);
-  rst_start = malloc (sizeof(double) * 64);        memset(rst_start, 0, sizeof(double) * 64);
-  rst_end = malloc (sizeof(double) * 64);          memset(rst_end, 0, sizeof(double) * 64);
-  hz_start = malloc (sizeof(double) * 64);         memset(hz_start, 0, sizeof(double) * 64);
-  hz_end = malloc (sizeof(double) * 64);           memset(hz_end, 0, sizeof(double) * 64);
-  agg_start = malloc (sizeof(double) * 64);        memset(agg_start, 0, sizeof(double) * 64);
-  agg_end = malloc (sizeof(double) * 64);          memset(agg_end, 0, sizeof(double) * 64);
-  io_start = malloc (sizeof(double) * 64);         memset(io_start, 0, sizeof(double) * 64);
-  io_end = malloc (sizeof(double) * 64);           memset(io_end, 0, sizeof(double) * 64);
-  cleanup_start = malloc (sizeof(double) * 64);    memset(cleanup_start, 0, sizeof(double) * 64);
-  cleanup_end = malloc (sizeof(double) * 64);      memset(cleanup_end, 0, sizeof(double) * 64);
-  finalize_start = malloc (sizeof(double) * 64);   memset(finalize_start, 0, sizeof(double) * 64);
-  finalize_end = malloc (sizeof(double) * 64);     memset(finalize_end, 0, sizeof(double) * 64);
+  write_init_start = malloc (sizeof(double) * 64);              memset(write_init_start, 0, sizeof(double) * 64);
+  write_init_end = malloc (sizeof(double) * 64);                memset(write_init_end, 0, sizeof(double) * 64);
+  rst_init_start = malloc (sizeof(double) * 64);                memset(rst_init_start, 0, sizeof(double) * 64);
+  rst_init_end = malloc (sizeof(double) * 64);                  memset(rst_init_end, 0, sizeof(double) * 64);
+  hz_init_start = malloc (sizeof(double) * 64);                 memset(hz_init_start, 0, sizeof(double) * 64);
+  hz_init_end = malloc (sizeof(double) * 64);                   memset(hz_init_end, 0, sizeof(double) * 64);
+  agg_init_start = malloc (sizeof(double) * 64);                memset(agg_init_start, 0, sizeof(double) * 64);
+  agg_init_end = malloc (sizeof(double) * 64);                  memset(agg_init_end, 0, sizeof(double) * 64);
+  io_init_start = malloc (sizeof(double) * 64);                 memset(io_init_start, 0, sizeof(double) * 64);
+  io_init_end = malloc (sizeof(double) * 64);                   memset(io_init_end, 0, sizeof(double) * 64);
+  var_init_start = malloc (sizeof(double) * 64);                memset(var_init_start, 0, sizeof(double) * 64);
+  var_init_end = malloc (sizeof(double) * 64);                  memset(var_init_end, 0, sizeof(double) * 64);
+  rst_start = malloc (sizeof(double) * 64);                     memset(rst_start, 0, sizeof(double) * 64);
+  rst_end = malloc (sizeof(double) * 64);                       memset(rst_end, 0, sizeof(double) * 64);
+  hz_start = malloc (sizeof(double) * 64);                      memset(hz_start, 0, sizeof(double) * 64);
+  hz_end = malloc (sizeof(double) * 64);                        memset(hz_end, 0, sizeof(double) * 64);
+  agg_start = malloc (sizeof(double) * 64);                     memset(agg_start, 0, sizeof(double) * 64);
+  agg_end = malloc (sizeof(double) * 64);                       memset(agg_end, 0, sizeof(double) * 64);
+  io_start = malloc (sizeof(double) * 64);                      memset(io_start, 0, sizeof(double) * 64);
+  io_end = malloc (sizeof(double) * 64);                        memset(io_end, 0, sizeof(double) * 64);
+  cleanup_start = malloc (sizeof(double) * 64);                 memset(cleanup_start, 0, sizeof(double) * 64);
+  cleanup_end = malloc (sizeof(double) * 64);                   memset(cleanup_end, 0, sizeof(double) * 64);
+  finalize_start = malloc (sizeof(double) * 64);                memset(finalize_start, 0, sizeof(double) * 64);
+  finalize_end = malloc (sizeof(double) * 64);                  memset(finalize_end, 0, sizeof(double) * 64);
   
-  agg_1 = malloc (sizeof(double) * 64);            memset(agg_1, 0, sizeof(double) * 64);
-  agg_2 = malloc (sizeof(double) * 64);            memset(agg_2, 0, sizeof(double) * 64);
-  agg_3 = malloc (sizeof(double) * 64);            memset(agg_3, 0, sizeof(double) * 64);
-  agg_4 = malloc (sizeof(double) * 64);            memset(agg_4, 0, sizeof(double) * 64);
-  agg_5 = malloc (sizeof(double) * 64);            memset(agg_5, 0, sizeof(double) * 64);
-  agg_6 = malloc (sizeof(double) * 64);            memset(agg_6, 0, sizeof(double) * 64);
+  block_rst_init_start =  malloc (sizeof(double) * 64);         memset(block_rst_init_start, 0, sizeof(double) * 64);
+  block_rst_init_end =  malloc (sizeof(double) * 64);           memset(block_rst_init_end, 0, sizeof(double) * 64);
+  compression_init_start =  malloc (sizeof(double) * 64);       memset(compression_init_start, 0, sizeof(double) * 64);
+  compression_init_end =  malloc (sizeof(double) * 64);         memset(compression_init_end, 0, sizeof(double) * 64);
+  block_rst_start =  malloc (sizeof(double) * 64);              memset(block_rst_start, 0, sizeof(double) * 64);
+  block_rst_end =  malloc (sizeof(double) * 64);                memset(block_rst_end, 0, sizeof(double) * 64);
+  compression_start =  malloc (sizeof(double) * 64);            memset(compression_start, 0, sizeof(double) * 64);
+  compression_end =  malloc (sizeof(double) * 64);              memset(compression_end, 0, sizeof(double) * 64);
+  
+  agg_1 = malloc (sizeof(double) * 64);                         memset(agg_1, 0, sizeof(double) * 64);
+  agg_2 = malloc (sizeof(double) * 64);                         memset(agg_2, 0, sizeof(double) * 64);
+  agg_3 = malloc (sizeof(double) * 64);                         memset(agg_3, 0, sizeof(double) * 64);
+  agg_4 = malloc (sizeof(double) * 64);                         memset(agg_4, 0, sizeof(double) * 64);
+  agg_5 = malloc (sizeof(double) * 64);                         memset(agg_5, 0, sizeof(double) * 64);
+  agg_6 = malloc (sizeof(double) * 64);                         memset(agg_6, 0, sizeof(double) * 64);
   
   return PIDX_success;
 }
@@ -1593,6 +1608,8 @@ static PIDX_return_code PIDX_write(PIDX_file file)
   int rank = 0;
   int local_do_rst = 0, global_do_rst = 0;
   int var_used_in_binary_file, total_header_size;
+  int do_block_rst = 1;
+  int do_compression = 1;
   
   //static int header_io = 0;
 #if PIDX_HAVE_MPI
@@ -1971,6 +1988,16 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     rst_init_end[vp] = PIDX_get_time();
     ///----------------------------------- RST init end------------------------------------------------///
     
+    ///----------------------------BLOCK restructure init start ---------------------------------------///
+    block_rst_init_start[vp] = PIDX_get_time();                                    
+    if(do_block_rst == 1)
+    {
+      file->block_rst_id = PIDX_block_rst_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+      PIDX_block_rst_set_communicator(file->block_rst_id, file->comm);
+    }
+    block_rst_init_end[vp] = PIDX_get_time();
+    ///----------------------------BLOCK restructure init end -----------------------------------------///
+    
     
     ///------------------------------------HZ init start-----------------------------------------------///
     hz_init_start[vp] = PIDX_get_time();                                             
@@ -1979,6 +2006,17 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     hz_init_end[vp] = PIDX_get_time();
     ///------------------------------------HZ init end-------------------------------------------------///
+    
+    
+    ///------------------------------Compression init start -------------------------------------------///
+    compression_init_start[vp] = PIDX_get_time();                                    
+    if(do_compression == 1)
+    {
+      file->compression_id = PIDX_compression_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+      PIDX_compression_set_communicator(file->compression_id, file->comm);
+    }
+    compression_init_end[vp] = PIDX_get_time();
+    ///------------------------------Compression init time---------------------------------------------///
     
     
     ///-----------------------------------AGG init start-----------------------------------------------///
@@ -2067,6 +2105,17 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     ///--------------------------------------RST end time---------------------------------------------------///
     
     
+    
+    ///----------------------------BLOCK restructure start time---------------------------------------------///
+    
+    
+    
+    
+    
+    ///----------------------------BLOCK restructure end time-----------------------------------------------///
+    
+    
+    
     ///-------------------------------------HZ start time---------------------------------------------------///
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_var(file->hz_id, file->idx_ptr->variable);
@@ -2088,6 +2137,17 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     hz_end[vp] = PIDX_get_time();
     ///------------------------------------HZ end time------------------------------------------------------///
+    
+    
+    
+    ///---------------------------------Compression start time----------------------------------------------///
+    
+    
+    
+    
+    
+    ///----------------------------------Compression end time-----------------------------------------------///
+    
     
     
     ///------------------------------------Agg start time---------------------------------------------------///

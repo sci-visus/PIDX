@@ -145,7 +145,7 @@ void revstr(char* str)
 {
   int64_t i;
   char cpstr[strlen(str)+1];
-  for(i=0; i < strlen(str); i++)
+  for(i=0; i < (int)strlen(str); i++)
     cpstr[i] = str[strlen(str)-i-1];
   
   cpstr[i] = '\0';
@@ -240,7 +240,7 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
   if (!(H>=0 && H<=maxh))
     return;
 
-  h_delta = malloc(PIDX_MAX_DIMENSIONS *sizeof(int));
+  h_delta = (int*)malloc(PIDX_MAX_DIMENSIONS *sizeof(int));
   memset(h_delta, 0, PIDX_MAX_DIMENSIONS *sizeof(int));
   
   ZDelta(bitmask,maxh,H, h_delta);

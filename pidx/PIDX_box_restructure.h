@@ -16,28 +16,26 @@
  **                                                 **
  *****************************************************/
 
-#ifndef TESTDEFS_H
-#define TESTDEFS_H
+#ifndef __PIDX_BOX_RST_H
+#define __PIDX_BOX_RST_H 
 
-// int test_writer(struct Args args, int rank, int nprocs);
-// int usage_writer();
 
-// int test_reader(struct Args args, int rank, int nprocs);
-// int usage_reader();
+struct PIDX_block_rst_id_struct;
+typedef struct PIDX_block_rst_id_struct* PIDX_block_rst_id;
 
-// int test_one_var_writer(struct Args args, int rank, int nprocs);
-// int usage_one_var_writer();
 
-// int test_multi_var_writer(struct Args args, int rank, int nprocs);
-// int usage_multi_var_writer();
+PIDX_block_rst_id PIDX_block_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
 
-// int serial_writer(struct Args args);
-// int usage_serial();
+#if PIDX_HAVE_MPI
+int PIDX_block_rst_set_communicator(PIDX_block_rst_id id, MPI_Comm comm);
+#endif
 
-// int test_multi_patch_writer(struct Args args, int rank, int nprocs);
-// int usage_multi_patch_writer();
+int PIDX_block_rst_prepare(PIDX_block_rst_id id, PIDX_variable* variable);
 
-int test_multi_idx_writer(struct Args args, int rank, int nprocs);
-int usage_multi_idx_writer();
+int PIDX_block_rst_compress(PIDX_block_rst_id id, PIDX_variable* variable, int MODE);
+  
+int PIDX_block_rst_buf_destroy(PIDX_block_rst_id id);
+
+int PIDX_block_rst_finalize(PIDX_block_rst_id id);  
 
 #endif

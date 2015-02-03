@@ -57,10 +57,10 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
   
-  variable = malloc(sizeof(*variable) * args.variable_count);
+  variable = (PIDX_variable*)malloc(sizeof(*variable) * args.variable_count);
   memset(variable, 0, sizeof(*variable) * args.variable_count);
   
-  values_per_sample = malloc(sizeof(*values_per_sample) * args.variable_count);
+  values_per_sample = (int*)malloc(sizeof(*values_per_sample) * args.variable_count);
   memset(values_per_sample, 0, sizeof(*values_per_sample) * args.variable_count);      
   
   /// Creating the filename 
@@ -90,7 +90,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     long_data = malloc(sizeof(*long_data) * args.variable_count);
     memset(long_data, 0, sizeof(*long_data) * args.variable_count);
 #else
-    double_data = malloc(sizeof(*double_data) * args.variable_count);
+    double_data = (double**)malloc(sizeof(*double_data) * args.variable_count);
     memset(double_data, 0, sizeof(*double_data) * args.variable_count);
 #endif
     
@@ -178,7 +178,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     for(var = 0; var < args.variable_count; var++)
     {
       values_per_sample[var] =  1;
-      long_data[var] = malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
+      long_data[var] = (uint64_t*)malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
       for (k = 0; k < args.count_local[2]; k++)
         for (j = 0; j < args.count_local[1]; j++)
@@ -193,7 +193,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     for(var = 0; var < args.variable_count; var++)
     {
       values_per_sample[var] =  1;
-      double_data[var] = malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
+      double_data[var] = (double*)malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
       for (k = 0; k < args.count_local[2]; k++)
         for (j = 0; j < args.count_local[1]; j++)
