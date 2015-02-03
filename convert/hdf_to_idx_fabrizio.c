@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   fclose(fp);
   
   PIDX_create_access(&access);
-  PIDX_set_mpi_access(access, 1, 1, 1 comm);
+  PIDX_set_mpi_access(access, 1, 1, 1, comm);
   PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
   
   if (rank == 0)

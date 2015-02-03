@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 
 #if PIDX_HAVE_MPI  
   H5Pset_fapl_mpio(plist_id, comm, info);
-  PIDX_set_mpi_access(access, 1, 1, 1 comm);
+  PIDX_set_mpi_access(access, 1, 1, 1, comm);
   PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
 #endif
  
