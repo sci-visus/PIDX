@@ -3,10 +3,10 @@
 
 #include "PIDX_config.h"
 
-#ifdef __bg__
+// #ifdef __bg__
   #define _XOPEN_SOURCE 600
   #define _GNU_SOURCE
-#endif
+// #endif
 
 #include <string.h>
 #include <assert.h>

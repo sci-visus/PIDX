@@ -20,10 +20,16 @@
 
 #if PIDX_OPTION_HDF5
 
-#define HDF_IO 1
-#include <PIDX.h>
-#include "hdf5.h"
+#define HDF_IO
+#define PIDX_IO
 
+#define PIDX_IO
+#include <PIDX.h>
+#endif
+
+#ifdef HDF_IO
+#include "hdf5.h"
+#endif
 
 static char *output_file_name;
 static double* buffer;
@@ -33,7 +39,7 @@ int main(int argc, char **argv)
   int sub_div[3], local_offset[3], count_local[3];
   int t = 0, time_count = 0;
   
-#if HDF_IO
+#ifdef HDF_IO
   hid_t file_id;
   hid_t plist_id;     
   hid_t group_id;
@@ -42,17 +48,19 @@ int main(int argc, char **argv)
   hid_t mem_dataspace;
 #endif
   
+#ifdef PIDX_IO
   PIDX_file file;
   PIDX_access access;
-  const int bits_per_block = 15;
-  const int blocks_per_file = 256;
   PIDX_variable variable;
-      
+#endif
+  
+  const int bits_per_block = 15;
+  const int blocks_per_file = 512;
   int nprocs=1, rank=0, slice;
   
   MPI_Comm comm  = MPI_COMM_WORLD;
   
-#if HDF_IO
+#ifdef HDF_IO
   MPI_Info info  = MPI_INFO_NULL;
 #endif
   
@@ -63,31 +71,31 @@ int main(int argc, char **argv)
   output_file_name = (char*) malloc(sizeof (char) * 1024);
   sprintf(output_file_name, "%s%s", "/scratch/project/visus/datasets/flame", ".idx");
   
-  if (nprocs == 320)
+  if (nprocs == 320)            /// 4 x 5 x 16
   {
     count_local[0] = 256;
     count_local[1] = 188;
     count_local[2] = 192;
   }
-  else if (nprocs == 640)
+  else if (nprocs == 640)       /// 4 x 5 x 32
   {
     count_local[0] = 256;
     count_local[1] = 188;
     count_local[2] = 96;
   }
-  else if (nprocs == 1280)
+  else if (nprocs == 1280)      /// 4 x 10 x 32
   {
     count_local[0] = 256;
     count_local[1] = 94;
     count_local[2] = 96;
   }
-  else if (nprocs == 2560)
+  else if (nprocs == 2560)      /// 8 x 10 x 32
   {
     count_local[0] = 128;
     count_local[1] = 94;
     count_local[2] = 96;
   }
-
+  
   sub_div[0] = (1024 / count_local[0]);
   sub_div[1] = (940 / count_local[1]);
   sub_div[2] = (3072 / count_local[2]);
@@ -95,13 +103,15 @@ int main(int argc, char **argv)
   slice = rank % (sub_div[0] * sub_div[1]);
   local_offset[1] = (slice / sub_div[0]) * count_local[1];
   local_offset[0] = (slice % sub_div[0]) * count_local[0];
-  
+ 
+#ifdef PIDX_IO
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
   PIDX_set_point_5D(global_bounding_box, (int64_t)1024, (int64_t)940, (int64_t)3072, 1, 1);
   PIDX_set_point_5D(local_offset_point, (int64_t)local_offset[0], (int64_t)local_offset[1], (int64_t)local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, (int64_t)count_local[0], (int64_t)count_local[1], (int64_t)count_local[2], 1, 1);
+#endif
   
-#if HDF_IO
+#ifdef HDF_IO
   hsize_t count[3];
   count[0] = count_local[0];
   count[1] = count_local[1];
@@ -119,7 +129,7 @@ int main(int argc, char **argv)
   // W
   // ZMIX
   
-#if HDF_IO
+#ifdef HDF_IO
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_mpio(plist_id, comm, info);
 #endif
@@ -137,18 +147,21 @@ int main(int argc, char **argv)
   }
   fclose(fp);
   
+#ifdef PIDX_IO
   PIDX_create_access(&access);
   PIDX_set_mpi_access(access, 1, 1, 1, comm);
   PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
+#endif
   
   if (rank == 0)
     printf("Number of timesteps = %d\n", time_count);
   for (t = 0; t < time_count; t++)
   {
-#if HDF_IO
+#ifdef HDF_IO
     file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
 #endif
      
+#ifdef PIDX_IO
     PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);
@@ -164,9 +177,9 @@ int main(int argc, char **argv)
     PIDX_enable_hz(file, 1);
     PIDX_enable_agg(file, 1);
     PIDX_enable_io(file, 1);
+#endif
     
-    
-#if HDF_IO
+#ifdef HDF_IO
     group_id = H5Gopen(file_id, "/data", H5P_DEFAULT);
     dataset_id = H5Dopen2(group_id, "P", H5P_DEFAULT);
     
@@ -175,38 +188,53 @@ int main(int argc, char **argv)
     H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
 #endif
     
-    buffer = malloc(sizeof(double) * 1024 * (940 * 3072/nprocs));
-    memset(buffer, 0, sizeof(double) * 1024 * (940 * 3072/nprocs));
+    buffer = malloc(sizeof(double) * count_local[0] * count_local[1] * count_local[2]);
+    memset(buffer, 0, sizeof(double) * count_local[0] * count_local[1] * count_local[2]);
     
-#if HDF_IO
+#ifdef HDF_IO
     H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer);
     H5Sclose(mem_dataspace);
     H5Sclose(file_dataspace);
     H5Dclose(dataset_id);
     H5Gclose(group_id);
     H5Fclose(file_id);
-#else
     
+    if (rank == 0)
+      printf("Finished reading HDF files\n");
+#else
+    int64_t i1, j1, k1;
+    for (k1 = 0; k1 < count_local[2]; k1++)
+      for (j1 = 0; j1 < count_local[1]; j1++)
+        for (i1 = 0; i1 < count_local[0]; i1++)
+        {
+          int64_t index = (int64_t) (count_local[0] * count_local[1] * k1) + (count_local[0] * j1) + i1;
+          buffer[index] = (256 * rank) / nprocs;
+        }
+
 #endif
     
+#ifdef PIDX_IO
     PIDX_variable_create(file, "P", sizeof(double) * 8, "1*float64", &variable);
     PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, buffer, PIDX_column_major);
     
     if (rank == 0)
-      printf("Writing for time %d\n", t);
+      printf("Starting to Write IDX %s Time Step %d\n", output_file_name t);
     
     PIDX_close(file);
+#endif
     
     free(buffer);
     buffer = 0;
   }
   
   //////////
-#if HDF_IO
+#ifdef HDF_IO
   H5Pclose(plist_id);
 #endif
   
+#ifdef PIDX_IO
   PIDX_close_access(access);
+#endif
   
   free(output_file_name);
   output_file_name = 0;

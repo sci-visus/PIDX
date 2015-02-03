@@ -22,7 +22,7 @@ IF (PIDX_BUILD_CONVERT)
   # sources
   # ////////////////////////////////////////
 
-  SET(SPH_TO_IDX sph_to_idx.c) 
+  #SET(SPH_TO_IDX sph_to_idx.c) 
   #SET(FILE_PER_PROCESS_RAW_TO_IDX file_per_process_raw_to_idx.c) 
   SET(PNETCDF_TO_IDX_SOURCES pnetcdf_to_idx.c)  
   SET(HDF_TO_IDX_SOURCES hdf_to_idx.c)
@@ -38,9 +38,9 @@ IF (PIDX_BUILD_CONVERT)
     INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
   ENDIF ()
 
-  PIDX_ADD_EXECUTABLE(sph_to_idx "${SPH_TO_IDX}")
-  ADD_DEPENDENCIES(sph_to_idx pidx)
-  TARGET_LINK_LIBRARIES(sph_to_idx pidx)
+  #PIDX_ADD_EXECUTABLE(sph_to_idx "${SPH_TO_IDX}")
+  #ADD_DEPENDENCIES(sph_to_idx pidx)
+  #TARGET_LINK_LIBRARIES(sph_to_idx pidx)
 
   #PIDX_ADD_EXECUTABLE(file_per_process_raw_to_idx "${FILE_PER_PROCESS_RAW_TO_IDX}")
   #IF (MPI_C_FOUND)
