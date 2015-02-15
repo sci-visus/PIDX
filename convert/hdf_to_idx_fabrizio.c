@@ -133,11 +133,7 @@ int main(int argc, char **argv)
   offset[2] = local_offset[2];
 #endif
   
-  /// P
-  /// U
-  /// V
-  /// W
-  /// ZMIX
+  /// P   U   V   W   ZMIX
   
 #if HDF_IO
   plist_id = H5Pcreate(H5P_FILE_ACCESS);
