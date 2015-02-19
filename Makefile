@@ -75,14 +75,13 @@ $(PIDX_AGG_OBJS): %.o: ../pidx/PIDX_agg.c ../pidx/PIDX_agg.h ../pidx/PIDX_inc.h 
 $(PIDX_IO_OBJS): %.o: ../pidx/PIDX_io.c ../pidx/PIDX_io.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
 	$(MPICC) $(MPI_CFLAGS) $< -c  -o $@
 
-$(PIDX_NEW_OBJS): %.o: ../pidx/PIDX.c ../pidx/PIDX.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
+$(PIDX_NEW_OBJS): %.o: ../pidx/PIDX.c ../pidx/PIDX.h ../pidx/PIDX_io.c ../pidx/PIDX_io.h ../pidx/PIDX_agg.c ../pidx/PIDX_agg.h ../pidx/PIDX_compression.c ../pidx/PIDX_compression.h ../pidx/PIDX_hz_encode.c ../pidx/PIDX_hz_encode.h ../pidx/PIDX_block_restructure.c ../pidx/PIDX_block_restructure.h ../pidx/PIDX_rst.c ../pidx/PIDX_rst.h ../pidx/PIDX_header_io.c ../pidx/PIDX_header_io.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
-	
 
-libPIDX.a: $(PIDX_NEW_OBJS)
+libPIDX.a: $(PIDX_NEW_OBJS) ../pidx/PIDX_io.c ../pidx/PIDX_io.h ../pidx/PIDX_agg.c ../pidx/PIDX_agg.h ../pidx/PIDX_compression.c ../pidx/PIDX_compression.h ../pidx/PIDX_hz_encode.c ../pidx/PIDX_hz_encode.h ../pidx/PIDX_block_restructure.c ../pidx/PIDX_block_restructure.h ../pidx/PIDX_rst.c ../pidx/PIDX_rst.h ../pidx/PIDX_header_io.c ../pidx/PIDX_header_io.h
 	ar rcs $@ $(PIDX_NEW_OBJS) PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_compression.o PIDX_block_restructure.o PIDX_agg.o PIDX.o
 
-pidxtest: ../test/pidxtest.c ../test/testdefs.h ../test/pidxtest.h ../test/test-PIDX-multi-patch.c ../test/test-PIDX-multi-var-writer.c ../test/test-PIDX-one-var-writer.c ../test/test-PIDX-reader.c ../test/test-PIDX-writer.c ../test/test-serial-writer.c PIDX_data_layout.o  PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a
+pidxtest:  ../test/pidxtest.c ../test/testdefs.h ../test/pidxtest.h ../test/test-PIDX-multi-patch.c ../test/test-PIDX-multi-var-writer.c ../test/test-PIDX-one-var-writer.c ../test/test-PIDX-reader.c ../test/test-PIDX-writer.c ../test/test-serial-writer.c PIDX_data_layout.o  PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a
 	$(MPICC) $(MPI_CFLAGS) $< ../test/test-PIDX-multi-idx-writer.c -o $@ $(MPI_LDFLAGS_PIDX)
 	rm *.o
 

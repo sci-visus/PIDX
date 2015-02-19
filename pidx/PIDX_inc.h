@@ -42,7 +42,10 @@
 extern "C" {
 #endif
 
-#include "PIDX_typedefs.h"
+#include "PIDX_data_layout.h"
+#include "PIDX_data_types.h"
+#include "PIDX_error_codes.h"
+#include "PIDX_file_access_modes.h"
 
 #include "PIDX_blocks.h"
 #include "PIDX_idx_data_structs.h"
