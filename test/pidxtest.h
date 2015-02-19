@@ -92,6 +92,11 @@ struct Args
   /// Default is 0
   int perform_io;
   
+  ///
+  int64_t compression_block_size[5];
+  
+  /// 1 for lossy 0 for lossless
+  int compression_type;
 };
 
 /// main

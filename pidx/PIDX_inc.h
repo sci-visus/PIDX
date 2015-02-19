@@ -3,10 +3,13 @@
 
 #include "PIDX_config.h"
 
-// #ifdef __bg__
+#ifdef __bg__
   #define _XOPEN_SOURCE 600
   #define _GNU_SOURCE
-// #endif
+#endif
+
+#define min(x, y) ((x) < (y) ? (x) : (y))
+#define max(x, y) ((x) > (y) ? (x) : (y))
 
 #include <string.h>
 #include <assert.h>
@@ -42,7 +45,7 @@ extern "C" {
 #include "PIDX_typedefs.h"
 
 #include "PIDX_blocks.h"
-#include "PIDX_data_structs.h"
+#include "PIDX_idx_data_structs.h"
 #include "PIDX_comm.h"
 #include "PIDX_utils.h"
 #include "PIDX_point.h"
@@ -51,7 +54,7 @@ extern "C" {
 #include "PIDX_header_io.h"
 #include "PIDX_rst.h"
 #include "PIDX_hz_encode.h"
-#include "PIDX_box_restructure.h"
+#include "PIDX_block_restructure.h"
 #include "PIDX_compression.h"
 #include "PIDX_agg.h"
 #include "PIDX_io.h"

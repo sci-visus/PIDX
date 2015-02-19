@@ -189,32 +189,20 @@ int parse_args(struct Args *args, int argc, char **argv)
   fscanf(config_file, "(aggregation factor)\n");
   fscanf(config_file, "%d\n", &args->aggregation_factor);
   
-  fscanf(config_file, "(idx count_x)\n");
-  fscanf(config_file, "%d\n", &args->idx_count[0]);
+  fscanf(config_file, "(idx count x:y:z)\n");
+  fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
   
-  fscanf(config_file, "(idx count_y)\n");
-  fscanf(config_file, "%d\n", &args->idx_count[1]);
+  fscanf(config_file, "(debug rst:hz:agg)\n");
+  fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
+   
+  fscanf(config_file, "(perform hz:agg:io)\n");
+  fscanf(config_file, "%d %d %d\n", &args->perform_hz, &args->perform_agg, &args->perform_io);
   
-  fscanf(config_file, "(idx count_z)\n");
-  fscanf(config_file, "%d\n", &args->idx_count[2]);
+  fscanf(config_file, "(compression block size)\n");
+  fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);
   
-  fscanf(config_file, "(debug_rst)\n");
-  fscanf(config_file, "%d\n", &args->debug_rst);
-  
-  fscanf(config_file, "(debug_hz)\n");
-  fscanf(config_file, "%d\n", &args->debug_hz);
-  
-  fscanf(config_file, "(dump_agg_info)\n");
-  fscanf(config_file, "%d\n", &args->dump_agg);
-  
-  fscanf(config_file, "(perform_hz)\n");
-  fscanf(config_file, "%d\n", &args->perform_hz);
-  
-  fscanf(config_file, "(perform_agg)\n");
-  fscanf(config_file, "%d\n", &args->perform_agg);
-  
-  fscanf(config_file, "(perform_io)\n");
-  fscanf(config_file, "%d\n", &args->perform_io);
+  fscanf(config_file, "(compression type)\n");
+  fscanf(config_file, "%d\n", &args->compression_type);
   
   fclose(config_file);
   

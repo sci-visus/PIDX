@@ -25,22 +25,22 @@ typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 
 PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
 
-int PIDX_hz_encode_create_cache_buffers(PIDX_hz_encode_id id, PIDX_variable* variable_ptr);
+int PIDX_hz_encode_create_cache_buffers(PIDX_hz_encode_id id);
 int PIDX_hz_encode_delete_cache_buffers();
 
 
-int PIDX_hz_encode_var(PIDX_hz_encode_id id, PIDX_variable* variable_ptr);
+int PIDX_hz_encode_prepare(PIDX_hz_encode_id id);
 
-int PIDX_hz_encode_write_var(PIDX_hz_encode_id id, PIDX_variable* variable_ptr);
+int PIDX_hz_encode_write_var(PIDX_hz_encode_id id);
 
-int PIDX_hz_encode_read_var(PIDX_hz_encode_id id, PIDX_variable* variable);
+int PIDX_hz_encode_read_var(PIDX_hz_encode_id id);
 
-int PIDX_hz_encode_buf_destroy_var(PIDX_hz_encode_id id, PIDX_variable* variable_ptr);
+int PIDX_hz_encode_buf_destroy_var(PIDX_hz_encode_id id);
 
 int PIDX_hz_encode_finalize(PIDX_hz_encode_id id);
 
 #if PIDX_HAVE_MPI
-int HELPER_Hz_encode(PIDX_hz_encode_id id, PIDX_variable* variable);
+int HELPER_Hz_encode(PIDX_hz_encode_id id);
 int PIDX_hz_encode_set_communicator(PIDX_hz_encode_id id, MPI_Comm comm);
 #endif
 

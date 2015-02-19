@@ -38,10 +38,13 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   int* values_per_sample;
   
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
+  PIDX_point compression_block_size_point;
   
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_io, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -55,7 +58,6 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.aggregation_factor, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
-  
   
   variable = (PIDX_variable*)malloc(sizeof(*variable) * args.variable_count);
   memset(variable, 0, sizeof(*variable) * args.variable_count);
@@ -78,6 +80,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
   
   PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
+  PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, (int64_t)local_offset[0], (int64_t)local_offset[1], (int64_t)local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, (int64_t)args.count_local[0], (int64_t)args.count_local[1], (int64_t)args.count_local[2], 1, 1);
   
@@ -94,9 +97,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     memset(double_data, 0, sizeof(*double_data) * args.variable_count);
 #endif
     
+    /// Creating access type (parallel here)
     PIDX_access access;
     PIDX_create_access(&access);
-
 #if PIDX_HAVE_MPI
     PIDX_set_mpi_access(access, args.idx_count[0], args.idx_count[1], args.idx_count[2], MPI_COMM_WORLD);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
@@ -104,7 +107,10 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_set_default_access(access);
 #endif
     
+    /// PIDX mandatory calls
     PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
+    
+    /// PIDX calls to set different parameters (optional)
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_block_size(file, args.bits_per_block);
@@ -112,10 +118,16 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_set_block_count(file, args.blocks_per_file);
     PIDX_set_variable_count(file, args.variable_count);
     
+    /// PIDX compression related calls
+    PIDX_set_compression_type(file, args.compression_type);
+    PIDX_set_compression_block_size(file, compression_block_size_point);
+    
+    /// PIDX debuging different phases
     PIDX_debug_rst(file, args.debug_rst);
     PIDX_debug_hz(file, args.debug_hz);
     PIDX_dump_agg_info(file, args.dump_agg);
     
+    /// PIDX enabling/disabling different phases
     PIDX_enable_hz(file, args.perform_hz);
     PIDX_enable_agg(file, args.perform_agg);
     PIDX_enable_io(file, args.perform_io);

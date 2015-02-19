@@ -140,7 +140,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
 #endif
   target_count = hz_count * values_per_sample;
   
-  bytes_per_datatype = agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8;
+  bytes_per_datatype = (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+  
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
   
   start_agg_index = target_disp / (int64_t) (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor);
@@ -411,7 +412,6 @@ int aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int variable
         memcpy( hz_buffer, agg_buffer->buffer + target_disp * bytes_per_datatype, hz_count * values_per_sample * bytes_per_datatype);
     }
   }
-  
   return PIDX_success;
 }
 
@@ -559,13 +559,13 @@ int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
           agg_buffer->var_number = i;
           agg_buffer->sample_number = j;
           
-          agg_buffer->buffer_size = agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8);
+          agg_buffer->buffer_size = agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
           
           agg_buffer->buffer = malloc(agg_buffer->buffer_size);
           if (agg_buffer->buffer == NULL)
           {
             printf("[%d] [%d %d %d] : %lld (%d %d (%d/%d) %d)\n", rank, i, j, k, (long long) agg_buffer->buffer_size, agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_buffer->file_number], (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), agg_id->idx_derived_ptr->samples_per_block, agg_id->idx_derived_ptr->aggregation_factor, (agg_id->idx_ptr->variable[agg_buffer->var_number]->bits_per_value/8));
-            
+
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_buffer->buffer_size, __LINE__, __FILE__);
             return (-1);
           }

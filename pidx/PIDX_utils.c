@@ -364,7 +364,6 @@ int64_t xyz_to_HZ(const char* bitmask, int maxh, PointND xyz)
   int temp_maxh = maxh;
   memset(&zero,0,sizeof(PointND));
 
-  //VisusDebugAssert(VisusGetBitmaskBit(bitmask,0)=='V');
   for (cnt=0 ; memcmp(&xyz, &zero, sizeof(PointND)) ; cnt++, maxh--)
   {
     int bit= bitmask[maxh];

@@ -301,6 +301,18 @@ PIDX_return_code PIDX_get_aggregation_factor(PIDX_file file, int *agg_factor);
 
 
 ///
+PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type);
+
+///
+PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type);
+
+///
+PIDX_return_code PIDX_set_compression_block_size(PIDX_file file, PIDX_point compression_block_size);
+
+///
+PIDX_return_code PIDX_get_compression_block_size(PIDX_file file, PIDX_point compression_block_size);
+
+///
 PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst);
 
 
