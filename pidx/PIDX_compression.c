@@ -45,8 +45,10 @@ struct PIDX_compression_id_struct
   
   int start_variable_index;
   int end_variable_index;
-  
+
+#if PIDX_HAVE_LOSSY_ZFP
   zfp_params *params;
+#endif
 };
 
 PIDX_compression_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index)
@@ -60,9 +62,11 @@ PIDX_compression_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset
   compression_id->idx_derived_ptr = idx_derived_ptr;
   compression_id->start_variable_index = start_var_index;
   compression_id->end_variable_index = end_var_index;
-  
+
+#if PIDX_HAVE_LOSSY_ZFP
   compression_id->params = malloc((end_var_index - start_var_index + 1) * sizeof(*compression_id->params));
   memset(compression_id->params, 0, (end_var_index - start_var_index + 1) * sizeof(*compression_id->params));
+#endif
   
   return compression_id;
   
@@ -87,6 +91,7 @@ int PIDX_compression_set_communicator(PIDX_compression_id compression_id, MPI_Co
 
 int PIDX_compression_prepare(PIDX_compression_id compression_id)
 {
+#if PIDX_HAVE_LOSSY_ZFP
   if (compression_id->idx_ptr->compression_type == 1)           ///< Lossy
   {
     int var = 0;
@@ -153,7 +158,7 @@ int PIDX_compression_prepare(PIDX_compression_id compression_id)
   {
     
   }
-  
+#endif
   return 0;
 }
 
@@ -183,8 +188,10 @@ int PIDX_compression_buf_destroy(PIDX_compression_id compression_id)
 
 int PIDX_compression_finalize(PIDX_compression_id compression_id)
 {
+#if PIDX_HAVE_LOSSY_ZFP
   free(compression_id->params);
   compression_id->params = 0;
+#endif
   
   free(compression_id);
   compression_id = 0;
