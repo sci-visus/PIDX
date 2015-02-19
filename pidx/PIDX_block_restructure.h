@@ -17,7 +17,7 @@
  *****************************************************/
 
 #ifndef __PIDX_BOX_RST_H
-#define __PIDX_BOX_RST_H 
+#define __PIDX_BOX_RST_H
 
 
 struct PIDX_block_rst_id_struct;
@@ -36,12 +36,14 @@ PIDX_block_rst_id PIDX_block_rst_init(idx_dataset idx_meta_data, idx_dataset_der
 int PIDX_block_rst_set_communicator(PIDX_block_rst_id id, MPI_Comm comm);
 #endif
 
+/// Restructures the voxels so that they are grouped in (m x n x p) blocks
+/// For example, (m n p) can be (4 4 4)
 int PIDX_block_rst_prepare(PIDX_block_rst_id id);
 
 int PIDX_block_rst_compress(PIDX_block_rst_id id, int MODE);
-  
+
 int PIDX_block_rst_buf_destroy(PIDX_block_rst_id id);
 
-int PIDX_block_rst_finalize(PIDX_block_rst_id id);  
+int PIDX_block_rst_finalize(PIDX_block_rst_id id);
 
 #endif
