@@ -157,9 +157,12 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
           // and index[i] * stride[i] < stride[i + 1]
           for (d = 0; d + 1 < PIDX_MAX_DIMENSIONS; ++d)
           {
-            int64_t k = j % stride[d + 1];
-            index[d] = (k > 0) ? (k / stride[d]) : (j / stride[d]);
-            j -= k;
+            if (j > 0)
+            {
+              int64_t k = j % stride[d + 1];
+              index[d] = k / stride[d];
+              j -= k;
+            }
           }
           if (stride[PIDX_MAX_DIMENSIONS - 1] > 0)
           {
