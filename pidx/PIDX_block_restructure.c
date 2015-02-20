@@ -184,7 +184,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
           }
 
           // copy the element
-          memcpy(&out_box->Ndim_box_buffer[j], &box->Ndim_box_buffer[i], bytes_per_value);
+          memcpy(&out_box->Ndim_box_buffer[j * bytes_per_value], &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value);
         }
       }
     }
