@@ -162,7 +162,7 @@ int PIDX_compression_prepare(PIDX_compression_id compression_id)
   return 0;
 }
 
-int PIDX_compression_compress(PIDX_compression_id compression_id, int MODE)
+int PIDX_compression_compress(PIDX_compression_id compression_id)
 {
   /*
   size_t outsize;

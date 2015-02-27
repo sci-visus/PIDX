@@ -19,31 +19,71 @@
 #ifndef __PIDX_IO_H
 #define __PIDX_IO_H 
 
+/**
+ * \file PIDX_io.h
+ *
+ * \author Sidharth Kumar
+ * \date   10/09/14
+ *
+ * Move the data from the A aggregator processes to f files
+ * 
+ */
+
 struct PIDX_io_struct;
 typedef struct PIDX_io_struct* PIDX_io_id;
 
 
-PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data,
-			idx_dataset_derived_metadata idx_derived_ptr,
-			int start_var_index, int end_var_index
- 		      );
+/// Creates the IO ID.
+/// \param idx_meta_data All infor regarding the idx file passed from PIDX.c
+/// \param idx_derived_ptr All derived idx related derived metadata passed from PIDX.c
+/// \param start_var_index starting index of the variable on which the relevant operation is to be applied
+/// \param end_var_index ending index of the variable on which the relevant operation is to be applied
+/// \return PIDX_hz_encode_id The identifier associated with the task
+PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
 
-int PIDX_io_cached_data(uint32_t* cached_header);
+
 
 #if PIDX_HAVE_MPI
+/// Attach the communicator wit the ID.
+/// \param id IO id
+/// \param comm the communicator
+/// \return error code
 int PIDX_io_set_communicator(PIDX_io_id io_id, MPI_Comm comm);
 #endif
 
-int PIDX_io_file_create(PIDX_io_id io_id, 
-			int time_step, 
-			char* data_set_path, int MODE);
 
-#if PIDX_HAVE_MPI
-int PIDX_io_aggregated_IO(PIDX_io_id io_id, Agg_buffer agg_buffer, int MODE);
-#endif
 
-int PIDX_io_independent_IO_var(PIDX_io_id io_id, PIDX_variable* variable_ptr, int MODE);
+///
+int PIDX_io_cached_data(uint32_t* cached_header);
 
+
+
+///
+int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, int MODE);
+
+
+
+///
+int PIDX_io_aggregated_write(PIDX_io_id io_id);
+
+
+
+///
+int PIDX_io_aggregated_read(PIDX_io_id io_id);
+
+
+
+///
+int PIDX_io_per_process_write(PIDX_io_id io_id);
+
+
+
+///
+int PIDX_io_per_process_read(PIDX_io_id io_id);
+
+
+
+///
 int PIDX_io_finalize(PIDX_io_id io_id);
 
 #endif

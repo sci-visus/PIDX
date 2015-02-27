@@ -31,7 +31,7 @@ int PIDX_compression_set_communicator(PIDX_compression_id id, MPI_Comm comm);
 
 int PIDX_compression_prepare(PIDX_compression_id id);
 
-int PIDX_compression_compress(PIDX_compression_id id, int MODE);
+int PIDX_compression_compress(PIDX_compression_id id);
   
 int PIDX_compression_buf_destroy(PIDX_compression_id id);
 

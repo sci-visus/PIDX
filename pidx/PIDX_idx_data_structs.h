@@ -33,12 +33,6 @@
 
 #include "PIDX_memory_layout_data_structs.h"
 
-/// IO_MODE
-/// \param PIDX_READ Read mode
-/// \param PIDX_WRITE Write mode
-///
-enum IO_MODE { PIDX_READ, PIDX_WRITE};
-
 ///
 struct PIDX_variable_struct
 {
@@ -96,7 +90,7 @@ struct idx_file_struct
   int compression_type;                                                 ///< lossy or lossless. 1 for lossy 0 for lossless
   int64_t compression_block_size[PIDX_MAX_DIMENSIONS];                  ///< size of the block at which compression is applied eg. (4x4x4)                                                      
                                                                         ///< the current compression schemes only work in three dimensions
-  int64_t compressed_global_bounds[PIDX_MAX_DIMENSIONS];               ///< Compressed global extents
+  int64_t compressed_global_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents
 };
 typedef struct idx_file_struct* idx_dataset;
 

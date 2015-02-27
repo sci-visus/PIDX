@@ -100,7 +100,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
   return -1;
 }
 
-int PIDX_block_rst_compress(PIDX_block_rst_id block_rst_id, int MODE)
+int PIDX_block_rst_compress(PIDX_block_rst_id block_rst_id)
 {
   return -1;
 }

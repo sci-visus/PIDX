@@ -43,7 +43,7 @@ static void usage(enum Kind kind)
   case PARALLEL_WRITER:                    usage_multi_idx_writer();    break;
   //case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
   //case SERIAL_READER:                      usage_reader();              break;
-  //case PARALLEL_READER:                    usage_reader();              break;
+  case PARALLEL_READER:                    usage_reader();              break;
   case DEFAULT:
   default:                                 usage_multi_idx_writer();
   }
@@ -102,13 +102,12 @@ int main(int argc, char **argv)
   /// run the specified test
   switch (args.kind)
   {
-    /*
     case PARALLEL_READER:
       if(rank == 0)
 	printf("Performing Parallel Read....\n");
       test_reader(args, rank, nprocs);
       break;
-    
+    /*
     case SERIAL_READER:  
       if(rank == 0)
 	printf("Performing Serial Read....\n");
@@ -173,36 +172,39 @@ int parse_args(struct Args *args, int argc, char **argv)
   
   fscanf(config_file, "(file name)\n");
   fscanf(config_file, "%s\n", args->output_file_template);
-
-  fscanf(config_file, "(fields)\n");
-  fscanf(config_file, "%d\n", &args->variable_count);
   
   fscanf(config_file, "(time steps)\n");
   fscanf(config_file, "%d\n", &args->time_step);
   
-  fscanf(config_file, "(blocks per file)\n");
-  fscanf(config_file, "%d\n", &args->blocks_per_file);
-  
-  fscanf(config_file, "(samples per block)\n");
-  fscanf(config_file, "%d\n", &args->bits_per_block);
-  
-  fscanf(config_file, "(aggregation factor)\n");
-  fscanf(config_file, "%d\n", &args->aggregation_factor);
-  
   fscanf(config_file, "(idx count x:y:z)\n");
   fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
   
-  fscanf(config_file, "(debug rst:hz:agg)\n");
-  fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
-   
-  fscanf(config_file, "(perform hz:agg:io)\n");
-  fscanf(config_file, "%d %d %d\n", &args->perform_hz, &args->perform_agg, &args->perform_io);
-  
-  fscanf(config_file, "(compression block size)\n");
-  fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);
-  
-  fscanf(config_file, "(compression type)\n");
-  fscanf(config_file, "%d\n", &args->compression_type);
+  if (strcmp(strkind, "parallel-writer") == 0)
+  {
+    fscanf(config_file, "(debug rst:hz:agg)\n");
+    fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
+    
+    fscanf(config_file, "(perform hz:agg:io)\n");
+    fscanf(config_file, "%d %d %d\n", &args->perform_hz, &args->perform_agg, &args->perform_io);
+    
+    fscanf(config_file, "(compression block size)\n");
+    fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);
+    
+    fscanf(config_file, "(compression type)\n");
+    fscanf(config_file, "%d\n", &args->compression_type);
+    
+    fscanf(config_file, "(fields)\n");
+    fscanf(config_file, "%d\n", &args->variable_count);
+    
+    fscanf(config_file, "(blocks per file)\n");
+    fscanf(config_file, "%d\n", &args->blocks_per_file);
+    
+    fscanf(config_file, "(samples per block)\n");
+    fscanf(config_file, "%d\n", &args->bits_per_block);
+    
+    fscanf(config_file, "(aggregation factor)\n");
+    fscanf(config_file, "%d\n", &args->aggregation_factor);
+  }
   
   fclose(config_file);
   

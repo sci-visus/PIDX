@@ -207,6 +207,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
       values_per_sample[var] =  1;
       double_data[var] = (double*)malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
+      const double pi = acos(-1.0);
       for (k = 0; k < args.count_local[2]; k++)
         for (j = 0; j < args.count_local[1]; j++)
           for (i = 0; i < args.count_local[0]; i++)
@@ -215,6 +216,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
             for (spv = 0; spv < values_per_sample[var]; spv++)
               //double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.count_local[0] * args.count_local[1]*(k))+(args.count_local[0]*(j)) + (i));
               double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+            //double_data[var][index * values_per_sample[var] + spv] = cos(2 * pi * i / args.count_local[0]) * cos(2 * pi * j / args.count_local[1]) * cos(2 * pi * k / args.count_local[2]);
           }
     }
 #endif
@@ -228,8 +230,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
       PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
 #else
       PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
-#endif
-      
+#endif  
     }
     
     PIDX_close(file);

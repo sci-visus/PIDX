@@ -15,7 +15,18 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
- 
+
+/**
+ * \file PIDX_agg.h
+ *
+ * \author Sidharth Kumar
+ * \date   10/09/14
+ *
+ * Move the hz encoded data sitting on n' cores
+ * to A aggregator cores
+ * 
+ */
+
 #ifndef __PIDX_AGG_H
 #define __PIDX_AGG_H 
 
@@ -23,21 +34,48 @@
 struct PIDX_agg_struct;
 typedef struct PIDX_agg_struct* PIDX_agg_id;
 
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, 
-			  idx_dataset_derived_metadata idx_derived_ptr,
-			  int start_var_index, 
-			  int end_var_index);
+
+/// Creates the Aggregation ID.
+/// \param idx_meta_data All infor regarding the idx file passed from PIDX.c
+/// \param idx_derived_ptr All derived idx related derived metadata passed from PIDX.c
+/// \param start_var_index starting index of the variable on which the relevant operation is to be applied
+/// \param end_var_index ending index of the variable on which the relevant operation is to be applied
+/// \return PIDX_hz_encode_id The identifier associated with the task
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
+
+
 
 #if PIDX_HAVE_MPI
+/// Attach the communicator wit the ID.
+/// \param id aggregator id
+/// \param comm the communicator
+/// \return error code
 int PIDX_agg_set_communicator(PIDX_agg_id io_id, MPI_Comm comm);
 #endif
 
-int PIDX_agg_aggregate(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
 
-int PIDX_agg_aggregate_write_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int MODE);
 
-int PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
+///
+int PIDX_agg_buf_create(PIDX_agg_id agg_id);
 
+
+
+///
+int PIDX_agg_write(PIDX_agg_id agg_id);
+
+
+
+///
+int PIDX_agg_read(PIDX_agg_id agg_id);
+
+
+
+///
+int PIDX_agg_buf_destroy(PIDX_agg_id agg_id);
+
+
+
+///
 int PIDX_agg_finalize(PIDX_agg_id agg_id);
 
 #endif //__PIDX_AGG_H
