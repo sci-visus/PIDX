@@ -79,7 +79,7 @@ int getPowerOftwo(int x)
 
 
 /// Function to find the dimension of the imposing regular box
-void set_default_box_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs) 
+void set_default_box_size(PIDX_rst_id rst_id, int* process_bounds, int nprocs) 
 {
   int i = 0, j = 0;
   int64_t average_count = 0;
@@ -170,9 +170,9 @@ int PIDX_rst_set_communicator(PIDX_rst_id rst_id, MPI_Comm comm)
 int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64_t* box_dim)
 {
   int num_output_buffers = 0;
-  int r, d, c, nprocs, rank, ret;
+  int r, d, c, nprocs, rank;
   int64_t i, j, k, l, m, max_vol, box_count;
-  int64_t *rank_r_offset, *rank_r_count;
+  //int64_t *rank_r_offset, *rank_r_count;
   int power_two_box_count, edge_case = 0;
   
   MPI_Comm_rank(rst_id->comm, &rank);
@@ -181,6 +181,7 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
   /// creating rank_r_count and rank_r_offset to hold the offset and count of every process
   rst_id->power_two_box_group_count = 0;
 
+  /*
   rank_r_offset = (int64_t*)malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
   if (!rank_r_offset) 
   {
@@ -196,7 +197,7 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
     return (-1);
   }
   memset(rank_r_count, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
-
+  
   /// STEP 1 : Doing an all to all Communication to get extents of all processes.
   ret = MPI_Allgather(rst_id->idx_ptr->variable[rst_id->start_variable_index]->patch[0]->Ndim_box_offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, rst_id->comm);
   if (ret != MPI_SUCCESS) 
@@ -211,10 +212,11 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
-
+  */
+  
   /// STEP 2 : Compute the dimension of the regular BOX
   if(set_box_dim == 0)
-   set_default_box_size(rst_id, rank_r_count, nprocs);
+   set_default_box_size(rst_id, rst_id->idx_ptr->variable[rst_id->start_variable_index]->rank_r_count, nprocs);
   else
     memcpy(rst_id->power_two_box_size, box_dim, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
     
@@ -226,8 +228,8 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
   memset(local_proc_box, 0, sizeof (*local_proc_box));
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++) 
   {
-    local_proc_box->Ndim_box_offset[d] = rank_r_offset[PIDX_MAX_DIMENSIONS * rank + d];
-    local_proc_box->Ndim_box_size[d] = rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
+    local_proc_box->Ndim_box_offset[d] = rst_id->idx_ptr->variable[rst_id->start_variable_index]->rank_r_offset[PIDX_MAX_DIMENSIONS * rank + d];
+    local_proc_box->Ndim_box_size[d] = rst_id->idx_ptr->variable[rst_id->start_variable_index]->rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
   }
 
   rst_id->power_two_box_group_count = 0;
@@ -350,8 +352,8 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
 
                 for (d = 0; d < PIDX_MAX_DIMENSIONS; d++) 
                 {
-                  rank_r_box->Ndim_box_offset[d] = rank_r_offset[PIDX_MAX_DIMENSIONS * r + d];
-                  rank_r_box->Ndim_box_size[d] = rank_r_count[PIDX_MAX_DIMENSIONS * r + d];
+                  rank_r_box->Ndim_box_offset[d] = rst_id->idx_ptr->variable[rst_id->start_variable_index]->rank_r_offset[PIDX_MAX_DIMENSIONS * r + d];
+                  rank_r_box->Ndim_box_size[d] = rst_id->idx_ptr->variable[rst_id->start_variable_index]->rank_r_count[PIDX_MAX_DIMENSIONS * r + d];
                 }
 
                 //If process with rank r intersects with the regular box, then calculate the offset, count and volume of the intersecting volume
@@ -422,8 +424,8 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
           }
 
   free(local_proc_box);
-  free(rank_r_offset);
-  free(rank_r_count);
+  //free(rank_r_offset);
+  //free(rank_r_count);
   
   return num_output_buffers;
 }

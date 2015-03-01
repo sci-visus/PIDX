@@ -45,7 +45,9 @@ struct PIDX_hz_encode_struct
   int start_var_index;
   int end_var_index;
   
+#if PIDX_HAVE_MPI
   MPI_Comm comm;
+#endif
 };
 
 
@@ -287,7 +289,7 @@ int PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
             {
               id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
               id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
-              //printf("[%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count,  id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_count_per_level[j], id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[j], id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[j], b);
+              printf("XXXXXXXXX [%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count,  id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_count_per_level[j], id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, (long long)id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[j], (long long)id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[j], b);
               count++;
             }
 #endif
@@ -646,7 +648,6 @@ int PIDX_hz_encode_write(PIDX_hz_encode_id id)
       
         if(id->idx_ptr->variable[id->start_var_index]->data_layout == PIDX_row_major)
         {
-          printf("BOX %d: %d %d %d %d %d : %d %d %d %d %d\n", b, compressed_patch_offset[0], compressed_patch_offset[1], compressed_patch_offset[2], compressed_patch_offset[3], compressed_patch_offset[4], compressed_patch_size[0], compressed_patch_size[1], compressed_patch_size[2], compressed_patch_size[3], compressed_patch_size[4]);
           for (v = compressed_patch_offset[4]; v < compressed_patch_offset[4] + compressed_patch_size[4]; v++)
           {
             for (u = compressed_patch_offset[3]; u < compressed_patch_offset[3] + compressed_patch_size[3]; u++)
@@ -867,14 +868,15 @@ int PIDX_hz_encode_read(PIDX_hz_encode_id id)
   if(id->idx_ptr->variable[id->start_var_index]->patch_count < 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_derived_ptr->patch_count not set.\n", __FILE__, __LINE__);
-    return 1;
+    return -1;
   }
   
   if(id->idx_derived_ptr->maxh <= 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_derived_ptr->maxh not set.\n", __FILE__, __LINE__);
-    return 1;
+    return -1;
   }
+  
   
   for (y = 0; y < id->idx_ptr->variable[id->start_var_index]->patch_group_count; y++)
   {
@@ -885,7 +887,7 @@ int PIDX_hz_encode_read(PIDX_hz_encode_id id)
     }
     
     total_compressed_patch_size = (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[0] / id->idx_ptr->compression_block_size[0]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[1] / id->idx_ptr->compression_block_size[1]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[2] / id->idx_ptr->compression_block_size[2]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[3] / id->idx_ptr->compression_block_size[3]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[4] / id->idx_ptr->compression_block_size[4]);
-    
+  
     for (b = 0; b < id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[y]->box_count; b++) 
     {
       total_compressed_patch_size = 0;
@@ -1029,14 +1031,22 @@ int PIDX_hz_encode_read(PIDX_hz_encode_id id)
           {
             int adjusted_buffer_size = (id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + 1 - (id->idx_ptr->variable[i]->HZ_patch[y]->missing_block_count_per_level[j] * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample;
             
+            //printf("Initial Size %lld Adjusted size %lld (%lld - %d)\n", (id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + 1), adjusted_buffer_size/(bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample), (id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + 1), (id->idx_ptr->variable[i]->HZ_patch[y]->missing_block_count_per_level[j] * id->idx_derived_ptr->samples_per_block));
+            
             int initial_m = 0;
             for (n = 0; n < id->idx_ptr->variable[i]->HZ_patch[y]->missing_block_count_per_level[j]; n++)
             {
+              //printf("[%d] [L %d] start %lld end %lld\n", n, j, id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j], id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j]);
               for (m = initial_m; m < (id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + 1); m++)
               {
                 if (m + id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] == id->idx_ptr->variable[i]->HZ_patch[y]->missing_block_index_per_level[j][n] * id->idx_derived_ptr->samples_per_block)
                 {
-                  memmove(id->idx_ptr->variable[i]->HZ_patch[y]->buffer[j] + (m - (level_blocks * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample, id->idx_ptr->variable[i]->HZ_patch[y]->buffer[j] + ((m + id->idx_derived_ptr->samples_per_block) - (level_blocks * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample, (id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - (id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + m + id->idx_derived_ptr->samples_per_block) + 1) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample /*((id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + 1 - ((m + level_blocks) + id->idx_derived_ptr->samples_per_block) ) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample)*/);
+                  //printf("[MISS] (%d + %d) %d = %d (%d x %d)\n", m, id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j], (m + id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j]), id->idx_ptr->variable[i]->HZ_patch[y]->missing_block_index_per_level[j][n] * id->idx_derived_ptr->samples_per_block, id->idx_ptr->variable[i]->HZ_patch[y]->missing_block_index_per_level[j][n], id->idx_derived_ptr->samples_per_block);                  
+                  //printf("[SOURCE] %d [DEST] %d [COUNT] %d\n", (m - (level_blocks * id->idx_derived_ptr->samples_per_block)), ((m + id->idx_derived_ptr->samples_per_block) - (level_blocks * id->idx_derived_ptr->samples_per_block)), (id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + 1 - ((m + level_blocks) + id->idx_derived_ptr->samples_per_block) ));
+                  
+                  memmove(id->idx_ptr->variable[i]->HZ_patch[y]->buffer[j] + (m - (level_blocks * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample, 
+                          id->idx_ptr->variable[i]->HZ_patch[y]->buffer[j] + ((m + id->idx_derived_ptr->samples_per_block) - (level_blocks * id->idx_derived_ptr->samples_per_block)) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample, 
+                          (id->idx_ptr->variable[i]->HZ_patch[y]->end_hz_index[j] - (id->idx_ptr->variable[i]->HZ_patch[y]->start_hz_index[j] + m + id->idx_derived_ptr->samples_per_block) + 1) * bytes_for_datatype * id->idx_ptr->variable[i]->values_per_sample );
                   level_blocks++;
                   initial_m = m;
                 }
@@ -1049,7 +1059,16 @@ int PIDX_hz_encode_read(PIDX_hz_encode_id id)
               
             }
             else
+            {
               id->idx_ptr->variable[i]->HZ_patch[y]->buffer[j] = temp_buffer;
+            }
+            
+            //int64_t dvalue;
+            //if (j == 20)
+            //{
+            //  memcpy(&dvalue, id->idx_ptr->variable[i]->HZ_patch[y]->buffer[j] + 887364 * bytes_for_datatype, bytes_for_datatype);
+            //  printf("[XXX] Value at 887364 = %lld\n", dvalue);
+            //}
           }
         }
       }
@@ -1233,8 +1252,7 @@ int PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
       free(id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index);
       free(id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index);
       
-      free(id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level);
-      
+      free(id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level);     
       
       if(id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[p]->box_group_type == 0)
 	free(id->idx_ptr->variable[var]->HZ_patch[p]->buffer_index);
@@ -1271,21 +1289,23 @@ int PIDX_hz_encode_finalize(PIDX_hz_encode_id id)
   return 0;
 }
 
-#if PIDX_HAVE_MPI
+
 int HELPER_Hz_encode(PIDX_hz_encode_id id)
 {
-  
   int i = 0, k = 0, b = 0, var = 0, rank;
   int64_t global_hz, element_count = 0, lost_element_count = 0;
   int64_t ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
+  
 #if long_buffer
   uint64_t dvalue_1, dvalue_2;
 #else
   double dvalue_1, dvalue_2;
 #endif
-  
+
+#if PIDX_HAVE_MPI
   MPI_Comm_rank(id->comm, &rank);
+#endif
   
   for(var = id->start_var_index; var <= id->end_var_index; var++)
   {
@@ -1331,7 +1351,8 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id)
       }
     }
   }
-  
+ 
+#if PIDX_HAVE_MPI
   int64_t global_volume = 0;
   MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, id->comm);
   
@@ -1351,7 +1372,7 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id)
     if (rank == 0)
       fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_derived_ptr->color, (long long) global_volume, (long long) id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2] * (id->end_var_index - id->start_var_index + 1));
   }
+#endif
     
   return 0;
 }
-#endif

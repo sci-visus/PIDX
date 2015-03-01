@@ -41,6 +41,8 @@ int test_reader(struct Args args, int rank, int nprocs)
   /// Total number of blocks per file
   int blocks_per_file;                                               
   
+  int *values_per_sample;
+  
   PIDX_variable* variable;
   double     **double_data;
   
@@ -92,9 +94,8 @@ int test_reader(struct Args args, int rank, int nprocs)
     PIDX_get_block_count(file, &blocks_per_file);
     PIDX_get_variable_count(file, &variable_count);
     
-    if(rank == 0)
-      printf("Block: %d %d and Variable Count = %d\n", bits_per_block, blocks_per_file, variable_count);
-    
+    //if(rank == 0)
+    //  printf("Block: %d %d and Variable Count = %d\n", bits_per_block, blocks_per_file, variable_count);
     
     ///
     variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
@@ -104,11 +105,17 @@ int test_reader(struct Args args, int rank, int nprocs)
     double_data = (double**)malloc(sizeof(*double_data) * variable_count);
     memset(double_data, 0, sizeof(*double_data) * variable_count);
     
-    for(var = 0; var < variable_count; var++)
+    
+    values_per_sample = (int*)malloc(sizeof(*values_per_sample) * variable_count);
+    memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count); 
+    
+    for (var = 0; var < variable_count; var++)
     {
       PIDX_get_next_variable(file, &variable[var]);
-      if(rank == 0)
-	printf("name = %s and size = %d\n", variable[var]->var_name, variable[var]->values_per_sample);
+      //if(rank == 0)
+      //	printf("name = %s and size = %d\n", variable[var]->var_name, variable[var]->values_per_sample);
+      
+      values_per_sample[var] = variable[var]->values_per_sample;
       
       double_data[var] = (double*)malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * variable[var]->values_per_sample);
       memset(double_data[var], 0, sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * variable[var]->values_per_sample);
@@ -117,13 +124,31 @@ int test_reader(struct Args args, int rank, int nprocs)
     }
     
     PIDX_close(file);
-    //PIDX_close_access(access);
-    
+    PIDX_close_access(access);
+    int equal_count = 0;
     for(var = 0; var < variable_count; var++)
     {
+      int i, j, k, spv;
+      for (k = 0; k < args.count_local[2]; k++)
+        for (j = 0; j < args.count_local[1]; j++)
+          for (i = 0; i < args.count_local[0]; i++)
+          {
+            int64_t index = (int64_t) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
+            for (spv = 0; spv < values_per_sample[var]; spv++)
+            {
+              if (double_data[var][index * values_per_sample[var] + spv] != 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)))
+              {
+                
+              }
+              else
+                equal_count++;
+            }
+          }
       free(double_data[var]);
       double_data[var] = 0;
     }
+    
+    printf("[%d] equal element count = %d\n", rank, equal_count);
     
     free(double_data);
     double_data = 0;
@@ -131,6 +156,8 @@ int test_reader(struct Args args, int rank, int nprocs)
     free(variable);
     variable = 0;
     
+    free(values_per_sample);
+    values_per_sample = 0;
   }
   free(args.output_file_name);
 #endif

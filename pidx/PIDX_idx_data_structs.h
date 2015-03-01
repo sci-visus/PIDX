@@ -55,8 +55,7 @@ struct PIDX_variable_struct
   int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase
   Ndim_box_group* patch_group_ptr;                                      ///< Pointer to the patch groups
   Ndim_box *post_rst_block;
-  
-  
+    
   // Block level layout
   PIDX_block_layout VAR_global_block_layout;                            ///< Block layout, specifically when variables might have different extents in the domain
   int *VAR_blocks_per_file;                                             ///< The number of blocks a variable occupy within each file
@@ -65,6 +64,10 @@ struct PIDX_variable_struct
   
   //Compression related
   int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
+  
+  //extents fo meta-data
+  int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
+  int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 

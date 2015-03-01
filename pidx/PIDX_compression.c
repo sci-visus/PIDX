@@ -32,9 +32,11 @@
 ///Struct for restructuring ID
 struct PIDX_compression_id_struct 
 {
+#if PIDX_HAVE_MPI
   /// Passed by PIDX API
   MPI_Comm comm;
-
+#endif
+  
   /// Contains all relevant IDX file info
   /// Blocks per file, samples per block, bitmask, box, file name template and more
   idx_dataset idx_ptr;

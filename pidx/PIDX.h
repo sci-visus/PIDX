@@ -217,7 +217,7 @@ PIDX_return_code PIDX_variable_get_box_metadata(PIDX_variable variable, int* on_
 /// This function gets the number of boxes written by all the processes.
 /// \param file The file handler.
 /// \return Number of boxes.
-PIDX_return_code PIDX_get_box_count(PIDX_file file, int* box_coult);
+PIDX_return_code PIDX_get_box_count(PIDX_file file, int* box_count);
 
 
 /// Gets the actual box meta-data associated with box_index.
@@ -232,7 +232,7 @@ PIDX_return_code PIDX_get_box(PIDX_file file, int box_index, PIDX_point offset, 
 /// \param file The file handler.
 /// \param MPI_rank  The rank for which one istrying to find the number of boxes.
 /// \return Number of boxes.
-PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int* box_coult);
+PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int* box_count);
 
 
 /// Gets the actual box meta-data associated with box_index and the MPI rank.

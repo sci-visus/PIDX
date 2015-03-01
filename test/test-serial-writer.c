@@ -20,67 +20,92 @@
 int serial_writer(struct Args args)
 {
   int i = 0, j = 0, k = 0;
-  int spv = 0;
+  int spv = 0, var = 0;
   int ts;
 
   /* IDX file */
   PIDX_file file = 0;                                                // IDX file descriptor
   const char *output_file;                                                      // IDX File Name
-  const int bits_per_block = 15;                                                // Total number of samples in each block = 2 ^ bits_per_block
-  const int blocks_per_file = 256;                                               // Total number of blocks per file
   
   /* IDX variables */
-  PIDX_variable variable = 0;                                       // variable descriptor
-  double     *var1_double_scalar_data;
-  int sample_count = 1;
-  //int one_opt = 0;
-  //int variable_count = 1;
-
+  PIDX_variable *variable;                                       // variable descriptor
+  int *values_per_sample;
+  double** double_data;
+    
+  variable = (PIDX_variable*)malloc(sizeof(*variable) * args.variable_count);
+  memset(variable, 0, sizeof(*variable) * args.variable_count);
+  
+  values_per_sample = (int*) malloc(sizeof(*values_per_sample) * args.variable_count);
+  memset(values_per_sample, 0, sizeof(*values_per_sample) * args.variable_count);      
+  
   //   Creating the filename
   args.output_file_name = (char*) malloc(sizeof (char) * 512);
   sprintf(args.output_file_name, "%s%s", args.output_file_template, ".idx");
 
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
-  //PIDX_create_point(&global_bounding_box);
-  //PIDX_create_point(&local_offset_point);
-  //PIDX_create_point(&local_box_count_point);
-  
   PIDX_set_point_5D(global_bounding_box, args.extents[0], args.extents[1], args.extents[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, 0, 0, 0, 0, 0);
   PIDX_set_point_5D(local_box_count_point, args.extents[0], args.extents[1], args.extents[2], 1, 1);
   
   output_file = args.output_file_name;
     
-  for (ts = 0; ts < args.time_step; ts++) 
+  for (ts = 0; ts < args.time_step; ts++)
   {
-    var1_double_scalar_data = malloc(sizeof (double) * args.extents[0] * args.extents[1] * args.extents[2] * sample_count);
-    for (k = 0; k < args.extents[2]; k++)
-      for (j = 0; j < args.extents[1]; j++)
-	for (i = 0; i < args.extents[0]; i++) 
-	{
-	  int64_t index = (int64_t) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
-	  for (spv = 0; spv < sample_count; spv++)
-	    var1_double_scalar_data[index * sample_count + spv] = (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
-	}
+    double_data = (double**)malloc(sizeof(*double_data) * args.variable_count);
+    for (var = 0; var < args.variable_count; var++)
+    {
+      values_per_sample[var] = 1;
+      double_data[var] = (double*)malloc(sizeof (*double_data[var]) * args.extents[0] * args.extents[1] * args.extents[2] * values_per_sample[var]);
+      for (k = 0; k < args.extents[2]; k++)
+        for (j = 0; j < args.extents[1]; j++)
+          for (i = 0; i < args.extents[0]; i++) 
+          {
+            int64_t index = (int64_t) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
+            for (spv = 0; spv < values_per_sample[var]; spv++)
+              double_data[var][index * values_per_sample[var] + spv] = (double)(args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
+          }
+    }
     
-    PIDX_file_create(output_file, PIDX_file_trunc, NULL, &file);
+    PIDX_access access;
+    PIDX_create_access(&access);
+    //PIDX_set_default_access(access);
+    
+    /// PIDX mandatory calls
+    PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
+    
+    /// PIDX calls to set different parameters (optional)
     PIDX_set_dims(file, global_bounding_box);
-    
     PIDX_set_current_time_step(file, ts);
-    PIDX_set_block_size(file, bits_per_block);
-    PIDX_set_block_count(file, blocks_per_file);
+    PIDX_set_block_size(file, args.bits_per_block);
+    PIDX_set_aggregation_factor(file, args.aggregation_factor);
+    PIDX_set_block_count(file, args.blocks_per_file);
+    PIDX_set_variable_count(file, args.variable_count);
     
-    PIDX_variable_create(file, "var1_double_scalar_data", sample_count * sizeof(double) * 8, "1*float64", &variable);
-    PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, var1_double_scalar_data, PIDX_row_major);
+    /// PIDX debuging different phases
+    PIDX_debug_rst(file, 0);
+    PIDX_debug_hz(file, 0);
+    PIDX_dump_agg_info(file, 0);
+    
+    /// PIDX enabling/disabling different phases
+    PIDX_enable_hz(file, args.perform_hz);
+    PIDX_enable_agg(file, args.perform_agg);
+    PIDX_enable_io(file, args.perform_io);
+    printf("variable count %d\n", args.variable_count);
+    for(var = 0; var < args.variable_count; var++)
+    {
+      char variable_name[1024];
+      char data_type[1024];
+      sprintf(variable_name, "variable_%d", var);
+      sprintf(data_type, "%d*float64", values_per_sample[var]);
+      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
+      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+    }
+    
     //PIDX_variable_set_box_metadata_on(variable);
     
     PIDX_close(file);
-    free(var1_double_scalar_data);
+    //free(var1_double_scalar_data);
   }
-  
-  //PIDX_delete_point(&global_bounding_box);
-  //PIDX_delete_point(&local_offset_point);
-  //PIDX_delete_point(&local_box_count_point);
   
   free(args.output_file_name);
   return 0;

@@ -39,7 +39,7 @@ static void usage(enum Kind kind)
 
   switch (kind)
   {
-  //case SERIAL_WRITER:                      usage_serial();              break;
+  case SERIAL_WRITER:                      usage_serial();              break;
   case PARALLEL_WRITER:                    usage_multi_idx_writer();    break;
   //case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
   //case SERIAL_READER:                      usage_reader();              break;
@@ -125,13 +125,13 @@ int main(int argc, char **argv)
 	printf("Performing Parallel Write....\n");
       test_multi_patch_writer(args, rank, nprocs);
       break;
-    
+    */
     case SERIAL_WRITER:  
       if(rank == 0)
 	printf("Performing Serial Write....\n");
       serial_writer(args);
       break;
-    */
+    
     default:
       test_multi_idx_writer(args, rank, nprocs);
   }
@@ -179,7 +179,7 @@ int parse_args(struct Args *args, int argc, char **argv)
   fscanf(config_file, "(idx count x:y:z)\n");
   fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
   
-  if (strcmp(strkind, "parallel-writer") == 0)
+  if (strcmp(strkind, "parallel-writer") == 0 || strcmp(strkind, "serial-writer") == 0)
   {
     fscanf(config_file, "(debug rst:hz:agg)\n");
     fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
