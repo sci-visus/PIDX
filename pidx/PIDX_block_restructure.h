@@ -36,8 +36,12 @@ PIDX_block_rst_id PIDX_block_rst_init(idx_dataset idx_meta_data, idx_dataset_der
 int PIDX_block_rst_set_communicator(PIDX_block_rst_id id, MPI_Comm comm);
 #endif
 
-/// Restructures the voxels so that they are grouped in (m x n x p) blocks
-/// For example, (m n p) can be (4 4 4)
+/// Restructures the voxels in (m x n x p) blocks
+/// Example: The following 2D array
+/// 1 2 3  4  5  6
+/// 7 8 9 10 11 12
+/// is usually stored in linear memory as 1 2 3 4 5 6 7 8 9 10 11 12
+/// The restructured storage, in 3 x 2 blocks, is 1 2 3 7 8 9 4 5 6 10 11 12
 int PIDX_block_rst_prepare(PIDX_block_rst_id id);
 
 int PIDX_block_rst_compress(PIDX_block_rst_id id, int MODE);

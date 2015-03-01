@@ -75,6 +75,7 @@ int PIDX_block_rst_set_communicator(PIDX_block_rst_id block_rst_id, MPI_Comm com
 #endif
 
 // one restructured box per group
+// TODO: detect wrong input
 int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 {
   // compute the intra compression block strides
@@ -146,7 +147,8 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 
         // loop through the elements to find their new positions
         int64_t i = 0;
-        for (i = 0; i < num_elems_box; ++i)
+        int64_t k = bytes_per_value * compression_block_size[0]; // we copy k consecutive bytes at a time
+        for (i = 0; i < num_elems_box; i += compression_block_size[0])
         {
           // compute the 5D index of the ith element
           int64_t j = i + num_prev_elems;
@@ -186,8 +188,8 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
             }
           }
 
-          // copy the element
-          memcpy(&out_box->Ndim_box_buffer[j * bytes_per_value], &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value);
+          // copy k consecutive elements at once
+          memcpy(&out_box->Ndim_box_buffer[j * k], &box->Ndim_box_buffer[i * k], k);
         }
       }
     }
