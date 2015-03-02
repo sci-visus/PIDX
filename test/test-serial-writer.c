@@ -48,7 +48,8 @@ int serial_writer(struct Args args)
   PIDX_set_point_5D(local_box_count_point, args.extents[0], args.extents[1], args.extents[2], 1, 1);
   
   output_file = args.output_file_name;
-    
+   
+  PIDX_time_step_caching_ON();
   for (ts = 0; ts < args.time_step; ts++)
   {
     double_data = (double**)malloc(sizeof(*double_data) * args.variable_count);
@@ -62,7 +63,7 @@ int serial_writer(struct Args args)
           {
             int64_t index = (int64_t) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
             for (spv = 0; spv < values_per_sample[var]; spv++)
-              double_data[var][index * values_per_sample[var] + spv] = (double)(args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
+              double_data[var][index * values_per_sample[var] + spv] = (double)100 + (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
           }
     }
     
@@ -83,7 +84,7 @@ int serial_writer(struct Args args)
     
     /// PIDX debuging different phases
     PIDX_debug_rst(file, 0);
-    PIDX_debug_hz(file, 0);
+    PIDX_debug_hz(file, args.debug_hz);
     PIDX_dump_agg_info(file, 0);
     
     /// PIDX enabling/disabling different phases
@@ -106,6 +107,7 @@ int serial_writer(struct Args args)
     PIDX_close(file);
     //free(var1_double_scalar_data);
   }
+  PIDX_time_step_caching_OFF();
   
   free(args.output_file_name);
   return 0;

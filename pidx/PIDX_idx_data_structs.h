@@ -54,7 +54,7 @@ struct PIDX_variable_struct
   // Memory layout before aggregation 
   int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase
   Ndim_box_group* patch_group_ptr;                                      ///< Pointer to the patch groups
-  Ndim_box *post_rst_block;
+  Ndim_box_group* post_rst_block;                                       ///< Pointer to the patch group after block restructuring
     
   // Block level layout
   PIDX_block_layout VAR_global_block_layout;                            ///< Block layout, specifically when variables might have different extents in the domain

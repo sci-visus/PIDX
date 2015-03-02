@@ -103,9 +103,9 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
     {
       // copy the size and offset to output
       Ndim_box_group box_group = var->patch_group_ptr[g];
-      Ndim_box out_box = var->post_rst_block[g];
-      memcpy(&out_box->Ndim_box_size, &box_group->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-      memcpy(&out_box->Ndim_box_offset, &box_group->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+      Ndim_box_group out_box = var->post_rst_block[g];
+      memcpy(&out_box->box[0]->Ndim_box_size, &box_group->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+      memcpy(&out_box->box[0]->Ndim_box_offset, &box_group->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
       int64_t num_elems_group = 1; // number of elements in the group
       for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
       {
@@ -114,7 +114,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
           num_elems_group *= box_group->enclosing_box_size[d];
         }
       }
-      out_box->Ndim_box_buffer = malloc(bytes_per_value * num_elems_group);
+      out_box->box[0]->Ndim_box_buffer = malloc(bytes_per_value * num_elems_group);
       int64_t *group_offset = box_group->enclosing_box_offset;
 
       // loop through all boxes
@@ -191,7 +191,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
           }
 
           // copy k consecutive elements at once
-          memcpy(&out_box->Ndim_box_buffer[j * k], &box->Ndim_box_buffer[i * k], k);
+          memcpy(&out_box->box[0]->Ndim_box_buffer[j * k], &box->Ndim_box_buffer[i * k], k);
         }
       }
     }

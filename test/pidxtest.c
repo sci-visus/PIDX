@@ -42,7 +42,7 @@ static void usage(enum Kind kind)
   case SERIAL_WRITER:                      usage_serial();              break;
   case PARALLEL_WRITER:                    usage_multi_idx_writer();    break;
   //case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
-  //case SERIAL_READER:                      usage_reader();              break;
+  case SERIAL_READER:                      usage_serial_reader();              break;
   case PARALLEL_READER:                    usage_reader();              break;
   case DEFAULT:
   default:                                 usage_multi_idx_writer();
@@ -132,6 +132,12 @@ int main(int argc, char **argv)
       serial_writer(args);
       break;
     
+    case SERIAL_READER:  
+      if(rank == 0)
+        printf("Performing Serial Read....\n");
+      serial_reader(args);
+      break;
+      
     default:
       test_multi_idx_writer(args, rank, nprocs);
   }

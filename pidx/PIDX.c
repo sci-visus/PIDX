@@ -384,11 +384,22 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   
   (*file)->idx_derived_ptr->aggregation_factor = 1;
   
+  (*file)->idx_ptr->current_time_step = 0;
+  (*file)->idx_derived_ptr->aggregation_factor = 1;
+  (*file)->idx_derived_ptr->color = 0;
+  (*file)->idx_count[0] = 1;
+  (*file)->idx_count[1] = 1;
+  (*file)->idx_count[2] = 1;
+  (*file)->idx_count[3] = 1;
+  (*file)->idx_count[4] = 1;
+  
+  (*file)->perform_hz = 1;
+  (*file)->perform_agg = 1;
+  (*file)->perform_io = 1;
+  
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
-  {
     MPI_Comm_rank(access_type->comm, &rank);
-  }
 #endif
   
   if (rank == 0)
@@ -1320,17 +1331,6 @@ PIDX_return_code PIDX_read(PIDX_file file)
       
       file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
     }
-    if (file->perform_io == 1)
-    {
-      file->header_io_id = PIDX_header_io_init(file->idx_ptr, file->idx_derived_ptr, 0, file->idx_ptr->variable_count);
-#if PIDX_HAVE_MPI
-      PIDX_header_io_set_communicator(file->header_io_id, file->comm);
-#endif
-      //PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
-      //PIDX_header_io_file_create(file->header_io_id);
-      //PIDX_header_io_file_write(file->header_io_id);
-      PIDX_header_io_finalize(file->header_io_id);
-    }
     write_init_end[hp] = PIDX_get_time();
     hp++;
   }
@@ -1355,23 +1355,6 @@ PIDX_return_code PIDX_read(PIDX_file file)
   {
     write_init_start[hp] = PIDX_get_time();
     //file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
-    
-    file->header_io_id = PIDX_header_io_init(file->idx_ptr, file->idx_derived_ptr, 0, file->idx_ptr->variable_index_tracker);
-#if PIDX_HAVE_MPI
-    PIDX_header_io_set_communicator(file->header_io_id, file->comm);
-#endif
-    
-    if (hp == 0)
-      PIDX_header_io_file_create(file->header_io_id);
-    
-    if (file->idx_ptr->variable_count == -1 || (file->idx_ptr->variable_count == file->idx_ptr->variable_index_tracker))
-    {
-      PIDX_header_io_write_idx (file->header_io_id, file->idx_ptr->filename, file->idx_ptr->current_time_step);
-      //PIDX_header_io_file_write(file->header_io_id);
-    }
-        
-    PIDX_header_io_finalize(file->header_io_id);
-    
     write_init_end[hp] = PIDX_get_time();
     hp++;
   }
@@ -1412,7 +1395,6 @@ PIDX_return_code PIDX_read(PIDX_file file)
         }
   }
     
-#if PIDX_HAVE_MPI
 
   int do_agg = 1;
   int local_do_rst = 0, global_do_rst = 0;
@@ -1425,11 +1407,12 @@ PIDX_return_code PIDX_read(PIDX_file file)
     
     ///----------------------------------IO init start-------------------------------------------------///
     io_init_start[vp] = PIDX_get_time();
-    //if (file->perform_io == 1)
-    //{
-      file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-      PIDX_io_set_communicator(file->io_id, file->comm);
-    //}
+    
+    file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+#if PIDX_HAVE_MPI
+    PIDX_io_set_communicator(file->io_id, file->comm);
+#endif
+    
     io_init_end[vp] = PIDX_get_time();
     ///----------------------------------IO init end---------------------------------------------------///
     
@@ -1439,7 +1422,9 @@ PIDX_return_code PIDX_read(PIDX_file file)
     if(do_agg == 1)
     {
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+#if PIDX_HAVE_MPI
       PIDX_agg_set_communicator(file->agg_id, file->comm);
+#endif
     }
     agg_init_end[vp] = PIDX_get_time();
     ///-----------------------------------AGG init end-------------------------------------------------///
@@ -1448,12 +1433,14 @@ PIDX_return_code PIDX_read(PIDX_file file)
     ///------------------------------------HZ init start-----------------------------------------------///
     hz_init_start[vp] = PIDX_get_time();                                             
     file->hz_id = PIDX_hz_encode_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
+#if PIDX_HAVE_MPI
     PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
-    
+#endif
     hz_init_end[vp] = PIDX_get_time();
     ///------------------------------------HZ init end-------------------------------------------------///
     
     
+#if PIDX_HAVE_MPI
     ///----------------------------------- RST init start----------------------------------------------///
     rst_init_start[vp] = PIDX_get_time();
     if (file->idx_ptr->variable[start_index]->patch_count == 1)
@@ -1469,7 +1456,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
     
     rst_init_end[vp] = PIDX_get_time();
     ///----------------------------------- RST init end------------------------------------------------///
-    
+#endif
     
     ///------------------------------Var buffer init start---------------------------------------------///
     var_init_start[vp] = PIDX_get_time();
@@ -1477,10 +1464,14 @@ PIDX_return_code PIDX_read(PIDX_file file)
     for (var = start_index; var <= end_index; var++)
     {
       file->idx_ptr->variable[var]->patch_group_count = 0;
+#if PIDX_HAVE_MPI
       if(global_do_rst == 1)
         file->idx_ptr->variable[var]->patch_group_count = PIDX_rst_attach_restructuring_box(file->rst_id, 0, NULL);
       else
         file->idx_ptr->variable[var]->patch_group_count = file->idx_ptr->variable[var]->patch_count;
+#else
+      file->idx_ptr->variable[var]->patch_group_count = file->idx_ptr->variable[var]->patch_count;
+#endif
       
       file->idx_ptr->variable[var]->patch_group_ptr = malloc(file->idx_ptr->variable[var]->patch_group_count * sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr)));
       for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
@@ -1494,10 +1485,14 @@ PIDX_return_code PIDX_read(PIDX_file file)
     }
 #else
     file->idx_ptr->variable[start_index]->patch_group_count = 0;
+#if PIDX_HAVE_MPI
     if (global_do_rst == 1)
       file->idx_ptr->variable[start_index]->patch_group_count = PIDX_rst_attach_restructuring_box(file->rst_id, 0, NULL);
     else
       file->idx_ptr->variable[start_index]->patch_group_count = file->idx_ptr->variable[start_index]->patch_count;
+#else
+      file->idx_ptr->variable[start_index]->patch_group_count = file->idx_ptr->variable[start_index]->patch_count;
+#endif
     
     for (var = start_index; var <= end_index; var++)
     {
@@ -1520,6 +1515,8 @@ PIDX_return_code PIDX_read(PIDX_file file)
     
     ///------------------------------------ALL buffer start time-------------------------------------------------///
     buffer_start[vp] = PIDX_get_time();
+
+#if PIDX_HAVE_MPI
     if(global_do_rst == 0)
     {
       for (var = start_index; var <= end_index; var++)
@@ -1544,7 +1541,30 @@ PIDX_return_code PIDX_read(PIDX_file file)
     }
     else
       PIDX_rst_buf_create(file->rst_id);
+#else
     
+    for (var = start_index; var <= end_index; var++)
+    {
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
+      {
+        file->idx_ptr->variable[var]->patch_group_ptr[p]->box_count = 1;
+        file->idx_ptr->variable[var]->patch_group_ptr[p]->box_group_type = 1;
+        
+        file->idx_ptr->variable[var]->patch_group_ptr[p]->box = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->box)) * file->idx_ptr->variable[var]->patch_group_ptr[p]->box_count);
+        for(j = 0; j < file->idx_ptr->variable[var]->patch_group_ptr[p]->box_count; j++)
+        {
+          file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j])));
+          memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch[p]->Ndim_box_buffer;
+        }
+        memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch[p]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+      }
+    }
+    
+#endif
+
     PIDX_hz_encode_buf_create(file->hz_id);
     
     file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
@@ -1588,8 +1608,10 @@ PIDX_return_code PIDX_read(PIDX_file file)
     
     ///---------------------------------------Agg start time--------------------------------------------------///
     rst_start[vp] = PIDX_get_time();  
+#if PIDX_HAVE_MPI
     PIDX_rst_read(file->rst_id);
     //HELPER_rst(file->rst_id);
+#endif
     rst_end[vp] = PIDX_get_time();  
     ///-----------------------------------------Agg end time--------------------------------------------------///
     
@@ -1620,107 +1642,17 @@ PIDX_return_code PIDX_read(PIDX_file file)
     if(do_agg == 1)
       PIDX_agg_finalize(file->agg_id);
     PIDX_hz_encode_finalize(file->hz_id);
+    
+#if PIDX_HAVE_MPI
     if(global_do_rst == 1)
       PIDX_rst_finalize(file->rst_id);
+#endif
+      
     finalize_end[vp] = PIDX_get_time();
     ///------------------------------------finalize end time------------------------------------------------///
     
     vp++;
   }
-#else
-
-#if 0
-  int start_index = 0, end_index = 0;
-  file->variable_pipelining_factor = 0;
-  
-  for (start_index = file->local_variable_index;
-      start_index < file->local_variable_index + file->local_variable_count; 
-      start_index = start_index + (file->variable_pipelining_factor + 1))
-  {
-    end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
-    
-    file->hz_id = PIDX_hz_encode_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-    
-    if(do_agg == 1)
-    {
-      file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-#if PIDX_HAVE_MPI
-      PIDX_agg_set_communicator(file->agg_id, file->comm);
-#endif
-    }
-    
-    file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-#if PIDX_HAVE_MPI
-    PIDX_io_set_communicator(file->io_id, file->comm);
-#endif
-    for (var = start_index; var <= end_index; var++)
-    {
-      file->idx_ptr->variable[var]->patch_group_count = file->idx_ptr->variable[var]->patch_count;
-      
-      file->idx_ptr->variable[var]->patch_group_ptr = malloc(file->idx_ptr->variable[var]->patch_group_count * sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr)));
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
-	file->idx_ptr->variable[var]->patch_group_ptr[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p])));
-      
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
-      {
-        file->idx_ptr->variable[var]->HZ_patch[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
-        assert(file->idx_ptr->variable[var]->HZ_patch[p] != NULL);
-        memset(file->idx_ptr->variable[var]->HZ_patch[p], 0, sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
-      }
-    }
-    
-    
-    for (var = start_index; var <= end_index; var++)
-    {
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
-      {
-	file->idx_ptr->variable[var]->patch_group_ptr[p]->count = 1;
-	file->idx_ptr->variable[var]->patch_group_ptr[p]->type = 0;
-	
-	file->idx_ptr->variable[var]->patch_group_ptr[p]->block = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->block)) * file->idx_ptr->variable[var]->patch_group_ptr[p]->count);
-	for(j = 0; j < file->idx_ptr->variable[var]->patch_group_ptr[p]->count; j++)
-	{
-	  file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j])));
-	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->offset, file->idx_ptr->variable[var]->patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->count, file->idx_ptr->variable[var]->patch[p]->count, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-	  file->idx_ptr->variable[var]->patch_group_ptr[p]->block[j]->buffer = file->idx_ptr->variable[var]->patch[p]->buffer;
-	}
-      }
-    }
-    
-    
-    
-    PIDX_hz_encode_buf_create(file->hz_id, file->idx_ptr->variable);
-    //if(global_do_rst == 1)
-    //HELPER_Hz_encode(file->hz_id, file->idx_ptr->variable);
-
-    if(do_agg == 1)
-    {
-      file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
-      PIDX_agg_buf_create(file->agg_id, file->idx_derived_ptr->agg_buffer);
-      
-      PIDX_io_aggregated_IO(file->io_id, file->idx_derived_ptr->agg_buffer, PIDX_READ);
-      PIDX_agg_write(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_READ);
-      
-      PIDX_agg_buf_destroy(file->idx_derived_ptr->agg_buffer);
-    }
-    else
-      PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_READ);
-    
-    PIDX_hz_encode_read_var(file->hz_id, file->idx_ptr->variable);
-    
-    PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
-    
-    PIDX_io_finalize(file->io_id);
-    
-    if(do_agg == 1)
-      PIDX_agg_finalize(file->agg_id);
-    
-    PIDX_hz_encode_finalize(file->hz_id);
-  }
-#endif
-  
-#endif
 
   return PIDX_success;
 }
@@ -2110,7 +2042,6 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           }
         }
   }
-#if 1//PIDX_HAVE_MPI
 
   int do_agg = 1;
   int local_do_rst = 0, global_do_rst = 0;
@@ -2262,8 +2193,26 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         memset(file->idx_ptr->variable[var]->HZ_patch[p], 0, sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
       }    
       //TODO
-      //file->idx_ptr->variable[var]->post_rst_block = malloc(sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
-      //memset(file->idx_ptr->variable[var]->post_rst_block, 0, sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+      file->idx_ptr->variable[var]->post_rst_block = malloc(sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+      memset(file->idx_ptr->variable[var]->post_rst_block, 0, sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
+      {
+        file->idx_ptr->variable[var]->post_rst_block[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+        memset(file->idx_ptr->variable[var]->post_rst_block[p], 0, sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+        
+        file->idx_ptr->variable[var]->post_rst_block[p]->box_count = 1;
+        file->idx_ptr->variable[var]->post_rst_block[p]->box_group_type = file->idx_ptr->variable[var]->patch_group_ptr[p]->box_group_type;
+        
+        file->idx_ptr->variable[var]->post_rst_block[p]->box = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box)) * file->idx_ptr->variable[var]->post_rst_block[p]->box_count);
+        
+        file->idx_ptr->variable[var]->post_rst_block[p]->box[0] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box[0])));
+        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS *       sizeof(int64_t));
+        file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch[p]->Ndim_box_buffer;
+        
+        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+      }
     }
 #endif
     var_init_end[vp] = PIDX_get_time();
@@ -2331,7 +2280,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if (file->perform_compression == 1)
     {
       PIDX_block_rst_prepare(file->block_rst_id);
-      PIDX_block_rst_compress(file->block_rst_id);
+      //PIDX_block_rst_compress(file->block_rst_id);
     }
     block_rst_end[vp] = PIDX_get_time();
     ///----------------------------BLOCK restructure end time-----------------------------------------------///
@@ -2344,10 +2293,11 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if (file->perform_hz == 1)
       PIDX_hz_encode_write(file->hz_id);
     
-#if PIDX_HAVE_MPI
     if(global_do_rst == 1 && file->debug_hz == 1)
       HELPER_Hz_encode(file->hz_id);
     
+
+#if PIDX_HAVE_MPI
     if(global_do_rst == 1)
       PIDX_rst_buf_destroy(file->rst_id);
 #endif
@@ -2482,95 +2432,6 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     vp++;
   }
-  
-#else
-
-#if 0
-  //if (file->idx_ptr->variable[var]->dump_meta_data_ON == 1)
-  //    dump_meta_data(file->idx_ptr->variable[var], file->comm);
-  int start_index = 0, end_index = 0;
-  file->variable_pipelining_factor = 0;
-  
-  for (start_index = file->local_variable_index;
-      start_index < file->local_variable_index + file->local_variable_count; 
-      start_index = start_index + (file->variable_pipelining_factor + 1))
-  {
-    end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
-    
-    file->hz_id = PIDX_hz_encode_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-    
-    if(do_agg == 1)
-    {
-      file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-#if PIDX_HAVE_MPI
-      PIDX_agg_set_communicator(file->agg_id, file->comm);
-#endif
-    }
-    
-    file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
-#if PIDX_HAVE_MPI
-    PIDX_io_set_communicator(file->io_id, file->comm);
-#endif
-    
-    for (var = start_index; var <= end_index; var++)
-    {
-      file->idx_ptr->variable[var]->patch_group_count = file->idx_ptr->variable[var]->patch_count;
-      
-      file->idx_ptr->variable[var]->patch_group_ptr = malloc(file->idx_ptr->variable[var]->patch_group_count * sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr)));
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
-	file->idx_ptr->variable[var]->patch_group_ptr[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p])));
-      
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
-      {
-        file->idx_ptr->variable[var]->HZ_patch[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
-        assert(file->idx_ptr->variable[var]->HZ_patch[p] != NULL);
-        memset(file->idx_ptr->variable[var]->HZ_patch[p], 0, sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
-      }
-    }
-    
-    for (var = start_index; var <= end_index; var++)
-    {
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
-      {
-	file->idx_ptr->variable[var]->patch_group_ptr[p]->count = 1;
-	file->idx_ptr->variable[var]->patch_group_ptr[p]->type = 0;
-	
-	file->idx_ptr->variable[var]->patch_group_ptr[p]->box = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->box)) * file->idx_ptr->variable[var]->patch_group_ptr[p]->count);
-	for(j = 0; j < file->idx_ptr->variable[var]->patch_group_ptr[p]->count; j++)
-	{
-	  file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j])));
-	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->offset, file->idx_ptr->variable[var]->patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int));
-	  memcpy(file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->count, file->idx_ptr->variable[var]->patch[p]->count, PIDX_MAX_DIMENSIONS * sizeof(int));
-	  file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->buffer = file->idx_ptr->variable[var]->patch[p]->buffer;
-	}
-      }
-    }
-    
-    PIDX_hz_encode_buf_create(file->hz_id, file->idx_ptr->variable);
-    PIDX_hz_encode_write_var(file->hz_id, file->idx_ptr->variable);
-    
-    if(do_agg == 1)
-    {
-      file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
-      PIDX_agg_buf_create(file->agg_id, file->idx_derived_ptr->agg_buffer);
-      PIDX_agg_write(file->agg_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
-      
-      PIDX_io_aggregated_IO(file->io_id, file->idx_derived_ptr->agg_buffer, PIDX_WRITE);
-      PIDX_agg_buf_destroy(file->idx_derived_ptr->agg_buffer);
-    }
-    else
-      PIDX_io_independent_IO_var(file->io_id, file->idx_ptr->variable, PIDX_WRITE);
-    
-    PIDX_hz_encode_buf_destroy_var(file->hz_id, file->idx_ptr->variable);
-    PIDX_io_finalize(file->io_id);
-    
-    if(do_agg == 1)
-      PIDX_agg_finalize(file->agg_id);
-    
-    PIDX_hz_encode_finalize(file->hz_id);
-  }
-#endif
-#endif
   
   return PIDX_success;
 }

@@ -324,15 +324,17 @@ int PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
   
   for(i = id->start_var_index; i <= id->end_var_index; i++)
   {
+    //printf("p g count %d\n", id->idx_ptr->variable[id->start_var_index]->patch_group_count);
     for (k = 0; k < id->idx_ptr->variable[id->start_var_index]->patch_group_count; k++)
     {
       id->idx_ptr->variable[i]->HZ_patch[k]->buffer = (unsigned char**)malloc( id->idx_derived_ptr->maxh * sizeof (unsigned char*));
       memset(id->idx_ptr->variable[i]->HZ_patch[k]->buffer, 0,  id->idx_derived_ptr->maxh * sizeof (unsigned char*));
-      
+      //printf("p g type %d = %d\n", k, id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[k]->box_group_type);
       if(id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[k]->box_group_type == 1 || id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[k]->box_group_type == 2)
       {
         for(c = 0 ; c < id->idx_derived_ptr->maxh ; c++)
         {
+          //printf("buffer at %d = %d\n", c, bytes_for_datatype * (id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[c] - id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[c] + 1) * id->idx_ptr->variable[i]->values_per_sample * id->idx_ptr->compression_block_size[0] * id->idx_ptr->compression_block_size[1] * id->idx_ptr->compression_block_size[2] * id->idx_ptr->compression_block_size[3] * id->idx_ptr->compression_block_size[4]);
           bytes_for_datatype = id->idx_ptr->variable[i]->bits_per_value / 8;
           id->idx_ptr->variable[i]->HZ_patch[k]->buffer[c] = malloc(bytes_for_datatype * (id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[c] - id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[c] + 1) * id->idx_ptr->variable[i]->values_per_sample * id->idx_ptr->compression_block_size[0] * id->idx_ptr->compression_block_size[1] * id->idx_ptr->compression_block_size[2] * id->idx_ptr->compression_block_size[3] * id->idx_ptr->compression_block_size[4]);
           memset(id->idx_ptr->variable[i]->HZ_patch[k]->buffer[c], 0, bytes_for_datatype * (id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[c] - id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[c] + 1) * id->idx_ptr->variable[i]->values_per_sample * id->idx_ptr->compression_block_size[0] * id->idx_ptr->compression_block_size[1] * id->idx_ptr->compression_block_size[2] * id->idx_ptr->compression_block_size[3] * id->idx_ptr->compression_block_size[4]);        

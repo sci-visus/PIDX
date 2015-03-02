@@ -405,6 +405,9 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
       }
       else
       {
+        //double x;
+        //memcpy(&x, agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, bytes_per_datatype);
+        //printf("count %d = %f\n", hz_count, x);
         memcpy( hz_buffer, agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, hz_count * values_per_sample * bytes_per_datatype);
       }
     }

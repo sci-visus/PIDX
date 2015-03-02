@@ -34,6 +34,9 @@ int usage_reader();
 int serial_writer(struct Args args);
 int usage_serial();
 
+int serial_reader(struct Args args);
+int usage_serial_reader();
+
 // int test_multi_patch_writer(struct Args args, int rank, int nprocs);
 // int usage_multi_patch_writer();
 

@@ -629,7 +629,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
       return -1;
     }
 #else
-    fh = open(file_name, O_WRONLY);
+    fh = open(file_name, O_RDONLY);
 #endif
     
 #if PIDX_RECORD_TIME
@@ -659,7 +659,12 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
     }
     
 #else
-    pread(fh, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))), (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
+    pread(fh, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))), (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
+    
+    double x[8];
+    memcpy(x, io_id->idx_derived_ptr->agg_buffer->buffer, sizeof(double) * 8);
+    printf("count = %f %f %f %f %f %f %f %f\n", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
+    
 #endif
 
     

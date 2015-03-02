@@ -112,9 +112,6 @@ int test_reader(struct Args args, int rank, int nprocs)
     for (var = 0; var < variable_count; var++)
     {
       PIDX_get_next_variable(file, &variable[var]);
-      //if(rank == 0)
-      //	printf("name = %s and size = %d\n", variable[var]->var_name, variable[var]->values_per_sample);
-      
       values_per_sample[var] = variable[var]->values_per_sample;
       
       double_data[var] = (double*)malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * variable[var]->values_per_sample);
