@@ -141,13 +141,12 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
         // compute the number of elements in the box, and the number of elements before the box in the same group
         int64_t num_elems_box = 1; // number of elements in the box
         int64_t num_prev_elems = 0; // number of elements that precede this box in the group
-        int64_t local_offset[PIDX_MAX_DIMENSIONS];
         for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
         {
           if (box_size[d] > 0)
           {
-            local_offset[d] = box_offset[d] - group_offset[d];
-            num_prev_elems += local_offset[d] * group_stride[d];
+            int64_t local_offset = box_offset[d] - group_offset[d];
+            num_prev_elems += local_offset * group_stride[d];
             num_elems_box *= box_size[d];
           }
         }
@@ -189,6 +188,10 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
           {
             index[PIDX_MAX_DIMENSIONS - 1] = j / box_stride[PIDX_MAX_DIMENSIONS - 1];
           }
+          else
+          {
+            index[PIDX_MAX_DIMENSIONS - 1] = 0;
+          }
 
           // compute the output linear index
           j = 0; // compression block-level linear index
@@ -207,10 +210,6 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
                 j += (index[d] / cbz) * box_stride[d];
                 j += (index[d] % cbz) * intra_cblock_stride[d];
               }
-            }
-            else
-            {
-              break;
             }
           }
 
