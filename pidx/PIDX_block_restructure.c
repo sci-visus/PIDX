@@ -174,13 +174,13 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
           // and index[i] * stride[i] < stride[i + 1]
           for (d = 0; d + 1 < PIDX_MAX_DIMENSIONS; ++d)
           {
-            if (j > 0 && box_stride[d + 1] > 0)
+            if (j > 0 && box_stride[d + 1] > 0 && box_stride[d] > 0)
             {
               int64_t k = j % box_stride[d + 1];
               index[d] = k / box_stride[d];
               j -= k;
             }
-            else if (j == 0)
+            else // if (j == 0)
             {
               index[d] = 0;
             }
