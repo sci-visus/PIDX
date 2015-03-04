@@ -82,13 +82,14 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 {
   // compute the intra compression block strides
   int64_t *compression_block_size = block_rst_id->idx_ptr->compression_block_size;
-  int64_t intra_cblock_stride[PIDX_MAX_DIMENSIONS]; // stride inside a compression block
-  intra_cblock_stride[0] = 1;
+  int64_t compression_block_stride[PIDX_MAX_DIMENSIONS]; // stride inside a compression block
+  compression_block_stride[0] = 1;
   int d = 0;
   for (d = 1; d < PIDX_MAX_DIMENSIONS; ++d)
   {
-    intra_cblock_stride[d] = intra_cblock_stride[d - 1] * compression_block_size[d - 1];
+    compression_block_stride[d] = compression_block_stride[d - 1] * compression_block_size[d - 1];
   }
+  int64_t compression_block_num_elems = compression_block_stride[PIDX_MAX_DIMENSIONS - 1];
 
   // loop through all variables
   int v = 0;
@@ -120,10 +121,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
       int64_t num_elems_group = 1; // number of elements in the group
       for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
       {
-        if (group_size[d] > 0)
-        {
           num_elems_group *= group_size[d];
-        }
       }
 
       // malloc the storage for all elements in the output array
@@ -138,17 +136,13 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
         int64_t *box_size = box->Ndim_box_size;
         int64_t *box_offset = box->Ndim_box_offset; // global offset of the box
 
-        // compute the number of elements in the box, and the number of elements before the box in the same group
+        // compute the number of elements in the box
         int64_t num_elems_box = 1; // number of elements in the box
-        int64_t num_prev_elems = 0; // number of elements that precede this box in the group
+        int64_t local_offset[PIDX_MAX_DIMENSIONS];
         for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
         {
-          if (box_size[d] > 0)
-          {
-            int64_t local_offset = box_offset[d] - group_offset[d];
-            num_prev_elems += local_offset * group_stride[d];
-            num_elems_box *= box_size[d];
-          }
+          local_offset[d] = box_offset[d] - group_offset[d];
+          num_elems_box *= box_size[d];
         }
 
         // compute strides of the box in all dimensions
@@ -162,59 +156,54 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 
         // loop through the elements to find their new positions
         int64_t i = 0;
-        for (i = 0; i < num_elems_box; i += compression_block_size[0]) // we copy k consecutive bytes at a time
+        int64_t box_index[PIDX_MAX_DIMENSIONS] = { 0 }; // index of the current element in the current box
+        int64_t group_index[PIDX_MAX_DIMENSIONS] = { 0 }; // index of the current element in the current group
+        for (i = 0; i < num_elems_box; i += compression_block_size[0])
         {
-          // compute the 5D index of the ith element
-          int64_t j = i + num_prev_elems;
-          int64_t index[PIDX_MAX_DIMENSIONS];
-          // the following calculation is based on the formula
-          // linear index = index[0] * stride[0] + index[1] * stride[1] + ... + index[n] * stride[n] (n == PIDX_MAX_DIMENSIONS)
-          // in which stride[1] is a multiple of stride[0], stride[2] is a multiple of stride[1] and so on
-          // and index[i] * stride[i] < stride[i + 1]
-          for (d = 0; d + 1 < PIDX_MAX_DIMENSIONS; ++d)
+          // compute the output linear index in row-major
+          int64_t j = 0; // output linear index
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
           {
-            if (j > 0 && box_stride[d + 1] > 0 && box_stride[d] > 0)
-            {
-              int64_t k = j % box_stride[d + 1];
-              index[d] = k / box_stride[d];
-              j -= k;
-            }
-            else // if (j == 0)
-            {
-              index[d] = 0;
-            }
-          }
-          if (box_stride[PIDX_MAX_DIMENSIONS - 1] > 0 && j >= 0)
-          {
-            index[PIDX_MAX_DIMENSIONS - 1] = j / box_stride[PIDX_MAX_DIMENSIONS - 1];
-          }
-          else
-          {
-            index[PIDX_MAX_DIMENSIONS - 1] = 0;
+            group_index[d] = local_offset[d] + box_index[d];
+            j += group_index[d] * group_stride[d];
           }
 
-          // compute the output linear index
-          j = 0; // compression block-level linear index
+          // compute the output linear index in compression block major
+          j = 0;
           box_stride[0] = 1; // re-use this, but now means the stride at compression block level
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
           {
             int64_t cbz = compression_block_size[d];
-            if (cbz > 0)
-            {
-              if (d > 0)
-              { // reduce the stride based on the new blocking scheme
-                box_stride[d] = box_stride[d - 1] * (group_size[d - 1] / compression_block_size[d - 1]);
-              }
-              if (index[d] > 0)
-              {
-                j += (index[d] / cbz) * box_stride[d];
-                j += (index[d] % cbz) * intra_cblock_stride[d];
-              }
+            if (d > 0)
+            { // reduce the stride based on the new blocking scheme
+              // IMPORTANT: this only works if each dimension of the group is a multiple of the corresponding dimension of compression block
+              box_stride[d] = box_stride[d - 1] * (group_size[d - 1] / compression_block_size[d - 1]);
             }
+
+            j += ((group_index[d] / cbz) * box_stride[d]) * compression_block_num_elems;
+            j += (group_index[d] % cbz) * compression_block_stride[d];
           }
 
-          // copy k consecutive elements at once
+          // copy the element
           memcpy(&out_box->box[0]->Ndim_box_buffer[j * bytes_per_value], &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value * compression_block_size[0]);
+
+          //printf("j = %d i = %d\n", j, i); // uncomment this line to debug the outputs
+
+          // update the index inside the box
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
+          {
+            box_index[d] += d == 0 ? compression_block_size[0] : 1;
+            if (box_index[d] != box_size[d])
+            {
+              // reset lower dimension indices to 0
+              int dd;
+              for (dd = 0; dd < d; ++dd)
+              {
+                box_index[dd] = 0;
+              }
+              break;
+            }
+          }
         }
       }
     }
