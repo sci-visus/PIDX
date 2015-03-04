@@ -184,15 +184,17 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
             j += (group_index[d] % cbz) * compression_block_stride[d];
           }
 
-          // copy the element
-          memcpy(&out_box->box[0]->Ndim_box_buffer[j * bytes_per_value], &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value * compression_block_size[0]);
+          // copy the elements (compression_block_size[0] elements at a time)
+          int64_t num_elems_copy = min(box_size[0] - box_index[0], compression_block_size[0]);
+          memcpy(&out_box->box[0]->Ndim_box_buffer[j * bytes_per_value], &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value * num_elems_copy);
+
 
           //printf("j = %d i = %d\n", j, i); // uncomment this line to debug the outputs
 
           // update the index inside the box
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
           {
-            box_index[d] += d == 0 ? compression_block_size[0] : 1;
+            box_index[d] += d == 0 ? num_elems_copy : 1;
             if (box_index[d] != box_size[d])
             {
               // reset lower dimension indices to 0
