@@ -182,6 +182,9 @@ int parse_args(struct Args *args, int argc, char **argv)
   fscanf(config_file, "(time steps)\n");
   fscanf(config_file, "%d\n", &args->time_step);
 
+  fscanf(config_file, "(fields)\n");
+  fscanf(config_file, "%d\n", &args->variable_count);
+  
   fscanf(config_file, "(idx count x:y:z)\n");
   fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
 
@@ -198,9 +201,6 @@ int parse_args(struct Args *args, int argc, char **argv)
 
     fscanf(config_file, "(compression type)\n");
     fscanf(config_file, "%d\n", &args->compression_type);
-
-    fscanf(config_file, "(fields)\n");
-    fscanf(config_file, "%d\n", &args->variable_count);
 
     fscanf(config_file, "(blocks per file)\n");
     fscanf(config_file, "%d\n", &args->blocks_per_file);

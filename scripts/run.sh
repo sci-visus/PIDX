@@ -16,5 +16,14 @@
 # **                                                 **
 # *****************************************************/
 
-# In Parallel Build Mode
-mpirun -n 8 ./pidxtest -k parallel -g 66x66x66 -l 33x33x33 -f Filename -t 1
+# parallel writes
+mpirun -n 1 ./pidxtest write_parallel.config
+
+# serial writes
+./pidxtest write_serial.config
+
+# parallel reads
+mpirun -n 1 ./pidxtest read_parallel.config
+
+# serial reads
+./pidxtest read_serial.config

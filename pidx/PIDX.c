@@ -27,6 +27,12 @@
  *
  */
 
+// TODO: PIDX reader
+// (global box)
+// 124 128 132
+// (local box)
+// 31 32 33
+
 #include "PIDX.h"
 
 static int vp = 0;
@@ -57,7 +63,6 @@ static PIDX_return_code PIDX_cleanup(PIDX_file file);
 static PIDX_return_code PIDX_write(PIDX_file file);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* file_name, int current_time_step);
 static PIDX_return_code PIDX_cache_headers(PIDX_file file);
-
 
 /// PIDX File descriptor (equivalent to the descriptor returned by)
 /// POSIX or any other IO framework
