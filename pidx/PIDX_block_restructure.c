@@ -225,5 +225,7 @@ int PIDX_block_rst_buf_destroy(PIDX_block_rst_id block_rst_id)
 
 int PIDX_block_rst_finalize(PIDX_block_rst_id block_rst_id)
 {
-  return -1;
+  free(block_rst_id);
+  block_rst_id = 0;
+  return 0;
 }

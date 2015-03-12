@@ -190,8 +190,8 @@ int parse_args(struct Args *args, int argc, char **argv)
     fscanf(config_file, "(debug rst:hz:agg)\n");
     fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
 
-    fscanf(config_file, "(perform hz:agg:io)\n");
-    fscanf(config_file, "%d %d %d\n", &args->perform_hz, &args->perform_agg, &args->perform_io);
+    fscanf(config_file, "(perform brst:hz:comp:agg:io)\n");
+    fscanf(config_file, "%d %d %d %d %d\n", &args->perform_brst, &args->perform_hz, &args->perform_compression, &args->perform_agg, &args->perform_io);
 
     fscanf(config_file, "(compression block size)\n");
     fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);

@@ -633,15 +633,15 @@ int PIDX_hz_encode_write(PIDX_hz_encode_id id)
     }
     else
     {
-      for (b = 0; b < id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[y]->box_count; b++) 
+      for (b = 0; b < id->idx_ptr->variable[id->start_var_index]->post_rst_block[y]->box_count; b++) 
       {
         index_count = 0;
         total_compressed_patch_size = 0;
         
         for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
         {
-          compressed_patch_offset[l] = id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_offset[l] / id->idx_ptr->compression_block_size[l];
-          compressed_patch_size[l] = id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[y]->box[b]->Ndim_box_size[l] / id->idx_ptr->compression_block_size[l];  
+          compressed_patch_offset[l] = id->idx_ptr->variable[id->start_var_index]->post_rst_block[y]->box[b]->Ndim_box_offset[l] / id->idx_ptr->compression_block_size[l];
+          compressed_patch_size[l] = id->idx_ptr->variable[id->start_var_index]->post_rst_block[y]->box[b]->Ndim_box_size[l] / id->idx_ptr->compression_block_size[l];  
           total_compressed_patch_size = total_compressed_patch_size * compressed_patch_size[l];
         }
         
@@ -703,9 +703,9 @@ int PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     {
                       bytes_for_datatype = id->idx_ptr->variable[var]->bits_per_value / 8;
                       for (s = 0; s < id->idx_ptr->variable[var]->values_per_sample; s++)
-                      {                        
+                      {
                         memcpy(id->idx_ptr->variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * id->idx_ptr->variable[var]->values_per_sample + s) * bytes_for_datatype * total_compression_block_size), 
-                                id->idx_ptr->variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * id->idx_ptr->variable[var]->values_per_sample) + s) * bytes_for_datatype * total_compression_block_size,
+                                id->idx_ptr->variable[var]->post_rst_block[y]->box[b]->Ndim_box_buffer + ((index * id->idx_ptr->variable[var]->values_per_sample) + s) * bytes_for_datatype * total_compression_block_size,
                                 bytes_for_datatype * total_compression_block_size);
                         
 #if 0

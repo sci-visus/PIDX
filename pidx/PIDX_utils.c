@@ -58,7 +58,6 @@ int isValidBox(int** box)
     if (! (box[0][D]>=0 && box[0][D]<=box[1][D]))
       return 0;
   }
-
   return 1;
 }
 

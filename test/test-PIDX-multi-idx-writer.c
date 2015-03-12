@@ -45,7 +45,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_brst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_compression, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_io, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_rst, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -128,7 +130,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_dump_agg_info(file, args.dump_agg);
     
     /// PIDX enabling/disabling different phases
+    PIDX_enable_block_restructuring(file, args.perform_brst);
     PIDX_enable_hz(file, args.perform_hz);
+    PIDX_enable_compression(file, args.perform_compression);
     PIDX_enable_agg(file, args.perform_agg);
     PIDX_enable_io(file, args.perform_io);
     
@@ -216,7 +220,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
             for (spv = 0; spv < values_per_sample[var]; spv++)
               //double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.count_local[0] * args.count_local[1]*(k))+(args.count_local[0]*(j)) + (i));
               double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-            //double_data[var][index * values_per_sample[var] + spv] = cos(2 * pi * i / args.count_local[0]) * cos(2 * pi * j / args.count_local[1]) * cos(2 * pi * k / args.count_local[2]);
+              //double_data[var][index * values_per_sample[var] + spv] = cos(2 * pi * i / args.count_local[0]) * cos(2 * pi * j / args.count_local[1]) * cos(2 * pi * k / args.count_local[2]);
           }
     }
 #endif

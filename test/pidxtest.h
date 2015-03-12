@@ -79,6 +79,14 @@ struct Args
   
   /// All the agg dumps will go here (file equal to number of processes will be ceated)
   char agg_dump_dir_name[512];
+
+  ///
+  ///
+  int perform_brst;
+  
+  ///
+  ///
+  int perform_compression;
   
   /// 0 for no aggregation (test IO only) and 1 for aggregation 
   /// Default is 1

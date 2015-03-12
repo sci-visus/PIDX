@@ -321,6 +321,14 @@ PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
 
 
 ///
+PIDX_return_code PIDX_enable_block_restructuring(PIDX_file file, int brst);
+
+
+///
+PIDX_return_code PIDX_enable_compression(PIDX_file file, int compression);
+
+
+///
 PIDX_return_code PIDX_enable_hz(PIDX_file file, int hz);
 
 

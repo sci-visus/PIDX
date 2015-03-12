@@ -44,9 +44,9 @@
 typedef struct {int x,y,z,u,v;} PointND;
 struct block_layout_struct
 {
-  int    levels;                          // Total number of Levels
-  int    *hz_block_count_array;           // Number of filled blocks per level
-  int    ** hz_block_number_array;        // Indices of filled blocks
+  int levels;                          // Total number of Levels
+  int *hz_block_count_array;           // Number of filled blocks per level
+  int ** hz_block_number_array;        // Indices of filled blocks
 };
 typedef struct block_layout_struct* block_layout;
 
@@ -85,6 +85,8 @@ int main(int argc, char **argv)
   int start_time_step = 0, end_time_step = 1;
   int idx_data_offset;
   int global_bounds[PIDX_MAX_DIMENSIONS];
+  int compression_block_size[PIDX_MAX_DIMENSIONS];
+  int compressed_global_bounds[PIDX_MAX_DIMENSIONS];
   int values_per_sample[MAX_VARIABLE_COUNT];
   char variable_name[MAX_VARIABLE_COUNT][1024];
   char filename_template[1024];
@@ -164,6 +166,27 @@ int main(int argc, char **argv)
         variable_count++;
       }
     }
+    
+    if (strcmp(line, "(compressed box)") == 0) 
+    {
+      fgets(line, sizeof line, fp);
+      len = strlen(line) - 1;
+      if (line[len] == '\n')
+        line[len] = 0;
+
+      pch = strtok(line, " ");
+      count = 0;
+      int comp;
+      while (pch != NULL) 
+      {
+        //if (count % 2 == 1)
+        compression_block_size[count]/*global_bounds[count / 2]*/ = atoi(pch);
+        //printf("compressed box size %d %d\n", comp, count);
+        count++;
+        pch = strtok(NULL, " ");
+      }
+    }
+    
     if (strcmp(line, "(bits)") == 0)
       fgets(line, sizeof line, fp);
 
@@ -176,6 +199,7 @@ int main(int argc, char **argv)
       bits_per_block = atoi(line);
       samples_per_block = pow(2, bits_per_block);
     }
+    
     if (strcmp(line, "(blocksperfile)") == 0) 
     {
       fgets(line, sizeof line, fp);
@@ -184,6 +208,7 @@ int main(int argc, char **argv)
 	line[len] = 0;
       blocks_per_file= atoi(line);
     }
+    
     if (strcmp(line, "(filename_template)") == 0) 
     {
       fgets(line, sizeof line, fp);
@@ -191,6 +216,7 @@ int main(int argc, char **argv)
       if (line[len] == '\n')
 	line[len] = 0;
     }
+    
     if (strcmp(line, "(time)") == 0)
     {
       fgets(line, sizeof line, fp);
@@ -220,17 +246,44 @@ int main(int argc, char **argv)
   printf("Finished Parsing %s %d\n", argv[1], idx_data_offset);
   printf("Starting time step %d and Ending time step %d\n", start_time_step, end_time_step);
   printf("(box)\n0 %d 0 %d 0 %d 0 %d 0 %d\n", global_bounds[0], global_bounds[1], global_bounds[2], global_bounds[3], global_bounds[4]);
+  printf("compressed box size %d %d %d %d %d\n", compression_block_size[0], compression_block_size[1], compression_block_size[2], compression_block_size[3], compression_block_size[4]);
   printf("(fields)\n");
   for(var = 0 ; var < variable_count ; var++)
   {
       printf("%s %d*", variable_name[var], values_per_sample[var]);
       printf("float64 ");
       if(var != variable_count - 1)
-	printf(" + \n");
+        printf(" + \n");
   }
   printf("\n(bitsperblock)\n%d\n(blocksperfile)\n%d\n", bits_per_block, blocks_per_file);
   printf("(filename)\n%s\n", argv[1]);
-    
+
+  if (global_bounds[0] % compression_block_size[0] == 0)
+    compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];
+  else
+    compressed_global_bounds[0] = (int) (global_bounds[0] / compression_block_size[0]) + 1;
+  
+  if (global_bounds[1] % compression_block_size[1] == 0)
+    compressed_global_bounds[1] = (int) global_bounds[1] / compression_block_size[1];
+  else
+    compressed_global_bounds[1] = (int) (global_bounds[1] / compression_block_size[1]) + 1;
+  
+  if (global_bounds[2] % compression_block_size[2] == 0)
+    compressed_global_bounds[2] = (int) global_bounds[2] / compression_block_size[2];
+  else
+    compressed_global_bounds[2] = (int) (global_bounds[2] / compression_block_size[2]) + 1;
+  
+  if (global_bounds[3] % compression_block_size[3] == 0)
+    compressed_global_bounds[3] = (int) global_bounds[3] / compression_block_size[3];
+  else
+    compressed_global_bounds[3] = (int) (global_bounds[3] / compression_block_size[3]) + 1;
+  
+  if (global_bounds[4] % compression_block_size[4] == 0)
+    compressed_global_bounds[4] = (int) global_bounds[4] / compression_block_size[4];
+  else
+    compressed_global_bounds[4] = (int) (global_bounds[4] / compression_block_size[4]) + 1;
+  
+  int64_t total_compression_block_size = compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * compression_block_size[3] * compression_block_size[4];
   
   int bounding_box[2][5] = {
     {0, 0, 0, 0, 0},
@@ -240,15 +293,15 @@ int main(int argc, char **argv)
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
   {
     bounding_box[0][i] = 0;
-    bounding_box[1][i] = global_bounds[i];
+    bounding_box[1][i] = compressed_global_bounds[i];
   }
     
   PointND extents;
-  extents.x = global_bounds[0];
-  extents.y = global_bounds[1];
-  extents.z = global_bounds[2];
-  extents.u = global_bounds[3];
-  extents.v = global_bounds[4];
+  extents.x = compressed_global_bounds[0];
+  extents.y = compressed_global_bounds[1];
+  extents.z = compressed_global_bounds[2];
+  extents.u = compressed_global_bounds[3];
+  extents.v = compressed_global_bounds[4];
   GuessBitmaskPattern(bitSequence, extents);
   maxh = strlen(bitSequence);
 
@@ -276,8 +329,8 @@ int main(int argc, char **argv)
   }
   
   /// maximum number of files possible
-  max_files = (getPowerOf2(global_bounds[0]) * getPowerOf2(global_bounds[1]) * getPowerOf2(global_bounds[2]) * getPowerOf2(global_bounds[3]) * getPowerOf2(global_bounds[4])) / ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file);
-  if ((getPowerOf2(global_bounds[0]) * getPowerOf2(global_bounds[1]) * getPowerOf2(global_bounds[2]) * getPowerOf2(global_bounds[3]) * getPowerOf2(global_bounds[4])) % ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file))
+  max_files = (getPowerOf2(compressed_global_bounds[0]) * getPowerOf2(compressed_global_bounds[1]) * getPowerOf2(compressed_global_bounds[2]) * getPowerOf2(compressed_global_bounds[3]) * getPowerOf2(compressed_global_bounds[4])) / ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file);
+  if ((getPowerOf2(compressed_global_bounds[0]) * getPowerOf2(compressed_global_bounds[1]) * getPowerOf2(compressed_global_bounds[2]) * getPowerOf2(compressed_global_bounds[3]) * getPowerOf2(compressed_global_bounds[4])) % ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file))
     max_files++;
   assert(max_files != 0);
 
@@ -375,57 +428,78 @@ int main(int argc, char **argv)
               memset(double_buffer, 0, data_size);
 
               ret = pread(fd, double_buffer, data_size, data_offset);
-              //printf("[%d] %ld and %ld\n", bpf, data_size, ret);
+              printf("[%d] size %ld and %ld offset %lld\n", (int)bpf, (long int)data_size, (long int)ret, (long long)data_offset);
               assert(ret == data_size);
 #endif
-              
-              for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var]); hz_val++) 
+
+              for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var] * total_compression_block_size); hz_val++) 
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
                 
                 //if (long_long_buffer[hz_val * values_per_sample[var] + 0] == 0 && (ZYX[2] < global_bounds[2]))
-                if (ZYX[2] >= global_bounds[2] || ZYX[1] >= global_bounds[1] || ZYX[0] >= global_bounds[0])
+                if (ZYX[2] >= compressed_global_bounds[2] || ZYX[1] >= compressed_global_bounds[1] || ZYX[0] >= compressed_global_bounds[0])
                   continue;
 
                 check_bit = 1, s = 0;
-                
-                for (s = 0; s < values_per_sample[var]; s++)
+                int i = 0, j = 0, k = 0, index = 0;
+                for (k = 0; k < compression_block_size[2]; k++)
+                {
+                  for (j = 0; j < compression_block_size[1]; j++)
+                  {
+                    for (i = 0; i < compression_block_size[0]; i++)
+                    {
+                      index = (compression_block_size[0] * compression_block_size[1] * k) + (compression_block_size[0] * j) + i;
+                      for (s = 0; s < values_per_sample[var]; s++)
+                      {
+                        
+                        //100 + var + (((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2]) + (compressed_global_bounds[0] * ZYX[1]) + ZYX[0]) * total_compression_block_size) + index
+                        //100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2])
+                        //ZYX[0] = (ZYX[0]) + i;
+                        //ZYX[1] = (ZYX[1]  compression_block_size[0]) + j;
+                        //ZYX[2] = (ZYX[2]  compression_block_size[0] * compression_block_size[1]) + k;
+
 #if long_buffer
-                  check_bit = check_bit && (long_long_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]));
+                        check_bit = check_bit && (long_long_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
 #else
-                  check_bit = check_bit && (double_buffer[hz_val * values_per_sample[var] + s] == 100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]));
-#endif
+                        check_bit = check_bit && (double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + ((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
+                        
+                        printf("value %lld %f %lld %lld %lld: %f\n", (long long)(hz_val * values_per_sample[var] + s), double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s], (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], (double)100 + var + ((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
+                      }
+#endif           
+                    }
+                  }
+                }
 
                 if (check_bit == 0)
                 {
                   lost_element_count++;
 #if long_buffer
-                  printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
-                         var,
-                         lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val, 
-                         hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                         (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                  //      var,
+                  //      lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val, 
+                  //      hz_index, ZYX[0], ZYX[1], ZYX[2], 
+                  //      (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #else
-                  printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n", 
-                         var,
-                         (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val, 
-                         (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], 
-                         (double)double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
-
+                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n", 
+                  //      var,
+                  //      (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val, 
+                  //      (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], 
+                  //      (double)double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #endif
                 }
                 else 
                 {
                   element_count++;
-                  //printf("F [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                  //printf("F [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n", 
                   //       var,
-                  //       lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val, 
-                  //       hz_index, ZYX[0], ZYX[1], ZYX[2], 
-                  //       (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (global_bounds[0] * global_bounds[1] * ZYX[2])+(global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  //       (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val, 
+                  //       (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], 
+                  //       (double)double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
+                
               }
-              
+
 #if long_buffer
               free(long_long_buffer);
               long_long_buffer = 0;
@@ -439,8 +513,8 @@ int main(int argc, char **argv)
       }
     }
     
-    printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
-    assert(element_count == (int64_t) global_bounds[0] * global_bounds[1] * global_bounds[2] * global_bounds[3] * global_bounds[4] * variable_count);
+    printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count);
+    assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count);
     
   }
   
@@ -840,7 +914,6 @@ static int RegExBitmaskBit(const char* bitmask_pattern,int N)
   }
   return bitmask_pattern[N]-'0';
 }
-
 
 static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz)
 {

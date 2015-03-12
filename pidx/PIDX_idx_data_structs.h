@@ -90,6 +90,7 @@ struct idx_file_struct
   char bitPattern[512];
   char filename_template[1024];                                         ///< Depends on the time step
   
+  int enable_compression;                                               ///< counter to enable/disable (1/0) compression
   int compression_type;                                                 ///< lossy or lossless. 1 for lossy 0 for lossless
   int64_t compression_block_size[PIDX_MAX_DIMENSIONS];                  ///< size of the block at which compression is applied eg. (4x4x4)                                                      
                                                                         ///< the current compression schemes only work in three dimensions

@@ -17,6 +17,8 @@
  *****************************************************/
 
 #include "PIDX_inc.h"
+#include <sys/time.h>
+
 //#define PIDX_ACTIVE_TARGET
 #define PIDX_DUMP_AGG
 #undef PIDX_PRINT_AGG
@@ -72,6 +74,88 @@ int PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
   return 0;
 }
 #endif
+
+static double now()
+{
+  struct timeval tv;
+  gettimeofday(&tv, 0);
+  return tv.tv_sec + 1e-6 * tv.tv_usec;
+}
+
+// compress 'inbytes' bytes from 'data' to stream 'FPZ'
+static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medium)
+{
+  //fprintf(stderr, "compressing to %s\n", medium);
+  double t = now();
+#ifndef WITHOUT_HEADER
+  // write header (optional)
+  if (!fpzip_write_header(fpz)) 
+  {
+    fprintf(stderr, "cannot write header: %s\n", fpzip_errstr[fpzip_errno]);
+    return 0;
+  }
+#endif
+  // perform actual compression
+  size_t outbytes = fpzip_write(fpz, data);
+  if (!outbytes) 
+  {
+    fprintf(stderr, "compression failed: %s\n", fpzip_errstr[fpzip_errno]);
+    return 0;
+  }
+  t = now() - t;
+  //fprintf(stderr, "in=%zu out=%zu ratio=%.2f seconds=%.3f MB/s=%.3f\n", inbytes, outbytes, (double)inbytes / outbytes, t, (double)inbytes / (1024 * 1024 * t));
+  return (int)outbytes;
+}
+
+int compress_buffer(PIDX_agg_id agg_id, unsigned char* buffer, int length)
+{
+  int i;
+  int prec = 0;
+  int nf = 1;
+  int type = FPZIP_TYPE_DOUBLE;
+  int64_t total_compression_block_size = agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+  
+  size_t size = (type == FPZIP_TYPE_FLOAT ? sizeof(float) : sizeof(double));
+  if (prec == 0)
+    prec = CHAR_BIT * size;
+  
+  
+  size_t total_size = 0;
+  
+  
+  for ( i = 0; i < length; i = i + total_compression_block_size * size)
+  {
+    void* decompressed_buffer = malloc(total_compression_block_size * size + 1024);
+    //printf("inint decomp = %d\n", (int)(total_compression_block_size * size + 1024));
+    FPZ* fpz = fpzip_write_to_buffer(decompressed_buffer, (total_compression_block_size * size + 1024));
+    fpz->type = type;
+    fpz->prec = prec;
+    fpz->nx = agg_id->idx_ptr->compression_block_size[0];
+    fpz->ny = agg_id->idx_ptr->compression_block_size[1];
+    fpz->nz = agg_id->idx_ptr->compression_block_size[2];
+    fpz->nf = nf;
+    
+    //printf("offset = %d input size = %d\n", i, (int)total_compression_block_size * size);
+    size_t x = compress(fpz, buffer + i, total_compression_block_size * size, "memory");
+    //printf("decomp = %d\n", (int)x);
+    //if (!compress(fpz, data, inbytes, "memory"))
+    //  return EXIT_FAILURE;
+    fpzip_write_close(fpz);
+
+    //printf("reallocating to %d\n", (int)x);
+    void* temp_buffer = (double*)realloc(decompressed_buffer, x);
+    if (temp_buffer == NULL)
+      ;//printf("realloc error\n!!!");
+    else
+      decompressed_buffer = temp_buffer;
+    //printf("copy location %d\n", (int)total_size);
+    memcpy(buffer + total_size, decompressed_buffer, x);
+    total_size = total_size + x;
+    free(decompressed_buffer);
+  }
+  
+  return total_size;
+}
 
 int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
 {
@@ -135,7 +219,9 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #endif
   target_count = hz_count * values_per_sample;
   
-  bytes_per_datatype = (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+  int64_t total_compression_block_size = agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+  
+  bytes_per_datatype = (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size;
   
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
   
@@ -166,19 +252,35 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
           fflush(agg_dump_fp);
         }
 #endif
-        ret = MPI_Put(hz_buffer, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
-        if(ret != MPI_SUCCESS)
+        if (agg_id->idx_ptr->enable_compression == 1)
         {
-          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
-          return (-1);
+          int length = 0;
+          length = compress_buffer(agg_id, hz_buffer, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype);
+          
+          ret = MPI_Put(hz_buffer, length, MPI_BYTE, target_rank, target_disp, length, MPI_BYTE, agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
+          
+        }
+        else
+        {              
+          ret = MPI_Put(hz_buffer, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
         }
       }
       else
       {
-        ret = MPI_Get(hz_buffer, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
+        ret = MPI_Get(hz_buffer, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, ( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          fprintf(stderr, " Error in MPI_Get Line %d File %s\n", __LINE__, __FILE__);
           return (-1);
         }
       }
@@ -230,12 +332,27 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
             fflush(agg_dump_fp);
           }
 #endif
-          
-          ret = MPI_Put(hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, agg_id->win);
-          if (ret != MPI_SUCCESS)
+          if (agg_id->idx_ptr->enable_compression == 1)
           {
-            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
-            return (-1);
+            int length = 0;
+            unsigned char* offseted_buffer = hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype;
+            length = compress_buffer(agg_id, offseted_buffer, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype);
+            
+            ret = MPI_Put(offseted_buffer, length, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, length, MPI_BYTE, agg_id->win);
+            if(ret != MPI_SUCCESS)
+            {
+              fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+              return (-1);
+            }
+          }
+          else
+          {
+            ret = MPI_Put(hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, agg_id->win);
+            if (ret != MPI_SUCCESS)
+            {
+              fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+              return (-1);
+            }
           }
         }
         else
@@ -243,7 +360,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
           ret = MPI_Get(hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, MPI_BYTE, agg_id->win);
           if (ret != MPI_SUCCESS)
           {
-            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            fprintf(stderr, " Error in MPI_Get Line %d File %s\n", __LINE__, __FILE__);
             return (-1);
           }
         }
@@ -295,12 +412,27 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
           fflush(agg_dump_fp);
         }
 #endif
-        ret = MPI_Put(hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp)) * bytes_per_datatype, 
-                      MPI_BYTE, agg_id->win);
-        if(ret != MPI_SUCCESS)
+        if (agg_id->idx_ptr->enable_compression == 1)
         {
-          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
-          return (-1);
+          int length = 0;
+          unsigned char* offseted_buffer = hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype;
+          length = compress_buffer(agg_id, offseted_buffer, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))) * bytes_per_datatype);
+          
+          ret = MPI_Put(offseted_buffer, length, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, length, MPI_BYTE, agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
+        }
+        else
+        {
+          ret = MPI_Put(hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))) * bytes_per_datatype, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp)) * bytes_per_datatype, MPI_BYTE, agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
         }
       }
       else
@@ -309,7 +441,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
                       MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
-          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          fprintf(stderr, " Error in MPI_Get Line %d File %s\n", __LINE__, __FILE__);
           return (-1);
         }
       }
@@ -362,12 +494,27 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
           fflush(agg_dump_fp);
         }
 #endif
-        
-        ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
-        if(ret != MPI_SUCCESS)
+        if (agg_id->idx_ptr->enable_compression == 1)
         {
-          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
-          return (-1);
+          int length = 0;
+          unsigned char* offseted_buffer = hz_buffer;
+          length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype);
+          
+          ret = MPI_Put(offseted_buffer, length, MPI_BYTE, target_rank, target_disp, length, MPI_BYTE, agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
+        }
+        else
+        {
+          ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
+          if(ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
         }
       }
       else
@@ -400,8 +547,16 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
           fflush(agg_dump_fp);
         }
 #endif
-        
-        memcpy( agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, hz_buffer, hz_count * values_per_sample * bytes_per_datatype);
+        if (agg_id->idx_ptr->enable_compression == 1)
+        {
+          int length = 0;
+          unsigned char* offseted_buffer = hz_buffer;
+          length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype);
+          printf("Original : Compressed :: %d : %d - %f\n", (int)hz_count * values_per_sample * bytes_per_datatype, (int)length, (double)(hz_count * values_per_sample * bytes_per_datatype)/length);
+          memcpy( agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, offseted_buffer, length);
+        }
+        else
+          memcpy( agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, hz_buffer, hz_count * values_per_sample * bytes_per_datatype);
       }
       else
       {
@@ -417,7 +572,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 
 int PIDX_agg_buf_create(PIDX_agg_id agg_id) 
 {
-  int i, j, k, var;
+  int i, j, k, l, var;
   int rank_counter = 0, no_of_aggregators = 0, nprocs = 1, rank = 0;
 
 #if PIDX_HAVE_MPI
@@ -566,7 +721,17 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_id->idx_derived_ptr->agg_buffer->buffer_size, __LINE__, __FILE__);
             return (-1);
           }
-          memset(agg_id->idx_derived_ptr->agg_buffer->buffer, 0, agg_id->idx_derived_ptr->agg_buffer->buffer_size);
+          
+          if (agg_id->idx_ptr->enable_compression == 1)
+          {
+            double nan_d = NAN;
+            for (l = 0; l < agg_id->idx_derived_ptr->agg_buffer->buffer_size; l = l + (agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8))
+              memcpy (agg_id->idx_derived_ptr->agg_buffer->buffer + l, &nan_d, sizeof(double));
+              //agg_id->idx_derived_ptr->agg_buffer->buffer[l] = NAN;
+            
+          }
+          else
+            memset(agg_id->idx_derived_ptr->agg_buffer->buffer, 0, agg_id->idx_derived_ptr->agg_buffer->buffer_size);
         }
       }
     }
@@ -585,7 +750,7 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
   int send_index = 0;
   int64_t index = 0, count = 0, hz_index = 0;
   int variable_order = 1;
-  int element_count = 0;
+  //int element_count = 0;
   
   int rank = 0;
   
