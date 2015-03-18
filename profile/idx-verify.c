@@ -450,7 +450,7 @@ int main(int argc, char **argv)
                     for (i = 0; i < compression_block_size[0]; i++)
                     {
                       index = (compression_block_size[0] * compression_block_size[1] * k) + (compression_block_size[0] * j) + i;
-                      //for (s = 0; s < values_per_sample[var]; s++) // TODO: add s
+                      for (s = 0; s < values_per_sample[var]; s++)
                       {
                         int value_index = index + (ZYX[2] * compressed_global_bounds[0] * compressed_global_bounds[1] + ZYX[1] * compressed_global_bounds[0] + ZYX[0]) * total_compression_block_size;//TODO: add idx_data_offset
                         int block_index = value_index / total_compression_block_size;
