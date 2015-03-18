@@ -62,19 +62,19 @@ static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t
 static int RegExBitmaskBit(const char* bitmask_pattern,int N);
 static uint64_t getPowerOf2(int x);
 
-int main(int argc, char **argv) 
-{  
+int main(int argc, char **argv)
+{
   if ( argv[1] == NULL )
   {
     fprintf(stderr, "Missing arguments (provide a .idx file as command line input argument)\n");
     return 0;
   }
-  
+
   int i, j, k, t, var, ret, counter = 0;
   char *pch, *pch1;
   char line [ 512 ];
   int count = 0, len = 0;
-  
+
   int max_files;
   int maxh;
   char bitSequence[512];
@@ -91,21 +91,21 @@ int main(int argc, char **argv)
   char variable_name[MAX_VARIABLE_COUNT][1024];
   char filename_template[1024];
   int variable_count = 0;
-  
+
   idx_data_offset = atoi(argv[2]);
-  
+
   FILE *fp = fopen(argv[1], "r");
-  while (fgets(line, sizeof (line), fp) != NULL) 
+  while (fgets(line, sizeof (line), fp) != NULL)
   {
     //printf("%s", line);
     len = strlen(line) - 1;
     if (line[len] == '\n')
       line[len] = 0;
-      
+
     if (strcmp(line, "(version)") == 0)
       fgets(line, sizeof line, fp);
-      
-    if (strcmp(line, "(box)") == 0) 
+
+    if (strcmp(line, "(box)") == 0)
     {
       fgets(line, sizeof line, fp);
       len = strlen(line) - 1;
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 
       pch = strtok(line, " ");
       count = 0;
-      while (pch != NULL) 
+      while (pch != NULL)
       {
 	if (count % 2 == 1)
 	  global_bounds[count / 2] = atoi(pch) + 1;
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
 	pch = strtok(NULL, " ");
       }
     }
-    if (strcmp(line, "(fields)") == 0) 
+    if (strcmp(line, "(fields)") == 0)
     {
       fgets(line, sizeof (line), fp);
       len = strlen(line) - 1;
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	line[len] = 0;
       count = 0;
       variable_count = 0;
-      
+
       while (strcmp(line, "(logic_to_physic)") != 0 && strcmp(line, "(version)") != 0 && strcmp(line, "(box)") != 0 && strcmp(line, "(bits)") && strcmp(line, "(bitsperblock)") != 0 && strcmp(line, "(blocksperfile)") != 0 && strcmp(line, "(filename_template)") != 0 && strcmp(line, "(time)") != 0)
       {
         pch1 = strtok(line, " *+");
@@ -166,8 +166,8 @@ int main(int argc, char **argv)
         variable_count++;
       }
     }
-    
-    if (strcmp(line, "(compressed box)") == 0) 
+
+    if (strcmp(line, "(compressed box)") == 0)
     {
       fgets(line, sizeof line, fp);
       len = strlen(line) - 1;
@@ -177,7 +177,7 @@ int main(int argc, char **argv)
       pch = strtok(line, " ");
       count = 0;
       int comp;
-      while (pch != NULL) 
+      while (pch != NULL)
       {
         //if (count % 2 == 1)
         compression_block_size[count]/*global_bounds[count / 2]*/ = atoi(pch);
@@ -186,11 +186,11 @@ int main(int argc, char **argv)
         pch = strtok(NULL, " ");
       }
     }
-    
+
     if (strcmp(line, "(bits)") == 0)
       fgets(line, sizeof line, fp);
 
-    if (strcmp(line, "(bitsperblock)") == 0) 
+    if (strcmp(line, "(bitsperblock)") == 0)
     {
       fgets(line, sizeof line, fp);
       len = strlen(line) - 1;
@@ -199,8 +199,8 @@ int main(int argc, char **argv)
       bits_per_block = atoi(line);
       samples_per_block = pow(2, bits_per_block);
     }
-    
-    if (strcmp(line, "(blocksperfile)") == 0) 
+
+    if (strcmp(line, "(blocksperfile)") == 0)
     {
       fgets(line, sizeof line, fp);
       len = strlen(line) - 1;
@@ -208,22 +208,22 @@ int main(int argc, char **argv)
 	line[len] = 0;
       blocks_per_file= atoi(line);
     }
-    
-    if (strcmp(line, "(filename_template)") == 0) 
+
+    if (strcmp(line, "(filename_template)") == 0)
     {
       fgets(line, sizeof line, fp);
       len = strlen(line) - 1;
       if (line[len] == '\n')
 	line[len] = 0;
     }
-    
+
     if (strcmp(line, "(time)") == 0)
     {
       fgets(line, sizeof line, fp);
       len = strlen(line) - 1;
       if (line[len] == '\n')
         line[len] = 0;
-      
+
       pch1 = strtok(line, " ");
       count = 0;
       while (pch1 != NULL)
@@ -242,7 +242,7 @@ int main(int argc, char **argv)
     }
   }
   fclose(fp);
-  
+
   printf("Finished Parsing %s %d\n", argv[1], idx_data_offset);
   printf("Starting time step %d and Ending time step %d\n", start_time_step, end_time_step);
   printf("(box)\n0 %d 0 %d 0 %d 0 %d 0 %d\n", global_bounds[0], global_bounds[1], global_bounds[2], global_bounds[3], global_bounds[4]);
@@ -262,40 +262,40 @@ int main(int argc, char **argv)
     compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];
   else
     compressed_global_bounds[0] = (int) (global_bounds[0] / compression_block_size[0]) + 1;
-  
+
   if (global_bounds[1] % compression_block_size[1] == 0)
     compressed_global_bounds[1] = (int) global_bounds[1] / compression_block_size[1];
   else
     compressed_global_bounds[1] = (int) (global_bounds[1] / compression_block_size[1]) + 1;
-  
+
   if (global_bounds[2] % compression_block_size[2] == 0)
     compressed_global_bounds[2] = (int) global_bounds[2] / compression_block_size[2];
   else
     compressed_global_bounds[2] = (int) (global_bounds[2] / compression_block_size[2]) + 1;
-  
+
   if (global_bounds[3] % compression_block_size[3] == 0)
     compressed_global_bounds[3] = (int) global_bounds[3] / compression_block_size[3];
   else
     compressed_global_bounds[3] = (int) (global_bounds[3] / compression_block_size[3]) + 1;
-  
+
   if (global_bounds[4] % compression_block_size[4] == 0)
     compressed_global_bounds[4] = (int) global_bounds[4] / compression_block_size[4];
   else
     compressed_global_bounds[4] = (int) (global_bounds[4] / compression_block_size[4]) + 1;
-  
+
   int64_t total_compression_block_size = compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * compression_block_size[3] * compression_block_size[4];
-  
+
   int bounding_box[2][5] = {
     {0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0}
   };
 
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
     bounding_box[0][i] = 0;
     bounding_box[1][i] = compressed_global_bounds[i];
   }
-    
+
   PointND extents;
   extents.x = compressed_global_bounds[0];
   extents.y = compressed_global_bounds[1];
@@ -310,9 +310,9 @@ int main(int argc, char **argv)
 
   block_layout global_block_layout =  malloc(sizeof (*global_block_layout));
   memset(global_block_layout, 0, sizeof (*global_block_layout));
-  
+
   createBlockBitmap(bounding_box, blocks_per_file, bits_per_block, maxh, bitPattern, global_block_layout);
-  
+
   k = 1;
   for (i = 1; i < (global_block_layout->levels); i++)
   {
@@ -327,7 +327,7 @@ int main(int argc, char **argv)
     }
     k = k * 2;
   }
-  
+
   /// maximum number of files possible
   max_files = (getPowerOf2(compressed_global_bounds[0]) * getPowerOf2(compressed_global_bounds[1]) * getPowerOf2(compressed_global_bounds[2]) * getPowerOf2(compressed_global_bounds[3]) * getPowerOf2(compressed_global_bounds[4])) / ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file);
   if ((getPowerOf2(compressed_global_bounds[0]) * getPowerOf2(compressed_global_bounds[1]) * getPowerOf2(compressed_global_bounds[2]) * getPowerOf2(compressed_global_bounds[3]) * getPowerOf2(compressed_global_bounds[4])) % ((int64_t) pow(2, bits_per_block) * (int64_t) blocks_per_file))
@@ -339,33 +339,33 @@ int main(int argc, char **argv)
   existing_file_index = (int*) malloc(max_files * sizeof (int));
   memset(existing_file_index, 0, max_files * sizeof (int));
   existing_file_index[0] = 1;
-  
-  for (i = 1; i < global_block_layout->levels; i++) 
+
+  for (i = 1; i < global_block_layout->levels; i++)
   {
-    for (j = 0; j < global_block_layout->hz_block_count_array[i]; j++) 
+    for (j = 0; j < global_block_layout->hz_block_count_array[i]; j++)
     {
       file_no = global_block_layout->hz_block_number_array[i][j] / blocks_per_file;
       existing_file_index[file_no] = 1;
     }
   }
-    
+
   uint32_t* binheader;
   int binheader_count;
   binheader_count = 10 + 10 * blocks_per_file * variable_count;
   binheader = (uint32_t*) malloc(sizeof (*binheader)*(binheader_count));
-    
+
   int fd;
   int64_t ZYX[PIDX_MAX_DIMENSIONS];
-  
+
   for (t = start_time_step; t <= end_time_step; t++)
   {
     int64_t lost_element_count = 0, element_count = 0;
-    for (i = 0; i < max_files; i++) 
+    for (i = 0; i < max_files; i++)
     {
-      if (existing_file_index[i] == 1) 
+      if (existing_file_index[i] == 1)
       {
         generate_file_name_template(maxh, bits_per_block, argv[1], t, filename_template);
-       
+
         char bin_file[PATH_MAX];
         ret = generate_file_name(blocks_per_file, filename_template, i, bin_file, PATH_MAX);
         if (ret == -1)
@@ -373,49 +373,49 @@ int main(int argc, char **argv)
           fprintf(stderr, "[File : %s] [Line : %d] generate_file_name\n", __FILE__, __LINE__);
           return 0;
         }
-        
+
         printf("Parsing File : %s\n", bin_file);
-        
+
         fd = open(bin_file, O_RDONLY);
-        if (fd < 0) 
+        if (fd < 0)
         {
           fprintf(stderr, "[File : %s] [Line : %d] open\n", __FILE__, __LINE__);
           return 0;
         }
 
         ret = read(fd, binheader, (sizeof (*binheader) * binheader_count));
-        if (ret < 0) 
+        if (ret < 0)
         {
           fprintf(stderr, "[File : %s] [Line : %d] read\n", __FILE__, __LINE__);
           return 0;
         }
-        
-        if (ret < (int) (sizeof (*binheader) * binheader_count)) 
+
+        if (ret < (int) (sizeof (*binheader) * binheader_count))
         {
           fprintf(stderr, "[File : %s] [Line : %d] read : size\n", __FILE__, __LINE__);
           return 0;
         }
-            
+
         int bpf = 0;
         //uint64_t* long_long_buffer = NULL;
         double* double_buffer = NULL;
         int check_bit = 1, s = 0;
         int64_t hz_index, hz_val;
-        
+
         size_t data_size;
         off_t data_offset;
-        for (var = 0; var < variable_count; var++) 
+        for (var = 0; var < variable_count; var++)
         {
-          for (bpf = 0; bpf < blocks_per_file; bpf++) 
+          for (bpf = 0; bpf < blocks_per_file; bpf++)
           {
-            if (is_block_present((bpf + (blocks_per_file * i)), global_block_layout)) 
+            if (is_block_present((bpf + (blocks_per_file * i)), global_block_layout))
             {
               data_offset = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 12]);
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
               //if(var == 2 || var == 1)
               printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, (long long)data_offset, (long)data_size);
-              
+
 #if long_buffer
               long_long_buffer = malloc(data_size);
               memset(long_long_buffer, 0, data_size);
@@ -432,11 +432,11 @@ int main(int argc, char **argv)
               assert(ret == data_size);
 #endif
 
-              for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var] * total_compression_block_size); hz_val++) 
+              for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var] * total_compression_block_size); hz_val++)
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
-                
+
                 //if (long_long_buffer[hz_val * values_per_sample[var] + 0] == 0 && (ZYX[2] < global_bounds[2]))
                 if (ZYX[2] >= compressed_global_bounds[2] || ZYX[1] >= compressed_global_bounds[1] || ZYX[0] >= compressed_global_bounds[0])
                   continue;
@@ -450,23 +450,31 @@ int main(int argc, char **argv)
                     for (i = 0; i < compression_block_size[0]; i++)
                     {
                       index = (compression_block_size[0] * compression_block_size[1] * k) + (compression_block_size[0] * j) + i;
-                      for (s = 0; s < values_per_sample[var]; s++)
+                      //for (s = 0; s < values_per_sample[var]; s++) // TODO: add s
                       {
-                        
-                        //100 + var + (((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2]) + (compressed_global_bounds[0] * ZYX[1]) + ZYX[0]) * total_compression_block_size) + index
-                        //100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2])
-                        //ZYX[0] = (ZYX[0]) + i;
-                        //ZYX[1] = (ZYX[1]  compression_block_size[0]) + j;
-                        //ZYX[2] = (ZYX[2]  compression_block_size[0] * compression_block_size[1]) + k;
+                        int value_index = index + (ZYX[2] * compressed_global_bounds[0] * compressed_global_bounds[1] + ZYX[1] * compressed_global_bounds[0] + ZYX[0]) * total_compression_block_size;//TODO: add idx_data_offset
+                        int block_index = value_index / total_compression_block_size;
+                        int block_index_x = block_index % compressed_global_bounds[0];
+                        int block_index_y = ((block_index - block_index_x) % (compressed_global_bounds[0] * compressed_global_bounds[1])) / compressed_global_bounds[0];
+                        int block_index_z = (block_index - block_index_x - block_index_y * compressed_global_bounds[0]) / (compressed_global_bounds[0] * compressed_global_bounds[1]);
+                        int local_index = value_index % total_compression_block_size; // IMPORTANT: only works if the total size % compressed_block_size == 0
+                        int local_index_x = local_index % compression_block_size[0];
+                        int local_index_y = ((local_index - local_index_x) % (compression_block_size[0] * compression_block_size[1])) / compression_block_size[0];
+                        int local_index_z = (local_index - local_index_x - local_index_y * compression_block_size[0]) / (compression_block_size[0] * compression_block_size[1]);
+                        int index_x = block_index_x * compression_block_size[0] + local_index_x;
+                        int index_y = block_index_y * compression_block_size[1] + local_index_y;
+                        int index_z = block_index_z * compression_block_size[2] + local_index_z;
 
 #if long_buffer
                         check_bit = check_bit && (long_long_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
 #else
-                        check_bit = check_bit && (double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + ((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
-                        
-                        //printf("value %lld %f %lld %lld %lld: %f\n", (long long)(hz_val * values_per_sample[var] + s), double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s], (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], (double)100 + var + ((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
+                        double lhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
+                        double rhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x);
+                        check_bit = check_bit && (lhs == rhs);
+
+                        //printf("value %f: %f\n", lhs, rhs);
                       }
-#endif           
+#endif
                     }
                   }
                 }
@@ -475,29 +483,29 @@ int main(int argc, char **argv)
                 {
                   lost_element_count++;
 #if long_buffer
-                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n", 
+                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n",
                   //      var,
-                  //      lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val, 
-                  //      hz_index, ZYX[0], ZYX[1], ZYX[2], 
+                  //      lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val,
+                  //      hz_index, ZYX[0], ZYX[1], ZYX[2],
                   //      (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #else
-                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n", 
+                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
                   //      var,
-                  //      (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val, 
-                  //      (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], 
+                  //      (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val,
+                  //      (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2],
                   //      (double)double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #endif
                 }
-                else 
+                else
                 {
                   element_count++;
-                  //printf("F [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n", 
+                  //printf("F [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
                   //       var,
-                  //       (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val, 
-                  //       (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], 
+                  //       (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val,
+                  //       (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2],
                   //       (double)double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
                 }
-                
+
               }
 
 #if long_buffer
@@ -512,22 +520,22 @@ int main(int argc, char **argv)
         }
       }
     }
-    
+
     printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count);
     assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count);
-    
+
   }
-  
+
   destroyBlockBitmap(global_block_layout);
   free(global_block_layout);
   global_block_layout = 0;
-    
-  
-  
+
+
+
   return 0;
 }
 
-static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) 
+static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen)
 {
   int64_t address = 0;
   unsigned int segs[MAX_TEMPLATE_DEPTH] = {0};
@@ -536,30 +544,30 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
   int ret;
 
   //printf("[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
-  // determine the first HZ address for the file in question 
+  // determine the first HZ address for the file in question
   address = file_number * blocks_per_file;
 
   // walk backwards through the file name template to find places where we need to substitute strings
   for (pos = &filename_template[strlen(filename_template) - 1];
           pos != filename_template;
-          pos--) 
+          pos--)
   {
-    // be careful not to lo0 past the end of the array 
+    // be careful not to lo0 past the end of the array
     if (pos - filename_template > (strlen(filename_template) - 3))
       continue;
 
-    if (pos[0] == '%' && pos[1] == '0' && pos[3] == 'x') 
+    if (pos[0] == '%' && pos[1] == '0' && pos[3] == 'x')
     {
-      // TODO: for now we have a hard coded max depth 
-      if (seg_count >= MAX_TEMPLATE_DEPTH) 
+      // TODO: for now we have a hard coded max depth
+      if (seg_count >= MAX_TEMPLATE_DEPTH)
       {
         fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
         return 1;
       }
 
-      // found an occurance of %0 in the template; check the next character to see how many bits to use here 
+      // found an occurance of %0 in the template; check the next character to see how many bits to use here
 
-      switch (pos[2]) 
+      switch (pos[2])
       {
         case '1':
             segs[seg_count] += address & 0xf;
@@ -582,14 +590,14 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
             address = address >> 20;
             break;
         default:
-            // TODO: generalize this to work for any value 
+            // TODO: generalize this to work for any value
             fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
             return 1;
       }
       seg_count++;
     }
   }
-  switch (seg_count) 
+  switch (seg_count)
   {
     case 0:
         ret = strlen(filename_template);
@@ -621,13 +629,13 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
                 segs[5], segs[4], segs[3], segs[2], segs[1], segs[0]);
         break;
     default:
-        // TODO: generalize this 
+        // TODO: generalize this
         fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
         return 1;
         break;
   }
-  // make sure that the resulting string fit into the buffer ok 
-  if (ret >= maxlen - 1) 
+  // make sure that the resulting string fit into the buffer ok
+  if (ret >= maxlen - 1)
   {
     fprintf(stderr, "Error: filename too short in generate_filename()\n");
     return 1;
@@ -643,7 +651,7 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
   int nbits_blocknumber;
   char* directory_path;
   char* data_set_path;
-  
+
   directory_path = (char*) malloc(sizeof (char) * 1024);
   assert(directory_path);
   memset(directory_path, 0, sizeof (char) * 1024);
@@ -652,16 +660,16 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
   assert(data_set_path);
   memset(data_set_path, 0, sizeof (char) * 1024);
 
-  strncpy(directory_path, filename, strlen(filename) - 4);  
+  strncpy(directory_path, filename, strlen(filename) - 4);
   sprintf(data_set_path, "%s/time%06d.idx", directory_path, current_time_step);
-  
+
   free(directory_path);
 
   nbits_blocknumber = (maxh - bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
 
   //remove suffix
-  for (N = strlen(basename) - 1; N >= 0; N--) 
+  for (N = strlen(basename) - 1; N >= 0; N--)
   {
     int ch = basename[N];
     basename[N] = 0;
@@ -672,9 +680,9 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
   //if i put . as the first character, if I move files VisusOpen can do path remapping
   sprintf(pidx->filename_template, "./%s", basename);
 #endif
-  //pidx does not do path remapping 
+  //pidx does not do path remapping
   strcpy(filename_template, data_set_path);
-  for (N = strlen(filename_template) - 1; N >= 0; N--) 
+  for (N = strlen(filename_template) - 1; N >= 0; N--)
   {
     int ch = filename_template[N];
     filename_template[N] = 0;
@@ -682,26 +690,26 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
   }
 
   //can happen if I have only only one block
-  if (nbits_blocknumber == 0) 
+  if (nbits_blocknumber == 0)
     strcat(filename_template, "/%01x.bin");
-   
-  else 
+
+  else
   {
     //approximate to 4 bits
-    if (nbits_blocknumber % 4) 
+    if (nbits_blocknumber % 4)
     {
       nbits_blocknumber += (4 - (nbits_blocknumber % 4));
       assert(!(nbits_blocknumber % 4));
     }
-    if (nbits_blocknumber <= 8) 
+    if (nbits_blocknumber <= 8)
       strcat(filename_template, "/%02x.bin"); //no directories, 256 files
-    else if (nbits_blocknumber <= 12) 
+    else if (nbits_blocknumber <= 12)
       strcat(filename_template, "/%03x.bin"); //no directories, 4096 files
-    else if (nbits_blocknumber <= 16) 
+    else if (nbits_blocknumber <= 16)
       strcat(filename_template, "/%04x.bin"); //no directories, 65536  files
-    else 
+    else
     {
-      while (nbits_blocknumber > 16) 
+      while (nbits_blocknumber > 16)
       {
         strcat(filename_template, "/%02x"); //256 subdirectories
         nbits_blocknumber -= 8;
@@ -711,7 +719,7 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
       assert(nbits_blocknumber <= 0);
     }
   }
-  
+
   free(data_set_path);
   return 0;
 }
@@ -722,7 +730,7 @@ static void revstr(char* str)
   char cpstr[strlen(str)+1];
   for(i=0; i < strlen(str); i++)
     cpstr[i] = str[strlen(str)-i-1];
-  
+
   cpstr[i] = '\0';
   strcpy(str, cpstr);
 }
@@ -732,9 +740,9 @@ static void GuessBitmaskPattern(char* _bits, PointND dims)
   int D,N,ordered;
   int dim = 1;
   char* p=_bits;
-              
+
   PointND id,sorted_id;
-    
+
   *p++='V';
 
   For(D)
@@ -760,7 +768,7 @@ static void GuessBitmaskPattern(char* _bits, PointND dims)
       }
     }
   }
-  
+
   For(D)
   {
     //order in DESC order
@@ -769,7 +777,7 @@ static void GuessBitmaskPattern(char* _bits, PointND dims)
       ordered=1;
       OffsetFor(N,D,-1)
       {
-        if (PGET(sorted_id,N+0)<PGET(sorted_id,N+1)) 
+        if (PGET(sorted_id,N+0)<PGET(sorted_id,N+1))
         {
           int _temp=PGET(sorted_id,N);
           PGET(sorted_id,N)=PGET(sorted_id,N+1);
@@ -783,7 +791,7 @@ static void GuessBitmaskPattern(char* _bits, PointND dims)
     {
       OffsetFor(N,D,0)
       {
-        *p++='0'+PGET(sorted_id,N);     
+        *p++='0'+PGET(sorted_id,N);
       }
     }
   }
@@ -795,15 +803,15 @@ static void GuessBitmaskPattern(char* _bits, PointND dims)
 static int is_block_present(int block_number, block_layout layout)
 {
   long i, j;
-  
+
   if( block_number == 0)
     return 1;
-  
+
   for(i = 1 ; i < layout->levels ; i++)
     for(j = 0 ; j < layout->hz_block_count_array[i] ; j++)
       if ( layout->hz_block_number_array[i][j] == block_number)
         return 1;
-    
+
   return(0);
 }
 
@@ -813,7 +821,7 @@ static void destroyBlockBitmap(block_layout layout)
   int j = 0;
   free(layout->hz_block_count_array);
   for(j = 0 ; j < (layout->levels) ; j++)
-  {     
+  {
     free(layout->hz_block_number_array[j]);
     layout->hz_block_number_array[j] = 0;
   }
@@ -827,7 +835,7 @@ static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bi
   int64_t hz_from = 0, hz_to = 0, block_number = 1;
   int i, j, m, n_blocks = 1, ctr = 1;
   int64_t *ZYX_from, *ZYX_to;
-  
+
   if(maxH < bits_per_block)
     layout->levels = 1;
   else
@@ -854,10 +862,10 @@ static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bi
     ctr = ctr * 2;
   }
   layout->hz_block_count_array[0] = 1;                  //This block contains data upto level "bits_per_block"
-  
+
   hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
   hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
-  
+
   for(m = 1 ; m < (maxH - bits_per_block); m++)
   {
     n_blocks = pow(2, (m - 1));
@@ -865,18 +873,18 @@ static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bi
     for(t = 0 ; t < n_blocks ; t++)
     {
       block_number = block_number + 1;
-      
+
       hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
       hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
-      
+
       ZYX_to = malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       ZYX_from = malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-      
+
       Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
       Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
-      
-      if(ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && 
-         ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && 
+
+      if(ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] &&
+         ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] &&
          ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] &&
          ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] &&
          ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
@@ -899,9 +907,9 @@ static int RegExBitmaskBit(const char* bitmask_pattern,int N)
   int S, L;
   assert(bitmask_pattern[0]=='V');
 
-  if (!N) 
+  if (!N)
     return bitmask_pattern[0];
-  
+
   if ((OpenRegEx=strchr(bitmask_pattern,'{')))
   {
     S = 1+OpenRegEx-bitmask_pattern;
@@ -918,12 +926,12 @@ static int RegExBitmaskBit(const char* bitmask_pattern,int N)
 static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz)
 {
   int64_t lastbitmask=((int64_t)1)<<maxh;
-  
+
   hzaddress <<= 1;
   hzaddress  |= 1;
   while ((lastbitmask & hzaddress) == 0) hzaddress <<= 1;
     hzaddress &= lastbitmask - 1;
-  
+
   PointND cnt;
   PointND p  ;
   int n = 0;
@@ -931,7 +939,7 @@ static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t
   memset(&cnt,0,sizeof(PointND));
   memset(&p  ,0,sizeof(PointND));
 
-  for (;hzaddress; hzaddress >>= 1,++n, maxh--) 
+  for (;hzaddress; hzaddress >>= 1,++n, maxh--)
   {
     int bit= bitmask[maxh];
     PGET(p,bit) |= (hzaddress & 1) << PGET(cnt,bit);
