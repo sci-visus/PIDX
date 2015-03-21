@@ -39,11 +39,11 @@ static void usage(enum Kind kind)
 
   switch (kind)
   {
-  case SERIAL_WRITER:                      usage_serial();              break;
+  //case SERIAL_WRITER:                      usage_serial();              break;
   case PARALLEL_WRITER:                    usage_multi_idx_writer();    break;
   //case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
-  case SERIAL_READER:                      /*usage_serial_reader();*/              break;
-  case PARALLEL_READER:                    usage_reader();              break;
+  //case SERIAL_READER:                      /*usage_serial_reader();*/              break;
+  //case PARALLEL_READER:                    usage_reader();              break;
   case DEFAULT:
   default:                                 usage_multi_idx_writer();
   }

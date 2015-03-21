@@ -22,8 +22,8 @@
 // int test_writer(struct Args args, int rank, int nprocs);
 // int usage_writer();
 
-int test_reader(struct Args args, int rank, int nprocs);
-int usage_reader();
+//int test_reader(struct Args args, int rank, int nprocs);
+//int usage_reader();
 
 // int test_one_var_writer(struct Args args, int rank, int nprocs);
 // int usage_one_var_writer();
@@ -31,11 +31,11 @@ int usage_reader();
 // int test_multi_var_writer(struct Args args, int rank, int nprocs);
 // int usage_multi_var_writer();
 
-int serial_writer(struct Args args);
-int usage_serial();
+//int serial_writer(struct Args args);
+//int usage_serial();
 
-int serial_reader(struct Args args);
-int usage_serial_reader();
+//int serial_reader(struct Args args);
+//int usage_serial_reader();
 
 // int test_multi_patch_writer(struct Args args, int rank, int nprocs);
 // int usage_multi_patch_writer();
