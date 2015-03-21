@@ -2662,7 +2662,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
         fprintf(stdout, "----------------------------------------VG %d (END)-------------------------------------\n", var);
       }
       
-      
+      /*
       double total_agg_time = 0, all_time = 0;
       for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
         for (var = 0; var < file->idx_ptr->variable_count; var++)
@@ -2674,7 +2674,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       
       all_time = total_agg_time + (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start) + (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start);
       printf("Total Agg Time %f = [Network + Win_Create + Win_free] %f + %f + %f\n", all_time, total_agg_time, (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start), (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start));
-      
+      */
       fprintf(stdout, "=======================================================================================\n");
     }
   }

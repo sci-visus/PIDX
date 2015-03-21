@@ -777,11 +777,8 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
 
 #ifdef PIDX_RECORD_TIME
-      printf("A. [R %d] [OS 0 %ld %ld (%d %d %d) %ld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, 
-              (long int)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 
-              (long int)io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, 
-              (int)io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number], (int)(io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor), (int)bytes_per_datatype, 
-              (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
+      printf("A. [R %d] [O 0 C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, 
+             (long long)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
 #endif
     }
     else if (io_id->idx_derived_ptr->agg_buffer->var_number != -1 && io_id->idx_derived_ptr->agg_buffer->sample_number != -1 && io_id->idx_derived_ptr->agg_buffer->file_number != -1) 
@@ -841,7 +838,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #else
       for (k = 0; k < io_id->idx_derived_ptr->agg_buffer->var_number; k++) 
         for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
-          data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor */;
+          data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (bytes_per_datatype) /* io_id->idx_derived_ptr->aggregation_factor */;
       
       for (i = 0; i < io_id->idx_derived_ptr->agg_buffer->sample_number; i++)
         data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype);
@@ -888,7 +885,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
       
 #ifdef PIDX_RECORD_TIME
-      printf("B. [R %d] [OS %lld %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (bytes_per_datatype)), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
+      printf("B. [R %d] [O %lld C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, (long long)((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (bytes_per_datatype)), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
 #endif
     }
   }
