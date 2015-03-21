@@ -82,6 +82,7 @@ static double now()
   return tv.tv_sec + 1e-6 * tv.tv_usec;
 }
 
+#ifdef PIDX_HAVE_LOSSY_ZFP
 // compress 'inbytes' bytes from 'data' to stream 'FPZ'
 static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medium)
 {
@@ -107,7 +108,6 @@ static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medi
   return (int)outbytes;
 }
 
-#ifdef PIDX_HAVE_LOSSY_ZFP
 int compress_buffer(PIDX_agg_id agg_id, unsigned char* buffer, int length)
 {
   int i = 0, j = 0;
