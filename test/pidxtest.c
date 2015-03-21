@@ -135,7 +135,7 @@ int main(int argc, char **argv)
     case SERIAL_READER:
       if(rank == 0)
         printf("Performing Serial Read....\n");
-      /*serial_reader(args);*/
+      serial_reader(args);
       break;
     */
     default:
