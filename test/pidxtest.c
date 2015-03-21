@@ -102,12 +102,12 @@ int main(int argc, char **argv)
   /// run the specified test
   switch (args.kind)
   {
+    /*
     case PARALLEL_READER:
       if(rank == 0)
 	printf("Performing Parallel Read....\n");
       test_reader(args, rank, nprocs);
       break;
-    /*
     case SERIAL_READER:
       if(rank == 0)
 	printf("Performing Serial Read....\n");
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
 	printf("Performing Parallel Write....\n");
       test_multi_patch_writer(args, rank, nprocs);
       break;
-    */
+    
     case SERIAL_WRITER:
       if(rank == 0)
 	printf("Performing Serial Write....\n");
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
         printf("Performing Serial Read....\n");
       /*serial_reader(args);*/
       break;
-
+    */
     default:
       test_multi_idx_writer(args, rank, nprocs);
   }
@@ -240,11 +240,11 @@ char* kindToStr(enum Kind k)
 {
   switch (k)
   {
-    case PARALLEL_READER:                return "parallel-reader";
-    case SERIAL_READER:                  return "serial-reader";
+    //case PARALLEL_READER:                return "parallel-reader";
+    //case SERIAL_READER:                  return "serial-reader";
     case PARALLEL_WRITER:                return "parallel-writer";
-    case PARALLEL_MULTI_PATCH_WRITER:    return "parallel-multi-patch-writer";
-    case SERIAL_WRITER:                  return "serial-writer";
+    //case PARALLEL_MULTI_PATCH_WRITER:    return "parallel-multi-patch-writer";
+    //case SERIAL_WRITER:                  return "serial-writer";
     case DEFAULT:
     default:                             return "default";
   }
@@ -253,10 +253,10 @@ char* kindToStr(enum Kind k)
 /// strToKind
 enum Kind strToKind(const char *str)
 {
-  if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
-  if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
+  //if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
+  //if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
   if (strcmp(str,"parallel-writer")   == 0)             return PARALLEL_WRITER;
-  if (strcmp(str,"parallel-multi-patch-writer")   == 0) return PARALLEL_MULTI_PATCH_WRITER;
-  if (strcmp(str,"serial-writer")     == 0)             return SERIAL_WRITER;
+  //if (strcmp(str,"parallel-multi-patch-writer")   == 0) return PARALLEL_MULTI_PATCH_WRITER;
+  //if (strcmp(str,"serial-writer")     == 0)             return SERIAL_WRITER;
   else                                                  return DEFAULT;
 }
