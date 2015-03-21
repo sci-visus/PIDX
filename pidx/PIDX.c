@@ -2094,7 +2094,8 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           }
         }
   }
-
+  
+  int i;
   int do_agg = 1;
   int local_do_rst = 0, global_do_rst = 0;
   int start_index = 0, end_index = 0;
@@ -2244,27 +2245,6 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       {
         file->idx_ptr->variable[var]->HZ_patch[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
         memset(file->idx_ptr->variable[var]->HZ_patch[p], 0, sizeof(*(file->idx_ptr->variable[var]->HZ_patch[p])));
-      }    
-      //TODO
-      file->idx_ptr->variable[var]->post_rst_block = malloc(sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
-      memset(file->idx_ptr->variable[var]->post_rst_block, 0, sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
-      {
-        file->idx_ptr->variable[var]->post_rst_block[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
-        memset(file->idx_ptr->variable[var]->post_rst_block[p], 0, sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
-        
-        file->idx_ptr->variable[var]->post_rst_block[p]->box_count = 1;
-        file->idx_ptr->variable[var]->post_rst_block[p]->box_group_type = file->idx_ptr->variable[var]->patch_group_ptr[p]->box_group_type;
-        
-        file->idx_ptr->variable[var]->post_rst_block[p]->box = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box)) * file->idx_ptr->variable[var]->post_rst_block[p]->box_count);
-        
-        file->idx_ptr->variable[var]->post_rst_block[p]->box[0] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box[0])));
-        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS *       sizeof(int64_t));
-        //file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch[p]->Ndim_box_buffer;
-        
-        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-        memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
       }
     }
 #endif
@@ -2330,38 +2310,96 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     ///----------------------------BLOCK restructure start time---------------------------------------------///
     block_rst_start[vp] = PIDX_get_time();
+    
+    for (var = start_index; var <= end_index; var++)
+    {
+      //TODO
+      if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
+      {
+        file->idx_ptr->variable[var]->post_rst_block = malloc(sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+        memset(file->idx_ptr->variable[var]->post_rst_block, 0, sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+        for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
+        {
+          file->idx_ptr->variable[var]->post_rst_block[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+          memset(file->idx_ptr->variable[var]->post_rst_block[p], 0, sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box_count = 1;
+          file->idx_ptr->variable[var]->post_rst_block[p]->box_group_type = file->idx_ptr->variable[var]->patch_group_ptr[p]->box_group_type;
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box)) * file->idx_ptr->variable[var]->post_rst_block[p]->box_count);
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box[0] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box[0])));
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS *       sizeof(int64_t));
+          //file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch[p]->Ndim_box_buffer;
+          
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        }
+      }
+      else
+      {
+        file->idx_ptr->variable[var]->post_rst_block = malloc(sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+        memset(file->idx_ptr->variable[var]->post_rst_block, 0, sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+        for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
+        {
+          file->idx_ptr->variable[var]->post_rst_block[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+          memset(file->idx_ptr->variable[var]->post_rst_block[p], 0, sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box_count = file->idx_ptr->variable[var]->patch_group_ptr[p]->box_count;
+          file->idx_ptr->variable[var]->post_rst_block[p]->box_group_type = file->idx_ptr->variable[var]->patch_group_ptr[p]->box_group_type;
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box)) * file->idx_ptr->variable[var]->post_rst_block[p]->box_count);
+          
+          for(j = 0; j < file->idx_ptr->variable[var]->post_rst_block[p]->box_count; j++)
+          {
+            file->idx_ptr->variable[var]->post_rst_block[p]->box[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box[j])));
+            memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+            memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+            file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_buffer;
+          }
+          
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        }
+        
+      }
+    }
+    
     if (file->perform_block_rst == 1)
     {
       block_1[vp] =  PIDX_get_time();
-      PIDX_block_rst_prepare(file->block_rst_id);
+      if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
+        PIDX_block_rst_prepare(file->block_rst_id);
       //PIDX_block_rst_compress(file->block_rst_id);
       block_2[vp] =  PIDX_get_time();
       
 #if PIDX_HAVE_MPI
-      int i;
-      if(global_do_rst == 1)
-        PIDX_rst_buf_destroy(file->rst_id);
-      else
+      if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
       {
-        for(var = start_index; var <= end_index; var++)
+        if(global_do_rst == 1)
+          PIDX_rst_buf_destroy(file->rst_id);
+        else
         {
-          for(i = 0; i < file->idx_ptr->variable[start_index]->patch_group_count; i++)
+          for(var = start_index; var <= end_index; var++)
           {
-            for(j = 0; j < file->idx_ptr->variable[start_index]->patch_group_ptr[i]->box_count; j++)
+            for(i = 0; i < file->idx_ptr->variable[start_index]->patch_group_count; i++)
             {
-              free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]->Ndim_box_buffer);
-              file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]->Ndim_box_buffer = 0;
-              
-              free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]);
-              file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j] = 0;
+              for(j = 0; j < file->idx_ptr->variable[start_index]->patch_group_ptr[i]->box_count; j++)
+              {                
+                free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]->Ndim_box_buffer);
+                file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]->Ndim_box_buffer = 0;
+                                
+                free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]);
+                file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j] = 0;
+              }
+              free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box);
+              file->idx_ptr->variable[var]->patch_group_ptr[i]->box = 0;
             }
-            free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box);
-            file->idx_ptr->variable[var]->patch_group_ptr[i]->box = 0;
           }
         }
       }
 #else
-      int i;
       for(var = start_index; var <= end_index; var++)
       {
         for(i = 0; i < file->idx_ptr->variable[start_index]->patch_group_count; i++)
@@ -2395,26 +2433,54 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     if(global_do_rst == 1 && file->debug_hz == 1)
       HELPER_Hz_encode(file->hz_id);
     
-    for (var = start_index; var <= end_index; var++)
+    
+    if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
     {
-      for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
+      for (var = start_index; var <= end_index; var++)
       {
-        free(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer);
-        file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer = 0;
-        
-        free(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]);
-        file->idx_ptr->variable[var]->post_rst_block[p]->box[0] = 0;
-        
-        free(file->idx_ptr->variable[var]->post_rst_block[p]->box);
-        file->idx_ptr->variable[var]->post_rst_block[p]->box = 0;
-        
-        free(file->idx_ptr->variable[var]->post_rst_block[p]);
-        file->idx_ptr->variable[var]->post_rst_block[p] = 0;
+        for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
+        {
+          
+          free(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer);
+          file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer = 0;
+          
+          free(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]);
+          file->idx_ptr->variable[var]->post_rst_block[p]->box[0] = 0;
+          
+          free(file->idx_ptr->variable[var]->post_rst_block[p]->box);
+          file->idx_ptr->variable[var]->post_rst_block[p]->box = 0;
+                    
+          free(file->idx_ptr->variable[var]->post_rst_block[p]);
+          file->idx_ptr->variable[var]->post_rst_block[p] = 0;
+        }
+        free(file->idx_ptr->variable[var]->post_rst_block);
+        file->idx_ptr->variable[var]->post_rst_block = 0;
       }
-      free(file->idx_ptr->variable[var]->post_rst_block);
-      file->idx_ptr->variable[var]->post_rst_block = 0;
     }
-
+    else
+    {
+      if(global_do_rst == 1)
+        PIDX_rst_buf_destroy(file->rst_id);
+      else
+      {
+        for(var = start_index; var <= end_index; var++)
+        {
+          for(i = 0; i < file->idx_ptr->variable[start_index]->patch_group_count; i++)
+          {
+            for(j = 0; j < file->idx_ptr->variable[start_index]->patch_group_ptr[i]->box_count; j++)
+            {                
+              free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]->Ndim_box_buffer);
+              file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]->Ndim_box_buffer = 0;
+                              
+              free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j]);
+              file->idx_ptr->variable[var]->patch_group_ptr[i]->box[j] = 0;
+            }
+            free(file->idx_ptr->variable[var]->patch_group_ptr[i]->box);
+            file->idx_ptr->variable[var]->patch_group_ptr[i]->box = 0;
+          }
+        }
+      }
+    }
     
     hz_end[vp] = PIDX_get_time();
     ///------------------------------------HZ end time------------------------------------------------------///
