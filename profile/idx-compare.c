@@ -126,11 +126,14 @@ int main(int argc, char **argv)
 	else
 	{
 	  if (data_buffer1[i] == data_buffer2[i])
+          {
 	    non_zero_equal_count[var]++;
+            printf("[R] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+          }
 	  else
 	  {
 	    non_zero_unequal_count[var]++;
-	    printf("Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+	    printf("[W] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
 	  }
 	}
       }

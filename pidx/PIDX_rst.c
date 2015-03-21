@@ -79,7 +79,7 @@ int getPowerOftwo(int x)
 
 
 /// Function to find the dimension of the imposing regular box
-void set_default_box_size(PIDX_rst_id rst_id, int* process_bounds, int nprocs) 
+void set_default_box_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs) 
 {
   int i = 0, j = 0;
   int64_t average_count = 0;

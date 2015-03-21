@@ -490,7 +490,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       
       MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
       MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
-      
+
     }
     else
       MPI_Comm_dup( access_type->comm , &((*file)->comm));
@@ -670,6 +670,10 @@ PIDX_return_code PIDX_validate(PIDX_file file)
     file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block) - 1;
     //file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block);
   }
+  
+  //file->idx_derived_ptr->samples_per_block = file->idx_derived_ptr->samples_per_block * 2;
+  //file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 1;
+  
   if (file->idx_ptr->bits_per_block == 0)
   {
     file->idx_ptr->bits_per_block = 1;
@@ -1707,8 +1711,8 @@ PIDX_return_code PIDX_time_step_caching_ON()
 /////////////////////////////////////////////////
 PIDX_return_code PIDX_time_step_caching_OFF()
 {
-  free(cached_header_copy);
-  cached_header_copy = 0;
+  //free(cached_header_copy);
+  //cached_header_copy = 0;
   
   return PIDX_success;
 }
@@ -1798,6 +1802,9 @@ PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz)
   
   return PIDX_success;
 }
+
+
+
 
 /////////////////////////////////////////////////
 static PIDX_return_code PIDX_cache_headers(PIDX_file file)
@@ -2453,6 +2460,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           memset(file->idx_derived_ptr->agg_level_end[p][var], 0, sizeof(*file->idx_derived_ptr->agg_level_end[p][var]) * (file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_to - file->idx_ptr->variable[start_index]->HZ_patch[p]->HZ_level_from));
         }
       }
+      
       agg_2[vp] = PIDX_get_time();
       PIDX_agg_buf_create(file->agg_id);
       agg_3[vp] = PIDX_get_time();
@@ -2461,11 +2469,16 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       agg_4[vp] = PIDX_get_time();
       PIDX_hz_encode_buf_destroy(file->hz_id);
       agg_5[vp] = PIDX_get_time();
+      
+            
       /// Initialization ONLY ONCE for all TIME STEPS (caching across time)
       if (caching_state == 1 && file->idx_derived_ptr->agg_buffer->var_number == 0 && file->idx_derived_ptr->agg_buffer->sample_number == 0)
       {
-        PIDX_cache_headers(file);
-        caching_state = 0;
+        if (file->idx_ptr->enable_compression == 0)
+        {
+          PIDX_cache_headers(file);
+          caching_state = 0;
+        }
       }
       agg_6[vp] = PIDX_get_time();
     }
@@ -2480,7 +2493,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       if (file->perform_io == 1)
       {
         if (time_step_caching == 1)
-          PIDX_io_cached_data(cached_header_copy);
+        {
+          if (file->idx_ptr->enable_compression == 0)
+            PIDX_io_cached_data(cached_header_copy);
+        }
       
         PIDX_io_aggregated_write(file->io_id);
       }

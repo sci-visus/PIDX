@@ -464,7 +464,7 @@ int main(int argc, char **argv)
 #else
                         check_bit = check_bit && (double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + ((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
                         
-                        //printf("value %lld %f %lld %lld %lld: %f\n", (long long)(hz_val * values_per_sample[var] + s), double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s], (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], (double)100 + var + ((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
+                        printf("value %lld %f %lld %lld %lld: %f\n", (long long)(hz_val * values_per_sample[var] + s), double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s], (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2], (double)100 + var + ((compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
                       }
 #endif           
                     }

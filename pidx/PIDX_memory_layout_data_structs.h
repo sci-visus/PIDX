@@ -79,6 +79,8 @@ struct PIDX_HZ_Agg_buffer_struct
   int var_number;                                       ///< Target variable number for the aggregator
   int sample_number;                                    ///< Target sample index for the aggregator
   uint64_t buffer_size;                                 ///< Aggregator buffer size
+  uint64_t compressed_buffer_size;                      ///< Aggregator buffer size after compression
+  uint64_t *compressed_block_size;                      ///< Compressed size of each block in the aggregator
   int ***rank_holder;                                   ///<
   unsigned char* buffer;                                ///< The actual aggregator buffer
 };

@@ -33,7 +33,7 @@
   #include <sys/time.h>
 #endif
 
-#if PIDX_HAVE_LOSSY_ZFP
+#ifdef PIDX_HAVE_LOSSY_ZFP
   #include "zfp.h"
   #include "fpzip.h"
 #endif

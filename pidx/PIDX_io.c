@@ -29,6 +29,7 @@ struct PIDX_io_struct
 {
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
+  MPI_Win win;
 #endif
     
   //Contains all relevant IDX file info
@@ -315,30 +316,81 @@ int PIDX_io_cached_data(uint32_t* cached_header)
   return 0;
 }
 
-#if 0
+#if 1
 int compress_aggregation_buffer(PIDX_io_id io_id, unsigned char* agg_buffer, int buffer_size)
 {
-  int i = 0;
-  double value;
-  int nan_counter = 0;
+  int i = 0, j = 0, double_elements_per_block = 0, memmove_count = 0;
+  double value = 0;
+  int nan_counter = 0, total_nan_count = 0, block_nan_count = 0, existing_block_count = 0;
+  int bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) /* (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]) */;
+  
   for (i = 0; i < io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]; i++)
   {
     if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * io_id->idx_derived_ptr->agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout))
     {
-      for (j = 0; j < io_id->idx_ptr->samples_per_block; j++)
+      block_nan_count = 0;
+      
+      double_elements_per_block = io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+      printf("samples per block = %d double elements per block = %d block count %d\n", io_id->idx_derived_ptr->samples_per_block, double_elements_per_block, existing_block_count);
+      for (j = 0; j < double_elements_per_block; j++)
       {
-        memcpy(&value, io_id->idx_derived_ptr->agg_buffer->buffer + (j * sizeof(double)), sizeof(double) );
-        if (isnan(value) != 0)
+        memcpy(&value, io_id->idx_derived_ptr->agg_buffer->buffer + ((existing_block_count * double_elements_per_block) + (j /*- memmove_count*/)) * bytes_per_datatype, bytes_per_datatype );
+        
+        /// if value is nan
+        //if (isnan(value) != 0)
+        if (value == 9999999999)
         {
           nan_counter++;
+          total_nan_count++;
+          block_nan_count++;
+          //printf("YYYYYYYYY %d %d\n", ((existing_block_count * double_elements_per_block) + (j /*- memmove_count*/)), total_nan_count);
         }
+        /// when performing memmove
         else
         {
-          memmove(io_id->idx_derived_ptr->agg_buffer->buffer);
+          //printf("XXXXXXXXX %d %d\n", j, total_nan_count);
+          if( nan_counter != 0)
+          {
+            printf("[%d] XXXXXXXXX %d %d\n", i, j, nan_counter);
+            //printf("Destination %d (%d - %d) Source %d (%d - %d + %d) Count %d (%d - %d)\n", (int)(((existing_block_count * double_elements_per_block) + j) - total_nan_count), (int)((existing_block_count * double_elements_per_block) + j), (int)total_nan_count, (int)(((existing_block_count * double_elements_per_block) + j) - total_nan_count + nan_counter), (int)((existing_block_count * double_elements_per_block) + j), (int)total_nan_count, (int)nan_counter, (int)io_id->idx_derived_ptr->agg_buffer->buffer_size - ((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype, (int)io_id->idx_derived_ptr->agg_buffer->buffer_size, (int)((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype);  
+            
+            //memmove(io_id->idx_derived_ptr->agg_buffer->buffer + (((existing_block_count * double_elements_per_block) + j) - total_nan_count) * bytes_per_datatype, io_id->idx_derived_ptr->agg_buffer->buffer + (((existing_block_count * double_elements_per_block) + j) - total_nan_count + nan_counter) * bytes_per_datatype, io_id->idx_derived_ptr->agg_buffer->buffer_size - ((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype);
+            memmove_count = memmove_count + nan_counter;
+            nan_counter = 0;
+          }
         }
+        value = 0;
       }
+      io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i] = (io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) - (block_nan_count * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
+      printf("Compressed block size %d = %lld\n", i, (long long)io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i]/(io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
+      existing_block_count++;
     }
+    else
+      io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i] = 0;  
   }
+  
+  unsigned char* temp_buffer = (unsigned char*)realloc(io_id->idx_derived_ptr->agg_buffer->buffer, io_id->idx_derived_ptr->agg_buffer->buffer_size - (total_nan_count * bytes_per_datatype));
+  if (temp_buffer == NULL)
+  {
+    fprintf(stderr, "[%s] [%d] realloc() of aggregation buffer for compression failed.\n", __FILE__, __LINE__);
+    return -1;
+  }
+  else
+    io_id->idx_derived_ptr->agg_buffer->buffer = temp_buffer;
+  
+  io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size = ((existing_block_count * io_id->idx_derived_ptr->samples_per_block) * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) - (total_nan_count * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
+  
+#if 1
+  printf("Total NAN count = %d %lld %d %d %d %d %d\n", 
+         (int)total_nan_count, 
+         (long long)io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size, 
+         (int)existing_block_count, 
+         (int)io_id->idx_derived_ptr->samples_per_block, 
+         (int)total_nan_count, 
+         (int)(io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8), 
+         (int)(io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]));
+#endif
+
   return 0;
 }
 #endif
@@ -347,17 +399,22 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 {
   int64_t data_offset = 0;  
   char file_name[PATH_MAX];
-  int i = 0, k = 0, rank, mpi_ret;
+  int i = 0, k = 0, rank, mpi_ret, new_rank, new_count;
   uint32_t *headers;
-  int total_header_size;
+  uint64_t *aggregator_process_offset;
+  int *aggregator_process_var_number;
+  int *aggregator_process_sample_number;
+  int total_header_size = 0;
   int write_count;
   int bytes_per_datatype;
+  int aggregated_header_write = 0;
   
 #ifdef PIDX_RECORD_TIME
   double t1, t2, t3, t4, t5;
 #endif
   
 #if PIDX_HAVE_MPI
+  MPI_Comm new_comm;
   MPI_File fh;
   MPI_Status status;
   MPI_Comm_rank(io_id->comm, &rank);
@@ -365,86 +422,296 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
   int fh;
 #endif
   
-  if (io_id->idx_derived_ptr->agg_buffer->var_number == 0 && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
+  if (io_id->idx_ptr->enable_compression == 1)
   {
-    bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+    uint32_t *header;
+    if (io_id->idx_derived_ptr->agg_buffer->file_number == -1)
+      io_id->idx_derived_ptr->agg_buffer->file_number = io_id->idx_derived_ptr->existing_file_count + 1;
     
-#ifdef PIDX_RECORD_TIME
-    t1 = MPI_Wtime();
+    int var_used_in_binary_file = 0;    
+    var_used_in_binary_file = (io_id->idx_ptr->variable_count < 0) ? 64 : io_id->idx_ptr->variable_count;   
+    total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * var_used_in_binary_file;
+          
+    
+    MPI_Comm_split(io_id->comm, io_id->idx_derived_ptr->agg_buffer->file_number, rank, &new_comm);
+    
+    if (io_id->idx_derived_ptr->agg_buffer->var_number != -1 && io_id->idx_derived_ptr->agg_buffer->sample_number != -1 && io_id->idx_derived_ptr->agg_buffer->file_number != -1) 
+    {
+      compress_aggregation_buffer (io_id, io_id->idx_derived_ptr->agg_buffer->buffer, io_id->idx_derived_ptr->agg_buffer->buffer_size);
+      
+      MPI_Comm_rank(new_comm, &new_rank);
+      MPI_Comm_size(new_comm, &new_count);
+      //printf("Rank %d and new rank %d\n", rank, new_rank);
+      
+      aggregator_process_offset = malloc(sizeof(*aggregator_process_offset) * new_count);
+      memset(aggregator_process_offset, 0, sizeof(*aggregator_process_offset) * new_count);
+      aggregator_process_var_number = malloc(sizeof(*aggregator_process_var_number) * new_count);
+      memset(aggregator_process_var_number, 0, sizeof(*aggregator_process_var_number) * new_count);
+      aggregator_process_sample_number = malloc(sizeof(*aggregator_process_sample_number) * new_count);
+      memset(aggregator_process_sample_number, 0, sizeof(*aggregator_process_sample_number) * new_count);
+      
+      MPI_Allgather(&io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size, 1, MPI_LONG_LONG, aggregator_process_offset, 1, MPI_LONG_LONG, new_comm);
+      MPI_Allgather(&io_id->idx_derived_ptr->agg_buffer->var_number, 1, MPI_INT, aggregator_process_var_number, 1, MPI_INT, new_comm);
+      MPI_Allgather(&io_id->idx_derived_ptr->agg_buffer->sample_number, 1, MPI_INT, aggregator_process_sample_number, 1, MPI_INT, new_comm);
+      
+      //TODO calculate data_offset
+      generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
+      
+      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+      if (mpi_ret != MPI_SUCCESS)
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
+        return -1;
+      }
+      
+      data_offset = total_header_size;
+      for (i = 0; i < new_rank; i++)
+        data_offset = data_offset + aggregator_process_offset[i];
+            
+      printf("data offset = %lld and length = %lld\n", (long long)data_offset, (long long)io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size);
+      mpi_ret = MPI_File_write_at(fh, data_offset, io_id->idx_derived_ptr->agg_buffer->buffer, io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size , MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
+        return -1;
+      }
+      
+      
+      if (aggregated_header_write == 1)
+      {
+#if 0
+        uint32_t *aggregated_header = 0;
+        int var_used_in_binary_file = 0, total_header_size = 0;
+        if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
+        {
+          var_used_in_binary_file = (io_id->idx_ptr->variable_count < 0) ? 64 : io_id->idx_ptr->variable_count;   
+          total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * var_used_in_binary_file;
+          io_id->idx_derived_ptr->start_fs_block = total_header_size / io_id->idx_derived_ptr->fs_block_size;
+          if (total_header_size % io_id->idx_derived_ptr->fs_block_size)
+            io_id->idx_derived_ptr->start_fs_block++;
+          
+          aggregated_header = (uint32_t*)malloc(total_header_size);
+          memset(aggregated_header, 0, total_header_size);
+          
+#if PIDX_HAVE_MPI
+          mpi_ret = MPI_Win_create(aggregated_header, total_header_size, sizeof (uint32_t), MPI_INFO_NULL, new_comm, &(io_id->win));
+          if (mpi_ret != MPI_SUCCESS) 
+          {
+            fprintf(stderr, "[%s] [%d] MPI_Win_create() failed.\n", __FILE__, __LINE__);
+            return -1;
+          }
 #endif
-    generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
+        }
+        else
+        {
+#if PIDX_HAVE_MPI
+          mpi_ret =  MPI_Win_create(0, 0, 1, MPI_INFO_NULL, new_comm, &(io_id->win));    
+          if (mpi_ret != MPI_SUCCESS) 
+          {
+            fprintf(stderr, "[%s] [%d] MPI_Win_create() failed.\n", __FILE__, __LINE__);
+            return -1;
+          }
+        }
+#endif
+          
+#if PIDX_HAVE_MPI
+#ifdef PIDX_ACTIVE_TARGET
+        mpi_ret = MPI_Win_fence(0, io_id->win);
+        if (mpi_ret != MPI_SUCCESS) 
+        {
+          fprintf(stderr, "[%s] [%d] MPI_Win_fence() failed.\n", __FILE__, __LINE__);
+          return -1;
+        }
+#else
+        //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+
+#ifndef PIDX_ACTIVE_TARGET
+        MPI_Win_lock(MPI_LOCK_SHARED, io_id->idx_derived_ptr->agg_buffer->rank_holder[io_id->start_var_index][0][io_id->idx_derived_ptr->agg_buffer->file_number], 0 , io_id->win);
+#endif
+      
+#if RANK_ORDER
+        mpi_ret = MPI_Put(const void *origin_addr, (10 * io_id->idx_ptr->blocks_per_file), MPI_INT, io_id->idx_derived_ptr->agg_buffer->rank_holder[io_id->start_var_index][0][io_id->idx_derived_ptr->agg_buffer->file_number], MPI_Aint target_disp, (10 * io_id->idx_ptr->blocks_per_file), MPI_INT, io_id->win);
+#else
+        mpi_ret = MPI_Put(const void *origin_addr, (10 * io_id->idx_ptr->blocks_per_file), MPI_INT, io_id->idx_derived_ptr->agg_buffer->rank_holder[io_id->idx_derived_ptr->agg_buffer->file_number][0][io_id->start_var_index], MPI_Aint target_disp, (10 * io_id->idx_ptr->blocks_per_file), MPI_INT, io_id->win);
+#endif
+        if (mpi_ret != MPI_SUCCESS) 
+        {
+          fprintf(stderr, "[%s] [%d] MPI_Put() failed.\n", __FILE__, __LINE__);
+          return -1;
+        }
+
+#ifndef PIDX_ACTIVE_TARGET
+        MPI_Win_unlock(io_id->idx_derived_ptr->agg_buffer->rank_holder[io_id->start_var_index][0][io_id->idx_derived_ptr->agg_buffer->file_number], io_id->win);
+#endif
+        
+#ifdef PIDX_ACTIVE_TARGET
+        mpi_ret = MPI_Win_fence(0, io_id->win);
+        if (mpi_ret != MPI_SUCCESS) 
+        {
+          fprintf(stderr, "[%s] [%d] MPI_Win_fence() failed.\n", __FILE__, __LINE__);
+          return -1;
+        }
+#else
+        //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+        
+        mpi_ret = MPI_File_write_at(fh, 0, aggregated_header, total_header_size , MPI_BYTE, &status);
+        if (mpi_ret != MPI_SUCCESS)
+        {
+          fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
+          return -1;
+        }
+        
+#endif
+        
+        if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
+        {
+          free(aggregated_header);
+          aggregated_header = 0;
+        }
+#endif
+      }
+      else
+      {
+        data_offset = total_header_size;
+        for (i = 0; i < new_rank; i++)
+          data_offset = data_offset + aggregator_process_offset[i];
+        printf("init offset = %ld\n", data_offset);
+        if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
+        {                   
+          int header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t);
+          header = (uint32_t*)malloc(header_size);
+          memset(header, 0, header_size);
+          
+          for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
+          {
+            data_offset = data_offset + io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i];
+            //printf("Block %d : Offset %ld Count %lld block size %lld\n", i, data_offset, (long long)io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i], io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i]);
+            
+            header[12 + (i*10)] = htonl(data_offset);
+            header[14 + (i*10)] = htonl(io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i]);
+          }
+          
+          mpi_ret = MPI_File_write_at(fh, 0, header, (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) , MPI_BYTE, &status);
+          if (mpi_ret != MPI_SUCCESS) 
+          {
+            fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
+            return -1;
+          }
+        }
+        else
+        {
+          int header_size = (10 * io_id->idx_ptr->blocks_per_file) * sizeof (uint32_t);
+          header = (uint32_t*)malloc(header_size);
+          memset(header, 0, header_size);
+          
+          for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
+          {
+            data_offset = data_offset + io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i];
+            header[12 + (i*10)] = htonl(data_offset);
+            header[14 + (i*10)] = htonl(io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i]);
+          }
+          
+          mpi_ret = MPI_File_write_at(fh, (10 + (10 * io_id->idx_ptr->blocks_per_file * new_rank)) * sizeof(uint32_t), header, (10 * io_id->idx_ptr->blocks_per_file) * sizeof (uint32_t) , MPI_BYTE, &status);
+          if (mpi_ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
+            return -1;
+          }
+        }
+        free(header);
+      }
+      
+      mpi_ret = MPI_File_close(&fh);
+      if (mpi_ret != MPI_SUCCESS)
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+      
+      free(aggregator_process_offset);
+      free(aggregator_process_var_number);
+      free(aggregator_process_sample_number);
+    }
+    MPI_Comm_free(&new_comm);
+  }
+  else
+  {
+    if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
+    {
+      bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+      
+#ifdef PIDX_RECORD_TIME
+      t1 = MPI_Wtime();
+#endif
+      generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
 
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-    if (mpi_ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed filename %s.\n", __FILE__, __LINE__, file_name);
-      return -1;
-    }
+      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed filename %s.\n", __FILE__, __LINE__, file_name);
+        return -1;
+      }
 #else
-    fh = open(file_name, O_WRONLY);
+      fh = open(file_name, O_WRONLY);
 #endif
-    
+      
 #ifdef PIDX_RECORD_TIME
-    t2 = MPI_Wtime();
+      t2 = MPI_Wtime();
 #endif
-    
-    data_offset = 0;
-    total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * io_id->idx_ptr->variable_count;
-    
-    headers = (uint32_t*)malloc(total_header_size);
-    memset(headers, 0, total_header_size);
-    
-    if (enable_caching == 1)
-      memcpy (headers, cached_header_copy, total_header_size);
-    
+      
+      data_offset = 0;
+      total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * io_id->idx_ptr->variable_count;
+      
+      headers = (uint32_t*)malloc(total_header_size);
+      memset(headers, 0, total_header_size);
+      
+      if (enable_caching == 1)
+        memcpy (headers, cached_header_copy, total_header_size);
+      
 #ifdef PIDX_RECORD_TIME
-    t3 = MPI_Wtime();
+      t3 = MPI_Wtime();
 #endif
-    
+      
 #ifdef PIDX_VAR_SLOW_LOOP
-    unsigned char* temp_buffer = realloc(io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
-    
-    if (temp_buffer == NULL)
-    {
-      ;
-    }
-    else
-    {
-      io_id->idx_derived_ptr->agg_buffer->buffer = temp_buffer;
-      memmove(io_id->idx_derived_ptr->agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) );
-      memcpy(io_id->idx_derived_ptr->agg_buffer->buffer, headers, total_header_size);
-      memset(io_id->idx_derived_ptr->agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
-    }
-    free(headers);
-    
-    
+      unsigned char* temp_buffer = realloc(io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
+      
+      if (temp_buffer == NULL)
+      {
+        ;
+      }
+      else
+      {
+        io_id->idx_derived_ptr->agg_buffer->buffer = temp_buffer;
+        memmove(io_id->idx_derived_ptr->agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) );
+        memcpy(io_id->idx_derived_ptr->agg_buffer->buffer, headers, total_header_size);
+        memset(io_id->idx_derived_ptr->agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
+      }
+      free(headers);
+      
+      
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_write_at(fh, 0, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
-    if (mpi_ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
-    
-    MPI_Get_count(&status, MPI_BYTE, &write_count);
-    if (write_count != (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block  / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size))
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
-    
+      mpi_ret = MPI_File_write_at(fh, 0, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+      
+      MPI_Get_count(&status, MPI_BYTE, &write_count);
+      if (write_count != (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block  / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size))
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+      
 #else
-    pwrite(fh, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
+      pwrite(fh, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
 #endif
-    
+      
 #else
-    if (io_id->idx_ptr->enable_compression == 1)
-    {
-      //compress_aggregation_buffer (io_id, io_id->idx_derived_ptr->agg_buffer->buffer, io_id->idx_derived_ptr->agg_buffer->buffer_size);
-    }
-    else
-    {
       unsigned char* temp_buffer = (unsigned char*)realloc(io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size));
       
       if (temp_buffer == NULL)
@@ -462,6 +729,13 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       free(headers);
       
 #if PIDX_HAVE_MPI
+      /*
+      double val[24];
+      int t = 0;
+      memcpy(val, io_id->idx_derived_ptr->agg_buffer->buffer + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 24 * sizeof(double));
+      for (t = 0; t < 24; t++)
+        printf("Agg value at %d = %f\n", t, val[t]);
+      */    
       mpi_ret = MPI_File_write_at(fh, 0, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
       if (mpi_ret != MPI_SUCCESS) 
       {
@@ -480,144 +754,145 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #else
       pwrite(fh, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 0);
 #endif
-    }
 
 #endif      
-    
+      
 #ifdef PIDX_RECORD_TIME
-    t4 = MPI_Wtime();
+      t4 = MPI_Wtime();
 #endif
 
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_close(&fh);
-    if (mpi_ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
+      mpi_ret = MPI_File_close(&fh);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
 #else
-      close(fh);
+        close(fh);
 #endif
 
 #ifdef PIDX_RECORD_TIME
-    t5 = MPI_Wtime();
+      t5 = MPI_Wtime();
 #endif
 
 #ifdef PIDX_RECORD_TIME
-    printf("A. [R %d] [OS 0 %ld %ld (%d %d %d) %ld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, 
-            (long int)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 
-            (long int)io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, 
-            (int)io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number], (int)(io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor), (int)bytes_per_datatype, 
-            (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
+      printf("A. [R %d] [OS 0 %ld %ld (%d %d %d) %ld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, 
+              (long int)(((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), 
+              (long int)io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype, 
+              (int)io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number], (int)(io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor), (int)bytes_per_datatype, 
+              (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
 #endif
-  }
-  else if (io_id->idx_derived_ptr->agg_buffer->var_number != -1 && io_id->idx_derived_ptr->agg_buffer->sample_number != -1 && io_id->idx_derived_ptr->agg_buffer->file_number != -1) 
-  {
+    }
+    else if (io_id->idx_derived_ptr->agg_buffer->var_number != -1 && io_id->idx_derived_ptr->agg_buffer->sample_number != -1 && io_id->idx_derived_ptr->agg_buffer->file_number != -1) 
+    {
 #ifdef PIDX_RECORD_TIME
-    t1 = MPI_Wtime();
+      t1 = MPI_Wtime();
 #endif
-    bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
-    
-    generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
-    
+      bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+      
+      generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
+      
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-    if (mpi_ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
-      return -1;
-    }
+      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
+        return -1;
+      }
 #else
-    fh = open(file_name, O_WRONLY);
+      fh = open(file_name, O_WRONLY);
 #endif
 
 #ifdef PIDX_RECORD_TIME
-    t2 = MPI_Wtime();
+      t2 = MPI_Wtime();
 #endif
-    
-    data_offset = 0;
-    data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
-    
+      
+      data_offset = 0;
+      data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+      
 #ifdef PIDX_VAR_SLOW_LOOP
-    for (k = 0; k < io_id->idx_derived_ptr->agg_buffer->var_number; k++) 
-      for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
-        data_offset = data_offset + io_id->idx_ptr->variable[k]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor*/;
-    
-    for (i = 0; i < io_id->idx_derived_ptr->agg_buffer->sample_number; i++)
-      data_offset = data_offset + io_id->idx_ptr->variable[k]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype);
-    
+      for (k = 0; k < io_id->idx_derived_ptr->agg_buffer->var_number; k++) 
+        for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
+          data_offset = data_offset + io_id->idx_ptr->variable[k]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor*/;
+      
+      for (i = 0; i < io_id->idx_derived_ptr->agg_buffer->sample_number; i++)
+        data_offset = data_offset + io_id->idx_ptr->variable[k]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype);
+      
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_write_at(fh, data_offset, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)) , MPI_BYTE, &status);
-    if (mpi_ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
-    
-    MPI_Get_count(&status, MPI_BYTE, &write_count);
-    if (write_count != ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)) )
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
-        
+      mpi_ret = MPI_File_write_at(fh, data_offset, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)) , MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+      
+      MPI_Get_count(&status, MPI_BYTE, &write_count);
+      if (write_count != ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->VAR_blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)) )
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+          
 #else
-    pwrite(fh, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)), data_offset);
+      pwrite(fh, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->blocks_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)), data_offset);
 #endif
-    
+      
 #else
-    for (k = 0; k < io_id->idx_derived_ptr->agg_buffer->var_number; k++) 
-      for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
-        data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor */;
-    
-    for (i = 0; i < io_id->idx_derived_ptr->agg_buffer->sample_number; i++)
-      data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype);
-    
+      for (k = 0; k < io_id->idx_derived_ptr->agg_buffer->var_number; k++) 
+        for (i = 0; i < io_id->idx_ptr->variable[k]->values_per_sample; i++)
+          data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[k]->bits_per_value/8) /* io_id->idx_derived_ptr->aggregation_factor */;
+      
+      for (i = 0; i < io_id->idx_derived_ptr->agg_buffer->sample_number; i++)
+        data_offset = (int64_t) data_offset + (int64_t) io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number] * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype);
+      
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_write_at(fh, data_offset, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (bytes_per_datatype)) , MPI_BYTE, &status);
-    if (mpi_ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
-      return -1;
-    }
-    
-    MPI_Get_count(&status, MPI_BYTE, &write_count);
-    //printf("[B] Elemets to write %d\n", write_count);
-    if (write_count != ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)))
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
-    
+      mpi_ret = MPI_File_write_at(fh, data_offset, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (bytes_per_datatype)) , MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
+        return -1;
+      }
+      
+      MPI_Get_count(&status, MPI_BYTE, &write_count);
+      //printf("[B] Elemets to write %d\n", write_count);
+      if (write_count != ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)))
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+      
 #else
-    pwrite(fh, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)), data_offset);
+      pwrite(fh, io_id->idx_derived_ptr->agg_buffer->buffer, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)), data_offset);
 #endif
-    
-#endif
-    
-#ifdef PIDX_RECORD_TIME
-    t3 = MPI_Wtime();
-#endif
-    
-#if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_close(&fh);
-    if (mpi_ret != MPI_SUCCESS) 
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
-#else
-    close(fh);
+      
 #endif
       
 #ifdef PIDX_RECORD_TIME
-    t4 = MPI_Wtime();
+      t3 = MPI_Wtime();
 #endif
-    
+      
+#if PIDX_HAVE_MPI
+      mpi_ret = MPI_File_close(&fh);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+#else
+      close(fh);
+#endif
+        
 #ifdef PIDX_RECORD_TIME
-    printf("B. [R %d] [OS %lld %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (bytes_per_datatype)), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
+      t4 = MPI_Wtime();
 #endif
+      
+#ifdef PIDX_RECORD_TIME
+      printf("B. [R %d] [OS %lld %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, ((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block/io_id->idx_derived_ptr->aggregation_factor)  * (bytes_per_datatype)), io_id->idx_derived_ptr->agg_buffer->file_number, io_id->idx_derived_ptr->agg_buffer->var_number, io_id->idx_derived_ptr->agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
+#endif
+    }
   }
+  
   return 0;
 }
 
@@ -643,7 +918,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
   int fh;
 #endif
   
-  if (io_id->idx_derived_ptr->agg_buffer->var_number == 0 && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
+  if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
   {
     bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
     

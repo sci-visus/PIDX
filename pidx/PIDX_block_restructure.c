@@ -80,6 +80,9 @@ int PIDX_block_rst_set_communicator(PIDX_block_rst_id block_rst_id, MPI_Comm com
 // TODO: detect wrong input
 int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 {
+  int rank;
+  MPI_Comm_rank(block_rst_id->comm, &rank);
+  
   // compute the intra compression block strides
   int64_t *compression_block_size = block_rst_id->idx_ptr->compression_block_size;
   int64_t compression_block_stride[PIDX_MAX_DIMENSIONS]; // stride inside a compression block
@@ -93,6 +96,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 
   // loop through all variables
   int v = 0;
+  
   for (v = block_rst_id->start_variable_index; v <= block_rst_id->end_variable_index; ++v)
   {
     PIDX_variable var = block_rst_id->idx_ptr->variable[v];
@@ -129,6 +133,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 
       int64_t *group_offset = box_group->enclosing_box_offset;
       // loop through all boxes
+      
       int b = 0;
       for (b = 0; b < box_group->box_count; ++b)
       {
@@ -136,6 +141,7 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
         int64_t *box_size = box->Ndim_box_size;
         int64_t *box_offset = box->Ndim_box_offset; // global offset of the box
 
+        //printf("[%d] [%d]: %d %d %d %d %d : %d %d %d %d %d\n",rank, b, (int)box_offset[0], (int)box_offset[1], (int)box_offset[2], (int)box_offset[3], (int)box_offset[4], (int)box->Ndim_box_size[0], (int)box->Ndim_box_size[1], (int)box->Ndim_box_size[2], (int)box->Ndim_box_size[3], (int)box->Ndim_box_size[4]);
         // compute the number of elements in the box
         int64_t num_elems_box = 1; // number of elements in the box
         int64_t local_offset[PIDX_MAX_DIMENSIONS];
@@ -186,6 +192,10 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 
           // copy the elements (compression_block_size[0] elements at a time)
           int64_t num_elems_copy = min(box_size[0] - box_index[0], compression_block_size[0]);
+          //double val;
+          //memcpy(&val, &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value);
+          //printf("VVVV: %f\n",val);
+          
           memcpy(&out_box->box[0]->Ndim_box_buffer[j * bytes_per_value], &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value * num_elems_copy);
 
 
