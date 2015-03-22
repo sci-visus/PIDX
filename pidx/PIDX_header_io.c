@@ -296,7 +296,7 @@ int PIDX_header_io_file_write(PIDX_header_io_id header_io_id)
   
   for (i = 0; i < header_io_id->idx_derived_ptr->max_file_count; i++) 
   {
-#if PIDX_HAVE_MPI
+#if !PIDX_HAVE_MPI
     if (i % nprocs == rank && header_io_id->idx_derived_ptr->file_bitmap[i] == 1) 
 #else
       if (rank == 0 && header_io_id->idx_derived_ptr->file_bitmap[i] == 1) 

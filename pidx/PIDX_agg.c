@@ -19,7 +19,8 @@
 #include "PIDX_inc.h"
 #include <sys/time.h>
 
-//#define PIDX_ACTIVE_TARGET
+#define PIDX_ACTIVE_TARGET
+
 #define PIDX_DUMP_AGG
 #undef PIDX_PRINT_AGG
 //#define RANK_ORDER 1
