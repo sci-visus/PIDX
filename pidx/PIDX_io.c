@@ -18,7 +18,7 @@
 
 #include "PIDX_inc.h"
 
-#define PIDX_RECORD_TIME
+#undef PIDX_RECORD_TIME
 //#define RANK_ORDER 1
 static uint32_t *cached_header_copy;
 static int enable_caching = 0;
