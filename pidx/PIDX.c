@@ -2713,12 +2713,13 @@ PIDX_return_code PIDX_close(PIDX_file file)
         sample_sum = sample_sum + file->idx_ptr->variable[var]->values_per_sample;
       
       int64_t total_data = file->idx_ptr->global_bounds[0] * file->idx_ptr->global_bounds[1] * file->idx_ptr->global_bounds[2] * file->idx_ptr->global_bounds[3] * file->idx_ptr->global_bounds[4] * sample_sum * 8;
-      fprintf(stdout, "\n=======================================================================================\n");
+      fprintf(stdout, "\n==========================================================================================================\n");
       fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d = %d x %d x %d\n", nprocs, (long long) file->idx_ptr->global_bounds[0], (long long) file->idx_ptr->global_bounds[1], (long long) file->idx_ptr->global_bounds[2], file->idx_ptr->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregation Factor %d Aggregator Count %d\n", file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->existing_file_count, file->idx_derived_ptr->aggregation_factor, file->idx_ptr->variable_count * file->idx_derived_ptr->existing_file_count * file->idx_derived_ptr->aggregation_factor);
+      fprintf(stdout, "Blocks Restructuring Size %d %d %d %d %d\n", (int)file->idx_ptr->compression_block_size[0], (int)file->idx_ptr->compression_block_size[1], (int)file->idx_ptr->compression_block_size[2], (int)file->idx_ptr->compression_block_size[3], (int)file->idx_ptr->compression_block_size[4]);
       fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", max_time, (float) total_data / (1000 * 1000 * max_time));
-      fprintf(stdout, "---------------------------------------------------------------------------------------\n");
+      fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
       //printf("File creation time %f\n", write_init_end - write_init_start);
       
       for (var = 0; var < hp; var++)
@@ -2726,7 +2727,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       
       for (var = 0; var < vp; var++)
       {
-        fprintf(stdout, "---------------------------------------VG %d (START)------------------------------------\n", var);
+        fprintf(stdout, "------------------------------------------------VG %d (START)----------------------------------------------\n", var);
         fprintf(stdout, "Buffer init time %f\n", (var_init_end[var] - var_init_start[var]));
         fprintf(stdout, "Init time  [RST + BRST + HZ + AGG + IO] %f + %f + %f + %f + %f = %f\n", (rst_init_end[var] - rst_init_start[var]), (block_rst_init_end[var] - block_rst_init_start[var]), (hz_init_end[var] - hz_init_start[var]), (agg_init_end[var] - agg_init_start[var]), (io_init_end[var] - io_init_start[var]), (rst_init_end[var] - rst_init_start[var]) + (block_rst_init_end[var] - block_rst_init_start[var]) + (hz_init_end[var] - hz_init_start[var]) + (agg_init_end[var] - agg_init_start[var]) + (io_init_end[var] - io_init_start[var]));
         
@@ -2737,7 +2738,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
         fprintf(stdout, "Agg time %f = %f + %f + %f + %f + %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
         
         fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
-        fprintf(stdout, "----------------------------------------VG %d (END)-------------------------------------\n", var);
+        fprintf(stdout, "-------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
       }
       
       /*
@@ -2753,7 +2754,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       all_time = total_agg_time + (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start) + (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start);
       printf("Total Agg Time %f = [Network + Win_Create + Win_free] %f + %f + %f\n", all_time, total_agg_time, (file->idx_derived_ptr->win_time_end - file->idx_derived_ptr->win_time_start), (file->idx_derived_ptr->win_free_time_end - file->idx_derived_ptr->win_free_time_start));
       */
-      fprintf(stdout, "=======================================================================================\n");
+      fprintf(stdout, "==========================================================================================================\n");
     }
   }
   else
@@ -2783,12 +2784,13 @@ PIDX_return_code PIDX_close(PIDX_file file)
       if (file->IDX_WRITE == 0 && file->IDX_READ == 1)
         fprintf(stdout, "\n------------- READ -------------\n");
       
-      fprintf(stdout, "\n=======================================================================================\n");
+      fprintf(stdout, "\n==========================================================================================================\n");
       fprintf(stdout, "[%d] Combined Time step %d File name %s\n", global_rank, file->idx_ptr->current_time_step, file->idx_ptr->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX Count %d = %d x %d x %d\n", global_nprocs, (long long) file->idx_ptr->global_bounds[0] * file->idx_count[0], (long long) file->idx_ptr->global_bounds[1] * file->idx_count[1], (long long) file->idx_ptr->global_bounds[2] * file->idx_count[2], file->idx_ptr->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregation Factor %d Aggregator Count %d\n", file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->existing_file_count, file->idx_derived_ptr->aggregation_factor, file->idx_ptr->variable_count * file->idx_derived_ptr->existing_file_count * file->idx_derived_ptr->aggregation_factor );
+      fprintf(stdout, "Blocks Restructuring Size %d %d %d %d %d\n", (int)file->idx_ptr->compression_block_size[0], (int)file->idx_ptr->compression_block_size[1], (int)file->idx_ptr->compression_block_size[2], (int)file->idx_ptr->compression_block_size[3], (int)file->idx_ptr->compression_block_size[4]);
       fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", global_max_time, (float) total_data / (1000 * 1000 * global_max_time));
-      fprintf(stdout, "---------------------------------------------------------------------------------------\n");
+      fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
       //printf("File creation time %f\n", write_init_end - write_init_start);
       
       for (var = 0; var < hp; var++)
@@ -2796,7 +2798,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       
       for (var = 0; var < vp; var++)
       {
-        fprintf(stdout, "---------------------------------------VG %d (START)------------------------------------\n", var);
+        fprintf(stdout, "------------------------------------------------VG %d (START)----------------------------------------------\n", var);
         fprintf(stdout, "Buffer init time %f\n", (var_init_end[var] - var_init_start[var]));
         
         fprintf(stdout, "Init time  [RST + BRST + HZ + AGG + IO] %f + %f + %f + %f + %f = %f\n", (rst_init_end[var] - rst_init_start[var]), (block_rst_init_end[var] - block_rst_init_start[var]), (hz_init_end[var] - hz_init_start[var]), (agg_init_end[var] - agg_init_start[var]), (io_init_end[var] - io_init_start[var]), (rst_init_end[var] - rst_init_start[var]) + (block_rst_init_end[var] - block_rst_init_start[var]) + (hz_init_end[var] - hz_init_start[var]) + (agg_init_end[var] - agg_init_start[var]) + (io_init_end[var] - io_init_start[var]));
@@ -2808,9 +2810,9 @@ PIDX_return_code PIDX_close(PIDX_file file)
         fprintf(stdout, "Agg time %f = %f + %f + %f + %f = %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
         
         fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
-        fprintf(stdout, "----------------------------------------VG %d (END)-------------------------------------\n", var);
+        fprintf(stdout, "--------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
       }
-      fprintf(stdout, "=======================================================================================\n");
+      fprintf(stdout, "==========================================================================================================\n");
     }
     
   }

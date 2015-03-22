@@ -45,7 +45,7 @@ if __name__ == '__main__':
     fout = open(outFName, 'w')
     #fout.write("#       core    g_x_g_y_g_z_v#      BPF_BPB     FC      AF      AC      IDX_xXyXz    Time(m)        Thuput(m)        Create(m)      rst(m)   brst(m)  hz(m)   agg(m)  io(m)   Time(s) Thuput(s)       Create(s)       rst(st) brst(st) hz(st) agg(st)  io(st)\n")
     
-    fout.write("#       core    g_x_g_y_g_z_v#      BPF_BPB     FC      AF      AC      x*y*z    Time(m)        Thpt(m)       Thpt(max)        Create(m)      rst(m)   brst(m)  hz(m)   agg(m)  io(m)   Time(s) Thuput(s)       Create(s)       rst(st) brst(st) hz(st) agg(st)  io(st)\n")
+    fout.write("#       core    g_x_g_y_g_z_v#  Bx*By*Bz      BPF_BPB     FC      AF      AC      x*y*z    Time(m)        Thpt(m)       Thpt(max)        Create(m)      rst(m)   brst(m)  hz(m)   agg(m)  io(m)\n")
     
     for inpFName in sorted(glob.glob(os.path.join(pathName,'*'))):
     
@@ -67,6 +67,7 @@ if __name__ == '__main__':
         agg_time = []
         io_time = []
         
+        
         iters = 0
         for line in finp:
             if 'Blocks Per File' in line:
@@ -77,6 +78,12 @@ if __name__ == '__main__':
                 af = words[13]
                 ac = words[16]
                 
+            if 'Blocks Restructuring Size' in line:
+                words = line.split()
+                brst_x = words[3]
+                brst_y = words[4]
+                brst_z = words[5]
+                                
             if 'Global Data' in line:
                 words = line.split()
                 cores = words[1]
@@ -153,7 +160,7 @@ if __name__ == '__main__':
         
         #fout.write('%d  %s  %sx%sx%sx%s   %sx%s      %s      %s      %s %sx%sx%s        %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f \n' % (iters, cores, gl_x, gl_y, gl_z, variables, bpf, bpb, fc, af, ac, idx_count_x, idx_count_y, idx_count_z, meanTime, meanThroughput, meanfileCreate, meanRST, meanBRST, meanHZ, meanAGG , meanIO, stddevTime, stddevThroughput, stddevfileCreate, stddevRST, stddevBRST, stddevHZ, stddevAGG, stddevIO))
         
-        fout.write('%d  %s  %sx%sx%sx%s   %sx%s      %s      %s      %s %sx%sx%s        %f      %f      %f      %f      %f      %f      %f      %f      %f\n' % (iters, cores, gl_x, gl_y, gl_z, variables, bpf, bpb, fc, af, ac, idx_count_x, idx_count_y, idx_count_z, meanTime, meanThroughput, maxThroughput, meanfileCreate, meanRST, meanBRST, meanHZ, meanAGG , meanIO))
+        fout.write('%d  %s  %sx%sx%sx%s %sx%sx%s   %sx%s      %s      %s      %s %sx%sx%s        %f      %f      %f      %f      %f      %f      %f      %f      %f\n' % (iters, cores, gl_x, gl_y, gl_z, brst_x, brst_y, brst_z, variables, bpf, bpb, fc, af, ac, idx_count_x, idx_count_y, idx_count_z, meanTime, meanThroughput, maxThroughput, meanfileCreate, meanRST, meanBRST, meanHZ, meanAGG , meanIO))
 
         finp.close()
     
