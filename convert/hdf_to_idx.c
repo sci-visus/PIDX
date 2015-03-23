@@ -153,8 +153,6 @@ int main(int argc, char **argv)
   char *dataset_name[6][13];
   char *pidx_dataset_name[6][13];
   
-  int variable_count = 34;
-  
   group_name[0] = strdup("/Flow properties");
   group_name[1] = strdup("/Intermediate strain eigenvector");
   group_name[2] = strdup("/Most compressive eigenvector");
@@ -258,6 +256,8 @@ int main(int argc, char **argv)
   char file_name[426][1024];
   char temp_name[1024];
   int time_count = 0;
+  int variable_count = 34;
+  
   while (!feof(fp)) 
   {
     if (fscanf(fp, "%s", temp_name) != 1)
@@ -274,6 +274,7 @@ int main(int argc, char **argv)
   time_step = time_count;
   if (rank == 0)
     printf("Number of timesteps = %d\n", time_step);
+  
   for (t = 0; t < time_step; t++)
   {
     var_count = 0;
@@ -285,17 +286,6 @@ int main(int argc, char **argv)
       buffer[var] = malloc(sizeof(double) * (1280/nprocs) * 320 * 320);
       memset(buffer[var], 0, sizeof(double) * (1280/nprocs) * 320 * 320);
     }
-    variable = malloc(sizeof(*variable) * variable_count);
-    
-    file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
-    
-    PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
-    PIDX_set_dims(file, global_bounding_box);
-    PIDX_set_current_time_step(file, t);
-    PIDX_set_block_size(file, bits_per_block);
-    PIDX_set_aggregation_factor(file, 1);
-    PIDX_set_block_count(file, blocks_per_file);
-    PIDX_set_variable_count(file, 34);
     
     for(g = 0; g < group_count; g++)
     {
@@ -310,12 +300,10 @@ int main(int argc, char **argv)
 	  
 	//printf("[%d] Writing %d variable from %d group: %s\n", t, g, d, dataset_name[g][d] );
         H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer[var_count]);
-        PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable[var_count]);
-        PIDX_append_and_write_variable(variable[var_count], local_offset_point, local_box_count_point, buffer[var_count], PIDX_column_major);
-	
-	if (rank == 0)
-	  printf("[%d] Writing %d variable from %d group: %s\n", t, g, d, dataset_name[g][d]);
-	var_count++;
+        
+        if (rank == 0)
+          printf("[%d] [%d] Reading %d variable from %d group %s filename %s\n", t, var_count, g, d, dataset_name[g][d], file_name[t]);
+        var_count++;
         
         H5Sclose(mem_dataspace);
         H5Sclose(file_dataspace);
@@ -324,9 +312,32 @@ int main(int argc, char **argv)
       
       H5Gclose(group_id);
     }
-    
     H5Fclose(file_id);
+    
+    
+    variable = malloc(sizeof(*variable) * variable_count);    
+    PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
+    PIDX_set_dims(file, global_bounding_box);
+    PIDX_set_current_time_step(file, t);
+    PIDX_set_block_size(file, bits_per_block);
+    PIDX_set_aggregation_factor(file, 1);
+    PIDX_set_block_count(file, blocks_per_file);
+    PIDX_set_variable_count(file, 34);
+    var_count = 0;
+    for(g = 0; g < group_count; g++)
+    {
+      for(d = 0; d < dataset_count[g]; d++)
+      {
+        PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable[var_count]);
+        PIDX_append_and_write_variable(variable[var_count], local_offset_point, local_box_count_point, buffer[var_count], PIDX_column_major);
+        
+        if (rank == 0)
+          printf("[%d] [%d] Writing %d variable from %d group %s filename %s\n", t, var_count, g, d, dataset_name[g][d], file_name[t]);
+        var_count++;
+      }
+    }
     PIDX_close(file);
+    
     
     for (var = 0; var < variable_count; var++)
     {
@@ -341,11 +352,7 @@ int main(int argc, char **argv)
   
   //////////
   H5Pclose(plist_id);
-  
-  
-  
   PIDX_close_access(access);
-  
   //////////
   
   free(output_file_name);
