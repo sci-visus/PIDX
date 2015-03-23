@@ -289,7 +289,7 @@ int PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
             {
               id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_count_per_level[j]++;
               id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count] = b;
-              printf("XXXXXXXXX [%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count,  id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_count_per_level[j], id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, (long long)id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[j], (long long)id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[j], b);
+              //printf("XXXXXXXXX [%d] [%d] (%d %d) (%d %d) (%lld %lld) missing blocks == %d\n", j, count,  id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_count_per_level[j], id->idx_ptr->variable[i]->HZ_patch[k]->missing_block_index_per_level[j][count], start_block_no, end_block_no, (long long)id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[j], (long long)id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[j], b);
               count++;
             }
 #endif
