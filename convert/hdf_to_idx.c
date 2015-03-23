@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   PIDX_access access;
   const int bits_per_block = 15;
   const int blocks_per_file = 256;
-  PIDX_variable variable;
+  PIDX_variable *variable;
       
   int nprocs=1, rank=0, slice;
   
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
   char *dataset_name[6][13];
   char *pidx_dataset_name[6][13];
   
-  int variable_count = 4;
+  int variable_count = 34;
   
   group_name[0] = strdup("/Flow properties");
   group_name[1] = strdup("/Intermediate strain eigenvector");
@@ -280,6 +280,13 @@ int main(int argc, char **argv)
     buffer = malloc(sizeof(double*) * variable_count);
     memset(buffer, 0, sizeof(double*) * variable_count);
     
+    for (var = 0; var < variable_count; var++)
+    {
+      buffer[var] = malloc(sizeof(double) * (1280/nprocs) * 320 * 320);
+      memset(buffer[var], 0, sizeof(double) * (1280/nprocs) * 320 * 320);
+    }
+    variable = malloc(sizeof(*variable) * variable_count);
+    
     file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
     
     PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
@@ -293,7 +300,6 @@ int main(int argc, char **argv)
     for(g = 0; g < group_count; g++)
     {
       group_id = H5Gopen(file_id, group_name[g], H5P_DEFAULT);
-      
       for(d = 0; d < dataset_count[g]; d++)
       {
         dataset_id = H5Dopen2(group_id, dataset_name[g][d], H5P_DEFAULT);
@@ -301,38 +307,16 @@ int main(int argc, char **argv)
         mem_dataspace = H5Screate_simple (3, count, NULL);
         file_dataspace = H5Dget_space (dataset_id);
         H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-	
-	if ( var_count == 0)
-	{
-	  for (var = 0; var < variable_count; var++)
-	  {
-	    buffer[var] = malloc(sizeof(double) * (1280/nprocs) * 320 * 320);
-	    memset(buffer[var], 0, sizeof(double) * (1280/nprocs) * 320 * 320);
-	  }
-	}
+	  
 	//printf("[%d] Writing %d variable from %d group: %s\n", t, g, d, dataset_name[g][d] );
         H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer[var_count]);
-        PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable);
-        PIDX_append_and_write_variable(variable, local_offset_point, local_box_count_point, buffer[var_count], PIDX_column_major);
-	
-	var_count++;
+        PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable[var_count]);
+        PIDX_append_and_write_variable(variable[var_count], local_offset_point, local_box_count_point, buffer[var_count], PIDX_column_major);
 	
 	if (rank == 0)
 	  printf("[%d] Writing %d variable from %d group: %s\n", t, g, d, dataset_name[g][d]);
-	
-	if (var_count == variable_count)
-	{
-	  PIDX_flush(file);
-	  if(rank == 0)
-	    printf("Flushed %d variables\n", variable_count);
-	  for (var = 0; var < variable_count; var++)
-	  {
-	    free(buffer[var]);
-	    buffer[var] = 0;
-	  }
-	  var_count = 0;
-	}
-	
+	var_count++;
+        
         H5Sclose(mem_dataspace);
         H5Sclose(file_dataspace);
         H5Dclose(dataset_id);
@@ -340,8 +324,16 @@ int main(int argc, char **argv)
       
       H5Gclose(group_id);
     }
-    PIDX_close(file);
+    
     H5Fclose(file_id);
+    PIDX_close(file);
+    
+    for (var = 0; var < variable_count; var++)
+    {
+      free(buffer[var]);
+      buffer[var] = 0;
+    }
+    free(variable);
     
     free(buffer);
     buffer = 0;
