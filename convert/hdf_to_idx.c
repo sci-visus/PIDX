@@ -249,12 +249,15 @@ int main(int argc, char **argv)
   
   FILE *fp;
   fp = fopen("list", "r");
-  char file_name[1][1024];
+  char file_name[426][1024];
+  char temp_name[1024];
   int time_count = 0;
   while (!feof(fp)) 
   {
-    if (fscanf(fp, "%s", file_name[time_count]) != 1)
-      break;
+    if (fscanf(fp, "%s", temp_name) != 1)
+      continue;
+    else
+      sprintf(file_name[time_count], "%s/Solution.h5", temp_name);
     if(rank == 0)
       printf("%s\n", file_name[time_count]);
     time_count++;
@@ -277,6 +280,7 @@ int main(int argc, char **argv)
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);
     PIDX_set_block_size(file, bits_per_block);
+    PIDX_set_aggregation_factor(file, 1);
     PIDX_set_block_count(file, blocks_per_file);
     PIDX_set_variable_count(file, 34);
     
