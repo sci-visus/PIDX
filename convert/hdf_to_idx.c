@@ -126,9 +126,9 @@ int main(int argc, char **argv)
   local_offset[0] = (slice % sub_div[0]) * count_local[0];
   
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
-  PIDX_set_point_5D(1280, 320, 320, 1, 1, global_bounding_box);
-  PIDX_set_point_5D(local_offset[0], local_offset[1], local_offset[2], 0, 0, local_offset_point);
-  PIDX_set_point_5D(count_local[0], count_local[1], count_local[2], 1, 1, local_box_count_point);
+  PIDX_set_point_5D(global_bounding_box, 1280, 320, 320, 1, 1);
+  PIDX_set_point_5D(local_offset_point, local_offset[0], local_offset[1], local_offset[2], 0, 0);
+  PIDX_set_point_5D(local_box_count_point, count_local[0], count_local[1], count_local[2], 1, 1);
   
   hsize_t count[3];
   count[0] = count_local[0];
