@@ -2367,8 +2367,8 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           for(j = 0; j < file->idx_ptr->variable[var]->post_rst_block[p]->box_count; j++)
           {
             file->idx_ptr->variable[var]->post_rst_block[p]->box[j] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box[j])));
-            memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-            memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+            memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+            memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
             file->idx_ptr->variable[var]->post_rst_block[p]->box[j]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch_group_ptr[p]->box[j]->Ndim_box_buffer;
           }
           
