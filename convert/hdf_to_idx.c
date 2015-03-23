@@ -57,8 +57,16 @@ int main(int argc, char **argv)
 #endif
   
   output_file_name = (char*) malloc(sizeof (char) * 1024);
-  sprintf(output_file_name, "%s%s", "/media/TOSHIBA EXT/kaust/new", ".idx");
+  sprintf(output_file_name, "%s%s", "/scratch/project/visus/datasets/flame2", ".idx");
   
+  if (nprocs == 128)
+  {
+    count_local[0] = 160;
+    count_local[1] = 80;
+    count_local[2] = 80;
+  }
+  
+  /*
   if (nprocs == 2)
   {
     count_local[0] = 256;
@@ -107,17 +115,18 @@ int main(int argc, char **argv)
     count_local[1] = 256;
     count_local[2] = 256;
   }
+  */
   
-  sub_div[0] = (512 / count_local[0]);
-  sub_div[1] = (256 / count_local[1]);
-  sub_div[2] = (256 / count_local[2]);
+  sub_div[0] = (1280 / count_local[0]);
+  sub_div[1] = (320 / count_local[1]);
+  sub_div[2] = (320 / count_local[2]);
   local_offset[2] = (rank / (sub_div[0] * sub_div[1])) * count_local[2];
   slice = rank % (sub_div[0] * sub_div[1]);
   local_offset[1] = (slice / sub_div[0]) * count_local[1];
   local_offset[0] = (slice % sub_div[0]) * count_local[0];
   
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
-  PIDX_set_point_5D(512, 256, 256, 1, 1, global_bounding_box);
+  PIDX_set_point_5D(1280, 320, 320, 1, 1, global_bounding_box);
   PIDX_set_point_5D(local_offset[0], local_offset[1], local_offset[2], 0, 0, local_offset_point);
   PIDX_set_point_5D(count_local[0], count_local[1], count_local[2], 1, 1, local_box_count_point);
   
@@ -264,7 +273,6 @@ int main(int argc, char **argv)
     
     file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
     
-    
     PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);
@@ -288,8 +296,8 @@ int main(int argc, char **argv)
 	{
 	  for (var = 0; var < variable_count; var++)
 	  {
-	    buffer[var] = malloc(sizeof(double) * 512 * 256 * 256/nprocs);
-	    memset(buffer[var], 0, sizeof(double) * 512 * 256 * 256/nprocs);
+	    buffer[var] = malloc(sizeof(double) * (1280/nprocs) * 320 * 320);
+	    memset(buffer[var], 0, sizeof(double) * (1280/nprocs) * 320 * 320);
 	  }
 	}
 	//printf("[%d] Writing %d variable from %d group: %s\n", t, g, d, dataset_name[g][d] );
