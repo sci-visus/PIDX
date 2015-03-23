@@ -66,7 +66,9 @@ if __name__ == '__main__':
         hz_time = []
         agg_time = []
         io_time = []
-        
+        brst_x = 1;
+        brst_y = 1;
+        brst_z = 1;
         
         iters = 0
         for line in finp:
@@ -160,7 +162,7 @@ if __name__ == '__main__':
         
         #fout.write('%d  %s  %sx%sx%sx%s   %sx%s      %s      %s      %s %sx%sx%s        %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f      %f \n' % (iters, cores, gl_x, gl_y, gl_z, variables, bpf, bpb, fc, af, ac, idx_count_x, idx_count_y, idx_count_z, meanTime, meanThroughput, meanfileCreate, meanRST, meanBRST, meanHZ, meanAGG , meanIO, stddevTime, stddevThroughput, stddevfileCreate, stddevRST, stddevBRST, stddevHZ, stddevAGG, stddevIO))
         
-        fout.write('%d  %s  %sx%sx%sx%s %sx%sx%s   %sx%s      %s      %s      %s %sx%sx%s        %f      %f      %f      %f      %f      %f      %f      %f      %f\n' % (iters, cores, gl_x, gl_y, gl_z, brst_x, brst_y, brst_z, variables, bpf, bpb, fc, af, ac, idx_count_x, idx_count_y, idx_count_z, meanTime, meanThroughput, maxThroughput, meanfileCreate, meanRST, meanBRST, meanHZ, meanAGG , meanIO))
+        fout.write('%d  %s  %sx%sx%sx%s %sx%sx%s   %sx%s      %s      %s      %s %sx%sx%s        %f      %f      %f      %f      %f      %f      %f      %f      %f\n' % (iters, cores, gl_x, gl_y, gl_z, variables, brst_x, brst_y, brst_z, bpf, bpb, fc, af, ac, idx_count_x, idx_count_y, idx_count_z, meanTime, meanThroughput, maxThroughput, meanfileCreate, meanRST, meanBRST, meanHZ, meanAGG , meanIO))
 
         finp.close()
     

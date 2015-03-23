@@ -671,6 +671,7 @@ PIDX_return_code PIDX_validate(PIDX_file file)
     //file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block);
   }
   
+  /*
   int reduce_by_sample = 1;
   if (reduce_by_sample == 1)
   {
@@ -682,7 +683,7 @@ PIDX_return_code PIDX_validate(PIDX_file file)
   {
     file->idx_ptr->blocks_per_file = file->idx_ptr->blocks_per_file /  (file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4]);
   }
-  
+  */
   //file->idx_derived_ptr->samples_per_block = file->idx_derived_ptr->samples_per_block * 2;
   //file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 1;
   
@@ -1440,7 +1441,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
   int local_do_rst = 0, global_do_rst = 0;
   int start_index = 0, end_index = 0;
   
-  file->variable_pipelining_factor = 15;
+  file->variable_pipelining_factor = 31;
   for (start_index = file->local_variable_index; start_index < file->local_variable_index + file->local_variable_count; start_index = start_index + (file->variable_pipelining_factor + 1))
   {
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
@@ -2111,7 +2112,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
   int do_agg = 1;
   int local_do_rst = 0, global_do_rst = 0;
   int start_index = 0, end_index = 0;
-  file->variable_pipelining_factor = 15;
+  file->variable_pipelining_factor = 31;
   
   for (start_index = file->local_variable_index; start_index < file->local_variable_index + file->local_variable_count; start_index = start_index + (file->variable_pipelining_factor + 1))
   {
