@@ -65,6 +65,12 @@ int main(int argc, char **argv)
     count_local[1] = 80;
     count_local[2] = 80;
   }
+  if (nprocs == 64)
+  {
+    count_local[0] = 160;
+    count_local[1] = 160;
+    count_local[2] = 80;
+  }
   
   /*
   if (nprocs == 2)
