@@ -40,8 +40,8 @@ int main(int argc, char **argv)
   
   PIDX_file file;
   PIDX_access access;
-  const int bits_per_block = 15;
-  const int blocks_per_file = 256;
+  const int bits_per_block = 17;
+  const int blocks_per_file = 512;
   PIDX_variable *variable;
       
   int nprocs=1, rank=0, slice;
@@ -58,6 +58,13 @@ int main(int argc, char **argv)
   
   output_file_name = (char*) malloc(sizeof (char) * 1024);
   sprintf(output_file_name, "%s%s", "/scratch/project/visus/datasets/flame2", ".idx");
+  
+  if (nprocs == 512)
+  {
+    count_local[0] = 160;
+    count_local[1] = 160;
+    count_local[2] = 160;
+  }
   
   if (nprocs == 128)
   {
@@ -277,16 +284,16 @@ int main(int argc, char **argv)
   
   for (t = 0; t < time_step; t++)
   {
-    var_count = 0;
+    
     buffer = malloc(sizeof(double*) * variable_count);
     memset(buffer, 0, sizeof(double*) * variable_count);
-    
     for (var = 0; var < variable_count; var++)
     {
       buffer[var] = malloc(sizeof(double) * (1280/nprocs) * 320 * 320);
       memset(buffer[var], 0, sizeof(double) * (1280/nprocs) * 320 * 320);
     }
     
+    var_count = 0;
     for(g = 0; g < group_count; g++)
     {
       group_id = H5Gopen(file_id, group_name[g], H5P_DEFAULT);
@@ -309,7 +316,6 @@ int main(int argc, char **argv)
         H5Sclose(file_dataspace);
         H5Dclose(dataset_id);
       }
-      
       H5Gclose(group_id);
     }
     H5Fclose(file_id);
