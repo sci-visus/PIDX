@@ -40,7 +40,7 @@ int main(int argc, char **argv)
   
   PIDX_file file;
   PIDX_access access;
-  const int bits_per_block = 17;
+  const int bits_per_block = 16;
   const int blocks_per_file = 512;
   PIDX_variable *variable;
       
@@ -263,14 +263,14 @@ int main(int argc, char **argv)
   char file_name[426][1024];
   char temp_name[1024];
   int time_count = 0;
-  int variable_count = 34;
+  int variable_count = 4;
   
   while (!feof(fp)) 
   {
     if (fscanf(fp, "%s", temp_name) != 1)
       continue;
     else
-      sprintf(file_name[time_count], "%s/Solution.h5", temp_name);
+      sprintf(file_name[time_count], "/project/v10/K3DR4/%s/Solution.h5", temp_name);
     if(rank == 0)
       printf("%s\n", file_name[time_count]);
     time_count++;
@@ -299,22 +299,24 @@ int main(int argc, char **argv)
       group_id = H5Gopen(file_id, group_name[g], H5P_DEFAULT);
       for(d = 0; d < dataset_count[g]; d++)
       {
-        dataset_id = H5Dopen2(group_id, dataset_name[g][d], H5P_DEFAULT);
-      
-        mem_dataspace = H5Screate_simple (3, count, NULL);
-        file_dataspace = H5Dget_space (dataset_id);
-        H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-	  
-	//printf("[%d] Writing %d variable from %d group: %s\n", t, g, d, dataset_name[g][d] );
-        H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer[var_count]);
+        if (g == 0 && d == 5 || g == 4 && d == 1 || g == 4 && d == 2 || g == 4 && d == 7)
+        {
+          dataset_id = H5Dopen2(group_id, dataset_name[g][d], H5P_DEFAULT);
         
-        if (rank == 0)
-          printf("[%d] [%d] Reading %d variable from %d group %s filename %s\n", t, var_count, g, d, dataset_name[g][d], file_name[t]);
-        var_count++;
-        
-        H5Sclose(mem_dataspace);
-        H5Sclose(file_dataspace);
-        H5Dclose(dataset_id);
+          mem_dataspace = H5Screate_simple (3, count, NULL);
+          file_dataspace = H5Dget_space (dataset_id);
+          H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
+            
+          H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer[var_count]);
+          
+          if (rank == 0)
+            printf("[%d] [%d] Reading %d variable from %d group %s filename %s\n", t, var_count, g, d, dataset_name[g][d], file_name[t]);
+          var_count++;
+          
+          H5Sclose(mem_dataspace);
+          H5Sclose(file_dataspace);
+          H5Dclose(dataset_id);
+        }
       }
       H5Gclose(group_id);
     }
@@ -328,18 +330,22 @@ int main(int argc, char **argv)
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_aggregation_factor(file, 1);
     PIDX_set_block_count(file, blocks_per_file);
-    PIDX_set_variable_count(file, 34);
+    PIDX_set_variable_count(file, 4);
+    
     var_count = 0;
     for(g = 0; g < group_count; g++)
     {
       for(d = 0; d < dataset_count[g]; d++)
       {
-        PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable[var_count]);
-        PIDX_append_and_write_variable(variable[var_count], local_offset_point, local_box_count_point, buffer[var_count], PIDX_column_major);
-        
-        if (rank == 0)
-          printf("[%d] [%d] Writing %d variable from %d group %s filename %s\n", t, var_count, g, d, dataset_name[g][d], file_name[t]);
-        var_count++;
+        if (g == 0 && d == 5 || g == 4 && d == 1 || g == 4 && d == 2 || g == 4 && d == 7)
+        {
+          PIDX_variable_create(file, pidx_dataset_name[g][d], sizeof(double) * 8, "1*float64", &variable[var_count]);
+          PIDX_append_and_write_variable(variable[var_count], local_offset_point, local_box_count_point, buffer[var_count], PIDX_column_major);
+          
+          if (rank == 0)
+            printf("[%d] [%d] Writing %d variable from %d group %s filename %s\n", t, var_count, g, d, dataset_name[g][d], file_name[t]);
+          var_count++;
+        }
       }
     }
     PIDX_close(file);
