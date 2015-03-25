@@ -294,6 +294,7 @@ int main(int argc, char **argv)
     }
     
     var_count = 0;
+    file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
     for(g = 0; g < group_count; g++)
     {
       group_id = H5Gopen(file_id, group_name[g], H5P_DEFAULT);
