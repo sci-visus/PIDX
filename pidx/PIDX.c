@@ -1721,6 +1721,7 @@ PIDX_return_code PIDX_time_step_caching_ON()
   return PIDX_success;
 }
 
+
 /////////////////////////////////////////////////
 PIDX_return_code PIDX_time_step_caching_OFF()
 {
@@ -1729,6 +1730,7 @@ PIDX_return_code PIDX_time_step_caching_OFF()
   
   return PIDX_success;
 }
+
 
 /////////////////////////////////////////////////
 PIDX_return_code PIDX_enable_compression(PIDX_file file, int compression)
@@ -1741,6 +1743,7 @@ PIDX_return_code PIDX_enable_compression(PIDX_file file, int compression)
   return PIDX_success;
 }
 
+
 PIDX_return_code PIDX_enable_block_restructuring(PIDX_file file, int brst)
 {
   if(!file)
@@ -1750,6 +1753,7 @@ PIDX_return_code PIDX_enable_block_restructuring(PIDX_file file, int brst)
   
   return PIDX_success;
 }
+
 
 PIDX_return_code PIDX_enable_hz(PIDX_file file, int hz)
 {
@@ -1761,6 +1765,7 @@ PIDX_return_code PIDX_enable_hz(PIDX_file file, int hz)
   return PIDX_success;
 }
 
+
 PIDX_return_code PIDX_enable_agg(PIDX_file file, int agg)
 {
   if(!file)
@@ -1770,6 +1775,7 @@ PIDX_return_code PIDX_enable_agg(PIDX_file file, int agg)
   
   return PIDX_success;
 }
+
 
 PIDX_return_code PIDX_enable_io(PIDX_file file, int io)
 {
@@ -1781,6 +1787,7 @@ PIDX_return_code PIDX_enable_io(PIDX_file file, int io)
   return PIDX_success;
 }
 
+
 PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst)
 {
   if(!file)
@@ -1790,6 +1797,7 @@ PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst)
   
   return PIDX_success;
 }
+
 
 PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info)
 {
@@ -1815,8 +1823,6 @@ PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz)
   
   return PIDX_success;
 }
-
-
 
 
 /////////////////////////////////////////////////
@@ -1972,7 +1978,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
 {
   if (file->local_variable_index == file->idx_ptr->variable_count)
     return PIDX_success;
-    
+  
+#if defined(BGL) || defined(BGP) || defined(BGQ)
+  identity(file->comm);
+#endif
+  
+#if 0
   int j = 0, p, var = 0;
   int rank = 0, nprocs = 1;
   int var_used_in_binary_file, total_header_size;
@@ -2634,7 +2645,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     vp++;
   }
-  
+#endif
   return PIDX_success;
 }
 
@@ -2692,7 +2703,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
   double total_time = sim_end - sim_start;
   double max_time = total_time;
-  int sample_sum = 0, var = 0, i = 0, p =0, rank = 0, nprocs = 1;
+  int sample_sum = 0, var = 0, rank = 0, nprocs = 1;
   
 #if PIDX_HAVE_MPI
   MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
@@ -2743,6 +2754,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       }
       
       /*
+      int p = 0, i = 0;
       double total_agg_time = 0, all_time = 0;
       for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
         for (var = 0; var < file->idx_ptr->variable_count; var++)
@@ -2818,6 +2830,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
     
   }
   
+#if 0
+  
   for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
   {
     for(var = 0; var < file->idx_ptr->variable_count; var++)
@@ -2831,54 +2845,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
   }
   free(file->idx_derived_ptr->agg_level_start);
   free(file->idx_derived_ptr->agg_level_end);
-  
-  vp = 0;
-  hp = 0;
-  
-  free(write_init_start);               write_init_start        = 0;
-  free(write_init_end);                 write_init_end          = 0;
-  free(rst_init_start);                 rst_init_start          = 0;
-  free(rst_init_end);                   rst_init_end            = 0;
-  free(hz_init_start);                  hz_init_start           = 0;
-  free(hz_init_end);                    hz_init_end             = 0;
-  free(agg_init_start);                 agg_init_start          = 0;
-  free(rst_start);                      rst_start               = 0;
-  free(rst_end);                        rst_end                 = 0;
-  free(hz_start);                       hz_start                = 0;
-  free(hz_end);                         hz_end                  = 0;
-  free(agg_init_end);                   agg_init_end            = 0;
-  free(agg_start);                      agg_start               = 0;
-  free(agg_end);                        agg_end                 = 0;
-  free(io_start);                       io_start                = 0;
-  free(io_end);                         io_end                  = 0;
-  free(io_init_start);                  io_init_start           = 0;
-  free(io_init_end);                    io_init_end             = 0;
-  free(var_init_start);                 var_init_start          = 0;
-  free(var_init_end);                   var_init_end            = 0;
-  free(cleanup_start);                  cleanup_start           = 0;
-  free(cleanup_end);                    cleanup_end             = 0;
-  free(finalize_start);                 finalize_start          = 0;
-  free(finalize_end);                   finalize_end            = 0;
-  free(buffer_start);                   buffer_start            = 0;
-  free(buffer_end);                     buffer_end              = 0;
-  free(block_rst_init_start);           block_rst_init_start    = 0;
-  free(block_rst_init_end);             block_rst_init_end      = 0;
-  free(block_rst_start);                block_rst_start         = 0;
-  free(block_rst_end);                  block_rst_end           = 0;
-  free(compression_init_start);         compression_init_start  = 0;
-  free(compression_init_end);           compression_init_end    = 0;
-  free(compression_start);              compression_start       = 0;
-  free(compression_end);                compression_end         = 0;
-  free(block_1);                        block_1                 = 0;
-  free(block_2);                        block_2                 = 0;
-  free(block_3);                        block_3                 = 0;
-  free(agg_1);                          agg_1                   = 0;
-  free(agg_2);                          agg_2                   = 0;
-  free(agg_3);                          agg_3                   = 0;
-  free(agg_4);                          agg_4                   = 0;
-  free(agg_5);                          agg_5                   = 0;
-  free(agg_6);                          agg_6                   = 0;
-  
   
 #ifdef PIDX_VAR_SLOW_LOOP
   for (i = 0; i < file->idx_ptr->variable_count; i++) 
@@ -2926,6 +2892,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_ptr);                        file->idx_ptr = 0;
   free(file->idx_derived_ptr->file_bitmap);   file->idx_derived_ptr->file_bitmap = 0;
   free(file->idx_derived_ptr);                file->idx_derived_ptr = 0;
+
+#endif
   
 #if PIDX_HAVE_MPI
   MPI_Comm_free(&(file->comm));
@@ -2934,6 +2902,53 @@ PIDX_return_code PIDX_close(PIDX_file file)
 #endif
   
   free(file);
+  
+  vp = 0;
+  hp = 0;
+  
+  free(write_init_start);               write_init_start        = 0;
+  free(write_init_end);                 write_init_end          = 0;
+  free(rst_init_start);                 rst_init_start          = 0;
+  free(rst_init_end);                   rst_init_end            = 0;
+  free(hz_init_start);                  hz_init_start           = 0;
+  free(hz_init_end);                    hz_init_end             = 0;
+  free(agg_init_start);                 agg_init_start          = 0;
+  free(rst_start);                      rst_start               = 0;
+  free(rst_end);                        rst_end                 = 0;
+  free(hz_start);                       hz_start                = 0;
+  free(hz_end);                         hz_end                  = 0;
+  free(agg_init_end);                   agg_init_end            = 0;
+  free(agg_start);                      agg_start               = 0;
+  free(agg_end);                        agg_end                 = 0;
+  free(io_start);                       io_start                = 0;
+  free(io_end);                         io_end                  = 0;
+  free(io_init_start);                  io_init_start           = 0;
+  free(io_init_end);                    io_init_end             = 0;
+  free(var_init_start);                 var_init_start          = 0;
+  free(var_init_end);                   var_init_end            = 0;
+  free(cleanup_start);                  cleanup_start           = 0;
+  free(cleanup_end);                    cleanup_end             = 0;
+  free(finalize_start);                 finalize_start          = 0;
+  free(finalize_end);                   finalize_end            = 0;
+  free(buffer_start);                   buffer_start            = 0;
+  free(buffer_end);                     buffer_end              = 0;
+  free(block_rst_init_start);           block_rst_init_start    = 0;
+  free(block_rst_init_end);             block_rst_init_end      = 0;
+  free(block_rst_start);                block_rst_start         = 0;
+  free(block_rst_end);                  block_rst_end           = 0;
+  free(compression_init_start);         compression_init_start  = 0;
+  free(compression_init_end);           compression_init_end    = 0;
+  free(compression_start);              compression_start       = 0;
+  free(compression_end);                compression_end         = 0;
+  free(block_1);                        block_1                 = 0;
+  free(block_2);                        block_2                 = 0;
+  free(block_3);                        block_3                 = 0;
+  free(agg_1);                          agg_1                   = 0;
+  free(agg_2);                          agg_2                   = 0;
+  free(agg_3);                          agg_3                   = 0;
+  free(agg_4);                          agg_4                   = 0;
+  free(agg_5);                          agg_5                   = 0;
+  free(agg_6);                          agg_6                   = 0;
   
   return PIDX_success;
 }
