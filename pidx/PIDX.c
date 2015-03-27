@@ -1983,7 +1983,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
   identity(file->comm);
 #endif
   
-#if 1
+#if 0
   int j = 0, p, var = 0;
   int rank = 0, nprocs = 1;
   int var_used_in_binary_file, total_header_size;
@@ -2830,7 +2830,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     
   }
   
-#if 1
+#if 0
   
   for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
   {
