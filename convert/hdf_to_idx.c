@@ -291,6 +291,7 @@ int main(int argc, char **argv)
   if (rank == 0)
     printf("Number of timesteps = %d\n", time_step);
   
+  PIDX_time_step_caching_ON();
   for (t = 100; t < 101/*time_step*/; t++)
   {
     
@@ -371,6 +372,7 @@ int main(int argc, char **argv)
     free(buffer);
     buffer = 0;
   }
+  PIDX_time_step_caching_OFF();
   
   //////////
   H5Pclose(plist_id);
