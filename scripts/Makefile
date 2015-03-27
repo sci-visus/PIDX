@@ -25,7 +25,7 @@ MPICXX = mpic++ -Wall -g
 MPI_LDFLAGS_PIDX = -L. -lPIDX -lm -I ../pidx
 MPI_CFLAGS = -Wno-write-strings -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -lm -I ../pidx
 
-all: PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_topology.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_block_restructure.o PIDX_compression.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a pidxtest idx-verify idx-compare
+all: PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_topology.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_block_restructure.o PIDX_compression.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a pidxtest idx-verify idx-compare idx-dump-header
 
 PIDX_error_codes.o: ../pidx/PIDX_error_codes.c ../pidx/PIDX_error_codes.h ../pidx/PIDX_inc.h  ../pidx/PIDX_memory_layout_data_structs.h ../pidx/PIDX_idx_data_structs.h
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
@@ -94,5 +94,8 @@ idx-verify: ../profile/idx-verify.c
 idx-compare:  ../profile/idx-compare.c
 	cc   ../profile/idx-compare.c   -o idx-compare -lm
 
+idx-dump-header:  ../profile/idx-dump-header.c
+	cc   ../profile/idx-dump-header.c   -o idx-dump-header -lm
+	
 clean::
 	rm -f *.o libPIDX* pidxtest idx-verify

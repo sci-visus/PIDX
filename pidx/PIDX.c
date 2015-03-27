@@ -1983,7 +1983,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
   identity(file->comm);
 #endif
   
-#if 0
+#if 1
   int j = 0, p, var = 0;
   int rank = 0, nprocs = 1;
   int var_used_in_binary_file, total_header_size;
@@ -2701,6 +2701,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
   sim_end = PIDX_get_time();
   
+  int p = 0, i = 0;
   double total_time = sim_end - sim_start;
   double max_time = total_time;
   int sample_sum = 0, var = 0, rank = 0, nprocs = 1;
@@ -2754,7 +2755,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
       }
       
       /*
-      int p = 0, i = 0;
       double total_agg_time = 0, all_time = 0;
       for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
         for (var = 0; var < file->idx_ptr->variable_count; var++)
@@ -2830,7 +2830,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     
   }
   
-#if 0
+#if 1
   
   for (p = 0; p < file->idx_ptr->variable[0]->patch_group_count; p++)
   {
