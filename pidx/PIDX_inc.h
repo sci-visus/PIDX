@@ -3,6 +3,14 @@
 
 #include "PIDX_config.h"
 
+#ifdef BGQ
+  #define _XOPEN_SOURCE 600
+#ifndef _GNU_SOURCE
+    #define _GNU_SOURCE
+#endif
+#endif
+
+
 #ifdef __bg__
   #define _XOPEN_SOURCE 600
   #define _GNU_SOURCE
