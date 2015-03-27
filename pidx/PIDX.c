@@ -1980,7 +1980,9 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     return PIDX_success;
   
 #if defined(BGL) || defined(BGP) || defined(BGQ)
-  identity(file->comm);
+    
+  int iotask = 1;
+  identity(file->comm, file->comm, &iotask);
 #endif
   
 #if 0

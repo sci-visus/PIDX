@@ -16,9 +16,12 @@
  **                                                 **
  *****************************************************/
 
+#ifndef __PIDX_TOPOLOGY_H
+#define __PIDX_TOPOLOGY_H
+
 #if defined(BGL) || defined(BGP) || defined(BGQ)
 
-void identity(MPI_Comm comm);
-//void identity(MPI_Comm comm, int *iotask);
+void identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask);
 
+#endif
 #endif

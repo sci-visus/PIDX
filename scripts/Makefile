@@ -36,7 +36,7 @@ PIDX_file_access_modes.o: ../pidx/PIDX_file_access_modes.c  ../pidx/PIDX_file_ac
 PIDX_data_types.o: ../pidx/PIDX_data_types.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
 	
-PIDX_topology.o: ../pidx/PIDX_topology.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
+PIDX_topology.o: ../pidx/PIDX_topology.c ../pidx/PIDX_topology.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
 
 PIDX_data_layout.o: ../pidx/PIDX_data_layout.c ../pidx/PIDX_data_layout.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
