@@ -20,12 +20,13 @@
 
 #if defined(BGL) || defined(BGP) || defined(BGQ)
 
+static int rank;
+static int np;
+static int my_name_len;
+static char my_name[255];
+
 void identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
 {
-  int rank;
-  int np;
-  int my_name_len;
-  char my_name[255];
    
   MPI_Comm_rank(comm2,&rank);
   MPI_Comm_size(comm2,&np);
