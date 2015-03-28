@@ -10,12 +10,6 @@
 #endif
 #endif
 
-
-#ifdef __bg__
-  #define _XOPEN_SOURCE 600
-  #define _GNU_SOURCE
-#endif
-
 #define min(x, y) ((x) < (y) ? (x) : (y))
 #define max(x, y) ((x) > (y) ? (x) : (y))
 
@@ -33,6 +27,7 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 #if PIDX_HAVE_MPI
   #include <mpi.h>

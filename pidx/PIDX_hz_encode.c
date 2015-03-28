@@ -785,8 +785,9 @@ int PIDX_hz_encode_write(PIDX_hz_encode_id id)
                       bytes_for_datatype = id->idx_ptr->variable[var]->bits_per_value / 8;
                       for (s = 0; s < id->idx_ptr->variable[var]->values_per_sample; s++)
                       {
-                        bytes_for_datatype = id->idx_ptr->variable[var]->bits_per_value / 8;
-                        memcpy(id->idx_ptr->variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * id->idx_ptr->variable[var]->values_per_sample + s) * bytes_for_datatype * total_compression_block_size), id->idx_ptr->variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * id->idx_ptr->variable[var]->values_per_sample) + s) * bytes_for_datatype * total_compression_block_size, bytes_for_datatype * total_compression_block_size);                        
+                        memcpy(id->idx_ptr->variable[var]->HZ_patch[y]->buffer[level] + ((hz_index * id->idx_ptr->variable[var]->values_per_sample + s) * bytes_for_datatype * total_compression_block_size), 
+                               id->idx_ptr->variable[var]->patch_group_ptr[y]->box[b]->Ndim_box_buffer + ((index * id->idx_ptr->variable[var]->values_per_sample) + s) * bytes_for_datatype * total_compression_block_size, 
+                               bytes_for_datatype * total_compression_block_size);                        
                       }
                     }
                   }

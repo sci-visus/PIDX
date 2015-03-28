@@ -41,6 +41,7 @@ struct PIDX_access_struct
   int idx_count[3];
   int sub_div[3];
   
+  int topology_aware_io;
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
 #endif
@@ -64,6 +65,10 @@ PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count_x, int id
 
 ///
 PIDX_return_code PIDX_set_process_extent(PIDX_access access, int sub_div_x, int sub_div_y, int sub_div_z);
+
+
+///
+PIDX_return_code PIDX_enable_topology_aware_io(PIDX_access access, int topology_io);
 #endif
 
 #ifdef __cplusplus

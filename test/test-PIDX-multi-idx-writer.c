@@ -59,6 +59,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.bits_per_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.aggregation_factor, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.topology_aware, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
   variable = (PIDX_variable*)malloc(sizeof(*variable) * args.variable_count);
@@ -103,6 +104,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
 #if PIDX_HAVE_MPI
     PIDX_set_mpi_access(access, args.idx_count[0], args.idx_count[1], args.idx_count[2], MPI_COMM_WORLD);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
+    PIDX_enable_topology_aware_io(access, args.topology_aware);
 #else
     PIDX_set_default_access(access);
 #endif
@@ -229,9 +231,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
       sprintf(data_type, "%d*float64", values_per_sample[var]);
       PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
 #if long_data
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
+      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_column_major);
 #else
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_column_major);
 #endif  
     }
     

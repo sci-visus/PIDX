@@ -24,6 +24,7 @@ PIDX_return_code PIDX_create_access(PIDX_access* access)
   memset(*access, 0, sizeof (*(*access)));
   
   (*access)->parallel = 0;
+  (*access)->topology_aware_io = 0;
   
 #if PIDX_HAVE_MPI
   (*access)->comm = MPI_COMM_NULL;
@@ -48,6 +49,7 @@ PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count_x, int id
   
   return PIDX_success;
 }
+
 PIDX_return_code PIDX_set_process_extent(PIDX_access access, int sub_div_x, int sub_div_y, int sub_div_z)
 {
   if(access == NULL)
@@ -60,6 +62,15 @@ PIDX_return_code PIDX_set_process_extent(PIDX_access access, int sub_div_x, int 
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_enable_topology_aware_io(PIDX_access access, int topology_io)
+{
+  if(access == NULL)
+    return PIDX_err_access;
+  
+  access->topology_aware_io = topology_io;
+  
+  return PIDX_success;
+}
 
 #endif
 

@@ -105,6 +105,9 @@ struct Args
   
   /// 1 for lossy 0 for lossless
   int compression_type;
+  
+  ///
+  int topology_aware;
 };
 
 /// main
