@@ -2855,7 +2855,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
 #endif
 
   //if (file->idx_count[0] *  file->idx_count[1] * file->idx_count[2] == 1)
-  if (file->access->topology_aware_io == 0)
+  if (file->access->topology_aware_io == 0 && (file->idx_count[0] *  file->idx_count[1] * file->idx_count[2]) == 1)
   {
     if (max_time == total_time)
     {
