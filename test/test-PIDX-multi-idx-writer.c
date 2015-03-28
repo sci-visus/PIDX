@@ -231,9 +231,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
       sprintf(data_type, "%d*float64", values_per_sample[var]);
       PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
 #if long_data
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_column_major);
+      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
 #else
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_column_major);
+      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
 #endif  
     }
     
