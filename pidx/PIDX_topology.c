@@ -25,10 +25,9 @@ static int np;
 static int my_name_len;
 static char my_name[255];
 
-static int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset);
-
-int identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
-{   
+void identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
+{
+   
   MPI_Comm_rank(comm2,&rank);
   MPI_Comm_size(comm2,&np);
   MPI_Get_processor_name(my_name, &my_name_len);
@@ -110,13 +109,13 @@ int identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
    for(i=0;i<numPsets;i++) tmp[i]=0;
    if(coreId == 0) {tmp[psetNum]=1;}
    ierr = MPI_Allreduce(tmp,TasksPerPset,numPsets,MPI_INT,MPI_SUM,comm2);
-   //if(rank == 0) {
-   //  for(i=0;i<numPsets;i++) {printf("Pset: %3i has %3i nodes \n",i,TasksPerPset[i]);}
-   //}
+   if(rank == 0) {
+     for(i=0;i<numPsets;i++) {printf("Pset: %3i has %3i nodes \n",i,TasksPerPset[i]);}
+   }
    free(tmp);
    free(TasksPerPset);
 
-   return psetNum;
+   //return psetNum;
 
 }
 
@@ -348,7 +347,7 @@ int bgq_ion_id (void)
 
 
 
-static int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset)
+int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset)
 {
         MPI_Comm world_comm2, pset_comm, bridge_comm;
         int world_rank, status, key, bridge_root, tot_bridges, cur_pset, itr, t_buf;
@@ -417,7 +416,7 @@ static int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, in
                 MPI_Recv (&temp_id,1, MPI_INT, 0, 0, world_comm, &mpi_status);
 
                 *psetID = temp_id;
-                //printf (" Pset ID is %d \n", *psetID);
+                printf (" Pset ID is %d \n", *psetID);
         }
         // Broadcast the PSET ID to all ranks in the psetcomm
         MPI_Bcast ( psetID, 1, MPI_INT, 0, pset_comm);

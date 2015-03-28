@@ -21,7 +21,7 @@
 
 #if defined(BGL) || defined(BGP) || defined(BGQ)
 
-int identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask);
+void identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask);
 
 #endif
 #endif
