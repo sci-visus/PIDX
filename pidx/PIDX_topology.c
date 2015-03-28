@@ -24,7 +24,7 @@ static int rank;
 static int np;
 static int my_name_len;
 static char my_name[255];
-static int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset)
+static int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset);
 
 int identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
 {
