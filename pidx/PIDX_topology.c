@@ -24,8 +24,9 @@ static int rank;
 static int np;
 static int my_name_len;
 static char my_name[255];
+static int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset)
 
-void identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
+int identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
 {
    
   MPI_Comm_rank(comm2,&rank);
@@ -115,7 +116,7 @@ void identity(MPI_Comm comm2, MPI_Comm world_comm2, int *iotask)
    free(tmp);
    free(TasksPerPset);
 
-   //return psetNum;
+   return psetNum;
 
 }
 
@@ -347,7 +348,7 @@ int bgq_ion_id (void)
 
 
 
-int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset)
+static int bgq_pset_info (MPI_Comm comm2, MPI_Comm world_comm, int* tot_pset, int* psetID, int* pset_size, int* rank_in_pset)
 {
         MPI_Comm world_comm2, pset_comm, bridge_comm;
         int world_rank, status, key, bridge_root, tot_bridges, cur_pset, itr, t_buf;
