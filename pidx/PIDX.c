@@ -332,6 +332,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 #if defined(BGL) || defined(BGP) || defined(BGQ)
       int iotask = 1;
       (*file)->idx_derived_ptr->color = identity(access_type->comm, access_type->comm, &iotask);
+      //(*file)->idx_derived_ptr->color = (*file)->idx_derived_ptr->color/2;
 #else
        srand(time(NULL) * rank);
        (*file)->idx_derived_ptr->color = /*rank % 2;*/ rand() % 8;
