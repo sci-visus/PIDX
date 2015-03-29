@@ -1329,7 +1329,7 @@ int HELPER_Hz_encode(PIDX_hz_encode_id id)
               check_bit = 1, s = 0;    
               for (s = 0; s < id->idx_ptr->variable[var]->values_per_sample; s++)
               {
-                dvalue_1 = 100 + var + (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1]*(ZYX[2]))+(id->idx_ptr->global_bounds[0]*(ZYX[1])) + ZYX[0] + ( /* id->idx_derived_ptr->color */0 * id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
+                dvalue_1 = 100 + var + (id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1]*(ZYX[2]))+(id->idx_ptr->global_bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_derived_ptr->color * id->idx_ptr->global_bounds[0] * id->idx_ptr->global_bounds[1] * id->idx_ptr->global_bounds[2]);
 #if long_buffer
                 dvalue_2 = *(*((uint64_t**)id->idx_ptr->variable[var]->HZ_patch[b]->buffer + i) + ((k * id->idx_ptr->variable[var]->values_per_sample) + s));
 #else

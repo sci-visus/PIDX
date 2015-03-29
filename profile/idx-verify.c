@@ -469,7 +469,7 @@ int main(int argc, char **argv)
                         check_bit = check_bit && (long_long_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
 #else
                         double lhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
-                        double rhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x);
+                        double rhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]);
                         check_bit = check_bit && (lhs == rhs);
 
                       }
