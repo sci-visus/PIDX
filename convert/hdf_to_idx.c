@@ -317,7 +317,7 @@ int main(int argc, char **argv)
           mem_dataspace = H5Screate_simple (3, count, NULL);
           file_dataspace = H5Dget_space (dataset_id);
           H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, offset, NULL, count, NULL);
-            
+          
           H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer[var_count]);
           
           if (rank == 0)

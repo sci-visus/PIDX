@@ -23,8 +23,7 @@ IF (PIDX_BUILD_TEST)
   # ////////////////////////////////////////
 
   FILE(GLOB PIDXTEST_SOURCES *.h *.c)
-
-
+  
   # ////////////////////////////////////////
   # includes and link libraries
   # ////////////////////////////////////////
@@ -45,6 +44,13 @@ IF (PIDX_BUILD_TEST)
   PIDX_ADD_EXECUTABLE(pidxtest "${PIDXTEST_SOURCES}")
   ADD_DEPENDENCIES(pidxtest pidx)
   TARGET_LINK_LIBRARIES(pidxtest ${PIDXTEST_LINK_LIBS})
+  if (PIDX_OPTION_HDF5)
+    INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+    ADD_DEPENDENCIES(pidxtest ${HDF5_LIBRARIES})
+    TARGET_LINK_LIBRARIES(pidxtest ${HDF5_LIBRARIES})
+  ENDIF()
+
+
 
 
 ENDIF()

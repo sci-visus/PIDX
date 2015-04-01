@@ -25,7 +25,7 @@ IF (PIDX_BUILD_PROFILE)
   SET(IDXCOMPARE_SOURCES idx-compare.c)
   SET(DUMPHEADER_SOURCES idx-dump-header.c)
   SET(IDXVERIFY_SOURCES idx-verify.c)
-
+  # SET(HDF5VERIFY_SOURCES hdf5-verify.c)
   # ////////////////////////////////////////
   # includes
   # ////////////////////////////////////////

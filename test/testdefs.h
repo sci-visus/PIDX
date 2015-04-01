@@ -40,6 +40,9 @@
 // int test_multi_patch_writer(struct Args args, int rank, int nprocs);
 // int usage_multi_patch_writer();
 
+int test_hdf5_writer(struct Args args, int rank, int nprocs);
+int test_hdf5_reader(struct Args args, int rank, int nprocs);
+
 int test_multi_idx_writer(struct Args args, int rank, int nprocs);
 int usage_multi_idx_writer();
 

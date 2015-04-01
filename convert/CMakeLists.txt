@@ -27,6 +27,7 @@ IF (PIDX_BUILD_CONVERT)
   SET(PNETCDF_TO_IDX_SOURCES pnetcdf_to_idx.c)  
   SET(HDF_TO_IDX_SOURCES hdf_to_idx.c)
   SET(HDF_TO_IDX_FABRIZIO_SOURCES hdf_to_idx_fabrizio.c)
+  #SET(TEST_HDF5_WRITER_SOURCES test_HDF5_writer.c)
 
 
   # ////////////////////////////////////////
@@ -64,9 +65,16 @@ IF (PIDX_BUILD_CONVERT)
     ADD_DEPENDENCIES(hdf5_to_idx pidx)
     TARGET_LINK_LIBRARIES(hdf5_to_idx pidx)
 
+    #PIDX_ADD_EXECUTABLE(test_HDF5_writer "${TEST_HDF5_WRITER_SOURCES}")
+    #ADD_DEPENDENCIES(test_HDF5_writer pidx)
+    #TARGET_LINK_LIBRARIES(test_HDF5_writer pidx)
+    #ADD_DEPENDENCIES(test_HDF5_writer ${HDF5_LIBRARIES})
+    #TARGET_LINK_LIBRARIES(test_HDF5_writer ${HDF5_LIBRARIES})    
+
     IF (MPI_C_FOUND)
       TARGET_LINK_LIBRARIES(hdf5_to_idx ${MPI_C_LIBRARIES})
       TARGET_LINK_LIBRARIES(hdf_to_idx_fabrizio ${MPI_C_LIBRARIES})
+      TARGET_LINK_LIBRARIES(test_HDF5_writer ${MPI_C_LIBRARIES})
     ENDIF()
 
     ADD_DEPENDENCIES(hdf5_to_idx ${HDF5_LIBRARIES})

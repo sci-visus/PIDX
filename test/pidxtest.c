@@ -114,11 +114,25 @@ int main(int argc, char **argv)
       //serial_reader(args);
       break;
     */
+    
     case PARALLEL_WRITER:
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
       test_multi_idx_writer(args, rank, nprocs);
       break;
+      
+    case HDF5_WRITER:
+      if(rank == 0)
+        printf("Performing Parallel Write....\n");
+      test_hdf5_writer(args, rank, nprocs);
+      break;
+      
+    case HDF5_READER:
+      if(rank == 0)
+        printf("Performing Parallel Write....\n");
+      test_hdf5_reader(args, rank, nprocs);
+      break;
+      
     /*
     case PARALLEL_MULTI_PATCH_WRITER:
       if(rank == 0)
@@ -187,32 +201,35 @@ int parse_args(struct Args *args, int argc, char **argv)
   
   fscanf(config_file, "(idx count x:y:z)\n");
   fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
-
-  if (strcmp(strkind, "parallel-writer") == 0 || strcmp(strkind, "serial-writer") == 0)
+  
+  if (strcmp(strkind, "hdf5-writer") != 0 && strcmp(strkind, "hdf5-reader") != 0)
   {
-    fscanf(config_file, "(debug rst:hz:agg)\n");
-    fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
+    if (strcmp(strkind, "parallel-writer") == 0 || strcmp(strkind, "serial-writer") == 0)
+    {
+      fscanf(config_file, "(debug rst:hz:agg)\n");
+      fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
 
-    fscanf(config_file, "(perform brst:hz:comp:agg:io)\n");
-    fscanf(config_file, "%d %d %d %d %d\n", &args->perform_brst, &args->perform_hz, &args->perform_compression, &args->perform_agg, &args->perform_io);
+      fscanf(config_file, "(perform brst:hz:comp:agg:io)\n");
+      fscanf(config_file, "%d %d %d %d %d\n", &args->perform_brst, &args->perform_hz, &args->perform_compression, &args->perform_agg, &args->perform_io);
 
-    fscanf(config_file, "(compression block size)\n");
-    fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);
+      fscanf(config_file, "(compression block size)\n");
+      fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);
 
-    fscanf(config_file, "(compression type)\n");
-    fscanf(config_file, "%d\n", &args->compression_type);
+      fscanf(config_file, "(compression type)\n");
+      fscanf(config_file, "%d\n", &args->compression_type);
 
-    fscanf(config_file, "(blocks per file)\n");
-    fscanf(config_file, "%d\n", &args->blocks_per_file);
+      fscanf(config_file, "(blocks per file)\n");
+      fscanf(config_file, "%d\n", &args->blocks_per_file);
 
-    fscanf(config_file, "(samples per block)\n");
-    fscanf(config_file, "%d\n", &args->bits_per_block);
+      fscanf(config_file, "(samples per block)\n");
+      fscanf(config_file, "%d\n", &args->bits_per_block);
 
-    fscanf(config_file, "(aggregation factor)\n");
-    fscanf(config_file, "%d\n", &args->aggregation_factor);
-    
-    fscanf(config_file, "(topology aware IO)\n");
-    fscanf(config_file, "%d\n", &args->topology_aware);
+      fscanf(config_file, "(aggregation factor)\n");
+      fscanf(config_file, "%d\n", &args->aggregation_factor);
+      
+      fscanf(config_file, "(topology aware IO)\n");
+      fscanf(config_file, "%d\n", &args->topology_aware);
+    }
   }
 
   fclose(config_file);
@@ -246,6 +263,8 @@ char* kindToStr(enum Kind k)
     //case PARALLEL_READER:                return "parallel-reader";
     //case SERIAL_READER:                  return "serial-reader";
     case PARALLEL_WRITER:                return "parallel-writer";
+    case HDF5_WRITER:                    return "hdf5-writer";
+    case HDF5_READER:                    return "hdf5-reader";
     //case PARALLEL_MULTI_PATCH_WRITER:    return "parallel-multi-patch-writer";
     //case SERIAL_WRITER:                  return "serial-writer";
     case DEFAULT:
@@ -259,6 +278,8 @@ enum Kind strToKind(const char *str)
   //if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
   //if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
   if (strcmp(str,"parallel-writer")   == 0)             return PARALLEL_WRITER;
+  if (strcmp(str,"hdf5-writer")   == 0)                 return HDF5_WRITER;
+  if (strcmp(str,"hdf5-reader")   == 0)                 return HDF5_READER;
   //if (strcmp(str,"parallel-multi-patch-writer")   == 0) return PARALLEL_MULTI_PATCH_WRITER;
   //if (strcmp(str,"serial-writer")     == 0)             return SERIAL_WRITER;
   else                                                  return DEFAULT;
