@@ -116,7 +116,7 @@ int test_hdf5_writer(struct Args args, int rank, int nprocs)
     rank_y = (rank_slice / sub_div[0]);
     rank_x = (rank_slice % sub_div[0]);
     
-    int* colors = malloc(sizeof(*colors) * args.idx_count[0] * args.idx_count[1] * args.idx_count[2]);
+    int* colors = (int*)malloc(sizeof(*colors) * args.idx_count[0] * args.idx_count[1] * args.idx_count[2]);
     memset(colors, 0, sizeof(*colors) * args.idx_count[0] * args.idx_count[1] * args.idx_count[2]);
     
     for (k = 0; k < args.idx_count[2]; k++)
