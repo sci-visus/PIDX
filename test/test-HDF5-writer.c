@@ -231,7 +231,7 @@ int test_hdf5_writer(struct Args args, int rank, int nprocs)
     
     if (total_time == max_time)
     {
-      printf("[Local] [%d] [%d] %s Variables %d IDXs %lld %lld %lld Global Dimension %lld %lld %lld Time %f seconds Throughput %f MB/sec\n", rank, nprocs, output_file, args.variable_count, (long long)args.idx_count[0], (long long)args.idx_count[1], (long long)args.idx_count[2], (long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2], max_time, (double)(args.extents[0] * args.extents[1] * args.extents[2] * args.variable_count * sizeof(double))/(max_time*1000*1000));
+      printf("[Local] [%d] [%d] %s Variables %d IDXs %lld %lld %lld Global Dimension %lld %lld %lld Time %f seconds Throughput %f MB/sec\n", rank, nprocs, output_file, args.variable_count, (long long)args.idx_count[0], (long long)args.idx_count[1], (long long)args.idx_count[2], (long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2], max_time, (double)(args.extents[0] * args.extents[1] * args.extents[2] * args.variable_count * sizeof(double) * args.idx_count[0] * args.idx_count[1] * args.idx_count[2])/(max_time*1000*1000));
     }
     
     //if (args.idx_count[0] != 1 || args.idx_count[1] != 1 || args.idx_count[2] != 1 )
@@ -243,12 +243,10 @@ int test_hdf5_writer(struct Args args, int rank, int nprocs)
       
       if (total_time == global_max_time)
       {
-        printf("[Global][%d] [%d] %s Variables %d IDXs %lld %lld %lld Global Dimension %lld %lld %lld Time %f seconds Throughput %f MB/sec\n", rank, nprocs, output_file, args.variable_count, (long long)args.idx_count[0], (long long)args.idx_count[1], (long long)args.idx_count[2], (long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2], global_max_time, (double)(args.extents[0] * args.extents[1] * args.extents[2] * args.variable_count * sizeof(double))/(global_max_time*1000*1000));
+        printf("[Global][%d] [%d] %s Variables %d IDXs %lld %lld %lld Global Dimension %lld %lld %lld Time %f seconds Throughput %f MB/sec\n", rank, nprocs, output_file, args.variable_count, (long long)args.idx_count[0], (long long)args.idx_count[1], (long long)args.idx_count[2], (long long)args.extents[0], (long long)args.extents[1], (long long)args.extents[2], global_max_time, (double)(args.extents[0] * args.extents[1] * args.extents[2] * args.variable_count * sizeof(double) * args.idx_count[0] * args.idx_count[1] * args.idx_count[2])/(global_max_time*1000*1000));
         printf("=============================================================================================================================\n\n");
       }
-    
     //if (rank == 0)
-      
   }
   
   for(var = 0; var < args.variable_count; var++)
