@@ -93,9 +93,7 @@ struct PIDX_file_descriptor
   PIDX_compression_id compression_id;                   ///< Compression (lossy and lossless) id
   PIDX_agg_id agg_id;                                   ///< Aggregation phase id
   PIDX_io_id io_id;                                     ///< IO phase id
-  
-  int if_local_index_space;                             ///<
-  
+    
   int local_variable_index;                             ///<
   int local_variable_count;                             ///<
   int variable_pipelining_factor;                       ///<
@@ -239,7 +237,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->perform_hz = 1;
   (*file)->perform_agg = 1;
   (*file)->perform_io = 1;
-  (*file)->if_local_index_space = 0;
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
     MPI_Comm_rank(access_type->comm, &rank);
@@ -783,7 +780,7 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
   //else if (file->idx_count[0] != 1 && file->idx_count[1] != 1 && file->idx_count[2] != 1 )
   //{
   //TODO: check this what if idx_count is not set here
-  if (file->if_local_index_space == 1)
+  if (file->access->global_indexing == 0)
   {
     file->idx_ptr->global_bounds[0] = file->idx_ptr->global_bounds[0] / file->idx_count[0];
     file->idx_ptr->global_bounds[1] = file->idx_ptr->global_bounds[1] / file->idx_count[1];
@@ -2245,7 +2242,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
   
   if (file->access->topology_aware_io == 0)
   {
-    if (file->if_local_index_space == 1)
+    if (file->access->global_indexing == 0)
     {
       if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
       {

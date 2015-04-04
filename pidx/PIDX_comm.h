@@ -38,6 +38,7 @@ extern "C" {
 struct PIDX_access_struct
 {
   int parallel;
+  int global_indexing;
   int idx_count[3];
   int sub_div[3];
   int rank_component[3];
@@ -74,6 +75,14 @@ PIDX_return_code PIDX_set_process_rank_decomposition(PIDX_access access, int ran
 
 ///
 PIDX_return_code PIDX_enable_topology_aware_io(PIDX_access access, int topology_io);
+
+
+///
+PIDX_return_code PIDX_set_global_indexing_order(PIDX_access access, int is_global_indexing);
+
+
+///
+PIDX_return_code PIDX_get_global_indexing_order(PIDX_access access, int* is_global_indexing);
 #endif
 
 #ifdef __cplusplus

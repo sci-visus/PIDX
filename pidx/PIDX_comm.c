@@ -25,6 +25,7 @@ PIDX_return_code PIDX_create_access(PIDX_access* access)
   
   (*access)->parallel = 0;
   (*access)->topology_aware_io = 0;
+  (*access)->global_indexing = 0;
   
 #if PIDX_HAVE_MPI
   (*access)->comm = MPI_COMM_NULL;
@@ -34,6 +35,27 @@ PIDX_return_code PIDX_create_access(PIDX_access* access)
 }
 
 #if PIDX_HAVE_MPI
+PIDX_return_code PIDX_set_global_indexing_order(PIDX_access access, int global_indexing)
+{
+  if(!access)
+    return PIDX_err_access;
+  
+  access->global_indexing = global_indexing;
+  
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_get_global_indexing_order(PIDX_access access, int *global_indexing)
+{
+  if(!access)
+    return PIDX_err_access;
+  
+  *global_indexing = access->global_indexing;
+  
+  return PIDX_success;
+}
+
+
 PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count_x, int idx_count_y, int idx_count_z, MPI_Comm comm)
 {
   if(access == NULL)

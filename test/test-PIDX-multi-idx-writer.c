@@ -99,6 +99,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.topology_aware, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.is_rank_z_ordering, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.is_global_indexing, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
   variable = (PIDX_variable*)malloc(sizeof(*variable) * args.variable_count);
@@ -161,6 +162,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
     PIDX_set_mpi_access(access, args.idx_count[0], args.idx_count[1], args.idx_count[2], MPI_COMM_WORLD);
+    PIDX_set_global_indexing_order(access, args.is_global_indexing);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
     PIDX_enable_topology_aware_io(access, args.topology_aware);

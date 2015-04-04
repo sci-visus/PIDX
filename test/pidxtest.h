@@ -111,6 +111,9 @@ struct Args
   
   ///
   int is_rank_z_ordering;
+  
+  ///
+  int is_global_indexing;
 };
 
 /// main
