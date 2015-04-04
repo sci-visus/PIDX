@@ -18,6 +18,44 @@
 
 #include "pidxtest.h"
 
+static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z);
+static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z);
+static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
+
+static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z)
+{
+  uint64_t answer = 0;
+  for (uint64_t i = 0; i < (sizeof(uint64_t)* CHAR_BIT)/3; ++i) 
+  {
+    answer |= ((x & ((uint64_t)1 << i)) << 2*i) | ((y & ((uint64_t)1 << i)) << (2*i + 1)) | ((z & ((uint64_t)1 << i)) << (2*i + 2));
+  }
+  return answer;
+}
+
+static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y)
+{
+  x = 0;
+  y = 0;
+  for (uint64_t i = 0; i < (sizeof(uint64_t) * CHAR_BIT)/2; ++i) 
+  {
+    x |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 0ull))) >> uint64_t(((2ull * i) + 0ull)-i));
+    y |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 1ull))) >> uint64_t(((2ull * i) + 1ull)-i));
+  }
+}
+
+static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z)
+{
+  x = 0;
+  y = 0;
+  z = 0;
+  for (uint64_t i = 0; i < (sizeof(uint64_t) * CHAR_BIT)/3; ++i) 
+  {
+    x |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 0ull))) >> uint64_t(((3ull * i) + 0ull)-i));
+    y |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 1ull))) >> uint64_t(((3ull * i) + 1ull)-i));
+    z |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 2ull))) >> uint64_t(((3ull * i) + 2ull)-i));
+  }
+}
+
 int test_multi_idx_writer(struct Args args, int rank, int nprocs)
 {
 #if PIDX_HAVE_MPI
@@ -60,6 +98,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.aggregation_factor, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.topology_aware, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.is_rank_z_ordering, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
   variable = (PIDX_variable*)malloc(sizeof(*variable) * args.variable_count);
@@ -81,6 +120,25 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   slice = rank % (sub_div[0] * sub_div[1]);
   local_offset[1] = (slice / sub_div[0]) * args.count_local[1];
   local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
+  
+  unsigned int rank_x, rank_y, rank_z = 0, rank_slice;
+  if (args.is_rank_z_ordering == 1)
+  {
+    //printf("Rank Z ordering\n");
+    mortonDecode_for((uint64_t)rank, rank_x, rank_y, rank_z);
+    local_offset[0] = rank_x * args.count_local[0];
+    local_offset[1] = rank_y * args.count_local[1];
+    local_offset[2] = rank_z * args.count_local[2];
+  }
+  else
+  {
+    //printf("Rank Row ordering\n");
+    rank_z = rank / (sub_div[0] * sub_div[1]);
+    rank_slice = rank % (sub_div[0] * sub_div[1]);
+    rank_y = (rank_slice / sub_div[0]);
+    rank_x = (rank_slice % sub_div[0]);
+  }
+  
   
   PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
   PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
@@ -104,6 +162,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
 #if PIDX_HAVE_MPI
     PIDX_set_mpi_access(access, args.idx_count[0], args.idx_count[1], args.idx_count[2], MPI_COMM_WORLD);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
+    PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
     PIDX_enable_topology_aware_io(access, args.topology_aware);
 #else
     PIDX_set_default_access(access);

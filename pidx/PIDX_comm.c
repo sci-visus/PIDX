@@ -72,6 +72,17 @@ PIDX_return_code PIDX_enable_topology_aware_io(PIDX_access access, int topology_
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_set_process_rank_decomposition(PIDX_access access, int rank_x, int rank_y, int rank_z)
+{
+  if(access == NULL)
+    return PIDX_err_access;
+  
+  access->rank_component[0] = rank_x;
+  access->rank_component[1] = rank_y;
+  access->rank_component[2] = rank_z;
+  
+  return PIDX_success;
+}
 #endif
 
 PIDX_return_code PIDX_close_access(PIDX_access access)

@@ -229,6 +229,9 @@ int parse_args(struct Args *args, int argc, char **argv)
       
       fscanf(config_file, "(topology aware IO)\n");
       fscanf(config_file, "%d\n", &args->topology_aware);
+      
+      fscanf(config_file, "(rank z ordering)\n");
+      fscanf(config_file, "%d\n", &args->is_rank_z_ordering);
     }
   }
 
