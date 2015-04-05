@@ -244,7 +244,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
   target_rank = agg_id->idx_derived_ptr->agg_buffer->rank_holder[file_no][variable_index - agg_id->start_var_index][sample_index];
 #endif
   target_count = hz_count * values_per_sample;
-  if (target_rank == 0 || target_rank == 256)
+  if ((target_rank == 0 || target_rank == 256) && agg_id->idx_derived_ptr->color == 0)
     printf("[%d] my rank %d %d\n", target_rank, rank, nrank);
   bytes_per_datatype = (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size;
   
