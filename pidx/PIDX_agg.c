@@ -183,7 +183,7 @@ int compress_buffer(PIDX_agg_id agg_id, unsigned char* buffer, int length)
 int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
 {
   int ret;
-  int rank = 0, itr;
+  int rank = 0, itr, nrank = 0;
   int bytes_per_datatype;
   int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, values_per_sample;
   int target_rank = 0;
@@ -195,6 +195,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
   
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(agg_id->comm, &rank);
+  MPI_Comm_rank(agg_id->global_comm, &nrank);
 #endif
 
   values_per_sample = agg_id->idx_ptr->variable[variable_index]->values_per_sample; //number of samples for variable j
@@ -243,7 +244,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
   target_rank = agg_id->idx_derived_ptr->agg_buffer->rank_holder[file_no][variable_index - agg_id->start_var_index][sample_index];
 #endif
   target_count = hz_count * values_per_sample;
-  
+  if (target_rank == 0 || target_rank == 256)
+    printf("[%d] my rank %d %d\n", target_rank, rank, nrank);
   bytes_per_datatype = (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size;
   
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
