@@ -33,6 +33,7 @@ struct PIDX_agg_struct
 {
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
+  MPI_Comm global_comm;
   MPI_Win win;
 #endif
   
@@ -71,6 +72,13 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
 int PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
 {
   agg_id->comm = comm;
+  //MPI_Comm_dup(comm, &agg_id->comm);
+  return 0;
+}
+
+int PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
+{
+  agg_id->global_comm = comm;
   //MPI_Comm_dup(comm, &agg_id->comm);
   return 0;
 }
@@ -746,10 +754,12 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
     {
       for (j = 0; j < agg_id->idx_ptr->variable[i]->values_per_sample * agg_id->idx_derived_ptr->aggregation_factor; j++)
       {
-#if 0
+#if 1
         agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = rank_counter;
         rank_counter = rank_counter + agg_id->aggregator_interval;
-#else
+#endif
+        
+#if 0
         if (k == 0)
           agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 256;
         if (k == 1)

@@ -1613,6 +1613,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
 #if PIDX_HAVE_MPI
       PIDX_agg_set_communicator(file->agg_id, file->comm);
+      PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
 #endif
     }
     agg_init_end[vp] = PIDX_get_time();
@@ -2380,6 +2381,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
 #if PIDX_HAVE_MPI
       PIDX_agg_set_communicator(file->agg_id, file->comm);
+      PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
 #endif
     }
     agg_init_end[vp] = PIDX_get_time();

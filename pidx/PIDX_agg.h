@@ -51,6 +51,8 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
 /// \param comm the communicator
 /// \return error code
 int PIDX_agg_set_communicator(PIDX_agg_id io_id, MPI_Comm comm);
+
+int PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm);
 #endif
 
 
