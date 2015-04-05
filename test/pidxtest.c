@@ -235,6 +235,9 @@ int parse_args(struct Args *args, int argc, char **argv)
       
       fscanf(config_file, "(global indexing order)\n");
       fscanf(config_file, "%d\n", &args->is_global_indexing);
+      
+      fscanf(config_file, "(resolution)\n");
+      fscanf(config_file, "%d\n", &args->resolution);
     }
   }
 

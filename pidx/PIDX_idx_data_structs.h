@@ -123,6 +123,8 @@ struct idx_dataset_derived_metadata_struct
   
   int color;
   
+  int resolution;
+  
   double win_free_time_start;
   double win_free_time_end;
   double win_time_start;

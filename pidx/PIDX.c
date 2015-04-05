@@ -2136,6 +2136,31 @@ PIDX_return_code PIDX_get_compression_block_size(PIDX_file file, PIDX_point comp
 }
 
 
+
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+  
+  file->idx_derived_ptr->resolution = resolution;
+  
+  return PIDX_success;
+}
+
+
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+  
+  *resolution = file->idx_derived_ptr->resolution;
+  
+  return PIDX_success;
+}
+
+
 /////////////////////////////////////////////////
 static PIDX_return_code PIDX_write(PIDX_file file)
 {

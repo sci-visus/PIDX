@@ -98,6 +98,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.aggregation_factor, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.topology_aware, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.resolution, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.is_rank_z_ordering, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.is_global_indexing, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -180,6 +181,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_set_aggregation_factor(file, args.aggregation_factor);
     PIDX_set_block_count(file, args.blocks_per_file);
     PIDX_set_variable_count(file, args.variable_count);
+    PIDX_set_resolution(file, args.resolution);
     
     /// PIDX compression related calls
     PIDX_set_compression_type(file, args.compression_type);
