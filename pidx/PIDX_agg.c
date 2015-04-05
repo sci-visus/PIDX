@@ -746,8 +746,44 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
     {
       for (j = 0; j < agg_id->idx_ptr->variable[i]->values_per_sample * agg_id->idx_derived_ptr->aggregation_factor; j++)
       {
+#if 0
         agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = rank_counter;
         rank_counter = rank_counter + agg_id->aggregator_interval;
+#else
+        if (k == 0)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 256;
+        if (k == 1)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 768;
+        if (k == 2)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1280;
+        if (k == 3)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1792;
+        if (k == 4)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2304;
+        if (k == 5)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2816;
+        if (k == 6)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3328;
+        if (k == 7)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3840;
+        
+        if (k == 8)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 0;
+        if (k == 9)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 512;
+        if (k == 10)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1024;
+        if (k == 11)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1536;
+        if (k == 12)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2048;
+        if (k == 13)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2560;
+        if (k == 14)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3072;
+        if (k == 15)
+          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3584;
+#endif
                   
         if(rank == agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j])
         {
