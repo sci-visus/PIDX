@@ -236,8 +236,8 @@ int parse_args(struct Args *args, int argc, char **argv)
       fscanf(config_file, "(global indexing order)\n");
       fscanf(config_file, "%d\n", &args->is_global_indexing);
       
-      fscanf(config_file, "(resolution)\n");
-      fscanf(config_file, "%d\n", &args->resolution);
+      fscanf(config_file, "(hz from:to)\n");
+      fscanf(config_file, "%d %d\n", &args->hz_from, &args->hz_to);
     }
   }
 

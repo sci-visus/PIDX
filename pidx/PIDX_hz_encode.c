@@ -248,7 +248,7 @@ int PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 	userBox[1][d] = (int) (id->idx_ptr->variable[i]->patch_group_ptr[k]->enclosing_box_offset[d] / id->idx_ptr->compression_block_size[d]) + (id->idx_ptr->variable[i]->patch_group_ptr[k]->enclosing_box_size[d] / id->idx_ptr->compression_block_size[d]) - 1;
       }
       
-      for (j = 0; j < id->idx_derived_ptr->maxh; j++) 
+      for (j = 0; j < id->idx_derived_ptr->maxh; j++)
       {
         Align((id->idx_derived_ptr->maxh - 1), j, id->idx_ptr->bitPattern, userBox, allign_offset, allign_count);
         
@@ -322,7 +322,7 @@ int PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
     memset(id->idx_ptr->variable[id->start_var_index]->HZ_patch[k]->samples_per_level, 0, id->idx_derived_ptr->maxh * sizeof (int64_t)); 
   }
   
-  for(i = id->start_var_index; i <= id->end_var_index; i++)
+  for (i = id->start_var_index; i <= id->end_var_index; i++)
   {
     //printf("p g count %d\n", id->idx_ptr->variable[id->start_var_index]->patch_group_count);
     for (k = 0; k < id->idx_ptr->variable[id->start_var_index]->patch_group_count; k++)
@@ -332,7 +332,7 @@ int PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
       //printf("p g type %d = %d\n", k, id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[k]->box_group_type);
       if(id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[k]->box_group_type == 1 || id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[k]->box_group_type == 2)
       {
-        for(c = 0 ; c < id->idx_derived_ptr->maxh ; c++)
+        for (c = 0 ; c < id->idx_derived_ptr->maxh ; c++)
         {
           //printf("buffer at %d = %d\n", c, bytes_for_datatype * (id->idx_ptr->variable[i]->HZ_patch[k]->end_hz_index[c] - id->idx_ptr->variable[i]->HZ_patch[k]->start_hz_index[c] + 1) * id->idx_ptr->variable[i]->values_per_sample * id->idx_ptr->compression_block_size[0] * id->idx_ptr->compression_block_size[1] * id->idx_ptr->compression_block_size[2] * id->idx_ptr->compression_block_size[3] * id->idx_ptr->compression_block_size[4]);
           bytes_for_datatype = id->idx_ptr->variable[i]->bits_per_value / 8;
@@ -697,6 +697,9 @@ int PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     hz_order = z_order;
                     
                     level = getLeveL(hz_order);
+                    printf("Level = %d\n", level);
+                    //if (level >= id->idx_derived_ptr->maxh - id->idx_derived_ptr->resolution_to - 1)
+                    //  continue;
                     id->idx_ptr->variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = id->idx_ptr->variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;
                     hz_index = hz_order - id->idx_ptr->variable[id->start_var_index]->HZ_patch[y]->start_hz_index[level];
                     for(var = id->start_var_index; var <= id->end_var_index; var++)

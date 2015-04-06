@@ -228,6 +228,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_ptr->current_time_step = 0;
   (*file)->idx_derived_ptr->aggregation_factor = 1;
   (*file)->idx_derived_ptr->color = 0;
+  (*file)->idx_derived_ptr->resolution_from = 0;
+  (*file)->idx_derived_ptr->resolution_to = 0;
   (*file)->idx_count[0] = 1;
   (*file)->idx_count[1] = 1;
   (*file)->idx_count[2] = 1;
@@ -1331,9 +1333,9 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
       //bounding_box[1][i] = file->idx_ptr->global_bounds[i];
       bounding_box[1][i] = file->idx_ptr->compressed_global_bounds[i];
     }
-    
+    //printf("XXXXXX\n");
     file->idx_derived_ptr->global_block_layout =  malloc(sizeof (*file->idx_derived_ptr->global_block_layout));
-    PIDX_blocks_create_layout(bounding_box, file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->maxh, file->idx_ptr->bitPattern, file->idx_derived_ptr->global_block_layout);
+    PIDX_blocks_create_layout(bounding_box, file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->maxh, file->idx_derived_ptr->resolution_from, file->idx_derived_ptr->resolution_to, file->idx_ptr->bitPattern, file->idx_derived_ptr->global_block_layout);
     
     int k = 1;
     for (i = 1; i < (file->idx_derived_ptr->global_block_layout->levels); i++)
@@ -1368,7 +1370,7 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
       }
       
       PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
-      PIDX_blocks_create_layout (bounding_box, file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->maxh, file->idx_ptr->bitPattern, per_patch_local_block_layout);
+      PIDX_blocks_create_layout (bounding_box, file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->maxh, file->idx_derived_ptr->resolution_from, file->idx_derived_ptr->resolution_to, file->idx_ptr->bitPattern, per_patch_local_block_layout);
       
       ctr = 1;
       for (i = 1; i < (all_patch_local_block_layout->levels); i++)
@@ -1613,7 +1615,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
 #if PIDX_HAVE_MPI
       PIDX_agg_set_communicator(file->agg_id, file->comm);
-      PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
+      //PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
 #endif
     }
     agg_init_end[vp] = PIDX_get_time();
@@ -2139,24 +2141,26 @@ PIDX_return_code PIDX_get_compression_block_size(PIDX_file file, PIDX_point comp
 
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution)
+PIDX_return_code PIDX_set_resolution(PIDX_file file, int hz_from, int hz_to)
 {
   if(file == NULL)
     return PIDX_err_file;
   
-  file->idx_derived_ptr->resolution = resolution;
+  file->idx_derived_ptr->resolution_from = hz_from;
+  file->idx_derived_ptr->resolution_to = hz_to;
   
   return PIDX_success;
 }
 
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution)
+PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_from, int *hz_to)
 {
   if(file == NULL)
     return PIDX_err_file;
   
-  *resolution = file->idx_derived_ptr->resolution;
+  *hz_from = file->idx_derived_ptr->resolution_from;
+  *hz_to = file->idx_derived_ptr->resolution_to;
   
   return PIDX_success;
 }
@@ -2381,7 +2385,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
 #if PIDX_HAVE_MPI
       PIDX_agg_set_communicator(file->agg_id, file->comm);
-      PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
+      //PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
 #endif
     }
     agg_init_end[vp] = PIDX_get_time();

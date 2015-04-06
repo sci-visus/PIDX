@@ -488,11 +488,11 @@ int main(int argc, char **argv)
                   //      hz_index, ZYX[0], ZYX[1], ZYX[2],
                   //      (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #else
-                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
-                  //      var,
-                  //      (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val,
-                  //      (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2],
-                  //      (double)double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
+                  printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
+                        var,
+                        (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val,
+                        (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2],
+                        (double)double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #endif
                 }
                 else

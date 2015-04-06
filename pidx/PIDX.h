@@ -345,11 +345,11 @@ PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info);
 
 
 ///
-PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution);
+PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int resolution_to);
 
 
 ///
-PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution);
+PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *resolution_to);
 
 
 ///

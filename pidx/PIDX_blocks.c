@@ -62,7 +62,7 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_
 
 
 ///
-int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, PIDX_block_layout layout)
+int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, int resolution_from, int resolution_to, const char* bitPattern, PIDX_block_layout layout)
 {
   int i = 0, j = 0, m = 0, n_blocks = 1, ctr = 1, t = 0, block_number = 1;
   int64_t hz_from = 0, hz_to = 0;
@@ -71,8 +71,8 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int 
   if (maxH < bits_per_block)
     layout->levels = 1;
   else
-    layout->levels = maxH - bits_per_block;
-
+    layout->levels = maxH - bits_per_block - resolution_to;
+  
   layout->hz_block_count_array = (int*)malloc(sizeof(int) * (layout->levels));
   layout->hz_block_count_array[0] = 1;
   layout->hz_block_number_array = (int**)malloc(sizeof(int*) * (layout->levels));
@@ -101,7 +101,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int 
   hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
   hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
   
-  for (m = 1 ; m < (maxH - bits_per_block); m++)
+  for (m = 1 ; m < layout->levels; m++)
   {
     n_blocks = pow(2, (m - 1));
     for (t = 0 ; t < n_blocks ; t++)

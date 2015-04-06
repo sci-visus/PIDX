@@ -195,7 +195,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
   
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(agg_id->comm, &rank);
-  MPI_Comm_rank(agg_id->global_comm, &nrank);
+  //MPI_Comm_rank(agg_id->global_comm, &nrank);
 #endif
 
   values_per_sample = agg_id->idx_ptr->variable[variable_index]->values_per_sample; //number of samples for variable j
@@ -244,8 +244,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
   target_rank = agg_id->idx_derived_ptr->agg_buffer->rank_holder[file_no][variable_index - agg_id->start_var_index][sample_index];
 #endif
   target_count = hz_count * values_per_sample;
-  if ((target_rank == 0 || target_rank == 256) && agg_id->idx_derived_ptr->color == 0)
-    printf("[%d] my rank %d %d\n", target_rank, rank, nrank);
+  
   bytes_per_datatype = (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size;
   
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
@@ -756,46 +755,8 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
     {
       for (j = 0; j < agg_id->idx_ptr->variable[i]->values_per_sample * agg_id->idx_derived_ptr->aggregation_factor; j++)
       {
-#if 1
         agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = rank_counter;
         rank_counter = rank_counter + agg_id->aggregator_interval;
-#endif
-        
-#if 0
-        if (k == 0)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 256;
-        if (k == 1)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 768;
-        if (k == 2)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1280;
-        if (k == 3)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1792;
-        if (k == 4)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2304;
-        if (k == 5)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2816;
-        if (k == 6)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3328;
-        if (k == 7)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3840;
-        
-        if (k == 8)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 0;
-        if (k == 9)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 512;
-        if (k == 10)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1024;
-        if (k == 11)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 1536;
-        if (k == 12)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2048;
-        if (k == 13)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 2560;
-        if (k == 14)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3072;
-        if (k == 15)
-          agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j] = 3584;
-#endif
                   
         if(rank == agg_id->idx_derived_ptr->agg_buffer->rank_holder[agg_id->idx_derived_ptr->existing_file_index[k]][i - agg_id->start_var_index][j])
         {
@@ -898,10 +859,10 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
     
     if(agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_ptr[p]->box_group_type == 0)
     {
-      for (i = 0; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i++) 
+      for (i = 0; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i++) 
         hz_index = hz_index + agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i];
       
-      for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+      for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - agg_id->idx_derived_ptr->resolution_to; i++)
       {
         if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
         {
@@ -986,7 +947,7 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
     {
       if (variable_order == 0)
       {
-        for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+        for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to  - agg_id->idx_derived_ptr->resolution_to; i++)
         {
           if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
           {
@@ -1016,8 +977,7 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
             fflush(agg_dump_fp);
           }
 #endif
-          
-          for (i = /*agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from*/agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - 1; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - agg_id->idx_derived_ptr->resolution; i++)
+          for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - agg_id->idx_derived_ptr->resolution_to; i++)
           {
             if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
             {
@@ -1140,7 +1100,7 @@ int PIDX_agg_read(PIDX_agg_id agg_id)
         fflush(agg_dump_fp);
       }
 #endif
-      for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to; i++)
+      for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - agg_id->idx_derived_ptr->resolution_to; i++)
       {
         count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
         

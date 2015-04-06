@@ -45,7 +45,7 @@ int PIDX_blocks_initialize_layout(PIDX_block_layout layout, int maxh, int bits_p
 
 
 ///
-int PIDX_blocks_create_layout(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, PIDX_block_layout layout);
+int PIDX_blocks_create_layout(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, int resolution_from, int resolution_to, const char* bitPattern, PIDX_block_layout layout);
 
 
 ///

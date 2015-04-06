@@ -116,7 +116,10 @@ struct Args
   int is_global_indexing;
   
   ///
-  int resolution;
+  int hz_from;
+  
+  ///
+  int hz_to;
 };
 
 /// main
