@@ -43,7 +43,16 @@
 int test_hdf5_writer(struct Args args, int rank, int nprocs);
 int test_hdf5_reader(struct Args args, int rank, int nprocs);
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 int test_multi_idx_writer(struct Args args, int rank, int nprocs);
 int usage_multi_idx_writer();
+
+int test_mpi_to_writer(struct Args args, int rank, int nprocs);
+#ifdef __cplusplus
+}
+#endif
+
 
 #endif

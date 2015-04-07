@@ -117,9 +117,9 @@ void set_default_box_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nproc
   //power_two_box_size =  average_count;
   if (equal_partiton == 1) 
   {
-    rst_id->power_two_box_size[0] = average_count * 1;
-    rst_id->power_two_box_size[1] = average_count * 1;
-    rst_id->power_two_box_size[2] = average_count * 1;
+    rst_id->power_two_box_size[0] = 256;//average_count * 1;
+    rst_id->power_two_box_size[1] = 256;//average_count * 1;
+    rst_id->power_two_box_size[2] = 256;//average_count * 1;
     rst_id->power_two_box_size[3] = 1;
     rst_id->power_two_box_size[4] = 1;
   } 
@@ -220,8 +220,8 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
   else
     memcpy(rst_id->power_two_box_size, box_dim, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
     
-  //if (rank == 0)
-    //printf("[%d] Imposed Box Dimension : %lld %lld %lld %lld %lld\n", rank, rst_id->power_two_box_size[0], rst_id->power_two_box_size[1], rst_id->power_two_box_size[2], rst_id->power_two_box_size[3], rst_id->power_two_box_size[4]);
+  if (rank == 0)
+    printf("[%d] Imposed Box Dimension : %lld %lld %lld %lld %lld\n", rank, (long long)rst_id->power_two_box_size[0], (long long)rst_id->power_two_box_size[1], (long long)rst_id->power_two_box_size[2], (long long)rst_id->power_two_box_size[3], (long long)rst_id->power_two_box_size[4]);
   
   /// extents for the local process(rank)
   Ndim_box local_proc_box = (Ndim_box)malloc(sizeof (*local_proc_box));
@@ -231,7 +231,7 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
     local_proc_box->Ndim_box_offset[d] = rst_id->idx_ptr->variable[rst_id->start_variable_index]->rank_r_offset[PIDX_MAX_DIMENSIONS * rank + d];
     local_proc_box->Ndim_box_size[d] = rst_id->idx_ptr->variable[rst_id->start_variable_index]->rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
   }
-
+  
   rst_id->power_two_box_group_count = 0;
   for (i = 0; i < rst_id->idx_ptr->global_bounds[0]; i = i + rst_id->power_two_box_size[0])
     for (j = 0; j < rst_id->idx_ptr->global_bounds[1]; j = j + rst_id->power_two_box_size[1])
@@ -470,7 +470,7 @@ int PIDX_rst_buf_create(PIDX_rst_id rst_id)
 
 
 int PIDX_rst_write(PIDX_rst_id rst_id)
-{  
+{ 
   int64_t a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
   int i, j, var, index, count1 = 0, ret = 0, req_count = 0;
   int *send_count, *send_offset;

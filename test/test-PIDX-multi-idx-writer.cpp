@@ -134,6 +134,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   {
     //printf("Rank Z ordering\n");
     mortonDecode_for((uint64_t)rank, rank_x, rank_y, rank_z);
+    printf("[%d] : %d %d %d\n", rank, rank_x, rank_y, rank_z);
     local_offset[0] = rank_x * args.count_local[0];
     local_offset[1] = rank_y * args.count_local[1];
     local_offset[2] = rank_z * args.count_local[2];
