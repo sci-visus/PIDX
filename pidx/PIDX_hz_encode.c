@@ -697,7 +697,7 @@ int PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     hz_order = z_order;
                     
                     level = getLeveL(hz_order);
-                    
+
                     //if (level >= id->idx_derived_ptr->maxh - id->idx_derived_ptr->resolution_to - 1)
                     //  continue;
                     id->idx_ptr->variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] = id->idx_ptr->variable[id->start_var_index]->HZ_patch[y]->samples_per_level[level] + 1;

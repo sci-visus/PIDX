@@ -24,7 +24,7 @@
 MACRO(PIDX_ADD_EXECUTABLE targetname files)
   #MESSAGE("Adding executable " ${targetname} " from sources: " ${files})                        
   ADD_EXECUTABLE(${targetname} "MACOSX_BUNDLE" ${files})
-  SET_TARGET_PROPERTIES(${targetname} PROPERTIES LINKER_LANGUAGE C)
+  SET_TARGET_PROPERTIES(${targetname} PROPERTIES LINKER_LANGUAGE CXX)
   INSTALL(TARGETS ${targetname} 
                   RUNTIME DESTINATION bin
                   BUNDLE DESTINATION  bin)

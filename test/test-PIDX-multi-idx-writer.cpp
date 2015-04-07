@@ -18,6 +18,10 @@
 
 #include "pidxtest.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z);
 static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z);
 static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
@@ -352,3 +356,7 @@ void usage_multi_idx_writer(void)
   printf("\n");
   return;
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -22,7 +22,7 @@ IF (PIDX_BUILD_TEST)
   # sources
   # ////////////////////////////////////////
 
-  FILE(GLOB PIDXTEST_SOURCES *.h *.c)
+  FILE(GLOB PIDXTEST_SOURCES *.h *.c *.cpp)
   
   # ////////////////////////////////////////
   # includes and link libraries
@@ -30,10 +30,10 @@ IF (PIDX_BUILD_TEST)
 
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
   SET(PIDXTEST_LINK_LIBS pidx) 
-  IF (MPI_C_FOUND)
+  IF (MPI_CXX_FOUND)
     MESSAGE("Configuring pidxtest with MPI support")
-    INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-    SET(PIDXTEST_LINK_LIBS ${PIDXTEST_LINK_LIBS} ${MPI_C_LIBRARIES})
+    INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
+    SET(PIDXTEST_LINK_LIBS ${PIDXTEST_LINK_LIBS} ${MPI_CXX_LIBRARIES})
   ENDIF()
 
 
