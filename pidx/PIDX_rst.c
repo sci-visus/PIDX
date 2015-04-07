@@ -117,9 +117,9 @@ void set_default_box_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nproc
   //power_two_box_size =  average_count;
   if (equal_partiton == 1) 
   {
-    rst_id->power_two_box_size[0] = 256;//average_count * 1;
-    rst_id->power_two_box_size[1] = 256;//average_count * 1;
-    rst_id->power_two_box_size[2] = 256;//average_count * 1;
+    rst_id->power_two_box_size[0] = average_count * 1;
+    rst_id->power_two_box_size[1] = average_count * 1;
+    rst_id->power_two_box_size[2] = average_count * 1;
     rst_id->power_two_box_size[3] = 1;
     rst_id->power_two_box_size[4] = 1;
   } 

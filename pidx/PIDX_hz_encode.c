@@ -384,17 +384,17 @@ int PIDX_hz_encode_write(PIDX_hz_encode_id id)
   }
   
   for (y = 0; y < id->idx_ptr->variable[id->start_var_index]->patch_group_count; y++)
-  {
-    for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
-    {
-      compressed_patch_offset[l] = id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_offset[l] / id->idx_ptr->compression_block_size[l];
-      compressed_patch_size[l] = id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[l] / id->idx_ptr->compression_block_size[l];
-    }
-    
-    total_compressed_patch_size = (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[0] / id->idx_ptr->compression_block_size[0]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[1] / id->idx_ptr->compression_block_size[1]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[2] / id->idx_ptr->compression_block_size[2]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[3] / id->idx_ptr->compression_block_size[3]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[4] / id->idx_ptr->compression_block_size[4]);
-    
+  { 
     if(id->idx_ptr->variable[id->start_var_index]->patch_group_ptr[y]->box_group_type == 0)
     {
+      for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
+      {
+        compressed_patch_offset[l] = id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_offset[l] / id->idx_ptr->compression_block_size[l];
+        compressed_patch_size[l] = id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[l] / id->idx_ptr->compression_block_size[l];
+      }
+      
+      total_compressed_patch_size = (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[0] / id->idx_ptr->compression_block_size[0]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[1] / id->idx_ptr->compression_block_size[1]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[2] / id->idx_ptr->compression_block_size[2]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[3] / id->idx_ptr->compression_block_size[3]) * (id->idx_ptr->variable[id->start_var_index]->patch[y]->Ndim_box_size[4] / id->idx_ptr->compression_block_size[4]);
+    
       index_count = 0;
       hz_tupple *tupple = malloc(total_compressed_patch_size * sizeof(hz_tupple));
       
