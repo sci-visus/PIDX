@@ -117,7 +117,7 @@ static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medi
   return (int)outbytes;
 }
 
-int compress_buffer(PIDX_agg_id agg_id, unsigned char* buffer, int length)
+int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
 {
   int i = 0, j = 0;
   int prec = 0;
@@ -126,57 +126,109 @@ int compress_buffer(PIDX_agg_id agg_id, unsigned char* buffer, int length)
   
   int64_t total_compression_block_size = agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
   
-  size_t size = (type == FPZIP_TYPE_FLOAT ? sizeof(float) : sizeof(double));
-  if (prec == 0)
-    prec = CHAR_BIT * size;
-  
-  size_t total_size = 0;
-  
-  for ( i = 0; i < length; i = i + total_compression_block_size * size)
+  //LOSSLESS Compression
+  if (agg_id->idx_ptr->compression_type == 0)
   {
-    void* decompressed_buffer = malloc(total_compression_block_size * size + 1024);
-    //printf("inint decomp = %d\n", (int)(total_compression_block_size * size + 1024));
-    FPZ* fpz = fpzip_write_to_buffer(decompressed_buffer, (total_compression_block_size * size + 1024));
-    fpz->type = type;
-    fpz->prec = prec;
-    fpz->nx = agg_id->idx_ptr->compression_block_size[0];
-    fpz->ny = agg_id->idx_ptr->compression_block_size[1];
-    fpz->nz = agg_id->idx_ptr->compression_block_size[2];
-    fpz->nf = nf;
+    size_t size = (type == FPZIP_TYPE_FLOAT ? sizeof(float) : sizeof(double));
+    if (prec == 0)
+      prec = CHAR_BIT * size;
     
-    //printf("offset = %d input size = %d\n", i, (int)total_compression_block_size * size);
-    size_t x = compress(fpz, buffer + i, total_compression_block_size * size, "memory");
+    size_t total_size = 0;
     
-    if (x / sizeof(double) != 0)
-      x = ((x / sizeof(double)) + 1) * sizeof(double);
-    //printf("[%d] x = %ld\n", i, x/sizeof(double));
-    //printf("decompressed buffe size = %ld %ld\n", x);
-    //if (!compress(fpz, data, inbytes, "memory"))
-    //  return EXIT_FAILURE;
-    fpzip_write_close(fpz);
-    
-    //TODO: big problem
-    double value = 0;
-    for (j = 0; j < x ; j = j + 8)
+    for ( i = 0; i < length; i = i + total_compression_block_size * size)
     {
-      memcpy(&value, decompressed_buffer + j, 8);
-      if (isnan(value) != 0)
-        printf("NAN\n");
+      void* decompressed_buffer = malloc(total_compression_block_size * size + 1024);
+      //printf("inint decomp = %d\n", (int)(total_compression_block_size * size + 1024));
+      FPZ* fpz = fpzip_write_to_buffer(decompressed_buffer, (total_compression_block_size * size + 1024));
+      fpz->type = type;
+      fpz->prec = prec;
+      fpz->nx = agg_id->idx_ptr->compression_block_size[0];
+      fpz->ny = agg_id->idx_ptr->compression_block_size[1];
+      fpz->nz = agg_id->idx_ptr->compression_block_size[2];
+      fpz->nf = nf;
+      
+      //printf("offset = %d input size = %d\n", i, (int)total_compression_block_size * size);
+      size_t x = compress(fpz, buffer + i, total_compression_block_size * size, "memory");
+      
+      if (x / sizeof(double) != 0)
+        x = ((x / sizeof(double)) + 1) * sizeof(double);
+      //printf("[%d] x = %ld\n", i, x/sizeof(double));
+      //printf("decompressed buffe size = %ld %ld\n", x);
+      //if (!compress(fpz, data, inbytes, "memory"))
+      //  return EXIT_FAILURE;
+      fpzip_write_close(fpz);
+      
+      //TODO: big problem
+      double value = 0;
+      for (j = 0; j < x ; j = j + 8)
+      {
+        memcpy(&value, decompressed_buffer + j, 8);
+        if (isnan(value) != 0)
+          printf("NAN\n");
+      }
+      //printf("reallocating to %d\n", (int)x);
+      void* temp_buffer = (double*)realloc(decompressed_buffer, x);
+      if (temp_buffer == NULL)
+        printf("realloc error\n!!!");
+      else
+        decompressed_buffer = temp_buffer;
+      //printf("copy location %d\n", (int)total_size);
+      memcpy(buffer + total_size, decompressed_buffer, x);
+      
+      total_size = total_size + x;
+      free(decompressed_buffer);
     }
-    //printf("reallocating to %d\n", (int)x);
-    void* temp_buffer = (double*)realloc(decompressed_buffer, x);
-    if (temp_buffer == NULL)
-      printf("realloc error\n!!!");
-    else
-      decompressed_buffer = temp_buffer;
-    //printf("copy location %d\n", (int)total_size);
-    memcpy(buffer + total_size, decompressed_buffer, x);
-    
-    total_size = total_size + x;
-    free(decompressed_buffer);
+    return (int)total_size;
+  }
+  //LOSSLESS Compression
+  else if (agg_id->idx_ptr->compression_type == 1)
+  {
+    size_t typesize, outsize;
+    typesize = sizeof(double);
+    zfp_params params;
+    params.type = ZFP_TYPE_DOUBLE;
+    params.nx = agg_id->idx_ptr->compression_block_size[0];
+    params.ny = agg_id->idx_ptr->compression_block_size[1];
+    params.nz = agg_id->idx_ptr->compression_block_size[2];
+    int total_size = 0;
+    zfp_set_rate(&params, agg_id->idx_ptr->compression_bit_rate);
+    for ( i = 0; i < length; i = i + total_compression_block_size * typesize)
+    {
+      outsize = zfp_estimate_compressed_size(&params);
+      
+      unsigned char* zip = malloc(outsize);
+      unsigned char* dzip = malloc(outsize);
+      
+      double x, y;
+      memcpy(&x, buffer + i, sizeof(double));
+      
+      outsize = zfp_compress(&params, buffer + i , zip, outsize);
+      if (outsize == 0) 
+      {
+        fprintf(stderr, "compression failed\n");
+        return -1;
+      }
+      
+      zfp_decompress(&params, dzip , zip, outsize);
+      memcpy(&y, dzip, sizeof(double));
+      printf("before after %f %f\n", x, y);
+     
+      
+      unsigned char* temp_buffer = realloc(zip, outsize);
+      if (temp_buffer == NULL)
+        printf("realloc error\n!!!");
+      else
+        zip = temp_buffer;
+      //printf("copy location %d\n", (int)total_size);
+      memcpy(buffer + total_size, zip, outsize);
+      
+      total_size = total_size + outsize;
+      free(zip);
+    }
+    return total_size;
   }
   
-  return (int)total_size;
+  return -1;
 }
 #endif
 
@@ -245,7 +297,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #endif
   target_count = hz_count * values_per_sample;
   
-  bytes_per_datatype = (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size;
+  bytes_per_datatype = ((agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size) / (64 / agg_id->idx_ptr->compression_bit_rate);
   
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
 
@@ -595,8 +647,15 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #ifdef PIDX_HAVE_LOSSY_ZFP
           int length = 0;
           unsigned char* offseted_buffer = hz_buffer;
+          double test1;
+          memcpy(&test1, offseted_buffer, sizeof(double));
+          printf("Value = %f\n", test1);
           length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype);
-          printf("Original : Compressed :: %d : %d NAN %d - %f\n", (int)hz_count * values_per_sample * bytes_per_datatype/8, (int)length/8, (int)(hz_count * values_per_sample * bytes_per_datatype/8) - (length/8), (double)(hz_count * values_per_sample * bytes_per_datatype)/length);
+          
+          double test;
+          memcpy(&test, offseted_buffer, sizeof(double));
+          //printf("Value = %f\n", test);
+          printf("Original : Compressed :: %d : %d NAN %d - %f [%f]\n", (int)hz_count * values_per_sample * bytes_per_datatype/8, (int)length/8, (int)(hz_count * values_per_sample * bytes_per_datatype/8) - (length/8), (double)(hz_count * values_per_sample * bytes_per_datatype)/length, test);
           memcpy( agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, offseted_buffer, length);
 #else
           if (rank == 0)
@@ -645,6 +704,7 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
     no_of_aggregators = no_of_aggregators + agg_id->idx_ptr->variable[var]->values_per_sample * agg_id->idx_derived_ptr->existing_file_count;
 #endif
   agg_id->aggregator_interval = nprocs/ (no_of_aggregators * agg_id->idx_derived_ptr->aggregation_factor);
+  
   assert(agg_id->aggregator_interval != 0);
 #if RANK_ORDER
   agg_id->idx_derived_ptr->agg_buffer->rank_holder = malloc((agg_id->end_var_index - agg_id->start_var_index + 1) * sizeof (int**));
@@ -764,7 +824,7 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
           agg_id->idx_derived_ptr->agg_buffer->var_number = i;
           agg_id->idx_derived_ptr->agg_buffer->sample_number = j;
           
-          agg_id->idx_derived_ptr->agg_buffer->buffer_size = agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_id->idx_derived_ptr->agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+          agg_id->idx_derived_ptr->agg_buffer->buffer_size = ((agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_id->idx_derived_ptr->agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)) / (64 / agg_id->idx_ptr->compression_bit_rate)) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
           
           agg_id->idx_derived_ptr->agg_buffer->buffer = malloc(agg_id->idx_derived_ptr->agg_buffer->buffer_size);
           if (agg_id->idx_derived_ptr->agg_buffer->buffer == NULL)
@@ -839,12 +899,12 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
 #endif
   
 #if PIDX_HAVE_MPI
-  agg_id->idx_derived_ptr->win_time_start = MPI_Wtime();
+  //agg_id->idx_derived_ptr->win_time_start = MPI_Wtime();
   if (agg_id->idx_derived_ptr->agg_buffer->buffer_size != 0)
-    MPI_Win_create(agg_id->idx_derived_ptr->agg_buffer->buffer, agg_id->idx_derived_ptr->agg_buffer->buffer_size, (agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4], MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
+    MPI_Win_create(agg_id->idx_derived_ptr->agg_buffer->buffer, agg_id->idx_derived_ptr->agg_buffer->buffer_size, ((agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4]) / (64/agg_id->idx_ptr->compression_bit_rate), MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
   else
     MPI_Win_create(0, 0, 1, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));    
-  agg_id->idx_derived_ptr->win_time_end = MPI_Wtime();      
+  //agg_id->idx_derived_ptr->win_time_end = MPI_Wtime();      
 #ifdef PIDX_ACTIVE_TARGET
   MPI_Win_fence(0, agg_id->win);
 #else
@@ -996,14 +1056,14 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
                 fflush(agg_dump_fp);
               }
 #endif
-              agg_id->idx_derived_ptr->agg_level_start[p][var][i] = MPI_Wtime();
+              //agg_id->idx_derived_ptr->agg_level_start[p][var][i] = MPI_Wtime();
               ret = aggregate_write_read(agg_id, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, PIDX_WRITE);
               if (ret == -1)
               {
                 fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
                 return (-1);
               }
-              agg_id->idx_derived_ptr->agg_level_end[p][var][i] = MPI_Wtime();
+              //agg_id->idx_derived_ptr->agg_level_end[p][var][i] = MPI_Wtime();
             }
           }
         }
@@ -1017,9 +1077,9 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
 #else
   //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
 #endif
-  agg_id->idx_derived_ptr->win_free_time_start = MPI_Wtime();
+  //agg_id->idx_derived_ptr->win_free_time_start = MPI_Wtime();
   MPI_Win_free(&(agg_id->win));
-  agg_id->idx_derived_ptr->win_free_time_end = MPI_Wtime();
+  //agg_id->idx_derived_ptr->win_free_time_end = MPI_Wtime();
 #endif
   
 #ifdef PIDX_DUMP_AGG
@@ -1073,12 +1133,12 @@ int PIDX_agg_read(PIDX_agg_id agg_id)
 #endif
   
 #if PIDX_HAVE_MPI
-  agg_id->idx_derived_ptr->win_time_start = MPI_Wtime();
+  //agg_id->idx_derived_ptr->win_time_start = MPI_Wtime();
   if (agg_id->idx_derived_ptr->agg_buffer->buffer_size != 0)
     MPI_Win_create(agg_id->idx_derived_ptr->agg_buffer->buffer, agg_id->idx_derived_ptr->agg_buffer->buffer_size, agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
   else
     MPI_Win_create(0, 0, 1, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));    
-  agg_id->idx_derived_ptr->win_time_end = MPI_Wtime();      
+  //agg_id->idx_derived_ptr->win_time_end = MPI_Wtime();      
 #ifdef PIDX_ACTIVE_TARGET
   MPI_Win_fence(0, agg_id->win);
 #else
@@ -1140,9 +1200,9 @@ int PIDX_agg_read(PIDX_agg_id agg_id)
 #else
   //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
 #endif
-  agg_id->idx_derived_ptr->win_free_time_start = MPI_Wtime();
+  //agg_id->idx_derived_ptr->win_free_time_start = MPI_Wtime();
   MPI_Win_free(&(agg_id->win));
-  agg_id->idx_derived_ptr->win_free_time_end = MPI_Wtime();
+  //agg_id->idx_derived_ptr->win_free_time_end = MPI_Wtime();
 #endif
   
 #ifdef PIDX_DUMP_AGG

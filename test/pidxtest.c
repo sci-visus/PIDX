@@ -215,8 +215,8 @@ int parse_args(struct Args *args, int argc, char **argv)
       fscanf(config_file, "(compression block size)\n");
       fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);
 
-      fscanf(config_file, "(compression type)\n");
-      fscanf(config_file, "%d\n", &args->compression_type);
+      fscanf(config_file, "(compression type:bits)\n");
+      fscanf(config_file, "%d %d\n", &args->compression_type, &args->compression_bit_rate);
 
       fscanf(config_file, "(blocks per file)\n");
       fscanf(config_file, "%d\n", &args->blocks_per_file);

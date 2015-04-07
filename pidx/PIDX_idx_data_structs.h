@@ -92,6 +92,7 @@ struct idx_file_struct
   
   int enable_compression;                                               ///< counter to enable/disable (1/0) compression
   int compression_type;                                                 ///< lossy or lossless. 1 for lossy 0 for lossless
+  int compression_bit_rate;
   int64_t compression_block_size[PIDX_MAX_DIMENSIONS];                  ///< size of the block at which compression is applied eg. (4x4x4)                                                      
                                                                         ///< the current compression schemes only work in three dimensions
   int64_t compressed_global_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents

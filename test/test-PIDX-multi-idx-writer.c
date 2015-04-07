@@ -83,6 +83,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_brst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_compression, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -187,6 +188,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     /// PIDX compression related calls
     PIDX_set_compression_type(file, args.compression_type);
     PIDX_set_compression_block_size(file, compression_block_size_point);
+    PIDX_set_lossy_compression_bit_rate(file, args.compression_bit_rate);
     
     /// PIDX debuging different phases
     PIDX_debug_rst(file, args.debug_rst);

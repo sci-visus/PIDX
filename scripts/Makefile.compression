@@ -123,11 +123,11 @@ libPIDX.a: $(PIDX_NEW_OBJS) ../pidx/PIDX_io.c ../pidx/PIDX_io.h ../pidx/PIDX_agg
 	ar rcs $@ $(PIDX_NEW_OBJS) PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_compression.o PIDX_block_restructure.o PIDX_agg.o PIDX.o
 
 pidxtest:  ../test/pidxtest.c ../test/testdefs.h ../test/pidxtest.h ../test/test-PIDX-multi-idx-writer.c ../test/test-PIDX-reader.c ../test/test-serial-reader.c ../test/test-serial-writer.c PIDX_data_layout.o  PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a
-	$(MPICXX) $(MPI_CFLAGS) $< ../test/test-PIDX-multi-idx-writer.c ../test/test-PIDX-reader.c ../test/test-serial-writer.c ../test/test-serial-reader.c -o $@ $(MPI_LDFLAGS_PIDX)
+	$(MPICXX) $(MPI_CFLAGS) $< ../test/test-PIDX-multi-idx-writer.c ../test/test-PIDX-reader.c ../test/test-HDF5-reader.c ../test/test-HDF5-writer.c ../test/test-serial-writer.c ../test/test-serial-reader.c -o $@ $(MPI_LDFLAGS_PIDX)
 # 	rm *.o
 
 idx-verify: ../profile/idx-verify.c
-	cc   ../profile/idx-verify.c   -o idx-verify -lm
+	g++   ../profile/idx-verify.c  -g  -o idx-verify -L. -lm -lzfp -lfpzip -I../zfp-0.2.1/inc -I../fpzip-1.1.0/inc
 
 idx-compare:  ../profile/idx-compare.c
 	cc   ../profile/idx-compare.c   -o idx-compare -lm

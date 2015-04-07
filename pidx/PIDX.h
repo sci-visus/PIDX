@@ -353,6 +353,14 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *
 
 
 ///
+PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compression_bit_rate);
+
+
+///
+PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compression_bit_rate);
+
+
+///
 double PIDX_get_time();
 
 #ifdef __cplusplus

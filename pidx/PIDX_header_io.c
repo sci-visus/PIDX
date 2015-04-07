@@ -162,7 +162,7 @@ int PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx_ptr->global_bounds[0] - 1), (long long)(header_io->idx_ptr->global_bounds[1] - 1), (long long)(header_io->idx_ptr->global_bounds[2] - 1), (long long)(header_io->idx_ptr->global_bounds[3] - 1), (long long)(header_io->idx_ptr->global_bounds[4] - 1));
     
     fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld %lld %lld\n", (long long)(header_io->idx_ptr->compression_block_size[0]), (long long)(header_io->idx_ptr->compression_block_size[1]), (long long)(header_io->idx_ptr->compression_block_size[2]), (long long)(header_io->idx_ptr->compression_block_size[3]), (long long)(header_io->idx_ptr->compression_block_size[4]));
-    
+    fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx_ptr->compression_bit_rate); 
     fprintf(idx_file_p, "(fields)\n");  
     
     for (l = 0; l < header_io->end_var_index; l++) 

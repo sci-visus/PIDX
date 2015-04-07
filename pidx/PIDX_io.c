@@ -422,7 +422,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
   int fh;
 #endif
   
-  if (io_id->idx_ptr->enable_compression == 1)
+  if (io_id->idx_ptr->enable_compression == 1 && io_id->idx_ptr->compression_type == 0)
   {
     uint32_t *header;
     if (io_id->idx_derived_ptr->agg_buffer->file_number == -1)
@@ -640,7 +640,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
   {
     if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
     {
-      bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+      bytes_per_datatype =  ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) / (64/io_id->idx_ptr->compression_bit_rate);
       
 #ifdef PIDX_RECORD_TIME
       t1 = MPI_Wtime();
@@ -670,7 +670,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       
       if (enable_caching == 1)
         memcpy (headers, cached_header_copy, total_header_size);
-      
+            
 #ifdef PIDX_RECORD_TIME
       t3 = MPI_Wtime();
 #endif
@@ -724,6 +724,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
         io_id->idx_derived_ptr->agg_buffer->buffer = temp_buffer;
         memmove(io_id->idx_derived_ptr->agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) );
         memcpy(io_id->idx_derived_ptr->agg_buffer->buffer, headers, total_header_size);
+        
         memset(io_id->idx_derived_ptr->agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
       }
       free(headers);
