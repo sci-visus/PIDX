@@ -44,6 +44,8 @@ int PIDX_block_rst_set_communicator(PIDX_block_rst_id id, MPI_Comm comm);
 /// The restructured storage, in 3 x 2 blocks, is 1 2 3 7 8 9 4 5 6 10 11 12
 int PIDX_block_rst_prepare(PIDX_block_rst_id id);
 
+int PIDX_block_rst_unprepare(PIDX_block_rst_id block_rst_id);
+
 int PIDX_block_rst_compress(PIDX_block_rst_id id);
 
 int PIDX_block_rst_buf_destroy(PIDX_block_rst_id id);

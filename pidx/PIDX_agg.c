@@ -51,6 +51,8 @@ struct PIDX_agg_struct
   int aggregator_interval;
 };
 
+static int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length);
+
 enum IO_MODE { PIDX_READ, PIDX_WRITE};
 
 PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index)
@@ -219,7 +221,6 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
         printf("realloc error\n!!!");
       else
         zip = temp_buffer;
-      //printf("copy location %d\n", (int)total_size);
       memcpy(buffer + total_size, zip, outsize);
       
       total_size = total_size + outsize;
@@ -230,6 +231,68 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
   
   return -1;
 }
+
+static int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
+{
+  int i = 0, j = 0;
+  int prec = 0;
+  int nf = 1;
+  int type = FPZIP_TYPE_DOUBLE;
+  
+  int64_t total_compression_block_size = agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+  
+  //TODO
+  //LOSSLESS Compression
+  if (agg_id->idx_ptr->compression_type == 1)
+  {
+    size_t typesize, outsize;
+    typesize = sizeof(double);
+    zfp_params params;
+    params.type = ZFP_TYPE_DOUBLE;
+    params.nx = agg_id->idx_ptr->compression_block_size[0];
+    params.ny = agg_id->idx_ptr->compression_block_size[1];
+    params.nz = agg_id->idx_ptr->compression_block_size[2];
+    int total_size = 0;
+    zfp_set_rate(&params, agg_id->idx_ptr->compression_bit_rate);
+    for ( i = 0; i < length; i = i + total_compression_block_size * typesize)
+    {
+      outsize = zfp_estimate_compressed_size(&params);
+      
+      unsigned char* zip = malloc(outsize);
+      unsigned char* dzip = malloc(outsize);
+      
+      double x, y;
+      memcpy(&x, buffer + i, sizeof(double));
+      
+      outsize = zfp_compress(&params, buffer + i , zip, outsize);
+      if (outsize == 0) 
+      {
+        fprintf(stderr, "compression failed\n");
+        return -1;
+      }
+      
+      zfp_decompress(&params, dzip , zip, outsize);
+      memcpy(&y, dzip, sizeof(double));
+      printf("before after %f %f\n", x, y);
+     
+      
+      unsigned char* temp_buffer = realloc(zip, outsize);
+      if (temp_buffer == NULL)
+        printf("realloc error\n!!!");
+      else
+        zip = temp_buffer;
+      memcpy(buffer + total_size, zip, outsize);
+      
+      total_size = total_size + outsize;
+      free(zip);
+    }
+    return total_size;
+  }
+  
+  return -1;
+}
+
+
 #endif
 
 int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
@@ -677,6 +740,33 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
   return PIDX_success;
 }
 
+
+int decompess_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
+{
+  int ret;
+  int rank = 0, itr, nrank = 0;
+  int bytes_per_datatype;
+  int values_per_sample;
+  
+  int64_t total_compression_block_size = agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+  
+  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
+  values_per_sample = agg_id->idx_ptr->variable[variable_index]->values_per_sample; //number of samples for variable j
+  bytes_per_datatype = ((agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size) / (64 / agg_id->idx_ptr->compression_bit_rate);
+
+#ifdef PIDX_HAVE_LOSSY_ZFP
+  if (agg_id->idx_ptr->enable_compression == 1)
+  {
+    decompress_buffer(agg_id, hz_buffer, hz_count * values_per_sample * bytes_per_datatype);    
+  }
+#else
+  printf("Compression build required !");
+#endif
+  
+  return PIDX_success;
+}
+
+
 int PIDX_agg_buf_create(PIDX_agg_id agg_id) 
 {
   int i, j, k, l, var;
@@ -1081,6 +1171,34 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
   MPI_Win_free(&(agg_id->win));
   //agg_id->idx_derived_ptr->win_free_time_end = MPI_Wtime();
 #endif
+  
+  
+  
+  for (p = 0; p < agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count; p++)
+  {
+    hz_index = 0, index = 0, count = 0, send_index = 0;
+    
+    for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+    {
+      for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - agg_id->idx_derived_ptr->resolution_to; i++)
+      {
+        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+        {
+          index = 0;
+          count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
+          
+          ret = decompess_read(agg_id, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, PIDX_WRITE);
+          if (ret == -1)
+          {
+            fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+            return (-1);
+          }
+        }
+      }
+    }
+  }
+  
+  
   
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
