@@ -66,7 +66,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   int i = 0, j = 0, k = 0;
   int ts, var, spv;
   int slice;
-  int sub_div[3], local_offset[3];
+  unsigned int sub_div[3], local_offset[3];
 
   /// IDX file descriptor
   PIDX_file file;
@@ -129,12 +129,12 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   local_offset[1] = (slice / sub_div[0]) * args.count_local[1];
   local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
   
-  unsigned int rank_x, rank_y, rank_z = 0, rank_slice;
+  unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice;
   if (args.is_rank_z_ordering == 1)
   {
     //printf("Rank Z ordering\n");
     mortonDecode_for((uint64_t)rank, rank_x, rank_y, rank_z);
-    printf("[%d] : %d %d %d\n", rank, rank_x, rank_y, rank_z);
+    //printf("[%d] : %d %d %d\n", rank, rank_x, rank_y, rank_z);
     assert(rank_x <= sub_div[0]);
     assert(rank_y <= sub_div[1]);
     assert(rank_z <= sub_div[2]);

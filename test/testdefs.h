@@ -22,9 +22,6 @@
 // int test_writer(struct Args args, int rank, int nprocs);
 // int usage_writer();
 
-//int test_reader(struct Args args, int rank, int nprocs);
-//int usage_reader();
-
 // int test_one_var_writer(struct Args args, int rank, int nprocs);
 // int usage_one_var_writer();
 
@@ -46,6 +43,10 @@ int test_hdf5_reader(struct Args args, int rank, int nprocs);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int test_reader(struct Args args, int rank, int nprocs);
+int usage_reader();
+
 int test_multi_idx_writer(struct Args args, int rank, int nprocs);
 int usage_multi_idx_writer();
 

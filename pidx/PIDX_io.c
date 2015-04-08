@@ -431,7 +431,6 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
     int var_used_in_binary_file = 0;    
     var_used_in_binary_file = (io_id->idx_ptr->variable_count < 0) ? 64 : io_id->idx_ptr->variable_count;   
     total_header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t) * var_used_in_binary_file;
-          
     
     MPI_Comm_split(io_id->comm, io_id->idx_derived_ptr->agg_buffer->file_number, rank, &new_comm);
     
@@ -579,7 +578,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
           data_offset = data_offset + aggregator_process_offset[i];
         printf("init offset = %ld\n", data_offset);
         if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
-        {                   
+        {
           int header_size = (10 + (10 * io_id->idx_ptr->blocks_per_file)) * sizeof (uint32_t);
           header = (uint32_t*)malloc(header_size);
           memset(header, 0, header_size);

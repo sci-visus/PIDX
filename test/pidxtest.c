@@ -102,12 +102,13 @@ int main(int argc, char **argv)
   /// run the specified test
   switch (args.kind)
   {
-    /*
+    
     case PARALLEL_READER:
       if(rank == 0)
 	printf("Performing Parallel Read....\n");
       test_reader(args, rank, nprocs);
       break;
+    /*
     case SERIAL_READER:
       if(rank == 0)
 	printf("Performing Serial Read....\n");
@@ -269,7 +270,7 @@ char* kindToStr(enum Kind k)
 {
   switch (k)
   {
-    //case PARALLEL_READER:                return "parallel-reader";
+    case PARALLEL_READER:                return "parallel-reader";
     //case SERIAL_READER:                  return "serial-reader";
     case PARALLEL_WRITER:                return "parallel-writer";
     case HDF5_WRITER:                    return "hdf5-writer";
@@ -284,7 +285,7 @@ char* kindToStr(enum Kind k)
 /// strToKind
 enum Kind strToKind(const char *str)
 {
-  //if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
+  if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
   //if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
   if (strcmp(str,"parallel-writer")   == 0)             return PARALLEL_WRITER;
   if (strcmp(str,"hdf5-writer")   == 0)                 return HDF5_WRITER;
