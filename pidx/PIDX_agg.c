@@ -267,9 +267,9 @@ static int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
       output_offset += uncompressed_block_size;
       assert(output_offset <= output_buffer_size);
     }
-    memcpy(buffer, dstPtr, output_buffer_size); // DUONG_TODO: is buffer big enough?
+    memcpy(buffer, dstPtr, output_buffer_size);
     free(dstPtr);
-    return output_buffer_size; // DUONG_TODO: what to return?
+    return 0;
   }
   return -1;
 }

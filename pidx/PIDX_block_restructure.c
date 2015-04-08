@@ -114,11 +114,11 @@ int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
   return 0;
 }
 
-//TODO
+//DUONG_TODO: code duplication with PIDX_block_rst_write (differ only at the memcpy line)
 int PIDX_block_rst_read(PIDX_block_rst_id block_rst_id)
 {
   int rank;
-  MPI_Comm_rank(block_rst_id->comm, &rank);
+  MPI_Comm_rank(block_rst_id->comm, &rank); // Do we need this here?
 
   // compute the intra compression block strides
   int64_t *compression_block_size = block_rst_id->idx_ptr->compression_block_size;
@@ -133,7 +133,6 @@ int PIDX_block_rst_read(PIDX_block_rst_id block_rst_id)
 
   // loop through all variables
   int v = 0;
-
   for (v = block_rst_id->start_variable_index; v <= block_rst_id->end_variable_index; ++v)
   {
     PIDX_variable var = block_rst_id->idx_ptr->variable[v];
@@ -162,9 +161,6 @@ int PIDX_block_rst_read(PIDX_block_rst_id block_rst_id)
       {
           num_elems_group *= group_size[d];
       }
-
-      // malloc the storage for all elements in the output array
-      out_box->box[0]->Ndim_box_buffer = malloc(bytes_per_value * num_elems_group);
 
       int64_t *group_offset = box_group->enclosing_box_offset;
       // loop through all boxes
@@ -225,8 +221,7 @@ int PIDX_block_rst_read(PIDX_block_rst_id block_rst_id)
 
           // copy the elements (compression_block_size[0] elements at a time)
           int64_t num_elems_copy = min(box_size[0] - box_index[0], compression_block_size[0]);
-
-          memcpy(&out_box->box[0]->Ndim_box_buffer[j * bytes_per_value], &box->Ndim_box_buffer[i * bytes_per_value], bytes_per_value * num_elems_copy);
+          memcpy(&box->Ndim_box_buffer[i * bytes_per_value], &out_box->box[0]->Ndim_box_buffer[j * bytes_per_value], bytes_per_value * num_elems_copy);
 
           // update the index inside the box
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
