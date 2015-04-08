@@ -2158,6 +2158,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
         }
       }
     }
+    PIDX_block_rst_prepare(file->block_rst_id);
     
     file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
     PIDX_agg_buf_create(file->agg_id);  
@@ -2197,6 +2198,8 @@ PIDX_return_code PIDX_read(PIDX_file file)
     hz_end[vp] = PIDX_get_time();
     ///------------------------------------HZ end time------------------------------------------------------///
     
+    //TODO
+    PIDX_block_rst_read(file->block_rst_id);
     
     ///---------------------------------------Agg start time--------------------------------------------------///
     rst_start[vp] = PIDX_get_time();  
