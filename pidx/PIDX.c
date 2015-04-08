@@ -1823,17 +1823,18 @@ PIDX_return_code PIDX_read(PIDX_file file)
   if (file->local_variable_index == file->idx_ptr->variable_count)
     return PIDX_success;
     
+#if 1
   int j = 0, p, var = 0;
   int rank = 0, nprocs = 1;
   int var_used_in_binary_file, total_header_size;
   //static int header_io = 0;
+  
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(file->comm, &rank);
   MPI_Comm_size(file->comm,  &nprocs);
 #endif
   
   populate_idx_dataset(file);
-  
   /// Initialization ONLY ONCE per IDX file
   if(file->one_time_initializations == 0)
   {
@@ -2129,6 +2130,35 @@ PIDX_return_code PIDX_read(PIDX_file file)
 
     PIDX_hz_encode_buf_create(file->hz_id);
     
+    //TODO
+    for (var = start_index; var <= end_index; var++)
+    {
+      //TODO
+      if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
+      {
+        file->idx_ptr->variable[var]->post_rst_block = malloc(sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+        memset(file->idx_ptr->variable[var]->post_rst_block, 0, sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
+        for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
+        {
+          file->idx_ptr->variable[var]->post_rst_block[p] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+          memset(file->idx_ptr->variable[var]->post_rst_block[p], 0, sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p])));
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box_count = 1;
+          file->idx_ptr->variable[var]->post_rst_block[p]->box_group_type = file->idx_ptr->variable[var]->patch_group_ptr[p]->box_group_type;
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box)) * file->idx_ptr->variable[var]->post_rst_block[p]->box_count);
+          
+          file->idx_ptr->variable[var]->post_rst_block[p]->box[0] = malloc(sizeof(*(file->idx_ptr->variable[var]->post_rst_block[p]->box[0])));
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS *       sizeof(int64_t));
+          //file->idx_ptr->variable[var]->post_rst_block[p]->box[0]->Ndim_box_buffer = file->idx_ptr->variable[var]->patch[p]->Ndim_box_buffer;
+          
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_offset, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          memcpy(file->idx_ptr->variable[var]->post_rst_block[p]->enclosing_box_size, file->idx_ptr->variable[var]->patch_group_ptr[p]->enclosing_box_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        }
+      }
+    }
+    
     file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
     PIDX_agg_buf_create(file->agg_id);  
     
@@ -2215,7 +2245,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
     
     vp++;
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -2646,8 +2676,10 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     {
       block_1[vp] =  PIDX_get_time();
       if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
+      {
         PIDX_block_rst_prepare(file->block_rst_id);
-      //PIDX_block_rst_compress(file->block_rst_id);
+        PIDX_block_rst_write(file->block_rst_id);
+      }
       block_2[vp] =  PIDX_get_time();
       
 #if PIDX_HAVE_MPI
