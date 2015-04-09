@@ -740,8 +740,9 @@ int decompess_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_ind
 
   bytes_per_datatype = ((agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size) / (64 / agg_id->idx_ptr->compression_bit_rate);
   
-  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
   values_per_sample = agg_id->idx_ptr->variable[variable_index]->values_per_sample; //number of samples for variable j
+  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
+  
   //DUONG_HARDCODE
   
 #ifdef PIDX_HAVE_LOSSY_ZFP
@@ -905,7 +906,8 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
 
           agg_id->idx_derived_ptr->agg_buffer->buffer_size = ((agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_id->idx_derived_ptr->agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)) / (64 / agg_id->idx_ptr->compression_bit_rate)) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
           
-          printf("[Aggregator] [%d] [%d %d %d] : %lld (%d %d %d %d %d)\n", rank, i, j, k, 
+          if (agg_id->idx_ptr->current_time_step == 0)
+            printf("[Aggregator] [%d] [%d %d %d] : %lld (%d %d %d %d %d)\n", rank, i, j, k, 
                  (long long) agg_id->idx_derived_ptr->agg_buffer->buffer_size, 
                  (int)agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_id->idx_derived_ptr->agg_buffer->file_number], 
                  (int)(agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), 
