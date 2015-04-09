@@ -81,6 +81,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
   
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
   PIDX_point compression_block_size_point;
+  PIDX_point restructured_box_size_point;
   
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
@@ -154,6 +155,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, (int64_t)local_offset[0], (int64_t)local_offset[1], (int64_t)local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, (int64_t)args.count_local[0], (int64_t)args.count_local[1], (int64_t)args.count_local[2], 1, 1);
+  PIDX_set_point_5D(restructured_box_size_point, (int64_t)args.restructured_box_size[0], (int64_t)args.restructured_box_size[1], (int64_t)args.restructured_box_size[2], 1, 1);
   
   PIDX_time_step_caching_ON();  
   for (ts = 0; ts < args.time_step; ts++) 
@@ -264,30 +266,14 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
     //printf("[%d] offset %d %d %d count %d %d %d %d %d\n", rank, local_offset[0], local_offset[1], local_offset[2], args.count_local[0], args.count_local[1], args.count_local[2], args.count_local[3], args.count_local[4]);
     /// IO with no Flush (high performance)
     
-#if long_data
-    for(var = 0; var < args.variable_count; var++)
-    {
-      values_per_sample[var] =  1;
-      long_data[var] = (uint64_t*)malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
-      
-      for (k = 0; k < args.count_local[2]; k++)
-        for (j = 0; j < args.count_local[1]; j++)
-          for (i = 0; i < args.count_local[0]; i++)
-          {
-            int64_t index = (int64_t) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
-            for (spv = 0; spv < values_per_sample[var]; spv++)
-              long_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-          }
-    }
-#else
     int fp = open("/usr/sci/cedmav/data/TALASS/Combustion/TJ_PProc/raw/tj.6.0125E-04.field.mpi", O_RDONLY);
     for(var = 0; var < args.variable_count; var++)
     {
       
       values_per_sample[var] =  1;
-      variable_offset = var * args.extents[0] * args.extents[1] * args.extents[2] * sizeof(double);
+      int64_t variable_offset = var * args.extents[0] * args.extents[1] * args.extents[2] * sizeof(double);
       double_data[var] = (double*)malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
-      read(fp, double_data[var], args.count_local[0] * args.count_local[1] * args.count_local[2] * sizeof(double), variable_offset + (rank * args.count_local[0] * args.count_local[1] * args.count_local[2] * sizeof(double)));
+      pread(fp, double_data[var], args.count_local[0] * args.count_local[1] * args.count_local[2] * sizeof(double), variable_offset + (rank * args.count_local[0] * args.count_local[1] * args.count_local[2] * sizeof(double)));
       
       /*
       const double pi = acos(-1.0);
@@ -304,7 +290,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
       */
     }
     close(fp);
-#endif
+
     
     for(var = 0; var < args.variable_count; var++)
     {

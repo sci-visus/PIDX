@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define PIDX_HAVE_LOSSY_ZFP
+#undef PIDX_HAVE_LOSSY_ZFP
 
 #ifdef PIDX_HAVE_LOSSY_ZFP
   #include "zfp.h"
