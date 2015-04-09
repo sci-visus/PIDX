@@ -95,6 +95,15 @@ int test_reader(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
   
+  MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_brst, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_compression, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.perform_io, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  
   //   Creating the filename 
   args.output_file_name = (char*) malloc(sizeof (char) * 512);
   sprintf(args.output_file_name, "%s%s", args.output_file_template, ".idx");
@@ -133,11 +142,12 @@ int test_reader(struct Args args, int rank, int nprocs)
   
   output_file = args.output_file_name;    
   
-  PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
+  PIDX_point global_bounding_box, local_offset_point, local_box_count_point, compression_block_size_point;
 
   PIDX_set_point_5D(global_bounding_box, args.extents[0], args.extents[1], args.extents[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, local_offset[0], local_offset[1], local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, args.count_local[0], args.count_local[1], args.count_local[2], 1, 1);
+  PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
   
   for (ts = 0; ts < args.time_step; ts++) 
   {
@@ -162,6 +172,18 @@ int test_reader(struct Args args, int rank, int nprocs)
     PIDX_get_block_size(file, &bits_per_block);
     PIDX_get_block_count(file, &blocks_per_file);
     PIDX_get_variable_count(file, &variable_count);
+    
+    /// PIDX compression related calls
+    PIDX_set_compression_type(file, args.compression_type);
+    PIDX_set_compression_block_size(file, compression_block_size_point);
+    PIDX_set_lossy_compression_bit_rate(file, args.compression_bit_rate);
+    
+    /// PIDX enabling/disabling different phases
+    PIDX_enable_block_restructuring(file, args.perform_brst);
+    PIDX_enable_hz(file, args.perform_hz);
+    PIDX_enable_compression(file, args.perform_compression);
+    PIDX_enable_agg(file, args.perform_agg);
+    PIDX_enable_io(file, args.perform_io);
     
     //if(rank == 0)
     //  printf("Block: %d %d and Variable Count = %d\n", bits_per_block, blocks_per_file, variable_count);
@@ -202,9 +224,9 @@ int test_reader(struct Args args, int rank, int nprocs)
             int64_t index = (int64_t) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
             for (spv = 0; spv < values_per_sample[var]; spv++)
             {
-              if (double_data[var][index * values_per_sample[var] + spv] != 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)))
+              if (double_data[var][index * values_per_sample[var] + spv] != 100)// + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)))
               {
-                
+                printf("values = %f %d\n", double_data[var][index * values_per_sample[var] + spv], 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)));
               }
               else
                 equal_count++;

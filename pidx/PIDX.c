@@ -2134,7 +2134,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
     for (var = start_index; var <= end_index; var++)
     {
       //TODO
-      if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
+      //if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
       {
         file->idx_ptr->variable[var]->post_rst_block = malloc(sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
         memset(file->idx_ptr->variable[var]->post_rst_block, 0, sizeof(*file->idx_ptr->variable[var]->post_rst_block) * file->idx_ptr->variable[var]->patch_group_count);
@@ -2194,7 +2194,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
     hz_start[vp] = PIDX_get_time();
     PIDX_hz_encode_read(file->hz_id);
     //HELPER_Hz_encode(file->hz_id);
-    PIDX_hz_encode_buf_destroy(file->hz_id);
+    //PIDX_hz_encode_buf_destroy(file->hz_id);
     hz_end[vp] = PIDX_get_time();
     ///------------------------------------HZ end time------------------------------------------------------///
     

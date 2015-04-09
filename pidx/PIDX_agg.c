@@ -211,10 +211,9 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
         return -1;
       }
 
-      zfp_decompress(&params, dzip , zip, outsize);
-      memcpy(&y, dzip, sizeof(double));
-      printf("before after %f %f\n", x, y);
-
+      //zfp_decompress(&params, dzip , zip, outsize);
+      //memcpy(&y, dzip, sizeof(double));
+      //printf("[%d] before after %f %f\n", total_size, x, y);
 
       unsigned char* temp_buffer = realloc(zip, outsize);
       if (temp_buffer == NULL)
@@ -250,15 +249,15 @@ static int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
     unsigned int input_offset = 0;
     unsigned int output_offset = 0;
     unsigned int input_buffer_size = (unsigned int) length;
-    unsigned int output_buffer_size = length / (bit_rate / 8) * type_size; // DUONG_HARDCODE
+    unsigned int output_buffer_size = (length / (bit_rate / 8.0)) * type_size; // DUONG_HARDCODE
     unsigned char* srcPtr = buffer;
     unsigned char* dstPtr = (unsigned char*) malloc(output_buffer_size);
-    unsigned int compressed_block_size = compression_block_num_elems * (bit_rate / 8);
+    unsigned int compressed_block_size = compression_block_num_elems * (bit_rate / 8.0);
     unsigned int uncompressed_block_size = compression_block_num_elems * type_size;
     while (input_offset < input_buffer_size) // decompress one compression block at a time
     {
       int success = zfp_decompress(&zfp, dstPtr + output_offset, srcPtr + input_offset, compressed_block_size);
-      if (success > 0) // failure
+      if (success == 0) // failure
       {
         free(dstPtr);
         return -1;
@@ -377,7 +376,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
         {
 #ifdef PIDX_HAVE_LOSSY_ZFP
           int length = 0;
-          length = compress_buffer(agg_id, hz_buffer, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype);
+          length = compress_buffer(agg_id, hz_buffer, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
 
           ret = MPI_Put(hz_buffer, length, MPI_BYTE, target_rank, target_disp, length, MPI_BYTE, agg_id->win);
           if(ret != MPI_SUCCESS)
@@ -461,8 +460,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
           {
 #ifdef PIDX_HAVE_LOSSY_ZFP
             int length = 0;
-            unsigned char* offseted_buffer = hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype;
-            length = compress_buffer(agg_id, offseted_buffer, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype);
+            unsigned char* offseted_buffer = hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate);
+            length = compress_buffer(agg_id, offseted_buffer, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
 
             ret = MPI_Put(offseted_buffer, length, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, length, MPI_BYTE, agg_id->win);
             if(ret != MPI_SUCCESS)
@@ -546,8 +545,8 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
         {
 #ifdef PIDX_HAVE_LOSSY_ZFP
           int length = 0;
-          unsigned char* offseted_buffer = hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype;
-          length = compress_buffer(agg_id, offseted_buffer, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))) * bytes_per_datatype);
+          unsigned char* offseted_buffer = hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate);
+          length = compress_buffer(agg_id, offseted_buffer, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
 
           ret = MPI_Put(offseted_buffer, length, MPI_BYTE, target_rank + agg_id->aggregator_interval, 0, length, MPI_BYTE, agg_id->win);
           if(ret != MPI_SUCCESS)
@@ -634,7 +633,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #ifdef PIDX_HAVE_LOSSY_ZFP
           int length = 0;
           unsigned char* offseted_buffer = hz_buffer;
-          length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype);
+          length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
 
           ret = MPI_Put(offseted_buffer, length, MPI_BYTE, target_rank, target_disp, length, MPI_BYTE, agg_id->win);
           if(ret != MPI_SUCCESS)
@@ -692,16 +691,24 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #ifdef PIDX_HAVE_LOSSY_ZFP
           int length = 0;
           unsigned char* offseted_buffer = hz_buffer;
+          /*
           double test1;
-          memcpy(&test1, offseted_buffer, sizeof(double));
-          printf("Value = %f\n", test1);
-          length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype);
+          double x, y, z;
+          memcpy(&x, offseted_buffer, sizeof(double));
+          memcpy(&y, offseted_buffer + sizeof(double), sizeof(double));
+          memcpy(&z, offseted_buffer + sizeof(double) + sizeof(double), sizeof(double));
+          printf("MMMMMMMMMMM: %f %f %f [%d]\n", x, y, z, hz_count * values_per_sample * bytes_per_datatype);
+          */
+          length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
 
-          double test;
-          memcpy(&test, offseted_buffer, sizeof(double));
-          //printf("Value = %f\n", test);
-          printf("Original : Compressed :: %d : %d NAN %d - %f [%f]\n", (int)hz_count * values_per_sample * bytes_per_datatype/8, (int)length/8, (int)(hz_count * values_per_sample * bytes_per_datatype/8) - (length/8), (double)(hz_count * values_per_sample * bytes_per_datatype)/length, test);
+          printf("Original : Compressed :: %d : %d NAN %d - %f\n", (int)hz_count * values_per_sample * bytes_per_datatype/8, (int)length/8, (int)(hz_count * values_per_sample * bytes_per_datatype/8) - (length/8), (double)(hz_count * values_per_sample * bytes_per_datatype)/length);
           memcpy( agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, offseted_buffer, length);
+          /*
+          memcpy(&x, agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, sizeof(double));
+          memcpy(&y, agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype + sizeof(double), sizeof(double));
+          memcpy(&z, agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype + sizeof(double) + sizeof(double), sizeof(double));
+          printf("UUUUUUUUUUU: %f %f %f\n", x, y, z);
+          */
 #else
           if (rank == 0)
             printf("Compression Library not available\n");
@@ -726,14 +733,15 @@ int decompess_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_ind
 {
   int bytes_per_datatype;
   int values_per_sample;
-
+  
   int64_t total_compression_block_size = agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
 
+  bytes_per_datatype = ((agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size) / (64 / agg_id->idx_ptr->compression_bit_rate);
+  
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
   values_per_sample = agg_id->idx_ptr->variable[variable_index]->values_per_sample; //number of samples for variable j
   //DUONG_HARDCODE
-  bytes_per_datatype = ((agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size) / (64 / agg_id->idx_ptr->compression_bit_rate);
-
+  
 #ifdef PIDX_HAVE_LOSSY_ZFP
   if (agg_id->idx_ptr->enable_compression == 1)
   {
@@ -1150,34 +1158,6 @@ int PIDX_agg_write(PIDX_agg_id agg_id)
   //agg_id->idx_derived_ptr->win_free_time_end = MPI_Wtime();
 #endif
 
-
-
-  for (p = 0; p < agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count; p++)
-  {
-    hz_index = 0, index = 0, count = 0, send_index = 0;
-
-    for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
-    {
-      for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - agg_id->idx_derived_ptr->resolution_to; i++)
-      {
-        if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
-        {
-          index = 0;
-          count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
-
-          ret = decompess_read(agg_id, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, PIDX_WRITE);
-          if (ret == -1)
-          {
-            fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
-            return (-1);
-          }
-        }
-      }
-    }
-  }
-
-
-
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_derived_ptr->dump_agg_info == 1 && agg_id->idx_ptr->current_time_step == 0)
   {
@@ -1284,7 +1264,6 @@ int PIDX_agg_read(PIDX_agg_id agg_id)
           //agg_id->idx_derived_ptr->agg_level_end[p][var][i] = MPI_Wtime();
 
         }
-
       }
     }
   }
@@ -1308,6 +1287,39 @@ int PIDX_agg_read(PIDX_agg_id agg_id)
   }
 #endif
 
+  if (agg_id->idx_ptr->enable_compression == 1)
+  {
+    //printf("XXXXXXXX %d: %d %d\n", agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count, agg_id->start_var_index, agg_id->end_var_index);
+    for (p = 0; p < agg_id->idx_ptr->variable[agg_id->start_var_index]->patch_group_count; p++)
+    {
+      for(var = agg_id->start_var_index; var <= agg_id->end_var_index; var++)
+      {
+        for (i = agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_from + agg_id->idx_derived_ptr->resolution_from; i < agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->HZ_level_to - agg_id->idx_derived_ptr->resolution_to; i++)
+        {
+          //printf("YYYYYY %d: %d\n", i, agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i]);
+          //if (agg_id->idx_ptr->variable[agg_id->start_var_index]->HZ_patch[p]->samples_per_level[i] != 0)
+          {
+            count =  agg_id->idx_ptr->variable[var]->HZ_patch[p]->end_hz_index[i] - agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i] + 1 - (agg_id->idx_ptr->variable[var]->HZ_patch[p]->missing_block_count_per_level[i] * agg_id->idx_derived_ptr->samples_per_block);
+
+            double test;
+            //memcpy(&test, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], sizeof(double));
+            //printf("[%d] Before decompression = %f\n", i, test);
+            
+            ret = decompess_read(agg_id, var, agg_id->idx_ptr->variable[var]->HZ_patch[p]->start_hz_index[i], count, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], 0, PIDX_WRITE);
+            if (ret == -1)
+            {
+              fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+              return (-1);
+            }
+            
+            memcpy(&test, agg_id->idx_ptr->variable[var]->HZ_patch[p]->buffer[i], sizeof(double));
+            printf("[%d] After decompression = %f\n", i, test);
+          }
+        }
+      }
+    }
+  }
+  
   return PIDX_success;
 }
 

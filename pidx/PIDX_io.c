@@ -743,6 +743,11 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
         return -1;
       }
       
+      double x, y, z;
+      memcpy(&x, io_id->idx_derived_ptr->agg_buffer->buffer, sizeof(double));
+      memcpy(&y, io_id->idx_derived_ptr->agg_buffer->buffer + sizeof(double), sizeof(double));
+      memcpy(&z, io_id->idx_derived_ptr->agg_buffer->buffer + sizeof(double) + sizeof(double), sizeof(double));
+      
       MPI_Get_count(&status, MPI_BYTE, &write_count);
       //printf("[A] Elemets to write %d\n", write_count);
       if (write_count != (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block  / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size))
@@ -786,7 +791,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #ifdef PIDX_RECORD_TIME
       t1 = MPI_Wtime();
 #endif
-      bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+      bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])  / (64/io_id->idx_ptr->compression_bit_rate);
       
       generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
       
@@ -917,7 +922,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
   
   if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
   {
-    bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+    bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])  / (64/io_id->idx_ptr->compression_bit_rate);
     
 #ifdef PIDX_RECORD_TIME
     t1 = MPI_Wtime();
@@ -952,6 +957,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
       fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
       return -1;
     }
+    
     
     MPI_Get_count(&status, MPI_BYTE, &write_count);
     //printf("[A] Elemets to write %d\n", write_count);

@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#undef PIDX_HAVE_LOSSY_ZFP
+#define PIDX_HAVE_LOSSY_ZFP
 
 #ifdef PIDX_HAVE_LOSSY_ZFP
   #include "zfp.h"
@@ -92,15 +92,16 @@ static int decompress(double* input_buffer, double* output_buffer, size_t buffer
   
   outsize = compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize;
   printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
-  memcpy(&test, input_buffer, sizeof(double));
-  printf("Value = %f\n", test);
+  //memcpy(&test, input_buffer, sizeof(double));
+  //printf("Value = %f\n", test);
   
+  unsigned char* zip = (unsigned char*)malloc(outsize);
   for (i = 0; i < buffer_size; i = i + (compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize)/(64/compression_bit_rate))
   {
-    unsigned char* zip = (unsigned char*)malloc(outsize);
-    zfp_decompress(&params, zip, input_buffer + (i/typesize), outsize/(64/compression_bit_rate));
-    memcpy(output_buffer + (i/typesize), zip, outsize);
+    zfp_decompress(&params, zip, (unsigned char*)input_buffer + (i), outsize/(64/compression_bit_rate));
+    memcpy((unsigned char*)output_buffer + (i*(64/compression_bit_rate)), zip, outsize);
   }
+  free(zip);
   
 #endif
   return 0;
@@ -473,7 +474,7 @@ int main(int argc, char **argv)
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
               //if(var == 2 || var == 1)
-              //printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, (long long)data_offset, (long)data_size);
+              printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, (long long)data_offset, (long)data_size);
 
 #if long_buffer
               long_long_buffer = malloc(data_size);
@@ -535,12 +536,15 @@ int main(int argc, char **argv)
 #if long_buffer
                         check_bit = check_bit && (long_long_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
 #else
-                        double lhs;
+                        int lhs;
                         if (compression == 0)
-                          lhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
+                          lhs = (int)double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                         else
+                        {
                           lhs = decompressed_double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
-                        double rhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]);
+                        }
+                        int rhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]);
+                        //printf("%d %d \n", (int) lhs, rhs);
                         check_bit = check_bit && (lhs == rhs);
 
                       }
@@ -559,6 +563,7 @@ int main(int argc, char **argv)
                   //      hz_index, ZYX[0], ZYX[1], ZYX[2],
                   //      (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #else
+#if 0
                   if (compression == 0)
                     printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
                         var,
@@ -571,7 +576,7 @@ int main(int argc, char **argv)
                         (long long)lost_element_count, bpf, (long long)hz_index/samples_per_block, (long long)hz_val,
                         (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2],
                         (double)decompressed_double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
-                    
+#endif              
 #endif
                 }
                 else

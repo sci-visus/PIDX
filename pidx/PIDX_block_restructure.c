@@ -79,8 +79,8 @@ int PIDX_block_rst_set_communicator(PIDX_block_rst_id block_rst_id, MPI_Comm com
 // TODO: detect wrong input
 int PIDX_block_rst_prepare(PIDX_block_rst_id block_rst_id)
 {
-  int rank;
-  MPI_Comm_rank(block_rst_id->comm, &rank);
+  //int rank;
+  //MPI_Comm_rank(block_rst_id->comm, &rank);
 
   // loop through all variables
   int v = 0;
@@ -223,6 +223,8 @@ int PIDX_block_rst_read(PIDX_block_rst_id block_rst_id)
           int64_t num_elems_copy = min(box_size[0] - box_index[0], compression_block_size[0]);
           memcpy(&box->Ndim_box_buffer[i * bytes_per_value], &out_box->box[0]->Ndim_box_buffer[j * bytes_per_value], bytes_per_value * num_elems_copy);
 
+          //double X = *((double*)&out_box->box[0]->Ndim_box_buffer[j * bytes_per_value]);
+          //printf("%f\n", X);
           // update the index inside the box
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
           {

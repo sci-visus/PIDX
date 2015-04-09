@@ -205,7 +205,7 @@ int parse_args(struct Args *args, int argc, char **argv)
   
   if (strcmp(strkind, "hdf5-writer") != 0 && strcmp(strkind, "hdf5-reader") != 0)
   {
-    if (strcmp(strkind, "parallel-writer") == 0 || strcmp(strkind, "serial-writer") == 0)
+    //if (strcmp(strkind, "parallel-writer") == 0 || strcmp(strkind, "serial-writer") == 0)
     {
       fscanf(config_file, "(debug rst:hz:agg)\n");
       fscanf(config_file, "%d %d %d\n", &args->debug_rst, &args->debug_hz, &args->dump_agg);
