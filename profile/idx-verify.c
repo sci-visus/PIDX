@@ -317,6 +317,8 @@ int main(int argc, char **argv)
   else
     compression = 1;
 
+  compression = 0;
+  
   if (global_bounds[0] % compression_block_size[0] == 0)
     compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];
   else

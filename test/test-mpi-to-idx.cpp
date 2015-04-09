@@ -86,6 +86,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.restructured_box_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_brst, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -190,6 +191,8 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
     PIDX_set_variable_count(file, args.variable_count);
     PIDX_set_resolution(file, args.hz_from, args.hz_to);
     
+    PIDX_set_restructuring_box(file, restructured_box_size_point);
+    
     /// PIDX compression related calls
     //PIDX_set_compression_type(file, args.compression_type);
     //PIDX_set_compression_block_size(file, compression_block_size_point);
@@ -277,16 +280,16 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
           }
     }
 #else
-    //int fp = open("/usr/sci/cedmav/data/TALASS/Combustion/TJ_PProc/raw/tj.6.0125E-04.field.mpi", O_RDONLY);
+    int fp = open("/usr/sci/cedmav/data/TALASS/Combustion/TJ_PProc/raw/tj.6.0125E-04.field.mpi", O_RDONLY);
     for(var = 0; var < args.variable_count; var++)
     {
-      /*
+      
       values_per_sample[var] =  1;
       variable_offset = var * args.extents[0] * args.extents[1] * args.extents[2] * sizeof(double);
       double_data[var] = (double*)malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       read(fp, double_data[var], args.count_local[0] * args.count_local[1] * args.count_local[2] * sizeof(double), variable_offset + (rank * args.count_local[0] * args.count_local[1] * args.count_local[2] * sizeof(double)));
-      */
       
+      /*
       const double pi = acos(-1.0);
       for (k = 0; k < args.count_local[2]; k++)
         for (j = 0; j < args.count_local[1]; j++)
@@ -298,9 +301,9 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
               double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
               //double_data[var][index * values_per_sample[var] + spv] = cos(2 * pi * i / args.count_local[0]) * cos(2 * pi * j / args.count_local[1]) * cos(2 * pi * k / args.count_local[2]);
           }
-      
+      */
     }
-    //close(fp);
+    close(fp);
 #endif
     
     for(var = 0; var < args.variable_count; var++)

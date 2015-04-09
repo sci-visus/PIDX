@@ -361,6 +361,10 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 
 
 ///
+PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point restructured_box_size_point);
+
+
+///
 double PIDX_get_time();
 
 #ifdef __cplusplus

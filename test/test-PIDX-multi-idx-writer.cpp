@@ -79,13 +79,15 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   double     **double_data;
   int* values_per_sample;
   
-  PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
+  PIDX_point restructured_box_size_point;
   PIDX_point compression_block_size_point;
-  
+  PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
+    
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.restructured_box_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_brst, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -151,11 +153,11 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     rank_x = (rank_slice % sub_div[0]);
   }
   
-  
   PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
   PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, (int64_t)local_offset[0], (int64_t)local_offset[1], (int64_t)local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, (int64_t)args.count_local[0], (int64_t)args.count_local[1], (int64_t)args.count_local[2], 1, 1);
+  PIDX_set_point_5D(restructured_box_size_point, (int64_t)args.restructured_box_size[0], (int64_t)args.restructured_box_size[1], (int64_t)args.restructured_box_size[2], 1, 1);
   
   PIDX_time_step_caching_ON();  
   for (ts = 0; ts < args.time_step; ts++) 
@@ -192,6 +194,9 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_set_block_count(file, args.blocks_per_file);
     PIDX_set_variable_count(file, args.variable_count);
     PIDX_set_resolution(file, args.hz_from, args.hz_to);
+    
+    /// PIDX set restructuring box size
+    PIDX_set_restructuring_box(file, restructured_box_size_point);
     
     /// PIDX compression related calls
     PIDX_set_compression_type(file, args.compression_type);
@@ -293,7 +298,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
             int64_t index = (int64_t) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
             for (spv = 0; spv < values_per_sample[var]; spv++)
               //double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.count_local[0] * args.count_local[1]*(k))+(args.count_local[0]*(j)) + (i));
-              double_data[var][index * values_per_sample[var] + spv] = 100;// + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
+              double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i));
               //double_data[var][index * values_per_sample[var] + spv] = cos(2 * pi * i / args.count_local[0]) * cos(2 * pi * j / args.count_local[1]) * cos(2 * pi * k / args.count_local[2]);
           }
     }

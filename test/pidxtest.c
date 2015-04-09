@@ -190,6 +190,9 @@ int parse_args(struct Args *args, int argc, char **argv)
 
   fscanf(config_file, "(local box)\n");
   fscanf(config_file, "%d %d %d\n", &args->count_local[0], &args->count_local[1], &args->count_local[2]);
+  
+  fscanf(config_file, "(restructured box size)\n");
+  fscanf(config_file, "%d %d %d\n", &args->restructured_box_size[0], &args->restructured_box_size[1], &args->restructured_box_size[2]);
 
   fscanf(config_file, "(file name)\n");
   fscanf(config_file, "%s\n", args->output_file_template);

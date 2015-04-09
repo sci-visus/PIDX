@@ -41,6 +41,9 @@ struct Args
 
   /// per-process dimensions of each sub-block
   int count_local[5];
+  
+  /// per-process dimensions of each sub-block
+  int restructured_box_size[5];
 
   /// Number of time-steps
   int time_step;

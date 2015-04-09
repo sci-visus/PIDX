@@ -204,7 +204,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     
   *file = malloc(sizeof (*(*file)) );
   memset(*file, 0, sizeof (*(*file)) );
-
+  
   (*file)->flags = flags;
   (*file)->idx_ptr = (idx_dataset)malloc(sizeof (*((*file)->idx_ptr)));
   memset((*file)->idx_ptr, 0, sizeof (*((*file)->idx_ptr)));
@@ -214,7 +214,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   
   for (i=0;i<PIDX_MAX_DIMENSIONS;i++) 
     (*file)->idx_ptr->global_bounds[i]=65535;
-
+  
   //initialize logic_to_physic transform to identity
   (*file)->idx_ptr->transform[0]  = 1.0;
   (*file)->idx_ptr->transform[5]  = 1.0;
@@ -223,7 +223,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   
   (*file)->idx_ptr->variable_count = -1;
   (*file)->idx_ptr->variable_index_tracker = 0;
-
+  
   (*file)->access = access_type;
   (*file)->idx_ptr->current_time_step = 0;
   (*file)->idx_derived_ptr->aggregation_factor = 1;
@@ -235,6 +235,12 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_count[2] = 1;
   (*file)->idx_count[3] = 1;
   (*file)->idx_count[4] = 1;
+  
+  (*file)->idx_ptr->restructured_box_size_point[0] = 0;
+  (*file)->idx_ptr->restructured_box_size_point[1] = 0;
+  (*file)->idx_ptr->restructured_box_size_point[2] = 0;
+  (*file)->idx_ptr->restructured_box_size_point[3] = 0;
+  (*file)->idx_ptr->restructured_box_size_point[4] = 0;
   
   (*file)->perform_hz = 1;
   (*file)->perform_agg = 1;
@@ -758,9 +764,23 @@ PIDX_return_code PIDX_get_access(PIDX_file file, PIDX_access *access)
     return PIDX_err_access;
 
   (*access) = file->access;
+  
   return PIDX_success;
 }
 
+
+PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point restructured_box_size_point)
+{
+  if(restructured_box_size_point[0] < 0 || restructured_box_size_point[1] < 0 || restructured_box_size_point[2] < 0 || restructured_box_size_point[3] < 0 || restructured_box_size_point[4] < 0)
+    return PIDX_err_box;
+  
+  if(file == NULL)
+    return PIDX_err_file;
+  
+  memcpy(file->idx_ptr->restructured_box_size_point, restructured_box_size_point, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  
+  return PIDX_success;
+}
 
 /////////////////////////////////////////////////
 PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
@@ -2534,7 +2554,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
 #if PIDX_HAVE_MPI
     file->idx_ptr->variable[start_index]->patch_group_count = 0;
     if (global_do_rst == 1)
-      file->idx_ptr->variable[start_index]->patch_group_count = PIDX_rst_attach_restructuring_box(file->rst_id, 0, NULL);
+    {
+      if (file->idx_ptr->restructured_box_size_point[0] == 0)
+        file->idx_ptr->variable[start_index]->patch_group_count = PIDX_rst_attach_restructuring_box(file->rst_id, 0, NULL);
+      else
+        file->idx_ptr->variable[start_index]->patch_group_count = PIDX_rst_attach_restructuring_box(file->rst_id, 1, file->idx_ptr->restructured_box_size_point);
+    }
     else
       file->idx_ptr->variable[start_index]->patch_group_count = file->idx_ptr->variable[start_index]->patch_count;
 #else

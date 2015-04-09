@@ -90,6 +90,8 @@ struct idx_file_struct
   char bitPattern[512];
   char filename_template[1024];                                         ///< Depends on the time step
   
+  int64_t restructured_box_size_point[PIDX_MAX_DIMENSIONS];
+  
   int enable_compression;                                               ///< counter to enable/disable (1/0) compression
   int compression_type;                                                 ///< lossy or lossless. 1 for lossy 0 for lossless
   int compression_bit_rate;
