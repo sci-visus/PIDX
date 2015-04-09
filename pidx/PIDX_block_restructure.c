@@ -374,6 +374,7 @@ int PIDX_block_rst_write(PIDX_block_rst_id block_rst_id)
       }
     }
   }
+  return 0;
 }
 
 int PIDX_block_rst_buf_destroy(PIDX_block_rst_id block_rst_id)

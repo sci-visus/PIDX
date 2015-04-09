@@ -51,7 +51,7 @@ struct PIDX_agg_struct
   int aggregator_interval;
 };
 
-static int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length);
+int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length);
 
 enum IO_MODE { PIDX_READ, PIDX_WRITE};
 
@@ -86,19 +86,21 @@ int PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
 }
 #endif
 
+/*
 static double now()
 {
   struct timeval tv;
   gettimeofday(&tv, 0);
   return tv.tv_sec + 1e-6 * tv.tv_usec;
 }
+*/
 
 #ifdef PIDX_HAVE_LOSSY_ZFP
 // compress 'inbytes' bytes from 'data' to stream 'FPZ'
 static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medium)
 {
   //fprintf(stderr, "compressing to %s\n", medium);
-  double t = now();
+  //double t = now();
 #ifndef WITHOUT_HEADER
   // write header (optional)
   if (!fpzip_write_header(fpz))
@@ -114,7 +116,7 @@ static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medi
     fprintf(stderr, "compression failed: %s\n", fpzip_errstr[fpzip_errno]);
     return 0;
   }
-  t = now() - t;
+  //t = now() - t;
   //fprintf(stderr, "in=%zu out=%zu ratio=%.2f seconds=%.3f MB/s=%.3f\n", inbytes, outbytes, (double)inbytes / outbytes, t, (double)inbytes / (1024 * 1024 * t));
   return (int)outbytes;
 }
@@ -231,7 +233,7 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
   return -1;
 }
 
-static int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
+int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
 {
   int64_t compression_block_num_elems = agg_id->idx_ptr->compression_block_size[0] *
                                         agg_id->idx_ptr->compression_block_size[1] *
@@ -279,7 +281,7 @@ static int decompress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
 int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, int MODE)
 {
   int ret;
-  int rank = 0, itr, nrank = 0;
+  int rank = 0, itr;// nrank = 0;
   int bytes_per_datatype;
   int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, values_per_sample;
   int target_rank = 0;
@@ -902,6 +904,14 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
           agg_id->idx_derived_ptr->agg_buffer->sample_number = j;
 
           agg_id->idx_derived_ptr->agg_buffer->buffer_size = ((agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_id->idx_derived_ptr->agg_buffer->file_number] * (agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor) * (agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)) / (64 / agg_id->idx_ptr->compression_bit_rate)) * agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
+          
+          printf("[Aggregator] [%d] [%d %d %d] : %lld (%d %d %d %d %d)\n", rank, i, j, k, 
+                 (long long) agg_id->idx_derived_ptr->agg_buffer->buffer_size, 
+                 (int)agg_id->idx_derived_ptr->existing_blocks_index_per_file[agg_id->idx_derived_ptr->agg_buffer->file_number], 
+                 (int)(agg_id->idx_derived_ptr->samples_per_block / agg_id->idx_derived_ptr->aggregation_factor), 
+                 (int)(agg_id->idx_ptr->variable[agg_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8),
+                 (int)(64 / agg_id->idx_ptr->compression_bit_rate), (int)(agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4])
+                );
 
           agg_id->idx_derived_ptr->agg_buffer->buffer = malloc(agg_id->idx_derived_ptr->agg_buffer->buffer_size);
           if (agg_id->idx_derived_ptr->agg_buffer->buffer == NULL)
