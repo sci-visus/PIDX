@@ -22,10 +22,11 @@
 extern "C" {
 #endif
 
-static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z);
+//static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z);
 static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z);
-static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
+//static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
 
+#if 0
 static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z)
 {
   uint64_t answer = 0;
@@ -46,6 +47,7 @@ static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& 
     y |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 1ull))) >> uint64_t(((2ull * i) + 1ull)-i));
   }
 }
+#endif
 
 static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z)
 {
@@ -104,7 +106,6 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.bits_per_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.aggregation_factor, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&args.topology_aware, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.hz_from, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.hz_to, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.is_rank_z_ordering, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -169,7 +170,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     double_data = (double**)malloc(sizeof(*double_data) * args.variable_count);
     memset(double_data, 0, sizeof(*double_data) * args.variable_count);
 #endif
-    
+    printf("FFFFFFFFFFFFFFFF %d\n", args.is_global_indexing);
     /// Creating access type (parallel here)
     PIDX_access access;
     PIDX_create_access(&access);
@@ -178,7 +179,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_set_global_indexing_order(access, args.is_global_indexing);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
-    PIDX_enable_topology_aware_io(access, args.topology_aware);
+    //PIDX_enable_topology_aware_io(access, args.topology_aware);
 #else
     PIDX_set_default_access(access);
 #endif
@@ -290,7 +291,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
       values_per_sample[var] =  1;
       double_data[var] = (double*)malloc(sizeof (uint64_t) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * values_per_sample[var]);
       
-      const double pi = acos(-1.0);
+      //const double pi = acos(-1.0);
       for (k = 0; k < args.count_local[2]; k++)
         for (j = 0; j < args.count_local[1]; j++)
           for (i = 0; i < args.count_local[0]; i++)

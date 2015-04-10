@@ -43,7 +43,7 @@ struct PIDX_access_struct
   int sub_div[3];
   int rank_component[3];
   
-  int topology_aware_io;
+  //int topology_aware_io;
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
 #endif
@@ -74,7 +74,7 @@ PIDX_return_code PIDX_set_process_rank_decomposition(PIDX_access access, int ran
 
 
 ///
-PIDX_return_code PIDX_enable_topology_aware_io(PIDX_access access, int topology_io);
+//PIDX_return_code PIDX_enable_topology_aware_io(PIDX_access access, int topology_io);
 
 
 ///

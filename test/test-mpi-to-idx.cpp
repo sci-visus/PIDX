@@ -22,20 +22,10 @@
 extern "C" {
 #endif
 
-static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z);
 static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z);
-static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
+//static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
 
-static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z)
-{
-  uint64_t answer = 0;
-  for (uint64_t i = 0; i < (sizeof(uint64_t)* CHAR_BIT)/3; ++i) 
-  {
-    answer |= ((x & ((uint64_t)1 << i)) << 2*i) | ((y & ((uint64_t)1 << i)) << (2*i + 1)) | ((z & ((uint64_t)1 << i)) << (2*i + 2));
-  }
-  return answer;
-}
-
+#if 0
 static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y)
 {
   x = 0;
@@ -46,6 +36,7 @@ static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& 
     y |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 1ull))) >> uint64_t(((2ull * i) + 1ull)-i));
   }
 }
+#endif
 
 static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z)
 {
@@ -63,8 +54,8 @@ static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, 
 int test_mpi_to_writer(struct Args args, int rank, int nprocs)
 {
 #if PIDX_HAVE_MPI
-  int i = 0, j = 0, k = 0;
-  int ts, var, spv;
+  //int i = 0, j = 0, k = 0;
+  int ts, var;//, spv;
   int slice;
   int sub_div[3], local_offset[3];
 
@@ -104,7 +95,6 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.bits_per_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.aggregation_factor, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&args.topology_aware, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.hz_from, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.hz_to, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.is_rank_z_ordering, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -176,7 +166,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
     PIDX_set_global_indexing_order(access, args.is_global_indexing);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
-    PIDX_enable_topology_aware_io(access, args.topology_aware);
+    //PIDX_enable_topology_aware_io(access, args.topology_aware);
 #else
     PIDX_set_default_access(access);
 #endif

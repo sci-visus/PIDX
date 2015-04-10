@@ -22,20 +22,10 @@
 extern "C" {
 #endif
 
-static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z);
 static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z);
-static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
+//static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y);
 
-static uint64_t mortonEncode_for(unsigned int x, unsigned int y, unsigned int z)
-{
-  uint64_t answer = 0;
-  for (uint64_t i = 0; i < (sizeof(uint64_t)* CHAR_BIT)/3; ++i) 
-  {
-    answer |= ((x & ((uint64_t)1 << i)) << 2*i) | ((y & ((uint64_t)1 << i)) << (2*i + 1)) | ((z & ((uint64_t)1 << i)) << (2*i + 2));
-  }
-  return answer;
-}
-
+#if 0
 static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& y)
 {
   x = 0;
@@ -46,6 +36,7 @@ static void mortonDecode_for_2D(uint64_t morton, unsigned int& x, unsigned int& 
     y |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 1ull))) >> uint64_t(((2ull * i) + 1ull)-i));
   }
 }
+#endif
 
 static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, unsigned int& z)
 {
@@ -159,7 +150,7 @@ int test_reader(struct Args args, int rank, int nprocs)
     PIDX_set_global_indexing_order(access, 1);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
-    PIDX_enable_topology_aware_io(access, 0);
+    //PIDX_enable_topology_aware_io(access, 0);
     
 #else
     PIDX_set_default_access(access);
@@ -226,7 +217,7 @@ int test_reader(struct Args args, int rank, int nprocs)
             {
               if (double_data[var][index * values_per_sample[var] + spv] != 100)// + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)))
               {
-                printf("values = %f %d\n", double_data[var][index * values_per_sample[var] + spv], 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)));
+                printf("values = %f %lld\n", double_data[var][index * values_per_sample[var] + spv], (long long)100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)));
               }
               else
                 equal_count++;

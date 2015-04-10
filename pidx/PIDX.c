@@ -277,97 +277,96 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   {
     memcpy ((*file)->idx_count, access_type->idx_count, sizeof(int) * /*PIDX_MAX_DIMENSIONS*/3);
     
-    if (access_type->topology_aware_io == 0)
+    if ((*file)->idx_count[0] != 1 || (*file)->idx_count[1] != 1 || (*file)->idx_count[2] != 1 )
     {
-      if ((*file)->idx_count[0] != 1 || (*file)->idx_count[1] != 1 || (*file)->idx_count[2] != 1 )
+      uint64_t i = 0, j = 0, k = 0;
+      /*
+      rank_z = rank / (access_type->sub_div[0] * access_type->sub_div[1]);
+      rank_slice = rank % (access_type->sub_div[0] * access_type->sub_div[1]);
+      rank_y = (rank_slice / access_type->sub_div[0]);
+      rank_x = (rank_slice % access_type->sub_div[0]);
+      
+      rank_x = 0;
+      rank_y = 0;
+      rank_z = 0;
+      
+      for (uint64_t i = 0; i < (sizeof(uint64_t) * CHAR_BIT)/3; ++i) 
       {
-        uint64_t i = 0, j = 0, k = 0;
-        /*
-        rank_z = rank / (access_type->sub_div[0] * access_type->sub_div[1]);
-        rank_slice = rank % (access_type->sub_div[0] * access_type->sub_div[1]);
-        rank_y = (rank_slice / access_type->sub_div[0]);
-        rank_x = (rank_slice % access_type->sub_div[0]);
-        
-        rank_x = 0;
-        rank_y = 0;
-        rank_z = 0;
-        
-        for (uint64_t i = 0; i < (sizeof(uint64_t) * CHAR_BIT)/3; ++i) 
-        {
-          rank_x |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 0ull))) >> uint64_t(((3ull * i) + 0ull)-i));
-          rank_y |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 1ull))) >> uint64_t(((3ull * i) + 1ull)-i));
-          rank_z |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 2ull))) >> uint64_t(((3ull * i) + 2ull)-i));
-        }
-        
-        morton = rank;
-        for (i = 0; i < (sizeof(uint64_t) * CHAR_BIT)/2; ++i)
-        {
-          rank_x |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 0ull))) >> uint64_t(((2ull * i) + 0ull)-i));
-          //rank_y |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 1ull))) >> uint64_t(((2ull * i) + 1ull)-i));
-          //rank_z |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 2ull))) >> uint64_t(((3ull * i) + 2ull)-i));
-        }
-        */
-        colors = malloc(sizeof(*colors) * (*file)->idx_count[0] * (*file)->idx_count[1] * (*file)->idx_count[2]);
-        memset(colors, 0, sizeof(*colors) * (*file)->idx_count[0] * (*file)->idx_count[1] * (*file)->idx_count[2]);
-        
-        for (k = 0; k < (*file)->idx_count[2]; k++)
-          for (j = 0; j < (*file)->idx_count[1]; j++)
-            for (i = 0; i < (*file)->idx_count[0]; i++)
-              colors[((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i] = ((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i;
-              
-        int index_x = 0, index_y = 0, index_z = 0;
-        for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_count[0]))
-        {
-          if (access_type->rank_component[0] >= i && access_type->rank_component[0] < i + (access_type->sub_div[0] / (*file)->idx_count[0]))
-          {
-            index_x = i;
-            break;
-          }
-        }
-        for (i = 0; i < access_type->sub_div[1]; i = i + (access_type->sub_div[1] / (*file)->idx_count[1]))
-        {
-          if (access_type->rank_component[1] >= i && access_type->rank_component[1] < i + (access_type->sub_div[1] / (*file)->idx_count[1]))
-          {
-            index_y = i;
-            break;
-          }
-        }
-        for (i = 0; i < access_type->sub_div[2]; i = i + (access_type->sub_div[2] / (*file)->idx_count[2]))
-        {
-          if (access_type->rank_component[2] >= i && access_type->rank_component[2] < i + (access_type->sub_div[2] / (*file)->idx_count[2]))
-          {
-            index_z = i;
-            break;
-          }
-        }
-        
-        //((*file)->idx_count[0] * (*file)->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_count[2]))) + ((*file)->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_count[0]));
-        (*file)->idx_derived_ptr->color = colors[((*file)->idx_count[0] * (*file)->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_count[2]))) + ((*file)->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_count[0]))];
-        
-        free(colors);
-        
-        //printf("%d = %d %d %d :: %d\n", rank, rank_x, rank_y, rank_z, (*file)->idx_derived_ptr->color);
-        MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
-        MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
-        
+        rank_x |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 0ull))) >> uint64_t(((3ull * i) + 0ull)-i));
+        rank_y |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 1ull))) >> uint64_t(((3ull * i) + 1ull)-i));
+        rank_z |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 2ull))) >> uint64_t(((3ull * i) + 2ull)-i));
       }
-      else
-        MPI_Comm_dup( access_type->comm , &((*file)->comm));
-    }
-    else
-    {
-#if defined(BGL) || defined(BGP) || defined(BGQ)
-      int iotask = 1;
-      (*file)->idx_derived_ptr->color = identity(access_type->comm, access_type->comm, &iotask);
-      //(*file)->idx_derived_ptr->color = (*file)->idx_derived_ptr->color/2;
-#else
-       srand(time(NULL) * rank);
-       (*file)->idx_derived_ptr->color = /*rank % 2;*/ rand() % 8;
-       printf("Rank %d has color %d\n", rank, (*file)->idx_derived_ptr->color);
-#endif
+      
+      morton = rank;
+      for (i = 0; i < (sizeof(uint64_t) * CHAR_BIT)/2; ++i)
+      {
+        rank_x |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 0ull))) >> uint64_t(((2ull * i) + 0ull)-i));
+        //rank_y |= ((morton & (uint64_t( 1ull ) << uint64_t((2ull * i) + 1ull))) >> uint64_t(((2ull * i) + 1ull)-i));
+        //rank_z |= ((morton & (uint64_t( 1ull ) << uint64_t((3ull * i) + 2ull))) >> uint64_t(((3ull * i) + 2ull)-i));
+      }
+      */
+      colors = malloc(sizeof(*colors) * (*file)->idx_count[0] * (*file)->idx_count[1] * (*file)->idx_count[2]);
+      memset(colors, 0, sizeof(*colors) * (*file)->idx_count[0] * (*file)->idx_count[1] * (*file)->idx_count[2]);
+      
+      for (k = 0; k < (*file)->idx_count[2]; k++)
+        for (j = 0; j < (*file)->idx_count[1]; j++)
+          for (i = 0; i < (*file)->idx_count[0]; i++)
+            colors[((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i] = ((*file)->idx_count[0] * (*file)->idx_count[1] * k) + ((*file)->idx_count[0] * j) + i;
+            
+      int index_x = 0, index_y = 0, index_z = 0;
+      for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_count[0]))
+      {
+        if (access_type->rank_component[0] >= i && access_type->rank_component[0] < i + (access_type->sub_div[0] / (*file)->idx_count[0]))
+        {
+          index_x = i;
+          break;
+        }
+      }
+      for (i = 0; i < access_type->sub_div[1]; i = i + (access_type->sub_div[1] / (*file)->idx_count[1]))
+      {
+        if (access_type->rank_component[1] >= i && access_type->rank_component[1] < i + (access_type->sub_div[1] / (*file)->idx_count[1]))
+        {
+          index_y = i;
+          break;
+        }
+      }
+      for (i = 0; i < access_type->sub_div[2]; i = i + (access_type->sub_div[2] / (*file)->idx_count[2]))
+      {
+        if (access_type->rank_component[2] >= i && access_type->rank_component[2] < i + (access_type->sub_div[2] / (*file)->idx_count[2]))
+        {
+          index_z = i;
+          break;
+        }
+      }
+      
+      //((*file)->idx_count[0] * (*file)->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_count[2]))) + ((*file)->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_count[0]));
+      (*file)->idx_derived_ptr->color = colors[((*file)->idx_count[0] * (*file)->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_count[2]))) + ((*file)->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_count[0]))];
+      
+      free(colors);
+      
+      //printf("%d = %d %d %d :: %d\n", rank, rank_x, rank_y, rank_z, (*file)->idx_derived_ptr->color);
       MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
       MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
+      
     }
+    else
+      MPI_Comm_dup( access_type->comm , &((*file)->comm));
+    
+    
+#if 0
+#if defined(BGL) || defined(BGP) || defined(BGQ)
+    int iotask = 1;
+    (*file)->idx_derived_ptr->color = identity(access_type->comm, access_type->comm, &iotask);
+    //(*file)->idx_derived_ptr->color = (*file)->idx_derived_ptr->color/2;
+#else
+    srand(time(NULL) * rank);
+    (*file)->idx_derived_ptr->color = /*rank % 2;*/ rand() % 8;
+    printf("Rank %d has color %d\n", rank, (*file)->idx_derived_ptr->color);
+#endif
+    MPI_Comm_split(access_type->comm, (*file)->idx_derived_ptr->color, rank, &((*file)->comm));
+    MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
+#endif
+
   }
 #endif
   
@@ -1373,15 +1372,14 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
   }
 #else
 
-  if (file->access->topology_aware_io == 1)
+  printf("XXXXXXXXXX %d\n", file->access->global_indexing);
+  if (file->access->global_indexing == 0)
   {
     for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
     {
       bounding_box[0][i] = 0;
-      //bounding_box[1][i] = file->idx_ptr->global_bounds[i];
       bounding_box[1][i] = file->idx_ptr->compressed_global_bounds[i];
     }
-    //printf("XXXXXX\n");
     file->idx_derived_ptr->global_block_layout =  malloc(sizeof (*file->idx_derived_ptr->global_block_layout));
     PIDX_blocks_create_layout(bounding_box, file->idx_ptr->blocks_per_file, file->idx_ptr->bits_per_block, file->idx_derived_ptr->maxh, file->idx_derived_ptr->resolution_from, file->idx_derived_ptr->resolution_to, file->idx_ptr->bitPattern, file->idx_derived_ptr->global_block_layout);
     
@@ -1753,6 +1751,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
   }
 #endif
 
+  return PIDX_success;
 }
 
 
@@ -1913,7 +1912,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
     hp++;
   }
   
-  if (file->access->topology_aware_io == 0)
+  if (file->access->global_indexing == 0)
   {
     if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
     {
@@ -2377,50 +2376,48 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     hp++;
   }
   
-  if (file->access->topology_aware_io == 0)
+  if (file->access->global_indexing == 0)
   {
-    if (file->access->global_indexing == 0)
+    if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
     {
-      if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
-      {
-        for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-          for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-            for (j = 0; j < file->idx_ptr->compressed_global_bounds[0] * file->idx_count[0]; j = j + (file->idx_ptr->compressed_global_bounds[0]))
-            {          
-              if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] < (j + file->idx_ptr->compressed_global_bounds[0]))
-              {
-                file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] - 
-                (j);
-                break;
-              }
-            }
-            
-        for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-          for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-            for (j = 0; j <= file->idx_ptr->compressed_global_bounds[1] * file->idx_count[1]; j = j + (file->idx_ptr->compressed_global_bounds[1]))
+      for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+        for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+          for (j = 0; j < file->idx_ptr->compressed_global_bounds[0] * file->idx_count[0]; j = j + (file->idx_ptr->compressed_global_bounds[0]))
+          {          
+            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] < (j + file->idx_ptr->compressed_global_bounds[0]))
             {
-              if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] < j + (file->idx_ptr->compressed_global_bounds[1] ))
-              {
-                file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] - 
-                (j);
-                break;
-              }
+              file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] - 
+              (j);
+              break;
             }
-            
-        for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-          for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-            for (j = 0; j < file->idx_ptr->compressed_global_bounds[2] * file->idx_count[2]; j = j + (file->idx_ptr->compressed_global_bounds[2]))
+          }
+          
+      for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+        for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+          for (j = 0; j <= file->idx_ptr->compressed_global_bounds[1] * file->idx_count[1]; j = j + (file->idx_ptr->compressed_global_bounds[1]))
+          {
+            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] < j + (file->idx_ptr->compressed_global_bounds[1] ))
             {
-              if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->compressed_global_bounds[2] /* file->idx_count */))
-              {
-                file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
-                (j);
-                break;
-              }
+              file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] - 
+              (j);
+              break;
             }
-      }
+          }
+          
+      for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
+        for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
+          for (j = 0; j < file->idx_ptr->compressed_global_bounds[2] * file->idx_count[2]; j = j + (file->idx_ptr->compressed_global_bounds[2]))
+          {
+            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->compressed_global_bounds[2] /* file->idx_count */))
+            {
+              file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
+              (j);
+              break;
+            }
+          }
     }
   }
+  
   
   int i;
   int do_agg = 1;
@@ -3030,8 +3027,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   MPI_Comm_size(file->comm, &nprocs);
 #endif
 
-  //if (file->idx_count[0] *  file->idx_count[1] * file->idx_count[2] == 1)
-  if (file->access->topology_aware_io == 0 && (file->idx_count[0] *  file->idx_count[1] * file->idx_count[2]) == 1)
+  if (file->idx_count[0] *  file->idx_count[1] * file->idx_count[2] == 1)
+  //if (file->access->topology_aware_io == 0 && (file->idx_count[0] *  file->idx_count[1] * file->idx_count[2]) == 1)
   {
     if (max_time == total_time)
     {
@@ -3216,8 +3213,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
 #if PIDX_HAVE_MPI
   MPI_Comm_free(&(file->comm));
-  //if (file->idx_count[0] * file->idx_count[1] * file->idx_count[2] != 1)
-  if (file->access->topology_aware_io != 0)
+  if (file->idx_count[0] * file->idx_count[1] * file->idx_count[2] != 1)
+  //if (file->access->topology_aware_io != 0)
     MPI_Comm_free(&(file->global_comm));
 #endif
   

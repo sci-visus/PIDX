@@ -115,9 +115,6 @@ struct Args
   
   
   ///
-  int topology_aware;
-  
-  ///
   int is_rank_z_ordering;
   
   ///
