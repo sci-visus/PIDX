@@ -170,7 +170,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     double_data = (double**)malloc(sizeof(*double_data) * args.variable_count);
     memset(double_data, 0, sizeof(*double_data) * args.variable_count);
 #endif
-    printf("FFFFFFFFFFFFFFFF %d\n", args.is_global_indexing);
+    
     /// Creating access type (parallel here)
     PIDX_access access;
     PIDX_create_access(&access);

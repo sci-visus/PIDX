@@ -1372,7 +1372,6 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
   }
 #else
 
-  printf("XXXXXXXXXX %d\n", file->access->global_indexing);
   if (file->access->global_indexing == 0)
   {
     for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
