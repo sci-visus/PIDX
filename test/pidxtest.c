@@ -102,10 +102,10 @@ int main(int argc, char **argv)
   /// run the specified test
   switch (args.kind)
   {
-    
+
     case PARALLEL_READER:
       if(rank == 0)
-	printf("Performing Parallel Read....\n");
+        printf("Performing Parallel Read....\n");
       test_reader(args, rank, nprocs);
       break;
     /*
@@ -115,32 +115,38 @@ int main(int argc, char **argv)
       //serial_reader(args);
       break;
     */
-    
+
     case PARALLEL_WRITER:
       if(rank == 0)
-	printf("Performing Parallel Write....\n");
+        printf("Performing Parallel Write....\n");
       test_multi_idx_writer(args, rank, nprocs);
       break;
-      
+
+    case PARALLEL_CONVERTER:
+      if (rank == 0)
+        printf("Performing Parallel Convert....\n");
+      test_converter(args, rank);
+      break;
+
     case HDF5_WRITER:
       if(rank == 0)
         printf("Performing Parallel Write....\n");
       test_hdf5_writer(args, rank, nprocs);
       break;
-      
+
     case HDF5_READER:
       if(rank == 0)
         printf("Performing Parallel Write....\n");
       test_hdf5_reader(args, rank, nprocs);
       break;
-      
+
     /*
     case PARALLEL_MULTI_PATCH_WRITER:
       if(rank == 0)
 	printf("Performing Parallel Write....\n");
       test_multi_patch_writer(args, rank, nprocs);
       break;
-    
+
     case SERIAL_WRITER:
       if(rank == 0)
 	printf("Performing Serial Write....\n");
@@ -190,7 +196,7 @@ int parse_args(struct Args *args, int argc, char **argv)
 
   fscanf(config_file, "(local box)\n");
   fscanf(config_file, "%d %d %d\n", &args->count_local[0], &args->count_local[1], &args->count_local[2]);
-  
+
   fscanf(config_file, "(restructured box size)\n");
   fscanf(config_file, "%d %d %d\n", &args->restructured_box_size[0], &args->restructured_box_size[1], &args->restructured_box_size[2]);
 
@@ -202,10 +208,10 @@ int parse_args(struct Args *args, int argc, char **argv)
 
   fscanf(config_file, "(fields)\n");
   fscanf(config_file, "%d\n", &args->variable_count);
-  
+
   fscanf(config_file, "(idx count x:y:z)\n");
   fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
-  
+
   if (strcmp(strkind, "hdf5-writer") != 0 && strcmp(strkind, "hdf5-reader") != 0)
   {
     //if (strcmp(strkind, "parallel-writer") == 0 || strcmp(strkind, "serial-writer") == 0)
@@ -230,13 +236,13 @@ int parse_args(struct Args *args, int argc, char **argv)
 
       fscanf(config_file, "(aggregation factor)\n");
       fscanf(config_file, "%d\n", &args->aggregation_factor);
-      
+
       fscanf(config_file, "(rank z ordering)\n");
       fscanf(config_file, "%d\n", &args->is_rank_z_ordering);
-      
+
       fscanf(config_file, "(global indexing order)\n");
       fscanf(config_file, "%d\n", &args->is_global_indexing);
-      
+
       fscanf(config_file, "(hz from:to)\n");
       fscanf(config_file, "%d %d\n", &args->hz_from, &args->hz_to);
     }
