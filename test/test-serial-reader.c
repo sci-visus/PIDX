@@ -44,7 +44,7 @@ int serial_reader(struct Args args)
   output_file = args.output_file_name;
    
   PIDX_time_step_caching_ON();
-  for (ts = 0; ts < args.time_step; ts++)
+  for (ts = 0; ts < args.time_step_count; ts++)
   { 
     PIDX_access access;
     PIDX_create_access(&access);

@@ -100,7 +100,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.debug_rst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.dump_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.blocks_per_file, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.bits_per_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -161,7 +161,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D(restructured_box_size_point, (int64_t)args.restructured_box_size[0], (int64_t)args.restructured_box_size[1], (int64_t)args.restructured_box_size[2], 1, 1);
   
   PIDX_time_step_caching_ON();  
-  for (ts = 0; ts < args.time_step; ts++) 
+  for (ts = 0; ts < args.time_step_count; ts++) 
   {
 #if long_data
     long_data = malloc(sizeof(*long_data) * args.variable_count);

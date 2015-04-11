@@ -204,7 +204,18 @@ int parse_args(struct Args *args, int argc, char **argv)
   fscanf(config_file, "%s\n", args->output_file_template);
 
   fscanf(config_file, "(time steps)\n");
-  fscanf(config_file, "%d\n", &args->time_step);
+  fscanf(config_file, "%d", &args->time_step_count);
+  args->time_steps = (int *)malloc(args->time_step_count * sizeof(int));
+  int ts = 0;
+  for (ts = 0; ts < args->time_step_count; ++ts)
+  {
+    args->time_steps[ts] = ts;
+  }
+  for (ts = 0; ts < args->time_step_count; ++ts)
+  {
+    fscanf(config_file, "%d", &args->time_steps[ts]);
+  }
+  fscanf(config_file, "\n");
 
   fscanf(config_file, "(fields)\n");
   fscanf(config_file, "%d\n", &args->variable_count);

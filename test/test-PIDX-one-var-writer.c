@@ -41,7 +41,7 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
   //The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   
   //   Creating the filename 
@@ -68,7 +68,7 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
   
   output_file = args.output_file_name;
     
-  for (ts = 0; ts < args.time_step; ts++) 
+  for (ts = 0; ts < args.time_step_count; ts++) 
   {
     var1_double_scalar_data = malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2] * sample_count);
     for (k = 0; k < args.count_local[2]; k++)

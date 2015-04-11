@@ -46,7 +46,7 @@ int test_hdf5_writer(struct Args args, int rank, int nprocs)
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
@@ -186,7 +186,7 @@ int test_hdf5_writer(struct Args args, int rank, int nprocs)
   
   MPI_Info info  = MPI_INFO_NULL;
   
-  for (ts = 0; ts < args.time_step; ts++) 
+  for (ts = 0; ts < args.time_step_count; ts++) 
   {
     /// Creating the filename 
     args.output_file_name = (char*) malloc(sizeof (char) * 512);

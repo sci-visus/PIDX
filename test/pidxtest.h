@@ -46,7 +46,10 @@ struct Args
   int restructured_box_size[5];
 
   /// Number of time-steps
-  int time_step;
+  int time_step_count;
+
+  /// Time steps
+  int *time_steps;
 
   /// Number of Variables
   int variable_count;

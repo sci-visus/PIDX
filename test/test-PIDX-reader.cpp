@@ -82,7 +82,7 @@ int test_reader(struct Args args, int rank, int nprocs)
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&args.time_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
 
@@ -140,7 +140,7 @@ int test_reader(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D(local_box_count_point, args.count_local[0], args.count_local[1], args.count_local[2], 1, 1);
   PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
 
-  for (ts = 0; ts < args.time_step; ts++)
+  for (ts = 0; ts < args.time_step_count; ts++)
   {
     PIDX_access access;
     PIDX_create_access(&access);
