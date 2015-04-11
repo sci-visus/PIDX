@@ -279,6 +279,7 @@ char* kindToStr(enum Kind k)
     case PARALLEL_READER:                return "parallel-reader";
     //case SERIAL_READER:                  return "serial-reader";
     case PARALLEL_WRITER:                return "parallel-writer";
+    case PARALLEL_CONVERTER:             return "parallel-converter";
     case HDF5_WRITER:                    return "hdf5-writer";
     case HDF5_READER:                    return "hdf5-reader";
     //case PARALLEL_MULTI_PATCH_WRITER:    return "parallel-multi-patch-writer";
@@ -294,6 +295,7 @@ enum Kind strToKind(const char *str)
   if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
   //if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
   if (strcmp(str,"parallel-writer")   == 0)             return PARALLEL_WRITER;
+  if (strcmp(str, "parallel-converter" == 0))           return PARALLEL_CONVERTER;
   if (strcmp(str,"hdf5-writer")   == 0)                 return HDF5_WRITER;
   if (strcmp(str,"hdf5-reader")   == 0)                 return HDF5_READER;
   //if (strcmp(str,"parallel-multi-patch-writer")   == 0) return PARALLEL_MULTI_PATCH_WRITER;
