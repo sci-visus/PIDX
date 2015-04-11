@@ -306,7 +306,7 @@ enum Kind strToKind(const char *str)
   if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
   //if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
   if (strcmp(str,"parallel-writer")   == 0)             return PARALLEL_WRITER;
-  if (strcmp(str, "parallel-converter" == 0))           return PARALLEL_CONVERTER;
+  if (strcmp(str, "parallel-converter") == 0)           return PARALLEL_CONVERTER;
   if (strcmp(str,"hdf5-writer")   == 0)                 return HDF5_WRITER;
   if (strcmp(str,"hdf5-reader")   == 0)                 return HDF5_READER;
   //if (strcmp(str,"parallel-multi-patch-writer")   == 0) return PARALLEL_MULTI_PATCH_WRITER;
