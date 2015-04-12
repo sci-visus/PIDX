@@ -42,6 +42,7 @@ int test_converter(struct Args args, int rank)
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.time_steps, args.time_step_count, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
@@ -60,6 +61,7 @@ int test_converter(struct Args args, int rank)
   MPI_Bcast(&args.bits_per_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.aggregation_factor, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.variables, args.variable_count, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.hz_from, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.hz_to, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.is_rank_z_ordering, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -82,12 +84,11 @@ int test_converter(struct Args args, int rank)
   local_offset[0] = (slice % sub_div[0]) * args.count_local[0];
 
   unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
-  {
-    rank_z = rank / (sub_div[0] * sub_div[1]);
-    rank_slice = rank % (sub_div[0] * sub_div[1]);
-    rank_y = (rank_slice / sub_div[0]);
-    rank_x = (rank_slice % sub_div[0]);
-  }
+  rank_z = rank / (sub_div[0] * sub_div[1]);
+  rank_slice = rank % (sub_div[0] * sub_div[1]);
+  rank_y = (rank_slice / sub_div[0]);
+  rank_x = (rank_slice % sub_div[0]);
+  
 
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point, compression_block_size_point, restructured_box_size_point;
   PIDX_set_point_5D(global_bounding_box, args.extents[0], args.extents[1], args.extents[2], 1, 1);
@@ -103,20 +104,32 @@ int test_converter(struct Args args, int rank)
     PIDX_access access;
     PIDX_create_access(&access);
     PIDX_set_mpi_access(access, args.idx_count[0], args.idx_count[1], args.idx_count[2], MPI_COMM_WORLD);
-    PIDX_set_global_indexing_order(access, args.is_global_indexing);
+    PIDX_set_global_indexing_order(access, 0);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
 
+    int bits_per_block = 15;
+    int variable_count = 1;
+    int blocks_per_file = 256;
+    int var = 0;
+    
+    double **double_data = (double **)malloc(sizeof(*double_data) * variable_count); // DUONG_HARDCODE?
+    memset(double_data, 0, sizeof(*double_data) * variable_count);
+    for (var = 0; var < variable_count; var++)
+    {
+      //double_data[var] = (double*)malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * 1/*read_variable[var]->values_per_sample*/);
+    }
+    
+    
+    PIDX_variable *write_variable;
     // get read parameters
     PIDX_file input_file;
     PIDX_file_open(input_file_name, PIDX_file_rdonly, access, &input_file);
+    
     PIDX_get_dims(input_file, global_bounding_box);
-    PIDX_set_current_time_step(input_file, args.time_steps[time_step]);
-    int bits_per_block;
+    PIDX_set_current_time_step(input_file, time_step/*args.time_steps[time_step]*/);
     PIDX_get_block_size(input_file, &bits_per_block);
-    int blocks_per_file;
     PIDX_get_block_count(input_file, &blocks_per_file);
-    int variable_count;
     PIDX_get_variable_count(input_file, &variable_count);
 
     // enable read phases
@@ -125,22 +138,57 @@ int test_converter(struct Args args, int rank)
     // NOTE: we don't enable compression for input
     PIDX_enable_agg(input_file, args.perform_agg);
     PIDX_enable_io(input_file, args.perform_io);
+    
 
+    // Allocate memory to read variables
+    PIDX_variable *read_variable = (PIDX_variable *)malloc(sizeof(*read_variable) * variable_count);
+    memset(read_variable, 0, sizeof(*read_variable) * variable_count);
+    
+
+    
+    
+    // read
+    for (var = 0; var < variable_count; var++)
+    {
+      PIDX_get_next_variable(input_file, &read_variable[var]);
+      double_data[var] = (double*)malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * 1);
+      memset(double_data[var], 0, sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * 1);
+      PIDX_read_next_variable(read_variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+    }
+    PIDX_close(input_file);
+    
+    
+    for(var = 0; var < variable_count; var++)
+    {
+      int i, j, k, spv;
+      for (k = 0; k < args.count_local[2]; k++)
+        for (j = 0; j < args.count_local[1]; j++)
+          for (i = 0; i < args.count_local[0]; i++)
+          {
+            int64_t index = (int64_t) (args.count_local[0] * args.count_local[1] * k) + (args.count_local[0] * j) + i;
+            
+            if ((int)double_data[var][index] == (int)100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)))
+            {
+              //printf("Y values = %f %lld\n", double_data[var][index * variable[var]->values_per_sample + spv], (long long)100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)));
+            }
+            else
+            {
+              //printf("X values = %f %lld\n", double_data[var][index * variable[var]->values_per_sample + spv], (long long)100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)));
+              printf("Shout !!!!!\n");
+            }
+            
+          }
+    }
+    
+    
+    
     // set write parameters
     PIDX_file output_file;
     PIDX_file_create(args.output_file_name, PIDX_file_trunc, access, &output_file);
     PIDX_set_dims(output_file, global_bounding_box);
-    PIDX_set_current_time_step(output_file, args.time_steps[time_step]);
-    int64_t r = mylog2(args.compression_block_size[0] * args.compression_block_size[1] * args.compression_block_size[2]);
-    if (r <= bits_per_block)
-    {
-      PIDX_set_block_size(output_file, bits_per_block - r);
-    }
-    else
-    {
-      printf("Compression block has more elements than the input bits per block. Terminating...\n");
-      exit(EXIT_FAILURE);
-    }
+    PIDX_set_current_time_step(output_file, /*args.time_steps[time_step]*/time_step);
+    PIDX_set_block_size(output_file, bits_per_block);
+    
     PIDX_set_block_count(output_file, blocks_per_file);
     PIDX_set_variable_count(output_file, variable_count);
     PIDX_set_aggregation_factor(output_file, args.aggregation_factor);
@@ -160,31 +208,19 @@ int test_converter(struct Args args, int rank)
     PIDX_enable_compression(output_file, args.perform_compression);
     PIDX_enable_agg(output_file, args.perform_agg);
     PIDX_enable_io(output_file, args.perform_io);
-
-    // Allocate memory to read variables
-    PIDX_variable *variable = (PIDX_variable *)malloc(sizeof(*variable) * variable_count);
-    memset(variable, 0, sizeof(*variable) * variable_count);
-    double **double_data = (double **)malloc(sizeof(*double_data) * variable_count); // DUONG_HARDCODE?
-    memset(double_data, 0, sizeof(*double_data) * variable_count);
-
-    // read
-    int var = 0;
-    for (var = 0; var < variable_count; var++)
-    {
-      PIDX_get_next_variable(input_file, &variable[var]);
-      double_data[var] = (double*)malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * variable[var]->values_per_sample);
-      memset(double_data[var], 0, sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * variable[var]->values_per_sample);
-      PIDX_read_next_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
-    }
-    PIDX_close(input_file);
-
+    
+    write_variable = (PIDX_variable *)malloc(sizeof(*write_variable) * variable_count);
+    memset(write_variable, 0, sizeof(*write_variable) * variable_count);
+    
     // write
     for (var = 0; var < variable_count; var++)
     {
-      PIDX_variable_create(output_file, variable[var]->var_name, variable[var]->values_per_sample * sizeof(uint64_t) * 8, variable[var]->type_name, &variable[var]);
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_variable_create(output_file, "var_name", 1 * sizeof(uint64_t) * 8, "1*float64", &write_variable[var]);
+      PIDX_append_and_write_variable(write_variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
     }
     PIDX_close(output_file);
+    
+    
     PIDX_close_access(access);
 
     // free stuffs
@@ -194,8 +230,12 @@ int test_converter(struct Args args, int rank)
     }
     free(double_data);
     double_data = 0;
-    free(variable);
-    variable = 0;
+    
+    free(read_variable);
+    read_variable = 0;
+    
+    free(write_variable);
+    write_variable = 0;
   }
   PIDX_time_step_caching_OFF();
   free(args.output_file_name);

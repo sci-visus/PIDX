@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#undef PIDX_HAVE_LOSSY_ZFP
+#define PIDX_HAVE_LOSSY_ZFP
 
 #ifdef PIDX_HAVE_LOSSY_ZFP
   #include "zfp.h"
@@ -91,7 +91,7 @@ static int decompress(double* input_buffer, double* output_buffer, size_t buffer
   
   
   outsize = compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize;
-  printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
+  //printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
   //memcpy(&test, input_buffer, sizeof(double));
   //printf("Value = %f\n", test);
   
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
   else
     compression = 1;
 
-  compression = 0;
+  compression = 1;
   
   if (global_bounds[0] % compression_block_size[0] == 0)
     compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];

@@ -196,15 +196,16 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
     params.nz = agg_id->idx_ptr->compression_block_size[2];
     int total_size = 0;
     zfp_set_rate(&params, agg_id->idx_ptr->compression_bit_rate);
+    //printf("MMMMMMMM %d %d %d %d\n", agg_id->idx_ptr->compression_block_size[0], agg_id->idx_ptr->compression_block_size[1], agg_id->idx_ptr->compression_block_size[2], agg_id->idx_ptr->compression_bit_rate);
     for ( i = 0; i < length; i = i + total_compression_block_size * typesize)
     {
       outsize = zfp_estimate_compressed_size(&params);
 
       unsigned char* zip = malloc(outsize);
-      unsigned char* dzip = malloc(outsize);
+      //unsigned char* dzip = malloc(outsize);
 
-      double x, y;
-      memcpy(&x, buffer + i, sizeof(double));
+      //double x, y;
+      //memcpy(&x, buffer + i, sizeof(double));
 
       outsize = zfp_compress(&params, buffer + i , zip, outsize);
       if (outsize == 0)
@@ -212,6 +213,7 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
         fprintf(stderr, "compression failed\n");
         return -1;
       }
+      //printf("%d %d\n", outsize, total_size);
 
       //zfp_decompress(&params, dzip , zip, outsize);
       //memcpy(&y, dzip, sizeof(double));
@@ -345,6 +347,9 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 
   bytes_per_datatype = ((agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * total_compression_block_size) / (64 / agg_id->idx_ptr->compression_bit_rate);
 
+  //printf("CCCCCCCCCCCc : %d = %d * %d / %d\n", bytes_per_datatype, (agg_id->idx_ptr->variable[variable_index]->bits_per_value / 8), total_compression_block_size, (64 / agg_id->idx_ptr->compression_bit_rate));
+  
+  
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
 
   start_agg_index = target_disp / (int64_t) (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor);
@@ -703,7 +708,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
           */
           length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
 
-          printf("Original : Compressed :: %d : %d NAN %d - %f\n", (int)hz_count * values_per_sample * bytes_per_datatype/8, (int)length/8, (int)(hz_count * values_per_sample * bytes_per_datatype/8) - (length/8), (double)(hz_count * values_per_sample * bytes_per_datatype)/length);
+          printf("Original : Compressed :: %d (%d %d %d) : %d\n", (int)hz_count * values_per_sample * bytes_per_datatype, (int)hz_count, (int)values_per_sample, (int)bytes_per_datatype, (int)length);
           memcpy( agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, offseted_buffer, length);
           /*
           memcpy(&x, agg_id->idx_derived_ptr->agg_buffer->buffer + target_disp * bytes_per_datatype, sizeof(double));

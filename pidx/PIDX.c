@@ -112,8 +112,9 @@ struct PIDX_file_descriptor
 };
 
 
+#if 0
 /// Returns elapsed time
-double PIDX_get_time()
+double MPI_Wtime()
 {
 #if PIDX_HAVE_MPI
   return MPI_Wtime();
@@ -123,6 +124,7 @@ double PIDX_get_time()
   return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
 #endif
 }
+#endif
 
 
 void PIDX_init_timming_buffers()
@@ -182,7 +184,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 {
   PIDX_init_timming_buffers();
   
-  sim_start = PIDX_get_time();
+  sim_start = MPI_Wtime();
 
   if(flags != PIDX_file_excl && flags != PIDX_file_trunc)
     return PIDX_err_unsupported_flags;
@@ -399,7 +401,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 {
   PIDX_init_timming_buffers();
   
-  sim_start = PIDX_get_time();
+  sim_start = MPI_Wtime();
   
   int rank = 0, ret;
   if(flags != PIDX_file_rdonly)
@@ -1872,7 +1874,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
   /// Variable Count maybe Set or not.
   if (file->local_variable_count == file->idx_ptr->variable_index_tracker && file->write_on_close == 1)
   {
-    write_init_start[hp] = PIDX_get_time();
+    write_init_start[hp] = MPI_Wtime();
     if (file->idx_ptr->variable_count == -1)
       file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
     else if (file->idx_ptr->variable_count < file->idx_ptr->variable_index_tracker)
@@ -1882,7 +1884,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
       
       file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
     }
-    write_init_end[hp] = PIDX_get_time();
+    write_init_end[hp] = MPI_Wtime();
     hp++;
   }
   
@@ -1904,9 +1906,9 @@ PIDX_return_code PIDX_read(PIDX_file file)
   /// Takes less memory but is not IO efficient way of writing data
   else
   {
-    write_init_start[hp] = PIDX_get_time();
+    write_init_start[hp] = MPI_Wtime();
     //file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
-    write_init_end[hp] = PIDX_get_time();
+    write_init_end[hp] = MPI_Wtime();
     hp++;
   }
   
@@ -1959,19 +1961,19 @@ PIDX_return_code PIDX_read(PIDX_file file)
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
     
     ///----------------------------------IO init start-------------------------------------------------///
-    io_init_start[vp] = PIDX_get_time();
+    io_init_start[vp] = MPI_Wtime();
     
     file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
 #if PIDX_HAVE_MPI
     PIDX_io_set_communicator(file->io_id, file->comm);
 #endif
     
-    io_init_end[vp] = PIDX_get_time();
+    io_init_end[vp] = MPI_Wtime();
     ///----------------------------------IO init end---------------------------------------------------///
     
     
     ///-----------------------------------AGG init start-----------------------------------------------///
-    agg_init_start[vp] = PIDX_get_time();                                            
+    agg_init_start[vp] = MPI_Wtime();                                            
     if(do_agg == 1)
     {
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
@@ -1980,23 +1982,23 @@ PIDX_return_code PIDX_read(PIDX_file file)
       //PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
 #endif
     }
-    agg_init_end[vp] = PIDX_get_time();
+    agg_init_end[vp] = MPI_Wtime();
     ///-----------------------------------AGG init end-------------------------------------------------///
     
     
     ///------------------------------------HZ init start-----------------------------------------------///
-    hz_init_start[vp] = PIDX_get_time();                                             
+    hz_init_start[vp] = MPI_Wtime();                                             
     file->hz_id = PIDX_hz_encode_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
 #if PIDX_HAVE_MPI
     PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
 #endif
-    hz_init_end[vp] = PIDX_get_time();
+    hz_init_end[vp] = MPI_Wtime();
     ///------------------------------------HZ init end-------------------------------------------------///
     
     
 #if PIDX_HAVE_MPI
     ///----------------------------------- RST init start----------------------------------------------///
-    rst_init_start[vp] = PIDX_get_time();
+    rst_init_start[vp] = MPI_Wtime();
     if (file->idx_ptr->variable[start_index]->patch_count == 1)
       local_do_rst = 1;
     
@@ -2008,12 +2010,12 @@ PIDX_return_code PIDX_read(PIDX_file file)
       PIDX_rst_set_communicator(file->rst_id, file->comm);
     }
     
-    rst_init_end[vp] = PIDX_get_time();
+    rst_init_end[vp] = MPI_Wtime();
     ///----------------------------------- RST init end------------------------------------------------///
 #endif
     
     ///----------------------------BLOCK restructure init start ---------------------------------------///
-    block_rst_init_start[vp] = PIDX_get_time();                                    
+    block_rst_init_start[vp] = MPI_Wtime();                                    
     if(file->perform_block_rst == 1)
     {
       file->block_rst_id = PIDX_block_rst_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
@@ -2021,12 +2023,12 @@ PIDX_return_code PIDX_read(PIDX_file file)
       PIDX_block_rst_set_communicator(file->block_rst_id, file->comm);
 #endif
     }
-    block_rst_init_end[vp] = PIDX_get_time();
+    block_rst_init_end[vp] = MPI_Wtime();
     ///----------------------------BLOCK restructure init end -----------------------------------------///
 
     
     ///------------------------------Var buffer init start---------------------------------------------///
-    var_init_start[vp] = PIDX_get_time();
+    var_init_start[vp] = MPI_Wtime();
     
 #if PIDX_HAVE_MPI
     file->idx_ptr->variable[start_index]->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
@@ -2089,12 +2091,12 @@ PIDX_return_code PIDX_read(PIDX_file file)
       }
     }
 #endif
-    var_init_end[vp] = PIDX_get_time();
+    var_init_end[vp] = MPI_Wtime();
     ///------------------------------Var buffer init end--------------------------------------------------///
     
     
     ///------------------------------------ALL buffer start time-------------------------------------------------///
-    buffer_start[vp] = PIDX_get_time();
+    buffer_start[vp] = MPI_Wtime();
 
 #if PIDX_HAVE_MPI
     if(global_do_rst == 0)
@@ -2180,22 +2182,22 @@ PIDX_return_code PIDX_read(PIDX_file file)
     file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
     PIDX_agg_buf_create(file->agg_id);  
     
-    buffer_end[vp] = PIDX_get_time();
+    buffer_end[vp] = MPI_Wtime();
     ///--------------------------------------ALL buffer end time---------------------------------------------------///
  
     
     ///------------------------------------IO start time---------------------------------------------------///
-    io_start[vp] = PIDX_get_time();
+    io_start[vp] = MPI_Wtime();
     if (do_agg == 1)
       PIDX_io_aggregated_read(file->io_id);
     else
       PIDX_io_per_process_read(file->io_id);
-    io_end[vp] = PIDX_get_time();
+    io_end[vp] = MPI_Wtime();
     ///---------------------------------------IO end time---------------------------------------------------///
     
 
     ///---------------------------------------Agg start time--------------------------------------------------///
-    agg_start[vp] = PIDX_get_time();  
+    agg_start[vp] = MPI_Wtime();  
     if (do_agg == 1)
     {
       PIDX_agg_read(file->agg_id);
@@ -2203,33 +2205,33 @@ PIDX_return_code PIDX_read(PIDX_file file)
       PIDX_agg_buf_destroy(file->agg_id);
       free(file->idx_derived_ptr->agg_buffer);
     }
-    agg_end[vp] = PIDX_get_time();
+    agg_end[vp] = MPI_Wtime();
     ///---------------------------------------IO end time---------------------------------------------------///
     
     
     ///-------------------------------------HZ start time---------------------------------------------------///
-    hz_start[vp] = PIDX_get_time();
+    hz_start[vp] = MPI_Wtime();
     PIDX_hz_encode_read(file->hz_id);
     //HELPER_Hz_encode(file->hz_id);
     //PIDX_hz_encode_buf_destroy(file->hz_id);
-    hz_end[vp] = PIDX_get_time();
+    hz_end[vp] = MPI_Wtime();
     ///------------------------------------HZ end time------------------------------------------------------///
     
     //TODO
     PIDX_block_rst_read(file->block_rst_id);
     
     ///---------------------------------------Agg start time--------------------------------------------------///
-    rst_start[vp] = PIDX_get_time();  
+    rst_start[vp] = MPI_Wtime();  
 #if PIDX_HAVE_MPI
     PIDX_rst_read(file->rst_id);
     //HELPER_rst(file->rst_id);
 #endif
-    rst_end[vp] = PIDX_get_time();  
+    rst_end[vp] = MPI_Wtime();  
     ///-----------------------------------------Agg end time--------------------------------------------------///
     
     
     ///--------------------------------------cleanup start time---------------------------------------------///
-    cleanup_start[vp] = PIDX_get_time();
+    cleanup_start[vp] = MPI_Wtime();
     for (var = start_index; var <= end_index; var++)
     {
       for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
@@ -2244,12 +2246,12 @@ PIDX_return_code PIDX_read(PIDX_file file)
       }
       free(file->idx_ptr->variable[var]->patch_group_ptr);
     }
-    cleanup_end[vp] = PIDX_get_time();
+    cleanup_end[vp] = MPI_Wtime();
     ///-------------------------------------cleanup end time------------------------------------------------///
     
     
     ///-------------------------------------finalize start time---------------------------------------------///
-    finalize_start[vp] = PIDX_get_time();
+    finalize_start[vp] = MPI_Wtime();
     PIDX_io_finalize(file->io_id);
     if(do_agg == 1)
       PIDX_agg_finalize(file->agg_id);
@@ -2260,7 +2262,7 @@ PIDX_return_code PIDX_read(PIDX_file file)
       PIDX_rst_finalize(file->rst_id);
 #endif
       
-    finalize_end[vp] = PIDX_get_time();
+    finalize_end[vp] = MPI_Wtime();
     ///------------------------------------finalize end time------------------------------------------------///
     
     vp++;
@@ -2308,7 +2310,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
   /// Variable Count maybe Set or not.
   if (file->local_variable_count == file->idx_ptr->variable_index_tracker && file->write_on_close == 1)
   {
-    write_init_start[hp] = PIDX_get_time();
+    write_init_start[hp] = MPI_Wtime();
     if (file->idx_ptr->variable_count == -1)
       file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
     else if (file->idx_ptr->variable_count < file->idx_ptr->variable_index_tracker)
@@ -2329,7 +2331,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       //PIDX_header_io_file_write(file->header_io_id);
       PIDX_header_io_finalize(file->header_io_id);
     }
-    write_init_end[hp] = PIDX_get_time();
+    write_init_end[hp] = MPI_Wtime();
     hp++;
   }
   
@@ -2351,7 +2353,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
   /// Takes less memory but is not IO efficient way of writing data
   else
   {
-    write_init_start[hp] = PIDX_get_time();
+    write_init_start[hp] = MPI_Wtime();
     //file->idx_ptr->variable_count = file->idx_ptr->variable_index_tracker;
     
     file->header_io_id = PIDX_header_io_init(file->idx_ptr, file->idx_derived_ptr, 0, file->idx_ptr->variable_index_tracker);
@@ -2370,7 +2372,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         
     PIDX_header_io_finalize(file->header_io_id);
     
-    write_init_end[hp] = PIDX_get_time();
+    write_init_end[hp] = MPI_Wtime();
     hp++;
   }
   
@@ -2428,7 +2430,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     end_index = ((start_index + file->variable_pipelining_factor) >= (file->local_variable_index + file->local_variable_count)) ? ((file->local_variable_index + file->local_variable_count) - 1) : (start_index + file->variable_pipelining_factor);
     
     ///----------------------------------- RST init start----------------------------------------------///
-    rst_init_start[vp] = PIDX_get_time();
+    rst_init_start[vp] = MPI_Wtime();
 #if PIDX_HAVE_MPI
     if (file->idx_ptr->variable[start_index]->patch_count == 1)
       local_do_rst = 1;
@@ -2440,12 +2442,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       PIDX_rst_set_communicator(file->rst_id, file->comm);
     }
 #endif
-    rst_init_end[vp] = PIDX_get_time();
+    rst_init_end[vp] = MPI_Wtime();
     ///----------------------------------- RST init end------------------------------------------------///
     
     
     ///----------------------------BLOCK restructure init start ---------------------------------------///
-    block_rst_init_start[vp] = PIDX_get_time();                                    
+    block_rst_init_start[vp] = MPI_Wtime();                                    
     if(file->perform_block_rst == 1)
     {
       file->block_rst_id = PIDX_block_rst_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
@@ -2453,22 +2455,22 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       PIDX_block_rst_set_communicator(file->block_rst_id, file->comm);
 #endif
     }
-    block_rst_init_end[vp] = PIDX_get_time();
+    block_rst_init_end[vp] = MPI_Wtime();
     ///----------------------------BLOCK restructure init end -----------------------------------------///
     
     
     ///------------------------------------HZ init start-----------------------------------------------///
-    hz_init_start[vp] = PIDX_get_time();                                             
+    hz_init_start[vp] = MPI_Wtime();                                             
     file->hz_id = PIDX_hz_encode_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
 #if PIDX_HAVE_MPI
     PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
 #endif
-    hz_init_end[vp] = PIDX_get_time();
+    hz_init_end[vp] = MPI_Wtime();
     ///------------------------------------HZ init end-------------------------------------------------///
     
 #if 0
     ///------------------------------Compression init start -------------------------------------------///
-    compression_init_start[vp] = PIDX_get_time();                                    
+    compression_init_start[vp] = MPI_Wtime();                                    
     if(file->perform_compression == 1)
     {
       file->compression_id = PIDX_compression_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
@@ -2476,12 +2478,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       PIDX_compression_set_communicator(file->compression_id, file->comm);
 #endif
     }
-    compression_init_end[vp] = PIDX_get_time();
+    compression_init_end[vp] = MPI_Wtime();
     ///------------------------------Compression init end---------------------------------------------///
 #endif
     
     ///-----------------------------------AGG init start-----------------------------------------------///
-    agg_init_start[vp] = PIDX_get_time();                                            
+    agg_init_start[vp] = MPI_Wtime();                                            
     if(do_agg == 1)
     {
       file->agg_id = PIDX_agg_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
@@ -2490,11 +2492,11 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       //PIDX_agg_set_global_communicator(file->agg_id, file->global_comm);
 #endif
     }
-    agg_init_end[vp] = PIDX_get_time();
+    agg_init_end[vp] = MPI_Wtime();
     ///-----------------------------------AGG init end-------------------------------------------------///
     
     ///----------------------------------IO init start-------------------------------------------------///
-    io_init_start[vp] = PIDX_get_time();
+    io_init_start[vp] = MPI_Wtime();
     if (file->perform_io == 1)
     {
       file->io_id = PIDX_io_init(file->idx_ptr, file->idx_derived_ptr, start_index, end_index);
@@ -2502,12 +2504,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       PIDX_io_set_communicator(file->io_id, file->comm);
 #endif
     }
-    io_init_end[vp] = PIDX_get_time();
+    io_init_end[vp] = MPI_Wtime();
     ///----------------------------------IO init end---------------------------------------------------///
     
     
     ///------------------------------Var buffer init start---------------------------------------------///
-    var_init_start[vp] = PIDX_get_time();
+    var_init_start[vp] = MPI_Wtime();
     
 #if PIDX_HAVE_MPI
     file->idx_ptr->variable[start_index]->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
@@ -2576,12 +2578,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       }
     }
 #endif
-    var_init_end[vp] = PIDX_get_time();
+    var_init_end[vp] = MPI_Wtime();
     ///------------------------------Var buffer init end--------------------------------------------------///
     
     
     ///------------------------------------RST start time-------------------------------------------------///
-    rst_start[vp] = PIDX_get_time();
+    rst_start[vp] = MPI_Wtime();
 #if PIDX_HAVE_MPI
     if(global_do_rst == 0)
     {
@@ -2633,12 +2635,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       }
     }
 #endif
-    rst_end[vp] = PIDX_get_time();
+    rst_end[vp] = MPI_Wtime();
     ///--------------------------------------RST end time---------------------------------------------------///
 
     
     ///----------------------------BLOCK restructure start time---------------------------------------------///
-    block_rst_start[vp] = PIDX_get_time();
+    block_rst_start[vp] = MPI_Wtime();
     
     for (var = start_index; var <= end_index; var++)
     {
@@ -2697,13 +2699,13 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     
     if (file->perform_block_rst == 1)
     {
-      block_1[vp] =  PIDX_get_time();
+      block_1[vp] =  MPI_Wtime();
       if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
       {
         PIDX_block_rst_prepare(file->block_rst_id);
         PIDX_block_rst_write(file->block_rst_id);
       }
-      block_2[vp] =  PIDX_get_time();
+      block_2[vp] =  MPI_Wtime();
       
 #if PIDX_HAVE_MPI
       if ( file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4] != 1)
@@ -2748,14 +2750,14 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         }
       }
 #endif
-      block_3[vp] =  PIDX_get_time();
+      block_3[vp] =  MPI_Wtime();
     }
-    block_rst_end[vp] = PIDX_get_time();
+    block_rst_end[vp] = MPI_Wtime();
     ///----------------------------BLOCK restructure end time-----------------------------------------------///
     
     
     ///-------------------------------------HZ start time---------------------------------------------------///
-    hz_start[vp] = PIDX_get_time();
+    hz_start[vp] = MPI_Wtime();
     PIDX_hz_encode_buf_create(file->hz_id);
     
     if (file->perform_hz == 1)
@@ -2813,27 +2815,27 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       }
     }
     
-    hz_end[vp] = PIDX_get_time();
+    hz_end[vp] = MPI_Wtime();
     ///------------------------------------HZ end time------------------------------------------------------///
     
 #if 0
     ///---------------------------------Compression start time----------------------------------------------///
-    compression_start[vp] = PIDX_get_time();
+    compression_start[vp] = MPI_Wtime();
     if(file->perform_compression == 1)
     {
       PIDX_compression_prepare(file->compression_id);
       PIDX_compression_compress(file->compression_id);
       PIDX_compression_finalize(file->compression_id);
     }
-    compression_end[vp] = PIDX_get_time();
+    compression_end[vp] = MPI_Wtime();
     ///----------------------------------Compression end time-----------------------------------------------///
 #endif
     
     ///------------------------------------Agg start time---------------------------------------------------///
-    agg_start[vp] = PIDX_get_time();
+    agg_start[vp] = MPI_Wtime();
     if(do_agg == 1)
     {
-      agg_1[vp] = PIDX_get_time();
+      agg_1[vp] = MPI_Wtime();
       file->idx_derived_ptr->agg_buffer = malloc(sizeof(*file->idx_derived_ptr->agg_buffer));
       
       /*
@@ -2860,14 +2862,14 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       }
       */
       
-      agg_2[vp] = PIDX_get_time();
+      agg_2[vp] = MPI_Wtime();
       PIDX_agg_buf_create(file->agg_id);
-      agg_3[vp] = PIDX_get_time();
+      agg_3[vp] = MPI_Wtime();
       if (file->perform_agg == 1)
         PIDX_agg_write(file->agg_id);
-      agg_4[vp] = PIDX_get_time();
+      agg_4[vp] = MPI_Wtime();
       PIDX_hz_encode_buf_destroy(file->hz_id);
-      agg_5[vp] = PIDX_get_time();
+      agg_5[vp] = MPI_Wtime();
       
             
       /// Initialization ONLY ONCE for all TIME STEPS (caching across time)
@@ -2880,14 +2882,14 @@ static PIDX_return_code PIDX_write(PIDX_file file)
         }
       }
       
-      agg_6[vp] = PIDX_get_time();
+      agg_6[vp] = MPI_Wtime();
     }
-    agg_end[vp] = PIDX_get_time();
+    agg_end[vp] = MPI_Wtime();
     ///---------------------------------------Agg end time---------------------------------------------------///
     
 
     ///---------------------------------------IO start time--------------------------------------------------///
-    io_start[vp] = PIDX_get_time();
+    io_start[vp] = MPI_Wtime();
     if(do_agg == 1)
     {
       if (file->perform_io == 1)
@@ -2908,12 +2910,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       if (file->perform_io == 1)
         PIDX_io_per_process_write(file->io_id);
     }
-    io_end[vp] = PIDX_get_time();
+    io_end[vp] = MPI_Wtime();
     ///---------------------------------------IO end time---------------------------------------------------///
     
     
     ///--------------------------------------cleanup start time---------------------------------------------///
-    cleanup_start[vp] = PIDX_get_time();
+    cleanup_start[vp] = MPI_Wtime();
     for (var = start_index; var <= end_index; var++)
     {
       for (p = 0; p < file->idx_ptr->variable[var]->patch_group_count; p++)
@@ -2934,12 +2936,12 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     free(file->idx_ptr->variable[start_index]->rank_r_count);
 #endif
     
-    cleanup_end[vp] = PIDX_get_time();
+    cleanup_end[vp] = MPI_Wtime();
     ///-------------------------------------cleanup end time------------------------------------------------///
     
     
     ///-------------------------------------finalize start time---------------------------------------------///
-    finalize_start[vp] = PIDX_get_time();
+    finalize_start[vp] = MPI_Wtime();
     PIDX_io_finalize(file->io_id);
     if(do_agg == 1)
       PIDX_agg_finalize(file->agg_id);
@@ -2950,7 +2952,7 @@ static PIDX_return_code PIDX_write(PIDX_file file)
       PIDX_rst_finalize(file->rst_id);
 #endif
     
-    finalize_end[vp] = PIDX_get_time();
+    finalize_end[vp] = MPI_Wtime();
     ///------------------------------------finalize end time------------------------------------------------///
     
     vp++;
@@ -3012,7 +3014,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   file->write_on_close = 1;
   PIDX_flush(file);
   
-  sim_end = PIDX_get_time();
+  sim_end = MPI_Wtime();
   
   int p = 0, i = 0;
   double total_time = sim_end - sim_start;
