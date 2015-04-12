@@ -723,7 +723,6 @@ PIDX_return_code PIDX_validate(PIDX_file file)
     //file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block);
   }
   
-  /*
   int reduce_by_sample = 1;
   if (reduce_by_sample == 1)
   {
@@ -735,7 +734,7 @@ PIDX_return_code PIDX_validate(PIDX_file file)
   {
     file->idx_ptr->blocks_per_file = file->idx_ptr->blocks_per_file /  (file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4]);
   }
-  */
+  
   //file->idx_derived_ptr->samples_per_block = file->idx_derived_ptr->samples_per_block * 2;
   //file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 1;
   
@@ -1240,7 +1239,7 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
   }
   else
     memcpy(file->idx_ptr->compressed_global_bounds, file->idx_ptr->global_bounds, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-  
+  //printf("[BOUNDS] %d %d %d %d %d\n", (int)file->idx_ptr->compressed_global_bounds[0], (int)file->idx_ptr->compressed_global_bounds[1], (int)file->idx_ptr->compressed_global_bounds[2], (int)file->idx_ptr->compressed_global_bounds[3], (int)file->idx_ptr->compressed_global_bounds[4]);
   global_bounds_point.x = (int) file->idx_ptr->compressed_global_bounds[0];
   global_bounds_point.y = (int) file->idx_ptr->compressed_global_bounds[1];
   global_bounds_point.z = (int) file->idx_ptr->compressed_global_bounds[2];
@@ -2381,9 +2380,9 @@ static PIDX_return_code PIDX_write(PIDX_file file)
     {
       for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
         for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-          for (j = 0; j < file->idx_ptr->compressed_global_bounds[0] * file->idx_count[0]; j = j + (file->idx_ptr->compressed_global_bounds[0]))
+          for (j = 0; j < file->idx_ptr->global_bounds[0] * file->idx_count[0]; j = j + (file->idx_ptr->global_bounds[0]))
           {          
-            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] < (j + file->idx_ptr->compressed_global_bounds[0]))
+            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] < (j + file->idx_ptr->global_bounds[0]))
             {
               file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[0] - 
               (j);
@@ -2393,9 +2392,9 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           
       for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
         for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-          for (j = 0; j <= file->idx_ptr->compressed_global_bounds[1] * file->idx_count[1]; j = j + (file->idx_ptr->compressed_global_bounds[1]))
+          for (j = 0; j <= file->idx_ptr->global_bounds[1] * file->idx_count[1]; j = j + (file->idx_ptr->global_bounds[1]))
           {
-            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] < j + (file->idx_ptr->compressed_global_bounds[1] ))
+            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] < j + (file->idx_ptr->global_bounds[1] ))
             {
               file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[1] - 
               (j);
@@ -2405,9 +2404,9 @@ static PIDX_return_code PIDX_write(PIDX_file file)
           
       for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
         for (p = 0; p < file->idx_ptr->variable[var]->patch_count; p++)
-          for (j = 0; j < file->idx_ptr->compressed_global_bounds[2] * file->idx_count[2]; j = j + (file->idx_ptr->compressed_global_bounds[2]))
+          for (j = 0; j < file->idx_ptr->global_bounds[2] * file->idx_count[2]; j = j + (file->idx_ptr->global_bounds[2]))
           {
-            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->compressed_global_bounds[2] /* file->idx_count */))
+            if (file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] >= j && file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] < j + (file->idx_ptr->global_bounds[2] /* file->idx_count */))
             {
               file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] = file->idx_ptr->variable[var]->patch[p]->Ndim_box_offset[2] - 
               (j);
