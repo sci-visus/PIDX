@@ -209,19 +209,38 @@ int parse_args(struct Args *args, int argc, char **argv)
   int ts = 0;
   for (ts = 0; ts < args->time_step_count; ++ts)
   {
-    args->time_steps[ts] = ts;
+    args->time_steps[ts] = ts; // default
   }
-  for (ts = 0; ts < args->time_step_count; ++ts)
+  char c;
+  if ((c = fgetc(config_file)) != '\n') // there is a list of time steps following
   {
-    fscanf(config_file, "%d", &args->time_steps[ts]);
+    for (ts = 0; ts < args->time_step_count; ++ts)
+    {
+      fscanf(config_file, "%d", &args->time_steps[ts]);
+    }
+    fscanf(config_file, "\n");
   }
-  fscanf(config_file, "\n");
 
   fscanf(config_file, "(fields)\n");
-  fscanf(config_file, "%d\n", &args->variable_count);
+  fscanf(config_file, "%d", &args->variable_count);
+  args->variables = (int *)malloc(args->variable_count * sizeof(int));
+  int v = 0;
+  for (v = 0; v < args->variable_count; ++v)
+  {
+    args->variables[v] = v; // default
+  }
+  if ((c = fgetc(config_file)) != '\n') // there is a list of variables following
+  {
+    for (v = 0; v < args->variable_count; ++v)
+    {
+      fscanf(config_file, "%d", &args->variables[v]);
+    }
+    fscanf(config_file, "\n");
+  }
 
   fscanf(config_file, "(idx count x:y:z)\n");
   fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
+  printf("%d %d %d \n", args->idx_count[0], args->idx_count[1], args->idx_count[2]);
 
   if (strcmp(strkind, "hdf5-writer") != 0 && strcmp(strkind, "hdf5-reader") != 0)
   {

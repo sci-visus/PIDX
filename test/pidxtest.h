@@ -54,6 +54,9 @@ struct Args
   /// Number of Variables
   int variable_count;
 
+  /// Variable indices
+  int *variables;
+
   /// Number of IDX files partitions in each direction (x, y, z)
   int idx_count[3];
 

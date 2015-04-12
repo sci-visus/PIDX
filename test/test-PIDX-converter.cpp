@@ -38,12 +38,6 @@ int64_t mylog2(int64_t num)
 
 int test_converter(struct Args args, int rank)
 {
-  PIDX_file input_file;
-  PIDX_file output_file;
-  int variable_count; /// IDX File variable counts
-  int bits_per_block; /// Total number of samples in each block = 2 ^ bits_per_block
-  int blocks_per_file; /// Total number of blocks per file
-
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
@@ -113,14 +107,30 @@ int test_converter(struct Args args, int rank)
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
 
+    // get read parameters
+    PIDX_file input_file;
     PIDX_file_open(input_file_name, PIDX_file_rdonly, access, &input_file);
-    PIDX_file_create(args.output_file_name, PIDX_file_trunc, access, &output_file);
-
     PIDX_get_dims(input_file, global_bounding_box);
-    PIDX_set_dims(output_file, global_bounding_box);
     PIDX_set_current_time_step(input_file, args.time_steps[time_step]);
-    PIDX_set_current_time_step(output_file, args.time_steps[time_step]);
+    int bits_per_block;
     PIDX_get_block_size(input_file, &bits_per_block);
+    int blocks_per_file;
+    PIDX_get_block_count(input_file, &blocks_per_file);
+    int variable_count;
+    PIDX_get_variable_count(input_file, &variable_count);
+
+    // enable read phases
+    PIDX_enable_block_restructuring(input_file, args.perform_brst);
+    PIDX_enable_hz(input_file, args.perform_hz);
+    // NOTE: we don't enable compression for input
+    PIDX_enable_agg(input_file, args.perform_agg);
+    PIDX_enable_io(input_file, args.perform_io);
+
+    // set write parameters
+    PIDX_file output_file;
+    PIDX_file_create(args.output_file_name, PIDX_file_trunc, access, &output_file);
+    PIDX_set_dims(output_file, global_bounding_box);
+    PIDX_set_current_time_step(output_file, args.time_steps[time_step]);
     int64_t r = mylog2(args.compression_block_size[0] * args.compression_block_size[1] * args.compression_block_size[2]);
     if (r <= bits_per_block)
     {
@@ -131,33 +141,20 @@ int test_converter(struct Args args, int rank)
       printf("Compression block has more elements than the input bits per block. Terminating...\n");
       exit(EXIT_FAILURE);
     }
-    printf("can reach here\n");
-    PIDX_get_block_count(input_file, &blocks_per_file);
     PIDX_set_block_count(output_file, blocks_per_file);
-    PIDX_get_variable_count(input_file, &variable_count);
     PIDX_set_variable_count(output_file, variable_count);
     PIDX_set_aggregation_factor(output_file, args.aggregation_factor);
-
-    // PIDX compression related calls
     PIDX_set_compression_type(output_file, args.compression_type);
     PIDX_set_compression_block_size(output_file, compression_block_size_point);
     PIDX_set_lossy_compression_bit_rate(output_file, args.compression_bit_rate);
-
-    // PIDX set restructuring box size
     PIDX_set_restructuring_box(output_file, restructured_box_size_point); // DUONG_TODO: do we have to set this for input?
 
-    // PIDX debugging different phases
+    // debug write phases
     PIDX_debug_rst(output_file, args.debug_rst);
     PIDX_debug_hz(output_file, args.debug_hz);
     PIDX_dump_agg_info(output_file, args.dump_agg);
 
-    // PIDX enabling/disabling different phases
-    PIDX_enable_block_restructuring(input_file, args.perform_brst);
-    PIDX_enable_hz(input_file, args.perform_hz);
-    // NOTE: we don't enable compression for input
-    PIDX_enable_agg(input_file, args.perform_agg);
-    PIDX_enable_io(input_file, args.perform_io);
-
+    // enable write phases
     PIDX_enable_block_restructuring(output_file, args.perform_brst);
     PIDX_enable_hz(output_file, args.perform_hz);
     PIDX_enable_compression(output_file, args.perform_compression);
@@ -170,22 +167,23 @@ int test_converter(struct Args args, int rank)
     double **double_data = (double **)malloc(sizeof(*double_data) * variable_count); // DUONG_HARDCODE?
     memset(double_data, 0, sizeof(*double_data) * variable_count);
 
-    // Reads the data
+    // read
     int var = 0;
     for (var = 0; var < variable_count; var++)
     {
-      //read
       PIDX_get_next_variable(input_file, &variable[var]);
       double_data[var] = (double*)malloc(sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * variable[var]->values_per_sample);
       memset(double_data[var], 0, sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * variable[var]->values_per_sample);
       PIDX_read_next_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+    }
+    PIDX_close(input_file);
 
-      // write
+    // write
+    for (var = 0; var < variable_count; var++)
+    {
       PIDX_variable_create(output_file, variable[var]->var_name, variable[var]->values_per_sample * sizeof(uint64_t) * 8, variable[var]->type_name, &variable[var]);
       PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
     }
-
-    PIDX_close(input_file);
     PIDX_close(output_file);
     PIDX_close_access(access);
 
