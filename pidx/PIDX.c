@@ -724,7 +724,7 @@ PIDX_return_code PIDX_validate(PIDX_file file)
     file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block) - 1;
     //file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block);
   }
-  
+  /*
   int reduce_by_sample = 1;
   if (reduce_by_sample == 1)
   {
@@ -736,7 +736,7 @@ PIDX_return_code PIDX_validate(PIDX_file file)
   {
     file->idx_ptr->blocks_per_file = file->idx_ptr->blocks_per_file /  (file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4]);
   }
-  
+  */
   //file->idx_derived_ptr->samples_per_block = file->idx_derived_ptr->samples_per_block * 2;
   //file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 1;
   

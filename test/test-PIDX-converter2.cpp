@@ -56,7 +56,7 @@ int test_converter2(struct Args args, int rank)
 
   // Creating the filenames
   char *input_file_name = (char *)malloc(sizeof(char) * 512);
-  sprintf(input_file_name, "%s", args.output_file_template);
+  sprintf(input_file_name, "%s%s", args.output_file_template, ".idx");
   args.output_file_name = (char *)malloc(sizeof(char) * 512);
   sprintf(args.output_file_name, "%sdecompressed%s", args.output_file_template, ".idx");
 
@@ -83,6 +83,8 @@ int test_converter2(struct Args args, int rank)
   PIDX_set_point_5D(compression_block_size_point, args.compression_block_size[0], args.compression_block_size[1], args.compression_block_size[2], 1, 1);
   PIDX_set_point_5D(restructured_box_size_point, args.restructured_box_size[0], args.restructured_box_size[1], args.restructured_box_size[2], 1, 1);
 
+  printf("i am here\n");
+  
   PIDX_time_step_caching_ON();
   int time_step = 0;
   for (time_step = 0; time_step < 1; time_step++)
@@ -112,9 +114,14 @@ int test_converter2(struct Args args, int rank)
     PIDX_get_block_count(input_file, &blocks_per_file);
     PIDX_get_variable_count(input_file, &variable_count);
 
+    /// PIDX compression related calls
+    PIDX_set_compression_type(input_file, args.compression_type);
+    PIDX_set_compression_block_size(input_file, compression_block_size_point);
+    PIDX_set_lossy_compression_bit_rate(input_file, args.compression_bit_rate);
     // enable read phases
     PIDX_enable_block_restructuring(input_file, args.perform_brst);
     PIDX_enable_hz(input_file, args.perform_hz);
+    PIDX_enable_compression(input_file, 1);
     // NOTE: we don't enable compression for input
     PIDX_enable_agg(input_file, args.perform_agg);
     PIDX_enable_io(input_file, args.perform_io);
@@ -131,7 +138,10 @@ int test_converter2(struct Args args, int rank)
       memset(double_data[var], 0, sizeof (double) * args.count_local[0] * args.count_local[1] * args.count_local[2]  * 1);
       PIDX_read_next_variable(read_variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
     }
+
+    printf("i can be here 2\n");
     PIDX_close(input_file);
+    printf("i can be here 3\n");
 
     // set write parameters
     PIDX_file output_file;
@@ -143,8 +153,8 @@ int test_converter2(struct Args args, int rank)
     PIDX_set_block_count(output_file, 512);
     PIDX_set_variable_count(output_file, variable_count);
     PIDX_set_aggregation_factor(output_file, args.aggregation_factor);
-    PIDX_set_compression_type(output_file, args.compression_type);
-    PIDX_set_compression_block_size(output_file, compression_block_size_point);
+    //PIDX_set_compression_type(output_file, args.compression_type);
+    //PIDX_set_compression_block_size(output_file, compression_block_size_point);
     //PIDX_set_lossy_compression_bit_rate(output_file, args.compression_bit_rate);
     PIDX_set_restructuring_box(output_file, restructured_box_size_point); // DUONG_TODO: do we have to set this for input?
 
@@ -154,7 +164,7 @@ int test_converter2(struct Args args, int rank)
     PIDX_dump_agg_info(output_file, args.dump_agg);
 
     // enable write phases
-    PIDX_enable_block_restructuring(output_file, args.perform_brst);
+    PIDX_enable_block_restructuring(output_file, 0);
     PIDX_enable_hz(output_file, args.perform_hz);
     PIDX_enable_compression(output_file, 0);
     PIDX_enable_agg(output_file, args.perform_agg);
@@ -162,7 +172,7 @@ int test_converter2(struct Args args, int rank)
 
     write_variable = (PIDX_variable *)malloc(sizeof(*write_variable) * variable_count);
     memset(write_variable, 0, sizeof(*write_variable) * variable_count);
-
+    printf("i can be here 3\n");
     // write
     for (var = 0; var < variable_count; var++)
     {

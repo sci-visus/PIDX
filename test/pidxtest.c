@@ -128,7 +128,7 @@ int main(int argc, char **argv)
       test_converter(args, rank);
       break;
     case PARALLEL_CONVERTER2:
-      if (rank = 0)
+      if (rank == 0)
         printf("Performing Parallel Convert 2....\n");
       test_converter2(args, rank);
       break;
