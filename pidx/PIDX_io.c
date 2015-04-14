@@ -939,7 +939,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       {
         assert(output_offset < compressed_buffer_size);
         uint64_t bytes_written = zfp_compress(&zfp, io_id->idx_derived_ptr->agg_buffer->buffer + input_offset,
-                                          compressed_buffer + output_offset, compressed_block_size);
+                                              compressed_buffer + output_offset, compressed_block_size);
         assert(bytes_written > 0);
         input_offset += input_block_size;
         output_offset += bytes_written;
@@ -1012,8 +1012,75 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #else
   int fh;
 #endif
+  if (io_id->idx_ptr->compression_type == 2)
+  {
+    bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])  / (64/io_id->idx_ptr->compression_bit_rate);
+    generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
 
-  if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
+    mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+    if (mpi_ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, "[%s] [%d] MPI_File_open() failed filename %s.\n", __FILE__, __LINE__, file_name);
+      return -1;
+    }
+
+    uint64_t buffer_size = (io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) *
+                           (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) *
+                           (io_id->idx_ptr->compression_bit_rate) / 8;
+    mpi_ret = MPI_File_read_at(fh, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), io_id->idx_derived_ptr->agg_buffer->buffer, buffer_size, MPI_BYTE, &status);
+    if (mpi_ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+      return -1;
+    }
+
+    // decompress the data
+    zfp_params zfp;
+    zfp.type = ZFP_TYPE_DOUBLE;
+    zfp.nx = zfp.ny = zfp.nz = 4;
+    zfp_set_rate(&zfp, io_id->idx_ptr->compression_bit_rate);
+    uint64_t compressed_block_size = zfp_estimate_compressed_size(&zfp);
+    assert(buffer_size % compressed_block_size == 0);
+    uint64_t num_blocks = buffer_size / compressed_block_size;
+    uint64_t uncompressed_block_size = zfp.nx * zfp.ny * zfp.nz * num_blocks;
+    uint64_t output_buffer_size = uncompressed_block_size * num_blocks;
+    unsigned char* output = (unsigned char*)malloc(output_buffer_size);
+    uint64_t input_offset = 0;
+    uint64_t output_offset = 0;
+    uint64_t num_blocks_decompressed = 0;
+    while (input_offset < buffer_size)
+    {
+      assert(output_offset < output_buffer_size);
+      int success = zfp_decompress(&zfp, output + output_offset, io_id->idx_derived_ptr->agg_buffer->buffer + input_offset, compressed_block_size);
+      assert(success > 0);
+      input_offset += compressed_block_size;
+      output_offset += uncompressed_block_size;
+      ++num_blocks_decompressed;
+    }
+    assert(num_blocks_decompressed == num_blocks);
+
+    unsigned char * temp = realloc(io_id->idx_derived_ptr->agg_buffer->buffer, output_buffer_size);
+    io_id->idx_derived_ptr->agg_buffer->buffer = temp;
+    memcpy(io_id->idx_derived_ptr->agg_buffer->buffer, output, output_buffer_size);
+    free(output);
+
+    MPI_Get_count(&status, MPI_BYTE, &write_count);
+    //printf("[A] Elemets to write %d\n", write_count);
+    if (write_count != (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block  / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))))
+    {
+      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
+      return -1;
+    }
+
+    mpi_ret = MPI_File_close(&fh);
+    if (mpi_ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+      return -1;
+    }
+
+  }
+  else if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
   {
     bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])  / (64/io_id->idx_ptr->compression_bit_rate);
 
