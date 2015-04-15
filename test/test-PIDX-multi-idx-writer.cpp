@@ -183,7 +183,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
 #else
     PIDX_set_default_access(access);
 #endif
-    
+    printf("compression type = %d\n", args.compression_type);  
     /// PIDX mandatory calls
     PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
     

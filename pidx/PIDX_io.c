@@ -635,8 +635,10 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
     }
     MPI_Comm_free(&new_comm);
   }
-  else
+  else if (io_id->idx_ptr->compression_type != 2)
   {
+    printf("%d\n", io_id->idx_ptr->compression_type);
+    printf("**********i'm here. WTF\n");
     if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
     {
       bytes_per_datatype =  ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) / (64/io_id->idx_ptr->compression_bit_rate);
@@ -895,10 +897,11 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
     }
   }
 
-  if (io_id->idx_ptr->enable_compression == 1 && io_id->idx_ptr->compression_type == 2) // zfp done without block restructuring
+  if (io_id->idx_ptr->compression_type == 2) // zfp done without block restructuring
   {
     if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
     {
+      printf("am i here?\n");
       bytes_per_datatype =  ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) / (64/io_id->idx_ptr->compression_bit_rate);
       generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
       mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
@@ -916,16 +919,15 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 
       if (enable_caching == 1)
         memcpy (headers, cached_header_copy, total_header_size);
-
       uint64_t buffer_size = (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype)));
       uint64_t header_size = (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size);
       //unsigned char* temp_buffer = (unsigned char*)realloc(io_id->idx_derived_ptr->agg_buffer->buffer, bufer_size+header_size);
-
       zfp_params zfp;
       zfp.type = ZFP_TYPE_DOUBLE;
       zfp.nx = 4;
       zfp.ny = 4;
       zfp.nz = 4;
+      zfp_set_rate(&zfp, 4); // DUONG
       uint64_t input_block_size = zfp.nx * zfp.ny * zfp.nz * sizeof(double);
       uint64_t compressed_block_size = zfp_estimate_compressed_size(&zfp);
       assert(compressed_block_size > 0);
@@ -938,17 +940,21 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       while (input_offset < buffer_size)
       {
         assert(output_offset < compressed_buffer_size);
+        if (output_offset >= compressed_buffer_size)
+            printf("wrong\n");
         uint64_t bytes_written = zfp_compress(&zfp, io_id->idx_derived_ptr->agg_buffer->buffer + input_offset,
                                               compressed_buffer + output_offset, compressed_block_size);
         assert(bytes_written > 0);
+        if (bytes_written == 0) printf("What the hell\n");
         input_offset += input_block_size;
         output_offset += bytes_written;
         ++num_blocks_encoded;
       }
       assert(num_blocks_encoded == numBlocks);
       assert(output_offset == compressed_buffer_size);
-
+      printf("finish loop\n");
       unsigned char* temp_buffer = (unsigned char*)realloc(compressed_buffer, compressed_buffer_size+header_size);
+      printf("finish realloc\n");
 
       if (temp_buffer == NULL)
       {
@@ -958,13 +964,13 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       else
       {
         io_id->idx_derived_ptr->agg_buffer->buffer = temp_buffer;
-        memmove(io_id->idx_derived_ptr->agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) );
+        memmove(io_id->idx_derived_ptr->agg_buffer->buffer + io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size, io_id->idx_derived_ptr->agg_buffer->buffer, compressed_buffer_size);
         memcpy(io_id->idx_derived_ptr->agg_buffer->buffer, headers, total_header_size);
         memset(io_id->idx_derived_ptr->agg_buffer->buffer + total_header_size, 0, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size - total_header_size));
       }
       free(headers);
 
-      mpi_ret = MPI_File_write_at(fh, 0, io_id->idx_derived_ptr->agg_buffer->buffer, (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
+      mpi_ret = MPI_File_write_at(fh, 0, io_id->idx_derived_ptr->agg_buffer->buffer, compressed_buffer_size + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), MPI_BYTE, &status);
       if (mpi_ret != MPI_SUCCESS)
       {
         fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed for filename %s.\n", __FILE__, __LINE__, file_name);
@@ -973,7 +979,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 
       MPI_Get_count(&status, MPI_BYTE, &write_count);
       //printf("[A] Elemets to write %d\n", write_count);
-      if (write_count != (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block  / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size))
+      if (write_count != compressed_buffer_size + (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size))
       {
         fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
         return -1;
@@ -1012,8 +1018,9 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #else
   int fh;
 #endif
-  if (io_id->idx_ptr->compression_type == 2)
+  if (io_id->idx_ptr->compression_type == 2) // DUONG
   {
+    printf("decompressing .... \n");
     bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])  / (64/io_id->idx_ptr->compression_bit_rate);
     generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
 
@@ -1023,27 +1030,36 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
       fprintf(stderr, "[%s] [%d] MPI_File_open() failed filename %s.\n", __FILE__, __LINE__, file_name);
       return -1;
     }
-
+    int read_bit_rate = 4;
     uint64_t buffer_size = (io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) *
-                           (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) *
-                           (io_id->idx_ptr->compression_bit_rate) / 8;
+                           (io_id->idx_derived_ptr->samples_per_block / io_id->idx_derived_ptr->aggregation_factor) /
+                           (64/read_bit_rate) * sizeof(double);
+    printf("sample per block = %d\n", io_id->idx_derived_ptr->samples_per_block );
+    printf("block per file  %d\n", io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]);
+    printf("bufer sz = %d\n", (int)buffer_size);
     mpi_ret = MPI_File_read_at(fh, (io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size), io_id->idx_derived_ptr->agg_buffer->buffer, buffer_size, MPI_BYTE, &status);
     if (mpi_ret != MPI_SUCCESS)
     {
       fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
       return -1;
     }
+    printf("after read\n");
 
     // decompress the data
     zfp_params zfp;
     zfp.type = ZFP_TYPE_DOUBLE;
-    zfp.nx = zfp.ny = zfp.nz = 4;
-    zfp_set_rate(&zfp, io_id->idx_ptr->compression_bit_rate);
+    zfp.nx = 4;
+    zfp.ny = 4;
+    zfp.nz = 4;
+    zfp_set_rate(&zfp, read_bit_rate);
     uint64_t compressed_block_size = zfp_estimate_compressed_size(&zfp);
+    printf("compressed block size = %d\n", compressed_block_size);
     assert(buffer_size % compressed_block_size == 0);
     uint64_t num_blocks = buffer_size / compressed_block_size;
-    uint64_t uncompressed_block_size = zfp.nx * zfp.ny * zfp.nz * num_blocks;
+    uint64_t uncompressed_block_size = zfp.nx * zfp.ny * zfp.nz * sizeof(double);
+    printf("%d %d %d %d %d\n", uncompressed_block_size, num_blocks, zfp.nx, zfp.ny, zfp.nz);
     uint64_t output_buffer_size = uncompressed_block_size * num_blocks;
+    printf("output_buffer_size = %d %d\n", (int) output_buffer_size, (int)num_blocks);
     unsigned char* output = (unsigned char*)malloc(output_buffer_size);
     uint64_t input_offset = 0;
     uint64_t output_offset = 0;
@@ -1051,22 +1067,28 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
     while (input_offset < buffer_size)
     {
       assert(output_offset < output_buffer_size);
+      if (output_offset >= output_buffer_size) printf("haohfdofhas\n");
       int success = zfp_decompress(&zfp, output + output_offset, io_id->idx_derived_ptr->agg_buffer->buffer + input_offset, compressed_block_size);
       assert(success > 0);
+      if (success == 0)      printf("wrongwrong\n");
       input_offset += compressed_block_size;
       output_offset += uncompressed_block_size;
       ++num_blocks_decompressed;
     }
     assert(num_blocks_decompressed == num_blocks);
+    printf("after loop\n");
 
     unsigned char * temp = realloc(io_id->idx_derived_ptr->agg_buffer->buffer, output_buffer_size);
+
+    printf("after realloc\n");
     io_id->idx_derived_ptr->agg_buffer->buffer = temp;
     memcpy(io_id->idx_derived_ptr->agg_buffer->buffer, output, output_buffer_size);
     free(output);
+    printf("after memcpy\n");
 
     MPI_Get_count(&status, MPI_BYTE, &write_count);
     //printf("[A] Elemets to write %d\n", write_count);
-    if (write_count != (((io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]) * ( io_id->idx_derived_ptr->samples_per_block  / io_id->idx_derived_ptr->aggregation_factor) * (bytes_per_datatype))))
+    if (write_count != buffer_size)
     {
       fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
       return -1;

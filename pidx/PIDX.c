@@ -1758,7 +1758,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
 /////////////////////////////////////////////////
 PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
 {
-  if(compression_type != 1)
+  if(compression_type != 1 && compression_type != 2)
     return PIDX_err_unsupported_compression_type;
   
   if(file == NULL)
