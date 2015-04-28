@@ -196,39 +196,21 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
     params.nz = agg_id->idx_ptr->compression_block_size[2];
     int total_size = 0;
     zfp_set_rate(&params, agg_id->idx_ptr->compression_bit_rate);
-    //printf("MMMMMMMM %d %d %d %d\n", agg_id->idx_ptr->compression_block_size[0], agg_id->idx_ptr->compression_block_size[1], agg_id->idx_ptr->compression_block_size[2], agg_id->idx_ptr->compression_bit_rate);
+    outsize = zfp_estimate_compressed_size(&params);
+    unsigned char* zip = malloc(outsize);
     for ( i = 0; i < length; i = i + total_compression_block_size * typesize)
     {
-      outsize = zfp_estimate_compressed_size(&params);
-
-      unsigned char* zip = malloc(outsize);
-      //unsigned char* dzip = malloc(outsize);
-
-      //double x, y;
-      //memcpy(&x, buffer + i, sizeof(double));
-
+      memset(zip, 0, outsize);
       outsize = zfp_compress(&params, buffer + i , zip, outsize);
       if (outsize == 0)
       {
         fprintf(stderr, "compression failed\n");
         return -1;
       }
-      //printf("%d %d\n", outsize, total_size);
-
-      //zfp_decompress(&params, dzip , zip, outsize);
-      //memcpy(&y, dzip, sizeof(double));
-      //printf("[%d] before after %f %f\n", total_size, x, y);
-
-      unsigned char* temp_buffer = realloc(zip, outsize);
-      if (temp_buffer == NULL)
-        printf("realloc error\n!!!");
-      else
-        zip = temp_buffer;
       memcpy(buffer + total_size, zip, outsize);
-
       total_size = total_size + outsize;
-      free(zip);
     }
+    free(zip);
     return total_size;
   }
 
@@ -928,7 +910,7 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_id->idx_derived_ptr->agg_buffer->buffer_size, __LINE__, __FILE__);
             return (-1);
           }
-
+#if 0
           if (agg_id->idx_ptr->enable_compression == 1)
           {
             double nan_d = NAN;
@@ -939,6 +921,7 @@ int PIDX_agg_buf_create(PIDX_agg_id agg_id)
           }
           else
             memset(agg_id->idx_derived_ptr->agg_buffer->buffer, 0, agg_id->idx_derived_ptr->agg_buffer->buffer_size);
+#endif
         }
       }
     }

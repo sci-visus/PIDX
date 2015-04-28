@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#define PIDX_HAVE_LOSSY_ZFP
+//#define PIDX_HAVE_LOSSY_ZFP
 
 #ifdef PIDX_HAVE_LOSSY_ZFP
   #include "zfp.h"
@@ -317,7 +317,7 @@ int main(int argc, char **argv)
   else
     compression = 1;
 
-  compression = 1;
+  compression = 0;
   
   if (global_bounds[0] % compression_block_size[0] == 0)
     compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];
@@ -546,7 +546,7 @@ int main(int argc, char **argv)
                           lhs = decompressed_double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                         }
                         int rhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
-                        printf("%d %d \n", (int) lhs, rhs);
+                        //printf("%d %d \n", (int) lhs, rhs);
                         check_bit = check_bit && (lhs == rhs);
 
                       }

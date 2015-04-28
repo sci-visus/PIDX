@@ -706,6 +706,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 /// validate dims/blocksize
 PIDX_return_code PIDX_validate(PIDX_file file)
 {
+  /*
   int64_t dims;
   int64_t adjusted_global_bounds[PIDX_MAX_DIMENSIONS];
   adjusted_global_bounds[0] = file->idx_ptr->global_bounds[0] / file->idx_ptr->compression_block_size[0];
@@ -724,18 +725,9 @@ PIDX_return_code PIDX_validate(PIDX_file file)
     file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block) - 1;
     //file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block);
   }
+  */
   
-  int reduce_by_sample = 1;
-  if (reduce_by_sample == 1)
-  {
-    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block - log2(file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4]);
-    
-    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
-  }
-  else
-  {
-    file->idx_ptr->blocks_per_file = file->idx_ptr->blocks_per_file /  (file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4]);
-  }
+  
   
   //file->idx_derived_ptr->samples_per_block = file->idx_derived_ptr->samples_per_block * 2;
   //file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 1;
@@ -1088,6 +1080,37 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compres
     return PIDX_err_file;
   
   file->idx_ptr->compression_bit_rate = compression_bit_rate;
+  
+  if (file->idx_ptr->compression_bit_rate == 32)
+  {
+    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 1;
+    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
+  }
+  if (file->idx_ptr->compression_bit_rate == 16)
+  {
+    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 2;
+    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
+  }
+  if (file->idx_ptr->compression_bit_rate == 8)
+  {
+    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 3;
+    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
+  }
+  if (file->idx_ptr->compression_bit_rate == 4)
+  {
+    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 4;
+    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
+  }
+  if (file->idx_ptr->compression_bit_rate == 2)
+  {
+    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 5;
+    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
+  }
+  if (file->idx_ptr->compression_bit_rate == 1)
+  {
+    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 6;
+    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
+  }
   
   return PIDX_success;
 }
@@ -1792,6 +1815,17 @@ PIDX_return_code PIDX_set_compression_block_size(PIDX_file file, PIDX_point comp
     return PIDX_err_file;
   
   memcpy(file->idx_ptr->compression_block_size, compression_block_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  
+  int reduce_by_sample = 1;
+  if (reduce_by_sample == 1)
+  {
+    file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block - log2(file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4]);
+    file->idx_derived_ptr->samples_per_block = pow(2, file->idx_ptr->bits_per_block);
+  }
+  else
+  {
+    file->idx_ptr->blocks_per_file = file->idx_ptr->blocks_per_file /  (file->idx_ptr->compression_block_size[0] * file->idx_ptr->compression_block_size[1] * file->idx_ptr->compression_block_size[2] * file->idx_ptr->compression_block_size[3] * file->idx_ptr->compression_block_size[4]);
+  }
   
   return PIDX_validate(file);
 }

@@ -189,7 +189,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     
     /// PIDX calls to set different parameters (optional)
     PIDX_set_dims(file, global_bounding_box);
-    PIDX_set_current_time_step(file, ts);
+    PIDX_set_current_time_step(file, 1/*ts*/);
     PIDX_set_block_size(file, args.bits_per_block);
     PIDX_set_aggregation_factor(file, args.aggregation_factor);
     PIDX_set_block_count(file, args.blocks_per_file);

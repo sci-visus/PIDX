@@ -48,190 +48,6 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
 
 //static int generate_file_name(PIDX_io_id io_id, int file_number, char* filename, int maxlen);
 
-static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, int MODE)
-{
-  int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
-  int mpi_ret;
-  int bytes_per_sample, bytes_per_datatype;
-  int i = 0, l = 0;
-  char file_name[PATH_MAX];
-  off_t data_offset = 0;
-
-#if PIDX_HAVE_MPI
-  MPI_File fh;
-  MPI_Status status;
-#else
-  int fh;
-#endif
-    
-  samples_per_file = io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->blocks_per_file;    
-
-  bytes_per_datatype = (io_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
-  
-  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * io_id->idx_ptr->variable[variable_index]->values_per_sample;
-  
-  while (hz_count) 
-  {
-    block_number = hz_start_index / io_id->idx_derived_ptr->samples_per_block;
-    file_number = hz_start_index / samples_per_file;
-    file_index = hz_start_index % samples_per_file;
-    file_count = samples_per_file - file_index;
-    
-    if ((int64_t)file_count > hz_count)
-      file_count = hz_count;
-
-    // build file name
-    ret = generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, file_number, file_name, PATH_MAX);
-    if (ret == 1)
-    {
-      fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
-      return -1;
-    }
-    //printf("File name = %s\n", file_name);
-#if PIDX_HAVE_MPI
-    if(MODE == PIDX_WRITE)
-    {
-      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-      if (mpi_ret != MPI_SUCCESS) 
-      {
-	fprintf(stderr, "[%s] [%d] MPI_File_open() failed. (%s)\n", __FILE__, __LINE__, file_name);
-	return -1;
-      }
-    }
-    else
-    {
-      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
-      if (mpi_ret != MPI_SUCCESS) 
-      {
-	fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-	return -1;
-      }
-    }
-#else
-    fh = open(file_name, O_WRONLY);
-#endif
-    
-    data_offset = 0;
-    bytes_per_sample = io_id->idx_ptr->variable[variable_index]->bits_per_value / 8;
-    data_offset = file_index * bytes_per_sample * io_id->idx_ptr->variable[variable_index]->values_per_sample;
-    data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
-    
-#ifdef PIDX_VAR_SLOW_LOOP
-    block_negative_offset = PIDX_blocks_find_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_ptr->variable[variable_index]->VAR_global_block_layout);
-#else
-    block_negative_offset = PIDX_blocks_find_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_derived_ptr->global_block_layout);
-#endif
-      
-    data_offset -= block_negative_offset * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[variable_index]->values_per_sample;
-      
-#ifdef PIDX_VAR_SLOW_LOOP
-    for (l = 0; l < variable_index; l++) 
-    {
-      bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
-      for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
-        if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[l]->VAR_global_block_layout))
-          data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
-    }
-#else
-    for (l = 0; l < variable_index; l++) 
-    {
-      bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
-      for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
-        if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_derived_ptr->global_block_layout))
-          data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
-    }
-#endif
-    
-#if 0
-    int u = 0;
-    printf("[Offset Count] [%d %d] :: [%d %d] File Number %d HZ Start %lld Total Samples %d\n", io_id->idx_derived_ptr->start_fs_block, io_id->idx_derived_ptr->fs_block_size, data_offset, file_count, file_number, hz_start_index, samples_per_file);
-    if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(double) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "float64") == 0)
-    {
-      double value;
-      printf("[D] Offset %d\n", data_offset);
-      for(u = 0 ; u < file_count ; u++)
-      {
-	memcpy(&value, hz_buffer + (u * sizeof(double)), sizeof(double));
-	printf("[DOUBLE] Value at %d = %f\n", u,  value);
-      }
-    }
-    else if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(int) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "float32") == 0)
-    {
-      float fvalue;
-      printf("[D] Offset %d\n", data_offset);
-      for(u = 0 ; u < file_count ; u++)
-      {
-	memcpy(&fvalue, hz_buffer + (u * sizeof(float)), sizeof(float));
-	printf("[FLOAT] Value at %d = %f\n", u,  fvalue);
-      }
-    }
-    else if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(float) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "int32") == 0)
-    {
-      int ivalue;
-      printf("[D] Offset %d\n", data_offset);
-      for(u = 0 ; u < file_count ; u++)
-      {
-	memcpy(&ivalue, hz_buffer + (u * sizeof(int)), sizeof(int));
-	printf("[INT] Value at %d = %f\n", u,  ivalue);
-      }
-    }
-    else if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(unsigned char) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "uint8") == 0)
-    {
-      unsigned char uivalue;
-      printf("[D] Offset %d\n", data_offset);
-      for(u = 0 ; u < file_count ; u++)
-      {
-	memcpy(&uivalue, hz_buffer + (u * sizeof(unsigned char)), sizeof(unsigned char));
-	printf("[U INT] Value at %d = %f\n", u,  uivalue);
-      }
-    }
-#endif
-
-    if(MODE == PIDX_WRITE)
-    {
-#if PIDX_HAVE_MPI
-      
-      //printf("[Offset Count] [%d %d] :: [%d %d] File Number %d HZ Start %lld Total Samples %d\n", io_id->idx_derived_ptr->start_fs_block, io_id->idx_derived_ptr->fs_block_size, data_offset, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), file_number, hz_start_index, samples_per_file);
-      
-      mpi_ret = MPI_File_write_at(fh, data_offset, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), MPI_BYTE, &status);
-      if (mpi_ret != MPI_SUCCESS) 
-      {
-        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-        return -1;
-      }
-#else
-      pwrite(fh, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), data_offset);
-#endif
-    }
-    if(MODE == PIDX_READ)
-    {
-#if PIDX_HAVE_MPI
-      mpi_ret = MPI_File_read_at(fh, data_offset, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), MPI_BYTE, &status);
-      if (mpi_ret != MPI_SUCCESS) 
-      {
-	fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-	return -1;
-      }
-#else
-      pread(fh, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), data_offset);
-#endif
-    }
-        
-    //file_count = file_count / io_id->idx_ptr->variable[variable_index]->values_per_sample;
-    
-    hz_count -= file_count;
-    hz_start_index += file_count;
-    hz_buffer += file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * bytes_per_datatype;
-
-#if PIDX_HAVE_MPI
-    MPI_File_close(&fh);
-#else
-    close(fh);
-#endif
-
-  }
-  return (0);
-}
 
 PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index) 
 {
@@ -243,15 +59,7 @@ PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata 
   
   io_id->idx_ptr = idx_meta_data;
   io_id->idx_derived_ptr = idx_derived_ptr;
-
-  /*
-  io_id->idx_ptr = (idx_dataset)malloc(sizeof(*(io_id->idx_ptr)));
-  memcpy(io_id->idx_ptr, idx_meta_data, sizeof(*(io_id->idx_ptr)));
-  
-  io_id->idx_derived_ptr = (idx_dataset_derived_metadata)malloc(sizeof(*(io_id->idx_derived_ptr)));
-  memcpy(io_id->idx_derived_ptr, idx_derived_ptr, sizeof(*(io_id->idx_derived_ptr)));
-  */
-  
+ 
   io_id->start_var_index = start_var_index;
   io_id->end_var_index = end_var_index;
       
@@ -267,47 +75,6 @@ int PIDX_io_set_communicator(PIDX_io_id io_id, MPI_Comm comm)
 }
 #endif
 
-void print_buffer(unsigned char *buffer, int offset, int count, int sample_size, int datatype_size, char* name)
-{
-  int i;
-  if(datatype_size/8 == sizeof(int) && strcmp(name, "int32") == 0)
-  {
-    int ival = 0;
-    for(i = 0; i < count * sample_size; i++)
-    {
-      memcpy(&ival, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
-      printf("Int value at %d = %d\n", i, ival);
-    }
-  }
-  else if(datatype_size/8 == sizeof(double) && strcmp(name, "float64") == 0)
-  {
-    double dval = 0;
-    for(i = 0; i < count * sample_size; i++)
-    {
-      memcpy(&dval, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
-      printf("[%d] Double value at %d = %f\n", count, i, dval);
-    }
-  }
-  else if (datatype_size/8 == sizeof(float) && strcmp(name, "float32") == 0)
-  {
-    float fval = 0;
-    for(i = 0; i < count * sample_size; i++)
-    {
-      memcpy(&fval, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
-      printf("[%d] Float value at %d = %f\n", count, i, fval);
-    }
-  }
-  else if (datatype_size/8 == sizeof(unsigned char) && strcmp(name, "uint8") == 0)
-  {
-    unsigned int uival = 0;
-    for(i = 0; i < count * sample_size; i++)
-    {
-      memcpy(&uival, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
-      printf("[%d] Unsigned int value at %d = %d\n", count, i, uival);
-    }
-  }
-}
-
 int PIDX_io_cached_data(uint32_t* cached_header)
 {
   cached_header_copy = cached_header;
@@ -315,85 +82,6 @@ int PIDX_io_cached_data(uint32_t* cached_header)
   
   return 0;
 }
-
-#if 1
-int compress_aggregation_buffer(PIDX_io_id io_id, unsigned char* agg_buffer, int buffer_size)
-{
-  int i = 0, j = 0, double_elements_per_block = 0, memmove_count = 0;
-  double value = 0;
-  int nan_counter = 0, total_nan_count = 0, block_nan_count = 0, existing_block_count = 0;
-  int bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) /* (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]) */;
-  
-  for (i = 0; i < io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]; i++)
-  {
-    if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * io_id->idx_derived_ptr->agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout))
-    {
-      block_nan_count = 0;
-      
-      double_elements_per_block = io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
-      printf("samples per block = %d double elements per block = %d block count %d\n", io_id->idx_derived_ptr->samples_per_block, double_elements_per_block, existing_block_count);
-      for (j = 0; j < double_elements_per_block; j++)
-      {
-        memcpy(&value, io_id->idx_derived_ptr->agg_buffer->buffer + ((existing_block_count * double_elements_per_block) + (j /*- memmove_count*/)) * bytes_per_datatype, bytes_per_datatype );
-        
-        /// if value is nan
-        //if (isnan(value) != 0)
-        if (value == 9999999999)
-        {
-          nan_counter++;
-          total_nan_count++;
-          block_nan_count++;
-          //printf("YYYYYYYYY %d %d\n", ((existing_block_count * double_elements_per_block) + (j /*- memmove_count*/)), total_nan_count);
-        }
-        /// when performing memmove
-        else
-        {
-          //printf("XXXXXXXXX %d %d\n", j, total_nan_count);
-          if( nan_counter != 0)
-          {
-            printf("[%d] XXXXXXXXX %d %d\n", i, j, nan_counter);
-            //printf("Destination %d (%d - %d) Source %d (%d - %d + %d) Count %d (%d - %d)\n", (int)(((existing_block_count * double_elements_per_block) + j) - total_nan_count), (int)((existing_block_count * double_elements_per_block) + j), (int)total_nan_count, (int)(((existing_block_count * double_elements_per_block) + j) - total_nan_count + nan_counter), (int)((existing_block_count * double_elements_per_block) + j), (int)total_nan_count, (int)nan_counter, (int)io_id->idx_derived_ptr->agg_buffer->buffer_size - ((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype, (int)io_id->idx_derived_ptr->agg_buffer->buffer_size, (int)((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype);  
-            
-            //memmove(io_id->idx_derived_ptr->agg_buffer->buffer + (((existing_block_count * double_elements_per_block) + j) - total_nan_count) * bytes_per_datatype, io_id->idx_derived_ptr->agg_buffer->buffer + (((existing_block_count * double_elements_per_block) + j) - total_nan_count + nan_counter) * bytes_per_datatype, io_id->idx_derived_ptr->agg_buffer->buffer_size - ((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype);
-            memmove_count = memmove_count + nan_counter;
-            nan_counter = 0;
-          }
-        }
-        value = 0;
-      }
-      io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i] = (io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) - (block_nan_count * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
-      printf("Compressed block size %d = %lld\n", i, (long long)io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i]/(io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
-      existing_block_count++;
-    }
-    else
-      io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i] = 0;  
-  }
-  
-  unsigned char* temp_buffer = (unsigned char*)realloc(io_id->idx_derived_ptr->agg_buffer->buffer, io_id->idx_derived_ptr->agg_buffer->buffer_size - (total_nan_count * bytes_per_datatype));
-  if (temp_buffer == NULL)
-  {
-    fprintf(stderr, "[%s] [%d] realloc() of aggregation buffer for compression failed.\n", __FILE__, __LINE__);
-    return -1;
-  }
-  else
-    io_id->idx_derived_ptr->agg_buffer->buffer = temp_buffer;
-  
-  io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size = ((existing_block_count * io_id->idx_derived_ptr->samples_per_block) * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) - (total_nan_count * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
-  
-#if 1
-  printf("Total NAN count = %d %lld %d %d %d %d %d\n", 
-         (int)total_nan_count, 
-         (long long)io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size, 
-         (int)existing_block_count, 
-         (int)io_id->idx_derived_ptr->samples_per_block, 
-         (int)total_nan_count, 
-         (int)(io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8), 
-         (int)(io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]));
-#endif
-
-  return 0;
-}
-#endif
 
 int PIDX_io_aggregated_write(PIDX_io_id io_id)
 {
@@ -1088,7 +776,6 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
   return 0;
 }
 
-
 int PIDX_io_per_process_write(PIDX_io_id io_id)
 {
   int e1 = 0, i = 0, p = 0, var = 0, ret;
@@ -1444,7 +1131,6 @@ int PIDX_io_per_process_read(PIDX_io_id io_id)
   return 0;
 }
 
-
 int PIDX_io_finalize(PIDX_io_id io_id) 
 {
   
@@ -1453,3 +1139,312 @@ int PIDX_io_finalize(PIDX_io_id io_id)
 
   return 0;
 }
+
+
+static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, int MODE)
+{
+  int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
+  int mpi_ret;
+  int bytes_per_sample, bytes_per_datatype;
+  int i = 0, l = 0;
+  char file_name[PATH_MAX];
+  off_t data_offset = 0;
+
+#if PIDX_HAVE_MPI
+  MPI_File fh;
+  MPI_Status status;
+#else
+  int fh;
+#endif
+    
+  samples_per_file = io_id->idx_derived_ptr->samples_per_block * io_id->idx_ptr->blocks_per_file;    
+
+  bytes_per_datatype = (io_id->idx_ptr->variable[variable_index]->bits_per_value / 8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+  
+  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * io_id->idx_ptr->variable[variable_index]->values_per_sample;
+  
+  while (hz_count) 
+  {
+    block_number = hz_start_index / io_id->idx_derived_ptr->samples_per_block;
+    file_number = hz_start_index / samples_per_file;
+    file_index = hz_start_index % samples_per_file;
+    file_count = samples_per_file - file_index;
+    
+    if ((int64_t)file_count > hz_count)
+      file_count = hz_count;
+
+    // build file name
+    ret = generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, file_number, file_name, PATH_MAX);
+    if (ret == 1)
+    {
+      fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
+      return -1;
+    }
+    //printf("File name = %s\n", file_name);
+#if PIDX_HAVE_MPI
+    if(MODE == PIDX_WRITE)
+    {
+      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+	fprintf(stderr, "[%s] [%d] MPI_File_open() failed. (%s)\n", __FILE__, __LINE__, file_name);
+	return -1;
+      }
+    }
+    else
+    {
+      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+	fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+	return -1;
+      }
+    }
+#else
+    fh = open(file_name, O_WRONLY);
+#endif
+    
+    data_offset = 0;
+    bytes_per_sample = io_id->idx_ptr->variable[variable_index]->bits_per_value / 8;
+    data_offset = file_index * bytes_per_sample * io_id->idx_ptr->variable[variable_index]->values_per_sample;
+    data_offset += io_id->idx_derived_ptr->start_fs_block * io_id->idx_derived_ptr->fs_block_size;
+    
+#ifdef PIDX_VAR_SLOW_LOOP
+    block_negative_offset = PIDX_blocks_find_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_ptr->variable[variable_index]->VAR_global_block_layout);
+#else
+    block_negative_offset = PIDX_blocks_find_negative_offset(io_id->idx_ptr->blocks_per_file, block_number, io_id->idx_derived_ptr->global_block_layout);
+#endif
+      
+    data_offset -= block_negative_offset * io_id->idx_derived_ptr->samples_per_block * bytes_per_sample * io_id->idx_ptr->variable[variable_index]->values_per_sample;
+      
+#ifdef PIDX_VAR_SLOW_LOOP
+    for (l = 0; l < variable_index; l++) 
+    {
+      bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
+      for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
+        if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_ptr->variable[l]->VAR_global_block_layout))
+          data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
+    }
+#else
+    for (l = 0; l < variable_index; l++) 
+    {
+      bytes_per_sample = io_id->idx_ptr->variable[l]->bits_per_value / 8;
+      for (i = 0; i < io_id->idx_ptr->blocks_per_file; i++)
+        if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * file_number)), io_id->idx_derived_ptr->global_block_layout))
+          data_offset = data_offset + (io_id->idx_ptr->variable[l]->values_per_sample * bytes_per_sample * io_id->idx_derived_ptr->samples_per_block);
+    }
+#endif
+    
+#if 0
+    int u = 0;
+    printf("[Offset Count] [%d %d] :: [%d %d] File Number %d HZ Start %lld Total Samples %d\n", io_id->idx_derived_ptr->start_fs_block, io_id->idx_derived_ptr->fs_block_size, data_offset, file_count, file_number, hz_start_index, samples_per_file);
+    if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(double) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "float64") == 0)
+    {
+      double value;
+      printf("[D] Offset %d\n", data_offset);
+      for(u = 0 ; u < file_count ; u++)
+      {
+	memcpy(&value, hz_buffer + (u * sizeof(double)), sizeof(double));
+	printf("[DOUBLE] Value at %d = %f\n", u,  value);
+      }
+    }
+    else if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(int) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "float32") == 0)
+    {
+      float fvalue;
+      printf("[D] Offset %d\n", data_offset);
+      for(u = 0 ; u < file_count ; u++)
+      {
+	memcpy(&fvalue, hz_buffer + (u * sizeof(float)), sizeof(float));
+	printf("[FLOAT] Value at %d = %f\n", u,  fvalue);
+      }
+    }
+    else if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(float) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "int32") == 0)
+    {
+      int ivalue;
+      printf("[D] Offset %d\n", data_offset);
+      for(u = 0 ; u < file_count ; u++)
+      {
+	memcpy(&ivalue, hz_buffer + (u * sizeof(int)), sizeof(int));
+	printf("[INT] Value at %d = %f\n", u,  ivalue);
+      }
+    }
+    else if(io_id->idx_ptr->variable[variable_index]->bits_per_value / 8 == (int)sizeof(unsigned char) && strcmp(io_id->idx_ptr->variable[variable_index]->type_name, "uint8") == 0)
+    {
+      unsigned char uivalue;
+      printf("[D] Offset %d\n", data_offset);
+      for(u = 0 ; u < file_count ; u++)
+      {
+	memcpy(&uivalue, hz_buffer + (u * sizeof(unsigned char)), sizeof(unsigned char));
+	printf("[U INT] Value at %d = %f\n", u,  uivalue);
+      }
+    }
+#endif
+
+    if(MODE == PIDX_WRITE)
+    {
+#if PIDX_HAVE_MPI
+      
+      //printf("[Offset Count] [%d %d] :: [%d %d] File Number %d HZ Start %lld Total Samples %d\n", io_id->idx_derived_ptr->start_fs_block, io_id->idx_derived_ptr->fs_block_size, data_offset, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), file_number, hz_start_index, samples_per_file);
+      
+      mpi_ret = MPI_File_write_at(fh, data_offset, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+        return -1;
+      }
+#else
+      pwrite(fh, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), data_offset);
+#endif
+    }
+    if(MODE == PIDX_READ)
+    {
+#if PIDX_HAVE_MPI
+      mpi_ret = MPI_File_read_at(fh, data_offset, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS) 
+      {
+	fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+	return -1;
+      }
+#else
+      pread(fh, hz_buffer, file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * (io_id->idx_ptr->variable[variable_index]->bits_per_value/8), data_offset);
+#endif
+    }
+        
+    //file_count = file_count / io_id->idx_ptr->variable[variable_index]->values_per_sample;
+    
+    hz_count -= file_count;
+    hz_start_index += file_count;
+    hz_buffer += file_count * io_id->idx_ptr->variable[variable_index]->values_per_sample * bytes_per_datatype;
+
+#if PIDX_HAVE_MPI
+    MPI_File_close(&fh);
+#else
+    close(fh);
+#endif
+
+  }
+  return (0);
+}
+
+
+void print_buffer(unsigned char *buffer, int offset, int count, int sample_size, int datatype_size, char* name)
+{
+  int i;
+  if(datatype_size/8 == sizeof(int) && strcmp(name, "int32") == 0)
+  {
+    int ival = 0;
+    for(i = 0; i < count * sample_size; i++)
+    {
+      memcpy(&ival, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
+      printf("Int value at %d = %d\n", i, ival);
+    }
+  }
+  else if(datatype_size/8 == sizeof(double) && strcmp(name, "float64") == 0)
+  {
+    double dval = 0;
+    for(i = 0; i < count * sample_size; i++)
+    {
+      memcpy(&dval, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
+      printf("[%d] Double value at %d = %f\n", count, i, dval);
+    }
+  }
+  else if (datatype_size/8 == sizeof(float) && strcmp(name, "float32") == 0)
+  {
+    float fval = 0;
+    for(i = 0; i < count * sample_size; i++)
+    {
+      memcpy(&fval, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
+      printf("[%d] Float value at %d = %f\n", count, i, fval);
+    }
+  }
+  else if (datatype_size/8 == sizeof(unsigned char) && strcmp(name, "uint8") == 0)
+  {
+    unsigned int uival = 0;
+    for(i = 0; i < count * sample_size; i++)
+    {
+      memcpy(&uival, buffer + (offset * sample_size + i) * (datatype_size/8), (datatype_size/8));
+      printf("[%d] Unsigned int value at %d = %d\n", count, i, uival);
+    }
+  }
+}
+
+
+
+#if 1
+int compress_aggregation_buffer(PIDX_io_id io_id, unsigned char* agg_buffer, int buffer_size)
+{
+  int i = 0, j = 0, double_elements_per_block = 0, memmove_count = 0;
+  double value = 0;
+  int nan_counter = 0, total_nan_count = 0, block_nan_count = 0, existing_block_count = 0;
+  int bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) /* (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]) */;
+  
+  for (i = 0; i < io_id->idx_derived_ptr->existing_blocks_index_per_file[io_id->idx_derived_ptr->agg_buffer->file_number]; i++)
+  {
+    if (PIDX_blocks_is_block_present((i + (io_id->idx_ptr->blocks_per_file * io_id->idx_derived_ptr->agg_buffer->file_number)), io_id->idx_derived_ptr->global_block_layout))
+    {
+      block_nan_count = 0;
+      
+      double_elements_per_block = io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]);
+      printf("samples per block = %d double elements per block = %d block count %d\n", io_id->idx_derived_ptr->samples_per_block, double_elements_per_block, existing_block_count);
+      for (j = 0; j < double_elements_per_block; j++)
+      {
+        memcpy(&value, io_id->idx_derived_ptr->agg_buffer->buffer + ((existing_block_count * double_elements_per_block) + (j /*- memmove_count*/)) * bytes_per_datatype, bytes_per_datatype );
+        
+        /// if value is nan
+        //if (isnan(value) != 0)
+        if (value == 9999999999)
+        {
+          nan_counter++;
+          total_nan_count++;
+          block_nan_count++;
+          //printf("YYYYYYYYY %d %d\n", ((existing_block_count * double_elements_per_block) + (j /*- memmove_count*/)), total_nan_count);
+        }
+        /// when performing memmove
+        else
+        {
+          //printf("XXXXXXXXX %d %d\n", j, total_nan_count);
+          if( nan_counter != 0)
+          {
+            printf("[%d] XXXXXXXXX %d %d\n", i, j, nan_counter);
+            //printf("Destination %d (%d - %d) Source %d (%d - %d + %d) Count %d (%d - %d)\n", (int)(((existing_block_count * double_elements_per_block) + j) - total_nan_count), (int)((existing_block_count * double_elements_per_block) + j), (int)total_nan_count, (int)(((existing_block_count * double_elements_per_block) + j) - total_nan_count + nan_counter), (int)((existing_block_count * double_elements_per_block) + j), (int)total_nan_count, (int)nan_counter, (int)io_id->idx_derived_ptr->agg_buffer->buffer_size - ((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype, (int)io_id->idx_derived_ptr->agg_buffer->buffer_size, (int)((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype);  
+            
+            //memmove(io_id->idx_derived_ptr->agg_buffer->buffer + (((existing_block_count * double_elements_per_block) + j) - total_nan_count) * bytes_per_datatype, io_id->idx_derived_ptr->agg_buffer->buffer + (((existing_block_count * double_elements_per_block) + j) - total_nan_count + nan_counter) * bytes_per_datatype, io_id->idx_derived_ptr->agg_buffer->buffer_size - ((existing_block_count * double_elements_per_block) + j) * bytes_per_datatype);
+            memmove_count = memmove_count + nan_counter;
+            nan_counter = 0;
+          }
+        }
+        value = 0;
+      }
+      io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i] = (io_id->idx_derived_ptr->samples_per_block * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) - (block_nan_count * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
+      printf("Compressed block size %d = %lld\n", i, (long long)io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i]/(io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
+      existing_block_count++;
+    }
+    else
+      io_id->idx_derived_ptr->agg_buffer->compressed_block_size[i] = 0;  
+  }
+  
+  unsigned char* temp_buffer = (unsigned char*)realloc(io_id->idx_derived_ptr->agg_buffer->buffer, io_id->idx_derived_ptr->agg_buffer->buffer_size - (total_nan_count * bytes_per_datatype));
+  if (temp_buffer == NULL)
+  {
+    fprintf(stderr, "[%s] [%d] realloc() of aggregation buffer for compression failed.\n", __FILE__, __LINE__);
+    return -1;
+  }
+  else
+    io_id->idx_derived_ptr->agg_buffer->buffer = temp_buffer;
+  
+  io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size = ((existing_block_count * io_id->idx_derived_ptr->samples_per_block) * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) - (total_nan_count * (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8));
+  
+#if 1
+  printf("Total NAN count = %d %lld %d %d %d %d %d\n", 
+         (int)total_nan_count, 
+         (long long)io_id->idx_derived_ptr->agg_buffer->compressed_buffer_size, 
+         (int)existing_block_count, 
+         (int)io_id->idx_derived_ptr->samples_per_block, 
+         (int)total_nan_count, 
+         (int)(io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8), 
+         (int)(io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4]));
+#endif
+
+  return 0;
+}
+#endif
