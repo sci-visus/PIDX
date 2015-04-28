@@ -52,6 +52,7 @@ int usage_multi_idx_writer();
 
 int test_mpi_to_writer(struct Args args, int rank, int nprocs);
 int test_converter(struct Args args, int rank);
+int test_converter2(struct Args args, int rank);
 #ifdef __cplusplus
 }
 #endif

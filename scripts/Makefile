@@ -85,7 +85,7 @@ libPIDX.a: $(PIDX_NEW_OBJS) ../pidx/PIDX_io.c ../pidx/PIDX_io.h ../pidx/PIDX_agg
 	ar rcs $@ $(PIDX_NEW_OBJS) PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_compression.o PIDX_block_restructure.o PIDX_agg.o PIDX.o
 
 pidxtest:  ../test/pidxtest.c ../test/testdefs.h ../test/pidxtest.h ../test/test-PIDX-reader.cpp ../test/test-mpi-to-idx.cpp ../test/test-HDF5-writer.c ../test/test-HDF5-reader.c ../test/test-PIDX-multi-idx-writer.cpp PIDX_data_layout.o  PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a
-	$(MPICXX) $(MPI_CFLAGS) $< ../test/test-PIDX-multi-idx-writer.cpp ../test/test-PIDX-reader.cpp ../test/test-mpi-to-idx.cpp ../test/test-HDF5-writer.c ../test/test-HDF5-reader.c ../test/test-PIDX-converter.cpp -o $@ $(MPI_LDFLAGS_PIDX)
+	$(MPICXX) $(MPI_CFLAGS) $< ../test/test-PIDX-multi-idx-writer.cpp ../test/test-PIDX-reader.cpp ../test/test-mpi-to-idx.cpp ../test/test-HDF5-writer.c ../test/test-HDF5-reader.c ../test/test-PIDX-converter.cpp ../test/test-PIDX-converter2.cpp -o $@ $(MPI_LDFLAGS_PIDX)
 # 	rm *.o
 
 idx-verify: ../profile/idx-verify.c

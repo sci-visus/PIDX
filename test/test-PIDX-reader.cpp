@@ -217,7 +217,7 @@ int test_reader(struct Args args, int rank, int nprocs)
             {
               if (double_data[var][index * values_per_sample[var] + spv] != 100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)))
               {
-                printf("values = %f %lld\n", double_data[var][index * values_per_sample[var] + spv], (long long)100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)));
+                //printf("values = %f %lld\n", double_data[var][index * values_per_sample[var] + spv], (long long)100 + var + ((args.extents[0] * args.extents[1]*(local_offset[2] + k))+(args.extents[0]*(local_offset[1] + j)) + (local_offset[0] + i)));
               }
               else
                 equal_count++;

@@ -220,8 +220,8 @@ int PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id, int set_box_dim, int64
   else
     memcpy(rst_id->power_two_box_size, box_dim, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
     
-  if (rank == 0)
-    printf("[%d] Imposed Box Dimension : %lld %lld %lld %lld %lld\n", rank, (long long)rst_id->power_two_box_size[0], (long long)rst_id->power_two_box_size[1], (long long)rst_id->power_two_box_size[2], (long long)rst_id->power_two_box_size[3], (long long)rst_id->power_two_box_size[4]);
+  //if (rank == 0)
+  //  printf("[%d] Imposed Box Dimension : %lld %lld %lld %lld %lld\n", rank, (long long)rst_id->power_two_box_size[0], (long long)rst_id->power_two_box_size[1], (long long)rst_id->power_two_box_size[2], (long long)rst_id->power_two_box_size[3], (long long)rst_id->power_two_box_size[4]);
   
   /// extents for the local process(rank)
   Ndim_box local_proc_box = (Ndim_box)malloc(sizeof (*local_proc_box));

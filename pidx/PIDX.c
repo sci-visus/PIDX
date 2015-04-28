@@ -706,7 +706,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 /// validate dims/blocksize
 PIDX_return_code PIDX_validate(PIDX_file file)
 {
-  /*
   int64_t dims;
   int64_t adjusted_global_bounds[PIDX_MAX_DIMENSIONS];
   adjusted_global_bounds[0] = file->idx_ptr->global_bounds[0] / file->idx_ptr->compression_block_size[0];
@@ -725,13 +724,7 @@ PIDX_return_code PIDX_validate(PIDX_file file)
     file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block) - 1;
     //file->idx_ptr->bits_per_block = getNumBits(file->idx_derived_ptr->samples_per_block);
   }
-  */
-  
-  
-  
-  //file->idx_derived_ptr->samples_per_block = file->idx_derived_ptr->samples_per_block * 2;
-  //file->idx_ptr->bits_per_block = file->idx_ptr->bits_per_block + 1;
-  
+ 
   if (file->idx_ptr->bits_per_block == 0)
   {
     file->idx_ptr->bits_per_block = 1;
@@ -1781,7 +1774,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
 /////////////////////////////////////////////////
 PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
 {
-  if(compression_type != 1)
+  if(compression_type != 1 && compression_type != 2)
     return PIDX_err_unsupported_compression_type;
   
   if(file == NULL)
