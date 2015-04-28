@@ -40,6 +40,7 @@ struct PIDX_agg_struct
   /// Contains all relevant IDX file info
   /// Blocks per file, samples per block, bitmask, box, file name template and more
   idx_dataset idx_ptr;
+  
 
   /// Contains all derieved IDX file info
   /// number of files, files that are ging to be populated
@@ -95,8 +96,9 @@ static double now()
 }
 */
 
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
 // compress 'inbytes' bytes from 'data' to stream 'FPZ'
+/*
 static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medium)
 {
   //fprintf(stderr, "compressing to %s\n", medium);
@@ -120,19 +122,19 @@ static int compress(FPZ* fpz, const void* data, size_t inbytes, const char* medi
   //fprintf(stderr, "in=%zu out=%zu ratio=%.2f seconds=%.3f MB/s=%.3f\n", inbytes, outbytes, (double)inbytes / outbytes, t, (double)inbytes / (1024 * 1024 * t));
   return (int)outbytes;
 }
-
+*/
 int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
 {
   int i = 0, j = 0;
   int prec = 0;
   int nf = 1;
-  int type = FPZIP_TYPE_DOUBLE;
+  //int type = FPZIP_TYPE_DOUBLE;
 
   int64_t total_compression_block_size = agg_id->idx_ptr->compression_block_size[0] * agg_id->idx_ptr->compression_block_size[1] * agg_id->idx_ptr->compression_block_size[2] * agg_id->idx_ptr->compression_block_size[3] * agg_id->idx_ptr->compression_block_size[4];
 
-  //LOSSLESS Compression
+  //LOSSLESS Compression  
   if (agg_id->idx_ptr->compression_type == 0)
-  {
+  {/*
     size_t size = (type == FPZIP_TYPE_FLOAT ? sizeof(float) : sizeof(double));
     if (prec == 0)
       prec = CHAR_BIT * size;
@@ -182,7 +184,7 @@ int compress_buffer(PIDX_agg_id agg_id, void* buffer, int length)
       total_size = total_size + x;
       free(decompressed_buffer);
     }
-    return (int)total_size;
+    return (int)total_size;*/
   }
   //LOSSY Compression
   else if (agg_id->idx_ptr->compression_type == 1)
@@ -363,7 +365,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #endif
         if (agg_id->idx_ptr->enable_compression == 1)
         {
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
           int length = 0;
           length = compress_buffer(agg_id, hz_buffer, ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
 
@@ -447,7 +449,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #endif
           if (agg_id->idx_ptr->enable_compression == 1)
           {
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
             int length = 0;
             unsigned char* offseted_buffer = hz_buffer + (( (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + (itr * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate);
             length = compress_buffer(agg_id, offseted_buffer, (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
@@ -532,7 +534,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #endif
         if (agg_id->idx_ptr->enable_compression == 1)
         {
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
           int length = 0;
           unsigned char* offseted_buffer = hz_buffer + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate);
           length = compress_buffer(agg_id, offseted_buffer, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor))) + (((samples_in_file / agg_id->idx_derived_ptr->aggregation_factor)) - target_disp))) * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
@@ -619,7 +621,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #endif
         if (agg_id->idx_ptr->enable_compression == 1)
         {
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
           int length = 0;
           unsigned char* offseted_buffer = hz_buffer;
           length = compress_buffer(agg_id, offseted_buffer, hz_count * values_per_sample * bytes_per_datatype * (64 / agg_id->idx_ptr->compression_bit_rate));
@@ -677,7 +679,7 @@ int aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_sta
 #endif
         if (agg_id->idx_ptr->enable_compression == 1)
         {
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
           int length = 0;
           unsigned char* offseted_buffer = hz_buffer;
           /*
@@ -732,7 +734,7 @@ int decompess_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_ind
   
   //DUONG_HARDCODE
   
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
   if (agg_id->idx_ptr->enable_compression == 1)
   {
     decompress_buffer(agg_id, hz_buffer, hz_count * values_per_sample * bytes_per_datatype);
