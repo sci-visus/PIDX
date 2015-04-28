@@ -746,7 +746,7 @@ int decompess_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_ind
 
 int PIDX_agg_buf_create(PIDX_agg_id agg_id)
 {
-  int i, j, k, l, var;
+  int i, j, k, var;
   int rank_counter = 0, no_of_aggregators = 0, nprocs = 1, rank = 0;
 
 #if PIDX_HAVE_MPI

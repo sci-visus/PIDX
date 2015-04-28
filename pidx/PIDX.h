@@ -46,6 +46,19 @@ extern "C" {
 struct PIDX_file_descriptor;
 typedef struct PIDX_file_descriptor* PIDX_file;
 
+
+///
+double PIDX_get_time();
+
+
+///
+PIDX_return_code PIDX_time_step_caching_ON();
+
+
+///
+PIDX_return_code PIDX_time_step_caching_OFF();
+
+
 /// Creates an IDX file.
 /// PIDX_file_create is the primary function for creating IDX files;
 /// it creates a new IDX file with the specified name and mode
@@ -65,6 +78,7 @@ typedef struct PIDX_file_descriptor* PIDX_file;
 /// It is PIDX_success if the task is completed correctly.
 PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
 
+
 /// Opens an existing IDX file.
 /// PIDX_file_open is the primary function for accessing existing IDX files.
 /// This function opens the named file in the specified access mode.
@@ -78,22 +92,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
-
-
-///
-PIDX_return_code PIDX_time_step_caching_ON();
-
-
-///
-PIDX_return_code PIDX_time_step_caching_OFF();
-
-
-///
-PIDX_return_code PIDX_hz_encoding_caching_ON();
-
-
-///
-PIDX_return_code PIDX_hz_encoding_caching_OFF();
 
 
 /// Get the PIDX_access associated with this file.
@@ -363,9 +361,6 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 ///
 PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point restructured_box_size_point);
 
-
-///
-double PIDX_get_time();
 
 #ifdef __cplusplus
 }

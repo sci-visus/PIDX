@@ -220,7 +220,6 @@ int main(int argc, char **argv)
 
       pch = strtok(line, " ");
       count = 0;
-      int comp;
       while (pch != NULL)
       {
         //if (count % 2 == 1)

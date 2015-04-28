@@ -94,9 +94,9 @@ int test_converter(struct Args args, int rank)
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
 
-    int bits_per_block = 15;
+    //int bits_per_block = 15;
     int variable_count = 1;
-    int blocks_per_file = 256;
+    //int blocks_per_file = 256;
     int var = 0;
 
     double **double_data = (double **)malloc(sizeof(*double_data) * variable_count); // DUONG_HARDCODE?

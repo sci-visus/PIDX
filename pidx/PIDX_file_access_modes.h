@@ -19,7 +19,8 @@
 /**
  * \file PIDX_file_access_modes.h
  *
- * PIDX common definitions and constants.
+ * \author Sidharth Kumar
+ * PIDX file access modes
  *
  */
 
@@ -27,16 +28,21 @@
 #define __PIDX_FILE_ACCESS_MODES_H
 
 
-/////////////////////////////////////////////////
-// FILE ACCESS MODES
-/////////////////////////////////////////////////
+typedef const uint8_t PIDX_flags;
 
-typedef const unsigned PIDX_flags;
+/// Error creating a file that already exists.
+extern PIDX_flags PIDX_file_excl;
 
-extern PIDX_flags PIDX_file_excl;       // Error creating a file that already exists.
-extern PIDX_flags PIDX_file_trunc;      // Create the file if it does not exist.
-extern PIDX_flags PIDX_file_rdwr;       // Read only.
-extern PIDX_flags PIDX_file_rdonly;     // Reading and writing.
-extern PIDX_flags PIDX_file_wronly;     // Write only. 
+/// Create the file if it does not exist.
+extern PIDX_flags PIDX_file_trunc;
+
+/// Read only.
+extern PIDX_flags PIDX_file_rdwr;
+
+/// Reading and writing.
+extern PIDX_flags PIDX_file_rdonly;
+
+/// Write only.
+extern PIDX_flags PIDX_file_wronly;
 
 #endif

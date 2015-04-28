@@ -44,7 +44,7 @@
 
 int main(int argc, char **argv) 
 {
-  int i, j, var;
+  int j, var;
   int fd1;
   int blocks_per_file = 0, variable_count = 0;
   size_t binheader_count;
