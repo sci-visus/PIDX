@@ -13,6 +13,7 @@
 
 #cmakedefine01 BUILD_SHARED_LIBS
 #cmakedefine01 PIDX_HAVE_MPI
+#cmakedefine01 PIDX_HAVE_ZFP
 #cmakedefine01 PIDX_OPTION_PNETCDF
 #cmakedefine01 PIDX_OPTION_HDF5
 

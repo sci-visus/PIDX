@@ -35,9 +35,8 @@
   #include <sys/time.h>
 #endif
 
-#ifdef PIDX_HAVE_LOSSY_ZFP
-  #include "zfp.h"
-  #include "fpzip.h"
+#if PIDX_HAVE_ZFP
+  #include <zfp.h>  
 #endif
 
 #if defined(BGL) || defined(BGP) || defined(BGQ)

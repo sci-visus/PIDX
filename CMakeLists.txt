@@ -31,6 +31,7 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMake)
 SET(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Use a verbose makefile")
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." FALSE)
 OPTION(ENABLE_MPI "Enable MPI." TRUE)
+OPTION(ENABLE_ZFP "Enable ZFP." FALSE)
 
 
 # ///////////////////////////////////////////////
@@ -44,6 +45,12 @@ IF (ENABLE_MPI)
    ENDIF()
 ENDIF()
 
+
+IF (ENABLE_ZFP)
+   SET(PIDX_HAVE_ZFP 1)
+   SET(ZFP_DIR ${CMAKE_SOURCE_DIR}/external/zfp-0.2.1) #TODO: we may want to write a script to find zfp
+   INCLUDE_DIRECTORIES(${ZFP_DIR}/inc)
+ENDIF()
 
 # ///////////////////////////////////////////////
 # platform configuration

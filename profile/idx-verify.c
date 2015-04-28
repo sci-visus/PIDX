@@ -31,9 +31,9 @@
 #include <stdio.h>
 #include <math.h>
 
-//#define PIDX_HAVE_LOSSY_ZFP
+//#define PIDX_HAVE_ZFP
 
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#ifdef PIDX_HAVE_ZFP
   #include "zfp.h"
   //#include "fpzip.h"
 #endif
@@ -75,7 +75,7 @@ static int decompress(double* input_buffer, double* output_buffer, size_t buffer
 
 static int decompress(double* input_buffer, double* output_buffer, size_t buffer_size)
 {
-#ifdef PIDX_HAVE_LOSSY_ZFP
+#ifdef PIDX_HAVE_ZFP
   int i;
   zfp_params params;
   size_t typesize, outsize, insize;

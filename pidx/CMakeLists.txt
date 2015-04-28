@@ -32,6 +32,11 @@ IF (MPI_C_FOUND)
   SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${MPI_C_LIBRARIES})
 ENDIF()
 
+IF (PIDX_HAVE_ZFP)
+  MESSAGE("Configuring pidx with ZFP support")
+  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${ZFP_DIR}/lib/libzfp.a)
+ENDIF()
+
 # ////////////////////////////////////////
 # library
 # ////////////////////////////////////////

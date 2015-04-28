@@ -586,7 +586,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 
   if (io_id->idx_ptr->compression_type == 2) // zfp done without block restructuring
   {
-#if PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
     if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
     {
       printf("am i here?\n");
@@ -709,7 +709,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #endif
   if (io_id->idx_ptr->compression_type == 2) // DUONG
   {
-#if PIDX_HAVE_LOSSY_ZFP
+#if PIDX_HAVE_ZFP
     printf("decompressing .... \n");
     bytes_per_datatype =  (io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])  / (64/io_id->idx_ptr->compression_bit_rate);
     generate_file_name(io_id->idx_ptr->blocks_per_file, io_id->idx_ptr->filename_template, (unsigned int) io_id->idx_derived_ptr->agg_buffer->file_number, file_name, PATH_MAX);
