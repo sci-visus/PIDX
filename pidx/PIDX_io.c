@@ -324,8 +324,6 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
   }
   else if (io_id->idx_ptr->compression_type != 2)
   {
-    //printf("%d\n", io_id->idx_ptr->compression_type);
-    //printf("**********i'm here. WTF\n");
     if (io_id->idx_derived_ptr->agg_buffer->var_number == io_id->start_var_index && io_id->idx_derived_ptr->agg_buffer->sample_number == 0)
     {
       bytes_per_datatype =  ((io_id->idx_ptr->variable[io_id->idx_derived_ptr->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx_ptr->compression_block_size[0] * io_id->idx_ptr->compression_block_size[1] * io_id->idx_ptr->compression_block_size[2] * io_id->idx_ptr->compression_block_size[3] * io_id->idx_ptr->compression_block_size[4])) / (64/io_id->idx_ptr->compression_bit_rate);
