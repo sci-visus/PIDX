@@ -25,6 +25,7 @@ extern "C" {
 
 int test_converter(struct Args args, int rank)
 {
+#if 0
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
@@ -32,7 +33,7 @@ int test_converter(struct Args args, int rank)
   MPI_Bcast(&args.time_steps, args.time_step_count, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.chunk_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.restructured_box_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -76,11 +77,11 @@ int test_converter(struct Args args, int rank)
   rank_y = (rank_slice / sub_div[0]);
   rank_x = (rank_slice % sub_div[0]);
 
-  PIDX_point global_bounding_box, local_offset_point, local_box_count_point, compression_block_size_point, restructured_box_size_point;
+  PIDX_point global_bounding_box, local_offset_point, local_box_count_point, chunk_size_point, restructured_box_size_point;
   PIDX_set_point_5D(global_bounding_box, args.extents[0], args.extents[1], args.extents[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, local_offset[0], local_offset[1], local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, args.count_local[0], args.count_local[1], args.count_local[2], 1, 1);
-  PIDX_set_point_5D(compression_block_size_point, args.compression_block_size[0], args.compression_block_size[1], args.compression_block_size[2], 1, 1);
+  PIDX_set_point_5D(chunk_size_point, args.chunk_size[0], args.chunk_size[1], args.chunk_size[2], 1, 1);
   PIDX_set_point_5D(restructured_box_size_point, args.restructured_box_size[0], args.restructured_box_size[1], args.restructured_box_size[2], 1, 1);
 
   PIDX_time_step_caching_ON();
@@ -173,7 +174,7 @@ int test_converter(struct Args args, int rank)
     PIDX_set_variable_count(output_file, variable_count);
     PIDX_set_aggregation_factor(output_file, args.aggregation_factor);
     PIDX_set_compression_type(output_file, args.compression_type);
-    PIDX_set_compression_block_size(output_file, compression_block_size_point);
+    PIDX_set_chunk_size(output_file, chunk_size_point);
     PIDX_set_lossy_compression_bit_rate(output_file, args.compression_bit_rate);
     PIDX_set_restructuring_box(output_file, restructured_box_size_point); // DUONG_TODO: do we have to set this for input?
 
@@ -218,7 +219,7 @@ int test_converter(struct Args args, int rank)
   PIDX_time_step_caching_OFF();
   free(args.output_file_name);
   free(input_file_name);
-
+#endif
   return 0;
 }
 

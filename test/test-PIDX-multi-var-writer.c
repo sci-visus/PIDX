@@ -20,6 +20,7 @@
 
 int test_multi_var_writer(struct Args args, int rank, int nprocs) 
 {
+#if 0
 #if PIDX_HAVE_MPI
   int i = 0, j = 0, k = 0;
   int ts, var, spv;
@@ -191,6 +192,7 @@ int test_multi_var_writer(struct Args args, int rank, int nprocs)
   free(variable);
   free(values_per_sample);
   free(args.output_file_name);
+#endif
 #endif
   return 0;
 }

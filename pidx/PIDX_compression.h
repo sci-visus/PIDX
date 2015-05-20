@@ -20,21 +20,26 @@
 #define __PIDX_COMPRESSION_H 
 
 
-struct PIDX_compression_id_struct;
-typedef struct PIDX_compression_id_struct* PIDX_compression_id;
+struct PIDX_comp_id_struct;
+typedef struct PIDX_comp_id_struct* PIDX_comp_id;
 
-PIDX_compression_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index );
+PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int init_index, int start_var_index, int end_var_index );
 
 #if PIDX_HAVE_MPI
-int PIDX_compression_set_communicator(PIDX_compression_id id, MPI_Comm comm);
+PIDX_return_code PIDX_compression_set_communicator(PIDX_comp_id id, MPI_Comm comm);
 #endif
 
-int PIDX_compression_prepare(PIDX_compression_id id);
 
-int PIDX_compression_compress(PIDX_compression_id id);
-  
-int PIDX_compression_buf_destroy(PIDX_compression_id id);
+///
+PIDX_return_code PIDX_compression(PIDX_comp_id id);
 
-int PIDX_compression_finalize(PIDX_compression_id id);  
 
+
+///
+PIDX_return_code PIDX_decompression(PIDX_comp_id id);
+
+
+
+///
+PIDX_return_code PIDX_compression_finalize(PIDX_comp_id id);
 #endif

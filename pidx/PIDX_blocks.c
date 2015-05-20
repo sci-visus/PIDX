@@ -25,9 +25,9 @@ const int PIDX_default_blocks_per_file      = 256;
 ///
 int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_per_block)
 {
-  
+
   int ctr = 1, i, j;
-  if(maxh < bits_per_block)
+  if (maxh < bits_per_block)
     layout->levels = 1;
   else
     layout->levels = maxh - bits_per_block;
@@ -46,9 +46,9 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_
 
   ctr = 1;
   layout->hz_block_number_array[0][0] = 0;
-  for(j = 1 ; j < (layout->levels) ; j++)
+  for (j = 1 ; j < (layout->levels) ; j++)
   {
-    for(i = 0 ; i < ctr ; i++)
+    for (i = 0 ; i < ctr ; i++)
       layout->hz_block_number_array[j][i] = 0;
     
     ctr = ctr * 2;
@@ -56,7 +56,7 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_
   
   /// This block contains data upto level "bits_per_block"
   layout->hz_block_count_array[0] = 1;
-  
+
   return 1;
 }
 
@@ -142,8 +142,8 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
   for (i = 1; i < (layout->levels); i++) 
   {
     printf("Number of blocks at level %d = %d :: ", i, layout->hz_block_count_array[i]);
-    for(j = 0 ; j <  ctr; j++)
-      if(layout->hz_block_number_array[i][j] != 0)
+    for (j = 0 ; j <  ctr; j++)
+      if (layout->hz_block_number_array[i][j] != 0)
         printf("%d ", layout->hz_block_number_array[i][j]);
     
     ctr = ctr * 2;

@@ -459,13 +459,13 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
       char data_type[512];
       sprintf(variable_name, "variable_%d", var);
       sprintf(data_type, "%d*float64", values_per_sample[var]);
-      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
+      PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
       
       for(p = 0 ; p < var_patch_count[var] ; p++)
       {
 	//if (rank == 0)
 	  //printf("Writing patch %d\n", p);
-	PIDX_append_and_write_variable(variable[var], local_offset_point[var][p], local_box_count_point[var][p], var_double_scalar_data[var][p], PIDX_row_major);
+    PIDX_append_and_write_variable(file, variable[var], local_offset_point[var][p], local_box_count_point[var][p], var_double_scalar_data[var][p], PIDX_row_major);
       }
       
       if(var % 2 == 0)

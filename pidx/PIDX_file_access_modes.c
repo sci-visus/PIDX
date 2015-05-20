@@ -30,12 +30,3 @@ PIDX_flags PIDX_file_excl                   = 1;
 
 /// Create the file if it does not exist.
 PIDX_flags PIDX_file_trunc                  = 2;
-
-/// Read only.
-PIDX_flags PIDX_file_rdwr                   = 4;
-
-/// Reading and writing.
-PIDX_flags PIDX_file_rdonly                 = 8;
-
-/// Write only.
-PIDX_flags PIDX_file_wronly                 = 16;

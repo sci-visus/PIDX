@@ -20,6 +20,7 @@
 
 int test_one_var_writer(struct Args args, int rank, int nprocs) 
 {
+#if 0
 #if PIDX_HAVE_MPI
   int i = 0, j = 0, k = 0;
   int spv = 0;
@@ -107,6 +108,7 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
   //PIDX_delete_point(&local_box_count_point);
   
   free(args.output_file_name);
+#endif
 #endif
   return 0;
 }

@@ -34,6 +34,7 @@
 typedef int PIDX_return_code;
 
 extern PIDX_return_code PIDX_success;
+extern PIDX_return_code PIDX_err_id;
 extern PIDX_return_code PIDX_err_unsupported_flags;
 extern PIDX_return_code PIDX_err_file_exists;
 extern PIDX_return_code PIDX_err_name;
@@ -50,6 +51,13 @@ extern PIDX_return_code PIDX_err_variable;
 extern PIDX_return_code PIDX_err_not_implemented;
 extern PIDX_return_code PIDX_err_point;
 extern PIDX_return_code PIDX_err_access;
+extern PIDX_return_code PIDX_err_mpi;
+extern PIDX_return_code PIDX_err_rst;
+extern PIDX_return_code PIDX_err_chunk;
+extern PIDX_return_code PIDX_err_compress;
+extern PIDX_return_code PIDX_err_hz;
+extern PIDX_return_code PIDX_err_agg;
+extern PIDX_return_code PIDX_err_io;
 extern PIDX_return_code PIDX_err_unsupported_compression_type;
 
 

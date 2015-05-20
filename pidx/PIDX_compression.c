@@ -30,7 +30,7 @@
 #include "PIDX_inc.h"
 
 ///Struct for restructuring ID
-struct PIDX_compression_id_struct 
+struct PIDX_comp_id_struct
 {
 #if PIDX_HAVE_MPI
   /// Passed by PIDX API
@@ -39,164 +39,180 @@ struct PIDX_compression_id_struct
   
   /// Contains all relevant IDX file info
   /// Blocks per file, samples per block, bitmask, box, file name template and more
-  idx_dataset idx_ptr;
+  idx_dataset idx;
   
   /// Contains all derieved IDX file info
   /// number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_derived_ptr;
+  idx_dataset_derived_metadata idx_derived;
   
-  int start_variable_index;
-  int end_variable_index;
+  int init_index;
+  int first_index;
+  int last_index;
 
-#if PIDX_HAVE_ZFP
-  zfp_params *params;
-#endif
 };
 
-PIDX_compression_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index)
-{
-  PIDX_compression_id compression_id;
-
-  compression_id = malloc(sizeof (*compression_id));
-  memset(compression_id, 0, sizeof (*compression_id));
-
-  compression_id->idx_ptr = idx_meta_data;
-  compression_id->idx_derived_ptr = idx_derived_ptr;
-  compression_id->start_variable_index = start_var_index;
-  compression_id->end_variable_index = end_var_index;
-
 #if PIDX_HAVE_ZFP
-  compression_id->params = malloc((end_var_index - start_var_index + 1) * sizeof(*compression_id->params));
-  memset(compression_id->params, 0, (end_var_index - start_var_index + 1) * sizeof(*compression_id->params));
+int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length)
+{
+  int total_size = 0;
+  int i = 0;
+  int64_t total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
+
+  if (comp_id->idx->compression_type == 1)
+  {
+    size_t typesize, outsize;
+    typesize = sizeof(double);
+    zfp_params params;
+    params.type = ZFP_TYPE_DOUBLE;
+    params.nx = comp_id->idx->chunk_size[0];
+    params.ny = comp_id->idx->chunk_size[1];
+    params.nz = comp_id->idx->chunk_size[2];
+    total_size = 0;
+    zfp_set_rate(&params, comp_id->idx->compression_bit_rate);
+    outsize = zfp_estimate_compressed_size(&params);
+
+    unsigned char* zip = malloc(outsize);
+    for ( i = 0; i < length; i = i + total_chunk_size * typesize)
+    {
+      memset(zip, 0, outsize);
+      outsize = zfp_compress(&params, buffer + i , zip, outsize);
+      if (outsize == 0)
+      {
+        fprintf(stderr, "compression failed\n");
+        return -1;
+      }
+      memcpy(buffer + total_size, zip, outsize);
+      total_size = total_size + outsize;
+    }
+    free(zip);
+  }
+  return total_size;
+}
+
+int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
+{
+  int64_t compression_block_num_elems = comp_id->idx_ptr->chunk_size[0] *
+                                        comp_id->idx_ptr->chunk_size[1] *
+                                        comp_id->idx_ptr->chunk_size[2];
+  unsigned int type_size = sizeof(double); // DUONG_HARDCODE
+  if (comp_id->idx_ptr->compression_type == 1) // zfp lossy compression
+  {
+    zfp_params zfp;
+    zfp.type = ZFP_TYPE_DOUBLE; // DUONG_HARDCODE
+    zfp.nx = comp_id->idx_ptr->chunk_size[0];
+    zfp.ny = comp_id->idx_ptr->chunk_size[1];
+    zfp.nz = comp_id->idx_ptr->chunk_size[2];
+    unsigned int bit_rate = (unsigned int) comp_id->idx_ptr->compression_bit_rate;
+    zfp_set_rate(&zfp, bit_rate);
+    unsigned int input_offset = 0;
+    unsigned int output_offset = 0;
+    unsigned int input_buffer_size = (unsigned int) length;
+    unsigned int output_buffer_size = (length / (bit_rate / 8.0)) * type_size; // DUONG_HARDCODE
+    unsigned char* srcPtr = buffer;
+    unsigned char* dstPtr = (unsigned char*) malloc(output_buffer_size);
+    unsigned int compressed_block_size = compression_block_num_elems * (bit_rate / 8.0);
+    unsigned int uncompressed_block_size = compression_block_num_elems * type_size;
+    while (input_offset < input_buffer_size) // decompress one compression block at a time
+    {
+      int success = zfp_decompress(&zfp, dstPtr + output_offset, srcPtr + input_offset, compressed_block_size);
+      if (success == 0) // failure
+      {
+        free(dstPtr);
+        return -1;
+      }
+      input_offset += compressed_block_size;
+      output_offset += uncompressed_block_size;
+      assert(output_offset <= output_buffer_size);
+    }
+    memcpy(buffer, dstPtr, output_buffer_size);
+    free(dstPtr);
+    return 0;
+  }
+  return -1;
+}
+
 #endif
+
+PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int init_index, int start_var_index, int end_var_index)
+{
+  PIDX_comp_id comp_id;
+
+  comp_id = malloc(sizeof (*comp_id));
+  memset(comp_id, 0, sizeof (*comp_id));
+
+  comp_id->idx = idx_meta_data;
+  comp_id->idx_derived = idx_derived;
+
+  comp_id->init_index = init_index;
+  comp_id->first_index = start_var_index;
+  comp_id->last_index = end_var_index;
   
-  return compression_id;
-  
-  /*
-  size_t count = (size_t)8 * 8 * 8 * 8;
-  size_t size = (type == FPZIP_TYPE_FLOAT ? sizeof(float) : sizeof(double));
-  size_t inbytes = count * size;
-  size_t bufbytes = 1024 + inbytes;
-  void* buffer = malloc(bufbytes);
-  FPZ* fpz = fpzip_write_to_buffer(buffer, bufbytes);
-  */  
+  return comp_id;
 }
 
 #if PIDX_HAVE_MPI
-int PIDX_compression_set_communicator(PIDX_compression_id compression_id, MPI_Comm comm)
+int PIDX_compression_set_communicator(PIDX_comp_id comp_id, MPI_Comm comm)
 {
-  compression_id->comm = comm;
-  //MPI_Comm_dup(comm, &compression_id->comm);
-  return 0;
+  if (comp_id == NULL)
+    return PIDX_err_id;
+
+  comp_id->comm = comm;
+
+  return PIDX_success;
 }
 #endif
 
-int PIDX_compression_prepare(PIDX_compression_id compression_id)
+
+PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
+  if (comp_id->idx->enable_compression != 1)
+   return PIDX_success;
+
 #if PIDX_HAVE_ZFP
-  if (compression_id->idx_ptr->compression_type == 1)           ///< Lossy
+  int v;
+  PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
+
+  for (v = comp_id->first_index; v <= comp_id->last_index; v++)
   {
-    int var = 0;
-    int dp;
-    double rate = 16;
-    uint mx, my, mz;
-    size_t typesize;
-    size_t insize;
-    
-    for(var = compression_id->start_variable_index; var <= compression_id->end_variable_index; var++)
+    PIDX_variable var = comp_id->idx->variable[v];
+    for (p = 0; p < var0->patch_group_count; p++)
     {
-      if (compression_id->idx_ptr->variable[var]->bits_per_value / 8 == sizeof(float))
+      for (b = 0; b < var0->chunk_patch_group[p]->count; b++)
       {
-        compression_id->params[var].type = ZFP_TYPE_FLOAT;
-        dp = 0;
-      }
-      else if (compression_id->idx_ptr->variable[var]->bits_per_value / 8 == sizeof(double))
-      {
-        compression_id->params[var].type = ZFP_TYPE_DOUBLE;
-        dp = 1;
-      }
-      
-      /// size of floating-point type in bytes
-      typesize = dp ? sizeof(double) : sizeof(float);
-      
-      compression_id->params[var].nx = compression_id->idx_ptr->compression_block_size[0];
-      compression_id->params[var].ny = compression_id->idx_ptr->compression_block_size[1];
-      compression_id->params[var].nz = compression_id->idx_ptr->compression_block_size[2];
-      
-      /// set compression mode
-#ifdef PIDX_MORE_COMPRESSION_MODES
-      double tolerance = 0;
-      uint precision = 0;
-      uint minbits = 0;
-      uint maxbits = 0;
-      uint maxprec = 0;
-      int minexp = INT_MIN;
-      
-      zfp_set_accuracy(&compression_id->params[var], tolerance);
-      zfp_set_precision(&compression_id->params[var], precision);
-      compression_id->params[var].minbits = minbits;
-      compression_id->params[var].maxbits = maxbits;
-      compression_id->params[var].maxprec = maxprec;
-      compression_id->params[var].minexp = minexp;
-#endif
-      
-      zfp_set_rate(&compression_id->params[var], rate);
-      
-      /// effective array dimensions
-      mx = max(compression_id->idx_ptr->compression_block_size[0], 1u);
-      my = max(compression_id->idx_ptr->compression_block_size[1], 1u);
-      mz = max(compression_id->idx_ptr->compression_block_size[2], 1u);
+        Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
+        unsigned char* buffer = patch->buffer;
+        int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4];
+        int compressed_element_count;
+        compressed_element_count = compress_buffer(comp_id, buffer, element_count);
 
-      /// size of floating-point type in bytes 
-      typesize = dp ? sizeof(double) : sizeof(float);
+        unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
 
-      /// allocate space for uncompressed and compressed fields
-      insize = mx * my * mz * typesize;
-      compression_id->idx_ptr->variable[var]->lossy_compressed_block_size = zfp_estimate_compressed_size(&compression_id->params[var]);
-      //printf("before zip : after zip %d (%d x %d x %d x %d) %d\n", (int)insize, (int)compression_id->idx_ptr->compression_block_size[0], (int)compression_id->idx_ptr->compression_block_size[1], (int)compression_id->idx_ptr->compression_block_size[2], (int)typesize, (int)compression_id->idx_ptr->variable[var]->lossy_compressed_block_size);
+        if (temp_buffer == NULL)
+          return PIDX_err_compress;
+        else
+          patch->buffer = temp_buffer;
+      }
     }
   }
-  else if (compression_id->idx_ptr->compression_type == 0)      /// Lossless
-  {
-    
-  }
+#else
+  //printf("Compression Library not found.\n");
+  return PIDX_err_compress;
 #endif
-  return 0;
-}
 
-int PIDX_compression_compress(PIDX_compression_id compression_id)
-{
-  /*
-  size_t outsize;
-  for(var = compression_id->start_variable_index; var <= compression_id->end_variable_index; var++)
-  {
-    
-    outsize = zfp_compress(&compression_id->params[var], f, zip, outsize);
-    if (outsize == 0) 
-    {
-      fprintf(stderr, "compression failed\n");
-      return EXIT_FAILURE;
-    }
-    rate = CHAR_BIT * (double)outsize / (mx * my * mz);
-  }
-  */
-  return -1;
+  return PIDX_success;
 }
   
-int PIDX_compression_buf_destroy(PIDX_compression_id compression_id)
+
+PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
 {
   return -1;
 }
 
-int PIDX_compression_finalize(PIDX_compression_id compression_id)
+PIDX_return_code PIDX_compression_finalize(PIDX_comp_id comp_id)
 {
-#if PIDX_HAVE_ZFP
-  free(compression_id->params);
-  compression_id->params = 0;
-#endif
   
-  free(compression_id);
-  compression_id = 0;
+  free(comp_id);
+  comp_id = 0;
   
-  return -1;
+  return PIDX_success;
 }

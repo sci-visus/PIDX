@@ -28,21 +28,12 @@
 #define __PIDX_FILE_ACCESS_MODES_H
 
 
-typedef const uint8_t PIDX_flags;
+typedef const unsigned PIDX_flags;
 
 /// Error creating a file that already exists.
 extern PIDX_flags PIDX_file_excl;
 
 /// Create the file if it does not exist.
 extern PIDX_flags PIDX_file_trunc;
-
-/// Read only.
-extern PIDX_flags PIDX_file_rdwr;
-
-/// Reading and writing.
-extern PIDX_flags PIDX_file_rdonly;
-
-/// Write only.
-extern PIDX_flags PIDX_file_wronly;
 
 #endif

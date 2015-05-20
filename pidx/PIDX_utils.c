@@ -227,7 +227,7 @@ static void freeBox(int** box)
   box = 0;
 }
 
-void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count)
+void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples)
 {
   int** alignedBox;
   int* h_delta;
@@ -295,8 +295,12 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
     return;
   }
 
-  memcpy(a_offset[H], alignedBox[0], PIDX_MAX_DIMENSIONS * sizeof(int) );
-  memcpy(a_count[H], alignedBox[1], PIDX_MAX_DIMENSIONS * sizeof(int) );
+  int i;
+  for( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+    nsamples[H][i]=1 + (alignedBox[1][i]-alignedBox[0][i])/h_delta[i];
+
+  memcpy(a_offset[H], alignedBox[0], PIDX_MAX_DIMENSIONS * sizeof(int));
+  memcpy(a_count[H], alignedBox[1], PIDX_MAX_DIMENSIONS * sizeof(int));
   
   freeBox(h_box);
   freeBox(alignedBox);

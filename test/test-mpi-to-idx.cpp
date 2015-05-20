@@ -53,6 +53,7 @@ static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, 
 
 int test_mpi_to_writer(struct Args args, int rank, int nprocs)
 {
+#if 0
 #if PIDX_HAVE_MPI
   //int i = 0, j = 0, k = 0;
   int ts, var;//, spv;
@@ -71,13 +72,13 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
   int* values_per_sample;
   
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
-  PIDX_point compression_block_size_point;
+  PIDX_point chunk_size_point;
   PIDX_point restructured_box_size_point;
   
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.chunk_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.restructured_box_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -142,7 +143,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
   
   
   PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
-  PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
+  PIDX_set_point_5D(chunk_size_point, (int64_t)args.chunk_size[0], (int64_t)args.chunk_size[1], (int64_t)args.chunk_size[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, (int64_t)local_offset[0], (int64_t)local_offset[1], (int64_t)local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, (int64_t)args.count_local[0], (int64_t)args.count_local[1], (int64_t)args.count_local[2], 1, 1);
   PIDX_set_point_5D(restructured_box_size_point, (int64_t)args.restructured_box_size[0], (int64_t)args.restructured_box_size[1], (int64_t)args.restructured_box_size[2], 1, 1);
@@ -187,7 +188,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
     
     /// PIDX compression related calls
     //PIDX_set_compression_type(file, args.compression_type);
-    //PIDX_set_compression_block_size(file, compression_block_size_point);
+    //PIDX_set_chunk_size(file, chunk_size_point);
     //PIDX_set_lossy_compression_bit_rate(file, args.compression_bit_rate);
     
     /// PIDX debuging different phases
@@ -328,6 +329,7 @@ int test_mpi_to_writer(struct Args args, int rank, int nprocs)
   free(values_per_sample);
   free(args.output_file_name);
   
+#endif
 #endif
   return 0;
 }

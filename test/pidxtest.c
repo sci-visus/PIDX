@@ -41,6 +41,7 @@ static void usage(enum Kind kind)
   {
   //case SERIAL_WRITER:                      usage_serial();              break;
   case PARALLEL_WRITER:                    usage_multi_idx_writer();    break;
+  case SIMPLE_WRITER:                      usage_simple_idx_writer();    break;
   //case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
   //case SERIAL_READER:                      /*usage_serial_reader();*/              break;
   //case PARALLEL_READER:                    usage_reader();              break;
@@ -120,6 +121,12 @@ int main(int argc, char **argv)
       if(rank == 0)
         printf("Performing Parallel Write....\n");
       test_multi_idx_writer(args, rank, nprocs);
+      break;
+
+    case SIMPLE_WRITER:
+      if(rank == 0)
+        printf("Performing Simple Parallel Write....\n");
+      test_simple_idx_writer(args, rank, nprocs);
       break;
 
     case PARALLEL_CONVERTER:
@@ -245,7 +252,6 @@ int parse_args(struct Args *args, int argc, char **argv)
 
   fscanf(config_file, "(idx count x:y:z)\n");
   fscanf(config_file, "%d %d %d\n", &args->idx_count[0], &args->idx_count[1], &args->idx_count[2]);
-  printf("%d %d %d \n", args->idx_count[0], args->idx_count[1], args->idx_count[2]);
 
   if (strcmp(strkind, "hdf5-writer") != 0 && strcmp(strkind, "hdf5-reader") != 0)
   {
@@ -258,7 +264,7 @@ int parse_args(struct Args *args, int argc, char **argv)
       fscanf(config_file, "%d %d %d %d %d\n", &args->perform_brst, &args->perform_hz, &args->perform_compression, &args->perform_agg, &args->perform_io);
 
       fscanf(config_file, "(compression block size)\n");
-      fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->compression_block_size[0], (long long*)&args->compression_block_size[1], (long long*)&args->compression_block_size[2]);
+      fscanf(config_file, "%lld %lld %lld\n", (long long*)&args->chunk_size[0], (long long*)&args->chunk_size[1], (long long*)&args->chunk_size[2]);
 
       fscanf(config_file, "(compression type:bits)\n");
       fscanf(config_file, "%d %d\n", &args->compression_type, &args->compression_bit_rate);
@@ -314,6 +320,7 @@ char* kindToStr(enum Kind k)
     case PARALLEL_READER:                return "parallel-reader";
     //case SERIAL_READER:                  return "serial-reader";
     case PARALLEL_WRITER:                return "parallel-writer";
+    case SIMPLE_WRITER:                  return "simple-writer";
     case PARALLEL_CONVERTER:             return "parallel-converter";
     case PARALLEL_CONVERTER2:            return "parallel-converter2";
     case HDF5_WRITER:                    return "hdf5-writer";
@@ -331,6 +338,7 @@ enum Kind strToKind(const char *str)
   if (strcmp(str,"parallel-reader")   == 0)             return PARALLEL_READER;
   //if (strcmp(str,"serial-reader")     == 0)             return SERIAL_READER;
   if (strcmp(str,"parallel-writer")   == 0)             return PARALLEL_WRITER;
+  if (strcmp(str,"simple-writer")   == 0)             return SIMPLE_WRITER;
   if (strcmp(str, "parallel-converter") == 0)           return PARALLEL_CONVERTER;
   if (strcmp(str, "parallel-converter2") == 0)          return PARALLEL_CONVERTER2;
   if (strcmp(str,"hdf5-writer")   == 0)                 return HDF5_WRITER;

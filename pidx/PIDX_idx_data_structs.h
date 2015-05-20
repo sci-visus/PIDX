@@ -34,11 +34,30 @@
 #include "PIDX_memory_layout_data_structs.h"
 
 ///
+struct PIDX_timming_struct
+{
+  double sim_start, sim_end;
+  double *header_start, *header_end;
+  double *init_start, *init_end;
+  double *rst_start, *rst_end;
+  double *chunk_start, *chunk_end;
+  double *compress_start, *compress_end;
+  double *hz_start, *hz_end;
+  double *agg_start, *agg_end;
+  double *io_start, *io_end;
+  double *cleanup_start, *cleanup_end;
+  double *finalize_start, *finalize_end;
+};
+typedef struct PIDX_timming_struct* PIDX_time;
+
+///
 struct PIDX_variable_struct
 {
   // Metadata
   int dump_meta_data_ON;                                                ///< Counter set if meta data dumping activated
   
+  int io_state;
+
   // General Info
   char var_name[1024];                                                  ///< Variable name
   int values_per_sample;                                                ///< Vector(3), scalar(1), or n
@@ -47,27 +66,24 @@ struct PIDX_variable_struct
   PIDX_data_layout data_layout;                                         ///< Row major or column major
 
   // Memory layout (before, after HZ encoding phase)
-  int patch_count;                                                      ///< The actual number of patches (application layout), most probably more than 1 in uintah
-  Ndim_box patch[1024];                                                 ///< Pointer to the patches
-  HZ_buffer HZ_patch[1024];                                             ///< HZ encoded buffer of the patches
-  
+  int sim_patch_count;                                                  ///< The actual number of patches (application layout), most probably more than 1 in uintah
+  Ndim_patch sim_patch[1024];                                           ///< Pointer to the patches
+  HZ_buffer hz_buffer[1024];                                            ///< HZ encoded buffer of the patches
+
   // Memory layout before aggregation 
   int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase
-  Ndim_box_group* patch_group_ptr;                                      ///< Pointer to the patch groups
-  Ndim_box_group* post_rst_block;                                       ///< Pointer to the patch group after block restructuring
-    
+  Ndim_patch_group* rst_patch_group;                                    ///< Pointer to the patch groups
+  Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
+
   // Block level layout
-  PIDX_block_layout VAR_global_block_layout;                            ///< Block layout, specifically when variables might have different extents in the domain
-  int *VAR_blocks_per_file;                                             ///< The number of blocks a variable occupy within each file
-  int VAR_existing_file_count;                                          ///< The number of files that exists for each of the variables
-  int *VAR_existing_file_index;                                         ///< The index of the existing files for each of the variables
+  PIDX_block_layout global_block_layout;                            ///< Block layout, specifically when variables might have different extents in the domain
+  int *block_count_per_file;                                             ///< The number of blocks a variable occupy within each file
+  int existing_file_count;                                          ///< The number of files that exists for each of the variables
+  int *existing_file_index;                                         ///< The index of the existing files for each of the variables
+  int *file_index;
   
   //Compression related
   int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
-  
-  //extents fo meta-data
-  int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
-  int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -84,20 +100,25 @@ struct idx_file_struct
   char filename[1024];
   int bits_per_block;
   int blocks_per_file;
-  int64_t global_bounds[PIDX_MAX_DIMENSIONS];
+  int64_t bounds[PIDX_MAX_DIMENSIONS];
   double transform[16];
   char bitSequence[512];
   char bitPattern[512];
   char filename_template[1024];                                         ///< Depends on the time step
   
-  int64_t restructured_box_size_point[PIDX_MAX_DIMENSIONS];
+  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
   
   int enable_compression;                                               ///< counter to enable/disable (1/0) compression
-  int compression_type;                                                 ///< lossy or lossless. 1 for lossy 0 for lossless
+  int enable_rst;                                               ///< counter to enable/disable (1/0) compression
+  /// 0 No aggregation
+  /// 1 Hybrid aggregation
+  /// 2 Only aggregation
+  int enable_agg;                                               ///< counter to enable/disable (1/0) compression
+
   int compression_bit_rate;
-  int64_t compression_block_size[PIDX_MAX_DIMENSIONS];                  ///< size of the block at which compression is applied eg. (4x4x4)                                                      
+  int64_t chunk_size[PIDX_MAX_DIMENSIONS];                              ///< size of the block at which compression is applied eg. (4x4x4)
                                                                         ///< the current compression schemes only work in three dimensions
-  int64_t compressed_global_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents
+  int64_t chunked_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents
 };
 typedef struct idx_file_struct* idx_dataset;
 
@@ -114,10 +135,10 @@ struct idx_dataset_derived_metadata_struct
   int fs_block_size;
   off_t start_fs_block;
   
-  PIDX_block_layout global_block_layout;
-  int *existing_blocks_index_per_file;
-  int existing_file_count;
-  int *existing_file_index;
+  //PIDX_block_layout global_block_layout;
+  //int *block_count_per_file;
+  //int existing_file_count;
+  //int *existing_file_index;
   
   int aggregation_factor;
   Agg_buffer agg_buffer;
@@ -126,15 +147,12 @@ struct idx_dataset_derived_metadata_struct
   
   int color;
   
-  int resolution_from;
-  int resolution_to;
+  int res_from;
+  int res_to;
   
-  double win_free_time_start;
-  double win_free_time_end;
-  double win_time_start;
-  double win_time_end;
-  double ***agg_level_start;
-  double ***agg_level_end;
+  //extents of meta-data
+  int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
+  int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

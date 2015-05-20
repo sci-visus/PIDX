@@ -19,6 +19,7 @@
 
 int serial_reader(struct Args args)
 {
+#if 0
   int i = 0, j = 0, k = 0;
   int spv = 0, var = 0;
   int ts, variable_count;
@@ -51,7 +52,7 @@ int serial_reader(struct Args args)
     //PIDX_set_default_access(access);
     
     /// PIDX mandatory calls
-    PIDX_file_open(output_file, PIDX_file_rdonly, access, &file);
+    //PIDX_file_open(output_file, PIDX_file_rdonly, access, &file);
     
     /// PIDX calls to set different parameters (optional)
     PIDX_set_current_time_step(file, ts);
@@ -106,6 +107,7 @@ int serial_reader(struct Args args)
   PIDX_time_step_caching_OFF();
   
   free(args.output_file_name);
+#endif
   return 0;
 }
 

@@ -19,6 +19,7 @@
 
 int serial_writer(struct Args args)
 {
+#if 0
   int i = 0, j = 0, k = 0;
   int spv = 0, var = 0;
   int ts;
@@ -110,6 +111,7 @@ int serial_writer(struct Args args)
   PIDX_time_step_caching_OFF();
   
   free(args.output_file_name);
+#endif
   return 0;
 }
 

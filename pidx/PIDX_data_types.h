@@ -27,7 +27,6 @@
 #define __PIDX_DATA_TYPES_H
 
 
-
 /////////////////////////////////////////////////
 // IDX DATA TYPES
 /////////////////////////////////////////////////
@@ -40,17 +39,56 @@ typedef const char* PIDX_type;
 
 // PLEASE NOTE: these are example types, not a complete list of possible IDX types
 
-#define PIDX_FLOAT32 "float32[1]"
-#define PIDX_FLOAT64 "float64[1]"
-#define PIDX_UINT8   "uint8[1]"
-#define PIDX_UINT16  "uint16[1]"
-#define PIDX_UINT32  "uint32[1]"
-#define PIDX_UINT64  "uint64[1]"
-#define PIDX_INT8    "int8[1]"
-#define PIDX_INT16   "int16[1]"
-#define PIDX_INT32   "int32[1]"
-#define PIDX_INT64   "int64[1]"
-#define PIDX_POINT3  "float32[3]"
+extern PIDX_type INT8;
+extern PIDX_type INT8_GA;
+extern PIDX_type INT8_RGB;
+extern PIDX_type INT8_RGBA;
 
+extern PIDX_type UINT8;
+extern PIDX_type UINT8_GA;
+extern PIDX_type UINT8_RGB;
+extern PIDX_type UINT8_RGBA;
+
+extern PIDX_type INT16;
+extern PIDX_type INT16_GA;
+extern PIDX_type INT16_RGB;
+extern PIDX_type INT16_RGBA;
+
+extern PIDX_type UINT16;
+extern PIDX_type UINT16_GA;
+extern PIDX_type UINT16_RGB;
+extern PIDX_type UINT16_RGBA;
+
+extern PIDX_type INT32;
+extern PIDX_type INT32_GA;
+extern PIDX_type INT32_RGB;
+extern PIDX_type INT32_RGBA;
+
+extern PIDX_type UINT32;
+extern PIDX_type UINT32_GA;
+extern PIDX_type UINT32_RGB;
+extern PIDX_type UINT32_RGBA;
+
+extern PIDX_type INT64;
+extern PIDX_type INT64_GA;
+extern PIDX_type INT64_RGB;
+extern PIDX_type INT64_RGBA;
+
+extern PIDX_type UINT64;
+extern PIDX_type UINT64_GA;
+extern PIDX_type UINT64_RGB;
+extern PIDX_type UINT64_RGBA;
+
+extern PIDX_type FLOAT32;
+extern PIDX_type FLOAT32_GA;
+extern PIDX_type FLOAT32_RGB;
+extern PIDX_type FLOAT32_RGBA;
+
+extern PIDX_type FLOAT64;
+extern PIDX_type FLOAT64_GA;
+extern PIDX_type FLOAT64_RGB;
+extern PIDX_type FLOAT64_RGBA;
+
+PIDX_return_code PIDX_default_bytes_per_datatype(PIDX_type type, int* bytes);
 
 #endif

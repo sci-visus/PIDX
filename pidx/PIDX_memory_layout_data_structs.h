@@ -22,8 +22,8 @@
  * \author Sidharth Kumar
  *
  * Generic data structs-
- * -- N dimensional Box
- * -- Set of N dimension boxes
+ * -- N dimensional patch
+ * -- Set of N dimension patches
  * -- HZ encoded buffer
  * -- Aggregation buffer
  */
@@ -33,34 +33,38 @@
 
 
 /// Struct to store the row/column major chunk of data given by application
-struct PIDX_Ndim_box_struct
+struct PIDX_Ndim_patch_struct
 {
-  int64_t Ndim_box_offset[PIDX_MAX_DIMENSIONS];         ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
-  int64_t Ndim_box_size[PIDX_MAX_DIMENSIONS];           ///< size (extents) in each of the dimensions for the data chunk
-  unsigned char* Ndim_box_buffer;                       ///< the data buffer
+  int64_t offset[PIDX_MAX_DIMENSIONS];                  ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  int64_t size[PIDX_MAX_DIMENSIONS];                    ///< size (extents) in each of the dimensions for the data chunk
+  unsigned char* buffer;                                ///< the data buffer
 };
-typedef struct PIDX_Ndim_box_struct* Ndim_box;
+typedef struct PIDX_Ndim_patch_struct* Ndim_patch;
 
 
 /// Struct to store a group of Ndim_buffer
-struct PIDX_Ndim_box_group_struct
+struct PIDX_Ndim_patch_group_struct
 {
-  int box_group_type;                                   ///< decide the type of the group 
-  int box_count;                                        ///< how many Ndim_buffer are there in the group
-  Ndim_box *box;                                        ///< Pointer to all the Ndim_buffer
-  int *source_box_rank;                                 ///<
-  int max_box_rank;                                     ///<
-  int64_t enclosing_box_offset[PIDX_MAX_DIMENSIONS];    ///< If restructuring used then this contains the offset of the power-two block
-  int64_t enclosing_box_size[PIDX_MAX_DIMENSIONS];      ///< If restructuring used then this contains the extents of the power-two block
+  int type;                                             ///< decide the type of the group
+  int count;                                            ///< how many Ndim_buffer are there in the group
+  Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
+  int *source_patch_rank;                               ///<
+  int max_patch_rank;                                   ///<
+  int64_t reg_patch_offset[PIDX_MAX_DIMENSIONS];        ///< If restructuring used then this contains the offset of the power-two block
+  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];          ///< If restructuring used then this contains the extents of the power-two block
 };
-typedef struct PIDX_Ndim_box_group_struct* Ndim_box_group; 
+typedef struct PIDX_Ndim_patch_group_struct* Ndim_patch_group;
 
 
 /// Struct to store the HZ encoded data and meta-data
 struct PIDX_HZ_buffer_struct
 {
-  int HZ_level_from;                                    ///< starting HZ level
-  int HZ_level_to;                                      ///< ending HZ level
+  int type;                                             ///< decide the type of the group
+  int HZ_io_from;                                    ///< starting HZ level
+  int HZ_io_to;                                      ///< ending HZ level
+  int HZ_agg_from;                                    ///< starting HZ level
+  int HZ_agg_to;                                      ///< ending HZ level
+  int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   int64_t *samples_per_level;                           ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   int64_t *start_hz_index;                              ///< Starting HZ index at of the data at all the HZ levels
   int64_t *end_hz_index;                                ///< Ending HZ index at of the data at all the HZ levels

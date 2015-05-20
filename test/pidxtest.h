@@ -22,7 +22,7 @@
 #include <PIDX.h>
 
 /// Kind of test to run
-enum Kind { DEFAULT = 0, SERIAL_READER, PARALLEL_READER, SERIAL_WRITER, PARALLEL_WRITER, PARALLEL_CONVERTER, PARALLEL_CONVERTER2, PARALLEL_MULTI_PATCH_WRITER, HDF5_WRITER, HDF5_READER};
+enum Kind { DEFAULT = 0, SERIAL_READER, PARALLEL_READER, SERIAL_WRITER, PARALLEL_WRITER, PARALLEL_CONVERTER, PARALLEL_CONVERTER2, PARALLEL_MULTI_PATCH_WRITER, HDF5_WRITER, HDF5_READER, SIMPLE_WRITER};
 
 /// kindToStr
 char* kindToStr(enum Kind k);
@@ -110,7 +110,7 @@ struct Args
   int perform_io;
 
   ///
-  int64_t compression_block_size[5];
+  int64_t chunk_size[5];
 
   /// 1 for lossy 0 for lossless
   int compression_type;

@@ -57,7 +57,7 @@ void revstr(char* str);
 
 void GuessBitmaskPattern(char* _bits, PointND dims);
 
-void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count);
+void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples);
 
 int RegExBitmaskBit(const char* bitmask_pattern,int N);
 

@@ -82,13 +82,13 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   int* values_per_sample;
   
   PIDX_point restructured_box_size_point;
-  PIDX_point compression_block_size_point;
+  PIDX_point chunk_size_point;
   PIDX_point global_bounding_box, local_offset_point, local_box_count_point;
     
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.chunk_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.restructured_box_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -155,7 +155,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   }
   
   PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
-  PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
+  PIDX_set_point_5D(chunk_size_point, (int64_t)args.chunk_size[0], (int64_t)args.chunk_size[1], (int64_t)args.chunk_size[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, (int64_t)local_offset[0], (int64_t)local_offset[1], (int64_t)local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, (int64_t)args.count_local[0], (int64_t)args.count_local[1], (int64_t)args.count_local[2], 1, 1);
   PIDX_set_point_5D(restructured_box_size_point, (int64_t)args.restructured_box_size[0], (int64_t)args.restructured_box_size[1], (int64_t)args.restructured_box_size[2], 1, 1);
@@ -189,7 +189,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     
     /// PIDX calls to set different parameters (optional)
     PIDX_set_dims(file, global_bounding_box);
-    PIDX_set_current_time_step(file, 1/*ts*/);
+    PIDX_set_current_time_step(file, ts);
     PIDX_set_block_size(file, args.bits_per_block);
     PIDX_set_aggregation_factor(file, args.aggregation_factor);
     PIDX_set_block_count(file, args.blocks_per_file);
@@ -201,7 +201,6 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     
     /// PIDX compression related calls
     PIDX_set_compression_type(file, args.compression_type);
-    PIDX_set_compression_block_size(file, compression_block_size_point);
     PIDX_set_lossy_compression_bit_rate(file, args.compression_bit_rate);
     
     /// PIDX debuging different phases
@@ -209,13 +208,18 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_debug_hz(file, args.debug_hz);
     PIDX_dump_agg_info(file, args.dump_agg);
     
-    /// PIDX enabling/disabling different phases
-    PIDX_enable_block_restructuring(file, args.perform_brst);
-    PIDX_enable_hz(file, args.perform_hz);
-    PIDX_enable_compression(file, args.perform_compression);
-    PIDX_enable_agg(file, args.perform_agg);
-    PIDX_enable_io(file, args.perform_io);
-    
+    /*
+    PIDX disabling different phases
+    PIDX_debug_disable_rst(file);
+    PIDX_debug_disable_chunking(file);
+    PIDX_debug_disable_hz(file);
+    PIDX_debug_disable_compression(file);
+    PIDX_debug_disable_agg(file);
+    PIDX_debug_disable_io(file);
+    */
+
+    //PIDX_disable_rst(file);
+    //PIDX_disable_agg(file);
     char variable_name[512];
     char data_type[512];
     
@@ -309,11 +313,23 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     {
       sprintf(variable_name, "variable_%d", var);
       sprintf(data_type, "%d*float64", values_per_sample[var]);
-      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
+
+      PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
 #if long_data
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
+      PIDX_append_and_write_variable(file, variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
 #else
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+
+      PIDX_append_and_write_variable(file, variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+
+      /*
+      if (var % 3 == 0)
+      {
+        if (rank == 0)
+          printf("flush var = %d\n", var);
+        PIDX_flush(file);
+      }
+      */
+
 #endif  
     }
     

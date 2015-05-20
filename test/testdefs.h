@@ -44,6 +44,10 @@ int test_hdf5_reader(struct Args args, int rank, int nprocs);
 extern "C" {
 #endif
 
+int test_simple_idx_writer(struct Args args, int rank, int nprocs);
+int usage_simple_idx_writer();
+
+
 int test_reader(struct Args args, int rank, int nprocs);
 int usage_reader();
 

@@ -41,7 +41,7 @@ typedef struct PIDX_agg_struct* PIDX_agg_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int init_index, int start_var_index, int end_var_index);
 
 
 
@@ -50,34 +50,34 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
 /// \param id aggregator id
 /// \param comm the communicator
 /// \return error code
-int PIDX_agg_set_communicator(PIDX_agg_id io_id, MPI_Comm comm);
+PIDX_return_code PIDX_agg_set_communicator(PIDX_agg_id io_id, MPI_Comm comm);
 
-int PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm);
+PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm);
 #endif
 
 
 
 ///
-int PIDX_agg_buf_create(PIDX_agg_id agg_id);
+PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id);
 
 
 
 ///
-int PIDX_agg_write(PIDX_agg_id agg_id);
+PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id);
 
 
 
 ///
-int PIDX_agg_read(PIDX_agg_id agg_id);
+PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id);
 
 
 
 ///
-int PIDX_agg_buf_destroy(PIDX_agg_id agg_id);
+PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id);
 
 
 
 ///
-int PIDX_agg_finalize(PIDX_agg_id agg_id);
+PIDX_return_code PIDX_agg_finalize(PIDX_agg_id agg_id);
 
 #endif //__PIDX_AGG_H

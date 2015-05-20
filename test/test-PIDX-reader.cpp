@@ -53,6 +53,7 @@ static void mortonDecode_for(uint64_t morton, unsigned int& x, unsigned int& y, 
 
 int test_reader(struct Args args, int rank, int nprocs)
 {
+#if 0
 #if PIDX_HAVE_MPI
   int ts, var;
   //int spv, i = 0, j = 0, k = 0;
@@ -86,7 +87,7 @@ int test_reader(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
 
-  MPI_Bcast(args.compression_block_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(args.chunk_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_type, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.compression_bit_rate, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.perform_brst, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -133,12 +134,12 @@ int test_reader(struct Args args, int rank, int nprocs)
 
   output_file = args.output_file_name;
 
-  PIDX_point global_bounding_box, local_offset_point, local_box_count_point, compression_block_size_point;
+  PIDX_point global_bounding_box, local_offset_point, local_box_count_point, chunk_size_point;
 
   PIDX_set_point_5D(global_bounding_box, args.extents[0], args.extents[1], args.extents[2], 1, 1);
   PIDX_set_point_5D(local_offset_point, local_offset[0], local_offset[1], local_offset[2], 0, 0);
   PIDX_set_point_5D(local_box_count_point, args.count_local[0], args.count_local[1], args.count_local[2], 1, 1);
-  PIDX_set_point_5D(compression_block_size_point, (int64_t)args.compression_block_size[0], (int64_t)args.compression_block_size[1], (int64_t)args.compression_block_size[2], 1, 1);
+  PIDX_set_point_5D(chunk_size_point, (int64_t)args.chunk_size[0], (int64_t)args.chunk_size[1], (int64_t)args.chunk_size[2], 1, 1);
 
   for (ts = 0; ts < args.time_step_count; ts++)
   {
@@ -156,7 +157,7 @@ int test_reader(struct Args args, int rank, int nprocs)
     PIDX_set_default_access(access);
 #endif
 
-    PIDX_file_open(output_file, PIDX_file_rdonly, access, &file);
+    //PIDX_file_open(output_file, PIDX_file_rdonly, access, &file);
 
     PIDX_get_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, ts);
@@ -166,7 +167,7 @@ int test_reader(struct Args args, int rank, int nprocs)
 
     /// PIDX compression related calls
     PIDX_set_compression_type(file, args.compression_type);
-    PIDX_set_compression_block_size(file, compression_block_size_point);
+    PIDX_set_chunk_size(file, chunk_size_point);
     PIDX_set_lossy_compression_bit_rate(file, args.compression_bit_rate);
 
     /// PIDX enabling/disabling different phases
@@ -240,7 +241,7 @@ int test_reader(struct Args args, int rank, int nprocs)
   }
   free(args.output_file_name);
 #endif
-
+#endif
   return 0;
 }
 
