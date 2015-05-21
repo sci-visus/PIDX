@@ -310,7 +310,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->start_fs_block = 0;
   (*file)->idx_d->aggregation_factor = 1;
   (*file)->idx_d->dump_agg_info = 0;
+  (*file)->idx_d->dump_io_info = 0;
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
+  memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
   (*file)->idx_d->color = 0;
   (*file)->idx_d->res_from = 0;
   (*file)->idx_d->res_to = 0;
@@ -1548,6 +1550,22 @@ PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info)
   filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
   sprintf(file->idx_d->agg_dump_dir_name, "%s_agg_dump", filename_skeleton);
   
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  char filename_skeleton[512];
+  file->idx_d->dump_io_info = dump_io_info;
+  strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
+  filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
+  sprintf(file->idx_d->io_dump_dir_name, "%s_io_dump", filename_skeleton);
+
   return PIDX_success;
 }
 

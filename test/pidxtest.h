@@ -86,6 +86,11 @@ struct Args
   /// Default is 0
   int dump_agg;
 
+
+  /// Dumps all the reguired offsets and counts for the aggregation phase
+  /// Default is 0
+  int dump_io;
+
   /// All the agg dumps will go here (file equal to number of processes will be ceated)
   char agg_dump_dir_name[512];
 

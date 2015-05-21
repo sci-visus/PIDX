@@ -146,8 +146,8 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       for(j = 0; j < out_patch->count; j++)
       {
         out_patch->patch[j] = malloc(sizeof(*(out_patch->patch[j])));
-        memcpy(out_patch->patch[j]->offset, in_patch->reg_patch_offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-        memcpy(out_patch->patch[j]->size, in_patch->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        memcpy(out_patch->patch[j]->offset, in_patch->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        memcpy(out_patch->patch[j]->size, in_patch->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 
         if (chunk_id->idx->enable_compression == 0)
         {
@@ -192,7 +192,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
     }
   }
 
-  return 0;
+  return PIDX_success;
 }
 
 //DUONG_TODO: code duplication with PIDX_chunk_write (differ only at the memcpy line)

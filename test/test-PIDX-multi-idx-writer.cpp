@@ -100,6 +100,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   MPI_Bcast(&args.debug_rst, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.debug_hz, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.dump_agg, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&args.dump_io, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.idx_count, 3, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.blocks_per_file, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -207,6 +208,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_debug_rst(file, args.debug_rst);
     PIDX_debug_hz(file, args.debug_hz);
     PIDX_dump_agg_info(file, args.dump_agg);
+    PIDX_dump_io_info(file, args.dump_io);
     
     /*
     PIDX disabling different phases
@@ -219,7 +221,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     */
 
     //PIDX_disable_rst(file);
-    //PIDX_disable_agg(file);
+    PIDX_disable_agg(file);
     char variable_name[512];
     char data_type[512];
     

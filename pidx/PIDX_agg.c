@@ -614,7 +614,6 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
   if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
   {
     char agg_file_name[1024];
-
     ret = mkdir(agg_id->idx_d->agg_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
     if (ret != 0 && errno != EEXIST)
     {

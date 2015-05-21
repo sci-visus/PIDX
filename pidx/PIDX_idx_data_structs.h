@@ -142,9 +142,13 @@ struct idx_dataset_derived_metadata_struct
   
   int aggregation_factor;
   Agg_buffer agg_buffer;
+
   int dump_agg_info;
   char agg_dump_dir_name[512];
-  
+  int dump_io_info;
+  char io_dump_dir_name[512];
+
+
   int color;
   
   int res_from;

@@ -320,6 +320,11 @@ PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
 PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info);
 
 
+
+///
+PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info);
+
+
 ///
 PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int resolution_to);
 

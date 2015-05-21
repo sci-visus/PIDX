@@ -483,14 +483,14 @@ int main(int argc, char **argv)
 
               ret = pread(fd, long_long_buffer, data_size, data_offset);
               //printf("[%d] %ld and %ld\n", bpf, data_size, ret);
-              assert(ret == data_size);
+              //assert(ret == data_size);
 #else
               double_buffer = (double*) malloc(data_size);
               memset(double_buffer, 0, data_size);
 
               ret = pread(fd, double_buffer, data_size, data_offset);
               //printf("[%d] size %ld and %ld offset %lld\n", (int)bpf, (long int)data_size, (long int)ret, (long long)data_offset);
-              assert(ret == data_size);
+              //assert(ret == data_size);
               
               if (compression == 1)
               {
@@ -564,7 +564,7 @@ int main(int argc, char **argv)
                   //      hz_index, ZYX[0], ZYX[1], ZYX[2],
                   //      (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #else
-#if 0
+#if 1
                   if (compression == 0)
                     printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
                         var,

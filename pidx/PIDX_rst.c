@@ -980,6 +980,8 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
         int64_t *count_ptr = var0->rst_patch_group[m]->patch[n]->size;
         int64_t *offset_ptr = var0->rst_patch_group[m]->patch[n]->offset;
         
+        //if (rank == 0)
+        //  printf("[%d] RST %d %d %d %d %d\n", n, count_ptr[0], count_ptr[1], count_ptr[2], count_ptr[3], count_ptr[4]);
         for (a = 0; a < count_ptr[4]; a++)
           for (u = 0; u < count_ptr[3]; u++)
             for (k = 0; k < count_ptr[2]; k++) 
