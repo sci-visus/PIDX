@@ -756,7 +756,7 @@ PIDX_return_code PIDX_set_aggregation_factor(PIDX_file file, int agg_factor)
 {
   if(!file)
     return PIDX_err_file;
-  
+
   file->idx_d->aggregation_factor = agg_factor;
   
   return PIDX_success;
@@ -2157,7 +2157,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
     }
   }
 
-  file->var_pipe_length = 5;
+  file->var_pipe_length = 0;
 
   return PIDX_success;
 }
@@ -2173,7 +2173,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   PIDX_return_code ret;
   //static int header_io = 0;
 
-#if 1
   
 #if PIDX_HAVE_MPI
   int rank = 0, nprocs = 1;
@@ -2258,7 +2257,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
                 file->idx->variable[var]->sim_patch[p]->offset[d] = file->idx->variable[var]->sim_patch[p]->offset[d] - j;
                 break;
               }
-  
+#if 1
   int start_index = 0, end_index = 0;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))
   {
@@ -2464,7 +2463,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     agg_end[vp] = PIDX_get_time();
     /*--------------------------------------------Agg [end]--------------------------------------------------*/
     
-
+#if 1
 
     /*--------------------------------------------IO [start]--------------------------------------------------*/
     io_start[vp] = PIDX_get_time();
@@ -2528,7 +2527,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     finalize_end[vp] = PIDX_get_time();
     /*-----------------------------------------finalize [end]--------------------------------------------------*/
-    
+#endif
+
     vp++;
   }
 

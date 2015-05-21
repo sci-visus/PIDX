@@ -19,7 +19,7 @@
 
 int serial_writer(struct Args args)
 {
-#if 0
+#if 1
   int i = 0, j = 0, k = 0;
   int spv = 0, var = 0;
   int ts;
@@ -64,7 +64,7 @@ int serial_writer(struct Args args)
           {
             int64_t index = (int64_t) (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
             for (spv = 0; spv < values_per_sample[var]; spv++)
-              double_data[var][index * values_per_sample[var] + spv] = (double)100 + (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
+              double_data[var][index * values_per_sample[var] + spv] = (double)100 + var + (args.extents[0] * args.extents[1] * k) + (args.extents[0] * j) + i;
           }
     }
     
@@ -84,29 +84,40 @@ int serial_writer(struct Args args)
     PIDX_set_variable_count(file, args.variable_count);
     
     /// PIDX debuging different phases
-    PIDX_debug_rst(file, 0);
+    PIDX_debug_rst(file, args.debug_rst);
     PIDX_debug_hz(file, args.debug_hz);
-    PIDX_dump_agg_info(file, 0);
-    
-    /// PIDX enabling/disabling different phases
-    PIDX_enable_hz(file, args.perform_hz);
-    PIDX_enable_agg(file, args.perform_agg);
-    PIDX_enable_io(file, args.perform_io);
-    printf("variable count %d\n", args.variable_count);
+    PIDX_dump_agg_info(file, args.dump_agg);
+    PIDX_dump_io_info(file, args.dump_io);
+
+
+    /// PIDX disabling different phases
+    // PIDX_debug_disable_restructuring(file);
+    // PIDX_debug_disable_chunking(file);
+    // PIDX_debug_disable_hz(file);
+    // PIDX_debug_disable_compression(file);
+    // PIDX_debug_disable_agg(file);
+    // PIDX_debug_disable_io(file);
+
+
     for(var = 0; var < args.variable_count; var++)
     {
       char variable_name[1024];
       char data_type[1024];
       sprintf(variable_name, "variable_%d", var);
       sprintf(data_type, "%d*float64", values_per_sample[var]);
-      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
-      PIDX_append_and_write_variable(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
+      PIDX_append_and_write_variable(file, variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
     }
-    
-    //PIDX_variable_set_box_metadata_on(variable);
-    
     PIDX_close(file);
-    //free(var1_double_scalar_data);
+
+    for(var = 0; var < args.variable_count; var++)
+    {
+      free(double_data[var]);
+      double_data[var] = 0;
+    }
+    free(double_data);
+    double_data = 0;
+
   }
   PIDX_time_step_caching_OFF();
   

@@ -29,7 +29,7 @@
 
 #include "PIDX_inc.h"
 
-#if PIDX_HAVE_MPI
+
 
 int maximum_neighbor_count = 128;
 
@@ -37,7 +37,9 @@ int maximum_neighbor_count = 128;
 struct PIDX_rst_struct 
 {
   //Passed by PIDX API
+#if PIDX_HAVE_MPI
   MPI_Comm comm; //Communicator
+#endif
 
   //Contains all relevant IDX file info
   //Blocks per file, samples per block, bitmask, patch, file name template and more
@@ -59,11 +61,16 @@ struct PIDX_rst_struct
   Ndim_patch_group* reg_patch_grp;
 };
 
+#if PIDX_HAVE_MPI
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
-static int getPowerOftwo(int x);
 static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs);
+static int getPowerOftwo(int x);
+#endif
 
 
+
+
+#if PIDX_HAVE_MPI
 /// Function to check if NDimensional data chunks A and B intersects
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 {
@@ -142,7 +149,7 @@ static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, 
   memcpy(rst_id->idx->reg_patch_size, rst_id->reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
   //reg_patch_size = reg_patch_size * 4;
 }
-
+#endif
 
 /// output value: num_output_buffers (number of buffers this process will hold after restructuring given the above parameters)
 PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int first_index, int var_start_index, int var_end_index)
@@ -440,8 +447,7 @@ PIDX_return_code PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id)
 /// actually do the restructuring, using pre-calculated data associated with the rst_id
 PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
 {
-  int rank;
-  int j = 0, i, cnt = 0, v = 0, p = 0;
+  int j = 0, v = 0, p = 0;
 
   for (v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
@@ -460,6 +466,7 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
   if(rst_id->idx->enable_rst == 1)
   {
 #if PIDX_HAVE_MPI
+    int rank = 0, cnt = 0, i = 0;
     MPI_Comm_rank(rst_id->comm, &rank);
     for (v = rst_id->first_index; v <= rst_id->last_index; v++)
     {
@@ -532,6 +539,7 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
   if (rst_id->idx->enable_rst != 1)
     return PIDX_success;
 
+#if PIDX_HAVE_MPI
   int64_t a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
   int i, j, v, index, count1 = 0, ret = 0, req_count = 0;
   int *send_count, *send_offset;
@@ -702,11 +710,21 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
   status = 0;
   
   return PIDX_success;
+#else
+  if (rst_id->idx->enable_rst == 1)
+    return PIDX_err_rst;
+  else
+    return PIDX_success;
+#endif
 }
 
 
 PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 {  
+  if (rst_id->idx->enable_rst != 1)
+    return PIDX_success;
+
+#if PIDX_HAVE_MPI
   int64_t a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
   int i, j, v, index, count1 = 0, ret = 0, req_count = 0;
   int *send_count, *send_offset;
@@ -878,6 +896,13 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
   status = 0;
   
   return PIDX_success;
+#else
+  if (rst_id->idx->enable_rst == 1)
+    return PIDX_err_rst;
+  else
+    return PIDX_success;
+
+#endif
 }
 
 
@@ -955,11 +980,13 @@ PIDX_return_code PIDX_rst_finalize(PIDX_rst_id rst_id)
 PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
 {
   int i, j, k, rank = 0, v = 0, u = 0, s = 0, a, m, n, bytes_for_datatype;
-  MPI_Comm_rank(rst_id->comm, &rank);
   int64_t element_count = 0;
   int64_t lost_element_count = 0;
   
+#if PIDX_HAVE_MPI
   MPI_Comm_rank(rst_id->comm, &rank);
+#endif
+
 #if long_buffer
   uint64_t dvalue_1, dvalue_2;
 #else
@@ -1016,7 +1043,11 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   }
   
   int64_t global_volume;
+#if PIDX_HAVE_MPI
   MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, rst_id->comm);
+#else
+  global_volume = element_count;
+#endif
     
   if (global_volume != (int64_t) bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4] * (rst_id->last_index - rst_id->first_index + 1))
   {
@@ -1033,5 +1064,3 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
     
   return PIDX_success;
 }
-
-#endif // PIDX_HAVE_MPI

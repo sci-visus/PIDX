@@ -121,7 +121,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 
     if (enable_caching == 1 && agg_buf->var_number == io_id->init_index && agg_buf->sample_number == 0)
     {
-      t1 = MPI_Wtime();
+      t1 = PIDX_get_time();
 
       generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
@@ -136,7 +136,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       fh = open(file_name, O_WRONLY);
 #endif
 
-      t2 = MPI_Wtime();
+      t2 = PIDX_get_time();
 
       data_offset = 0;
       total_header_size = (10 + (10 * io_id->idx->blocks_per_file)) * sizeof (uint32_t) * io_id->idx->variable_count;
@@ -151,7 +151,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
         //TODO
       }
 
-      t3 = MPI_Wtime();
+      t3 = PIDX_get_time();
 
       uint64_t header_size = (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size);
 
@@ -188,10 +188,15 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       }
 
 #else
-      pwrite(fh, agg_buf->buffer, agg_buf->buffer_size + header_size, 0);
+      ssize_t write_count = pwrite(fh, agg_buf->buffer, agg_buf->buffer_size + header_size, 0);
+      if (write_count != agg_buf->buffer_size + header_size)
+      {
+        fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
 #endif
 
-      t4 = MPI_Wtime();
+      t4 = PIDX_get_time();
 
 #if PIDX_HAVE_MPI
       mpi_ret = MPI_File_close(&fh);
@@ -204,7 +209,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       close(fh);
 #endif
 
-      t5 = MPI_Wtime();
+      t5 = PIDX_get_time();
 
 #ifdef PIDX_RECORD_TIME
       printf("V0. [R %d] [O 0 C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long)agg_buf->buffer_size + header_size, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
@@ -213,7 +218,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
     }
     else if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
     {
-      t1 = MPI_Wtime();
+      t1 = PIDX_get_time();
 
       generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
@@ -228,7 +233,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       fh = open(file_name, O_WRONLY);
 #endif
 
-      t2 = MPI_Wtime();
+      t2 = PIDX_get_time();
 
       data_offset = 0;
       data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
@@ -263,10 +268,15 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       }
 
 #else
-      pwrite(fh, agg_buf->buffer, agg_buf->buffer_size, data_offset);
+      ssize_t write_count = pwrite(fh, agg_buf->buffer, agg_buf->buffer_size, data_offset);
+      if (write_count != agg_buf->buffer_size)
+      {
+        fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
 #endif
 
-      t3 = MPI_Wtime();
+      t3 = PIDX_get_time();
 
 #if PIDX_HAVE_MPI
       mpi_ret = MPI_File_close(&fh);
@@ -279,7 +289,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       close(fh);
 #endif
 
-      t4 = MPI_Wtime();
+      t4 = PIDX_get_time();
 
 #ifdef PIDX_RECORD_TIME
       printf("V. [R %d] [O %lld C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, (long long)agg_buf->buffer_size, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
@@ -299,7 +309,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 {
   int64_t data_offset = 0;
   char file_name[PATH_MAX];
-  int i = 0, k = 0, rank, mpi_ret;
+  int i = 0, k = 0, rank;
   //uint32_t *headers;
   //int total_header_size;
   int write_count;
@@ -310,6 +320,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #endif
 
 #if PIDX_HAVE_MPI
+  int mpi_ret;
   MPI_File fh;
   MPI_Status status;
   MPI_Comm_rank(io_id->comm, &rank);
@@ -322,7 +333,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
     bytes_per_datatype =  (io_id->idx->variable[io_id->idx_d->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4])  / (64/io_id->idx->compression_bit_rate);
 
 #ifdef PIDX_RECORD_TIME
-    t1 = MPI_Wtime();
+    t1 = PIDX_get_time();
 #endif
     generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) io_id->idx_d->agg_buffer->file_number, file_name, PATH_MAX);
 
@@ -338,12 +349,12 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #endif
 
 #ifdef PIDX_RECORD_TIME
-    t2 = MPI_Wtime();
+    t2 = PIDX_get_time();
 #endif
 
 
 #ifdef PIDX_RECORD_TIME
-    t3 = MPI_Wtime();
+    t3 = PIDX_get_time();
 #endif
 
 
@@ -380,7 +391,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 
 
 #ifdef PIDX_RECORD_TIME
-    t4 = MPI_Wtime();
+    t4 = PIDX_get_time();
 #endif
 
 #if PIDX_HAVE_MPI
@@ -395,7 +406,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #endif
 
 #ifdef PIDX_RECORD_TIME
-    t5 = MPI_Wtime();
+    t5 = PIDX_get_time();
 #endif
 
 #ifdef PIDX_RECORD_TIME
@@ -409,7 +420,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
   else if (io_id->idx_d->agg_buffer->var_number != -1 && io_id->idx_d->agg_buffer->sample_number != -1 && io_id->idx_d->agg_buffer->file_number != -1)
   {
 #ifdef PIDX_RECORD_TIME
-    t1 = MPI_Wtime();
+    t1 = PIDX_get_time();
 #endif
     bytes_per_datatype =  (io_id->idx->variable[io_id->idx_d->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]);
 
@@ -428,7 +439,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #endif
 
 #ifdef PIDX_RECORD_TIME
-    t2 = MPI_Wtime();
+    t2 = PIDX_get_time();
 #endif
 
     data_offset = 0;
@@ -465,7 +476,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 
 
 #ifdef PIDX_RECORD_TIME
-    t3 = MPI_Wtime();
+    t3 = PIDX_get_time();
 #endif
 
 #if PIDX_HAVE_MPI
@@ -480,7 +491,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 #endif
 
 #ifdef PIDX_RECORD_TIME
-    t4 = MPI_Wtime();
+    t4 = PIDX_get_time();
 #endif
 
 #ifdef PIDX_RECORD_TIME
@@ -496,9 +507,9 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
   int send_index = 0;
   int64_t hz_index = 0;
   int64_t index = 0, count = 0;
+  int rank = 0;
 
 #if PIDX_HAVE_MPI
-  int rank;
   MPI_Comm_rank(io_id->comm, &rank);
 #endif
 

@@ -39,7 +39,7 @@ static void usage(enum Kind kind)
 
   switch (kind)
   {
-  //case SERIAL_WRITER:                      usage_serial();              break;
+  case SERIAL_WRITER:                      usage_serial();              break;
   case PARALLEL_WRITER:                    usage_multi_idx_writer();    break;
   case SIMPLE_WRITER:                      usage_simple_idx_writer();    break;
   //case PARALLEL_MULTI_PATCH_WRITER:        usage_multi_var_writer();    break;
@@ -158,6 +158,7 @@ int main(int argc, char **argv)
 	printf("Performing Parallel Write....\n");
       test_multi_patch_writer(args, rank, nprocs);
       break;
+    */
 
     case SERIAL_WRITER:
       if(rank == 0)
@@ -165,6 +166,7 @@ int main(int argc, char **argv)
       serial_writer(args);
       break;
 
+    /*
     case SERIAL_READER:
       if(rank == 0)
         printf("Performing Serial Read....\n");
@@ -326,7 +328,7 @@ char* kindToStr(enum Kind k)
     case HDF5_WRITER:                    return "hdf5-writer";
     case HDF5_READER:                    return "hdf5-reader";
     //case PARALLEL_MULTI_PATCH_WRITER:    return "parallel-multi-patch-writer";
-    //case SERIAL_WRITER:                  return "serial-writer";
+    case SERIAL_WRITER:                  return "serial-writer";
     case DEFAULT:
     default:                             return "default";
   }
@@ -344,6 +346,6 @@ enum Kind strToKind(const char *str)
   if (strcmp(str,"hdf5-writer")   == 0)                 return HDF5_WRITER;
   if (strcmp(str,"hdf5-reader")   == 0)                 return HDF5_READER;
   //if (strcmp(str,"parallel-multi-patch-writer")   == 0) return PARALLEL_MULTI_PATCH_WRITER;
-  //if (strcmp(str,"serial-writer")     == 0)             return SERIAL_WRITER;
+  if (strcmp(str,"serial-writer")     == 0)             return SERIAL_WRITER;
   else                                                  return DEFAULT;
 }
