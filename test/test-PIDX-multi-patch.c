@@ -24,7 +24,7 @@ extern "C" {
 
 int test_multi_patch_writer(struct Args args, int rank, int nprocs) 
 {
-#if 1
+#if PIDX_HAVE_MPI
   int i = 0, j = 0, k = 0, u = 0, v = 0, p = 0, var, d;
   int spv = 0;
   int ts;
