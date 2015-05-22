@@ -180,6 +180,10 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
 PIDX_return_code PIDX_get_bits_per_sample(PIDX_type type_name, unsigned int bits_per_sample);
 
 
+
+PIDX_return_code PIDX_variable_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
 /// Write function used for dumping data from a simulation.
 /// This function is used to write data in increasing order, typically suited for dumping data from a simulation.
 /// \param variable The variable to be written.
@@ -187,7 +191,7 @@ PIDX_return_code PIDX_get_bits_per_sample(PIDX_type type_name, unsigned int bits
 /// \param dims The box size of the chunk associated with the process.
 /// \param src_buffer The data buffer that needs to be written by the process.
 /// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* src_buffer, PIDX_data_layout layout);
+PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable/*, PIDX_point offset, PIDX_point dims, const void* src_buffer, PIDX_data_layout layout*/);
 
 
 /// Read function used for restarting a simulation from checkpoint dump.

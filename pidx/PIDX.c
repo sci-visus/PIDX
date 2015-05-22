@@ -1218,12 +1218,8 @@ PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offs
 }
 
 
-
-PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout)
+PIDX_return_code PIDX_variable_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout)
 {
-  if (!file)
-    return PIDX_err_file;
-
   if(!variable)
     return PIDX_err_variable;
 
@@ -1232,9 +1228,6 @@ PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable va
 
   if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
     return PIDX_err_count;
-
-  if (file->idx->variable_index_tracker >= file->idx->variable_count)
-    return PIDX_err_variable;
 
   const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
@@ -1246,6 +1239,43 @@ PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable va
 
   variable->data_layout = data_layout;
   variable->sim_patch_count = variable->sim_patch_count + 1;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable/*, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout*/)
+{
+
+  if (!file)
+    return PIDX_err_file;
+
+  if(!variable)
+    return PIDX_err_variable;
+
+  if (file->idx->variable_index_tracker >= file->idx->variable_count)
+    return PIDX_err_variable;
+
+  /*
+  if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
+    return PIDX_err_offset;
+
+  if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
+    return PIDX_err_count;
+
+  const void *temp_buffer;
+  variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+
+  temp_buffer = read_from_this_buffer;
+  variable->sim_patch[variable->sim_patch_count]->buffer = (unsigned char*)temp_buffer;
+
+  variable->data_layout = data_layout;
+  variable->sim_patch_count = variable->sim_patch_count + 1;
+  */
+
   variable->io_state = 1;
 
   file->idx->variable[file->idx->variable_index_tracker] = variable;

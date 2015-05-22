@@ -161,7 +161,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D(local_box_count_point, (int64_t)args.count_local[0], (int64_t)args.count_local[1], (int64_t)args.count_local[2], 1, 1);
   PIDX_set_point_5D(restructured_box_size_point, (int64_t)args.restructured_box_size[0], (int64_t)args.restructured_box_size[1], (int64_t)args.restructured_box_size[2], 1, 1);
   
-  PIDX_time_step_caching_ON();  
+  PIDX_time_step_caching_ON();
   for (ts = 0; ts < args.time_step_count; ts++) 
   {
 #if long_data
@@ -221,7 +221,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     */
 
     //PIDX_disable_rst(file);
-    PIDX_disable_agg(file);
+    //PIDX_disable_agg(file);
     char variable_name[512];
     char data_type[512];
     
@@ -321,7 +321,8 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
       PIDX_append_and_write_variable(file, variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
 #else
 
-      PIDX_append_and_write_variable(file, variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_variable_data_layout(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_append_and_write_variable(file, variable[var]);
 
       /*
       if (var % 3 == 0)

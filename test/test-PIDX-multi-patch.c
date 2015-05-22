@@ -18,15 +18,19 @@
 
 #include "pidxtest.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int test_multi_patch_writer(struct Args args, int rank, int nprocs) 
 {
-#if PIDX_HAVE_MPI
+#if 1
   int i = 0, j = 0, k = 0, u = 0, v = 0, p = 0, var, d;
   int spv = 0;
   int ts;
   int slice;
   int sub_div[5], offset_local[5];
+
 
   PIDX_file file;                                                // IDX file descriptor
   const char *output_file;                                                      // IDX File Name
@@ -35,14 +39,13 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   
   PIDX_variable *variable;                                       // variable descriptor
   int *values_per_sample;                                                       // values per variable (example, scalar=1, vector=3)
-  int *var_patch_count;                                                         // Number of patches a variable has (data blocks per variable that needs to be written to).
+  int patch_count = 8;                                                         // Number of patches a variable has (data blocks per variable that needs to be written to).
   
   int      ***var_count;                                                              // Local extents of the variables in each process
-  int      ***var_offset;                                                              // Local counts of the variables in each process
+  int      ***var_offset;                                                              // Local counts of the variables in each process  
+  double   ***double_data;
   
-  double   ***var_double_scalar_data;
-  
-  //The command line arguments are shared by all processes
+  /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&args.time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -53,22 +56,8 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   memset(variable, 0, sizeof (PIDX_variable) * args.variable_count);
   
   values_per_sample = (int*) malloc(sizeof (int) * args.variable_count);                  
-  var_patch_count = (int*) malloc(sizeof (int) * args.variable_count);                  
   for (var = 0; var < args.variable_count; var++)
-  {
     values_per_sample[var] = 1;
-    /*
-    if(var % 4 == 3)
-      var_patch_count[var] = 1;
-    else if(var % 4 == 2)
-      var_patch_count[var] = 2;
-    else if(var % 4 == 1)
-      var_patch_count[var] = 4;
-    else if(var % 4 == 0)
-    */
-    var_patch_count[var] = 8;
-  }
-  
   
   //   Creating the filename 
   args.output_file_name = (char*) malloc(sizeof (char) * 512);
@@ -93,9 +82,9 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   
   for(var = 0; var < args.variable_count; var++)
   {
-    var_count[var] = malloc(sizeof(int*) * var_patch_count[var]);
-    var_offset[var] = malloc(sizeof(int*) * var_patch_count[var]);
-    for(i = 0; i < var_patch_count[var] ; i++)
+    var_count[var] = malloc(sizeof(int*) * patch_count);
+    var_offset[var] = malloc(sizeof(int*) * patch_count);
+    for(i = 0; i < patch_count ; i++)
     {
       var_count[var][i] = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
       var_offset[var][i] = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);    
@@ -104,42 +93,46 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   
   for(var = 0; var < args.variable_count; var++)
   {
-    /*
-    if(var % 4 == 3)                                                       // One patch for this variable
+    // One patch for this variable
+    if (patch_count == 1)
     {
       for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-	var_count[var][0][d] = args.count_local[d];
-	var_offset[var][0][d] = offset_local[d];
+        var_count[var][0][d] = args.count_local[d];
+        var_offset[var][0][d] = offset_local[d];
       }
     }
-    else if(var % 4 == 2)                                                  // two patches for this variable
+
+    // two patches for this variable
+    else if (patch_count == 2)
     {
       for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-	var_count[var][0][d] = args.count_local[d];
-	var_offset[var][0][d] = offset_local[d];
-	var_count[var][1][d] = args.count_local[d];
-	var_offset[var][1][d] = offset_local[d];
+        var_count[var][0][d] = args.count_local[d];
+        var_offset[var][0][d] = offset_local[d];
+        var_count[var][1][d] = args.count_local[d];
+        var_offset[var][1][d] = offset_local[d];
       }
       
       var_count[var][0][0] = args.count_local[0]/2;
       if(args.count_local[0] % 2 == 0)
-	var_count[var][1][0] = args.count_local[0]/2;
+        var_count[var][1][0] = args.count_local[0]/2;
       else
-	var_count[var][1][0] = args.count_local[0]/2 + 1;
+        var_count[var][1][0] = args.count_local[0]/2 + 1;
       
       var_offset[var][1][0] = offset_local[0] + args.count_local[0]/2;
     }
-    else if(var % 4 == 1)
+
+    // four patches for this variable
+    else if (patch_count == 4)
     {
-      for(i = 0; i < var_patch_count[var]; i++)
+      for(i = 0; i < patch_count; i++)
       {
-	for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-	{
-	  var_count[var][i][d] = args.count_local[d];
-	  var_offset[var][i][d] = offset_local[d];
-	}
+        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        {
+          var_count[var][i][d] = args.count_local[d];
+          var_offset[var][i][d] = offset_local[d];
+        }
       }
       var_count[var][0][0] = args.count_local[0]/2;
       var_count[var][0][1] = args.count_local[1]/2;
@@ -147,45 +140,46 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
       var_count[var][1][1] = args.count_local[1]/2;
       if(args.count_local[0] % 2 == 0)
       {
-	var_count[var][1][0] = args.count_local[0]/2;
-	var_count[var][3][0] = args.count_local[0]/2;
-	var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
-	var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_count[var][1][0] = args.count_local[0]/2;
+        var_count[var][3][0] = args.count_local[0]/2;
+        var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
       }
       else
       {
-	var_count[var][1][0] = args.count_local[0]/2 + 1;
-	var_count[var][3][0] = args.count_local[0]/2 + 1;
-	var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
-	var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_count[var][1][0] = args.count_local[0]/2 + 1;
+        var_count[var][3][0] = args.count_local[0]/2 + 1;
+        var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
       }
       
       var_count[var][2][0] = args.count_local[0]/2;
       if(args.count_local[1] % 2 == 0)
       {
-	var_count[var][2][1] = args.count_local[1]/2;
-	var_count[var][3][1] = args.count_local[1]/2;
-	var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
-	var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_count[var][2][1] = args.count_local[1]/2;
+        var_count[var][3][1] = args.count_local[1]/2;
+        var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
       }
       else
       {
-	var_count[var][2][1] = args.count_local[1]/2 + 1;
-	var_count[var][3][1] = args.count_local[1]/2 + 1;
-	var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
-	var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_count[var][2][1] = args.count_local[1]/2 + 1;
+        var_count[var][3][1] = args.count_local[1]/2 + 1;
+        var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
       }
     }
-    */
-    //else if(var % 4 == 0)
-    //{
-      for(i = 0; i < var_patch_count[var]; i++)
+
+    // eight patches for this variable
+    else if (patch_count == 8)
+    {
+      for(i = 0; i < patch_count; i++)
       {
-	for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-	{
-	  var_count[var][i][d] = args.count_local[d];
-	  var_offset[var][i][d] = offset_local[d];
-	}
+        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        {
+          var_count[var][i][d] = args.count_local[d];
+          var_offset[var][i][d] = offset_local[d];
+        }
       }
       var_count[var][0][0] = args.count_local[0]/2;
       var_count[var][0][1] = args.count_local[1]/2;
@@ -197,27 +191,27 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
       var_count[var][5][1] = args.count_local[1]/2;
       if(args.count_local[0] % 2 == 0)
       {
-	var_count[var][1][0] = args.count_local[0]/2;
-	var_count[var][3][0] = args.count_local[0]/2;
-	var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
-	var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_count[var][1][0] = args.count_local[0]/2;
+        var_count[var][3][0] = args.count_local[0]/2;
+        var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
 	
-	var_count[var][5][0] = args.count_local[0]/2;
-	var_count[var][7][0] = args.count_local[0]/2;
-	var_offset[var][5][0] = var_offset[var][0][0] + args.count_local[0]/2;
-	var_offset[var][7][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_count[var][5][0] = args.count_local[0]/2;
+        var_count[var][7][0] = args.count_local[0]/2;
+        var_offset[var][5][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_offset[var][7][0] = var_offset[var][0][0] + args.count_local[0]/2;
       }
       else
       {
-	var_count[var][1][0] = args.count_local[0]/2 + 1;
-	var_count[var][3][0] = args.count_local[0]/2 + 1;
-	var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
-	var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_count[var][1][0] = args.count_local[0]/2 + 1;
+        var_count[var][3][0] = args.count_local[0]/2 + 1;
+        var_offset[var][1][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_offset[var][3][0] = var_offset[var][0][0] + args.count_local[0]/2;
 	
-	var_count[var][5][0] = args.count_local[0]/2 + 1;
-	var_count[var][7][0] = args.count_local[0]/2 + 1;
-	var_offset[var][5][0] = var_offset[var][0][0] + args.count_local[0]/2;
-	var_offset[var][7][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_count[var][5][0] = args.count_local[0]/2 + 1;
+        var_count[var][7][0] = args.count_local[0]/2 + 1;
+        var_offset[var][5][0] = var_offset[var][0][0] + args.count_local[0]/2;
+        var_offset[var][7][0] = var_offset[var][0][0] + args.count_local[0]/2;
       }
       
       var_count[var][2][0] = args.count_local[0]/2;
@@ -225,27 +219,27 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
       
       if(args.count_local[1] % 2 == 0)
       {
-	var_count[var][2][1] = args.count_local[1]/2;
-	var_count[var][3][1] = args.count_local[1]/2;
-	var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
-	var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_count[var][2][1] = args.count_local[1]/2;
+        var_count[var][3][1] = args.count_local[1]/2;
+        var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
 	
-	var_count[var][6][1] = args.count_local[1]/2;
-	var_count[var][7][1] = args.count_local[1]/2;
-	var_offset[var][6][1] = var_offset[var][0][1] + args.count_local[1]/2;
-	var_offset[var][7][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_count[var][6][1] = args.count_local[1]/2;
+        var_count[var][7][1] = args.count_local[1]/2;
+        var_offset[var][6][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_offset[var][7][1] = var_offset[var][0][1] + args.count_local[1]/2;
       }
       else
       {
-	var_count[var][2][1] = args.count_local[1]/2 + 1;
-	var_count[var][3][1] = args.count_local[1]/2 + 1;
-	var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
-	var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_count[var][2][1] = args.count_local[1]/2 + 1;
+        var_count[var][3][1] = args.count_local[1]/2 + 1;
+        var_offset[var][2][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_offset[var][3][1] = var_offset[var][0][1] + args.count_local[1]/2;
 	
-	var_count[var][6][1] = args.count_local[1]/2 + 1;
-	var_count[var][7][1] = args.count_local[1]/2 + 1;
-	var_offset[var][6][1] = var_offset[var][0][1] + args.count_local[1]/2;
-	var_offset[var][7][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_count[var][6][1] = args.count_local[1]/2 + 1;
+        var_count[var][7][1] = args.count_local[1]/2 + 1;
+        var_offset[var][6][1] = var_offset[var][0][1] + args.count_local[1]/2;
+        var_offset[var][7][1] = var_offset[var][0][1] + args.count_local[1]/2;
       }
       
       var_count[var][0][2] = args.count_local[2]/2;
@@ -254,29 +248,31 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
       var_count[var][3][2] = args.count_local[2]/2;
       if(args.count_local[1] % 2 == 0)
       {
-	var_count[var][4][2] = args.count_local[2]/2;
-	var_count[var][5][2] = args.count_local[2]/2;
-	var_count[var][6][2] = args.count_local[2]/2;
-	var_count[var][7][2] = args.count_local[2]/2;
+        var_count[var][4][2] = args.count_local[2]/2;
+        var_count[var][5][2] = args.count_local[2]/2;
+        var_count[var][6][2] = args.count_local[2]/2;
+        var_count[var][7][2] = args.count_local[2]/2;
 	
-	var_offset[var][4][2] = var_offset[var][0][2] + args.count_local[2]/2;
-	var_offset[var][5][2] = var_offset[var][1][2] + args.count_local[2]/2;
-	var_offset[var][6][2] = var_offset[var][2][2] + args.count_local[2]/2;
-	var_offset[var][7][2] = var_offset[var][3][2] + args.count_local[2]/2;
+        var_offset[var][4][2] = var_offset[var][0][2] + args.count_local[2]/2;
+        var_offset[var][5][2] = var_offset[var][1][2] + args.count_local[2]/2;
+        var_offset[var][6][2] = var_offset[var][2][2] + args.count_local[2]/2;
+        var_offset[var][7][2] = var_offset[var][3][2] + args.count_local[2]/2;
       }
       else
       {
-	var_count[var][4][2] = args.count_local[2]/2 + 1;
-	var_count[var][5][2] = args.count_local[2]/2 + 1;
-	var_count[var][6][2] = args.count_local[2]/2 + 1;
-	var_count[var][7][2] = args.count_local[2]/2 + 1;
+        var_count[var][4][2] = args.count_local[2]/2 + 1;
+        var_count[var][5][2] = args.count_local[2]/2 + 1;
+        var_count[var][6][2] = args.count_local[2]/2 + 1;
+        var_count[var][7][2] = args.count_local[2]/2 + 1;
 	
-	var_offset[var][4][2] = var_offset[var][0][2] + args.count_local[2]/2;
-	var_offset[var][5][2] = var_offset[var][1][2] + args.count_local[2]/2;
-	var_offset[var][6][2] = var_offset[var][2][2] + args.count_local[2]/2;
-	var_offset[var][7][2] = var_offset[var][3][2] + args.count_local[2]/2;
+        var_offset[var][4][2] = var_offset[var][0][2] + args.count_local[2]/2;
+        var_offset[var][5][2] = var_offset[var][1][2] + args.count_local[2]/2;
+        var_offset[var][6][2] = var_offset[var][2][2] + args.count_local[2]/2;
+        var_offset[var][7][2] = var_offset[var][3][2] + args.count_local[2]/2;
       }
-    //}
+    }
+    else
+      printf("This patch count not supported !!!!\n");
   }
   
   output_file = args.output_file_name;
@@ -287,9 +283,9 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   local_box_count_point = malloc(sizeof(PIDX_point*) * args.variable_count);
   for(var = 0; var < args.variable_count; var++)
   {
-    local_offset_point[var] = malloc(sizeof(PIDX_point) * var_patch_count[var]);
-    local_box_count_point[var] = malloc(sizeof(PIDX_point) * var_patch_count[var]);
-    for(p = 0 ; p < var_patch_count[var] ; p++)
+    local_offset_point[var] = malloc(sizeof(PIDX_point) * patch_count);
+    local_box_count_point[var] = malloc(sizeof(PIDX_point) * patch_count);
+    for(p = 0 ; p < patch_count ; p++)
     {
       PIDX_set_point_5D(local_offset_point[var][p], (int64_t)var_offset[var][p][0], (int64_t)var_offset[var][p][1], (int64_t)var_offset[var][p][2], 0, 0);
       PIDX_set_point_5D(local_box_count_point[var][p], (int64_t)var_count[var][p][0], (int64_t)var_count[var][p][1], (int64_t)var_count[var][p][2], 1, 1);       
@@ -298,6 +294,7 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   
   PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
   
+  PIDX_time_step_caching_ON();
   for (ts = 0; ts < args.time_step_count; ts++) 
   {
     PIDX_access access;
@@ -313,143 +310,28 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_block_count(file, blocks_per_file);
     PIDX_set_variable_count(file, args.variable_count);
-    
-#if 0
-    var_double_scalar_data = malloc(sizeof(double**) * args.variable_count);
-    for (var = 0; var < args.variable_count; var++)
-    {
-      var_double_scalar_data[var] = malloc(sizeof(double*) * var_patch_count[var]);
-      for(p = 0 ; p < var_patch_count[var] ; p++)
-      {
-	var_double_scalar_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * var_count[var][p][4] * values_per_sample[var]);
-	for (v = 0; v < var_count[var][p][4]; v++)
-	  for (u = 0; u < var_count[var][p][3]; u++)
-	    for (k = 0; k < var_count[var][p][2]; k++)
-	      for (j = 0; j < var_count[var][p][1]; j++)
-		for (i = 0; i < var_count[var][p][0]; i++) 
-		{
-		  int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
-				    (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
-				    (var_count[var][p][0] * j) + i;
-		  for (spv = 0; spv < values_per_sample[var]; spv++)
-		    var_double_scalar_data[var][p][index * values_per_sample[var] + spv] = (100 + 
-		      ((args.extents[0] * args.extents[1] * args.extents[2] * args.extents[3] * (var_offset[var][p][4] + v)) + 
-		      (args.extents[0] * args.extents[1] * args.extents[2] * (var_offset[var][p][3] + u)) + 
-		      (args.extents[0] * args.extents[1]*(var_offset[var][p][2] + k))+(args.extents[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i)));
-		}
-      }
-    }
-    
-    char variable_name[512];
-    char data_type[512];
-    for(var = 0; var < args.variable_count; var++)
-    {
-      sprintf(variable_name, "variable_%d", var);
-      sprintf(data_type, "%d*float64", values_per_sample[var]);
-      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
-      
-      for(p = 0 ; p < var_patch_count[var] ; p++)
-      {
-	if (rank == 0)
-	  printf("Writing patch %d\n", p);
-	PIDX_append_and_write_variable(variable[var], local_offset_point[var][p], local_box_count_point[var][p], var_double_scalar_data[var][p], PIDX_row_major);
-      }
-    }
-    
-    PIDX_close(file);
-    PIDX_close_access(access);
-    
-    for(var = 0; var < args.variable_count; var++)
-    {
-      for(p = 0; p < var_patch_count[0]; p++)
-      {
-	free(var_double_scalar_data[var][p]);  
-	var_double_scalar_data[var][p] = 0;
-      }
-      free(var_double_scalar_data[var]);  
-      var_double_scalar_data[var] = 0;
-    }
-#endif
 
-#if 0
-    var_double_scalar_data = malloc(sizeof(double**) * args.variable_count);
+    //PIDX_disable_rst(file);
+    //PIDX_disable_agg(file);
+
+    double_data = malloc(sizeof(double**) * args.variable_count);
     for (var = 0; var < args.variable_count; var++)
     {
-      var_double_scalar_data[var] = malloc(sizeof(double*) * var_patch_count[var]);
-      for(p = 0 ; p < var_patch_count[var] ; p++)
+      double_data[var] = malloc(sizeof(double*) * patch_count);
+      for(p = 0 ; p < patch_count ; p++)
       {
-	var_double_scalar_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * var_count[var][p][4] * values_per_sample[var]);
-	for (v = 0; v < var_count[var][p][4]; v++)
-	  for (u = 0; u < var_count[var][p][3]; u++)
-	    for (k = 0; k < var_count[var][p][2]; k++)
-	      for (j = 0; j < var_count[var][p][1]; j++)
-		for (i = 0; i < var_count[var][p][0]; i++) 
-		{
-		  int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
-				    (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
-				    (var_count[var][p][0] * j) + i;
-		  for (spv = 0; spv < values_per_sample[var]; spv++)
-		    var_double_scalar_data[var][p][index * values_per_sample[var] + spv] = (100 + 
-		      ((args.extents[0] * args.extents[1] * args.extents[2] * args.extents[3] * (var_offset[var][p][4] + v)) + 
-		      (args.extents[0] * args.extents[1] * args.extents[2] * (var_offset[var][p][3] + u)) + 
-		      (args.extents[0] * args.extents[1]*(var_offset[var][p][2] + k))+(args.extents[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i)));
-		}
-      }
-    
-    
-      char variable_name[512];
-      char data_type[512];
-      sprintf(variable_name, "variable_%d", var);
-      sprintf(data_type, "%d*float64", values_per_sample[var]);
-      PIDX_variable_create(file, variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
-      
-      for(p = 0 ; p < var_patch_count[var] ; p++)
-      {
-	if (rank == 0)
-	  printf("Writing patch %d\n", p);
-	PIDX_append_and_write_variable(variable[var], local_offset_point[var][p], local_box_count_point[var][p], var_double_scalar_data[var][p], PIDX_row_major);
-      }
-      
-      PIDX_flush(file);
-      for(p = 0; p < var_patch_count[var]; p++)
-      {
-	free(var_double_scalar_data[var][p]);  
-	var_double_scalar_data[var][p] = 0;
-      }
-      
-      free(var_double_scalar_data[var]);  
-      var_double_scalar_data[var] = 0;
-    }
-    
-    PIDX_close(file);
-    PIDX_close_access(access);
-#endif
-    
-    
-#if 1
-  
-  var_double_scalar_data = malloc(sizeof(double**) * args.variable_count);
-    for (var = 0; var < args.variable_count; var++)
-    {
-      var_double_scalar_data[var] = malloc(sizeof(double*) * var_patch_count[var]);
-      for(p = 0 ; p < var_patch_count[var] ; p++)
-      {
-	var_double_scalar_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * var_count[var][p][4] * values_per_sample[var]);
-	for (v = 0; v < var_count[var][p][4]; v++)
-	  for (u = 0; u < var_count[var][p][3]; u++)
-	    for (k = 0; k < var_count[var][p][2]; k++)
-	      for (j = 0; j < var_count[var][p][1]; j++)
-		for (i = 0; i < var_count[var][p][0]; i++) 
-		{
-		  int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + 
-				    (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + 
-				    (var_count[var][p][0] * j) + i;
-		  for (spv = 0; spv < values_per_sample[var]; spv++)
-		    var_double_scalar_data[var][p][index * values_per_sample[var] + spv] = (100 + 
-		      ((args.extents[0] * args.extents[1] * args.extents[2] * args.extents[3] * (var_offset[var][p][4] + v)) + 
-		      (args.extents[0] * args.extents[1] * args.extents[2] * (var_offset[var][p][3] + u)) + 
-		      (args.extents[0] * args.extents[1]*(var_offset[var][p][2] + k))+(args.extents[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i)));
-		}
+        double_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * var_count[var][p][4] * values_per_sample[var]);
+        for (v = 0; v < var_count[var][p][4]; v++)
+          for (u = 0; u < var_count[var][p][3]; u++)
+            for (k = 0; k < var_count[var][p][2]; k++)
+              for (j = 0; j < var_count[var][p][1]; j++)
+                for (i = 0; i < var_count[var][p][0]; i++)
+                {
+                  int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * v) + (var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * u) + (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
+                  for (spv = 0; spv < values_per_sample[var]; spv++)
+                    double_data[var][p][index * values_per_sample[var] + spv] = (100 +
+                      ((args.extents[0] * args.extents[1] * args.extents[2] * args.extents[3] * (var_offset[var][p][4] + v)) + (args.extents[0] * args.extents[1] * args.extents[2] * (var_offset[var][p][3] + u)) + (args.extents[0] * args.extents[1]*(var_offset[var][p][2] + k))+(args.extents[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i)));
+                }
       }
     }
     
@@ -461,32 +343,25 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
       sprintf(data_type, "%d*float64", values_per_sample[var]);
       PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
       
-      for(p = 0 ; p < var_patch_count[var] ; p++)
-      {
-	//if (rank == 0)
-	  //printf("Writing patch %d\n", p);
-    PIDX_append_and_write_variable(file, variable[var], local_offset_point[var][p], local_box_count_point[var][p], var_double_scalar_data[var][p], PIDX_row_major);
-      }
-      
-      if(var % 2 == 0)
-	PIDX_flush(file);
-      //for(p = 0; p < var_patch_count[var]; p++)
-      //{
-	//free(var_double_scalar_data[var][p]);  
-	//var_double_scalar_data[var][p] = 0;
-      //}
-      
-      //free(var_double_scalar_data[var]);  
-      //var_double_scalar_data[var] = 0;
+      for (p = 0 ; p < patch_count ; p++)
+        PIDX_variable_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
+
+
+      PIDX_append_and_write_variable(file, variable[var]/*, local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major*/);
     }
     
     PIDX_close(file);
     PIDX_close_access(access);
   
-#endif
-    
-    free(var_double_scalar_data);  var_double_scalar_data = 0;
+    for (var = 0; var < args.variable_count; var++)
+    {
+      for(p = 0 ; p < patch_count ; p++)
+        free(double_data[var][p]);
+      free(double_data[var]);
+    }
+    free(double_data);  double_data = 0;
   }
+  PIDX_time_step_caching_OFF();
   
   for(var = 0; var < args.variable_count; var++)
   {
@@ -495,13 +370,14 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   }
   free(local_offset_point);
   free(local_box_count_point);
-  
+
   free(args.output_file_name);
   free(variable);
   variable = 0;
   free(values_per_sample);
   values_per_sample = 0;
 #endif
+
   return 0;
 }
 
@@ -516,3 +392,7 @@ void usage_multi_patch_writer(void)
   printf("\n");
   return;
 }
+
+#ifdef __cplusplus
+}
+#endif

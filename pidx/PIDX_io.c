@@ -593,6 +593,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
             {
               for(v = io_id->first_index; v <= io_id->last_index; v++)
               {
+                printf("%d %d %d\n", index, count, send_index);
                 ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_WRITE);
                 if (ret != PIDX_success)
                 {
@@ -1026,7 +1027,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
 #ifdef PIDX_DUMP_IO
       if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
       {
-        fprintf(io_dump_fp, "[A] Count %lld Target Disp %lld (%d %d)\n", (long long)file_count * io_id->idx->variable[variable_index]->values_per_sample * (io_id->idx->variable[variable_index]->bits_per_value/8), (file_index * bytes_per_sample * io_id->idx->variable[variable_index]->values_per_sample - block_negative_offset * io_id->idx_d->samples_per_block * bytes_per_sample * io_id->idx->variable[variable_index]->values_per_sample)/8, io_id->idx_d->start_fs_block, io_id->idx_d->fs_block_size);
+        fprintf(io_dump_fp, "[A] Count %lld Target Disp %d (%d %d)\n", (long long)file_count * io_id->idx->variable[variable_index]->values_per_sample * (io_id->idx->variable[variable_index]->bits_per_value/8), (file_index * bytes_per_sample * io_id->idx->variable[variable_index]->values_per_sample - block_negative_offset * io_id->idx_d->samples_per_block * bytes_per_sample * io_id->idx->variable[variable_index]->values_per_sample)/8, (int)io_id->idx_d->start_fs_block, (int)io_id->idx_d->fs_block_size);
         fflush(io_dump_fp);
       }
 #endif

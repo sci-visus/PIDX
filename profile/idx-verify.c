@@ -564,7 +564,7 @@ int main(int argc, char **argv)
                   //      hz_index, ZYX[0], ZYX[1], ZYX[2],
                   //      (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #else
-#if 1
+#if 0
                   if (compression == 0)
                     printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
                         var,

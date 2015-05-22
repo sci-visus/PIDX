@@ -106,7 +106,9 @@ int serial_writer(struct Args args)
       sprintf(variable_name, "variable_%d", var);
       sprintf(data_type, "%d*float64", values_per_sample[var]);
       PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
-      PIDX_append_and_write_variable(file, variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+
+      PIDX_variable_data_layout(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_append_and_write_variable(file, variable[var]);
     }
     PIDX_close(file);
 

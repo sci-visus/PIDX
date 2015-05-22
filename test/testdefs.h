@@ -34,9 +34,6 @@
 //int serial_reader(struct Args args);
 //int usage_serial_reader();
 
-// int test_multi_patch_writer(struct Args args, int rank, int nprocs);
-// int usage_multi_patch_writer();
-
 int test_hdf5_writer(struct Args args, int rank, int nprocs);
 int test_hdf5_reader(struct Args args, int rank, int nprocs);
 
@@ -57,6 +54,11 @@ int usage_multi_idx_writer();
 int test_mpi_to_writer(struct Args args, int rank, int nprocs);
 int test_converter(struct Args args, int rank);
 int test_converter2(struct Args args, int rank);
+
+int test_multi_patch_writer(struct Args args, int rank, int nprocs);
+int usage_multi_patch_writer();
+
+
 #ifdef __cplusplus
 }
 #endif

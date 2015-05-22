@@ -108,6 +108,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
   tpatch[1] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
   assert(tpatch);
 
+  printf("id->idx->variable[id->first_index]->sim_patch_count %d\n", id->idx->variable[id->first_index]->sim_patch_count);
   if(id->idx->variable[id->first_index]->sim_patch_count < 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_d->count not set.\n", __FILE__, __LINE__);
@@ -132,7 +133,6 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
   for (p = 0; p < var0->patch_group_count; p++)
   {
     HZ_buffer hz_buf = var0->hz_buffer[p];
-
     if(var0->chunk_patch_group[p]->type == 0)
     {
       uint64_t buffer_size = 1;
@@ -297,6 +297,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
       for (b = 0; b < var0->chunk_patch_group[y]->count; b++)
       {
 #if 1
+        total_chunked_patch_size = 1;
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         {
           chunked_patch_offset[d] = var0->chunk_patch_group[y]->patch[b]->offset[d] / id->idx->chunk_size[d];
@@ -441,15 +442,16 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
         qsort( tupple, total_chunked_patch_size, sizeof(hz_tupple), compare );
       
         for(var = id->first_index; var <= id->last_index; var++)
+        {
           for(c = 0 ; c < maxH ; c++)
           {
             bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
             id->idx->variable[var]->hz_buffer[y]->buffer[c] = malloc(bytes_for_datatype * var0->hz_buffer[y]->samples_per_level[c] * id->idx->variable[var]->values_per_sample * chunk_size);
             memset(id->idx->variable[var]->hz_buffer[y]->buffer[c], 0, bytes_for_datatype * var0->hz_buffer[y]->samples_per_level[c] * id->idx->variable[var]->values_per_sample * chunk_size);
           }
+        }
       
         cnt = 0;
-      
         for(c = 0; c < maxH; c++)
         {
           for(s = 0; s < var0->hz_buffer[y]->samples_per_level[c]; s++)
@@ -460,7 +462,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
               {
                 bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
                 memcpy(id->idx->variable[var]->hz_buffer[y]->buffer[c] + ((s * id->idx->variable[var]->values_per_sample + i) * bytes_for_datatype * chunk_size), tupple[cnt].value[var - id->first_index][i], bytes_for_datatype * chunk_size);
-                id->idx->variable[var]->hz_buffer[y]->buffer_index[cnt] = tupple[cnt].index;
+                id->idx->variable[id->first_index]->hz_buffer[y]->buffer_index[cnt] = tupple[cnt].index;
 
                 free(tupple[cnt].value[var - id->first_index][i]);
               }
