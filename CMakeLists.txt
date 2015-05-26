@@ -120,6 +120,7 @@ ADD_SUBDIRECTORY(pidx)
 ADD_SUBDIRECTORY(test)
 ADD_SUBDIRECTORY(convert)
 ADD_SUBDIRECTORY(profile)
+ADD_SUBDIRECTORY(examples)
 
 # ///////////////////////////////////////////////
 # installation
