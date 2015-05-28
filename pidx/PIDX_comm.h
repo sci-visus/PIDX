@@ -62,7 +62,11 @@ PIDX_return_code PIDX_close_access(PIDX_access access);
 
 #if PIDX_HAVE_MPI
 ///
-PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count_x, int idx_count_y, int idx_count_z, MPI_Comm comm);
+PIDX_return_code PIDX_set_idx_count(PIDX_access access, int idx_count_x, int idx_count_y, int idx_count_z);
+
+
+///
+PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm);
 
 
 ///

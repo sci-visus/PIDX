@@ -25,7 +25,6 @@ const int PIDX_default_blocks_per_file      = 256;
 ///
 int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_per_block)
 {
-
   int ctr = 1, i, j;
   if (maxh < bits_per_block)
     layout->levels = 1;
@@ -33,7 +32,8 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_
     layout->levels = maxh - bits_per_block;
 
   layout->hz_block_count_array = (int*)malloc(sizeof(int) * (layout->levels));
-  layout->hz_block_count_array[0] = 1;
+  memset(layout->hz_block_count_array, 0, sizeof(int) * (layout->levels));
+
   layout->hz_block_number_array = (int**)malloc(sizeof(int*) * (layout->levels));
   layout->hz_block_number_array[0] = (int*)malloc(sizeof(int) * ctr);
   
@@ -64,36 +64,27 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_
 ///
 int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, int resolution_from, int resolution_to, const char* bitPattern, PIDX_block_layout layout)
 {
-  int i = 0, j = 0, m = 0, n_blocks = 1, ctr = 1, t = 0, block_number = 1;
+  int j = 0, m = 0, n_blocks = 1, ctr = 1, t = 0, block_number = 1;
   int64_t hz_from = 0, hz_to = 0;
   int64_t *ZYX_from, *ZYX_to;
   
   if (maxH < bits_per_block)
     layout->levels = 1;
   else
-    layout->levels = maxH - bits_per_block - resolution_to;
-  
+    layout->levels = maxH - bits_per_block;
+
   layout->hz_block_count_array = (int*)malloc(sizeof(int) * (layout->levels));
-  layout->hz_block_count_array[0] = 1;
   layout->hz_block_number_array = (int**)malloc(sizeof(int*) * (layout->levels));
-  layout->hz_block_number_array[0] = (int*)malloc(sizeof(int) * ctr);
-  
+  layout->hz_block_number_array[0] = (int*)malloc(sizeof(int) * 1);
   for (j = 1 ; j < (layout->levels) ; j++)
   {
     layout->hz_block_count_array[j] = 0;
     layout->hz_block_number_array[j] = (int*)malloc(sizeof(int) * ctr);
+    memset(layout->hz_block_number_array[j], 0, sizeof(int) * ctr);
     ctr = ctr * 2;
   }
-  ctr = 1;
   layout->hz_block_number_array[0][0] = 0;
-  for (j = 1 ; j < (layout->levels) ; j++)
-  {
-    for (i = 0 ; i < ctr ; i++)
-    {
-      layout->hz_block_number_array[j][i] = 0;
-    }
-    ctr = ctr * 2;
-  }
+
   
   /// This block contains data upto level "bits_per_block"
   layout->hz_block_count_array[0] = 1;
@@ -101,7 +92,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int 
   hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
   hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
   
-  for (m = 1 ; m < layout->levels; m++)
+  for (m = /*1*/resolution_from ; m < layout->levels - resolution_to; m++)
   {
     n_blocks = pow(2, (m - 1));
     for (t = 0 ; t < n_blocks ; t++)
@@ -157,10 +148,10 @@ int PIDX_blocks_is_block_present(int block_number, /*int bits_per_block,*/ PIDX_
 {
   long i, j;
   
-  if (block_number == 0)
-    return 1;
+  //if (block_number == 0)
+  //  return 1;
   
-  for (i = 1 ; i < layout->levels ; i++)
+  for (i = 0 ; i < layout->levels ; i++)
     for (j = 0 ; j < layout->hz_block_count_array[i] ; j++)
       if (layout->hz_block_number_array[i][j] == block_number)
         return 1;

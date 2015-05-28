@@ -176,7 +176,8 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
     PIDX_access access;
     PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
-    PIDX_set_mpi_access(access, args.idx_count[0], args.idx_count[1], args.idx_count[2], MPI_COMM_WORLD);
+    PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+    PIDX_set_idx_count(access, args.idx_count[0], args.idx_count[1], args.idx_count[2]);
     PIDX_set_global_indexing_order(access, args.is_global_indexing);
     PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
     PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);

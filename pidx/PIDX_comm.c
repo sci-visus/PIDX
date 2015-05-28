@@ -27,6 +27,10 @@ PIDX_return_code PIDX_create_access(PIDX_access* access)
   //(*access)->topology_aware_io = 0;
   (*access)->global_indexing = 0;
   
+  (*access)->idx_count[0] = 1;
+  (*access)->idx_count[1] = 1;
+  (*access)->idx_count[2] = 1;
+
 #if PIDX_HAVE_MPI
   (*access)->comm = MPI_COMM_NULL;
 #endif
@@ -56,21 +60,30 @@ PIDX_return_code PIDX_get_global_indexing_order(PIDX_access access, int *global_
 }
 
 
-PIDX_return_code PIDX_set_mpi_access(PIDX_access access, int idx_count_x, int idx_count_y, int idx_count_z, MPI_Comm comm)
+PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm)
 {
   if(access == NULL)
     return PIDX_err_access;
   
   access->parallel = 1;
-  
-  access->idx_count[0] = idx_count_x;
-  access->idx_count[1] = idx_count_y;
-  access->idx_count[2] = idx_count_z;
-  
   MPI_Comm_dup(comm, &(access->comm));
   
   return PIDX_success;
 }
+
+
+PIDX_return_code PIDX_set_idx_count(PIDX_access access, int idx_count_x, int idx_count_y, int idx_count_z)
+{
+  if(access == NULL)
+    return PIDX_err_access;
+
+  access->idx_count[0] = idx_count_x;
+  access->idx_count[1] = idx_count_y;
+  access->idx_count[2] = idx_count_z;
+
+  return PIDX_success;
+}
+
 
 PIDX_return_code PIDX_set_process_extent(PIDX_access access, int sub_div_x, int sub_div_y, int sub_div_z)
 {

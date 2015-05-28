@@ -1368,7 +1368,6 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
   else
   {
     int p = 0, ctr = 1;
-
     PIDX_blocks_initialize_layout(block_layout, file->idx_d->maxh, file->idx->bits_per_block);
 
     PIDX_block_layout all_patch_local_block_layout = malloc(sizeof (*all_patch_local_block_layout));

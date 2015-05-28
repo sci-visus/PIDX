@@ -108,7 +108,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
   tpatch[1] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
   assert(tpatch);
 
-  printf("id->idx->variable[id->first_index]->sim_patch_count %d\n", id->idx->variable[id->first_index]->sim_patch_count);
+  //printf("id->idx->variable[id->first_index]->sim_patch_count %d\n", id->idx->variable[id->first_index]->sim_patch_count);
   if(id->idx->variable[id->first_index]->sim_patch_count < 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_d->count not set.\n", __FILE__, __LINE__);
