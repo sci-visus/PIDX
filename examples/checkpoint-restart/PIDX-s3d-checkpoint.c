@@ -113,7 +113,10 @@ int main(int argc, char **argv)
   // Synthetic simulation data
   for(var = 0; var < variable_count; var++)
   {
-    values_per_sample[var] =  1;
+    if (var % 2  == 1)
+      values_per_sample[var] =  3;
+    else
+      values_per_sample[var] =  1;
     data[var] = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample[var]);
 
     for (k = 0; k < local_box_size[2]; k++)
@@ -145,7 +148,7 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
-  PIDX_time_step_caching_ON();
+  //PIDX_time_step_caching_ON();
   for (ts = 0; ts < time_step_count; ts++)
   {
     //  PIDX mandatory calls
@@ -162,7 +165,7 @@ int main(int argc, char **argv)
     char var_name[512];
     char data_type[512];
 
-    for(var = 0; var < variable_count; var++)
+    for (var = 0; var < variable_count; var++)
     {
       sprintf(var_name, "variable_%d", var);
       sprintf(data_type, "%d*float64", values_per_sample[var]);
@@ -181,7 +184,7 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  report_error("PIDX_close", __FILE__, __LINE__);
   }
 
-  PIDX_time_step_caching_OFF();
+  //PIDX_time_step_caching_OFF();
 
   ret = PIDX_close_access(access);
   if (ret != PIDX_success)  report_error("PIDX_close_access", __FILE__, __LINE__);

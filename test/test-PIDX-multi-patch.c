@@ -36,15 +36,15 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   const char *output_file;                                                      // IDX File Name
   const int bits_per_block = 15;                                                // Total number of samples in each block = 2 ^ bits_per_block
   const int blocks_per_file = 32;                                               // Total number of blocks per file
-  
+
   PIDX_variable *variable;                                       // variable descriptor
   int *values_per_sample;                                                       // values per variable (example, scalar=1, vector=3)
   int patch_count = 8;                                                         // Number of patches a variable has (data blocks per variable that needs to be written to).
-  
+
   int      ***var_count;                                                              // Local extents of the variables in each process
-  int      ***var_offset;                                                              // Local counts of the variables in each process  
+  int      ***var_offset;                                                              // Local counts of the variables in each process
   double   ***double_data;
-  
+
   /// The command line arguments are shared by all processes
   MPI_Bcast(args.extents, 5, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(args.count_local, 5, MPI_INT, 0, MPI_COMM_WORLD);
@@ -54,16 +54,16 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   
   variable = malloc(sizeof (PIDX_variable) * args.variable_count);        // variable pointers
   memset(variable, 0, sizeof (PIDX_variable) * args.variable_count);
-  
-  values_per_sample = (int*) malloc(sizeof (int) * args.variable_count);                  
+
+  values_per_sample = (int*) malloc(sizeof (int) * args.variable_count);
   for (var = 0; var < args.variable_count; var++)
     values_per_sample[var] = 1;
-  
-  //   Creating the filename 
+
+  //   Creating the filename
   args.output_file_name = (char*) malloc(sizeof (char) * 512);
   sprintf(args.output_file_name, "%s%s", args.output_file_template, ".idx");
 
-  //   Calculating every process's offset and count  
+  //   Calculating every process's offset and count
   sub_div[0] = (args.extents[0] / args.count_local[0]);
   sub_div[1] = (args.extents[1] / args.count_local[1]);
   sub_div[2] = (args.extents[2] / args.count_local[2]);
@@ -295,7 +295,7 @@ int test_multi_patch_writer(struct Args args, int rank, int nprocs)
   PIDX_set_point_5D(global_bounding_box, (int64_t)args.extents[0], (int64_t)args.extents[1], (int64_t)args.extents[2], 1, 1);
   
   PIDX_time_step_caching_ON();
-  for (ts = 0; ts < args.time_step_count; ts++) 
+  for (ts = 0; ts < args.time_step_count; ts++)
   {
     PIDX_access access;
     PIDX_create_access(&access);

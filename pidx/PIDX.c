@@ -1621,7 +1621,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
   int i = 0, j = 0, k = 0;
   off_t data_offset = 0, base_offset = 0;
   int block_negative_offset = 0;
-  int all_scalars = 1;
+  int all_scalars = 0;
   int total_header_size;
   int64_t total_chunk_size = (file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2] * file->idx->chunk_size[3] * file->idx->chunk_size[4]) / (64 / file->idx->compression_bit_rate);
   
@@ -1633,6 +1633,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
   cached_header_copy = (uint32_t*)malloc(total_header_size);
   memset(cached_header_copy, 0, total_header_size);
 
+  /*
   for (i = 0; i < file->idx->variable_count; i++)
   {
     if (file->idx->variable[i]->values_per_sample != 1)
@@ -1641,6 +1642,7 @@ static PIDX_return_code PIDX_cache_headers(PIDX_file file)
       break;
     }
   }
+  */
 
   for (i = 0; i < file->idx->blocks_per_file; i++)
   {
@@ -2265,6 +2267,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   {
     // Write the header
     if (file->flush_used == 1 || file->idx->enable_agg == 0 || file->idx->enable_agg == 1)
+      PIDX_header_io_file_write(file->header_io_id, 1);
+    if ((file->var_pipe_length < file->idx->variable_count - 1) && caching_state == 0)
       PIDX_header_io_file_write(file->header_io_id, 1);
   }
 

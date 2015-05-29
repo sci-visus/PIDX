@@ -327,7 +327,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
 #else
   int fh = 0;
 #endif  
-  int i = 0, j = 0, k = 0, all_scalars = 1;
+  int i = 0, j = 0, k = 0, all_scalars = 0;
   off_t data_offset = 0, base_offset = 0;
 
   int64_t total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2] * header_io_id->idx->chunk_size[3] * header_io_id->idx->chunk_size[4]) / (64 / header_io_id->idx->compression_bit_rate);
