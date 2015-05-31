@@ -48,7 +48,7 @@ ENDIF()
 
 IF (ENABLE_ZFP)
    SET(PIDX_HAVE_ZFP 1)
-   SET(ZFP_DIR ${CMAKE_SOURCE_DIR}/external/zfp-0.2.1) #TODO: we may want to write a script to find zfp
+   SET(ZFP_DIR ${CMAKE_SOURCE_DIR}/external/zfp)
    INCLUDE_DIRECTORIES(${ZFP_DIR}/inc)
 ENDIF()
 

@@ -201,7 +201,6 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 
   return PIDX_success;
 }
-  
 
 PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
 {
@@ -210,9 +209,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
 
 PIDX_return_code PIDX_compression_finalize(PIDX_comp_id comp_id)
 {
-  
   free(comp_id);
   comp_id = 0;
-  
   return PIDX_success;
 }
