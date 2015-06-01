@@ -351,10 +351,10 @@ static void usage(void)
   printf("  -g: global dimensions\n");
   printf("  -l: local (per-process) dimensions\n");
   printf("  -f: IDX Filename\n");
-  printf("  -t: number of timesteps\n");
-  printf("  -v: number of fields\n");
+  printf("  -i: list of input\n");
+  printf("  -v: list of input fields\n");
 
-  printf("pidx-s3d-checkpoint generates a 3D volume of size g_x g_y g_z specified by -g command line parameter\nEach process writes a sub-volume of size l_x l_y l_z specified by -l command line parameter. \nData is written in the idx format, with the filename Filename specified by -f command line parameter. \nThe number of time-steps and the number of fields can be optionally provided by -t and -v command line parameters.\n");
+  //printf("pidx-s3d-checkpoint generates a 3D volume of size g_x g_y g_z specified by -g command line parameter\nEach process writes a sub-volume of size l_x l_y l_z specified by -l command line parameter. \nData is written in the idx format, with the filename Filename specified by -f command line parameter. \nThe number of time-steps and the number of fields can be optionally provided by -t and -v command line parameters.\n");
 
   printf("\n");
 
