@@ -31,11 +31,10 @@
 #include <stdio.h>
 #include <math.h>
 
-//#define PIDX_HAVE_ZFP
+#include "PIDX_config.h"
 
-#ifdef PIDX_HAVE_ZFP
+#if PIDX_HAVE_ZFP
   #include "zfp.h"
-  //#include "fpzip.h"
 #endif
 
 #define PIDX_MAX_DIMENSIONS 5
@@ -75,7 +74,7 @@ static int decompress(double* input_buffer, double* output_buffer, size_t buffer
 
 static int decompress(double* input_buffer, double* output_buffer, size_t buffer_size)
 {
-#ifdef PIDX_HAVE_ZFP
+#if PIDX_HAVE_ZFP
   int i;
   zfp_params params;
   size_t typesize, outsize, insize;
@@ -86,7 +85,6 @@ static int decompress(double* input_buffer, double* output_buffer, size_t buffer
   params.nx = compression_block_size[0];
   params.ny = compression_block_size[1];
   params.nz = compression_block_size[2];
-  int total_size = 0;
   zfp_set_rate(&params, compression_bit_rate);
   
   
@@ -316,7 +314,7 @@ int main(int argc, char **argv)
   else
     compression = 1;
 
-  compression = 0;
+  compression = 1;
   
   if (global_bounds[0] % compression_block_size[0] == 0)
     compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];
@@ -477,14 +475,6 @@ int main(int argc, char **argv)
               //if(var == 2 || var == 1)
               printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, (long long)data_offset, (long)data_size);
 
-#if long_buffer
-              long_long_buffer = malloc(data_size);
-              memset(long_long_buffer, 0, data_size);
-
-              ret = pread(fd, long_long_buffer, data_size, data_offset);
-              //printf("[%d] %ld and %ld\n", bpf, data_size, ret);
-              //assert(ret == data_size);
-#else
               double_buffer = (double*) malloc(data_size);
               memset(double_buffer, 0, data_size);
 
@@ -498,8 +488,6 @@ int main(int argc, char **argv)
                 decompress(double_buffer, decompressed_double_buffer, data_size);
                 free(double_buffer);
               }
-              
-#endif
 
               for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var] * total_compression_block_size); hz_val++)
               {
@@ -553,14 +541,8 @@ int main(int argc, char **argv)
                 if (check_bit == 0)
                 {
                   lost_element_count++;
-#if long_buffer
-                  //printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %lld Should Be %lld\n",
-                  //      var,
-                  //      lost_element_count, bpf, (int64_t)hz_index/samples_per_block, hz_val,
-                  //      hz_index, ZYX[0], ZYX[1], ZYX[2],
-                  //      (uint64_t)long_long_buffer[hz_val * values_per_sample[var] + 0], (100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
-#else
-#if 0
+
+#if 1
                   if (compression == 0)
                     printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
                         var,
@@ -574,7 +556,7 @@ int main(int argc, char **argv)
                         (long long)hz_index, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2],
                         (double)decompressed_double_buffer[hz_val * values_per_sample[var] + 0], (long long)(100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0]));
 #endif              
-#endif
+
                 }
                 else
                 {

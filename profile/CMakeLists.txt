@@ -40,6 +40,14 @@ IF (PIDX_BUILD_PROFILE)
   PIDX_ADD_EXECUTABLE(idxcompare "${IDXCOMPARE_SOURCES}")
   PIDX_ADD_EXECUTABLE(idxdumpheader "${DUMPHEADER_SOURCES}")
   PIDX_ADD_EXECUTABLE(idxverify "${IDXVERIFY_SOURCES}")
-  TARGET_LINK_LIBRARIES(idxverify m)
+  
+  IF (PIDX_HAVE_ZFP)
+    MESSAGE("Configuring idxverify with ZFP support")
+    TARGET_LINK_LIBRARIES(idxverify m stdc++ ${ZFP_DIR}/lib/libzfp.a)
+  ELSE()
+    TARGET_LINK_LIBRARIES(idxverify m)
+  ENDIF()  
+  
+  #TARGET_LINK_LIBRARIES(idxverify m)
 
 ENDIF()

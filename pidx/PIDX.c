@@ -2189,7 +2189,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
     }
   }
 
-  file->var_pipe_length = 0;
+  file->var_pipe_length = file->idx->variable_count - 1;
 
   return PIDX_success;
 }
@@ -2268,7 +2268,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     // Write the header
     if (file->flush_used == 1 || file->idx->enable_agg == 0 || file->idx->enable_agg == 1)
       PIDX_header_io_file_write(file->header_io_id, 1);
-    if ((file->var_pipe_length < file->idx->variable_count - 1) && caching_state == 0)
+    if (/*(file->var_pipe_length < file->idx->variable_count - 1) && */ caching_state == 0)
       PIDX_header_io_file_write(file->header_io_id, 1);
   }
 
