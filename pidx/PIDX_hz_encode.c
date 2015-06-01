@@ -666,223 +666,403 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
 {
   int64_t z_order = 0, hz_order = 0, index = 0;
-  int b = 0, level = 0, cnt = 0, s = 0, y = 0, n = 0, m = 0, number_levels = 0, var = 0;
+  //int n = 0, m = 0, d = 0, c = 0;
+  //int index_count = 0;
+  int b = 0, level = 0, cnt = 0, s = 0, y = 0, number_levels = 0, var = 0;
   int64_t i = 0, j = 0, k = 0, u = 0, v = 0, l = 0;
   int bytes_for_datatype;
   int64_t hz_index;
-  int64_t total_chunked_patch_size;
-  
-  int64_t total_chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
-  
+  int64_t total_chunked_patch_size = 1;
+
+  int maxH = id->idx_d->maxh;
+  int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
+  PIDX_variable var0 = id->idx->variable[id->first_index];
+
   int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
   int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
-  
-  if(id->idx->variable[id->first_index]->sim_patch_count < 0)
+
+  if (var0->sim_patch_count < 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_d->count not set.\n", __FILE__, __LINE__);
-    return -1;
+    return PIDX_err_hz;
   }
-  
-  if(id->idx_d->maxh <= 0)
+
+  if (maxH <= 0)
   {
-    fprintf(stderr, "[%s] [%d] id->idx_d->maxh not set.\n", __FILE__, __LINE__);
-    return -1;
+    fprintf(stderr, "[%s] [%d] maxH not set.\n", __FILE__, __LINE__);
+    return PIDX_err_hz;
   }
-  
-  
-  for (y = 0; y < id->idx->variable[id->first_index]->patch_group_count; y++)
+
+  for (y = 0; y < var0->patch_group_count; y++)
   {
-    for (b = 0; b < id->idx->variable[id->first_index]->chunk_patch_group[y]->count; b++)
+    if (var0->chunk_patch_group[y]->type == 0)
     {
-      total_chunked_patch_size = 0;
-      
-      for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
+#if 0
+      for (b = 0; b < var0->chunk_patch_group[y]->count; b++)
       {
-        chunked_patch_offset[l] = id->idx->variable[id->first_index]->chunk_patch_group[y]->patch[b]->offset[l] / id->idx->chunk_size[l];
-        chunked_patch_size[l] = id->idx->variable[id->first_index]->chunk_patch_group[y]->patch[b]->size[l] / id->idx->chunk_size[l];
-        total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
-      }
-      
-      number_levels = id->idx_d->maxh - 1;
-      PointND xyzuv_Index;
-    
-      if(id->idx->variable[id->first_index]->data_layout == PIDX_row_major)
-      {
-        for (v = chunked_patch_offset[4]; v < chunked_patch_offset[4] + chunked_patch_size[4]; v++)
-          for (u = chunked_patch_offset[3]; u < chunked_patch_offset[3] + chunked_patch_size[3]; u++)
-            for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
-              for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
-                for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
-                {
-                  index = (chunked_patch_size[0] * chunked_patch_size[1] * chunked_patch_size[2] * chunked_patch_size[3] * (v - chunked_patch_offset[4]))
-                        + (chunked_patch_size[0] * chunked_patch_size[1] * chunked_patch_size[2] * (u - chunked_patch_offset[3]))
-                        + (chunked_patch_size[0] * chunked_patch_size[1] * (k - chunked_patch_offset[2]))
+#if 1
+        total_chunked_patch_size = 1;
+        for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        {
+          chunked_patch_offset[d] = var0->chunk_patch_group[y]->patch[b]->offset[d] / id->idx->chunk_size[d];
+          chunked_patch_size[d] = var0->chunk_patch_group[y]->patch[b]->size[d] / id->idx->chunk_size[d];
+          total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[d];
+        }
+
+        index_count = 0;
+        hz_tupple *tupple = malloc(total_chunked_patch_size * sizeof(hz_tupple));
+
+        number_levels = maxH - 1;
+        PointND xyzuv_Index;
+
+        if (var0->data_layout == PIDX_row_major)
+        {
+          for (m = chunked_patch_offset[4]; m < chunked_patch_offset[4] + chunked_patch_size[4]; m++)
+            for (u = chunked_patch_offset[3]; u < chunked_patch_offset[3] + chunked_patch_size[3]; u++)
+              for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
+                for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
+                  for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
+                  {
+                    xyzuv_Index.x = i;
+                    xyzuv_Index.y = j;
+                    xyzuv_Index.z = k;
+                    xyzuv_Index.u = u;
+                    xyzuv_Index.v = m;
+
+                    z_order = 0;
+                    PointND zero;
+                    zero.x = 0;
+                    zero.y = 0;
+                    zero.z = 0;
+                    zero.u = 0;
+                    zero.v = 0;
+                    memset(&zero, 0, sizeof (PointND));
+
+                    for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+                    {
+                      int bit = id->idx->bitPattern[number_levels];
+                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      PGET(xyzuv_Index, bit) >>= 1;
+                    }
+
+                    number_levels = maxH - 1;
+                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    z_order |= lastbitmask;
+                    while (!(1 & z_order)) z_order >>= 1;
+                    z_order >>= 1;
+
+                    hz_order = z_order;
+                    level = getLeveL(hz_order);
+
+                    index = (chunked_patch_size[0] * chunked_patch_size[1] * chunked_patch_size[2] * chunked_patch_size[3] * (m - chunked_patch_offset[4])) +
+                            (chunked_patch_size[0] * chunked_patch_size[1] * chunked_patch_size[2] * (u - chunked_patch_offset[3])) +
+                            (chunked_patch_size[0] * chunked_patch_size[1] * (k - chunked_patch_offset[2]))
                         + (chunked_patch_size[0] * (j - chunked_patch_offset[1]))
                         + (i - chunked_patch_offset[0]);
-                        
-                  xyzuv_Index.x = i;
-                  xyzuv_Index.y = j;
-                  xyzuv_Index.z = k;
-                  xyzuv_Index.u = u;
-                  xyzuv_Index.v = v;
 
-                  z_order = 0;
-                  PointND zero;
-                  zero.x = 0;
-                  zero.y = 0;
-                  zero.z = 0;
-                  zero.u = 0;
-                  zero.v = 0;
-                  memset(&zero, 0, sizeof (PointND));
+                    tupple[index_count].value = malloc((id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+                    var0->hz_buffer[y]->samples_per_level[level] = var0->hz_buffer[y]->samples_per_level[level] + 1;
 
-                  for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--) 
-                  {
-                    int bit = id->idx->bitPattern[number_levels];
-                    z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
-                    PGET(xyzuv_Index, bit) >>= 1;
-                  }
+                    for(v = id->first_index; v <= id->last_index; v++)
+                    {
+                      PIDX_variable var = id->idx->variable[v];
+                      tupple[index_count].value[v - id->first_index] = malloc(var->values_per_sample * sizeof(unsigned char*));
+                      bytes_for_datatype = var->bits_per_value / 8;
 
-                  number_levels = id->idx_d->maxh - 1;
-                  int64_t lastbitmask = ((int64_t) 1) << number_levels;
-                  z_order |= lastbitmask;
-                  while (!(1 & z_order)) z_order >>= 1;
-                  z_order >>= 1;
+                      for (s = 0; s < var->values_per_sample; s++)
+                      {
+                        tupple[index_count].value[v - id->first_index][s] = malloc(bytes_for_datatype * chunk_size);
+                        memcpy(tupple[index_count].value[v- id->first_index][s], var->chunk_patch_group[y]->patch[b]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype * chunk_size, bytes_for_datatype * chunk_size);
 
-                  hz_order = z_order;
-                  
-                  level = getLeveL(hz_order);
-                  id->idx->variable[id->first_index]->hz_buffer[y]->samples_per_level[level] = id->idx->variable[id->first_index]->hz_buffer[y]->samples_per_level[level] + 1;
-                  hz_index = hz_order - id->idx->variable[id->first_index]->hz_buffer[y]->start_hz_index[level];
-                  for(var = id->first_index; var <= id->last_index; var++)
-                  {
-                    bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
-                    for (s = 0; s < id->idx->variable[var]->values_per_sample; s++)
-                    {                        
-                      memcpy(id->idx->variable[var]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[var]->values_per_sample) + s) * bytes_for_datatype * total_chunk_size,
-                             id->idx->variable[var]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[var]->values_per_sample + s) * bytes_for_datatype * total_chunk_size),
-                             bytes_for_datatype * total_chunk_size);
+                        tupple[index_count].index = hz_order;
+                      }
                     }
+                    index_count++;
                   }
-                }
-      }
-      else
-      {
-        for (v = chunked_patch_offset[4]; v < chunked_patch_offset[4] + chunked_patch_size[4]; v++)
-          for (u = chunked_patch_offset[3]; u < chunked_patch_offset[3] + chunked_patch_size[3]; u++)
-            for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
-              for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
-                for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
-                {
-                  xyzuv_Index.x = i;
-                  xyzuv_Index.y = j;
-                  xyzuv_Index.z = k;
-                  xyzuv_Index.u = u;
-                  xyzuv_Index.v = v;
-
-                  z_order = 0;
-                  PointND zero;
-                  zero.x = 0;
-                  zero.y = 0;
-                  zero.z = 0;
-                  zero.u = 0;
-                  zero.v = 0;
-                  memset(&zero, 0, sizeof (PointND));
-
-                  for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--) 
+        }
+        else
+        {
+          for (m = chunked_patch_offset[4]; m < chunked_patch_offset[4] + chunked_patch_size[4]; m++)
+            for (u = chunked_patch_offset[3]; u < chunked_patch_offset[3] + chunked_patch_size[3]; u++)
+              for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
+                for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
+                  for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
                   {
-                    int bit = id->idx->bitPattern[number_levels];
-                    z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
-                    PGET(xyzuv_Index, bit) >>= 1;
-                  }
+                    xyzuv_Index.x = i;
+                    xyzuv_Index.y = j;
+                    xyzuv_Index.z = k;
+                    xyzuv_Index.u = u;
+                    xyzuv_Index.v = m;
 
-                  number_levels = id->idx_d->maxh - 1;
-                  int64_t lastbitmask = ((int64_t) 1) << number_levels;
-                  z_order |= lastbitmask;
-                  while (!(1 & z_order)) z_order >>= 1;
-                  z_order >>= 1;
+                    z_order = 0;
+                    PointND zero;
+                    zero.x = 0;
+                    zero.y = 0;
+                    zero.z = 0;
+                    zero.u = 0;
+                    zero.v = 0;
+                    memset(&zero, 0, sizeof (PointND));
 
-                  hz_order = z_order;
-                  level = getLeveL(hz_order);
-                  
-                  index = (chunked_patch_size[2] * chunked_patch_size[1] * (i - chunked_patch_offset[0]))
+                    for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+                    {
+                      int bit = id->idx->bitPattern[number_levels];
+                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      PGET(xyzuv_Index, bit) >>= 1;
+                    }
+
+                    number_levels = maxH - 1;
+                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    z_order |= lastbitmask;
+                    while (!(1 & z_order)) z_order >>= 1;
+                    z_order >>= 1;
+
+                    hz_order = z_order;
+                    level = getLeveL(hz_order);
+
+                    index = (chunked_patch_size[2] * chunked_patch_size[1] * (i - chunked_patch_offset[0]))
                         + (chunked_patch_size[2] * (j - chunked_patch_offset[1]))
                         + (k - chunked_patch_offset[2]);
 
-                  id->idx->variable[id->first_index]->hz_buffer[y]->samples_per_level[level] = id->idx->variable[id->first_index]->hz_buffer[y]->samples_per_level[level] + 1;
-                  for(var = id->first_index; var <= id->last_index; var++)
+                    tupple[index_count].value = malloc((id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+                    var0->hz_buffer[y]->samples_per_level[level] = var0->hz_buffer[y]->samples_per_level[level] + 1;
+
+                    for(var = id->first_index; var <= id->last_index; var++)
+                    {
+                      tupple[index_count].value[var - id->first_index] = malloc(id->idx->variable[var]->values_per_sample * sizeof(unsigned char*));
+                      bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
+
+                      for (s = 0; s < id->idx->variable[var]->values_per_sample; s++)
+                      {
+                        tupple[index_count].value[var - id->first_index][s] = malloc(bytes_for_datatype * chunk_size);
+                        memcpy(tupple[index_count].value[var - id->first_index][s], id->idx->variable[var]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[var]->values_per_sample) + s) * bytes_for_datatype * chunk_size, bytes_for_datatype * chunk_size);
+
+                        tupple[index_count].index = hz_order;
+                      }
+                    }
+                    index_count++;
+                  }
+
+        }
+        qsort( tupple, total_chunked_patch_size, sizeof(hz_tupple), compare );
+
+        for(var = id->first_index; var <= id->last_index; var++)
+        {
+          for(c = 0 ; c < maxH ; c++)
+          {
+            bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
+            id->idx->variable[var]->hz_buffer[y]->buffer[c] = malloc(bytes_for_datatype * var0->hz_buffer[y]->samples_per_level[c] * id->idx->variable[var]->values_per_sample * chunk_size);
+            memset(id->idx->variable[var]->hz_buffer[y]->buffer[c], 0, bytes_for_datatype * var0->hz_buffer[y]->samples_per_level[c] * id->idx->variable[var]->values_per_sample * chunk_size);
+          }
+        }
+
+        cnt = 0;
+        for(c = 0; c < maxH; c++)
+        {
+          for(s = 0; s < var0->hz_buffer[y]->samples_per_level[c]; s++)
+          {
+            for(var = id->first_index; var <= id->last_index; var++)
+            {
+              for (i = 0; i < id->idx->variable[var]->values_per_sample; i++)
+              {
+                bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
+                memcpy(id->idx->variable[var]->hz_buffer[y]->buffer[c] + ((s * id->idx->variable[var]->values_per_sample + i) * bytes_for_datatype * chunk_size), tupple[cnt].value[var - id->first_index][i], bytes_for_datatype * chunk_size);
+                id->idx->variable[id->first_index]->hz_buffer[y]->buffer_index[cnt] = tupple[cnt].index;
+
+                free(tupple[cnt].value[var - id->first_index][i]);
+              }
+              free(tupple[cnt].value[var - id->first_index]);
+            }
+            free(tupple[cnt].value);
+            cnt++;
+          }
+        }
+        free(tupple);
+        tupple = 0;
+#endif
+      }
+#endif
+    }
+    else
+    {
+      for (b = 0; b < var0->chunk_patch_group[y]->count; b++)
+      {
+        total_chunked_patch_size = 0;
+        for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
+        {
+          chunked_patch_offset[l] = var0->chunk_patch_group[y]->patch[b]->offset[l] / id->idx->chunk_size[l];
+          chunked_patch_size[l] = var0->chunk_patch_group[y]->patch[b]->size[l] / id->idx->chunk_size[l];
+          total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
+        }
+
+        number_levels = maxH - 1;
+        PointND xyzuv_Index;
+
+        if(var0->data_layout == PIDX_row_major)
+        {
+          for (v = chunked_patch_offset[4]; v < chunked_patch_offset[4] + chunked_patch_size[4]; v++)
+            for (u = chunked_patch_offset[3]; u < chunked_patch_offset[3] + chunked_patch_size[3]; u++)
+              for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
+                for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
+                  for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
                   {
-                    hz_index = hz_order - id->idx->variable[var]->hz_buffer[y]->start_hz_index[level];
-                    bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
-                    for (s = 0; s < id->idx->variable[var]->values_per_sample; s++)
+                    index = (chunked_patch_size[0] * chunked_patch_size[1] * chunked_patch_size[2] * chunked_patch_size[3] * (v - chunked_patch_offset[4]))
+                          + (chunked_patch_size[0] * chunked_patch_size[1] * chunked_patch_size[2] * (u - chunked_patch_offset[3]))
+                          + (chunked_patch_size[0] * chunked_patch_size[1] * (k - chunked_patch_offset[2]))
+                          + (chunked_patch_size[0] * (j - chunked_patch_offset[1]))
+                          + (i - chunked_patch_offset[0]);
+
+                    xyzuv_Index.x = i;
+                    xyzuv_Index.y = j;
+                    xyzuv_Index.z = k;
+                    xyzuv_Index.u = u;
+                    xyzuv_Index.v = v;
+
+                    z_order = 0;
+                    PointND zero;
+                    zero.x = 0;
+                    zero.y = 0;
+                    zero.z = 0;
+                    zero.u = 0;
+                    zero.v = 0;
+                    memset(&zero, 0, sizeof (PointND));
+
+                    for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+                    {
+                      int bit = id->idx->bitPattern[number_levels];
+                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      PGET(xyzuv_Index, bit) >>= 1;
+                    }
+
+                    number_levels = maxH - 1;
+                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    z_order |= lastbitmask;
+                    while (!(1 & z_order)) z_order >>= 1;
+                    z_order >>= 1;
+
+                    hz_order = z_order;
+
+                    level = getLeveL(hz_order);
+
+                    //if (level >= maxH - id->idx_d->resolution_to - 1)
+                    //  continue;
+                    var0->hz_buffer[y]->samples_per_level[level] = var0->hz_buffer[y]->samples_per_level[level] + 1;
+                    hz_index = hz_order - var0->hz_buffer[y]->start_hz_index[level];
+                    for(var = id->first_index; var <= id->last_index; var++)
                     {
                       bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
-                      memcpy(id->idx->variable[var]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[var]->values_per_sample) + s) * bytes_for_datatype * total_chunk_size, id->idx->variable[var]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[var]->values_per_sample + s) * bytes_for_datatype * total_chunk_size), bytes_for_datatype * total_chunk_size);
+                      for (s = 0; s < id->idx->variable[var]->values_per_sample; s++)
+                      {
+                        memcpy(id->idx->variable[var]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[var]->values_per_sample) + s) * bytes_for_datatype * chunk_size, id->idx->variable[var]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[var]->values_per_sample + s) * bytes_for_datatype * chunk_size), bytes_for_datatype * chunk_size);
+                      }
                     }
                   }
-                }
+        }
+        else
+        {
+          for (v = chunked_patch_offset[4]; v < chunked_patch_offset[4] + chunked_patch_size[4]; v++)
+            for (u = chunked_patch_offset[3]; u < chunked_patch_offset[3] + chunked_patch_size[3]; u++)
+              for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
+                for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
+                  for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
+                  {
+                    xyzuv_Index.x = i;
+                    xyzuv_Index.y = j;
+                    xyzuv_Index.z = k;
+                    xyzuv_Index.u = u;
+                    xyzuv_Index.v = v;
+
+                    z_order = 0;
+                    PointND zero;
+                    zero.x = 0;
+                    zero.y = 0;
+                    zero.z = 0;
+                    zero.u = 0;
+                    zero.v = 0;
+                    memset(&zero, 0, sizeof (PointND));
+
+                    for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+                    {
+                      int bit = id->idx->bitPattern[number_levels];
+                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      PGET(xyzuv_Index, bit) >>= 1;
+                    }
+
+                    number_levels = maxH - 1;
+                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    z_order |= lastbitmask;
+                    while (!(1 & z_order)) z_order >>= 1;
+                    z_order >>= 1;
+
+                    hz_order = z_order;
+                    level = getLeveL(hz_order);
+
+                    index = (chunked_patch_size[2] * chunked_patch_size[1] * (i - chunked_patch_offset[0]))
+                          + (chunked_patch_size[2] * (j - chunked_patch_offset[1]))
+                          + (k - chunked_patch_offset[2]);
+
+                    var0->hz_buffer[y]->samples_per_level[level] = var0->hz_buffer[y]->samples_per_level[level] + 1;
+                    for(var = id->first_index; var <= id->last_index; var++)
+                    {
+                      hz_index = hz_order - id->idx->variable[var]->hz_buffer[y]->start_hz_index[level];
+                      bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
+                      for (s = 0; s < id->idx->variable[var]->values_per_sample; s++)
+                      {
+                        memcpy(id->idx->variable[var]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[var]->values_per_sample) + s) * bytes_for_datatype * chunk_size, id->idx->variable[var]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[var]->values_per_sample + s) * bytes_for_datatype * chunk_size), bytes_for_datatype * chunk_size);
+                      }
+                    }
+                  }
+        }
       }
     }
-    
-    if (id->idx->variable[id->first_index]->chunk_patch_group[y]->type == 2)
+
+#if 0
+    if (var0->chunk_patch_group[y]->type == 2)
     {
       for (i = id->first_index; i <= id->last_index; i++)
       {
-        bytes_for_datatype = id->idx->variable[i]->bits_per_value / 8;
-        for (j = 0; j < id->idx_d->maxh; j++)
+        PIDX_variable var = id->idx->variable[i];
+        bytes_for_datatype = (var->bits_per_value / 8) * var->values_per_sample;
+        for (j = 0; j < maxH; j++)
         {
           int level_blocks = 0;
-          if (id->idx->variable[i]->hz_buffer[y]->missing_block_count_per_level[j] != 0)
+          if (var0->hz_buffer[y]->missing_block_count_per_level[j] != 0)
           {
-            int adjusted_buffer_size = (id->idx->variable[i]->hz_buffer[y]->end_hz_index[j] - id->idx->variable[i]->hz_buffer[y]->start_hz_index[j] + 1 - (id->idx->variable[i]->hz_buffer[y]->missing_block_count_per_level[j] * id->idx_d->samples_per_block)) * bytes_for_datatype * id->idx->variable[i]->values_per_sample;
-            
-            //printf("Initial Size %lld Adjusted size %lld (%lld - %d)\n", (id->idx->variable[i]->hz_buffer[y]->end_hz_index[j] - id->idx->variable[i]->hz_buffer[y]->start_hz_index[j] + 1), adjusted_buffer_size/(bytes_for_datatype * id->idx->variable[i]->values_per_sample), (id->idx->variable[i]->hz_buffer[y]->end_hz_index[j] - id->idx->variable[i]->hz_buffer[y]->start_hz_index[j] + 1), (id->idx->variable[i]->hz_buffer[y]->missing_block_count_per_level[j] * id->idx_d->samples_per_block));
-            
+            int samples_per_level = var0->hz_buffer[y]->end_hz_index[j] - var0->hz_buffer[y]->start_hz_index[j] + 1;
+            int missing_sample_count = var0->hz_buffer[y]->missing_block_count_per_level[j] * id->idx_d->samples_per_block;
+            int adjusted_buffer_size = (samples_per_level- missing_sample_count) * bytes_for_datatype;
+
             int initial_m = 0;
-            for (n = 0; n < id->idx->variable[i]->hz_buffer[y]->missing_block_count_per_level[j]; n++)
+            for (n = 0; n < var0->hz_buffer[y]->missing_block_count_per_level[j]; n++)
             {
-              //printf("[%d] [L %d] start %lld end %lld\n", n, j, id->idx->variable[i]->hz_buffer[y]->start_hz_index[j], id->idx->variable[i]->hz_buffer[y]->end_hz_index[j]);
-              for (m = initial_m; m < (id->idx->variable[i]->hz_buffer[y]->end_hz_index[j] - id->idx->variable[i]->hz_buffer[y]->start_hz_index[j] + 1); m++)
+              for (m = initial_m; m < samples_per_level; m++)
               {
-                if (m + id->idx->variable[i]->hz_buffer[y]->start_hz_index[j] == id->idx->variable[i]->hz_buffer[y]->missing_block_index_per_level[j][n] * id->idx_d->samples_per_block)
+                if (var0->hz_buffer[y]->start_hz_index[j] + m == var0->hz_buffer[y]->missing_block_index_per_level[j][n] * id->idx_d->samples_per_block)
                 {
-                  //printf("[MISS] (%d + %d) %d = %d (%d x %d)\n", m, id->idx->variable[i]->hz_buffer[y]->start_hz_index[j], (m + id->idx->variable[i]->hz_buffer[y]->start_hz_index[j]), id->idx->variable[i]->hz_buffer[y]->missing_block_index_per_level[j][n] * id->idx_d->samples_per_block, id->idx->variable[i]->hz_buffer[y]->missing_block_index_per_level[j][n], id->idx_d->samples_per_block);
-                  //printf("[SOURCE] %d [DEST] %d [COUNT] %d\n", (m - (level_blocks * id->idx_d->samples_per_block)), ((m + id->idx_d->samples_per_block) - (level_blocks * id->idx_d->samples_per_block)), (id->idx->variable[i]->hz_buffer[y]->end_hz_index[j] - id->idx->variable[i]->hz_buffer[y]->start_hz_index[j] + 1 - ((m + level_blocks) + id->idx_d->samples_per_block) ));
-                  
-                  memmove(id->idx->variable[i]->hz_buffer[y]->buffer[j] + (m - (level_blocks * id->idx_d->samples_per_block)) * bytes_for_datatype * id->idx->variable[i]->values_per_sample,
-                          id->idx->variable[i]->hz_buffer[y]->buffer[j] + ((m + id->idx_d->samples_per_block) - (level_blocks * id->idx_d->samples_per_block)) * bytes_for_datatype * id->idx->variable[i]->values_per_sample,
-                          (id->idx->variable[i]->hz_buffer[y]->end_hz_index[j] - (id->idx->variable[i]->hz_buffer[y]->start_hz_index[j] + m + id->idx_d->samples_per_block) + 1) * bytes_for_datatype * id->idx->variable[i]->values_per_sample );
+                  memmove(var->hz_buffer[y]->buffer[j] + (m - (level_blocks * id->idx_d->samples_per_block)) * bytes_for_datatype * var->values_per_sample, var->hz_buffer[y]->buffer[j] + ((m + id->idx_d->samples_per_block) - (level_blocks * id->idx_d->samples_per_block)) * bytes_for_datatype * var->values_per_sample, (var0->hz_buffer[y]->end_hz_index[j] - (var0->hz_buffer[y]->start_hz_index[j] + m + id->idx_d->samples_per_block) + 1) * bytes_for_datatype * var->values_per_sample);
                   level_blocks++;
                   initial_m = m;
                 }
               }
             }
-            
-            unsigned char* temp_buffer = realloc(id->idx->variable[i]->hz_buffer[y]->buffer[j], adjusted_buffer_size);
-            if (temp_buffer == NULL) 
+
+            unsigned char* temp_buffer = realloc(var->hz_buffer[y]->buffer[j], adjusted_buffer_size);
+            if (temp_buffer == NULL)
             {
-              
+              fprintf(stderr, "realloc error File %s Line no %d\n", __FILE__, __LINE__);
+              return PIDX_err_hz;
             }
             else
-            {
-              id->idx->variable[i]->hz_buffer[y]->buffer[j] = temp_buffer;
-            }
-            
-            //int64_t dvalue;
-            //if (j == 20)
-            //{
-            //  memcpy(&dvalue, id->idx->variable[i]->hz_buffer[y]->buffer[j] + 887364 * bytes_for_datatype, bytes_for_datatype);
-            //  printf("[XXX] Value at 887364 = %lld\n", dvalue);
-            //}
+              var->hz_buffer[y]->buffer[j] = temp_buffer;
           }
         }
       }
     }
+#endif
   }
-  return 0;
-  
 
-  return 1;
+  return PIDX_success;
 }
+
 
 
 /* tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well */

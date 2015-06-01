@@ -16,8 +16,6 @@
  **                                                 **
  *****************************************************/
 
-
-
 #include <PIDX.h>
 
 #if PIDX_HAVE_MPI
@@ -33,15 +31,16 @@ static int local_box_size[3] = {0, 0, 0};             ///< local dimensions of t
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 1;                        ///< Number of fields
 static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
+static int patch_count = 1;
 
 
 /// main
 int main(int argc, char **argv)
 {
-#if 0
+#if 1
   int ret;
   int i, j, k;
-  int var, vps;
+  int d, p, var, vps, ts;
   int slice = 0;
   int nprocs = 1, rank = 0;
   char output_file_name[512];
@@ -53,7 +52,6 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
-  double **data;             // variable data buffer
   int *values_per_sample;    // Example: 1 for scalar 3 for vector
 
   int local_box_offset[3];
@@ -92,6 +90,7 @@ int main(int argc, char **argv)
   MPI_Bcast(local_box_size, 3, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&patch_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
 #endif
 
@@ -112,11 +111,6 @@ int main(int argc, char **argv)
   local_box_offset[1] = (slice / sub_div[0]) * local_box_size[1];
   local_box_offset[0] = (slice % sub_div[0]) * local_box_size[0];
 
-  local_box_offset[3] = 0;
-  local_box_offset[4] = 0;
-  local_box_size[3] = 1;
-  local_box_size[4] = 1;
-
   int ***var_count;
   int ***var_offset;
   var_count = malloc(sizeof(int**) * variable_count);
@@ -128,8 +122,8 @@ int main(int argc, char **argv)
     var_offset[var] = malloc(sizeof(int*) * patch_count);
     for(i = 0; i < patch_count ; i++)
     {
-      var_count[var][i] = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
-      var_offset[var][i] = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
+      var_count[var][i] = malloc(sizeof(int) * 3);
+      var_offset[var][i] = malloc(sizeof(int) * 3);
     }
   }
 
@@ -138,7 +132,7 @@ int main(int argc, char **argv)
     // One patch for this variable
     if (patch_count == 1)
     {
-      for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      for(d = 0; d < 3; d++)
       {
         var_count[var][0][d] = local_box_size[d];
         var_offset[var][0][d] = local_box_offset[d];
@@ -148,7 +142,7 @@ int main(int argc, char **argv)
     // two patches for this variable
     else if (patch_count == 2)
     {
-      for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      for(d = 0; d < 3; d++)
       {
         var_count[var][0][d] = local_box_size[d];
         var_offset[var][0][d] = local_box_offset[d];
@@ -170,7 +164,7 @@ int main(int argc, char **argv)
     {
       for(i = 0; i < patch_count; i++)
       {
-        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        for(d = 0; d < 3; d++)
         {
           var_count[var][i][d] = local_box_size[d];
           var_offset[var][i][d] = local_box_offset[d];
@@ -217,7 +211,7 @@ int main(int argc, char **argv)
     {
       for(i = 0; i < patch_count; i++)
       {
-        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        for(d = 0; d < 3; d++)
         {
           var_count[var][i][d] = local_box_size[d];
           var_offset[var][i][d] = local_box_offset[d];
@@ -325,14 +319,14 @@ int main(int argc, char **argv)
     double_data[var] = malloc(sizeof(double*) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
-      double_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * var_count[var][p][3] * var_count[var][p][4] * values_per_sample[var]);
+      double_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * values_per_sample[var]);
       for (k = 0; k < var_count[var][p][2]; k++)
         for (j = 0; j < var_count[var][p][1]; j++)
           for (i = 0; i < var_count[var][p][0]; i++)
           {
             int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
-            for (spv = 0; spv < values_per_sample[var]; spv++)
-              double_data[var][p][index * values_per_sample[var] + spv] = 100 +                 (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
+            for (vps = 0; vps < values_per_sample[var]; vps++)
+              double_data[var][p][index * values_per_sample[var] + vps] = 100 +                 (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
           }
     }
   }
@@ -351,6 +345,11 @@ int main(int argc, char **argv)
       PIDX_set_point_5D(local_box_count_point[var][p], (int64_t)var_count[var][p][0], (int64_t)var_count[var][p][1], (int64_t)var_count[var][p][2], 1, 1);
     }
   }
+  PIDX_file file;            // IDX file descriptor
+  PIDX_variable* variable;   // variable descriptor
+
+  variable = malloc(sizeof(*variable) * variable_count);
+  memset(variable, 0, sizeof(*variable) * variable_count);
 
   PIDX_set_point_5D(global_bounding_box, (int64_t)global_box_size[0], (int64_t)global_box_size[1], (int64_t)global_box_size[2], 1, 1);
 
@@ -364,13 +363,9 @@ int main(int argc, char **argv)
   PIDX_time_step_caching_ON();
   for (ts = 0; ts < time_step_count; ts++)
   {
-
-
-    PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
+    PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, ts);
-    PIDX_set_block_size(file, bits_per_block);
-    PIDX_set_block_count(file, blocks_per_file);
     PIDX_set_variable_count(file, variable_count);
 
     for (var = 0; var < variable_count; var++)
@@ -409,19 +404,19 @@ int main(int argc, char **argv)
   free(local_offset_point);
   free(local_box_count_point);
 
-  free(output_file_name);
   free(variable);
   variable = 0;
   free(values_per_sample);
   values_per_sample = 0;
 #endif
+
   return 0;
 }
 
 ///< Parse the input arguments
 static int parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:";
+  char flags[] = "g:l:f:t:v:p:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -441,9 +436,12 @@ static int parse_args(int argc, char **argv)
       case('t'):
           sscanf(optarg, "%d", &time_step_count);
           break;
-    case('v'):
-        sscanf(optarg, "%d", &variable_count);
-        break;
+      case('v'):
+          sscanf(optarg, "%d", &variable_count);
+          break;
+      case('p'):
+          sscanf(optarg, "%d", &patch_count);
+          break;
       case('?'):
           return (-1);
     }
@@ -481,15 +479,16 @@ static int parse_args(int argc, char **argv)
 ///< How to use this progam
 static void usage(void)
 {
-  printf("Serial Usage: ./pidx-s3d-checkpoint -g 4x4x4 -l 4x4x4 -f Filename -t 1 -v 1\n");
+  printf("Serial Usage: ./pidx-uintah-checkpoint -g 4x4x4 -l 4x4x4 -f Filename -t 1 -v 1\n");
   printf("Parallel Usage: mpirun -n 8 ./pidx-s3d-checkpoint -g 4x4x4 -l 2x2x2 -f Filename_ -t 1 -v 1\n");
   printf("  -g: global dimensions\n");
   printf("  -l: local (per-process) dimensions\n");
   printf("  -f: IDX Filename\n");
   printf("  -t: number of timesteps\n");
   printf("  -v: number of fields\n");
+  printf("  -p: number of patches\n");
 
-  printf("pidx-s3d-checkpoint generates a 3D volume of size g_x g_y g_z specified by -g command line parameter\nEach process writes a sub-volume of size l_x l_y l_z specified by -l command line parameter. \nData is written in the idx format, with the filename Filename specified by -f command line parameter. \nThe number of time-steps and the number of fields can be optionally provided by -t and -v command line parameters.\n");
+  printf("pidx-s3d-uintah generates a 3D volume of size g_x g_y g_z specified by -g command line parameter\nEach process writes a sub-volume of size l_x l_y l_z specified by -l command line parameter. \nData is written in the idx format, with the filename Filename specified by -f command line parameter. \nThe number of time-steps and the number of fields can be optionally provided by -t and -v command line parameters.\n");
 
   printf("\n");
 

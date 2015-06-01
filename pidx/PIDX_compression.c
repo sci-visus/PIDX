@@ -58,7 +58,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length)
   int i = 0;
   int64_t total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
 
-  if (comp_id->idx->compression_type == 1)
+  //if (comp_id->idx->compression_type == 1)
   {
     size_t typesize, outsize;
     typesize = sizeof(double);
@@ -91,18 +91,18 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length)
 
 int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
 {
-  int64_t compression_block_num_elems = comp_id->idx_ptr->chunk_size[0] *
-                                        comp_id->idx_ptr->chunk_size[1] *
-                                        comp_id->idx_ptr->chunk_size[2];
+  int64_t compression_block_num_elems = comp_id->idx->chunk_size[0] *
+                                        comp_id->idx->chunk_size[1] *
+                                        comp_id->idx->chunk_size[2];
   unsigned int type_size = sizeof(double); // DUONG_HARDCODE
-  if (comp_id->idx_ptr->compression_type == 1) // zfp lossy compression
+  //if (comp_id->idx->compression_type == 1) // zfp lossy compression
   {
     zfp_params zfp;
     zfp.type = ZFP_TYPE_DOUBLE; // DUONG_HARDCODE
-    zfp.nx = comp_id->idx_ptr->chunk_size[0];
-    zfp.ny = comp_id->idx_ptr->chunk_size[1];
-    zfp.nz = comp_id->idx_ptr->chunk_size[2];
-    unsigned int bit_rate = (unsigned int) comp_id->idx_ptr->compression_bit_rate;
+    zfp.nx = comp_id->idx->chunk_size[0];
+    zfp.ny = comp_id->idx->chunk_size[1];
+    zfp.nz = comp_id->idx->chunk_size[2];
+    unsigned int bit_rate = (unsigned int) comp_id->idx->compression_bit_rate;
     zfp_set_rate(&zfp, bit_rate);
     unsigned int input_offset = 0;
     unsigned int output_offset = 0;
@@ -169,7 +169,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
    return PIDX_success;
 
 #if PIDX_HAVE_ZFP
-  int v;
+  int v, p, b;
   PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
 
   for (v = comp_id->first_index; v <= comp_id->last_index; v++)

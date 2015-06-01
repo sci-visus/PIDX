@@ -81,6 +81,7 @@ PIDX_return_code PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
   return PIDX_success;
 }
 
+
 PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
 {
   if (agg_id == NULL)
@@ -561,6 +562,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id)
   return PIDX_success;
 }
 
+
 PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
 {
   if (agg_id->idx->enable_agg == 0)
@@ -794,26 +796,63 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
 
 PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id)
 {
-  int i, p, var, ret = 0;
-  int64_t count = 0;
+  if (agg_id->idx->enable_agg == 0)
+    return PIDX_success;
 
+  int i, p, e1, v, ret = 0;
+  int send_index = 0;
+  int64_t index = 0, count = 0, hz_index = 0;
   int rank = 0;
 
 #if PIDX_HAVE_MPI
+  Agg_buffer agg_buffer = agg_id->idx_d->agg_buffer;
   MPI_Comm_rank(agg_id->comm, &rank);
+
+  if (agg_id->idx_d->agg_buffer->buffer_size != 0)
+  {
+    int total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+    int bytes_per_datatype = total_chunk_size * (agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/8) / (64/agg_id->idx->compression_bit_rate);
+
+    ret = MPI_Win_create(agg_buffer->buffer, agg_buffer->buffer_size, bytes_per_datatype, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
+    if (ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
+  }
+  else
+  {
+    ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
+    if (ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
+  }
+
+#ifdef PIDX_ACTIVE_TARGET
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#else
+  //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+
 #endif
 
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
   {
     char agg_file_name[1024];
-
     ret = mkdir(agg_id->idx_d->agg_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
     if (ret != 0 && errno != EEXIST)
     {
       perror("mkdir");
       fprintf(stderr, " Error in aggregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, agg_id->idx_d->agg_dump_dir_name);
-      return -1;
+      return PIDX_err_agg;
     }
 
 #if PIDX_HAVE_MPI
@@ -830,54 +869,126 @@ PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id)
   }
 #endif
 
-#if PIDX_HAVE_MPI
-  //agg_id->idx_d->win_time_start = MPI_Wtime();
-  if (agg_id->idx_d->agg_buffer->buffer_size != 0)
-    MPI_Win_create(agg_id->idx_d->agg_buffer->buffer, agg_id->idx_d->agg_buffer->buffer_size, agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/8, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
-  else
-    MPI_Win_create(0, 0, 1, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
-  //agg_id->idx_d->win_time_end = MPI_Wtime();
-#ifdef PIDX_ACTIVE_TARGET
-  MPI_Win_fence(0, agg_id->win);
-#else
-  //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
-#endif
-#endif
-
-  for (p = 0; p < agg_id->idx->variable[agg_id->first_index]->patch_group_count; p++)
+  PIDX_variable var0 = agg_id->idx->variable[agg_id->first_index];
+  for (p = 0; p < var0->patch_group_count; p++)
   {
-    count = 0;
-    for (var = agg_id->first_index; var <= agg_id->last_index; var++)
+    hz_index = 0, index = 0, count = 0, send_index = 0;
+    HZ_buffer hz_buf = var0->hz_buffer[p];
+    if(var0->hz_buffer[p]->type == 0)
     {
-#ifdef PIDX_DUMP_AGG
-      if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
-      {
-        fprintf(agg_dump_fp, "Variable %d\n", var);
-        fflush(agg_dump_fp);
-      }
-#endif
-      for (i = agg_id->idx->variable[agg_id->first_index]->hz_buffer[p]->HZ_agg_from + agg_id->idx_d->res_from; i < agg_id->idx->variable[agg_id->first_index]->hz_buffer[p]->HZ_agg_to - agg_id->idx_d->res_to; i++)
-      {
-        count =  agg_id->idx->variable[var]->hz_buffer[p]->end_hz_index[i] - agg_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i] + 1 - (agg_id->idx->variable[var]->hz_buffer[p]->missing_block_count_per_level[i] * agg_id->idx_d->samples_per_block);
+      for (i = 0; i < hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i++)
+        hz_index = hz_index + hz_buf->samples_per_level[i];
 
-        //if (agg_id->idx->variable[agg_id->first_index]->hz_buffer[p]->samples_per_level[i] != 0)
-        if (count != 0)
+      for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
+      {
+        if (hz_buf->samples_per_level[i] != 0)
         {
+          for(e1 = 0; e1 < hz_buf->samples_per_level[i] ; e1++)
+          {
+            if(e1 == 0)
+            {
+              index = hz_buf->buffer_index[hz_index];
+              send_index = e1;
+              count = 1;
+
+              if(hz_buf->samples_per_level[i] == 1)
+              {
+                for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+                {
+                  ret = aggregate_write_read(agg_id, v, index, count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                    return PIDX_err_agg;
+                  }
+                }
+              }
+            }
+            else
+            {
+              if(hz_buf->buffer_index[hz_index] - hz_buf->buffer_index[hz_index - 1] == 1)
+              {
+                count++;
+                if(e1 == hz_buf->samples_per_level[i] - 1)
+                {
+                  for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+                  {
+                    aggregate_write_read(agg_id, v, index, count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
+                    if (ret != PIDX_success)
+                    {
+                      fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                      return PIDX_err_agg;
+                    }
+                  }
+                }
+              }
+              else
+              {
+                for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+                {
+                  aggregate_write_read(agg_id, v, index, count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                    return PIDX_err_agg;
+                  }
+                }
+
+                if(e1 == hz_buf->samples_per_level[i] - 1)
+                {
+                  for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+                  {
+                    aggregate_write_read(agg_id, v, hz_buf->buffer_index[hz_index], 1, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], e1, PIDX_READ);
+                    if (ret != PIDX_success)
+                    {
+                      fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                      return PIDX_err_agg;
+                    }
+                  }
+                }
+                index = hz_buf->buffer_index[hz_index];
+                count = 1;
+                send_index = e1;
+              }
+            }
+            hz_index++;
+          }
+        }
+      }
+    }
+    else
+    {
+      for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+      {
 #ifdef PIDX_DUMP_AGG
-          if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
-          {
-            fprintf(agg_dump_fp, "[%d]: ", i);
-            fflush(agg_dump_fp);
-          }
+        if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
+        {
+          fprintf(agg_dump_fp, "Variable %d\n", v);
+          fflush(agg_dump_fp);
+        }
 #endif
-          //agg_id->idx_d->agg_level_start[p][var][i] = MPI_Wtime();
-          ret = aggregate_write_read(agg_id, var, agg_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i], count, agg_id->idx->variable[var]->hz_buffer[p]->buffer[i], 0, PIDX_READ);
-          if (ret != PIDX_success)
+        for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
+        {
+          if (hz_buf->samples_per_level[i] != 0)
           {
-            fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
-            return PIDX_err_agg;
+            index = 0;
+            count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1 - (var0->hz_buffer[p]->missing_block_count_per_level[i] * agg_id->idx_d->samples_per_block);
+
+
+#ifdef PIDX_DUMP_AGG
+            if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
+            {
+              fprintf(agg_dump_fp, "[%d]: ", i);
+              fflush(agg_dump_fp);
+            }
+#endif
+            ret = aggregate_write_read(agg_id, v, var0->hz_buffer[p]->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], 0, PIDX_READ);
+            if (ret != PIDX_success)
+            {
+              fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+              return PIDX_err_agg;
+            }
           }
-          //agg_id->idx_d->agg_level_end[p][var][i] = MPI_Wtime();
         }
       }
     }
@@ -885,13 +996,21 @@ PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id)
 
 #if PIDX_HAVE_MPI
 #ifdef PIDX_ACTIVE_TARGET
-  MPI_Win_fence(0, agg_id->win);
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
 #else
   //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
 #endif
-  //agg_id->idx_d->win_free_time_start = MPI_Wtime();
-  MPI_Win_free(&(agg_id->win));
-  //agg_id->idx_d->win_free_time_end = MPI_Wtime();
+  ret = MPI_Win_free(&(agg_id->win));
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
 #endif
 
 #ifdef PIDX_DUMP_AGG

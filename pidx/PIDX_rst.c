@@ -68,8 +68,6 @@ static int getPowerOftwo(int x);
 #endif
 
 
-
-
 #if PIDX_HAVE_MPI
 /// Function to check if NDimensional data chunks A and B intersects
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
@@ -151,7 +149,7 @@ static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, 
 }
 #endif
 
-/// output value: num_output_buffers (number of buffers this process will hold after restructuring given the above parameters)
+
 PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int first_index, int var_start_index, int var_end_index)
 {
   //Creating the restructuring ID
@@ -168,6 +166,7 @@ PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
 
   return (rst_id);
 }
+
 
 #if PIDX_HAVE_MPI
 PIDX_return_code PIDX_rst_set_communicator(PIDX_rst_id rst_id, MPI_Comm comm)
@@ -444,7 +443,6 @@ PIDX_return_code PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id)
 }
 
 
-/// actually do the restructuring, using pre-calculated data associated with the rst_id
 PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
 {
   int j = 0, v = 0, p = 0;
@@ -906,8 +904,6 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 }
 
 
-/// tear down the various buffer structs. In the case of the output 
-/// structs this function should also free the memory buffers as well
 PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
 {
   int i, j, v;
@@ -941,9 +937,6 @@ PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
 }
 
 
-
-/// tear down whatever was calculated for this particular 
-/// combination of dimensions and bounds
 PIDX_return_code PIDX_rst_finalize(PIDX_rst_id rst_id)
 {
   if (rst_id->idx->enable_rst == 1)
@@ -976,7 +969,6 @@ PIDX_return_code PIDX_rst_finalize(PIDX_rst_id rst_id)
 }
 
 
-////////////////////////////////////////////////////////////////////////
 PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
 {
   int i, j, k, rank = 0, v = 0, u = 0, s = 0, a, m, n, bytes_for_datatype;

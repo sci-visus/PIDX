@@ -59,35 +59,60 @@ PIDX_return_code PIDX_rst_set_communicator(PIDX_rst_id id, MPI_Comm comm);
 
 
 ///
+/// \brief PIDX_rst_attach_restructuring_box
+/// \param rst_id
+/// \return
+///
 PIDX_return_code PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id);
 
 
 
 /// Ceate the appropriate data structs to hold restructured output data
+
+///
+/// \brief PIDX_rst_buf_create
+/// \param rst_id
+/// \return
+///
 PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id);
 
 
-
-/// Actually do the restructuring, using pre-calculated data associated with the id
+///
+/// \brief PIDX_rst_write Actually do the restructuring, using pre-calculated data associated with the id
+/// \param rst_id
+/// \return
+///
 PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id);
 
 
-
+///
+/// \brief PIDX_rst_read
+/// \param rst_id
+/// \return
 ///
 PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id);
 
 
-
-/// Tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well
+///
+/// \brief PIDX_rst_buf_destroy Tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well
+/// \param rst_id
+/// \return
+///
 PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id);
 
 
-
-/// Tear down whatever was calculated for this particular combination of dimensions and bounds
+///
+/// \brief PIDX_rst_finalize Tear down whatever was calculated for this particular combination of dimensions and bounds
+/// \param id
+/// \return
+///
 PIDX_return_code PIDX_rst_finalize(PIDX_rst_id id);
 
 
-
+///
+/// \brief HELPER_rst
+/// \param rst_id
+/// \return
 ///
 PIDX_return_code HELPER_rst(PIDX_rst_id rst_id);
 

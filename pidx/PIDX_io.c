@@ -53,8 +53,6 @@ struct PIDX_io_struct
 
 static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, int MODE);
 
-//static int generate_file_name(PIDX_io_id io_id, int file_number, char* filename, int maxlen);
-
 
 PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
 {
@@ -93,6 +91,7 @@ int PIDX_io_cached_data(uint32_t* cached_header)
 
   return PIDX_success;
 }
+
 
 int PIDX_io_aggregated_write(PIDX_io_id io_id)
 {
@@ -305,19 +304,16 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
   return PIDX_success;
 }
 
+
 int PIDX_io_aggregated_read(PIDX_io_id io_id)
 {
   int64_t data_offset = 0;
   char file_name[PATH_MAX];
-  int i = 0, k = 0, rank;
-  //uint32_t *headers;
-  //int total_header_size;
-  int write_count;
-  int bytes_per_datatype;
-
-#ifdef PIDX_RECORD_TIME
-  double t1, t2, t3, t4, t5;
-#endif
+  int i = 0;
+  uint32_t *headers;
+  int total_header_size = 0;
+  double t1, t2, t3, t4;
+  int rank = 0;
 
 #if PIDX_HAVE_MPI
   int mpi_ret;
@@ -328,178 +324,106 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
   int fh;
 #endif
 
-  if (io_id->idx_d->agg_buffer->var_number == io_id->first_index && io_id->idx_d->agg_buffer->sample_number == 0)
+  int total_chunk_size = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]);
+
+  if (io_id->idx->enable_agg != 0)
   {
-    bytes_per_datatype =  (io_id->idx->variable[io_id->idx_d->agg_buffer->var_number]->bits_per_value/8)  * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4])  / (64/io_id->idx->compression_bit_rate);
+    Agg_buffer agg_buf = io_id->idx_d->agg_buffer;
 
-#ifdef PIDX_RECORD_TIME
-    t1 = PIDX_get_time();
-#endif
-    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) io_id->idx_d->agg_buffer->file_number, file_name, PATH_MAX);
+    if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
+    {
+      t1 = PIDX_get_time();
+
+      generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
-    if (mpi_ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed filename %s.\n", __FILE__, __LINE__, file_name);
-      return PIDX_err_io;
-    }
+      mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
+      if (mpi_ret != MPI_SUCCESS)
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
+        return PIDX_err_io;
+      }
 #else
-    fh = open(file_name, O_RDONLY);
+      fh = open(file_name, O_WRONLY);
 #endif
 
-#ifdef PIDX_RECORD_TIME
-    t2 = PIDX_get_time();
+      t2 = PIDX_get_time();
+
+      data_offset = 0;
+      //TODO
+      headers = malloc(total_header_size);
+#if PIDX_HAVE_MPI
+      mpi_ret = MPI_File_read_at(fh, 0, headers, total_header_size , MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS)
+      {
+        fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+        return PIDX_err_io;
+      }
 #endif
+      free(headers);
 
-
-#ifdef PIDX_RECORD_TIME
-    t3 = PIDX_get_time();
-#endif
-
+      int var_num = io_id->idx_d->agg_buffer->var_number;
+      data_offset = htonl(headers[12 + ((0 + (io_id->idx->blocks_per_file * var_num))*10 )]);
+      for (i = 1; i < io_id->idx->blocks_per_file; i++)
+      {
+        if (htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * var_num))*10 )]) < data_offset)
+          data_offset = htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * var_num))*10 )]);
+      }
 
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_read_at(fh, (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size), io_id->idx_d->agg_buffer->buffer, (((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block / io_id->idx_d->aggregation_factor) * (bytes_per_datatype))), MPI_BYTE, &status);
-    if (mpi_ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
+      mpi_ret = MPI_File_read_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
+      if (mpi_ret != MPI_SUCCESS)
+      {
+        fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+        return PIDX_err_io;
+      }
 
-
-    MPI_Get_count(&status, MPI_BYTE, &write_count);
-    //printf("[A] Elemets to write %d\n", write_count);
-    if (write_count != (((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * ( io_id->idx_d->samples_per_block  / io_id->idx_d->aggregation_factor) * (bytes_per_datatype))))
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
+      int write_count = 0;
+      MPI_Get_count(&status, MPI_BYTE, &write_count);
+      if (write_count != agg_buf->buffer_size)
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
 
 #else
-    ssize_t read_count  = pread(fh, io_id->idx_d->agg_buffer->buffer, (((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block / io_id->idx_d->aggregation_factor) * (bytes_per_datatype))), (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size));
-    if (read_count != (((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block / io_id->idx_d->aggregation_factor) * (bytes_per_datatype))))
-    {
-      fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-
-    //double x[8];
-    //memcpy(x, io_id->idx_d->agg_buffer->buffer, sizeof(double) * 8);
-    //printf("count = %f %f %f %f %f %f %f %f\n", x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]);
-
+      ssize_t write_count = pwrite(fh, agg_buf->buffer, agg_buf->buffer_size, data_offset);
+      if (write_count != agg_buf->buffer_size)
+      {
+        fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
 #endif
 
-
-#ifdef PIDX_RECORD_TIME
-    t4 = PIDX_get_time();
-#endif
+      t3 = PIDX_get_time();
 
 #if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_close(&fh);
-    if (mpi_ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
+      mpi_ret = MPI_File_close(&fh);
+      if (mpi_ret != MPI_SUCCESS)
+      {
+        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
 #else
       close(fh);
 #endif
 
-#ifdef PIDX_RECORD_TIME
-    t5 = PIDX_get_time();
-#endif
+      t4 = PIDX_get_time();
 
 #ifdef PIDX_RECORD_TIME
-    printf("A. [R %d] [OS 0 %ld %ld (%d %d %d) %ld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank,
-            (long int)(((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block / io_id->idx_d->aggregation_factor) * (bytes_per_datatype))) + (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size),
-            (long int)io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number] * (io_id->idx_d->samples_per_block / io_id->idx_d->aggregation_factor) * bytes_per_datatype,
-            (int)io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number], (int)(io_id->idx_d->samples_per_block / io_id->idx_d->aggregation_factor), (int)bytes_per_datatype,
-            (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size), io_id->idx_d->agg_buffer->file_number, io_id->idx_d->agg_buffer->var_number, io_id->idx_d->agg_buffer->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
+      printf("V. [R %d] [O %lld C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, (long long)agg_buf->buffer_size, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
 #endif
+    }
   }
-  else if (io_id->idx_d->agg_buffer->var_number != -1 && io_id->idx_d->agg_buffer->sample_number != -1 && io_id->idx_d->agg_buffer->file_number != -1)
-  {
-#ifdef PIDX_RECORD_TIME
-    t1 = PIDX_get_time();
-#endif
-    bytes_per_datatype =  (io_id->idx->variable[io_id->idx_d->agg_buffer->var_number]->bits_per_value/8) * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]);
 
-    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) io_id->idx_d->agg_buffer->file_number, file_name, PATH_MAX);
+  int ret;
+  ret = PIDX_io_per_process_read(io_id);
+  if (ret != PIDX_success)
+    return PIDX_err_io;
 
-
-#if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
-    if (mpi_ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
-      return PIDX_err_io;
-    }
-#else
-    fh = open(file_name, O_WRONLY);
-#endif
-
-#ifdef PIDX_RECORD_TIME
-    t2 = PIDX_get_time();
-#endif
-
-    data_offset = 0;
-    data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
-
-
-    for (k = 0; k < io_id->idx_d->agg_buffer->var_number; k++)
-      for (i = 0; i < io_id->idx->variable[k]->values_per_sample; i++)
-        data_offset = (int64_t) data_offset + (int64_t) io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number] * io_id->idx_d->samples_per_block * (io_id->idx->variable[k]->bits_per_value/8) /* io_id->idx_d->aggregation_factor */;
-
-    for (i = 0; i < io_id->idx_d->agg_buffer->sample_number; i++)
-      data_offset = (int64_t) data_offset + (int64_t) io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number] * (io_id->idx_d->samples_per_block/io_id->idx_d->aggregation_factor) * (bytes_per_datatype);
-
-#if PIDX_HAVE_MPI
-
-    mpi_ret = MPI_File_read_at(fh, data_offset, io_id->idx_d->agg_buffer->buffer, ((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block/io_id->idx_d->aggregation_factor)  * (bytes_per_datatype)) , MPI_BYTE, &status);
-    if (mpi_ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_open() failed.\n", (long long) data_offset, __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-
-    MPI_Get_count(&status, MPI_BYTE, &write_count);
-    //printf("[B] Elemets to write %d\n", write_count);
-    if (write_count != ((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block/io_id->idx_d->aggregation_factor) * (bytes_per_datatype)))
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-
-#else
-    pread(fh, io_id->idx_d->agg_buffer->buffer, ((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block / io_id->idx_d->aggregation_factor) * (bytes_per_datatype)), data_offset);
-#endif
-
-
-#ifdef PIDX_RECORD_TIME
-    t3 = PIDX_get_time();
-#endif
-
-#if PIDX_HAVE_MPI
-    mpi_ret = MPI_File_close(&fh);
-    if (mpi_ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-#else
-    close(fh);
-#endif
-
-#ifdef PIDX_RECORD_TIME
-    t4 = PIDX_get_time();
-#endif
-
-#ifdef PIDX_RECORD_TIME
-    //printf("B. [R %d] [OS %lld %d] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, ((io_id->idx->variable[io_id->init_index]->block_count_per_file[io_id->idx_d->agg_buffer->file_number]) * (io_id->idx_d->samples_per_block/io_id->idx_d->aggregation_factor)  * (bytes_per_datatype)), io_id->idx_d->agg_buffer->file_number, io_id->idx_d->agg_buffer->var_number, io_id->idx_d->agg_buffer->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
-#endif
-  }
-  return PIDX_success;
+   return PIDX_success;
 }
+
 
 int PIDX_io_per_process_write(PIDX_io_id io_id)
 {
@@ -576,7 +500,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
             if(var0->hz_buffer[p]->buffer_index[hz_index] - var0->hz_buffer[p]->buffer_index[hz_index - 1] == 1)
             {
               count++;
-              if(e1 == var0->hz_buffer[p]->samples_per_level[i] - 1)
+              if (e1 == var0->hz_buffer[p]->samples_per_level[i] - 1)
               {
                 for(v = io_id->first_index; v <= io_id->last_index; v++)
                 {
@@ -593,7 +517,6 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
             {
               for(v = io_id->first_index; v <= io_id->last_index; v++)
               {
-                printf("%d %d %d\n", index, count, send_index);
                 ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_WRITE);
                 if (ret != PIDX_success)
                 {
@@ -762,167 +685,210 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
 
 int PIDX_io_per_process_read(PIDX_io_id io_id)
 {
-  int e1 = 0, i = 0, p = 0, var = 0, ret;
-  int send_index = 0;
-  int64_t hz_index = 0;
-  int64_t index = 0, count = 0;
+    int e1 = 0, i = 0, p = 0, v = 0, ret;
+    int send_index = 0;
+    int64_t hz_index = 0;
+    int64_t index = 0, count = 0;
+    int rank = 0;
 
-  for (p = 0; p < io_id->idx->variable[io_id->first_index]->patch_group_count; p++)
-  {
-    hz_index = 0, index = 0, count = 0, send_index = 0;
-    if(io_id->idx->variable[io_id->first_index]->hz_buffer[p]->type == 0)
+  #if PIDX_HAVE_MPI
+    MPI_Comm_rank(io_id->comm, &rank);
+  #endif
+
+  #ifdef PIDX_DUMP_IO
+    if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
     {
-      for (i = 0; i < io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_from; i++)
-        hz_index = hz_index + io_id->idx->variable[io_id->first_index]->hz_buffer[p]->samples_per_level[i];
-
-      for (i = io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_from; i < io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_to; i++)
+      char io_file_name[1024];
+      ret = mkdir(io_id->idx_d->io_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
+      if (ret != 0 && errno != EEXIST)
       {
-        for(e1 = 0; e1 < io_id->idx->variable[io_id->first_index]->hz_buffer[p]->samples_per_level[i] ; e1++)
+        perror("mkdir");
+        fprintf(stderr, " Error in aggregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, io_id->idx_d->io_dump_dir_name);
+        return PIDX_err_io;
+      }
+
+  #if PIDX_HAVE_MPI
+      MPI_Barrier(io_id->comm);
+  #endif
+
+      sprintf(io_file_name, "%s/rank_%d", io_id->idx_d->io_dump_dir_name, rank);
+      io_dump_fp = fopen(io_file_name, "a+");
+      if (!io_dump_fp)
+      {
+        fprintf(stderr, " [%s] [%d] io_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, io_file_name);
+        return PIDX_err_io;
+      }
+    }
+  #endif
+
+    PIDX_variable var0 = io_id->idx->variable[io_id->first_index];
+    for (p = 0; p < var0->patch_group_count; p++)
+    {
+      hz_index = 0, index = 0, count = 0, send_index = 0;
+      if(var0->hz_buffer[p]->type == 0)
+      {
+        for (i = 0; i < var0->hz_buffer[p]->HZ_io_from; i++)
+          hz_index = hz_index + var0->hz_buffer[p]->samples_per_level[i];
+
+        for (i = var0->hz_buffer[p]->HZ_io_from; i < var0->hz_buffer[p]->HZ_io_to; i++)
         {
-          if(e1 == 0)
+          for(e1 = 0; e1 < var0->hz_buffer[p]->samples_per_level[i] ; e1++)
           {
-            index = io_id->idx->variable[io_id->first_index]->hz_buffer[p]->buffer_index[hz_index];
-            send_index = e1;
-            count = 1;
-
-            if(io_id->idx->variable[io_id->first_index]->hz_buffer[p]->samples_per_level[i] == 1)
+            if(e1 == 0)
             {
-              for(var = io_id->first_index; var <= io_id->last_index; var++)
-              {
-                ret = write_read_samples(io_id, var, index, count, io_id->idx->variable[var]->hz_buffer[p]->buffer[i], (send_index), PIDX_READ);
-                if (ret != PIDX_success)
-                {
-                  fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
-                  return PIDX_err_io;
-                }
-              }
-            }
-          }
-          else
-          {
-            if(io_id->idx->variable[io_id->first_index]->hz_buffer[p]->buffer_index[hz_index] - io_id->idx->variable[io_id->first_index]->hz_buffer[p]->buffer_index[hz_index - 1] == 1)
-            {
-              count++;
-              if(e1 == io_id->idx->variable[io_id->first_index]->hz_buffer[p]->samples_per_level[i] - 1)
-              {
-                for(var = io_id->first_index; var <= io_id->last_index; var++)
-                {
-                  ret = write_read_samples(io_id, var, index, count, io_id->idx->variable[var]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
-                  if (ret != PIDX_success)
-                  {
-                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
-                    return PIDX_err_io;
-                  }
-                }
-              }
-            }
-            else
-            {
-              for(var = io_id->first_index; var <= io_id->last_index; var++)
-              {
-                ret = write_read_samples(io_id, var, index, count, io_id->idx->variable[var]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
-                if (ret != PIDX_success)
-                {
-                  fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
-                  return PIDX_err_io;
-                }
-              }
-
-              if(e1 == io_id->idx->variable[io_id->first_index]->hz_buffer[p]->samples_per_level[i] - 1)
-              {
-                for(var = io_id->first_index; var <= io_id->last_index; var++)
-                {
-                  ret = write_read_samples(io_id, var, io_id->idx->variable[io_id->first_index]->hz_buffer[p]->buffer_index[hz_index], 1, io_id->idx->variable[var]->hz_buffer[p]->buffer[i], e1, PIDX_READ);
-                  if (ret != PIDX_success)
-                  {
-                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
-                    return PIDX_err_io;
-                  }
-                }
-              }
-              index = io_id->idx->variable[io_id->first_index]->hz_buffer[p]->buffer_index[hz_index];
-              count = 1;
+              index = var0->hz_buffer[p]->buffer_index[hz_index];
               send_index = e1;
-            }
-          }
-          hz_index++;
-        }
-      }
-    }
+              count = 1;
 
-    else if(io_id->idx->variable[io_id->first_index]->hz_buffer[p]->type == 1)
-    {
-      for (i = /*io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_from*/io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_to - 1; i < io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_to; i++)
-      {
-        if (io_id->idx->variable[io_id->first_index]->hz_buffer[p]->samples_per_level[i] != 0)
-        {
-          for(var = io_id->first_index; var <= io_id->last_index; var++)
-          {
-            index = 0;
-            count =  io_id->idx->variable[var]->hz_buffer[p]->end_hz_index[i] - io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i] + 1;
-            ret = write_read_samples(io_id, var, io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i], count, io_id->idx->variable[var]->hz_buffer[p]->buffer[i], 0, PIDX_READ);
-            if (ret != PIDX_success)
-            {
-              fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
-              return PIDX_err_io;
-            }
-          }
-        }
-      }
-    }
-
-    else if(io_id->idx->variable[io_id->first_index]->hz_buffer[p]->type == 2)
-    {
-      int start_block_index, end_block_index, bl;
-      for (i = io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_from; i < io_id->idx->variable[io_id->first_index]->hz_buffer[p]->HZ_io_to; i++)
-      {
-        for (var = io_id->first_index; var <= io_id->last_index; var++)
-        {
-          start_block_index = io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i] / io_id->idx_d->samples_per_block;
-          end_block_index = io_id->idx->variable[var]->hz_buffer[p]->end_hz_index[i] / io_id->idx_d->samples_per_block;
-          assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
-
-          send_index = 0;
-          for (bl = start_block_index; bl <= end_block_index; bl++)
-          {
-            if (end_block_index == start_block_index)
-            {
-              index = 0;
-              count = (io_id->idx->variable[var]->hz_buffer[p]->end_hz_index[i] - io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i] + 1);
+              if(var0->hz_buffer[p]->samples_per_level[i] == 1)
+              {
+                for(v = io_id->first_index; v <= io_id->last_index; v++)
+                {
+                  ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], (send_index), PIDX_READ);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return PIDX_err_io;
+                  }
+                }
+              }
             }
             else
             {
-              if (bl == start_block_index)
+              if(var0->hz_buffer[p]->buffer_index[hz_index] - var0->hz_buffer[p]->buffer_index[hz_index - 1] == 1)
               {
-                index = 0;
-                count = ((start_block_index + 1) * io_id->idx_d->samples_per_block) - io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i];
-              }
-              else if (bl == end_block_index)
-              {
-                index = (end_block_index * io_id->idx_d->samples_per_block - io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i]);
-                count = io_id->idx->variable[var]->hz_buffer[p]->end_hz_index[i] - ((end_block_index) * io_id->idx_d->samples_per_block) + 1;
+                count++;
+                if (e1 == var0->hz_buffer[p]->samples_per_level[i] - 1)
+                {
+                  for(v = io_id->first_index; v <= io_id->last_index; v++)
+                  {
+                    ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
+                    if (ret != PIDX_success)
+                    {
+                      fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                      return PIDX_err_io;
+                    }
+                  }
+                }
               }
               else
               {
-                index = (bl * io_id->idx_d->samples_per_block - io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i]);
-                count = io_id->idx_d->samples_per_block;
+                for(v = io_id->first_index; v <= io_id->last_index; v++)
+                {
+                  ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return PIDX_err_io;
+                  }
+                }
+
+                if(e1 == var0->hz_buffer[p]->samples_per_level[i] - 1)
+                {
+                  for(v = io_id->first_index; v <= io_id->last_index; v++)
+                  {
+                    ret = write_read_samples(io_id, v, var0->hz_buffer[p]->buffer_index[hz_index], 1, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], e1, PIDX_READ);
+                    if (ret != PIDX_success)
+                    {
+                      fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                      return PIDX_err_io;
+                    }
+                  }
+                }
+                index = var0->hz_buffer[p]->buffer_index[hz_index];
+                count = 1;
+                send_index = e1;
               }
             }
+            hz_index++;
+          }
+        }
+      }
 
-            ret = write_read_samples(io_id, var, index + io_id->idx->variable[var]->hz_buffer[p]->start_hz_index[i], count, io_id->idx->variable[var]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
-            if (ret != PIDX_success)
+      else if (var0->hz_buffer[p]->type == 1)
+      {
+        for (i = var0->hz_buffer[p]->HZ_io_from; i < var0->hz_buffer[p]->HZ_io_to; i++)
+        {
+          if (var0->hz_buffer[p]->samples_per_level[i] != 0)
+          {
+            for(v = io_id->first_index; v <= io_id->last_index; v++)
             {
-              fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
-              return PIDX_err_io;
-            }
+  #ifdef PIDX_DUMP_IO
+              //if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
+              //{
+              //  fprintf(io_dump_fp, "Variable %d\n", v);
+              //  fflush(io_dump_fp);
+              //}
+  #endif
+              HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
+              index = 0;
+              count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1;
 
-            send_index = send_index + count;
+  #ifdef PIDX_DUMP_IO
+              if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
+              {
+                fprintf(io_dump_fp, "[%d]: ", i);
+                fflush(io_dump_fp);
+              }
+  #endif
+              ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_READ);
+              if (ret != PIDX_success)
+              {
+                fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                return PIDX_err_io;
+              }
+            }
+          }
+        }
+      }
+
+      else if (var0->hz_buffer[p]->type == 2)
+      {
+        for(v = io_id->first_index; v <= io_id->last_index; v++)
+        {
+  #ifdef PIDX_DUMP_IO
+          if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
+          {
+            fprintf(io_dump_fp, "Variable %d\n", v);
+            fflush(io_dump_fp);
+          }
+  #endif
+          HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
+          for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
+          {
+            if (var0->hz_buffer[p]->samples_per_level[i] != 0)
+            {
+              index = 0;
+              count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1 - (var0->hz_buffer[p]->missing_block_count_per_level[i] * io_id->idx_d->samples_per_block);
+              //printf("%d [%d] count = %d %d\n", rank, i, var0->hz_buffer[p]->missing_block_count_per_level[i], count);
+
+  #ifdef PIDX_DUMP_IO
+              if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
+              {
+                fprintf(io_dump_fp, "[%d]: ", i);
+                fflush(io_dump_fp);
+              }
+  #endif
+
+              ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_READ);
+              if (ret != PIDX_success)
+              {
+                fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                return PIDX_err_io;
+              }
+            }
           }
         }
       }
     }
-  }
-  return PIDX_success;
+  #ifdef PIDX_DUMP_IO
+    if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
+    {
+      fprintf(io_dump_fp, "\n");
+      fclose(io_dump_fp);
+    }
+  #endif
+    return PIDX_success;
 }
 
 
@@ -934,7 +900,6 @@ int PIDX_io_finalize(PIDX_io_id io_id)
 
   return PIDX_success;
 }
-
 
 
 static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, int MODE)

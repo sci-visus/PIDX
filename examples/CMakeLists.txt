@@ -106,4 +106,58 @@ IF (PIDX_BUILD_TEST)
   ADD_DEPENDENCIES(pidx-read-by-field pidx)
   TARGET_LINK_LIBRARIES(pidx-read-by-field ${EXAMPLES_LINK_LIBS})
 
+  IF (PIDX_BUILD_CONVERT)
+
+    SET(PNETCDF_TO_IDX_SOURCES convert/pnetcdf-to-idx.c)  
+    SET(HDF_TO_IDX_SOURCES convert/hdf5-to-idx.c)
+    SET(FILE_PER_PROCESS_SOURCES convert/file-per-process-to-idx.c)
+    SET(RAW_TO_IDX_SOURCES convert/raw-to-idx.c)
+
+    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
+    IF (MPI_C_FOUND)
+      INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
+    ENDIF ()
+
+    PIDX_ADD_EXECUTABLE(file-per-process-to-idx "${FILE_PER_PROCESS_SOURCES}")
+    ADD_DEPENDENCIES(file-per-process-to-idx pidx)
+    TARGET_LINK_LIBRARIES(file-per-process-to-idx ${EXAMPLES_LINK_LIBS})
+
+    PIDX_ADD_EXECUTABLE(raw-to-idx "${RAW_TO_IDX_SOURCES}")
+    ADD_DEPENDENCIES(raw-to-idx pidx)
+    TARGET_LINK_LIBRARIES(raw-to-idx ${EXAMPLES_LINK_LIBS})
+
+    if (PIDX_OPTION_HDF5)
+      INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+
+      PIDX_ADD_EXECUTABLE(hdf5_to_idx "${HDF_TO_IDX_SOURCES}")
+      ADD_DEPENDENCIES(hdf5_to_idx pidx)
+      TARGET_LINK_LIBRARIES(hdf5_to_idx pidx)
+  
+      IF (MPI_C_FOUND)
+        TARGET_LINK_LIBRARIES(hdf5_to_idx ${MPI_C_LIBRARIES})
+      ENDIF()
+
+      ADD_DEPENDENCIES(hdf5_to_idx ${HDF5_LIBRARIES})
+      TARGET_LINK_LIBRARIES(hdf5_to_idx ${HDF5_LIBRARIES})
+    
+    ENDIF()
+
+    if (PIDX_OPTION_PNETCDF)
+      INCLUDE_DIRECTORIES(${PNETCDF_INCLUDE_DIRS})
+
+      PIDX_ADD_EXECUTABLE(pnetcdf_to_idx "${PNETCDF_TO_IDX_SOURCES}")
+      ADD_DEPENDENCIES(pnetcdf_to_idx pidx)
+      TARGET_LINK_LIBRARIES(pnetcdf_to_idx pidx)  
+
+      IF (MPI_C_FOUND)
+        TARGET_LINK_LIBRARIES(pnetcdf_to_idx ${MPI_C_LIBRARIES})
+      ENDIF()
+
+      ADD_DEPENDENCIES(pnetcdf_to_idx ${PNETCDF_LIBRARIES})
+      TARGET_LINK_LIBRARIES(pnetcdf_to_idx ${PNETCDF_LIBRARIES})
+    ENDIF()  
+
+  ENDIF()
+
+
 ENDIF()

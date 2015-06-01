@@ -534,9 +534,6 @@ int main(int argc, char **argv)
                         int index_y = block_index_y * compression_block_size[1] + local_index_y;
                         int index_z = block_index_z * compression_block_size[2] + local_index_z;
 
-#if long_buffer
-                        check_bit = check_bit && (long_long_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s] == 100 + var + (compressed_global_bounds[0] * compressed_global_bounds[1] * ZYX[2])+(compressed_global_bounds[0]*(ZYX[1])) + ZYX[0] + (idx_data_offset * compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2]));
-#else
                         int lhs;
                         if (compression == 0)
                           lhs = (int)double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
@@ -549,7 +546,6 @@ int main(int argc, char **argv)
                         check_bit = check_bit && (lhs == rhs);
 
                       }
-#endif
                     }
                   }
                 }
