@@ -1009,7 +1009,7 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   if(!file)
     return PIDX_err_file;
 
-  if (compression_type != 0 || compression_type != 1)
+  if (compression_type != 0 && compression_type != 1)
     return PIDX_err_unsupported_compression_type;
 
   file->idx->enable_compression = compression_type;
