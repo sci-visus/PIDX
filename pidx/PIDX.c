@@ -273,7 +273,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 2;
-  (*file)->idx->enable_compression = 0;
+  (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
 
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
   file_name_skeleton[strlen(filename) - 4] = '\0';
@@ -1009,10 +1009,38 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   if(!file)
     return PIDX_err_file;
 
-  if (compression_type != 0 && compression_type != 1)
+  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP)
     return PIDX_err_unsupported_compression_type;
 
-  file->idx->enable_compression = compression_type;
+  file->idx->compression_type = compression_type;
+
+  if (file->idx->compression_type == PIDX_NO_COMPRESSION)
+    return PIDX_success;
+  else if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP)
+  {
+    PIDX_point chunk_size;
+
+    chunk_size[0] = 4;
+    chunk_size[1] = 4;
+    chunk_size[2] = 4;
+    chunk_size[3] = 1;
+    chunk_size[4] = 1;
+
+    if(chunk_size[0] < 0 || chunk_size[1] < 0 || chunk_size[2] < 0 || chunk_size[3] < 0 || chunk_size[4] < 0)
+      return PIDX_err_box;
+
+    memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+
+    int reduce_by_sample = 1;
+    uint64_t total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2] * file->idx->chunk_size[3] * file->idx->chunk_size[4];
+    if (reduce_by_sample == 1)
+    {
+      file->idx->bits_per_block = file->idx->bits_per_block - log2(total_chunk_size);
+      file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+    }
+    else
+      file->idx->blocks_per_file = file->idx->blocks_per_file / total_chunk_size;
+  }
 
   return PIDX_success;
 }
@@ -1024,7 +1052,7 @@ PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type
   if(!file)
     return PIDX_err_file;
 
-   *compression_type = file->idx->enable_compression;
+   *compression_type = file->idx->compression_type;
 
   return PIDX_success;
 }
@@ -1036,35 +1064,8 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compres
   if (!file)
     return PIDX_err_file;
 
-  if (file->idx->enable_compression != 1)
+  if (file->idx->compression_type != PIDX_CHUNKING_ZFP)
     return PIDX_err_unsupported_compression_type;
-
-  PIDX_point chunk_size;
-
-  chunk_size[0] = 4;
-  chunk_size[1] = 4;
-  chunk_size[2] = 4;
-  chunk_size[3] = 1;
-  chunk_size[4] = 1;
-
-  if(chunk_size[0] < 0 || chunk_size[1] < 0 || chunk_size[2] < 0 || chunk_size[3] < 0 || chunk_size[4] < 0)
-    return PIDX_err_box;
-
-  if(file == NULL)
-    return PIDX_err_file;
-
-  memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-
-  int reduce_by_sample = 1;
-  uint64_t total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2] * file->idx->chunk_size[3] * file->idx->chunk_size[4];
-  if (reduce_by_sample == 1)
-  {
-    file->idx->bits_per_block = file->idx->bits_per_block - log2(total_chunk_size);
-    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
-  }
-  else
-    file->idx->blocks_per_file = file->idx->blocks_per_file / total_chunk_size;
-
 
   file->idx->compression_bit_rate = compression_bit_rate;
   
@@ -2142,12 +2143,12 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
   file->idx->enable_rst = 0;
 #endif
 
-  if (file->idx->enable_compression == 1)
+  if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
     // No Chunking and compression without restructuring
     if (file->idx->enable_rst != 1)
     {
-      file->idx->enable_compression = 0;
+      file->idx->compression_type = PIDX_NO_COMPRESSION;
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         file->idx->chunk_size[d] = 1;
       file->idx->compression_bit_rate = 64;
@@ -2158,7 +2159,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
       {
         if (file->idx->bounds[d] % file->idx->chunk_size[d] != 0)
         {
-          file->idx->enable_compression = 0;
+          file->idx->compression_type = PIDX_NO_COMPRESSION;
           for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
             file->idx->chunk_size[d] = 1;
           file->idx->compression_bit_rate = 64;
@@ -2189,7 +2190,8 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
     }
   }
 
-  file->var_pipe_length = file->idx->variable_count - 1;
+  //file->var_pipe_length = file->idx->variable_count - 1;
+  file->var_pipe_length = 7;
 
   return PIDX_success;
 }
@@ -2419,7 +2421,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     chunk_end[vp] = PIDX_get_time();
     /*-----------------------------------------Chunking [end]------------------------------------------------*/
-    
+
 
     
     /*----------------------------------------Compression [start]--------------------------------------------*/
@@ -2469,9 +2471,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     hz_end[vp] = PIDX_get_time();
     /*----------------------------------------------HZ [end]-------------------------------------------------*/
-    
 
-    
+
+
     /*----------------------------------------------Agg [start]-----------------------------------------------*/
     agg_start[vp] = PIDX_get_time();
 
@@ -2562,6 +2564,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /*-----------------------------------------finalize [end]--------------------------------------------------*/
 #endif
 
+    if (rank == 0)
+      printf("Finished Writing %d variables\n", end_index - start_index + 1);
     vp++;
   }
 
@@ -2944,11 +2948,14 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
 
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
+  int ret;
   if (file->idx->variable_count <= 0)
     return PIDX_err_variable;
 
   //printf("XXXXXXXXXXX %d %d\n", file->local_variable_index, file->local_variable_count);
-  PIDX_write(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+  ret = PIDX_write(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+  if (ret != PIDX_success)
+    return PIDX_err_flush;
 
   int i, p;
   /*
@@ -3006,8 +3013,12 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
 PIDX_return_code PIDX_close(PIDX_file file) 
 {
+  int ret;
   file->write_on_close = 1;
-  PIDX_flush(file);
+
+  ret = PIDX_flush(file);
+  if (ret != PIDX_success)
+    return PIDX_err_close;
   
   sim_end = PIDX_get_time();
   
@@ -3038,7 +3049,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "\n==========================================================================================================\n");
       fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx->current_time_step, file->idx->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d = %d x %d x %d\n", nprocs, (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
-      fprintf(stdout, "Rst = %d Comp = %d Agg = %d\n", file->idx->enable_rst, file->idx->enable_compression, file->idx->enable_agg);
+      fprintf(stdout, "Rst = %d Comp = %d Agg = %d\n", file->idx->enable_rst, file->idx->compression_type, file->idx->enable_agg);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregation Factor %d Aggregator Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count, file->idx_d->aggregation_factor, file->idx->variable_count * file->idx_d->max_file_count * file->idx_d->aggregation_factor);
       fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);

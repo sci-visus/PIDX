@@ -58,7 +58,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length)
   int i = 0;
   int64_t total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
 
-  //if (comp_id->idx->compression_type == 1)
+  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
     size_t typesize, outsize;
     typesize = sizeof(double);
@@ -95,7 +95,7 @@ int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
                                         comp_id->idx->chunk_size[1] *
                                         comp_id->idx->chunk_size[2];
   unsigned int type_size = sizeof(double); // DUONG_HARDCODE
-  //if (comp_id->idx->compression_type == 1) // zfp lossy compression
+  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP) // zfp lossy compression
   {
     zfp_params zfp;
     zfp.type = ZFP_TYPE_DOUBLE; // DUONG_HARDCODE
@@ -128,7 +128,7 @@ int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
     free(dstPtr);
     return 0;
   }
-  return -1;
+  return 0;
 }
 
 #endif
@@ -165,39 +165,46 @@ int PIDX_compression_set_communicator(PIDX_comp_id comp_id, MPI_Comm comm)
 
 PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
-  if (comp_id->idx->enable_compression != 1)
-   return PIDX_success;
+  if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
+    return PIDX_success;
 
-#if PIDX_HAVE_ZFP
-  int v, p, b;
-  PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
-
-  for (v = comp_id->first_index; v <= comp_id->last_index; v++)
+  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-    PIDX_variable var = comp_id->idx->variable[v];
-    for (p = 0; p < var0->patch_group_count; p++)
+#if PIDX_HAVE_ZFP
+    int v, p, b;
+    PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
+
+    for (v = comp_id->first_index; v <= comp_id->last_index; v++)
     {
-      for (b = 0; b < var0->chunk_patch_group[p]->count; b++)
+      PIDX_variable var = comp_id->idx->variable[v];
+      for (p = 0; p < var0->patch_group_count; p++)
       {
-        Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
-        unsigned char* buffer = patch->buffer;
-        int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4];
-        int compressed_element_count;
-        compressed_element_count = compress_buffer(comp_id, buffer, element_count);
+        for (b = 0; b < var0->chunk_patch_group[p]->count; b++)
+        {
+          Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
+          unsigned char* buffer = patch->buffer;
+          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4];
+          int compressed_element_count;
 
-        unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
+          compressed_element_count = compress_buffer(comp_id, buffer, element_count);
+          printf("Compressed element count = %d\n", compressed_element_count);
+          if (compressed_element_count < 0)
+            return PIDX_err_compress;
 
-        if (temp_buffer == NULL)
-          return PIDX_err_compress;
-        else
-          patch->buffer = temp_buffer;
+          unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
+
+          if (temp_buffer == NULL)
+            return PIDX_err_compress;
+          else
+            patch->buffer = temp_buffer;
+        }
       }
     }
-  }
 #else
-  //printf("Compression Library not found.\n");
-  return PIDX_err_compress;
+    //printf("Compression Library not found.\n");
+    return PIDX_err_compress;
 #endif
+  }
 
   return PIDX_success;
 }

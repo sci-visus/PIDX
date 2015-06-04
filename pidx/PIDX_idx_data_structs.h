@@ -108,7 +108,7 @@ struct idx_file_struct
   
   int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
   
-  int enable_compression;                                               ///< counter to enable/disable (1/0) compression
+  int compression_type;                                               ///< counter to enable/disable (1/0) compression
   int enable_rst;                                               ///< counter to enable/disable (1/0) compression
   /// 0 No aggregation
   /// 1 Hybrid aggregation

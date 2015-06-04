@@ -59,6 +59,8 @@ extern PIDX_return_code PIDX_err_hz;
 extern PIDX_return_code PIDX_err_agg;
 extern PIDX_return_code PIDX_err_io;
 extern PIDX_return_code PIDX_err_unsupported_compression_type;
+extern PIDX_return_code PIDX_err_close;
+extern PIDX_return_code PIDX_err_flush;
 
 
 #endif

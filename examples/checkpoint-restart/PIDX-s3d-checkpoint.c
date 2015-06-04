@@ -164,6 +164,7 @@ int main(int argc, char **argv)
 
     char var_name[512];
     char data_type[512];
+
     for (var = 0; var < variable_count; var++)
     {
       sprintf(var_name, "variable_%d", var);
@@ -182,6 +183,7 @@ int main(int argc, char **argv)
     ret = PIDX_close(file);
     if (ret != PIDX_success)  report_error("PIDX_close", __FILE__, __LINE__);
   }
+
   //PIDX_time_step_caching_OFF();
 
   ret = PIDX_close_access(access);

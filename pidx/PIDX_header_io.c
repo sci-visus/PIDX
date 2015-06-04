@@ -173,6 +173,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
     
+    fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
     fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld %lld %lld\n", (long long)(header_io->idx->chunk_size[0]), (long long)(header_io->idx->chunk_size[1]), (long long)(header_io->idx->chunk_size[2]), (long long)(header_io->idx->chunk_size[3]), (long long)(header_io->idx->chunk_size[4]));
     fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
     fprintf(idx_file_p, "(fields)\n");  

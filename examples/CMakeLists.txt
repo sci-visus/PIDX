@@ -106,6 +106,11 @@ IF (PIDX_BUILD_TEST)
   ADD_DEPENDENCIES(pidx-read-by-field pidx)
   TARGET_LINK_LIBRARIES(pidx-read-by-field ${EXAMPLES_LINK_LIBS})
 
+  SET(PIDX_PARAMETER_STUDY_SOURCES parameter-study/PIDX-parameter-study.c)
+  PIDX_ADD_EXECUTABLE(pidx-parameter-study "${PIDX_PARAMETER_STUDY_SOURCES}")
+  ADD_DEPENDENCIES(pidx-parameter-study pidx)
+  TARGET_LINK_LIBRARIES(pidx-parameter-study ${EXAMPLES_LINK_LIBS})
+
   IF (PIDX_BUILD_CONVERT)
 
     SET(PNETCDF_TO_IDX_SOURCES convert/pnetcdf-to-idx.c)  

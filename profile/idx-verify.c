@@ -58,6 +58,7 @@ typedef struct block_layout_struct* block_layout;
 
 static int compression_block_size[PIDX_MAX_DIMENSIONS];
 static int compression_bit_rate = 0;
+static int compression_type = 0;
 
 static void revstr(char* str);
 static void GuessBitmaskPattern(char* _bits, PointND dims);
@@ -89,7 +90,7 @@ static int decompress(double* input_buffer, double* output_buffer, size_t buffer
   
   
   outsize = compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize;
-  //printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
+  printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
   //memcpy(&test, input_buffer, sizeof(double));
   //printf("Value = %f\n", test);
   
@@ -250,6 +251,15 @@ int main(int argc, char **argv)
       compression_bit_rate = atoi(line);
     }
 
+    if (strcmp(line, "(compression type)") == 0)
+    {
+      fgets(line, sizeof line, fp);
+      len = strlen(line) - 1;
+      if (line[len] == '\n')
+        line[len] = 0;
+      compression_type = atoi(line);
+    }
+
     if (strcmp(line, "(blocksperfile)") == 0)
     {
       fgets(line, sizeof line, fp);
@@ -314,7 +324,7 @@ int main(int argc, char **argv)
   else
     compression = 1;
 
-  compression = 1;
+  compression = 0;
   
   if (global_bounds[0] % compression_block_size[0] == 0)
     compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];

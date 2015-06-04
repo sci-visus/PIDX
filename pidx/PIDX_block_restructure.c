@@ -137,7 +137,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       Ndim_patch_group out_patch = var->chunk_patch_group[p];
       Ndim_patch_group in_patch = var->rst_patch_group[p];
 
-      if (chunk_id->idx->enable_compression == 1)
+      if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP)
         out_patch->count = 1;
       else
         out_patch->count = in_patch->count;
@@ -151,7 +151,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
         memcpy(out_patch->patch[j]->offset, in_patch->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
         memcpy(out_patch->patch[j]->size, in_patch->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 
-        if (chunk_id->idx->enable_compression == 0)
+        if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
         {
           out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value);
           memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value);
@@ -162,7 +162,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
     }
   }
 
-  if (chunk_id->idx->enable_compression == 1)
+  if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
     // loop through all variables
     for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
@@ -200,9 +200,8 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
 {
-  if (chunk_id->idx->enable_compression != 1)
+  if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
     return PIDX_success;
-
 
   // compute the intra compression block strides
   int64_t *chunk_size = chunk_id->idx->chunk_size;
@@ -333,7 +332,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_read(PIDX_chunk_id chunk_id)
 {
-  if (chunk_id->idx->enable_compression != 1)
+  if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
     return PIDX_success;
 
   // compute the intra compression block strides
