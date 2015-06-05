@@ -741,7 +741,7 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
   memset(data_set_path, 0, sizeof (char) * 1024);
 
   strncpy(directory_path, filename, strlen(filename) - 4);
-  sprintf(data_set_path, "%s/time%06d.idx", directory_path, current_time_step);
+  sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);
 
   free(directory_path);
 

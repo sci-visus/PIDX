@@ -816,7 +816,7 @@ PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* filename, 
   memset(directory_path, 0, sizeof(*directory_path) * 1024);
   
   strncpy(directory_path, filename, strlen(filename) - 4);  
-  sprintf(data_set_path, "%s/time%06d.idx", directory_path, current_time_step);
+  sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);
   free(directory_path);
   
   nbits_blocknumber = (file->idx_d->maxh - file->idx->bits_per_block - 1);
