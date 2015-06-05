@@ -985,22 +985,27 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   double dvalue_1, dvalue_2;
 #endif
 
+
   int64_t *bounds = rst_id->idx->bounds;
   PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
+  if (rank == 0)
+    printf("%d GGGGGGgg %d %d\n", rst_id->idx_derived->color, rst_id->first_index, rst_id->last_index);
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = rst_id->idx->variable[v];
     bytes_for_datatype = var->bits_per_value / 8;
-
+    if (rank == 0)
+      printf("%d DDDDDDDDdd %d\n", rst_id->idx_derived->color, var0->patch_group_count);
     for (m = 0; m < var0->patch_group_count; m++)
     {
+
       for(n = 0; n < var0->rst_patch_group[m]->count; n++)
       {
         int64_t *count_ptr = var0->rst_patch_group[m]->patch[n]->size;
         int64_t *offset_ptr = var0->rst_patch_group[m]->patch[n]->offset;
         
-        //if (rank == 0)
-        //  printf("[%d] RST %d %d %d %d %d\n", n, count_ptr[0], count_ptr[1], count_ptr[2], count_ptr[3], count_ptr[4]);
+        if (rank == 0)
+          printf("XXXXXXx %d [%d] RST %d %d %d %d %d\n", rst_id->idx_derived->color, n, count_ptr[0], count_ptr[1], count_ptr[2], count_ptr[3], count_ptr[4]);
         for (a = 0; a < count_ptr[4]; a++)
           for (u = 0; u < count_ptr[3]; u++)
             for (k = 0; k < count_ptr[2]; k++) 
@@ -1022,7 +1027,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                   if (check_bit == 0)
                   {
                     lost_element_count++;
-                    //printf("[%d] [RST] LOST Element : %f %f\n", rank, dvalue_1, dvalue_2);
+                    printf("[%d] [RST] LOST Element : %f %f\n", rank, dvalue_1, dvalue_2);
                   } 
                   else 
                   {

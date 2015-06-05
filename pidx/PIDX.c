@@ -209,6 +209,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->debug_rst = 0;
   (*file)->debug_hz = 0;
+  (*file)->idx_d->color = 0;
 
 #if PIDX_HAVE_MPI
   //unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
@@ -258,7 +259,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
       (*file)->idx_d->color = colors[((*file)->idx_count[0] * (*file)->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_count[2]))) + ((*file)->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_count[0]))];
 
       free(colors);
-
+printf("rank %d = color %d\n", rank, (*file)->idx_d->color);
       MPI_Comm_split(access_type->comm, (*file)->idx_d->color, rank, &((*file)->comm));
       MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
     }
@@ -314,7 +315,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->dump_io_info = 0;
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
-  (*file)->idx_d->color = 0;
   (*file)->idx_d->res_from = 0;
   (*file)->idx_d->res_to = 0;
 
@@ -715,26 +715,9 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
   
   memcpy(file->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
   
-  /*
-  if (file->idx_count[0] == 1 && file->idx_count[1] == 1 && file->idx_count[2] != 1 )
-    file->idx->bounds[2] = file->idx->bounds[2] / file->idx_count[2];
-  
-  else if (file->idx_count[0] != 1 && file->idx_count[1] == 1 && file->idx_count[2] == 1 )
-    file->idx->bounds[0] = file->idx->bounds[0] / file->idx_count[0];
-  
-  else if (file->idx_count[0] == 1 && file->idx_count[1] != 1 && file->idx_count[2] == 1 )
-    file->idx->bounds[1] = file->idx->bounds[1] / file->idx_count[1];
-  */
-  //else if (file->idx_count[0] != 1 && file->idx_count[1] != 1 && file->idx_count[2] != 1 )
-  //{
-  //TODO: check this what if idx_count is not set here
-  if (file->access->global_indexing == 0)
-  {
-    file->idx->bounds[0] = file->idx->bounds[0] / file->idx_count[0];
-    file->idx->bounds[1] = file->idx->bounds[1] / file->idx_count[1];
-    file->idx->bounds[2] = file->idx->bounds[2] / file->idx_count[2];
-  }
-  //}
+  file->idx->bounds[0] = file->idx->bounds[0] / file->idx_count[0];
+  file->idx->bounds[1] = file->idx->bounds[1] / file->idx_count[1];
+  file->idx->bounds[2] = file->idx->bounds[2] / file->idx_count[2];
   
   return PIDX_validate(file);
 }
@@ -1342,7 +1325,8 @@ PIDX_return_code populate_idx_dataset(PIDX_file file)
 
   PIDX_block_layout block_layout = file->idx->variable[file->local_variable_index]->global_block_layout;
 
-  if (file->access->global_indexing == 0)
+  int if_AMR = 0;
+  if (if_AMR == 0)
   {
     for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
     {
@@ -2282,16 +2266,16 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   hp++;
   
   if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
-    if (file->access->global_indexing == 0)
-      for (var = start_var_index; var < end_var_index; var++)
-        for (p = 0; p < file->idx->variable[var]->sim_patch_count; p++)
-          for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
-            for (j = 0; j < file->idx->bounds[d] * file->idx_count[d]; j = j + (file->idx->bounds[d]))
-              if (file->idx->variable[var]->sim_patch[p]->offset[d] >= j && file->idx->variable[var]->sim_patch[p]->offset[d] < (j + file->idx->bounds[d]))
-              {
-                file->idx->variable[var]->sim_patch[p]->offset[d] = file->idx->variable[var]->sim_patch[p]->offset[d] - j;
-                break;
-              }
+    for (var = start_var_index; var < end_var_index; var++)
+      for (p = 0; p < file->idx->variable[var]->sim_patch_count; p++)
+        for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
+          for (j = 0; j < file->idx->bounds[d] * file->idx_count[d]; j = j + (file->idx->bounds[d]))
+            if (file->idx->variable[var]->sim_patch[p]->offset[d] >= j && file->idx->variable[var]->sim_patch[p]->offset[d] < (j + file->idx->bounds[d]))
+            {
+              file->idx->variable[var]->sim_patch[p]->offset[d] = file->idx->variable[var]->sim_patch[p]->offset[d] - j;
+              break;
+            }
+  //printf("[%d] Offset Count %d %d %d :: %d %d %d\n", rank, file->idx->variable[0]->sim_patch[0]->offset[0], file->idx->variable[0]->sim_patch[0]->offset[1], file->idx->variable[0]->sim_patch[0]->offset[2], file->idx->variable[0]->sim_patch[0]->size[0], file->idx->variable[0]->sim_patch[0]->size[1], file->idx->variable[0]->sim_patch[0]->size[2]);
 #if 1
   int start_index = 0, end_index = 0;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))
@@ -2672,16 +2656,16 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
   hp++;
 
   if (file->idx_count[0] != 1 || file->idx_count[1] != 1 || file->idx_count[2] != 1 )
-    if (file->access->global_indexing == 0)
-      for (var = start_var_index; var < end_var_index; var++)
-        for (p = 0; p < file->idx->variable[var]->sim_patch_count; p++)
-          for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
-            for (j = 0; j < file->idx->bounds[d] * file->idx_count[d]; j = j + (file->idx->bounds[d]))
-              if (file->idx->variable[var]->sim_patch[p]->offset[d] >= j && file->idx->variable[var]->sim_patch[p]->offset[d] < (j + file->idx->bounds[d]))
-              {
-                file->idx->variable[var]->sim_patch[p]->offset[d] = file->idx->variable[var]->sim_patch[p]->offset[d] - j;
-                break;
-              }
+    for (var = start_var_index; var < end_var_index; var++)
+      for (p = 0; p < file->idx->variable[var]->sim_patch_count; p++)
+        for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
+          for (j = 0; j < file->idx->bounds[d] * file->idx_count[d]; j = j + (file->idx->bounds[d]))
+            if (file->idx->variable[var]->sim_patch[p]->offset[d] >= j && file->idx->variable[var]->sim_patch[p]->offset[d] < (j + file->idx->bounds[d]))
+            {
+              file->idx->variable[var]->sim_patch[p]->offset[d] = file->idx->variable[var]->sim_patch[p]->offset[d] - j;
+              break;
+            }
+
 #if 1
   int start_index = 0, end_index = 0;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))

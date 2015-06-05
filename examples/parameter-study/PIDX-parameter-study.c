@@ -139,12 +139,25 @@ int main(int argc, char **argv)
   local_box_offset[1] = (slice / sub_div[0]) * local_box_size[1];
   local_box_offset[0] = (slice % sub_div[0]) * local_box_size[0];
 
+  unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice;
+  if (is_rank_z_ordering == 0)
+  {
+    rank_z = rank / (sub_div[0] * sub_div[1]);
+    rank_slice = rank % (sub_div[0] * sub_div[1]);
+    rank_y = (rank_slice / sub_div[0]);
+    rank_x = (rank_slice % sub_div[0]);
+  }
+
   create_patches();
 
   double_data = malloc(sizeof(double**) * variable_count);
   for (var = 0; var < variable_count; var++)
   {
-    values_per_sample[var] = 1;
+    if (var == 3 || var == 8)
+      values_per_sample[var] = 3;
+    else
+      values_per_sample[var] = 1;
+
     double_data[var] = malloc(sizeof(double*) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
@@ -187,6 +200,9 @@ int main(int argc, char **argv)
 
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+  PIDX_set_idx_count(access, idx_count[0], idx_count[1], idx_count[2]);
+  PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
+  PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -255,6 +271,8 @@ int main(int argc, char **argv)
 
       ret = PIDX_append_and_write_variable(file, variable[var]);
       if (ret != PIDX_success)  report_error("PIDX_append_and_write_variable", __FILE__, __LINE__);
+
+      ret = PIDX_flush(file);
     }
     ret = PIDX_close(file);
     if (ret != PIDX_success)  report_error("PIDX_close", __FILE__, __LINE__);
