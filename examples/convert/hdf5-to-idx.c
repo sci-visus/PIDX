@@ -16,6 +16,9 @@
  **                                                 **
  *****************************************************/
 
+// TODO: allow the user to specify the number of variables read before flushing
+// TODO: check the dimension for each dataset (variable) in the HDF5 file
+
 #include <PIDX.h>
 #include <hdf5.h>
 #include <stdarg.h>
@@ -29,11 +32,11 @@
 #define PIDX_ROW_OR_COLUMN_MAJOR PIDX_row_major
 
 enum { X, Y, Z, NUM_DIMS };
-enum AtomicType { CHAR = 1, INT = 4, FLOAT = 4, DOUBLE = 8, INVALID };
+enum AtomicType { CHAR = 1, UCHAR = 1, INT = 4, UINT = 4, FLOAT = 4, DOUBLE = 8, INVALID };
 struct Type
 {
-  enum AtomicType atomic_type;
-  unsigned long long num_values;
+  enum AtomicType atomic_type; ///< e.g. int, float, etc
+  unsigned long long num_values; ///< e.g. 1, 2, 3
 };
 static unsigned long long global_box_size[NUM_DIMS] = { 0 }; ///< global dimensions of 3D volume
 static unsigned long long local_box_size[NUM_DIMS] = { 0 }; ///< local dimensions of the per-process block
@@ -100,9 +103,9 @@ static void init_mpi(int argc, char **argv)
 #if PIDX_HAVE_MPI
   if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Init error\n");
-  if (MPI_Comm_size(MPI_COMM_WORLD, process_count) != MPI_SUCCESS)
+  if (MPI_Comm_size(MPI_COMM_WORLD, &process_count) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Comm_size error\n");
-  if (MPI_Comm_rank(MPI_COMM_WORLD, rank) != MPI_SUCCESS)
+  if (MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Comm_rank error\n");
 #endif
 }
@@ -119,27 +122,32 @@ static void shutdown_mpi()
 // Read all the lines in a file into a list.
 // Return the number of lines read.
 // A line starting with // is treated as a comment and does not increase the count.
-static int read_list_in_file(const char *file_name, char **list)
+static int read_list_in_file(const char *file_name, char ***list_ptr)
 {
   assert(file_name != 0);
+  assert(list_ptr != 0);
+
+  rank_0_print("Opening file %s\n", file_name);
 
   FILE *fp = 0;
-  if (fopen(file_name, "r") == 0)
-    return 0;
+  if ((fp = fopen(file_name, "r")) == 0)
+    terminate_with_error_msg("ERROR: Cannot open file %s\n", file_name);
+
 
   // first pass, count the number of non-comment lines
   int line_count = 0;
   char line[512]; // a line cannot be longer than 512 characters
-  while (fgets(line, sizeof(line), fp) != 0)
+  //char *line = malloc(sizeof(char) * 512);
+  while (fgets(line, 512, fp) != 0)
   {
     if (line[0] != '/' || line[1] != '/')
       ++line_count;
   }
-
   // second pass, actually read the data
-  list = (char **)calloc(line_count, sizeof(*list));
+  *list_ptr = (char **)calloc(line_count, sizeof(*list_ptr));
+  char **list = *list_ptr;
   if (list == 0)
-    terminate_with_error_msg("ERROR: Failed to allocate memory for a list of names. Bytes requested = %d (items) * %u (bytes)\n", line_count, sizeof(*list));
+    terminate_with_error_msg("ERROR: Failed to allocate memory for a list of names. Bytes requested = %d (items) * %u (bytes)\n", line_count, sizeof(*list_ptr));
   rewind(fp);
   int i = 0;
   while (fgets(line, sizeof(line), fp) != 0)
@@ -190,6 +198,9 @@ static void free_memory()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
+  if (argc != 11)
+    terminate_with_error_msg("ERROR: Wrong number of arguments.\n%s", usage);
+
   char flags[] = "g:l:f:i:v:";
   int opt = 0;
   while ((opt = getopt(argc, argv, flags)) != -1)
@@ -287,7 +298,7 @@ static struct Type from_hdf5_type(hid_t type_id)
       return type;
     }
   }
-  else if (type_class == H5T_FLOAT || H5T_INTEGER)
+  else if (type_class == H5T_FLOAT || type_class == H5T_INTEGER)
   {
     type.num_values = 1;
   }
@@ -328,8 +339,8 @@ static void determine_var_types(hid_t plist_id)
     if (var_types[i].atomic_type == INVALID)
       terminate_with_error_msg("ERROR: The datatype of the %s variable is not supported\n", hdf5_var_names[i]);
     H5Tclose(type_id);
+    H5Dclose(dataset_id);
   }
-
   H5Fclose(file_id);
 }
 
@@ -343,7 +354,7 @@ int read_var_from_hdf5(hid_t file_id, const char *var_name, struct Type type)
   hid_t dataset_id = H5Dopen2(file_id, var_name, H5P_DEFAULT);
   if (dataset_id < 0)
     terminate_with_error_msg("ERROR: Failed to open HDF5 dataset for variable %s\n", var_name);
-  hid_t mem_dataspace = H5Screate_simple(3, local_box_size, 0);
+  hid_t mem_dataspace = global_box_size[Z] > 1 ? H5Screate_simple(3, local_box_size, 0) : H5Screate_simple(2, local_box_size, 0);
   if (mem_dataspace < 0)
     terminate_with_error_msg("ERROR: Failed to create memory dataspace for variable %s\n", var_name);
   hid_t file_dataspace = H5Dget_space(dataset_id);
@@ -358,8 +369,12 @@ int read_var_from_hdf5(hid_t file_id, const char *var_name, struct Type type)
     read_error = H5Dread(dataset_id, H5T_NATIVE_FLOAT, mem_dataspace, file_dataspace, H5P_DEFAULT, var_data);
   else if (type.atomic_type == INT)
     read_error = H5Dread(dataset_id, H5T_NATIVE_INT, mem_dataspace, file_dataspace, H5P_DEFAULT, var_data);
+  else if (type.atomic_type == UINT)
+    read_error = H5Dread(dataset_id, H5T_NATIVE_UINT, mem_dataspace, file_dataspace, H5P_DEFAULT, var_data);
   else if (type.atomic_type == CHAR)
     read_error = H5Dread(dataset_id, H5T_NATIVE_CHAR, mem_dataspace, file_dataspace, H5P_DEFAULT, var_data);
+  else if (type.atomic_type == UCHAR)
+    read_error = H5Dread(dataset_id, H5T_NATIVE_UCHAR, mem_dataspace, file_dataspace, H5P_DEFAULT, var_data);
   else
     terminate_with_error_msg("ERROR: Unsupported type. Type = %d\n", type.atomic_type);
   H5Sclose(mem_dataspace);
@@ -382,8 +397,12 @@ static void to_idx_type_string(struct Type type, char *type_string)
       sprintf(type_string, "%lld*float32", type.num_values);
   else if (type.atomic_type == INT)
     sprintf(type_string, "%lld*int32", type.num_values);
+  else if (type.atomic_type == UINT)
+    sprintf(type_string, "%lld*uint32", type.num_values);
   else if (type.atomic_type == CHAR)
     sprintf(type_string, "%lld*int8", type.num_values);
+  else if (type.atomic_type == UCHAR)
+    sprintf(type_string, "%lld*uint8", type.num_values);
   else
     terminate_with_error_msg("ERROR: Unsupported type. Type = %d\n", type.atomic_type);
 }
@@ -440,6 +459,7 @@ static void create_pidx_vars()
   int i = 0;
   for (i = 0; i < var_count; ++i)
   {
+
     char type_string[32] = { 0 };
     to_idx_type_string(var_types[i], type_string);
     int ret = PIDX_variable_create(pidx_var_names[i], var_types[i].atomic_type * 8, type_string, &pidx_vars[i]);
@@ -510,11 +530,11 @@ int main(int argc, char **argv)
   parse_args(argc, argv);
   check_args();
   calculate_per_process_offsets();
-  var_count = read_list_in_file(var_file, hdf5_var_names);
+
+  var_count = read_list_in_file(var_file, &hdf5_var_names);
   create_pidx_var_names();
-  create_pidx_vars();
   rank_0_print("Number of variables = %d\n", var_count);
-  time_step_count = read_list_in_file(hdf5_file_list, hdf5_file_names);
+  time_step_count = read_list_in_file(hdf5_file_list, &hdf5_file_names);
   rank_0_print("Number of timesteps = %d\n", time_step_count);
 
   PIDX_access pidx_access;
@@ -523,11 +543,12 @@ int main(int argc, char **argv)
 
   hid_t plist_id = init_hdf5();
   determine_var_types(plist_id);
+  create_pidx_vars();
 
   int t = 0;
   for (t = 0; t < time_step_count; ++t)
   {
-    rank_0_print("Processing time step %d\n", t);
+    rank_0_print("Processing time step %d (file %s)\n", t, hdf5_file_names[t]);
 
     PIDX_file pidx_file;
     int ret = PIDX_file_create(output_file_name, PIDX_file_trunc, pidx_access, &pidx_file);
@@ -544,11 +565,14 @@ int main(int argc, char **argv)
     for(v = 0; v < var_count; ++v)
     {
       rank_0_print("Processing variable %s\n", hdf5_var_names[v]);
+      var_data = malloc(var_types[v].atomic_type * var_types[v].num_values * local_box_size[0] * local_box_size[1] * local_box_size[2]);
       if (read_var_from_hdf5(file_id, hdf5_var_names[v], var_types[v]) < 0)
         terminate_with_error_msg("ERROR: Failed to read variable %s from file %s\n", hdf5_var_names[v], hdf5_file_names[t]);
+
       write_var_to_idx(pidx_file, pidx_var_names[v], pidx_vars[v]);
       if (PIDX_flush(pidx_file) != PIDX_success)
         terminate_with_error_msg("ERROR: Failed to flush variable %s, time step %d\n", pidx_var_names[v], t);
+      free(var_data);
     }
 
     H5Fclose(file_id);
