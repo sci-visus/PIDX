@@ -426,12 +426,12 @@ static void create_pidx_var_names()
     if (pidx_var_names == 0)
       terminate_with_error_msg("ERROR: Failed to allocate memory to store the PIDX var name for %s\n. Bytes requested = %d (values) * %u (bytes)\n", hdf5_var_names[i], strlen(hdf5_var_names[i]) + 1, sizeof(*pidx_var_names[i]));
     hdf5_var_name_to_pidx_var_name(hdf5_var_names[i], pidx_var_names[i]);
-    rank_0_print("HDF5 variable %s becomes\n PIDX variable %s", hdf5_var_names[i], pidx_var_names[i]);
+    rank_0_print("HDF5 variable %s becomes\n PIDX variable %s\n", hdf5_var_names[i], pidx_var_names[i]);
   }
 }
 
 //----------------------------------------------------------------
-static void create_pidx_vars(PIDX_file pidx_file)
+static void create_pidx_vars()
 {
   assert(hdf5_var_names != 0);
   assert(var_types != 0);
@@ -449,7 +449,7 @@ static void create_pidx_vars(PIDX_file pidx_file)
 }
 
 //----------------------------------------------------------------
-static void write_var_to_idx(PIDX_file pidx_file, const char *var_name, struct Type type, PIDX_variable pidx_var)
+static void write_var_to_idx(PIDX_file pidx_file, const char *var_name, PIDX_variable pidx_var)
 {
   assert(var_name != 0);
   assert(var_data != 0);
@@ -512,6 +512,7 @@ int main(int argc, char **argv)
   calculate_per_process_offsets();
   var_count = read_list_in_file(var_file, hdf5_var_names);
   create_pidx_var_names();
+  create_pidx_vars();
   rank_0_print("Number of variables = %d\n", var_count);
   time_step_count = read_list_in_file(hdf5_file_list, hdf5_file_names);
   rank_0_print("Number of timesteps = %d\n", time_step_count);
@@ -533,7 +534,6 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)
       terminate_with_error_msg("ERROR: Failed to create PIDX file\n");
     set_pidx_params(pidx_file);
-    create_pidx_vars(pidx_file);
     PIDX_set_current_time_step(pidx_file, t);
 
     hid_t file_id = H5Fopen(hdf5_file_names[t], H5F_ACC_RDONLY, plist_id);
@@ -546,9 +546,9 @@ int main(int argc, char **argv)
       rank_0_print("Processing variable %s\n", hdf5_var_names[v]);
       if (read_var_from_hdf5(file_id, hdf5_var_names[v], var_types[v]) < 0)
         terminate_with_error_msg("ERROR: Failed to read variable %s from file %s\n", hdf5_var_names[v], hdf5_file_names[t]);
-      write_var_to_idx(pidx_file, hdf5_var_names[v], var_types[v], pidx_vars[v]);
+      write_var_to_idx(pidx_file, pidx_var_names[v], pidx_vars[v]);
       if (PIDX_flush(pidx_file) != PIDX_success)
-        terminate_with_error_msg("ERROR: Failed to flush variable %s, time step %d\n", hdf5_var_names[v], t);
+        terminate_with_error_msg("ERROR: Failed to flush variable %s, time step %d\n", pidx_var_names[v], t);
     }
 
     H5Fclose(file_id);
