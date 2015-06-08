@@ -26,8 +26,6 @@
 #include <mpi.h>
 #endif
 
-#define HDF5_IO 1
-#define USE_DOUBLE
 #define PIDX_ROW_OR_COLUMN_MAJOR PIDX_row_major
 
 enum { X, Y, Z, NUM_DIMS };
@@ -51,7 +49,8 @@ static char output_file_template[512] = "test"; ///< output IDX file Name Templa
 static char output_file_name[512] = "test.idx";
 static char var_file[512];
 static char hdf5_file_list[512];
-static char **var_names = 0;
+static char **hdf5_var_names = 0;
+static char **pidx_var_names = 0;
 static char **hdf5_file_names = 0;
 static struct Type *var_types = 0;
 static PIDX_variable *pidx_vars = 0;
@@ -66,7 +65,6 @@ static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list 
                      "  -v: file containing list of input fields\n";
 
 //----------------------------------------------------------------
-// TODO: write another function to release resources before terminating
 static void terminate()
 {
 #if PIDX_HAVE_MPI
@@ -167,11 +165,15 @@ static void free_memory()
   int i = 0;
   for (i = 0; i < var_count; i++)
   {
-    free(var_names[i]);
-    var_names[i] = 0;
+    free(hdf5_var_names[i]);
+    hdf5_var_names[i] = 0;
+    free(pidx_var_names[i]);
+    pidx_var_names[i] = 0;
   }
-  free(var_names);
-  var_names = 0;
+  free(hdf5_var_names);
+  hdf5_var_names = 0;
+  free(pidx_var_names);
+  pidx_var_names = 0;
   free(var_types);
   free(pidx_vars);
 
@@ -229,7 +231,7 @@ static void check_args()
   if (global_box_size[X] < local_box_size[X] || global_box_size[Y] < local_box_size[Y] || global_box_size[Z] < local_box_size[Z])
     terminate_with_error_msg("ERROR: Global box is smaller than local box in one of the dimensions\n");
 
-  // check if the number of processes given by the user is consistent with the actual number of procesess needed
+  // check if the number of processes given by the user is consistent with the actual number of processes needed
   int brick_count = (int)((global_box_size[X] + local_box_size[X] - 1) / local_box_size[X]) *
                     (int)((global_box_size[Y] + local_box_size[Y] - 1) / local_box_size[Y]) *
                     (int)((global_box_size[Z] + local_box_size[Z] - 1) / local_box_size[Z]);
@@ -305,7 +307,7 @@ static struct Type from_hdf5_type(hid_t type_id)
 static void determine_var_types(hid_t plist_id)
 {
   assert(hdf5_file_names != 0);
-  assert(var_names != 0);
+  assert(hdf5_var_names != 0);
 
   hid_t file_id = H5Fopen(hdf5_file_names[0], H5F_ACC_RDONLY, plist_id);
   if (file_id < 0)
@@ -316,15 +318,15 @@ static void determine_var_types(hid_t plist_id)
   int i = 0;
   for (i = 0; i < var_count; ++i)
   {
-    hid_t dataset_id = H5Dopen2(file_id, var_names[i], H5P_DEFAULT);
+    hid_t dataset_id = H5Dopen2(file_id, hdf5_var_names[i], H5P_DEFAULT);
     if (dataset_id < 0)
-      terminate_with_error_msg("ERROR: Variable %s does not exist in file %s\n", var_names[i], hdf5_file_names[0]);
+      terminate_with_error_msg("ERROR: Variable %s does not exist in file %s\n", hdf5_var_names[i], hdf5_file_names[0]);
     hid_t type_id = H5Dget_type(dataset_id);
     if (type_id < 0)
-      terminate_with_error_msg("ERROR: Failed to query the type of variable %s\n");
+      terminate_with_error_msg("ERROR: Failed to query the type of variable %s\n", hdf5_var_names[i]);
     var_types[i] = from_hdf5_type(type_id);
     if (var_types[i].atomic_type == INVALID)
-      terminate_with_error_msg("ERROR: The datatype of the %s variable is not supported\n");
+      terminate_with_error_msg("ERROR: The datatype of the %s variable is not supported\n", hdf5_var_names[i]);
     H5Tclose(type_id);
   }
 
@@ -387,9 +389,51 @@ static void to_idx_type_string(struct Type type, char *type_string)
 }
 
 //----------------------------------------------------------------
+// Convert an HDF5 variable name to a PIDX variable name.
+// Remove the leading "/" character.
+// Replace any "/" and " " character with "-".
+static void hdf5_var_name_to_pidx_var_name(const char *hdf5_name, char *pidx_name)
+{
+  assert(hdf5_name != 0);
+  assert(pidx_name != 0);
+
+  int i = 0;
+  while (hdf5_name[i] == '/')
+    ++i;
+  int j = 0;
+  while (hdf5_name[i] != '\0')
+  {
+    pidx_name[j] = (hdf5_name[i] == '/' || hdf5_name[i] == ' ') ? '-' : hdf5_name[i];
+    ++j;
+    ++i;
+  }
+  pidx_name[j] = '\0';
+}
+
+//----------------------------------------------------------------
+static void create_pidx_var_names()
+{
+  assert(hdf5_var_names != 0);
+
+  pidx_var_names = (char **)calloc(var_count, sizeof(*pidx_var_names));
+  if (pidx_var_names == 0)
+    terminate_with_error_msg("ERROR: Failed to allocate memory to store PIDX var names\n. Bytes requested = %d (values) * %u (bytes)\n", var_count, sizeof(*pidx_var_names));
+
+  int i = 0;
+  for (i = 0; i < var_count; ++i)
+  {
+    pidx_var_names[i] = (char *)calloc(strlen(hdf5_var_names[i]) + 1, sizeof(*pidx_var_names[i]));
+    if (pidx_var_names == 0)
+      terminate_with_error_msg("ERROR: Failed to allocate memory to store the PIDX var name for %s\n. Bytes requested = %d (values) * %u (bytes)\n", hdf5_var_names[i], strlen(hdf5_var_names[i]) + 1, sizeof(*pidx_var_names[i]));
+    hdf5_var_name_to_pidx_var_name(hdf5_var_names[i], pidx_var_names[i]);
+    rank_0_print("HDF5 variable %s becomes\n PIDX variable %s", hdf5_var_names[i], pidx_var_names[i]);
+  }
+}
+
+//----------------------------------------------------------------
 static void create_pidx_vars(PIDX_file pidx_file)
 {
-  assert(var_names != 0);
+  assert(hdf5_var_names != 0);
   assert(var_types != 0);
 
   pidx_vars = (PIDX_variable *)calloc(var_count, sizeof(*pidx_vars));
@@ -398,10 +442,9 @@ static void create_pidx_vars(PIDX_file pidx_file)
   {
     char type_string[32] = { 0 };
     to_idx_type_string(var_types[i], type_string);
-    int ret = PIDX_variable_create(var_names[i], var_types[i].atomic_type * 8, type_string, &pidx_vars[i]);
+    int ret = PIDX_variable_create(pidx_var_names[i], var_types[i].atomic_type * 8, type_string, &pidx_vars[i]);
     if (ret != PIDX_success)
-      terminate_with_error_msg("ERROR: PIDX failed to create variable %s\n", var_names[i]);
-    rank_0_print("Successfully create variable %s, type = %s", var_names[i], type_string);
+      terminate_with_error_msg("ERROR: PIDX failed to create PIDX variable %s\n", pidx_var_names[i]);
   }
 }
 
@@ -433,7 +476,6 @@ static void create_pidx_access(PIDX_access *pidx_access)
   if (ret != PIDX_success)
     terminate_with_error_msg("ERROR: Failed to create PIDX MPI access\n");
 #endif
-
 }
 
 //----------------------------------------------------------------
@@ -468,7 +510,8 @@ int main(int argc, char **argv)
   parse_args(argc, argv);
   check_args();
   calculate_per_process_offsets();
-  var_count = read_list_in_file(var_file, var_names);
+  var_count = read_list_in_file(var_file, hdf5_var_names);
+  create_pidx_var_names();
   rank_0_print("Number of variables = %d\n", var_count);
   time_step_count = read_list_in_file(hdf5_file_list, hdf5_file_names);
   rank_0_print("Number of timesteps = %d\n", time_step_count);
@@ -500,12 +543,12 @@ int main(int argc, char **argv)
     int v = 0;
     for(v = 0; v < var_count; ++v)
     {
-      rank_0_print("Processing variable %s\n", var_names[v]);
-      if (read_var_from_hdf5(file_id, var_names[v], var_types[v]) < 0)
-        terminate_with_error_msg("ERROR: Failed to read variable %s from file %s\n", var_names[v], hdf5_file_names[t]);
-      write_var_to_idx(pidx_file, var_names[v], var_types[v], pidx_vars[v]);
+      rank_0_print("Processing variable %s\n", hdf5_var_names[v]);
+      if (read_var_from_hdf5(file_id, hdf5_var_names[v], var_types[v]) < 0)
+        terminate_with_error_msg("ERROR: Failed to read variable %s from file %s\n", hdf5_var_names[v], hdf5_file_names[t]);
+      write_var_to_idx(pidx_file, hdf5_var_names[v], var_types[v], pidx_vars[v]);
       if (PIDX_flush(pidx_file) != PIDX_success)
-        terminate_with_error_msg("ERROR: Failed to flush variable %s, time step %d\n", var_names[v], t);
+        terminate_with_error_msg("ERROR: Failed to flush variable %s, time step %d\n", hdf5_var_names[v], t);
     }
 
     H5Fclose(file_id);
@@ -518,4 +561,6 @@ int main(int argc, char **argv)
 
   free_memory();
   shutdown_mpi();
+
+  return 0;
 }
