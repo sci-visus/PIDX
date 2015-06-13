@@ -56,6 +56,14 @@ int PIDX_hz_encode_set_communicator(PIDX_hz_encode_id id, MPI_Comm comm);
 
 
 ///
+PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id);
+
+
+///
+PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id);
+
+
+///
 PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id);
 
 

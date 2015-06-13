@@ -181,272 +181,249 @@ PIDX_return_code PIDX_rst_set_communicator(PIDX_rst_id rst_id, MPI_Comm comm)
 #endif
 
 
-PIDX_return_code PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id)
+PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 {
-
-  PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
 
 #if PIDX_HAVE_MPI
   int r, d, c, nprocs, rank;
-  int64_t i, j, k, l, m, max_vol, patch_count;
+  int64_t i, j, k, l, m, v, max_vol, patch_count;
   int reg_patch_count, edge_case = 0;
   
   MPI_Comm_rank(rst_id->comm, &rank);
   MPI_Comm_size(rst_id->comm, &nprocs);
 
-  /*
-  if (rst_id->idx->enable_rst == 1)
+  for (v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
-    /// Calculate the total number of patches across all processes.
-    local_patch_count = var0->sim_patch_count;
-    ret = MPI_Allreduce(&local_patch_count, &total_patch_count, 1, MPI_INT, MPI_SUM, rst_id->comm);
-    if (ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI error\n", __FILE__, __LINE__);
-      return PIDX_err_mpi;
-    }
+    PIDX_variable var = rst_id->idx->variable[v];
 
-    /// If total patch count != total number of processes
-    /// Then NO restructuring
-    if (total_patch_count != nprocs)
-      rst_id->idx->enable_rst = 0;
-  }
-  */
-
-  if (rst_id->idx->enable_rst == 0)
-    var0->patch_group_count = var0->sim_patch_count;
-  else
-  {
-    var0->patch_group_count = 0;
-
-    /// STEP 1 : Compute the dimension of the regular patch
-    if (rst_id->idx->reg_patch_size[0] == 0)
-      set_default_patch_size(rst_id, rst_id->idx_derived->rank_r_count, nprocs);
+    if (rst_id->idx->enable_rst == 0)
+      var->patch_group_count = var->sim_patch_count;
     else
-      memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-
-    /// extents for the local process(rank)
-    Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
-    memset(local_proc_patch, 0, sizeof (*local_proc_patch));
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_proc_patch->offset[d] = rst_id->idx_derived->rank_r_offset[PIDX_MAX_DIMENSIONS * rank + d];
-      local_proc_patch->size[d] = rst_id->idx_derived->rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
-    }
+      var->patch_group_count = 0;
 
-    rst_id->reg_patch_grp_count = 0;
-    for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
-      for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
-        for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
-          for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
-            for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
-            {
-              Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
-              memset(reg_patch, 0, sizeof (*reg_patch));
+      /// STEP 1 : Compute the dimension of the regular patch
+      if (rst_id->idx->reg_patch_size[0] == 0)
+        set_default_patch_size(rst_id, rst_id->idx_derived->rank_r_count, nprocs);
+      else
+        memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 
-              //Interior regular patches
-              reg_patch->offset[0] = i;
-              reg_patch->offset[1] = j;
-              reg_patch->offset[2] = k;
-              reg_patch->offset[3] = l;
-              reg_patch->offset[4] = m;
-              reg_patch->size[0] = rst_id->reg_patch_size[0];
-              reg_patch->size[1] = rst_id->reg_patch_size[1];
-              reg_patch->size[2] = rst_id->reg_patch_size[2];
-              reg_patch->size[3] = rst_id->reg_patch_size[3];
-              reg_patch->size[4] = rst_id->reg_patch_size[4];
+      /// extents for the local process(rank)
+      Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
+      memset(local_proc_patch, 0, sizeof (*local_proc_patch));
+      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      {
+        local_proc_patch->offset[d] = rst_id->idx_derived->rank_r_offset[PIDX_MAX_DIMENSIONS * rank + d];
+        local_proc_patch->size[d] = rst_id->idx_derived->rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
+      }
 
-              //Edge regular patches
-              if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
-                reg_patch->size[0] = rst_id->idx->bounds[0] - i;
-              if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
-                reg_patch->size[1] = rst_id->idx->bounds[1] - j;
-              if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
-                reg_patch->size[2] = rst_id->idx->bounds[2] - k;
-              if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
-                reg_patch->size[3] = rst_id->idx->bounds[3] - l;
-              if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
-                reg_patch->size[4] = rst_id->idx->bounds[4] - m;
-
-              if (intersectNDChunk(reg_patch, local_proc_patch))
-                rst_id->reg_patch_grp_count++;
-
-              free(reg_patch);
-            }
-
-    rst_id->reg_patch_grp = (Ndim_patch_group*)malloc(sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
-    memset(rst_id->reg_patch_grp, 0, sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
-
-    reg_patch_count = 0;
-    /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
-    for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
-      for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
-        for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
-          for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
-            for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
-            {
-              Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
-              memset(reg_patch, 0, sizeof (*reg_patch));
-
-              //Interior regular patches
-              reg_patch->offset[0] = i;
-              reg_patch->offset[1] = j;
-              reg_patch->offset[2] = k;
-              reg_patch->offset[3] = l;
-              reg_patch->offset[4] = m;
-              reg_patch->size[0] = rst_id->reg_patch_size[0];
-              reg_patch->size[1] = rst_id->reg_patch_size[1];
-              reg_patch->size[2] = rst_id->reg_patch_size[2];
-              reg_patch->size[3] = rst_id->reg_patch_size[3];
-              reg_patch->size[4] = rst_id->reg_patch_size[4];
-
-              //Edge regular patches
-              edge_case = 0;
-              if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
+      rst_id->reg_patch_grp_count = 0;
+      for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
+        for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
+          for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
+            for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
+              for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
               {
-                reg_patch->size[0] = rst_id->idx->bounds[0] - i;
-                edge_case = 1;
-              }
-              if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
-              {
-                reg_patch->size[1] = rst_id->idx->bounds[1] - j;
-                edge_case = 1;
-              }
-              if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
-              {
-                reg_patch->size[2] = rst_id->idx->bounds[2] - k;
-                edge_case = 1;
-              }
-              if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
-              {
-                reg_patch->size[3] = rst_id->idx->bounds[3] - l;
-                edge_case = 1;
-              }
-              if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
-              {
-                reg_patch->size[4] = rst_id->idx->bounds[4] - m;
-                edge_case = 1;
+                Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
+                memset(reg_patch, 0, sizeof (*reg_patch));
+
+                //Interior regular patches
+                reg_patch->offset[0] = i;
+                reg_patch->offset[1] = j;
+                reg_patch->offset[2] = k;
+                reg_patch->offset[3] = l;
+                reg_patch->offset[4] = m;
+                reg_patch->size[0] = rst_id->reg_patch_size[0];
+                reg_patch->size[1] = rst_id->reg_patch_size[1];
+                reg_patch->size[2] = rst_id->reg_patch_size[2];
+                reg_patch->size[3] = rst_id->reg_patch_size[3];
+                reg_patch->size[4] = rst_id->reg_patch_size[4];
+
+                //Edge regular patches
+                if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
+                  reg_patch->size[0] = rst_id->idx->bounds[0] - i;
+                if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
+                  reg_patch->size[1] = rst_id->idx->bounds[1] - j;
+                if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
+                  reg_patch->size[2] = rst_id->idx->bounds[2] - k;
+                if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
+                  reg_patch->size[3] = rst_id->idx->bounds[3] - l;
+                if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
+                  reg_patch->size[4] = rst_id->idx->bounds[4] - m;
+
+                if (intersectNDChunk(reg_patch, local_proc_patch))
+                  rst_id->reg_patch_grp_count++;
+
+                free(reg_patch);
               }
 
-              /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
-              if (intersectNDChunk(reg_patch, local_proc_patch))
+      rst_id->reg_patch_grp = (Ndim_patch_group*)malloc(sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
+      memset(rst_id->reg_patch_grp, 0, sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
+
+      reg_patch_count = 0;
+      /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
+      for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
+        for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
+          for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
+            for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
+              for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
               {
-                rst_id->reg_patch_grp[reg_patch_count] = malloc(sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));
-                memset(rst_id->reg_patch_grp[reg_patch_count], 0, sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));
+                Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
+                memset(reg_patch, 0, sizeof (*reg_patch));
 
-                Ndim_patch_group patch_grp = rst_id->reg_patch_grp[reg_patch_count];
+                //Interior regular patches
+                reg_patch->offset[0] = i;
+                reg_patch->offset[1] = j;
+                reg_patch->offset[2] = k;
+                reg_patch->offset[3] = l;
+                reg_patch->offset[4] = m;
+                reg_patch->size[0] = rst_id->reg_patch_size[0];
+                reg_patch->size[1] = rst_id->reg_patch_size[1];
+                reg_patch->size[2] = rst_id->reg_patch_size[2];
+                reg_patch->size[3] = rst_id->reg_patch_size[3];
+                reg_patch->size[4] = rst_id->reg_patch_size[4];
 
-                patch_grp->source_patch_rank = (int*)malloc(sizeof(int) * maximum_neighbor_count);
-                patch_grp->patch = malloc(sizeof(*patch_grp->patch) * maximum_neighbor_count);
-                memset(patch_grp->source_patch_rank, 0, sizeof(int) * maximum_neighbor_count);
-                memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * maximum_neighbor_count);
-
-                patch_count = 0;
-                patch_grp->count = 0;
-                if(edge_case == 0)
-                  patch_grp->type = 1;
-                else
-                  patch_grp->type = 2;
-
-                //Iterate through all processes
-                for (r = 0; r < nprocs; r++)
+                //Edge regular patches
+                edge_case = 0;
+                if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
                 {
-                  //Extent of process with rank r
-                  Ndim_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
-                  memset(rank_r_patch, 0, sizeof (*rank_r_patch));
+                  reg_patch->size[0] = rst_id->idx->bounds[0] - i;
+                  edge_case = 1;
+                }
+                if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
+                {
+                  reg_patch->size[1] = rst_id->idx->bounds[1] - j;
+                  edge_case = 1;
+                }
+                if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
+                {
+                  reg_patch->size[2] = rst_id->idx->bounds[2] - k;
+                  edge_case = 1;
+                }
+                if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
+                {
+                  reg_patch->size[3] = rst_id->idx->bounds[3] - l;
+                  edge_case = 1;
+                }
+                if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
+                {
+                  reg_patch->size[4] = rst_id->idx->bounds[4] - m;
+                  edge_case = 1;
+                }
 
-                  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-                  {
-                    rank_r_patch->offset[d] = rst_id->idx_derived->rank_r_offset[PIDX_MAX_DIMENSIONS * r + d];
-                    rank_r_patch->size[d] = rst_id->idx_derived->rank_r_count[PIDX_MAX_DIMENSIONS * r + d];
-                  }
+                /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
+                if (intersectNDChunk(reg_patch, local_proc_patch))
+                {
+                  rst_id->reg_patch_grp[reg_patch_count] = malloc(sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));
+                  memset(rst_id->reg_patch_grp[reg_patch_count], 0, sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));
 
-                  //If process with rank r intersects with the regular patch, then calculate the offset, count and volume of the intersecting volume
-                  if (intersectNDChunk(reg_patch, rank_r_patch))
+                  Ndim_patch_group patch_grp = rst_id->reg_patch_grp[reg_patch_count];
+
+                  patch_grp->source_patch_rank = (int*)malloc(sizeof(int) * maximum_neighbor_count);
+                  patch_grp->patch = malloc(sizeof(*patch_grp->patch) * maximum_neighbor_count);
+                  memset(patch_grp->source_patch_rank, 0, sizeof(int) * maximum_neighbor_count);
+                  memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * maximum_neighbor_count);
+
+                  patch_count = 0;
+                  patch_grp->count = 0;
+                  if(edge_case == 0)
+                    patch_grp->type = 1;
+                  else
+                    patch_grp->type = 2;
+
+                  //Iterate through all processes
+                  for (r = 0; r < nprocs; r++)
                   {
-                    patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
-                    memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
+                    //Extent of process with rank r
+                    Ndim_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
+                    memset(rank_r_patch, 0, sizeof (*rank_r_patch));
 
                     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
                     {
-                      //STEP 5 : offset and count of intersecting chunk of process with rank r and regular patch
-                      if (rank_r_patch->offset[d] <= reg_patch->offset[d] && (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) <= (reg_patch->offset[d] + reg_patch->size[d] - 1))
-                      {
-                        patch_grp->patch[patch_count]->offset[d] = reg_patch->offset[d];
-                        patch_grp->patch[patch_count]->size[d] = (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) - reg_patch->offset[d] + 1;
-                      }
-                      else if (reg_patch->offset[d] <= rank_r_patch->offset[d] && (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) >= (reg_patch->offset[d] + reg_patch->size[d] - 1))
-                      {
-                        patch_grp->patch[patch_count]->offset[d] = rank_r_patch->offset[d];
-                        patch_grp->patch[patch_count]->size[d] = (reg_patch->offset[d] + reg_patch->size[d] - 1) - rank_r_patch->offset[d] + 1;
-                      }
-                      else if (( reg_patch->offset[d] + reg_patch->size[d] - 1) <= (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) && reg_patch->offset[d] >= rank_r_patch->offset[d])
-                      {
-                        patch_grp->patch[patch_count]->offset[d] = reg_patch->offset[d];
-                        patch_grp->patch[patch_count]->size[d] = reg_patch->size[d];
-                      }
-                      else if (( rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) <= (reg_patch->offset[d] + reg_patch->size[d] - 1) && rank_r_patch->offset[d] >= reg_patch->offset[d])
-                      {
-                        patch_grp->patch[patch_count]->offset[d] = rank_r_patch->offset[d];
-                        patch_grp->patch[patch_count]->size[d] = rank_r_patch->size[d];
-                      }
-
-                      //offset and count of intersecting regular patch
-                      patch_grp->reg_patch_offset[d] = reg_patch->offset[d];
-                      patch_grp->reg_patch_size[d] = reg_patch->size[d];
+                      rank_r_patch->offset[d] = rst_id->idx_derived->rank_r_offset[PIDX_MAX_DIMENSIONS * r + d];
+                      rank_r_patch->size[d] = rst_id->idx_derived->rank_r_count[PIDX_MAX_DIMENSIONS * r + d];
                     }
 
-                    patch_grp->source_patch_rank[patch_count] = r;
-                    patch_count++;
-                    patch_grp->count = patch_count;
-                  }
-                  free(rank_r_patch);
-                }
+                    //If process with rank r intersects with the regular patch, then calculate the offset, count and volume of the intersecting volume
+                    if (intersectNDChunk(reg_patch, rank_r_patch))
+                    {
+                      patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
+                      memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
 
-                patch_grp->max_patch_rank = patch_grp->source_patch_rank[0];
-                max_vol = 1;
-                for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-                  max_vol = max_vol * patch_grp->patch[0]->size[d];
-                int64_t c_vol = 1;
-                for(c = 1; c < patch_grp->count ; c++)
-                {
-                  c_vol = 1;
+                      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+                      {
+                        //STEP 5 : offset and count of intersecting chunk of process with rank r and regular patch
+                        if (rank_r_patch->offset[d] <= reg_patch->offset[d] && (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) <= (reg_patch->offset[d] + reg_patch->size[d] - 1))
+                        {
+                          patch_grp->patch[patch_count]->offset[d] = reg_patch->offset[d];
+                          patch_grp->patch[patch_count]->size[d] = (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) - reg_patch->offset[d] + 1;
+                        }
+                        else if (reg_patch->offset[d] <= rank_r_patch->offset[d] && (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) >= (reg_patch->offset[d] + reg_patch->size[d] - 1))
+                        {
+                          patch_grp->patch[patch_count]->offset[d] = rank_r_patch->offset[d];
+                          patch_grp->patch[patch_count]->size[d] = (reg_patch->offset[d] + reg_patch->size[d] - 1) - rank_r_patch->offset[d] + 1;
+                        }
+                        else if (( reg_patch->offset[d] + reg_patch->size[d] - 1) <= (rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) && reg_patch->offset[d] >= rank_r_patch->offset[d])
+                        {
+                          patch_grp->patch[patch_count]->offset[d] = reg_patch->offset[d];
+                          patch_grp->patch[patch_count]->size[d] = reg_patch->size[d];
+                        }
+                        else if (( rank_r_patch->offset[d] + rank_r_patch->size[d] - 1) <= (reg_patch->offset[d] + reg_patch->size[d] - 1) && rank_r_patch->offset[d] >= reg_patch->offset[d])
+                        {
+                          patch_grp->patch[patch_count]->offset[d] = rank_r_patch->offset[d];
+                          patch_grp->patch[patch_count]->size[d] = rank_r_patch->size[d];
+                        }
+
+                        //offset and count of intersecting regular patch
+                        patch_grp->reg_patch_offset[d] = reg_patch->offset[d];
+                        patch_grp->reg_patch_size[d] = reg_patch->size[d];
+                      }
+
+                      patch_grp->source_patch_rank[patch_count] = r;
+                      patch_count++;
+                      patch_grp->count = patch_count;
+                    }
+                    free(rank_r_patch);
+                  }
+
+                  patch_grp->max_patch_rank = patch_grp->source_patch_rank[0];
+                  max_vol = 1;
                   for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-                    c_vol = c_vol * patch_grp->patch[c]->size[d];
-                  if(c_vol > max_vol)
+                    max_vol = max_vol * patch_grp->patch[0]->size[d];
+                  int64_t c_vol = 1;
+                  for(c = 1; c < patch_grp->count ; c++)
                   {
-                    max_vol = c_vol;
-                    patch_grp->max_patch_rank = patch_grp->source_patch_rank[c];
+                    c_vol = 1;
+                    for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+                      c_vol = c_vol * patch_grp->patch[c]->size[d];
+                    if(c_vol > max_vol)
+                    {
+                      max_vol = c_vol;
+                      patch_grp->max_patch_rank = patch_grp->source_patch_rank[c];
+                    }
                   }
+
+                  if(rank == patch_grp->max_patch_rank)
+                    var->patch_group_count = var->patch_group_count + 1;
+
+                  reg_patch_count++;
                 }
-
-                if(rank == patch_grp->max_patch_rank)
-                  var0->patch_group_count = var0->patch_group_count + 1;
-
-                reg_patch_count++;
+                free(reg_patch);
               }
-              free(reg_patch);
-            }
 
-    free(local_proc_patch);
-    //free(rank_r_offset);
-    //free(rank_r_count);
+      free(local_proc_patch);
+      //free(rank_r_offset);
+      //free(rank_r_count);
 
-    //return num_output_buffers;
+      //return num_output_buffers;
+    }
   }
 #else
   rst_id->idx->enable_rst = 0;
-  var0->patch_group_count = var0->sim_patch_count;
+  var->patch_group_count = var->sim_patch_count;
 #endif
 
-  return PIDX_success;
-}
-
-
-PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
-{
-  int j = 0, v = 0, p = 0;
-
+  int p = 0;
   for (v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = rst_id->idx->variable[v];
@@ -461,6 +438,9 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
     }
   }
 
+  j = 0;
+  v = 0;
+  p = 0;
   if(rst_id->idx->enable_rst == 1)
   {
 #if PIDX_HAVE_MPI
@@ -482,11 +462,8 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
           for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
           {
             patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
-
             memcpy(patch_group->patch[j]->offset, rst_id->reg_patch_grp[i]->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
             memcpy(patch_group->patch[j]->size, rst_id->reg_patch_grp[i]->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-
-            patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->values_per_sample * var->bits_per_value/8);
           }
           memcpy(patch_group->reg_patch_offset, rst_id->reg_patch_grp[i]->reg_patch_offset, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
           memcpy(patch_group->reg_patch_size, rst_id->reg_patch_grp[i]->reg_patch_size, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
@@ -505,24 +482,67 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
       for (p = 0; p < var->patch_group_count; p++)
       {
         Ndim_patch_group patch_group = var->rst_patch_group[p];
-
         patch_group->count = 1;
         patch_group->type = 0;
-
         patch_group->patch = malloc(sizeof(*(patch_group->patch)) * patch_group->count);
-
         for(j = 0; j < patch_group->count; j++)
         {
           patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
           memcpy(patch_group->patch[j]->offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
           memcpy(patch_group->patch[j]->size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-
-          patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8);
-
-          memcpy(patch_group->patch[j]->buffer, var->sim_patch[p]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8));
         }
         memcpy(patch_group->reg_patch_offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
         memcpy(patch_group->reg_patch_size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+      }
+    }
+  }
+  return PIDX_success;
+}
+
+
+PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
+{
+  int j = 0, v = 0, p = 0;
+  if(rst_id->idx->enable_rst == 1)
+  {
+#if PIDX_HAVE_MPI
+    int rank = 0, cnt = 0, i = 0;
+    MPI_Comm_rank(rst_id->comm, &rank);
+    for (v = rst_id->first_index; v <= rst_id->last_index; v++)
+    {
+      PIDX_variable var = rst_id->idx->variable[v];
+      cnt = 0;
+      for (i = 0; i < rst_id->reg_patch_grp_count; i++)
+      {
+        if (rank == rst_id->reg_patch_grp[i]->max_patch_rank)
+        {
+          Ndim_patch_group patch_group = var->rst_patch_group[cnt];
+          for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
+          {
+            patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->values_per_sample * var->bits_per_value/8);
+            memset(patch_group->patch[j]->buffer, 0, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->values_per_sample * var->bits_per_value/8));
+          }
+          cnt++;
+        }
+      }
+      assert(cnt == var->patch_group_count);
+    }
+#endif
+  }
+  else
+  {
+    for (v = rst_id->first_index; v <= rst_id->last_index; v++)
+    {
+      PIDX_variable var = rst_id->idx->variable[v];
+      for (p = 0; p < var->patch_group_count; p++)
+      {
+        Ndim_patch_group patch_group = var->rst_patch_group[p];
+        for(j = 0; j < patch_group->count; j++)
+        {
+          patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample);
+
+          memcpy(patch_group->patch[j]->buffer, var->sim_patch[p]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample));
+        }
       }
     }
   }
@@ -757,12 +777,12 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
   {
     if (rank == rst_id->reg_patch_grp[i]->max_patch_rank)
     {
-      for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
+      for (j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       {
         int64_t *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
         int64_t *reg_patch_count  = rst_id->reg_patch_grp[i]->patch[j]->size;
         
-        if(rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
+        if (rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
         {
           count1 = 0;
           for (a1 = reg_patch_offset[4]; a1 < reg_patch_offset[4] + reg_patch_count[4]; a1++)
@@ -917,7 +937,24 @@ PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
       {
         free(var->rst_patch_group[i]->patch[j]->buffer);
         var->rst_patch_group[i]->patch[j]->buffer = 0;
-        
+      }
+    }
+  }
+  
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_rst_meta_data_destroy(PIDX_rst_id rst_id)
+{
+  int i, j, v;
+
+  for(v = rst_id->first_index; v <= rst_id->last_index; v++)
+  {
+    PIDX_variable var = rst_id->idx->variable[v];
+    for(i = 0; i < rst_id->idx->variable[v]->patch_group_count; i++)
+    {
+      for(j = 0; j < rst_id->idx->variable[v]->rst_patch_group[i]->count; j++)
+      {
         free(var->rst_patch_group[i]->patch[j]);
         var->rst_patch_group[i]->patch[j] = 0;
       }
@@ -932,7 +969,7 @@ PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
     free(var->rst_patch_group);
     var->rst_patch_group = 0;
   }
-  
+
   return PIDX_success;
 }
 
@@ -985,27 +1022,22 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   double dvalue_1, dvalue_2;
 #endif
 
-
   int64_t *bounds = rst_id->idx->bounds;
-  PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
-  if (rank == 0)
-    printf("%d GGGGGGgg %d %d\n", rst_id->idx_derived->color, rst_id->first_index, rst_id->last_index);
+
+
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = rst_id->idx->variable[v];
     bytes_for_datatype = var->bits_per_value / 8;
-    if (rank == 0)
-      printf("%d DDDDDDDDdd %d\n", rst_id->idx_derived->color, var0->patch_group_count);
-    for (m = 0; m < var0->patch_group_count; m++)
+
+    for (m = 0; m < var->patch_group_count; m++)
     {
 
-      for(n = 0; n < var0->rst_patch_group[m]->count; n++)
+      for(n = 0; n < var->rst_patch_group[m]->count; n++)
       {
-        int64_t *count_ptr = var0->rst_patch_group[m]->patch[n]->size;
-        int64_t *offset_ptr = var0->rst_patch_group[m]->patch[n]->offset;
+        int64_t *count_ptr = var->rst_patch_group[m]->patch[n]->size;
+        int64_t *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
         
-        if (rank == 0)
-          printf("XXXXXXx %d [%d] RST %d %d %d %d %d\n", rst_id->idx_derived->color, n, count_ptr[0], count_ptr[1], count_ptr[2], count_ptr[3], count_ptr[4]);
         for (a = 0; a < count_ptr[4]; a++)
           for (u = 0; u < count_ptr[3]; u++)
             for (k = 0; k < count_ptr[2]; k++) 
@@ -1017,9 +1049,11 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                   int check_bit = 1;
                   for (s = 0; s < var->values_per_sample; s++)
                   {
-                    dvalue_1 = 100 + v + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                    dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
                     
                     memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+
+                    //printf("[%d (%d) %d] :: %f %f \n", v, var->values_per_sample, s, dvalue_1, dvalue_2);
                     
                     check_bit = check_bit && (dvalue_1 == dvalue_2);
                   }

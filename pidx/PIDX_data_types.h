@@ -35,60 +35,60 @@
 /// C array syntax, e.g. "float32[3]".  In the PIDX library, we declare types using strings so
 /// users can easily override the provided defaults.
 
-typedef const char* PIDX_type;
+typedef char PIDX_data_type[512];
 
 // PLEASE NOTE: these are example types, not a complete list of possible IDX types
 
-extern PIDX_type INT8;
-extern PIDX_type INT8_GA;
-extern PIDX_type INT8_RGB;
-extern PIDX_type INT8_RGBA;
+extern PIDX_data_type INT8;
+extern PIDX_data_type INT8_GA;
+extern PIDX_data_type INT8_RGB;
+extern PIDX_data_type INT8_RGBA;
 
-extern PIDX_type UINT8;
-extern PIDX_type UINT8_GA;
-extern PIDX_type UINT8_RGB;
-extern PIDX_type UINT8_RGBA;
+extern PIDX_data_type UINT8;
+extern PIDX_data_type UINT8_GA;
+extern PIDX_data_type UINT8_RGB;
+extern PIDX_data_type UINT8_RGBA;
 
-extern PIDX_type INT16;
-extern PIDX_type INT16_GA;
-extern PIDX_type INT16_RGB;
-extern PIDX_type INT16_RGBA;
+extern PIDX_data_type INT16;
+extern PIDX_data_type INT16_GA;
+extern PIDX_data_type INT16_RGB;
+extern PIDX_data_type INT16_RGBA;
 
-extern PIDX_type UINT16;
-extern PIDX_type UINT16_GA;
-extern PIDX_type UINT16_RGB;
-extern PIDX_type UINT16_RGBA;
+extern PIDX_data_type UINT16;
+extern PIDX_data_type UINT16_GA;
+extern PIDX_data_type UINT16_RGB;
+extern PIDX_data_type UINT16_RGBA;
 
-extern PIDX_type INT32;
-extern PIDX_type INT32_GA;
-extern PIDX_type INT32_RGB;
-extern PIDX_type INT32_RGBA;
+extern PIDX_data_type INT32;
+extern PIDX_data_type INT32_GA;
+extern PIDX_data_type INT32_RGB;
+extern PIDX_data_type INT32_RGBA;
 
-extern PIDX_type UINT32;
-extern PIDX_type UINT32_GA;
-extern PIDX_type UINT32_RGB;
-extern PIDX_type UINT32_RGBA;
+extern PIDX_data_type UINT32;
+extern PIDX_data_type UINT32_GA;
+extern PIDX_data_type UINT32_RGB;
+extern PIDX_data_type UINT32_RGBA;
 
-extern PIDX_type INT64;
-extern PIDX_type INT64_GA;
-extern PIDX_type INT64_RGB;
-extern PIDX_type INT64_RGBA;
+extern PIDX_data_type INT64;
+extern PIDX_data_type INT64_GA;
+extern PIDX_data_type INT64_RGB;
+extern PIDX_data_type INT64_RGBA;
 
-extern PIDX_type UINT64;
-extern PIDX_type UINT64_GA;
-extern PIDX_type UINT64_RGB;
-extern PIDX_type UINT64_RGBA;
+extern PIDX_data_type UINT64;
+extern PIDX_data_type UINT64_GA;
+extern PIDX_data_type UINT64_RGB;
+extern PIDX_data_type UINT64_RGBA;
 
-extern PIDX_type FLOAT32;
-extern PIDX_type FLOAT32_GA;
-extern PIDX_type FLOAT32_RGB;
-extern PIDX_type FLOAT32_RGBA;
+extern PIDX_data_type FLOAT32;
+extern PIDX_data_type FLOAT32_GA;
+extern PIDX_data_type FLOAT32_RGB;
+extern PIDX_data_type FLOAT32_RGBA;
 
-extern PIDX_type FLOAT64;
-extern PIDX_type FLOAT64_GA;
-extern PIDX_type FLOAT64_RGB;
-extern PIDX_type FLOAT64_RGBA;
+extern PIDX_data_type FLOAT64;
+extern PIDX_data_type FLOAT64_GA;
+extern PIDX_data_type FLOAT64_RGB;
+extern PIDX_data_type FLOAT64_RGBA;
 
-PIDX_return_code PIDX_default_bytes_per_datatype(PIDX_type type, int* bytes);
+PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits);
 
 #endif

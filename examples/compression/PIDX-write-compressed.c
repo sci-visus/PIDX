@@ -176,7 +176,7 @@ int main(int argc, char **argv)
       ret = PIDX_variable_create(var_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
       if (ret != PIDX_success)  report_error("PIDX_variable_create", __FILE__, __LINE__);
 
-      ret = PIDX_variable_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+      ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
       if (ret != PIDX_success)  report_error("PIDX_variable_data_layout", __FILE__, __LINE__);
 
       ret = PIDX_append_and_write_variable(file, variable[var]);

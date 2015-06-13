@@ -57,6 +57,14 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm c
 
 
 
+PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id);
+
+
+PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id);
+
+PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id);
+
+
 ///
 PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id);
 

@@ -166,7 +166,7 @@ PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
 
 
 /// Creates a PIDX variable...
-PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per_sample, PIDX_type type_name, PIDX_variable* variable);
+PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per_sample, PIDX_data_type type_name, PIDX_variable* variable);
 
 
 /// Gets the next PIDX variable...
@@ -177,11 +177,18 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
 /// This function can be used to find the number of bits associated with a particular PIDX type.
 /// \param PIDX_type 
 /// \return Number of bits associated with type_name
-PIDX_return_code PIDX_get_bits_per_sample(PIDX_type type_name, unsigned int bits_per_sample);
+PIDX_return_code PIDX_get_bits_per_sample(PIDX_data_type type_name, unsigned int bits_per_sample);
 
 
 
-PIDX_return_code PIDX_variable_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout);
+PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
+PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
+
+PIDX_return_code PIDX_reset_variable_counter(PIDX_file file);
 
 
 /// Write function used for dumping data from a simulation.
@@ -201,7 +208,7 @@ PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable va
 /// \param dims The box size of the chunk associated with the process.
 /// \param dst_buffer The buffer to which data is read to.
 /// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_read_next_variable(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* dst_buffer, PIDX_data_layout layout);
+PIDX_return_code PIDX_read_next_variable(PIDX_file file, PIDX_variable variable/*, PIDX_point offset, PIDX_point dims, void* dst_buffer, PIDX_data_layout layout*/);
 
 
 /// Enables dumping of meta-data.

@@ -385,6 +385,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
         data_offset = base_offset + data_offset + header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size;
 
         //TODO
+        //printf("%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bits_per_value / 8), total_chunk_size, header_io_id->idx->variable[j]->values_per_sample);
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample);
       }

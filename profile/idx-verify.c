@@ -499,6 +499,7 @@ int main(int argc, char **argv)
                 free(double_buffer);
               }
 
+              //printf("%d %d %d\n", data_size, values_per_sample[var], total_compression_block_size);
               for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var] * total_compression_block_size); hz_val++)
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
@@ -539,7 +540,7 @@ int main(int argc, char **argv)
                         {
                           lhs = decompressed_double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                         }
-                        int rhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                        int rhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                         //printf("%d %d \n", (int) lhs, rhs);
                         check_bit = check_bit && (lhs == rhs);
 
@@ -552,7 +553,7 @@ int main(int argc, char **argv)
                 {
                   lost_element_count++;
 
-#if 1
+#if 0
                   if (compression == 0)
                     printf("L [%d] [%lld (%d = %lld) %lld] [%lld : %lld %lld %lld] Actual: %f Should Be %lld\n",
                         var,

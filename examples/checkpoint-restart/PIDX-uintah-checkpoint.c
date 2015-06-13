@@ -377,7 +377,7 @@ int main(int argc, char **argv)
       PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
 
       for (p = 0 ; p < patch_count ; p++)
-        PIDX_variable_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
+        PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
 
 
       PIDX_append_and_write_variable(file, variable[var]/*, local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major*/);

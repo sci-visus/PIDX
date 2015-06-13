@@ -31,6 +31,7 @@
 #ifndef __PIDX_MEMORY_LAYOUT_DATA_STRUCTS_H
 #define __PIDX_MEMORY_LAYOUT_DATA_STRUCTS_H
 
+#include "PIDX_inc.h"
 
 /// Struct to store the row/column major chunk of data given by application
 struct PIDX_Ndim_patch_struct

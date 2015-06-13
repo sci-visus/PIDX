@@ -125,7 +125,7 @@ int main(int argc, char **argv)
         {
           int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
           for (vps = 0; vps < values_per_sample[var]; vps++)
-            data[var][index * values_per_sample[var] + vps] = 100 + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+            data[var][index * values_per_sample[var] + vps] = 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
   }
 
@@ -162,18 +162,28 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  report_error("PIDX_set_variable_count", __FILE__, __LINE__);
 
-    char var_name[512];
-    char data_type[512];
+    //ret = PIDX_set_block_size(file, 2);
+    //if (ret != PIDX_success)  report_error("PIDX_set_block_size", __FILE__, __LINE__);
 
+    //PIDX_debug_rst(file, 1);
+    //PIDX_debug_hz(file, 1);
+
+    char var_name[512];
     for (var = 0; var < variable_count; var++)
     {
       sprintf(var_name, "variable_%d", var);
-      sprintf(data_type, "%d*float64", values_per_sample[var]);
 
-      ret = PIDX_variable_create(var_name, values_per_sample[var] * sizeof(uint64_t) * 8, data_type, &variable[var]);
+      PIDX_data_type type;
+      if (var % 2  == 1)
+        strcpy(type, FLOAT64_RGB);
+      else
+        strcpy(type, FLOAT64);
+        //type = FLOAT64_RGB;
+
+      ret = PIDX_variable_create(var_name, values_per_sample[var] * sizeof(uint64_t) * 8, type, &variable[var]);
       if (ret != PIDX_success)  report_error("PIDX_variable_create", __FILE__, __LINE__);
 
-      ret = PIDX_variable_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+      ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
       if (ret != PIDX_success)  report_error("PIDX_variable_data_layout", __FILE__, __LINE__);
 
       ret = PIDX_append_and_write_variable(file, variable[var]);

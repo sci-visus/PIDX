@@ -63,7 +63,10 @@ PIDX_return_code PIDX_rst_set_communicator(PIDX_rst_id id, MPI_Comm comm);
 /// \param rst_id
 /// \return
 ///
-PIDX_return_code PIDX_rst_attach_restructuring_box(PIDX_rst_id rst_id);
+PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id);
+
+
+PIDX_return_code PIDX_rst_meta_data_destroy(PIDX_rst_id rst_id);
 
 
 

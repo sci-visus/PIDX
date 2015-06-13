@@ -65,6 +65,12 @@ PIDX_return_code PIDX_chunk_finalize(PIDX_chunk_id id);
 
 
 
+PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id);
+
+
+PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id);
+
+
 ///
 int HELPER_chunking(PIDX_chunk_id id);
 

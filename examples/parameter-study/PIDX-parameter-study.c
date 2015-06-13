@@ -265,7 +265,7 @@ int main(int argc, char **argv)
 
       for (p = 0 ; p < patch_count ; p++)
       {
-        ret = PIDX_variable_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
+        ret = PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
         if (ret != PIDX_success)  report_error("PIDX_variable_data_layout", __FILE__, __LINE__);
       }
 

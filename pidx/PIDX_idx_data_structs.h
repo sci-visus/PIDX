@@ -62,7 +62,7 @@ struct PIDX_variable_struct
   char var_name[1024];                                                  ///< Variable name
   int values_per_sample;                                                ///< Vector(3), scalar(1), or n
   int bits_per_value;                                                   ///< Number of bits each need
-  char type_name[1024];                                                 ///< Name of the type uint8, bob
+  PIDX_data_type type_name;                                                 ///< Name of the type uint8, bob
   PIDX_data_layout data_layout;                                         ///< Row major or column major
 
   // Memory layout (before, after HZ encoding phase)

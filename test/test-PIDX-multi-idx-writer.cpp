@@ -321,7 +321,7 @@ int test_multi_idx_writer(struct Args args, int rank, int nprocs)
       PIDX_append_and_write_variable(file, variable[var], local_offset_point, local_box_count_point, long_data[var], PIDX_row_major);
 #else
 
-      PIDX_variable_data_layout(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
+      PIDX_variable_write_data_layout(variable[var], local_offset_point, local_box_count_point, double_data[var], PIDX_row_major);
       PIDX_append_and_write_variable(file, variable[var]);
 
       /*
