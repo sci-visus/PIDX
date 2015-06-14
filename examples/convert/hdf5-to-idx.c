@@ -477,7 +477,7 @@ static void write_var_to_idx(PIDX_file pidx_file, const char *var_name, PIDX_var
   PIDX_set_point_5D(pidx_local_box_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z], 0, 0);
   PIDX_set_point_5D(pidx_local_box_size, local_box_size[X], local_box_size[Y], local_box_size[Z], 1, 1);
   int ret = PIDX_success;
-  ret = PIDX_variable_data_layout(pidx_var, pidx_local_box_offset, pidx_local_box_size, var_data, PIDX_ROW_OR_COLUMN_MAJOR);
+  ret = PIDX_variable_write_data_layout(pidx_var, pidx_local_box_offset, pidx_local_box_size, var_data, PIDX_ROW_OR_COLUMN_MAJOR);
   if (ret != PIDX_success)
     terminate_with_error_msg("ERROR: PIDX failed to specify variable data layout for %s\n", var_name);
   ret = PIDX_append_and_write_variable(pidx_file, pidx_var);
