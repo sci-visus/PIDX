@@ -622,25 +622,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
         }
       }
     }
-    if (var0->chunk_patch_group[y]->type == 2)
-    {
-      for (i = id->first_index; i <= id->last_index; i++)
-      {
-        PIDX_variable var = id->idx->variable[i];
-        bytes_for_datatype = (var->bits_per_value / 8) * var->values_per_sample;
-        for (j = 0; j < maxH; j++)
-        {
-          int sample = 0;
-          int samples_per_level = var0->hz_buffer[y]->end_hz_index[j] - var0->hz_buffer[y]->start_hz_index[j] + 1;
-          for (sample = 0; sample < samples_per_level; sample++)
-          {
-            //double x;
-            //memcpy(&x, var->hz_buffer[y]->buffer[j] + sample * bytes_for_datatype, bytes_for_datatype);
-            //printf("Level %d Element %d Value %f\n", (int)j, (int)sample, x);
-          }
-        }
-      }
-    }
 
     int missing_sample_count = 0;
     if (var0->chunk_patch_group[y]->type == 2)
@@ -693,26 +674,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
         }
       }
     }
-    if (var0->chunk_patch_group[y]->type == 2)
-    {
-      printf("AFTER\n");
-      for (i = id->first_index; i <= id->last_index; i++)
-      {
-        PIDX_variable var = id->idx->variable[i];
-        bytes_for_datatype = (var->bits_per_value / 8) * var->values_per_sample;
-        for (j = 0; j < maxH; j++)
-        {
-          int sample = 0;
-          int samples_per_level = var0->hz_buffer[y]->end_hz_index[j] - var0->hz_buffer[y]->start_hz_index[j] + 1;
-          for (sample = 0; sample < samples_per_level - missing_sample_count; sample++)
-          {
-            //double x;
-            //memcpy(&x, var->hz_buffer[y]->buffer[j] + sample * bytes_for_datatype, bytes_for_datatype);
-            //printf("Level %d Element %d Value %f\n", (int)j, (int)sample, x);
-          }
-        }
-      }
-    }
   }
   return PIDX_success;
 }
@@ -759,25 +720,6 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
         bytes_for_datatype = (var->bits_per_value / 8) * var->values_per_sample;
         for (j = 0; j < maxH; j++)
         {
-          int sample = 0;
-          int samples_per_level = var0->hz_buffer[y]->end_hz_index[j] - var0->hz_buffer[y]->start_hz_index[j] + 1;
-          for (sample = 0; sample < samples_per_level; sample++)
-          {
-            //double x;
-            //memcpy(&x, var->hz_buffer[y]->buffer[j] + sample * bytes_for_datatype, bytes_for_datatype);
-            //printf("Level %d Element %d Value %f\n", (int)j, (int)sample, x);
-          }
-        }
-      }
-    }
-    if (var0->chunk_patch_group[y]->type == 2)
-    {
-      for (i = id->first_index; i <= id->last_index; i++)
-      {
-        PIDX_variable var = id->idx->variable[i];
-        bytes_for_datatype = (var->bits_per_value / 8) * var->values_per_sample;
-        for (j = 0; j < maxH; j++)
-        {
           int skipped_blocks = 0;
           int skipped_samples = 0;
           if (var0->hz_buffer[y]->missing_block_count_per_level[j] != 0)
@@ -809,27 +751,6 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                 sample++;
               }
             }
-          }
-        }
-      }
-    }
-
-    if (var0->chunk_patch_group[y]->type == 2)
-    {
-      printf("AFTER\n");
-      for (i = id->first_index; i <= id->last_index; i++)
-      {
-        PIDX_variable var = id->idx->variable[i];
-        bytes_for_datatype = (var->bits_per_value / 8) * var->values_per_sample;
-        for (j = 0; j < maxH; j++)
-        {
-          int sample = 0;
-          int samples_per_level = var0->hz_buffer[y]->end_hz_index[j] - var0->hz_buffer[y]->start_hz_index[j] + 1;
-          for (sample = 0; sample < samples_per_level; sample++)
-          {
-            //double x;
-            //memcpy(&x, var->hz_buffer[y]->buffer[j] + sample * bytes_for_datatype, bytes_for_datatype);
-            //printf("Level %d Element %d Value %f\n", (int)j, (int)sample, x);
           }
         }
       }
