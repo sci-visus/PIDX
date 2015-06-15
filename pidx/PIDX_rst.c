@@ -406,6 +406,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
                   if(rank == patch_grp->max_patch_rank)
                     var->patch_group_count = var->patch_group_count + 1;
 
+                  //printf("%d\n", var->patch_group_count);
                   reg_patch_count++;
                 }
                 free(reg_patch);
@@ -496,6 +497,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
       }
     }
   }
+
   return PIDX_success;
 }
 

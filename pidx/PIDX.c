@@ -52,6 +52,7 @@ static double *compression_start, *compression_end;
 static double *agg_1, *agg_2, *agg_3, *agg_4, *agg_5, *agg_6;
 static double *block_1, *block_2, *block_3;
 
+static int simulate_io = 0;
 static int caching_state = 0;
 static int time_step_caching = 0;
 static uint32_t* cached_header_copy;
@@ -62,6 +63,8 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* file_name, int current_time_step);
 static PIDX_return_code PIDX_cache_headers(PIDX_file file);
 static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index);
+static PIDX_return_code PIDX_validate(PIDX_file file);
+static PIDX_return_code populate_idx_dataset(PIDX_file file);
 
 /// PIDX File descriptor (equivalent to the descriptor returned by)
 /// POSIX or any other IO framework
@@ -166,7 +169,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
       return PIDX_err_file_exists;
   }
   
-  int i; 
+  uint64_t i = 0, j = 0, k = 0;
   int ret;
   char file_name_skeleton[1024];
   int rank = 0;
@@ -219,7 +222,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     MPI_Comm_rank(access_type->comm, &rank);
     if (access_type->idx_count[0] != 1 || access_type->idx_count[1] != 1 || access_type->idx_count[2] != 1 )
     {
-      uint64_t i = 0, j = 0, k = 0;
       memcpy ((*file)->idx_count, access_type->idx_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
 
       colors = malloc(sizeof(*colors) * (*file)->idx_count[0] * (*file)->idx_count[1] * (*file)->idx_count[2]);
@@ -485,7 +487,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx->chunk_size[i] = 1;
 
   (*file)->idx_d->dimension = 0;
-  (*file)->idx_d->samples_per_block = pow(2, PIDX_default_bits_per_block);
+  (*file)->idx_d->samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
   (*file)->idx_d->maxh = 0;
   (*file)->idx_d->max_file_count = 0;
   (*file)->idx_d->fs_block_size = 0;
@@ -583,7 +585,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
         (*file)->idx->bits_per_block = atoi(line);
-        (*file)->idx_d->samples_per_block = pow(2, (*file)->idx->bits_per_block);
+        (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
       }
       if (strcmp(line, "(blocksperfile)") == 0) 
       {
@@ -613,7 +615,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->comm);
   MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->comm);
 
-  (*file)->idx_d->samples_per_block = pow(2, (*file)->idx->bits_per_block);
+  (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
   
   if(rank != 0)
   {
@@ -658,7 +660,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
 
 /// validate dims/blocksize
-PIDX_return_code PIDX_validate(PIDX_file file)
+static PIDX_return_code PIDX_validate(PIDX_file file)
 {
   int64_t dims;
   int64_t adjusted_bounds[PIDX_MAX_DIMENSIONS];
@@ -918,7 +920,7 @@ PIDX_return_code PIDX_set_block_size(PIDX_file file, const int bits_per_block)
     return PIDX_err_block;
    
   file->idx->bits_per_block = bits_per_block;
-  file->idx_d->samples_per_block = pow(2, bits_per_block);
+  file->idx_d->samples_per_block = (int)pow(2, bits_per_block);
   
   return PIDX_validate(file);
 }
@@ -1022,8 +1024,8 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
     uint64_t total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2] * file->idx->chunk_size[3] * file->idx->chunk_size[4];
     if (reduce_by_sample == 1)
     {
-      file->idx->bits_per_block = file->idx->bits_per_block - log2(total_chunk_size);
-      file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+      file->idx->bits_per_block = file->idx->bits_per_block - (int)log2(total_chunk_size);
+      file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
     }
     else
       file->idx->blocks_per_file = file->idx->blocks_per_file / total_chunk_size;
@@ -1059,32 +1061,32 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compres
   if (file->idx->compression_bit_rate == 32)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 1;
-    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
   }
   if (file->idx->compression_bit_rate == 16)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 2;
-    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
   }
   if (file->idx->compression_bit_rate == 8)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 3;
-    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
   }
   if (file->idx->compression_bit_rate == 4)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 4;
-    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
   }
   if (file->idx->compression_bit_rate == 2)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 5;
-    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
   }
   if (file->idx->compression_bit_rate == 1)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 6;
-    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
   }
   
   return PIDX_success;
@@ -1251,6 +1253,10 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
   if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
     return PIDX_err_count;
 
+  if (simulate_io == 0)
+    if (read_from_this_buffer == NULL)
+      return PIDX_err_block;
+
   const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
   memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
@@ -1294,7 +1300,7 @@ PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_poi
 
 
 
-PIDX_return_code populate_idx_dataset(PIDX_file file)
+static PIDX_return_code populate_idx_dataset(PIDX_file file)
 {
   int d;
 
@@ -2218,18 +2224,25 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   MPI_Comm_size(file->comm,  &nprocs);
 #endif
 
-  populate_idx_dataset(file);
+  ret = populate_idx_dataset(file);
+  if (ret != PIDX_success)
+    return PIDX_err_file;
+
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)
   {
-    PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
     
     total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
     file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
     if (total_header_size % file->idx_d->fs_block_size)
       file->idx_d->start_fs_block++;
     
-    PIDX_parameter_validate(file, start_var_index);
+    ret = PIDX_parameter_validate(file, start_var_index);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
 
     file->one_time_initializations = 1;
   }
@@ -2266,34 +2279,55 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
    */
 
   write_init_start[hp] = PIDX_get_time();
-
+#if 0
   /* STEP 1 */
   file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
 #if PIDX_HAVE_MPI
-  PIDX_header_io_set_communicator(file->header_io_id, file->comm);
+  ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
+  if (ret != PIDX_success)
+    return PIDX_err_header;
 #endif
-  PIDX_header_io_file_create(file->header_io_id);
+  ret = PIDX_header_io_file_create(file->header_io_id);
+  if (ret != PIDX_success)
+    return PIDX_err_header;
 
   /* STEP 2 */
   if (file->idx->variable_index_tracker < file->idx->variable_count )
   {
     // Create the header
-    PIDX_header_io_file_write(file->header_io_id, 0);
+    ret = PIDX_header_io_file_write(file->header_io_id, 0);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
     file->flush_used = 1;
   }
+
   if (file->idx->variable_index_tracker == file->idx->variable_count)
   {
     // Write the header
     if (file->flush_used == 1 || file->idx->enable_agg == 0 || file->idx->enable_agg == 1)
-      PIDX_header_io_file_write(file->header_io_id, 1);
-    if (/*(file->var_pipe_length < file->idx->variable_count - 1) && */ caching_state == 0)
-      PIDX_header_io_file_write(file->header_io_id, 1);
+    {
+      ret = PIDX_header_io_file_write(file->header_io_id, 1);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
+    else if (/*(file->var_pipe_length < file->idx->variable_count - 1) && */ caching_state == 0)
+    {
+      ret = PIDX_header_io_file_write(file->header_io_id, 1);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
   }
 
   /* STEP 3 */
-  PIDX_header_io_write_idx (file->header_io_id, file->idx->filename, file->idx->current_time_step);
-  PIDX_header_io_finalize(file->header_io_id);
+  ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename, file->idx->current_time_step);
+  if (ret != PIDX_success)
+    return PIDX_err_header;
 
+  ret = PIDX_header_io_finalize(file->header_io_id);
+  if (ret != PIDX_success)
+    return PIDX_err_header;
+
+#endif
   write_init_end[hp] = PIDX_get_time();
   hp++;
 
@@ -2377,181 +2411,184 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       return PIDX_err_rst;
 
 
-    /*--------------------------------------------RST [start]------------------------------------------------*/
-    rst_start[vp] = PIDX_get_time();
-
-    /* Creating the buffers required for restructurig */
-    ret = PIDX_rst_buf_create(file->rst_id);
-    if (ret != PIDX_success)
-      return PIDX_err_rst;
-
-    /* Perform data restructuring */
-    if (file->debug_do_rst == 1)
+    if (simulate_io == 0)
     {
-      ret = PIDX_rst_write(file->rst_id);
+      /*--------------------------------------------RST [start]------------------------------------------------*/
+      rst_start[vp] = PIDX_get_time();
+
+      /* Creating the buffers required for restructurig */
+      ret = PIDX_rst_buf_create(file->rst_id);
       if (ret != PIDX_success)
         return PIDX_err_rst;
-    }
 
-    /* Verifying the correctness of the restructuring phase */
-    if (file->debug_rst == 1)
-    {
-      HELPER_rst(file->rst_id);
+      /* Perform data restructuring */
+      if (file->debug_do_rst == 1)
+      {
+        ret = PIDX_rst_write(file->rst_id);
+        if (ret != PIDX_success)
+          return PIDX_err_rst;
+      }
+
+      /* Verifying the correctness of the restructuring phase */
+      if (file->debug_rst == 1)
+      {
+        HELPER_rst(file->rst_id);
+        if (ret != PIDX_success)
+          return PIDX_err_rst;
+      }
+
+      rst_end[vp] = PIDX_get_time();
+      /*--------------------------------------------RST [end]---------------------------------------------------*/
+
+
+
+      /*----------------------------------------Chunking [start]------------------------------------------------*/
+      chunk_start[vp] = PIDX_get_time();
+
+      /* Creating the buffers required for chunking */
+      ret = PIDX_chunk_buf_create(file->chunk_id);
+      if (ret != PIDX_success)
+        return PIDX_err_chunk;
+
+      /* Perform Chunking */
+      if (file->debug_do_chunk == 1)
+      {
+        ret = PIDX_chunk_write(file->chunk_id);
+        if (ret != PIDX_success)
+          return PIDX_err_chunk;
+      }
+
+      /* Verifying the correctness of the chunking phase */
+      if (file->debug_chunk == 1)
+      {
+        ret = HELPER_chunking(file->chunk_id);
+        if (ret != PIDX_success)
+          return PIDX_err_chunk;
+      }
+
+      /* Destroy buffers allocated during restructuring phase */
+      ret = PIDX_rst_buf_destroy(file->rst_id);
       if (ret != PIDX_success)
         return PIDX_err_rst;
-    }
 
-    rst_end[vp] = PIDX_get_time();
-    /*--------------------------------------------RST [end]---------------------------------------------------*/
-
-
-
-    /*----------------------------------------Chunking [start]------------------------------------------------*/
-    chunk_start[vp] = PIDX_get_time();
-
-    /* Creating the buffers required for chunking */
-    ret = PIDX_chunk_buf_create(file->chunk_id);
-    if (ret != PIDX_success)
-      return PIDX_err_chunk;
-
-    /* Perform Chunking */
-    if (file->debug_do_chunk == 1)
-    {
-      ret = PIDX_chunk_write(file->chunk_id);
-      if (ret != PIDX_success)
-        return PIDX_err_chunk;
-    }
-
-    /* Verifying the correctness of the chunking phase */
-    if (file->debug_chunk == 1)
-    {
-      ret = HELPER_chunking(file->chunk_id);
-      if (ret != PIDX_success)
-        return PIDX_err_chunk;
-    }
-
-    /* Destroy buffers allocated during restructuring phase */
-    ret = PIDX_rst_buf_destroy(file->rst_id);
-    if (ret != PIDX_success)
-      return PIDX_err_rst;
-
-    chunk_end[vp] = PIDX_get_time();
-    /*-----------------------------------------Chunking [end]------------------------------------------------*/
+      chunk_end[vp] = PIDX_get_time();
+      /*-----------------------------------------Chunking [end]------------------------------------------------*/
 
 
     
-    /*----------------------------------------Compression [start]--------------------------------------------*/
-    compression_start[vp] = PIDX_get_time();
+      /*----------------------------------------Compression [start]--------------------------------------------*/
+      compression_start[vp] = PIDX_get_time();
 
-    /* Perform Compression */
-    if (file->debug_do_compress == 1)
-    {
-      ret = PIDX_compression(file->comp_id);
-      if (ret != PIDX_success)
-        return PIDX_err_compress;
-    }
+      /* Perform Compression */
+      if (file->debug_do_compress == 1)
+      {
+        ret = PIDX_compression(file->comp_id);
+        if (ret != PIDX_success)
+          return PIDX_err_compress;
+      }
 
-    compression_end[vp] = PIDX_get_time();
-    /*------------------------------------------Compression [end]--------------------------------------------*/
+      compression_end[vp] = PIDX_get_time();
+      /*------------------------------------------Compression [end]--------------------------------------------*/
 
 
 
-    /*---------------------------------------------HZ [start]------------------------------------------------*/
-    hz_start[vp] = PIDX_get_time();
+      /*---------------------------------------------HZ [start]------------------------------------------------*/
+      hz_start[vp] = PIDX_get_time();
 
-    /* Creating the buffers required for HZ encoding */
-    ret = PIDX_hz_encode_buf_create(file->hz_id);
-    if (ret != PIDX_success)
-      return PIDX_err_hz;
-
-    /* Perform HZ encoding */
-    if (file->debug_do_hz == 1)
-    {
-      ret = PIDX_hz_encode_write(file->hz_id);
+      /* Creating the buffers required for HZ encoding */
+      ret = PIDX_hz_encode_buf_create(file->hz_id);
       if (ret != PIDX_success)
         return PIDX_err_hz;
-    }
 
-    /* Verify the HZ encoding */
-    if(file->debug_hz == 1)
-    {
-      ret = HELPER_Hz_encode(file->hz_id);
+      /* Perform HZ encoding */
+      if (file->debug_do_hz == 1)
+      {
+        ret = PIDX_hz_encode_write(file->hz_id);
+        if (ret != PIDX_success)
+          return PIDX_err_hz;
+      }
+
+      /* Verify the HZ encoding */
+      if(file->debug_hz == 1)
+      {
+        ret = HELPER_Hz_encode(file->hz_id);
+        if (ret != PIDX_success)
+          return PIDX_err_hz;
+      }
+
+      /* Destroy buffers allocated during chunking phase */
+      ret = PIDX_chunk_buf_destroy(file->chunk_id);
       if (ret != PIDX_success)
-        return PIDX_err_hz;
-    }
+        return PIDX_err_chunk;
 
-    /* Destroy buffers allocated during chunking phase */
-    ret = PIDX_chunk_buf_destroy(file->chunk_id);
-    if (ret != PIDX_success)
-      return PIDX_err_chunk;
-
-    hz_end[vp] = PIDX_get_time();
-    /*----------------------------------------------HZ [end]-------------------------------------------------*/
+      hz_end[vp] = PIDX_get_time();
+      /*----------------------------------------------HZ [end]-------------------------------------------------*/
 
 
 
-    /*----------------------------------------------Agg [start]-----------------------------------------------*/
-    agg_start[vp] = PIDX_get_time();
+      /*----------------------------------------------Agg [start]-----------------------------------------------*/
+      agg_start[vp] = PIDX_get_time();
 
-    /* Creating the buffers required for Aggregation */
-    ret = PIDX_agg_buf_create(file->agg_id);
-    if (ret != PIDX_success)
-      return PIDX_err_agg;
-
-    /* Perform Aggregation */
-    if (file->debug_do_agg == 1)
-    {
-      ret = PIDX_agg_write(file->agg_id);
+      /* Creating the buffers required for Aggregation */
+      ret = PIDX_agg_buf_create(file->agg_id);
       if (ret != PIDX_success)
         return PIDX_err_agg;
-    }
 
-    /* Destroy buffers allocated during HZ encoding phase */
-    ret = PIDX_hz_encode_buf_destroy(file->hz_id);
-    if (ret != PIDX_success)
-      return PIDX_err_hz;
+      /* Perform Aggregation */
+      if (file->debug_do_agg == 1)
+      {
+        ret = PIDX_agg_write(file->agg_id);
+        if (ret != PIDX_success)
+          return PIDX_err_agg;
+      }
 
-    agg_end[vp] = PIDX_get_time();
-    /*--------------------------------------------Agg [end]--------------------------------------------------*/
+      /* Destroy buffers allocated during HZ encoding phase */
+      ret = PIDX_hz_encode_buf_destroy(file->hz_id);
+      if (ret != PIDX_success)
+        return PIDX_err_hz;
+
+      agg_end[vp] = PIDX_get_time();
+      /*--------------------------------------------Agg [end]--------------------------------------------------*/
     
 #if 1
 
-    /*--------------------------------------------IO [start]--------------------------------------------------*/
-    io_start[vp] = PIDX_get_time();
+      /*--------------------------------------------IO [start]--------------------------------------------------*/
+      io_start[vp] = PIDX_get_time();
 
-    /* Initialization ONLY ONCE for all TIME STEPS (caching across time) */
-    if (file->idx->enable_agg == 2)
-    {
-      if (caching_state == 1 && file->idx_d->agg_buffer->var_number == 0 && file->idx_d->agg_buffer->sample_number == 0)
+      /* Initialization ONLY ONCE for all TIME STEPS (caching across time) */
+      if (file->idx->enable_agg == 2)
       {
-        if (file->flush_used == 0)
+        if (caching_state == 1 && file->idx_d->agg_buffer->var_number == 0 && file->idx_d->agg_buffer->sample_number == 0)
         {
-          PIDX_cache_headers(file);
-          caching_state = 0;
+          if (file->flush_used == 0)
+          {
+            PIDX_cache_headers(file);
+            caching_state = 0;
+          }
         }
       }
-    }
 
-    if (file->debug_do_io == 1)
-    {
-      if (time_step_caching == 1)
+      if (file->debug_do_io == 1)
       {
-        if (file->flush_used == 0)
-          PIDX_io_cached_data(cached_header_copy);
+        if (time_step_caching == 1)
+        {
+          if (file->flush_used == 0)
+            PIDX_io_cached_data(cached_header_copy);
+        }
+
+        ret = PIDX_io_aggregated_write(file->io_id);
+        if (ret != PIDX_success)
+          return PIDX_err_io;
       }
 
-      ret = PIDX_io_aggregated_write(file->io_id);
+      /* Destroy buffers allocated during aggregation phase */
+      ret = PIDX_agg_buf_destroy(file->agg_id);
       if (ret != PIDX_success)
-        return PIDX_err_io;
+        return PIDX_err_agg;
+
+      io_end[vp] = PIDX_get_time();
+      /*----------------------------------------------IO [end]--------------------------------------------------*/
     }
-
-    /* Destroy buffers allocated during aggregation phase */
-    ret = PIDX_agg_buf_destroy(file->agg_id);
-    if (ret != PIDX_success)
-      return PIDX_err_agg;
-
-    io_end[vp] = PIDX_get_time();
-    /*----------------------------------------------IO [end]--------------------------------------------------*/
     
     ret = PIDX_agg_meta_data_destroy(file->agg_id);
     if (ret != PIDX_success)
@@ -3476,4 +3513,10 @@ static void PIDX_init_timming_buffers()
   agg_4 = malloc (sizeof(double) * 64);                         memset(agg_4, 0, sizeof(double) * 64);
   agg_5 = malloc (sizeof(double) * 64);                         memset(agg_5, 0, sizeof(double) * 64);
   agg_6 = malloc (sizeof(double) * 64);                         memset(agg_6, 0, sizeof(double) * 64);
+}
+
+PIDX_return_code PIDX_simulate_io()
+{
+  simulate_io = 1;
+  return PIDX_success;
 }

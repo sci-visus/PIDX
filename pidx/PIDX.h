@@ -395,6 +395,10 @@ PIDX_return_code PIDX_disable_rst(PIDX_file file);
 ///
 PIDX_return_code PIDX_disable_agg(PIDX_file file);
 
+
+///
+PIDX_return_code PIDX_simulate_io();
+
 #ifdef __cplusplus
 }
 #endif

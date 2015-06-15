@@ -68,7 +68,7 @@ struct PIDX_variable_struct
   // Memory layout (before, after HZ encoding phase)
   int sim_patch_count;                                                  ///< The actual number of patches (application layout), most probably more than 1 in uintah
   Ndim_patch sim_patch[1024];                                           ///< Pointer to the patches
-  HZ_buffer hz_buffer[1024];                                            ///< HZ encoded buffer of the patches
+  HZ_buffer* hz_buffer;                                            ///< HZ encoded buffer of the patches
 
   // Memory layout before aggregation 
   int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase

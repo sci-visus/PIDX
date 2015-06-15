@@ -111,6 +111,11 @@ IF (PIDX_BUILD_TEST)
   ADD_DEPENDENCIES(pidx-parameter-study pidx)
   TARGET_LINK_LIBRARIES(pidx-parameter-study ${EXAMPLES_LINK_LIBS})
 
+  SET(PIDX_WRITE_SIMULATE_SOURCES parameter-study/PIDX-write-simulate.c)
+  PIDX_ADD_EXECUTABLE(pidx-write-simulate "${PIDX_WRITE_SIMULATE_SOURCES}")
+  ADD_DEPENDENCIES(pidx-write-simulate pidx)
+  TARGET_LINK_LIBRARIES(pidx-write-simulate ${EXAMPLES_LINK_LIBS})
+
   IF (PIDX_BUILD_CONVERT)
 
     SET(PNETCDF_TO_IDX_SOURCES convert/pnetcdf-to-idx.c)  

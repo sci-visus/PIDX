@@ -295,23 +295,25 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, int m
   MPI_Comm_rank(header_io_id->comm, &rank);
   MPI_Comm_size(header_io_id->comm, &nprocs);
 #endif
-  
+
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
-#if !PIDX_HAVE_MPI
+#if PIDX_HAVE_MPI
     if (i % nprocs == rank && header_io_id->idx_d->file_bitmap[i] == 1)
 #else
-      if (rank == 0 && header_io_id->idx_d->file_bitmap[i] == 1)
+    if (rank == 0 && header_io_id->idx_d->file_bitmap[i] == 1)
 #endif
+    {
+      ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, i, bin_file, PATH_MAX);
+      if (ret == 1)
       {
-        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, i, bin_file, PATH_MAX);
-        if (ret == 1)
-        {
-          fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
-          return 1;
-        }
-        populate_meta_data(header_io_id, i, bin_file, mode);
+        fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
+        return 1;
       }
+
+      ret = populate_meta_data(header_io_id, i, bin_file, mode);
+      if (ret != PIDX_success) return PIDX_err_header;
+    }
   }
   
   return PIDX_success;
