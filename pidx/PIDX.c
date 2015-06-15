@@ -2279,7 +2279,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
    */
 
   write_init_start[hp] = PIDX_get_time();
-#if 1
+if (simulate_io == 0)
+{
   /* STEP 1 */
   file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
 #if PIDX_HAVE_MPI
@@ -2327,7 +2328,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   if (ret != PIDX_success)
     return PIDX_err_header;
 
-#endif
+}
   write_init_end[hp] = PIDX_get_time();
   hp++;
 

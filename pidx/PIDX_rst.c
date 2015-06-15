@@ -639,7 +639,6 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
           {
             PIDX_variable var = rst_id->idx->variable[v];
 
-
             int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]) * var->values_per_sample * var->bits_per_value/8;
 
             ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->comm, &req[req_counter]);
@@ -1077,7 +1076,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                   if (check_bit == 0)
                   {
                     lost_element_count++;
-                    printf("[%d] [RST] LOST Element : %f %f\n", rank, dvalue_1, dvalue_2);
+                    //printf("[%d] [RST] LOST Element : %f %f\n", rank, dvalue_1, dvalue_2);
                   } 
                   else 
                   {
