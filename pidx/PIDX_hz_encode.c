@@ -463,7 +463,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
         {
           for(s = 0; s < var0->hz_buffer[y]->samples_per_level[c]; s++)
           {
-            int v1;
             for(v1 = id->first_index; v1 <= id->last_index; v1++)
             {
               for (i = 0; i < id->idx->variable[v1]->values_per_sample; i++)
@@ -1186,11 +1185,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   int64_t ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
   
-#if long_buffer
-  uint64_t dvalue_1, dvalue_2;
-#else
   double dvalue_1, dvalue_2;
-#endif
 
 #if PIDX_HAVE_MPI
   int rank = 0;
