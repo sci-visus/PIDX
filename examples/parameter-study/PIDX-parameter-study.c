@@ -272,7 +272,7 @@ int main(int argc, char **argv)
       ret = PIDX_append_and_write_variable(file, variable[var]);
       if (ret != PIDX_success)  report_error("PIDX_append_and_write_variable", __FILE__, __LINE__);
 
-      ret = PIDX_flush(file);
+      //ret = PIDX_flush(file);
     }
     ret = PIDX_close(file);
     if (ret != PIDX_success)  report_error("PIDX_close", __FILE__, __LINE__);
