@@ -32,6 +32,7 @@ static void report_error(char* func_name, char* file_name, int line_no);
 static int ***local_patch_size;
 static int ***local_patch_offset;
 static double ***double_data;
+static double ***ulong_data;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
 static int local_box_size[3] = {0, 0, 0};             ///< local dimensions of the per-process block
 
@@ -39,6 +40,7 @@ static int global_box_size[3] = {0, 0, 0};            ///< global dimensions of 
 static int local_box_offset[3];
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 1;                        ///< Number of fields
+static char variable_type[512];   ///< output IDX file Name Template
 static char output_file_template[512];   ///< output IDX file Name Template
 static int patch_count;
 static int bits_per_block;
@@ -108,6 +110,7 @@ int main(int argc, char **argv)
   MPI_Bcast(&variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&patch_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&variable_type, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast(&blocks_per_file, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&bits_per_block, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(restructured_box_size, 5, MPI_LONG_LONG, 0, MPI_COMM_WORLD);
@@ -150,26 +153,56 @@ int main(int argc, char **argv)
 
   create_patches();
 
-  double_data = malloc(sizeof(double**) * variable_count);
-  for (var = 0; var < variable_count; var++)
+  if (strcmp(variable_type, "double") == 0)
   {
-    if (var == 3 || var == 8)
-      values_per_sample[var] = 3;
-    else
-      values_per_sample[var] = 1;
-
-    double_data[var] = malloc(sizeof(double*) * patch_count);
-    for(p = 0 ; p < patch_count ; p++)
+    double_data = malloc(sizeof(double**) * variable_count);
+    for (var = 0; var < variable_count; var++)
     {
-      double_data[var][p] = malloc(sizeof (double) * local_patch_size[var][p][0] * local_patch_size[var][p][1] * local_patch_size[var][p][2] * local_patch_size[var][p][3]);
-      for (k = 0; k < local_patch_size[var][p][2]; k++)
-        for (j = 0; j < local_patch_size[var][p][1]; j++)
-          for (i = 0; i < local_patch_size[var][p][0]; i++)
-          {
-            int64_t index = (int64_t) (local_patch_size[var][p][0] * local_patch_size[var][p][1] * k) + (local_patch_size[var][p][0] * j) + i;
-            for (vps = 0; vps < values_per_sample[var]; vps++)
-              double_data[var][p][index * values_per_sample[var] + vps] = (100 + var + ((global_box_size[0] * global_box_size[1]*(local_patch_offset[var][p][2] + k))+(global_box_size[0]*(local_patch_offset[var][p][1] + j)) + (local_patch_offset[var][p][0] + i)));
-          }
+      if (var == 3 || var == 8)
+        values_per_sample[var] = 3;
+      else
+        values_per_sample[var] = 1;
+
+      double_data[var] = malloc(sizeof(double*) * patch_count);
+      for(p = 0 ; p < patch_count ; p++)
+      {
+        double_data[var][p] = malloc(sizeof (double) * local_patch_size[var][p][0] * local_patch_size[var][p][1] * local_patch_size[var][p][2] * local_patch_size[var][p][3]);
+
+        for (k = 0; k < local_patch_size[var][p][2]; k++)
+          for (j = 0; j < local_patch_size[var][p][1]; j++)
+            for (i = 0; i < local_patch_size[var][p][0]; i++)
+            {
+              int64_t index = (int64_t) (local_patch_size[var][p][0] * local_patch_size[var][p][1] * k) + (local_patch_size[var][p][0] * j) + i;
+              for (vps = 0; vps < values_per_sample[var]; vps++)
+                double_data[var][p][index * values_per_sample[var] + vps] = (100 + var + ((global_box_size[0] * global_box_size[1]*(local_patch_offset[var][p][2] + k))+(global_box_size[0]*(local_patch_offset[var][p][1] + j)) + (local_patch_offset[var][p][0] + i)));
+            }
+      }
+    }
+  }
+  else if (strcmp(variable_type, "unsigned long long") == 0)
+  {
+    ulong_data = malloc(sizeof(double**) * variable_count);
+    for (var = 0; var < variable_count; var++)
+    {
+      if (var == 3 || var == 8)
+        values_per_sample[var] = 3;
+      else
+        values_per_sample[var] = 1;
+
+      ulong_data[var] = malloc(sizeof(double*) * patch_count);
+      for(p = 0 ; p < patch_count ; p++)
+      {
+        ulong_data[var][p] = malloc(sizeof (double) * local_patch_size[var][p][0] * local_patch_size[var][p][1] * local_patch_size[var][p][2] * local_patch_size[var][p][3]);
+
+        for (k = 0; k < local_patch_size[var][p][2]; k++)
+          for (j = 0; j < local_patch_size[var][p][1]; j++)
+            for (i = 0; i < local_patch_size[var][p][0]; i++)
+            {
+              int64_t index = (int64_t) (local_patch_size[var][p][0] * local_patch_size[var][p][1] * k) + (local_patch_size[var][p][0] * j) + i;
+              for (vps = 0; vps < values_per_sample[var]; vps++)
+                ulong_data[var][p][index * values_per_sample[var] + vps] = (100 + var + ((global_box_size[0] * global_box_size[1]*(local_patch_offset[var][p][2] + k))+(global_box_size[0]*(local_patch_offset[var][p][1] + j)) + (local_patch_offset[var][p][0] + i)));
+            }
+      }
     }
   }
 
@@ -256,36 +289,55 @@ int main(int argc, char **argv)
     for (var = 0; var < variable_count; var++)
     {
       char variable_name[512];
-      char data_type[512];
       sprintf(variable_name, "variable_%d", var);
-      sprintf(data_type, "%d*float64", values_per_sample[var]);
 
-      ret = PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
+      PIDX_data_type type;
+      if (strcmp(variable_type, "double") == 0)
+        strcpy(type, FLOAT64);
+      else if (strcmp(variable_type, "unsigned long long") == 0)
+        strcpy(type, UINT64);
+
+      ret = PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(uint64_t) * 8, type, &variable[var]);
       if (ret != PIDX_success)  report_error("PIDX_variable_create", __FILE__, __LINE__);
 
       for (p = 0 ; p < patch_count ; p++)
       {
-        ret = PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
+        if (strcmp(variable_type, "double") == 0)
+          ret = PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
+        else if (strcmp(variable_type, "unsigned long long") == 0)
+          ret = PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], ulong_data[var][p], PIDX_row_major);
+
         if (ret != PIDX_success)  report_error("PIDX_variable_data_layout", __FILE__, __LINE__);
       }
 
       ret = PIDX_append_and_write_variable(file, variable[var]);
       if (ret != PIDX_success)  report_error("PIDX_append_and_write_variable", __FILE__, __LINE__);
-
-      //ret = PIDX_flush(file);
     }
     ret = PIDX_close(file);
     if (ret != PIDX_success)  report_error("PIDX_close", __FILE__, __LINE__);
   }
   PIDX_close_access(access);
 
-  for (var = 0; var < variable_count; var++)
+  if (strcmp(variable_type, "double") == 0)
   {
-    for(p = 0 ; p < patch_count ; p++)
-      free(double_data[var][p]);
-    free(double_data[var]);
+    for (var = 0; var < variable_count; var++)
+    {
+      for(p = 0 ; p < patch_count ; p++)
+        free(double_data[var][p]);
+      free(double_data[var]);
+    }
+    free(double_data);  double_data = 0;
   }
-  free(double_data);  double_data = 0;
+  if (strcmp(variable_type, "unsigned long long") == 0)
+  {
+    for (var = 0; var < variable_count; var++)
+    {
+      for(p = 0 ; p < patch_count ; p++)
+        free(ulong_data[var][p]);
+      free(ulong_data[var]);
+    }
+    free(ulong_data);  ulong_data = 0;
+  }
 
   for(var = 0; var < variable_count; var++)
   {
@@ -323,21 +375,18 @@ static int parse_args(int argc, char **argv)
     return (-1);
   }
 
+  printf("Parsing the Input File\n");
   char line [ 512 ];
   while (fgets(line, sizeof (line), fp) != NULL)
   {
-    len = strlen(line) - 1;
-    if (line[len] == '\n')
-      line[len] = 0;
+    line[strcspn(line, "\r\n")] = 0;
 
-    printf("input line %s\n", line);
+    //printf("%s: ", line);
     if (strcmp(line, "(global box)") == 0)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
 
       pch = strtok(line, " ");
       count = 0;
@@ -347,15 +396,14 @@ static int parse_args(int argc, char **argv)
         count++;
         pch = strtok(NULL, " ");
       }
+      //printf("%%d %d %d\n", global_box_size[0], global_box_size[1], global_box_size[2]);
     }
 
     if (strcmp(line, "(rst agg)") == 0)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
 
       pch = strtok(line, " ");
       count = 0;
@@ -371,10 +419,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
-
+      line[strcspn(line, "\r\n")] = 0;
       pch = strtok(line, " ");
       count = 0;
       while (pch != NULL)
@@ -389,10 +434,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
-
+      line[strcspn(line, "\r\n")] = 0;
       pch = strtok(line, " ");
       count = 0;
       while (pch != NULL)
@@ -407,9 +449,9 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
+
+      len = strlen(line);
       strncpy(output_file_template, line, len);
     }
 
@@ -417,9 +459,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       time_step_count = atoi(line);
     }
 
@@ -427,19 +467,24 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       variable_count= atoi(line);
+    }
+
+    if (strcmp(line, "(field type)") == 0)
+    {
+      if( fgets(line, sizeof line, fp) == NULL)
+        return (-1);
+      line[strcspn(line, "\r\n")] = 0;
+      len = strlen(line);
+      strncpy(variable_type, line, len);
     }
 
     if (strcmp(line, "(patch count)") == 0)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       patch_count= atoi(line);
     }
 
@@ -447,10 +492,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
-
+      line[strcspn(line, "\r\n")] = 0;
       pch = strtok(line, " ");
       count = 0;
       while (pch != NULL)
@@ -465,10 +507,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
-
+      line[strcspn(line, "\r\n")] = 0;
       pch = strtok(line, " ");
       count = 0;
       while (pch != NULL)
@@ -483,10 +522,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
-
+      line[strcspn(line, "\r\n")] = 0;
       pch = strtok(line, " ");
       count = 0;
       while (pch != NULL)
@@ -500,10 +536,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
-
+      line[strcspn(line, "\r\n")] = 0;
       pch = strtok(line, " ");
       count = 0;
       while (pch != NULL)
@@ -518,9 +551,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       compression_type= atoi(line);
     }
 
@@ -528,9 +559,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       compression_bit_rate= atoi(line);
     }
 
@@ -538,9 +567,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       blocks_per_file= atoi(line);
     }
 
@@ -548,9 +575,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       bits_per_block = atoi(line);
     }
 
@@ -558,9 +583,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       aggregation_factor = atoi(line);
     }
 
@@ -568,9 +591,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
+      line[strcspn(line, "\r\n")] = 0;
       is_rank_z_ordering = atoi(line);
     }
 
@@ -578,10 +599,7 @@ static int parse_args(int argc, char **argv)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return (-1);
-      len = strlen(line) - 1;
-      if (line[len] == '\n')
-        line[len] = 0;
-
+      line[strcspn(line, "\r\n")] = 0;
       pch = strtok(line, " ");
       count = 0;
       while (pch != NULL)

@@ -1191,6 +1191,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   int64_t ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
   double dvalue_1, dvalue_2;
+  uint64_t uvalue_1, uvalue_2;
 
 #if PIDX_HAVE_MPI
   int rank = 0;
@@ -1229,6 +1230,22 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
                   memcpy(&dvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
 
                   check_bit = check_bit && (dvalue_1  == dvalue_2);
+                }
+              }
+              if (strcmp(var->type_name, UINT64) == 0)
+              {
+                uvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                uvalue_2 = *(*((unsigned long long**)var->hz_buffer[b]->buffer + i) + ((k * var->values_per_sample) + s));
+                check_bit = check_bit && (uvalue_1  == uvalue_2);
+              }
+              else if (strcmp(var->type_name, UINT64_RGB) == 0)
+              {
+                for (s = 0; s < 3; s++)
+                {
+                  uvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                  memcpy(&uvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
+
+                  check_bit = check_bit && (uvalue_1  == uvalue_2);
                 }
               }
 

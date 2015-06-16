@@ -1144,10 +1144,10 @@ PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per
   *variable = malloc(sizeof *(*variable));
   memset(*variable, 0, sizeof *(*variable));
 
-  //(*variable)->values_per_sample = 1;
-  //(*variable)->bits_per_value = (bits_per_sample/1);
+  (*variable)->values_per_sample = 1;
+  (*variable)->bits_per_value = (bits_per_sample/1);
 
-  //
+  /*
   if (strcmp(type_name, FLOAT64)  == 0)
   {
     (*variable)->values_per_sample = 1;
@@ -1158,7 +1158,7 @@ PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per
     (*variable)->values_per_sample = 3;
     (*variable)->bits_per_value = (bits_per_sample/3);
   }
-  //
+  */
 
   strcpy((*variable)->type_name, type_name);
   strcpy((*variable)->var_name, variable_name);
@@ -2432,7 +2432,7 @@ if (simulate_io == 0)
       /* Verifying the correctness of the restructuring phase */
       if (file->debug_rst == 1)
       {
-        HELPER_rst(file->rst_id);
+        ret = HELPER_rst(file->rst_id);
         if (ret != PIDX_success)
           return PIDX_err_rst;
       }
@@ -2873,7 +2873,6 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
       ret = PIDX_hz_encode_read(file->hz_id);
       if (ret != PIDX_success)
         return PIDX_err_hz;
-      HELPER_Hz_encode(file->hz_id);
     }
 
     /* Verifying the correctness of the chunking phase */
