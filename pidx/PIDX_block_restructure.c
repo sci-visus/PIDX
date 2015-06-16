@@ -215,7 +215,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
 {
-  int v,p,j;
+  int64_t v,p,j;
   if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
   {
     for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)

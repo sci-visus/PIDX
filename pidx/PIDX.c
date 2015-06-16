@@ -2411,7 +2411,6 @@ if (simulate_io == 0)
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
-
     if (simulate_io == 0)
     {
       /*--------------------------------------------RST [start]------------------------------------------------*/

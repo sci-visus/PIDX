@@ -39,7 +39,7 @@ static int global_box_size[3] = {0, 0, 0};            ///< global dimensions of 
 static int local_box_offset[3];
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 1;                        ///< Number of fields
-static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
+static char output_file_template[512];   ///< output IDX file Name Template
 static int patch_count;
 static int bits_per_block;
 static int blocks_per_file;

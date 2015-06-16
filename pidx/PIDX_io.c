@@ -560,7 +560,9 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
     {
       for (i = var0->hz_buffer[p]->HZ_io_from; i < var0->hz_buffer[p]->HZ_io_to; i++)
       {
-        if (var0->hz_buffer[p]->samples_per_level[i] != 0)
+        if (rank == 0)
+          printf("[IO] Number of samples at level %d = %d\n", i, (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2]));
+        if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
         {
           for(v = io_id->first_index; v <= io_id->last_index; v++)
           {
@@ -607,7 +609,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
         HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
         for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
         {
-          if (var0->hz_buffer[p]->samples_per_level[i] != 0)
+          if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
             index = 0;
             count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1 - (var0->hz_buffer[p]->missing_block_count_per_level[i] * io_id->idx_d->samples_per_block);
@@ -817,7 +819,7 @@ int PIDX_io_per_process_read(PIDX_io_id io_id)
       {
         for (i = var0->hz_buffer[p]->HZ_io_from; i < var0->hz_buffer[p]->HZ_io_to; i++)
         {
-          if (var0->hz_buffer[p]->samples_per_level[i] != 0)
+          if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
             for(v = io_id->first_index; v <= io_id->last_index; v++)
             {
@@ -864,7 +866,7 @@ int PIDX_io_per_process_read(PIDX_io_id io_id)
           HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
           for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
           {
-            if (var0->hz_buffer[p]->samples_per_level[i] != 0)
+            if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
             {
               index = 0;
               count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1 - (var0->hz_buffer[p]->missing_block_count_per_level[i] * io_id->idx_d->samples_per_block);
