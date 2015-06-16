@@ -504,6 +504,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
 {
+#if !SIMULATE_IO
   int j = 0, v = 0, p = 0;
   if(rst_id->idx->enable_rst == 1)
   {
@@ -548,7 +549,7 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
       }
     }
   }
-
+#endif
   //assert(cnt == num_output_buffers);
   return PIDX_success;
 }
@@ -626,8 +627,9 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
                       PIDX_variable var = rst_id->idx->variable[v];
                       send_o = index * var->values_per_sample;
                       send_c = reg_patch_count[0] * var->values_per_sample;
-
+#if !SIMULATE_IO
                       memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bits_per_value/8), var->sim_patch[0]->buffer + send_o * var->bits_per_value/8, send_c * var->bits_per_value/8);
+#endif
                     }
 
                     count1++;
@@ -641,13 +643,14 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
 
             int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]) * var->values_per_sample * var->bits_per_value/8;
 
+#if !SIMULATE_IO
             ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
               return PIDX_err_mpi;
             }
-
+#endif
             req_counter++;
           }
         }
@@ -710,12 +713,14 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
             MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type);
             MPI_Type_commit(&chunk_data_type);
 
+#if !SIMULATE_IO
             ret = MPI_Isend(var->sim_patch[0]->buffer, 1, chunk_data_type, rst_id->reg_patch_grp[i]->max_patch_rank, 123, rst_id->comm, &req[req_counter]);
             if (ret != MPI_SUCCESS) 
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
               return PIDX_err_mpi;
             }
+#endif
 
             req_counter++;
 
@@ -729,12 +734,14 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     }
   }
 
+#if !SIMULATE_IO
   ret = MPI_Waitall(req_counter, req, status);
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+#endif
 
 
   free(req);
@@ -941,6 +948,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
 {
+#if !SIMULATE_IO
   int i, j, v;
 
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
@@ -955,7 +963,7 @@ PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
       }
     }
   }
-  
+#endif
   return PIDX_success;
 }
 
@@ -1023,6 +1031,7 @@ PIDX_return_code PIDX_rst_finalize(PIDX_rst_id rst_id)
 
 PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
 {
+#if !SIMULATE_IO
   int i, j, k, rank = 0, v = 0, u = 0, s = 0, a, m, n, bytes_for_datatype;
   int64_t element_count = 0;
   int64_t lost_element_count = 0;
@@ -1111,6 +1120,6 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   else
     if (rank == 0)
       fprintf(stderr, "[RST Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
-    
+#endif
   return PIDX_success;
 }

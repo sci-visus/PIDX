@@ -3,6 +3,8 @@
 
 #include "PIDX_config.h"
 
+#define SIMULATE_IO 1
+
 #ifdef BGQ
   #define _XOPEN_SOURCE 600
 #ifndef _GNU_SOURCE
@@ -38,6 +40,7 @@
 #if PIDX_HAVE_ZFP
   #include <zfp.h>  
 #endif
+
 
 #if defined(BGL) || defined(BGP) || defined(BGQ)
 

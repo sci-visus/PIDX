@@ -191,7 +191,6 @@ int main(int argc, char **argv)
     PIDX_set_resolution(file, hz_from_to[0], hz_from_to[1]);
     PIDX_set_block_size(file, bits_per_block);
     PIDX_set_block_count(file, blocks_per_file);
-    PIDX_simulate_io();
 
     // PIDX set restructuring box size
     PIDX_set_restructuring_box(file, restructured_box_size);

@@ -175,6 +175,7 @@ PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
 // TODO: detect wrong input
 PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 {
+#if !SIMULATE_IO
   int v = 0, p = 0, j = 0;
   for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
   {
@@ -208,7 +209,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       }
     }
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -233,7 +234,9 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
         {
           if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
           {
+#if !SIMULATE_IO
             memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
+#endif
           }
         }
       }
@@ -342,7 +345,9 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
 
           // copy the elements (chunk_size[0] elements at a time)
           int64_t num_elems_copy = min(patch_size[0] - patch_index[0], chunk_size[0]);
+#if !SIMULATE_IO
           memcpy(&out_patch->patch[0]->buffer[j * bytes_per_value], &patch->buffer[i * bytes_per_value],   bytes_per_value * num_elems_copy);
+#endif
 
           // update the index inside the patch
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
@@ -548,6 +553,7 @@ PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
 {
+#if !SIMULATE_IO
   int p, var;
   for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
   {
@@ -557,7 +563,7 @@ PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
       chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[0]->buffer = 0;
     }
   }
-
+#endif
   return PIDX_success;
 }
 

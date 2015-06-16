@@ -92,6 +92,11 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_der
 
 PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 {
+#if PIDX_HAVE_MPI
+  int rank = 0;
+  MPI_Comm_rank(id->comm, &rank);
+#endif
+
   int **tpatch;
   int **allign_offset;
   int **allign_count;
@@ -192,6 +197,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       {
         Align((maxH - 1), j, id->idx->bitPattern, tpatch, allign_offset, allign_count, hz_buf->nsamples_per_level);
 
+        if (rank == 0 && p == 0)
+          printf("Number of samples at level %d = %d x %d x %d\n", j, hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
+
         PointND startXYZ;
         startXYZ.x = allign_offset[j][0];
         startXYZ.y = allign_offset[j][1];
@@ -246,6 +254,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
 PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 {
+#if !SIMULATE_IO
   int p = 0, c = 0, v = 0, bytes_for_datatype = 0;
 
   int maxH = id->idx_d->maxh;
@@ -273,7 +282,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
       }
     }
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -493,6 +502,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
     }
     else
     {
+#if !SIMULATE_IO
       for (b = 0; b < var0->chunk_patch_group[y]->count; b++)
       {
         index_count = 0;
@@ -565,9 +575,11 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                       for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
                       {
                         //printf("Dest %d Src %d Count %d\n", (int)((hz_index * id->idx->variable[v1]->values_per_sample + s) * chunk_size), (int)((index * id->idx->variable[v1]->values_per_sample) + s) * chunk_size, (int)chunk_size);
+#if !SIMULATE_IO
                         memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[v1]->values_per_sample + s) * bytes_for_datatype * chunk_size),
                                 id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype * chunk_size,
                                 bytes_for_datatype * chunk_size);
+#endif
                       }
                     }
                   }
@@ -621,14 +633,17 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                       bytes_for_datatype = id->idx->variable[v1]->bits_per_value / 8;
                       for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
                       {
+#if !SIMULATE_IO
                         memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[v1]->values_per_sample + s) * bytes_for_datatype * chunk_size),
                                id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype * chunk_size,
                                bytes_for_datatype * chunk_size);
+#endif
                       }
                     }
                   }
         }
       }
+#endif
     }
 
     int missing_sample_count = 0;
@@ -660,9 +675,11 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                   int dest = (sample - skipped_samples) * bytes_for_datatype;
                   int src = (sample + id->idx_d->samples_per_block - skipped_samples) * bytes_for_datatype;
                   int count = (samples_per_level - sample - id->idx_d->samples_per_block) * bytes_for_datatype;
-                  //printf("[%d %d] [%d + %d : %d x %d] Dest %d (%d - %d) Source %d (%d + %d - %d) Count %d (%d)\n",n, var0->hz_buffer[y]->missing_block_index_per_level[j][n], var0->hz_buffer[y]->start_hz_index[j], sample, var0->hz_buffer[y]->missing_block_index_per_level[j][n], id->idx_d->samples_per_block, dest, sample, skipped_samples, src, sample, id->idx_d->samples_per_block, skipped_samples,  count, (var0->hz_buffer[y]->end_hz_index[j] - (var0->hz_buffer[y]->start_hz_index[j] + sample + id->idx_d->samples_per_block) + 1) * bytes_for_datatype);
+
+#if !SIMULATE_IO
                   memmove(var->hz_buffer[y]->buffer[j] + dest, var->hz_buffer[y]->buffer[j] + src, count);
-                  //memset(var->hz_buffer[y]->buffer[j] + (sample * bytes_for_datatype) + count, 0, samples_per_level * bytes_for_datatype - count - sample * bytes_for_datatype);
+#endif
+
                   skipped_blocks++;
                   sample_start_index = sample;
                   break;
@@ -670,6 +687,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                 sample++;
               }
             }
+#if !SIMULATE_IO
             unsigned char* temp_buffer = realloc(var->hz_buffer[y]->buffer[j], adjusted_buffer_size);
             if (temp_buffer == NULL)
             {
@@ -678,6 +696,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
             }
             else
               var->hz_buffer[y]->buffer[j] = temp_buffer;
+#endif
           }
         }
       }
@@ -1088,6 +1107,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
 /* tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well */
 PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
 {
+#if !SIMULATE_IO
   int itr = 0, p = 0, v = 0;
   
   if(id->idx->variable[id->first_index]->sim_patch_count < 0)
@@ -1116,7 +1136,7 @@ PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
       }
     }
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -1186,6 +1206,7 @@ PIDX_return_code PIDX_hz_encode_finalize(PIDX_hz_encode_id id)
 
 PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 {
+#if !SIMULATE_IO
   int i = 0, k = 0, b = 0, v = 0;
   int64_t global_hz, element_count = 0, lost_element_count = 0;
   int64_t ZYX[PIDX_MAX_DIMENSIONS];
@@ -1287,6 +1308,6 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
       fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
   }
 #endif
-    
+#endif
   return PIDX_success;
 }
