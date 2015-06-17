@@ -32,7 +32,7 @@ static void report_error(char* func_name, char* file_name, int line_no);
 static int ***local_patch_size;
 static int ***local_patch_offset;
 static double ***double_data;
-static double ***ulong_data;
+static uint64_t ***ulong_data;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
 static int local_box_size[3] = {0, 0, 0};             ///< local dimensions of the per-process block
 
@@ -200,7 +200,10 @@ int main(int argc, char **argv)
             {
               int64_t index = (int64_t) (local_patch_size[var][p][0] * local_patch_size[var][p][1] * k) + (local_patch_size[var][p][0] * j) + i;
               for (vps = 0; vps < values_per_sample[var]; vps++)
+              {
                 ulong_data[var][p][index * values_per_sample[var] + vps] = (100 + var + ((global_box_size[0] * global_box_size[1]*(local_patch_offset[var][p][2] + k))+(global_box_size[0]*(local_patch_offset[var][p][1] + j)) + (local_patch_offset[var][p][0] + i)));
+                //printf("Value at %lld %lld %lld = %lld\n", (unsigned long long)i, (unsigned long long)j, (unsigned long long)k, (unsigned long long)ulong_data[var][p][index * values_per_sample[var] + vps]);
+              }
             }
       }
     }

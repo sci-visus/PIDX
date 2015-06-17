@@ -3,7 +3,7 @@
 
 #include "PIDX_config.h"
 
-#define SIMULATE_IO 1
+//#define SIMULATE_IO 1
 
 #ifdef BGQ
   #define _XOPEN_SOURCE 600

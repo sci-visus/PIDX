@@ -1089,7 +1089,10 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                   if (check_bit == 0)
                   {
                     lost_element_count++;
-                    //printf("[%d] [RST] LOST Element : %f %f\n", rank, dvalue_1, dvalue_2);
+                    //if (strcmp(var->type_name, FLOAT64) == 0)
+                    //  printf("[%d] [RST] [DOUBLEs] LOST Element : %f %f\n", rank, dvalue_1, dvalue_2);
+                    //else if (strcmp(var->type_name, UINT64) == 0)
+                    //  printf("[%d] [RST] [LONGs] LOST Element : %lld %lld\n", rank, (unsigned long long)uvalue_1, (unsigned long long)uvalue_2);
                   } 
                   else 
                   {

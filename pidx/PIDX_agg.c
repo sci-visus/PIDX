@@ -767,8 +767,8 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
 #endif
         for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
         {
-          if (rank == 0 && p == 0)
-            printf("[AGG] Number of samples at level %d = %d\n", i, (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2]));
+          //if (rank == 0 && p == 0)
+          //  printf("[AGG] Number of samples at level %d = %d\n", i, (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2]));
 
           if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
           {

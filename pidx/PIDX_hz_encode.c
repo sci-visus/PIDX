@@ -197,8 +197,8 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       {
         Align((maxH - 1), j, id->idx->bitPattern, tpatch, allign_offset, allign_count, hz_buf->nsamples_per_level);
 
-        if (rank == 0 && p == 0)
-          printf("Number of samples at level %d = %d x %d x %d\n", j, hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
+        //if (rank == 0 && p == 0)
+        //  printf("Number of samples at level %d = %d x %d x %d\n", j, hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
 
         PointND startXYZ;
         startXYZ.x = allign_offset[j][0];
