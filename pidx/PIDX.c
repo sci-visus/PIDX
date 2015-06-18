@@ -96,6 +96,8 @@ struct PIDX_file_descriptor
   int write_on_close;                          ///< HPC Writes
   int one_time_initializations;                ///<
   
+  int ROI_writes;
+
   int debug_rst;                               ///< Debug restructuring phase, works only on the test application
   int debug_chunk;                             ///< Debug chunking phase, works only on the test application
   int debug_compress;                          ///< Debug compression phase, works only on the test application
@@ -1253,8 +1255,8 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
     return PIDX_err_count;
 
 #if !SIMULATE_IO
-  if (read_from_this_buffer == NULL)
-    return PIDX_err_block;
+//  if (read_from_this_buffer == NULL)
+//    return PIDX_err_block;
 #endif
 
   const void *temp_buffer;
@@ -1352,8 +1354,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
 
   PIDX_block_layout block_layout = file->idx->variable[file->local_variable_index]->global_block_layout;
 
-  int if_AMR = 0;
-  if (if_AMR == 0)
+  if (file->ROI_writes == 0)
   {
     for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
     {
@@ -3512,4 +3513,17 @@ static void PIDX_init_timming_buffers()
   agg_4 = malloc (sizeof(double) * 64);                         memset(agg_4, 0, sizeof(double) * 64);
   agg_5 = malloc (sizeof(double) * 64);                         memset(agg_5, 0, sizeof(double) * 64);
   agg_6 = malloc (sizeof(double) * 64);                         memset(agg_6, 0, sizeof(double) * 64);
+}
+
+
+PIDX_return_code PIDX_set_ROI_writes(PIDX_file file)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  file->ROI_writes = 1;
+  file->idx->enable_rst = 0;
+  //file->idx->enable_agg = 0;
+
+  return PIDX_success;
 }

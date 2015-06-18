@@ -31,6 +31,7 @@ static int global_box_size[3] = {0, 0, 0};            ///< global dimensions of 
 static int local_box_size[3] = {0, 0, 0};             ///< local dimensions of the per-process block
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 1;                        ///< Number of fields
+static int reduced_resolution = 0;
 static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
 
 int main(int argc, char **argv)
@@ -88,6 +89,7 @@ int main(int argc, char **argv)
   MPI_Bcast(local_box_size, 3, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&reduced_resolution, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast(&output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
 #endif
 
@@ -145,7 +147,6 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
-  PIDX_time_step_caching_ON();
   for (ts = 0; ts < time_step_count; ts++)
   {
     //  PIDX mandatory calls
@@ -159,7 +160,7 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  report_error("PIDX_set_variable_count", __FILE__, __LINE__);
 
-    ret = PIDX_set_resolution(file, 0, 1);
+    ret = PIDX_set_resolution(file, 0, reduced_resolution);
     if (ret != PIDX_success)  report_error("PIDX_set_resolution", __FILE__, __LINE__);
 
     char var_name[512];
@@ -183,8 +184,6 @@ int main(int argc, char **argv)
     ret = PIDX_close(file);
     if (ret != PIDX_success)  report_error("PIDX_close", __FILE__, __LINE__);
   }
-
-  PIDX_time_step_caching_OFF();
 
   ret = PIDX_close_access(access);
   if (ret != PIDX_success)  report_error("PIDX_close_access", __FILE__, __LINE__);
@@ -228,9 +227,12 @@ static int parse_args(int argc, char **argv)
       case('t'):
           sscanf(optarg, "%d", &time_step_count);
           break;
-    case('v'):
-        sscanf(optarg, "%d", &variable_count);
-        break;
+      case('v'):
+          sscanf(optarg, "%d", &variable_count);
+          break;
+      case('r'):
+          sscanf(optarg, "%d", &reduced_resolution);
+          break;
       case('?'):
           return (-1);
     }

@@ -56,7 +56,7 @@ struct block_layout_struct
 };
 typedef struct block_layout_struct* block_layout;
 
-static int compression_block_size[PIDX_MAX_DIMENSIONS];
+static int compression_block_size[PIDX_MAX_DIMENSIONS] = {1, 1, 1, 1, 1};
 static int compression_bit_rate = 0;
 static int compression_type = 0;
 
@@ -66,7 +66,7 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
 static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen);
 static int is_block_present(int block_number, block_layout layout);
 static void destroyBlockBitmap(block_layout layout);
-static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout layout);
+static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, int res, const char* bitPattern, block_layout layout);
 static int VisusSplitFilename(const char* filename,char* dirname,char* basename);
 static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz);
 static int RegExBitmaskBit(const char* bitmask_pattern,int N);
@@ -131,6 +131,7 @@ int main(int argc, char **argv)
   char variable_type[MAX_VARIABLE_COUNT][1024];
   char filename_template[1024];
   int variable_count = 0;
+  int resolution = 0;
 
   idx_data_offset = atoi(argv[2]);
 
@@ -254,6 +255,17 @@ int main(int argc, char **argv)
       bits_per_block = atoi(line);
       samples_per_block = pow(2, bits_per_block);
     }
+
+    if (strcmp(line, "(resolution)") == 0)
+    {
+      if( fgets(line, sizeof line, fp) == NULL)
+        return 0;
+
+      len = strlen(line) - 1;
+      if (line[len] == '\n')
+        line[len] = 0;
+      resolution = atoi(line);
+    }
     
     if (strcmp(line, "(compression bit rate)") == 0)
     {
@@ -284,7 +296,7 @@ int main(int argc, char **argv)
 
       len = strlen(line) - 1;
       if (line[len] == '\n')
-	line[len] = 0;
+        line[len] = 0;
       blocks_per_file= atoi(line);
     }
 
@@ -295,7 +307,7 @@ int main(int argc, char **argv)
 
       len = strlen(line) - 1;
       if (line[len] == '\n')
-	line[len] = 0;
+      line[len] = 0;
     }
 
     if (strcmp(line, "(time)") == 0)
@@ -380,6 +392,7 @@ int main(int argc, char **argv)
     bounding_box[1][i] = compressed_global_bounds[i];
   }
 
+
   PointND extents;
   extents.x = compressed_global_bounds[0];
   extents.y = compressed_global_bounds[1];
@@ -387,15 +400,17 @@ int main(int argc, char **argv)
   extents.u = compressed_global_bounds[3];
   extents.v = compressed_global_bounds[4];
   GuessBitmaskPattern(bitSequence, extents);
+
   maxh = strlen(bitSequence);
 
+  printf("bitsequence = %s [%d]\n", bitSequence, maxh);
   for (i = 0; i <= maxh; i++)
     bitPattern[i] = RegExBitmaskBit(bitSequence, i);
 
   block_layout global_block_layout =  (block_layout)malloc(sizeof (*global_block_layout));
   memset(global_block_layout, 0, sizeof (*global_block_layout));
 
-  createBlockBitmap(bounding_box, blocks_per_file, bits_per_block, maxh, bitPattern, global_block_layout);
+  createBlockBitmap(bounding_box, blocks_per_file, bits_per_block, maxh, resolution, bitPattern, global_block_layout);
 
   k = 1;
   for (i = 1; i < (global_block_layout->levels); i++)
@@ -480,6 +495,7 @@ int main(int argc, char **argv)
           return 0;
         }
 
+
         int bpf = 0;
         //uint64_t* long_long_buffer = NULL;
         double* double_buffer = NULL;
@@ -561,7 +577,7 @@ int main(int argc, char **argv)
 
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
-                          drhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          drhs = 100;// + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0)
                             dlhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                           else
@@ -583,10 +599,12 @@ int main(int argc, char **argv)
 
                 if (check_bit == 0)
                 {
+                  /*
                   if (strcmp(variable_type[var], "float64") == 0)
                     printf("%f %f\n", dlhs, drhs);
                   else if (strcmp(variable_type[var], "uint64") == 0)
                       printf("%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
+                   */
                   lost_element_count++;
                   //break;
                 }
@@ -621,16 +639,15 @@ int main(int argc, char **argv)
       }
     }
 
-    printf("[=]%lld + [!=]%lld (%lld) : %lld\n", (long long) (element_count), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count);
-    assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count);
+    printf("[=]%lld + [!=]%lld [%lld : %lld]\n", (long long) (element_count), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
+
+    assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
 
   }
 
   destroyBlockBitmap(global_block_layout);
   free(global_block_layout);
   global_block_layout = 0;
-
-
 
   return 0;
 }
@@ -930,7 +947,7 @@ static void destroyBlockBitmap(block_layout layout)
   layout->levels = 0;
 }
 
-static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, const char* bitPattern, block_layout layout)
+static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bits_per_block, int maxH, int res, const char* bitPattern, block_layout layout)
 {
   int64_t hz_from = 0, hz_to = 0, block_number = 1;
   int i, j, m, n_blocks = 1, ctr = 1;
@@ -966,7 +983,7 @@ static int createBlockBitmap(int bounding_box[2][5], int blocks_per_file, int bi
   hz_from = (int64_t)(block_number - 1) * pow(2, bits_per_block);
   hz_to = (int64_t)(block_number * pow(2, bits_per_block)) - 1;
 
-  for(m = 1 ; m < (maxH - bits_per_block); m++)
+  for(m = 1 ; m < (maxH - bits_per_block - res); m++)
   {
     n_blocks = pow(2, (m - 1));
     int t = 0;

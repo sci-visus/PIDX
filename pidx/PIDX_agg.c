@@ -472,11 +472,14 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
       {
         agg_id->idx_d->max_file_count = agg_id->idx_d->max_file_count / 2;
         agg_id->idx->variable[agg_id->init_index]->existing_file_count = 0;
+
         for (i = 0; i < agg_id->idx_d->max_file_count; i++)
           if (agg_id->idx->variable[agg_id->init_index]->file_index[i] == 1)
             agg_id->idx->variable[agg_id->init_index]->existing_file_count++;
+
         no_of_aggregators = per_file_aggregator * agg_id->idx->variable[agg_id->init_index]->existing_file_count * agg_id->idx_d->aggregation_factor;
       }
+
       level = getLeveL((agg_id->idx->variable[agg_id->init_index]->existing_file_count * agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file) - 1);
 
       for (v = agg_id->first_index; v <= agg_id->last_index; v++)
@@ -579,6 +582,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id)
           agg_buffer->buffer_size = sample_count * bytes_per_datatype;
 #if !SIMULATE_IO
           agg_buffer->buffer = malloc(agg_buffer->buffer_size);
+          memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
           if (agg_buffer->buffer == NULL)
           {
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_buffer->buffer_size, __LINE__, __FILE__);
