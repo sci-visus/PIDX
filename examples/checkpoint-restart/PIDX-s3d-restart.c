@@ -179,7 +179,7 @@ int main(int argc, char **argv)
    ret = PIDX_close_access(access);
   if (ret != PIDX_success)  report_error("PIDX_close_access", __FILE__, __LINE__);
 
-  int read_error_count = 0;
+  int read_error_count = 0, read_count = 0;
   for(var = 0; var < variable_count; var++)
   {
     for (k = 0; k < local_box_size[2]; k++)
@@ -192,11 +192,17 @@ int main(int argc, char **argv)
             {
               read_error_count++;
               if (rank == 0)
-              printf("[%d %d %d] Read error %f %d\n", i,j ,k, data[var][index * values_per_sample[var] + vps], 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                printf("[%d %d %d] Read error %f %d\n", i,j ,k, data[var][index * values_per_sample[var] + vps], 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
+            else
+              read_count++;
         }
   }
-  printf("Read Error Count = %d Total Count = %d\n", read_error_count, global_box_size[0]*global_box_size[1]*global_box_size[2]);
+  int var_sample_count = 0;
+  for(var = 0; var < variable_count; var++)
+    var_sample_count = var_sample_count + values_per_sample[var];
+
+  printf("Read Error Count + Right Count : [%d + %d] Total Count = %d\n", read_error_count, read_count, global_box_size[0]*global_box_size[1]*global_box_size[2] * var_sample_count);
 
   for(var = 0; var < variable_count; var++)
   {

@@ -162,12 +162,6 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  report_error("PIDX_set_variable_count", __FILE__, __LINE__);
 
-    ret = PIDX_debug_hz(file, 1);
-    if (ret != PIDX_success)  report_error("PIDX_debug_hz", __FILE__, __LINE__);
-
-    //PIDX_debug_rst(file, 1);
-    //PIDX_debug_hz(file, 1);
-
     char var_name[512];
     for (var = 0; var < variable_count; var++)
     {
@@ -178,7 +172,6 @@ int main(int argc, char **argv)
         strcpy(type, FLOAT64_RGB);
       else
         strcpy(type, FLOAT64);
-        //type = FLOAT64_RGB;
 
       ret = PIDX_variable_create(var_name, values_per_sample[var] * sizeof(uint64_t) * 8, type, &variable[var]);
       if (ret != PIDX_success)  report_error("PIDX_variable_create", __FILE__, __LINE__);

@@ -523,7 +523,7 @@ int main(int argc, char **argv)
                 memset(double_buffer, 0, data_size);
 
                 ret = pread(fd, double_buffer, data_size, data_offset);
-                assert(ret == data_size);
+                //assert(ret == data_size);
               
                 if (compression_type == 2)
                 {

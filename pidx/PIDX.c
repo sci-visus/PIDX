@@ -2400,12 +2400,18 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     if (ret != PIDX_success)
       return PIDX_err_agg;
 
+    // TODO
+    ret = PIDX_hz_encode_buf_create(file->hz_id);
+    if (ret != PIDX_success)
+      return PIDX_err_hz;
+
     if (file->debug_do_io == 1)
     {
       ret = PIDX_io_aggregated_read(file->io_id);
       if (ret != PIDX_success)
         return PIDX_err_io;
     }
+
     io_end[vp] = PIDX_get_time();
     /*----------------------------------------------IO [End]-----------------------------------------------*/
 
@@ -2414,9 +2420,10 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     /*--------------------------------------------Agg [start]-----------------------------------------------*/
     agg_start[vp] = PIDX_get_time();
     /* Creating the buffers required for HZ encoding */
-    ret = PIDX_hz_encode_buf_create(file->hz_id);
-    if (ret != PIDX_success)
-      return PIDX_err_hz;
+    // TODO
+    //ret = PIDX_hz_encode_buf_create(file->hz_id);
+    //if (ret != PIDX_success)
+    //  return PIDX_err_hz;
 
     /* Perform Aggregation */
     if (file->debug_do_agg == 1)
@@ -2427,17 +2434,18 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     }
 
     /* Verify the HZ encoding */
-    //if(file->debug_hz == 1)
+    if(file->debug_hz == 1)
     {
       ret = HELPER_Hz_encode(file->hz_id);
       if (ret != PIDX_success)
         return PIDX_err_hz;
     }
 
+    // TODO
     /* Destroy buffers allocated during aggregation phase */
-    ret = PIDX_agg_buf_destroy(file->agg_id);
-    if (ret != PIDX_success)
-      return PIDX_err_agg;
+    //ret = PIDX_agg_buf_destroy(file->agg_id);
+    //if (ret != PIDX_success)
+    //  return PIDX_err_agg;
     agg_end[vp] = PIDX_get_time();
     /*----------------------------------------------Agg [end]-----------------------------------------------*/
 
@@ -2482,6 +2490,11 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
       if (ret != PIDX_success)
         return PIDX_err_chunk;
     }
+
+    // TODO
+    ret = PIDX_agg_buf_destroy(file->agg_id);
+    if (ret != PIDX_success)
+      return PIDX_err_agg;
 
     /* Destroy buffers allocated during HZ encoding phase */
     ret = PIDX_hz_encode_buf_destroy(file->hz_id);
