@@ -380,7 +380,6 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 
       int var_num = io_id->idx_d->agg_buffer->var_number;
       data_offset = htonl(headers[12 + ((0 + (io_id->idx->blocks_per_file * var_num))*10 )]);
-
       for (i = 1; i < io_id->idx->blocks_per_file; i++)
       {
         if (htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * var_num))*10 )])== 0)
@@ -391,7 +390,27 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
         }
       }
 
+      /*
+      data_offset = 0;
+      data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
+
+      //TODO
+      int k;
+      for (k = 0; k < agg_buf->var_number; k++)
+      {
+        PIDX_variable vark = io_id->idx->variable[k];
+        int bytes_per_datatype =  ((vark->bits_per_value/8) * total_chunk_size) / (64/io_id->idx->compression_bit_rate);
+        int64_t prev_var_sample = (int64_t) io_id->idx->variable[io_id->init_index]->block_count_per_file[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * io_id->idx->variable[k]->values_per_sample;
+
+        data_offset = (int64_t) data_offset + prev_var_sample;
+      }
+      */
+
+      for (i = 0; i < agg_buf->sample_number; i++)
+        data_offset = (int64_t) data_offset + agg_buf->buffer_size;
+
 #if PIDX_HAVE_MPI
+
 
       mpi_ret = MPI_File_read_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
       if (mpi_ret != MPI_SUCCESS)
@@ -863,6 +882,7 @@ int PIDX_io_per_process_read(PIDX_io_id io_id)
                 fflush(io_dump_fp);
               }
   #endif
+              //printf("[%d] : %d %lld %lld\n", i, v, var0->hz_buffer[p]->start_hz_index[i], count);
               ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_READ);
               if (ret != PIDX_success)
               {
@@ -1005,7 +1025,6 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
     bytes_per_sample = io_id->idx->variable[variable_index]->bits_per_value / 8;
     data_offset = file_index * bytes_per_sample * io_id->idx->variable[variable_index]->values_per_sample;
     data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
-    
 
     block_negative_offset = PIDX_blocks_find_negative_offset(io_id->idx->blocks_per_file, block_number, io_id->idx->variable[io_id->init_index]->global_block_layout);
       

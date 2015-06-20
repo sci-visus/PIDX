@@ -65,7 +65,7 @@ PIDX_return_code PIDX_time_step_caching_OFF();
 /// specifying whether an existing file of same name should be overwritten.
 /// \param  filename The filename parameter specifies the name of the new file.
 /// \param flags  The flags parameter specifies whether an existing file is to be overwritten.
-/// It should be set to either PIDX_FILE_TRUNC to overwrite an existing file
+/// It should be set to either PIDX_MODE_CREATE to overwrite an existing file
 /// or PIDX_FILE_EXCL, instructing the function to fail if the file already exists.
 /// New files are always created in read-write mode, so the read-write and read-only
 /// flags, PIDX_FILE_RDWR and PIDX_FILE_RDONLY, respectively, are not relevant in this

@@ -73,7 +73,7 @@ int serial_writer(struct Args args)
     //PIDX_set_default_access(access);
     
     /// PIDX mandatory calls
-    PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
+    PIDX_file_create(output_file, PIDX_MODE_CREATE, access, &file);
     
     /// PIDX calls to set different parameters (optional)
     PIDX_set_dims(file, global_bounding_box);

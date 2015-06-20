@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 #if PIDX_IO
     variable = malloc(sizeof(*variable) * variable_count);
     memset(variable, 0, sizeof(*variable) * variable_count);
-    PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
+    PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
     PIDX_set_variable_count(file, variable_count);
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);

@@ -1222,6 +1222,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   for(v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = id->idx->variable[v];
+    //printf("[%d %d] var->type_name = %s\n", v, (id->last_index - id->first_index + 1), var->type_name);
     for (b = 0; b < var->patch_group_count; b++)
     {
       for (i = 0; i < id->idx_d->maxh; i++)
@@ -1248,6 +1249,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
                 for (s = 0; s < 3; s++)
                 {
                   dvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+
                   memcpy(&dvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
 
                   check_bit = check_bit && (dvalue_1  == dvalue_2);

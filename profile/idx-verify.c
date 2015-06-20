@@ -577,7 +577,7 @@ int main(int argc, char **argv)
 
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
-                          drhs = 100;// + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          drhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0)
                             dlhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                           else

@@ -152,7 +152,7 @@ int main(int argc, char **argv)
   for (ts = 0; ts < time_step_count; ts++)
   {
     //  PIDX mandatory calls
-    ret = PIDX_file_create(output_file_name, PIDX_file_trunc, access, &file);
+    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
     if (ret != PIDX_success)  report_error("PIDX_file_create", __FILE__, __LINE__);
 
     ret = PIDX_set_dims(file, global_size);
@@ -162,8 +162,8 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  report_error("PIDX_set_variable_count", __FILE__, __LINE__);
 
-    //ret = PIDX_set_block_size(file, 2);
-    //if (ret != PIDX_success)  report_error("PIDX_set_block_size", __FILE__, __LINE__);
+    ret = PIDX_debug_hz(file, 1);
+    if (ret != PIDX_success)  report_error("PIDX_debug_hz", __FILE__, __LINE__);
 
     //PIDX_debug_rst(file, 1);
     //PIDX_debug_hz(file, 1);

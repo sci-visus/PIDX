@@ -165,7 +165,7 @@ int test_converter(struct Args args, int rank)
 
     // set write parameters
     PIDX_file output_file;
-    PIDX_file_create(args.output_file_name, PIDX_file_trunc, access, &output_file);
+    PIDX_file_create(args.output_file_name, PIDX_MODE_CREATE, access, &output_file);
     PIDX_set_dims(output_file, global_bounding_box);
     PIDX_set_current_time_step(output_file, /*args.time_steps[time_step]*/time_step);
     PIDX_set_block_size(output_file, 16);

@@ -22,11 +22,12 @@
  * \author Sidharth Kumar
  *
  */
-
+/*
 #include "PIDX_file_access_modes.h"
 
 /// Error creating a file that already exists.
 PIDX_flags PIDX_file_excl                   = 1;
 
 /// Create the file if it does not exist.
-PIDX_flags PIDX_file_trunc                  = 2;
+PIDX_flags PIDX_MODE_CREATE                  = 2;
+*/

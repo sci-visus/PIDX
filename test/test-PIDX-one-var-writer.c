@@ -88,7 +88,7 @@ int test_one_var_writer(struct Args args, int rank, int nprocs)
     PIDX_set_mpi_access(access, 1, 1, 1, MPI_COMM_WORLD);
 #endif
     
-    PIDX_file_create(output_file, PIDX_file_trunc, access, &file);
+    PIDX_file_create(output_file, PIDX_MODE_CREATE, access, &file);
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_block_size(file, bits_per_block);

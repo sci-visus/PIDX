@@ -89,9 +89,6 @@ int main(int argc, char **argv)
   MPI_Bcast(&output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
 #endif
 
-  values_per_sample = malloc(sizeof(*values_per_sample) * variable_count);
-  memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count);
-
   // Creating the filename
   sprintf(output_file_name, "%s%s", output_file_template,".idx");
 
@@ -121,7 +118,7 @@ int main(int argc, char **argv)
 #endif
 
   //  PIDX mandatory calls
-  ret = PIDX_file_open(output_file_name, PIDX_file_trunc, access, &file);
+  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, access, &file);
   if (ret != PIDX_success)  report_error("PIDX_file_create", __FILE__, __LINE__);
 
   ret = PIDX_get_dims(file, global_size);
@@ -133,12 +130,16 @@ int main(int argc, char **argv)
   ret = PIDX_set_current_time_step(file, 0);
   if (ret != PIDX_success)  report_error("PIDX_set_current_time_step", __FILE__, __LINE__);
 
+  values_per_sample = malloc(sizeof(*values_per_sample) * variable_count);
+  memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count);
+
   variable = malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
 
   data = (double**)malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
+  //printf("Variable Count %d\n", variable_count);
   for (var = 0; var < variable_count; var++)
   {
     ret = PIDX_get_next_variable(file, &variable[var]);
@@ -152,6 +153,9 @@ int main(int argc, char **argv)
 
     data[var] = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
     memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
+
+    ret = PIDX_read_next_variable(file, variable[var]);
+    if (ret != PIDX_success)  report_error("PIDX_read_next_variable", __FILE__, __LINE__);
   }
 
   ret = PIDX_reset_variable_counter(file);
@@ -187,11 +191,12 @@ int main(int argc, char **argv)
             if (data[var][index * values_per_sample[var] + vps] != 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
-              //printf("[%d %d %d] Read error %f %d\n", i,j ,k, data[var][index * values_per_sample[var] + vps], 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              if (rank == 0)
+              printf("[%d %d %d] Read error %f %d\n", i,j ,k, data[var][index * values_per_sample[var] + vps], 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
         }
   }
-  printf("Read Error Count = %d Total Error Count = %d\n", read_error_count, global_box_size[0]*global_box_size[1]*global_box_size[2]);
+  printf("Read Error Count = %d Total Count = %d\n", read_error_count, global_box_size[0]*global_box_size[1]*global_box_size[2]);
 
   for(var = 0; var < variable_count; var++)
   {
@@ -200,6 +205,8 @@ int main(int argc, char **argv)
   }
   free(data);
   data = 0;
+
+  free(values_per_sample);
 
   //  MPI finalize
 #if PIDX_HAVE_MPI

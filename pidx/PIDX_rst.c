@@ -628,6 +628,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
                       send_o = index * var->values_per_sample;
                       send_c = reg_patch_count[0] * var->values_per_sample;
 #if !SIMULATE_IO
+                      //if (rank == 0)
+                      //printf("Source %lld Destination %lld Count %lld\n", (unsigned long long)send_o * var->bits_per_value/8, (unsigned long long)(count1 * send_c * var->bits_per_value/8), (unsigned long long)send_c * var->bits_per_value/8);
                       memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bits_per_value/8), var->sim_patch[0]->buffer + send_o * var->bits_per_value/8, send_c * var->bits_per_value/8);
 #endif
                     }
@@ -759,6 +761,216 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
 }
 
 
+
+
+PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
+{
+  if (rst_id->idx->enable_rst != 1)
+    return PIDX_success;
+
+#if PIDX_HAVE_MPI
+  uint64_t a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
+  uint64_t i, j, v, index, count1 = 0, req_count = 0;
+  int *send_count, *send_offset;
+  uint64_t send_c = 0, send_o = 0, counter = 0, req_counter = 0;
+  int rank = 0, ret = 0;
+
+
+  MPI_Request *req;
+  MPI_Status *status;
+
+  //rank and nprocs
+  MPI_Comm_rank(rst_id->comm, &rank);
+
+  //printf("rst_id->reg_patch_grp_count = %d\n", rst_id->reg_patch_grp_count);
+  for (i = 0; i < rst_id->reg_patch_grp_count; i++)
+    for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
+      req_count++;
+
+  //creating ample requests and statuses
+  req = (MPI_Request*) malloc(sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
+  if (!req)
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
+
+  status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
+  if (!status)
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
+
+  for (i = 0; i < rst_id->reg_patch_grp_count; i++)
+  {
+    if (rank == rst_id->reg_patch_grp[i]->max_patch_rank)
+    {
+      for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
+      {
+        int64_t *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
+        int64_t *reg_patch_count  = rst_id->reg_patch_grp[i]->patch[j]->size;
+
+        if(rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
+        {
+          count1 = 0;
+          for (a1 = reg_patch_offset[4]; a1 < reg_patch_offset[4] + reg_patch_count[4]; a1++)
+            for (b1 = reg_patch_offset[3]; b1 < reg_patch_offset[3] + reg_patch_count[3]; b1++)
+              for (k1 = reg_patch_offset[2]; k1 < reg_patch_offset[2] + reg_patch_count[2]; k1++)
+                for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
+                  for (i1 = reg_patch_offset[0]; i1 < reg_patch_offset[0] + reg_patch_count[0]; i1 = i1 + reg_patch_count[0])
+                  {
+                    int64_t *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
+                    int64_t *sim_patch_count = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
+
+                    index = (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * sim_patch_count[3] * (a1 - sim_patch_offset[4])) +
+                            (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * (b1 - sim_patch_offset[3])) +
+                            (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
+                            (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
+                            (i1 - sim_patch_offset[0]);
+
+
+                    for(v = rst_id->first_index; v <= rst_id->last_index; v++)
+                    {
+                      PIDX_variable var = rst_id->idx->variable[v];
+                      send_o = index * var->values_per_sample;
+                      send_c = reg_patch_count[0] * var->values_per_sample;
+#if !SIMULATE_IO
+                      //if (rank == 0)
+                      //printf("Source %lld Destination %lld Count %lld\n",(unsigned long long)(count1 * send_c * var->bits_per_value/8), (unsigned long long)send_o * var->bits_per_value/8, (unsigned long long)send_c * var->bits_per_value/8);
+                      memcpy(var->sim_patch[0]->buffer + send_o * var->bits_per_value/8, var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8);
+#endif
+                    }
+
+                    count1++;
+                  }
+        }
+        else
+        {
+          for(v = rst_id->first_index; v <= rst_id->last_index; v++)
+          {
+            PIDX_variable var = rst_id->idx->variable[v];
+
+            int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]) * var->values_per_sample * var->bits_per_value/8;
+
+#if !SIMULATE_IO
+            ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->comm, &req[req_counter]);
+            if (ret != MPI_SUCCESS)
+            {
+              fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+              return PIDX_err_mpi;
+            }
+#endif
+            req_counter++;
+          }
+        }
+      }
+      counter++;
+    }
+    else
+    {
+      for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
+      {
+        if(rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
+        {
+          for(v = rst_id->first_index; v <= rst_id->last_index; v++)
+          {
+            PIDX_variable var = rst_id->idx->variable[v];
+
+            int64_t *reg_patch_count = rst_id->reg_patch_grp[i]->patch[j]->size;
+            int64_t *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
+
+
+            send_offset = malloc(sizeof (int) * (reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]));
+            if (!send_offset)
+            {
+              fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+              return PIDX_err_mpi;
+            }
+            memset(send_offset, 0, sizeof (int) * (reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]));
+
+            send_count = malloc(sizeof (int) * (reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]));
+            if (!send_count)
+            {
+              fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+              return PIDX_err_mpi;
+            }
+            memset(send_count, 0, sizeof (int) * (reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]));
+
+            count1 = 0;
+            for (a1 = reg_patch_offset[4]; a1 < reg_patch_offset[4] + reg_patch_count[4]; a1++)
+              for (b1 = reg_patch_offset[3]; b1 < reg_patch_offset[3] + reg_patch_count[3]; b1++)
+                for (k1 = reg_patch_offset[2]; k1 < reg_patch_offset[2] + reg_patch_count[2]; k1++)
+                  for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
+                    for (i1 = reg_patch_offset[0]; i1 < reg_patch_offset[0] + reg_patch_count[0]; i1 = i1 + reg_patch_count[0])
+                    {
+                      int64_t *sim_patch_count  = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
+                      int64_t *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
+
+                      index = (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * sim_patch_count[3] * (a1 - sim_patch_offset[4])) +
+                              (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * (b1 - sim_patch_offset[3])) +
+                              (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
+                              (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
+                              (i1 - sim_patch_offset[0]);
+                      send_offset[count1] = index * var->values_per_sample * var->bits_per_value/8;
+                      send_count[count1] = reg_patch_count[0] * var->values_per_sample * var->bits_per_value/8;
+
+                      count1++;
+                    }
+
+
+            MPI_Datatype chunk_data_type;
+            MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type);
+            MPI_Type_commit(&chunk_data_type);
+
+#if !SIMULATE_IO
+            ret = MPI_Irecv(var->sim_patch[0]->buffer, 1, chunk_data_type, rst_id->reg_patch_grp[i]->max_patch_rank, 123, rst_id->comm, &req[req_counter]);
+            if (ret != MPI_SUCCESS)
+            {
+              fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+              return PIDX_err_mpi;
+            }
+#endif
+
+            req_counter++;
+
+            MPI_Type_free(&chunk_data_type);
+            free(send_offset);
+            free(send_count);
+
+          }
+        }
+      }
+    }
+  }
+
+#if !SIMULATE_IO
+  ret = MPI_Waitall(req_counter, req, status);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return (-1);
+  }
+#endif
+
+
+  free(req);
+  req = 0;
+  free(status);
+  status = 0;
+
+  return PIDX_success;
+#else
+  if (rst_id->idx->enable_rst == 1)
+    return PIDX_err_rst;
+  else
+    return PIDX_success;
+#endif
+}
+
+
+
+#if 0
 PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 {  
   if (rst_id->idx->enable_rst != 1)
@@ -944,7 +1156,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 
 #endif
 }
-
+#endif
 
 PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
 {
@@ -1070,10 +1282,21 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                     if (strcmp(var->type_name, FLOAT64) == 0)
                     {
                       dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
-                    
                       memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
 
                       check_bit = check_bit && (dvalue_1 == dvalue_2);
+                    }
+                    else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
+                    {
+                      for (s = 0; s < 3; s++)
+                      {
+                        dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+
+                        memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * 3) + s) * sizeof(double), sizeof(double));
+                        //memcpy(&dvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
+                        //printf("%f -- %f\n", dvalue_1, dvalue_2);
+                        check_bit = check_bit && (dvalue_1  == dvalue_2);
+                      }
                     }
                     else if (strcmp(var->type_name, UINT64) == 0)
                     {

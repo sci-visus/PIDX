@@ -551,7 +551,7 @@ int main(int argc, char **argv)
     rank_0_print("Processing time step %d (file %s)\n", t, hdf5_file_names[t]);
 
     PIDX_file pidx_file;
-    int ret = PIDX_file_create(output_file_name, PIDX_file_trunc, pidx_access, &pidx_file);
+    int ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, pidx_access, &pidx_file);
     if (ret != PIDX_success)
       terminate_with_error_msg("ERROR: Failed to create PIDX file\n");
     set_pidx_params(pidx_file);
