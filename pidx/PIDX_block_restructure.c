@@ -192,6 +192,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       {
         if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
         {
+          printf("[%d   %d]\n", j, out_patch->count);
           out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
           //memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
         }
@@ -529,14 +530,17 @@ PIDX_return_code PIDX_chunk_read(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
 {
-  int p, var;
+  int j, p, var;
 
   for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
   {
     for (p = 0; p < chunk_id->idx->variable[var]->patch_group_count; p++)
     {
-      free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[0]);
-      chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[0] = 0;
+      for(j = 0; j < chunk_id->idx->variable[var]->chunk_patch_group[p]->count; j++)
+      {
+        free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j]);
+        chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j] = 0;
+      }
 
       free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch);
       chunk_id->idx->variable[var]->chunk_patch_group[p]->patch = 0;
@@ -554,13 +558,16 @@ PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
 PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
 {
 #if !SIMULATE_IO
-  int p, var;
+  int j = 0, p = 0, var = 0;
   for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
   {
     for (p = 0; p < chunk_id->idx->variable[var]->patch_group_count; p++)
     {
-      free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[0]->buffer);
-      chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[0]->buffer = 0;
+      for(j = 0; j < chunk_id->idx->variable[var]->chunk_patch_group[p]->count; j++)
+      {
+        free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j]->buffer);
+        chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j]->buffer = 0;
+      }
     }
   }
 #endif

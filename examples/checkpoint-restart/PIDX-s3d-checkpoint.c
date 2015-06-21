@@ -200,6 +200,9 @@ int main(int argc, char **argv)
   free(data);
   data = 0;
 
+  free(variable);
+  variable = 0;
+
   //  MPI finalize
 #if PIDX_HAVE_MPI
   MPI_Finalize();
