@@ -1254,6 +1254,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   MPI_Comm_rank(rst_id->comm, &rank);
 #endif
 
+  float fvalue_1, fvalue_2;
   double dvalue_1, dvalue_2;
   uint64_t uvalue_1, uvalue_2;
 
@@ -1281,7 +1282,14 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                   int check_bit = 1;
                   for (s = 0; s < var->values_per_sample; s++)
                   {
-                    if (strcmp(var->type_name, FLOAT64) == 0)
+                    if (strcmp(var->type_name, FLOAT32) == 0)
+                    {
+                      fvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                      memcpy(&fvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+
+                      check_bit = check_bit && (fvalue_1 == fvalue_2);
+                    }
+                    else if (strcmp(var->type_name, FLOAT64) == 0)
                     {
                       dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
                       memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);

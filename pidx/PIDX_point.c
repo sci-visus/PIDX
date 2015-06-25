@@ -28,7 +28,7 @@ PIDX_return_code PIDX_set_point_5D(PIDX_point point, int64_t  x, int64_t  y, int
   point[1] = y;
   point[2] = z;
   point[3] = u;
-  point[4] = u;
+  point[4] = v;
   
   return PIDX_success;
 }

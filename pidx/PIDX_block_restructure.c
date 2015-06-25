@@ -192,7 +192,6 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       {
         if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
         {
-          printf("[%d   %d]\n", j, out_patch->count);
           out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
           //memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
         }
