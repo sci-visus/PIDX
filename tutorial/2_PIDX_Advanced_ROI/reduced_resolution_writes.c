@@ -47,13 +47,14 @@ static char output_file_template[512] = "test";
 static double **data;
 static int reduced_resolution = 0;
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list -i hdf5_file_names_list -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./hdf5-to-idx -g 4x4x4 -l 2x2x2 -f Filename_ -v var_list -i hdf5_file_names_list\n"
+static char *usage = "Serial Usage: ./reduced_resolution_writes -g 128x128x128 -l 128x128x128 -f out_file_name -t 1 -v 2 -r 4\n"
+                     "Parallel Usage: mpirun -n 64 ./reduced_resolution_writes -g 128x128x128 -l 32x32x32 -f out_file_name -t 1 -v 2 -r 4\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX filename\n"
-                     "  -i: file containing list of input hdf5 files\n"
-                     "  -v: file containing list of input fields\n";
+                     "  -t: number of timesteps\n"
+                     "  -v: number of variables\n"
+                     "  -r: reduced resolution factor (0 = full, 1 = half, 2 = quarter, etc.)\n";
 
 
 //----------------------------------------------------------------
@@ -182,17 +183,17 @@ static void parse_args(int argc, char **argv)
       sprintf(output_file_name, "%s%s", output_file_template, ".idx");
       break;
 
-    case('t'): // a file with a list of variables
+    case('t'): // number of timesteps
       if (sscanf(optarg, "%d", &time_step_count) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('v'): // a file with a list of variables
+    case('v'): // number of variables
       if (sscanf(optarg, "%d", &variable_count) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('r'): // a file with a list of variables
+    case('r'): // resolution factor
       if (sscanf(optarg, "%d", &reduced_resolution) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;

@@ -47,13 +47,11 @@ static char output_file_template[512] = "test_idx";   ///< output IDX file Name 
 static double **data;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list -i hdf5_file_names_list -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./hdf5-to-idx -g 4x4x4 -l 2x2x2 -f Filename_ -v var_list -i hdf5_file_names_list\n"
+static char *usage = "Serial Usage: ./restart -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -f: IDX filename\n"
-                     "  -i: file containing list of input hdf5 files\n"
-                     "  -v: file containing list of input fields\n";
+                     "  -f: IDX filename\n";
 
 //----------------------------------------------------------------
 static void terminate()
@@ -204,18 +202,18 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
-    case('f'): // output file name
+    case('f'): // input file name
       if (sprintf(output_file_template, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
       sprintf(output_file_name, "%s%s", output_file_template, ".idx");
       break;
 
-    case('t'): // a file with a list of variables
+    case('t'): // number of timesteps
       if (sscanf(optarg, "%d", &time_step_count) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('v'): // a file with a list of variables
+    case('v'): // number of variables
       if (sscanf(optarg, "%d", &variable_count) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
