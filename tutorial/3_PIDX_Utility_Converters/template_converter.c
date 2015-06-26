@@ -16,15 +16,20 @@
  **                                                 **
  *****************************************************/
 
-#include <PIDX.h>
-#include "hdf5.h"
+#define PIDX_IO 1
+#define HDF5_IO 0
 
+
+#include <PIDX.h>
+
+#if HDF5_HAVE_MPI
+  #include "hdf5.h"
+#endif
+  
 #if PIDX_HAVE_MPI
   #include <mpi.h>
 #endif
 
-#define PIDX_IO 1
-#define HDF5_IO 0
 
 static int parse_args(int argc, char **argv);
 static void usage(void);
