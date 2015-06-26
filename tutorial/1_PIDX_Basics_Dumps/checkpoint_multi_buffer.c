@@ -18,101 +18,93 @@
 
 #include <PIDX.h>
 
-#if PIDX_HAVE_MPI
- #include <mpi.h>
-#endif
 
-static int parse_args(int argc, char **argv);
-static void usage(void);
-static void report_error(char* func_name, char* file_name, int line_no);
+enum { X, Y, Z, NUM_DIMS };
+static int process_count = 1, rank = 0;
 
-static int global_box_size[3] = {0, 0, 0};            ///< global dimensions of 3D volume
-static int local_box_size[3] = {0, 0, 0};             ///< local dimensions of the per-process block
+static unsigned long long global_box_size[3] = {0, 0, 0};            ///< global dimensions of 3D volume
+static unsigned long long local_box_size[3] = {0, 0, 0};             ///< local dimensions of the per-process block
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 1;                        ///< Number of fields
 static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
 static int patch_count = 1;
+static int ***var_count;
+static int ***var_offset;
+static double   ***double_data;
+static char output_file_name[512] = "test.idx";
+static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list -i hdf5_file_names_list -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./hdf5-to-idx -g 4x4x4 -l 2x2x2 -f Filename_ -v var_list -i hdf5_file_names_list\n"
+                     "  -g: global dimensions\n"
+                     "  -l: local (per-process) dimensions\n"
+                     "  -f: IDX filename\n"
+                     "  -i: file containing list of input hdf5 files\n"
+                     "  -v: file containing list of input fields\n";
 
-
-/// main
-int main(int argc, char **argv)
+//----------------------------------------------------------------
+static void terminate()
 {
-#if 1
-  int ret;
-  int i, j, k;
-  int d, p, var, vps, ts;
-  int slice = 0;
-  int nprocs = 1, rank = 0;
-  char output_file_name[512];
-
-  // MPI initialization
 #if PIDX_HAVE_MPI
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-
-  int *values_per_sample;    // Example: 1 for scalar 3 for vector
-
-  int local_box_offset[3];
-
-  if (rank == 0)
-  {
-    ret = parse_args(argc, argv);
-    if (ret < 0)
-    {
-      usage();
-#if PIDX_HAVE_MPI
-      MPI_Abort(MPI_COMM_WORLD, -1);
+  MPI_Abort(MPI_COMM_WORLD, -1);
 #else
-      exit(-1);
+  exit(-1);
 #endif
-    }
+}
 
-    // check if the num procs is appropriate
-    int num_bricks = (global_box_size[0] / local_box_size[0]) * (global_box_size[1] / local_box_size[1]) * (global_box_size[2] / local_box_size[2]);
-    if(num_bricks != nprocs)
-    {
-      fprintf(stderr, "Error: number of sub-blocks (%d) doesn't match number of procs (%d)\n", num_bricks, nprocs);
-      fprintf(stderr, "Incorrect distribution of data across processes i.e.\n(global_x / local_x) X (global_x / local_x) X (global_x / local_x) != nprocs\n(%d/%d) X (%d/%d) X (%d/%d) != %d\n", global_box_size[0], local_box_size[0], global_box_size[1], local_box_size[1], global_box_size[2], local_box_size[2], nprocs);
+//----------------------------------------------------------------
+static void terminate_with_error_msg(const char *format, ...)
+{
+  va_list arg_ptr;
+  va_start(arg_ptr, format);
+  vfprintf(stderr, format, arg_ptr);
+  va_end(arg_ptr);
+  terminate();
+}
 
+//----------------------------------------------------------------
+static void rank_0_print(const char *format, ...)
+{
+  if (rank != 0) return;
+  va_list arg_ptr;
+  va_start(arg_ptr, format);
+  vfprintf(stderr, format, arg_ptr);
+  va_end(arg_ptr);
+}
+
+//----------------------------------------------------------------
+static void init_mpi(int argc, char **argv)
+{
 #if PIDX_HAVE_MPI
-      MPI_Abort(MPI_COMM_WORLD, -1);
-#else
-      exit(-1);
+  if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
+    terminate_with_error_msg("ERROR: MPI_Init error\n");
+  if (MPI_Comm_size(MPI_COMM_WORLD, &process_count) != MPI_SUCCESS)
+    terminate_with_error_msg("ERROR: MPI_Comm_size error\n");
+  if (MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS)
+    terminate_with_error_msg("ERROR: MPI_Comm_rank error\n");
 #endif
-    }
-  }
+}
 
-  //  The command line arguments are shared by all processes
+//----------------------------------------------------------------
+static void shutdown_mpi()
+{
 #if PIDX_HAVE_MPI
-  MPI_Bcast(global_box_size, 3, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(local_box_size, 3, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&time_step_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&variable_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&patch_count, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&output_file_template, 512, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Finalize();
 #endif
+}
 
-  values_per_sample = (int*) malloc(sizeof (int) * variable_count);
-  for (var = 0; var < variable_count; var++)
-    values_per_sample[var] = 1;
-
-  // Creating the filename
-  sprintf(output_file_name, "%s%s", output_file_template,".idx");
-
+static void calculate_per_process_offsets()
+{
   //   Calculating every process's offset and count
+  int var = 0, d = 0, i = 0;
   int sub_div[3];
+  int local_box_offset[3];
   sub_div[0] = (global_box_size[0] / local_box_size[0]);
   sub_div[1] = (global_box_size[1] / local_box_size[1]);
   sub_div[2] = (global_box_size[2] / local_box_size[2]);
   local_box_offset[2] = (rank / (sub_div[0] * sub_div[1])) * local_box_size[2];
-  slice = rank % (sub_div[0] * sub_div[1]);
+  int slice = rank % (sub_div[0] * sub_div[1]);
   local_box_offset[1] = (slice / sub_div[0]) * local_box_size[1];
   local_box_offset[0] = (slice % sub_div[0]) * local_box_size[0];
 
-  int ***var_count;
-  int ***var_offset;
   var_count = malloc(sizeof(int**) * variable_count);
   var_offset = malloc(sizeof(int**) * variable_count);
 
@@ -125,10 +117,7 @@ int main(int argc, char **argv)
       var_count[var][i] = malloc(sizeof(int) * 3);
       var_offset[var][i] = malloc(sizeof(int) * 3);
     }
-  }
 
-  for(var = 0; var < variable_count; var++)
-  {
     // One patch for this variable
     if (patch_count == 1)
     {
@@ -311,30 +300,122 @@ int main(int argc, char **argv)
     else
       printf("This patch count not supported !!!!\n");
   }
+}
 
-  double   ***double_data;
+static void create_synthetic_simulation_data()
+{
+  int var = 0, p = 0;
+  unsigned long long i, j, k;
+
   double_data = malloc(sizeof(double**) * variable_count);
   for (var = 0; var < variable_count; var++)
   {
     double_data[var] = malloc(sizeof(double*) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
-      double_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2] * values_per_sample[var]);
+      double_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2]);
       for (k = 0; k < var_count[var][p][2]; k++)
         for (j = 0; j < var_count[var][p][1]; j++)
           for (i = 0; i < var_count[var][p][0]; i++)
           {
             int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
-            for (vps = 0; vps < values_per_sample[var]; vps++)
-              double_data[var][p][index * values_per_sample[var] + vps] = 100 +                 (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
+            double_data[var][p][index] = 100 + var + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
           }
     }
   }
+}
 
+static void destroy_synthetic_simulation_data()
+{
+  int var, p;
+  for (var = 0; var < variable_count; var++)
+  {
+    for(p = 0 ; p < patch_count ; p++)
+      free(double_data[var][p]);
+    free(double_data[var]);
+  }
+  free(double_data);  double_data = 0;
+}
+
+///< Parse the input arguments
+static void parse_args(int argc, char **argv)
+{
+  char flags[] = "g:l:f:t:v:p:";
+  int one_opt = 0;
+
+  while ((one_opt = getopt(argc, argv, flags)) != EOF)
+  {
+    /* postpone error checking for after while loop */
+    switch (one_opt)
+    {
+    case('g'): // global dimension
+      if ((sscanf(optarg, "%lldx%lldx%lld", &global_box_size[0], &global_box_size[1], &global_box_size[2]) == EOF) ||
+          (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1))
+        terminate_with_error_msg("Invalid global dimensions\n%s", usage);
+      break;
+
+    case('l'): // local dimension
+      if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
+          (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
+        terminate_with_error_msg("Invalid local dimension\n%s", usage);
+      break;
+
+    case('f'): // output file name
+      if (sprintf(output_file_template, "%s", optarg) < 0)
+        terminate_with_error_msg("Invalid output file name template\n%s", usage);
+      sprintf(output_file_name, "%s%s", output_file_template, ".idx");
+      break;
+
+    case('t'): // a file with a list of variables
+      if (sscanf(optarg, "%d", &time_step_count) < 0)
+        terminate_with_error_msg("Invalid time step count\n%s", usage);
+      break;
+
+    case('v'): // a file with a list of variables
+      if (sscanf(optarg, "%d", &variable_count) < 0)
+        terminate_with_error_msg("Invalid variable count\n%s", usage);
+      break;
+
+    case('p'): // a file with a list of variables
+      if (sscanf(optarg, "%d", &patch_count) < 0)
+        terminate_with_error_msg("Invalid patch count\n%s", usage);
+      break;
+
+    default:
+      terminate_with_error_msg("Wrong arguments\n%s", usage);
+    }
+  }
+}
+
+static void check_args()
+{
+  if (global_box_size[X] < local_box_size[X] || global_box_size[Y] < local_box_size[Y] || global_box_size[Z] < local_box_size[Z])
+    terminate_with_error_msg("ERROR: Global box is smaller than local box in one of the dimensions\n");
+
+  // check if the number of processes given by the user is consistent with the actual number of processes needed
+  int brick_count = (int)((global_box_size[X] + local_box_size[X] - 1) / local_box_size[X]) *
+                    (int)((global_box_size[Y] + local_box_size[Y] - 1) / local_box_size[Y]) *
+                    (int)((global_box_size[Z] + local_box_size[Z] - 1) / local_box_size[Z]);
+  if(brick_count != process_count)
+    terminate_with_error_msg("ERROR: Number of sub-blocks (%d) doesn't match number of processes (%d)\n", brick_count, process_count);
+
+}
+
+/// main
+int main(int argc, char **argv)
+{
+  init_mpi(argc, argv);
+  parse_args(argc, argv);
+  check_args();
+  calculate_per_process_offsets();
+  create_synthetic_simulation_data();
+
+  int var, p;
   PIDX_point global_bounding_box, **local_offset_point, **local_box_count_point;
 
   local_offset_point = malloc(sizeof(PIDX_point*) * variable_count);
   local_box_count_point = malloc(sizeof(PIDX_point*) * variable_count);
+
   for(var = 0; var < variable_count; var++)
   {
     local_offset_point[var] = malloc(sizeof(PIDX_point) * patch_count);
@@ -360,6 +441,7 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
+  int ts;
   for (ts = 0; ts < time_step_count; ts++)
   {
     PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
@@ -370,29 +452,20 @@ int main(int argc, char **argv)
     for (var = 0; var < variable_count; var++)
     {
       char variable_name[512];
-      char data_type[512];
       sprintf(variable_name, "variable_%d", var);
-      sprintf(data_type, "%d*float64", values_per_sample[var]);
-      PIDX_variable_create(variable_name, values_per_sample[var] * sizeof(double) * 8, data_type, &variable[var]);
+      PIDX_variable_create(variable_name, sizeof(double) * 8, FLOAT64, &variable[var]);
 
       for (p = 0 ; p < patch_count ; p++)
         PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
-
 
       PIDX_append_and_write_variable(file, variable[var]/*, local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major*/);
     }
 
     PIDX_close(file);
   }
-
   PIDX_close_access(access);
-  for (var = 0; var < variable_count; var++)
-  {
-    for(p = 0 ; p < patch_count ; p++)
-      free(double_data[var][p]);
-    free(double_data[var]);
-  }
-  free(double_data);  double_data = 0;
+
+  destroy_synthetic_simulation_data();
 
   for(var = 0; var < variable_count; var++)
   {
@@ -404,102 +477,8 @@ int main(int argc, char **argv)
 
   free(variable);
   variable = 0;
-  free(values_per_sample);
-  values_per_sample = 0;
-#endif
+
+  shutdown_mpi();
 
   return 0;
-}
-
-///< Parse the input arguments
-static int parse_args(int argc, char **argv)
-{
-  char flags[] = "g:l:f:t:v:p:";
-  int one_opt = 0;
-
-  while ((one_opt = getopt(argc, argv, flags)) != EOF)
-  {
-    /* postpone error checking for after while loop */
-    switch (one_opt)
-    {
-      case('g'):
-          sscanf(optarg, "%dx%dx%d", &global_box_size[0], &global_box_size[1], &global_box_size[2]);
-          break;
-      case('l'):
-          sscanf(optarg, "%dx%dx%d", &local_box_size[0], &local_box_size[1], &local_box_size[2]);
-          break;
-      case('f'):
-          sprintf(output_file_template, "%s", optarg);
-          break;
-      case('t'):
-          sscanf(optarg, "%d", &time_step_count);
-          break;
-      case('v'):
-          sscanf(optarg, "%d", &variable_count);
-          break;
-      case('p'):
-          sscanf(optarg, "%d", &patch_count);
-          break;
-      case('?'):
-          return (-1);
-    }
-  }
-    /* need positive dimensions */
-  if (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1 || local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1)
-  {
-    fprintf(stderr, "Error: bad dimension specification.\n");
-    return (-1);
-  }
-
-  /* need global dimension to be larger than the local */
-  if (global_box_size[0] < local_box_size[0] || global_box_size[1] < local_box_size[1] || global_box_size[2] < local_box_size[2])
-  {
-    fprintf(stderr, "Error: Per-process local box size cannot be greater than the global box\n");
-    return (-1);
-  }
-
-  if (local_box_size[0] == 0 || local_box_size[1] == 0 || local_box_size[2] == 0)
-  {
-    fprintf(stderr, "Local Dimension cannot be 0!!!!!!!!!\n");
-    return (-1);
-  }
-
-  if (global_box_size[0] == 0 || global_box_size[1] == 0 || global_box_size[2] == 0)
-  {
-    fprintf(stderr, "Global Dimension cannot be 0!!!!!!!!!\n");
-    return (-1);
-  }
-
-  return (0);
-}
-
-
-///< How to use this progam
-static void usage(void)
-{
-  printf("Serial Usage: ./pidx-uintah-checkpoint -g 4x4x4 -l 4x4x4 -f Filename -t 1 -v 1\n");
-  printf("Parallel Usage: mpirun -n 8 ./pidx-s3d-checkpoint -g 4x4x4 -l 2x2x2 -f Filename_ -t 1 -v 1\n");
-  printf("  -g: global dimensions\n");
-  printf("  -l: local (per-process) dimensions\n");
-  printf("  -f: IDX Filename\n");
-  printf("  -t: number of timesteps\n");
-  printf("  -v: number of fields\n");
-  printf("  -p: number of patches\n");
-
-  printf("pidx-s3d-uintah generates a 3D volume of size g_x g_y g_z specified by -g command line parameter\nEach process writes a sub-volume of size l_x l_y l_z specified by -l command line parameter. \nData is written in the idx format, with the filename Filename specified by -f command line parameter. \nThe number of time-steps and the number of fields can be optionally provided by -t and -v command line parameters.\n");
-
-  printf("\n");
-
-  return;
-}
-
-///< Print error and exit program
-static void report_error(char* func_name, char* file_name, int line_no)
-{
-  fprintf(stderr, "Error in function %s Program %s Line %d\n", func_name, file_name, line_no);
-#if PIDX_HAVE_MPI
-  MPI_Abort(MPI_COMM_WORLD, -1);
-#else
-  exit(-1);
-#endif
 }

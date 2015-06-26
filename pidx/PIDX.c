@@ -708,21 +708,6 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
 
 
 
-PIDX_return_code PIDX_get_access(PIDX_file file, PIDX_access *access)
-{
-  if (file == NULL)
-    return PIDX_err_file;
-  
-  if (!access)
-    return PIDX_err_access;
-
-  (*access) = file->access;
-  
-  return PIDX_success;
-}
-
-
-
 PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch_size)
 {
   if(reg_patch_size[0] < 0 || reg_patch_size[1] < 0 || reg_patch_size[2] < 0 || reg_patch_size[3] < 0 || reg_patch_size[4] < 0)

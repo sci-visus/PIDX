@@ -100,7 +100,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
   int i = 0, k = 0;
   uint32_t *headers;
   int total_header_size = 0;
+#ifdef PIDX_RECORD_TIME
   double t1, t2, t3, t4, t5;
+#endif
   int rank = 0;
 
 #if PIDX_HAVE_MPI
@@ -120,7 +122,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 
     if (enable_caching == 1 && agg_buf->var_number == io_id->init_index && agg_buf->sample_number == 0)
     {
+#ifdef PIDX_RECORD_TIME
       t1 = PIDX_get_time();
+#endif
 
       generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
@@ -137,7 +141,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t2 = PIDX_get_time();
+#endif
 
       data_offset = 0;
       total_header_size = (10 + (10 * io_id->idx->blocks_per_file)) * sizeof (uint32_t) * io_id->idx->variable_count;
@@ -153,7 +159,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       }
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t3 = PIDX_get_time();
+#endif
 
       uint64_t header_size = (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size);
 
@@ -201,7 +209,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t4 = PIDX_get_time();
+#endif
 
 #if !SIMULATE_IO
 #if PIDX_HAVE_MPI
@@ -216,7 +226,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t5 = PIDX_get_time();
+#endif
 
 #ifdef PIDX_RECORD_TIME
       printf("V0. [R %d] [O 0 C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long)agg_buf->buffer_size + header_size, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
@@ -225,7 +237,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
     }
     else if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
     {
+#ifdef PIDX_RECORD_TIME
       t1 = PIDX_get_time();
+#endif
 
       generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
@@ -242,7 +256,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
 #endif
 
+ #ifdef PIDX_RECORD_TIME
       t2 = PIDX_get_time();
+#endif
 
       data_offset = 0;
       data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
@@ -287,7 +303,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t3 = PIDX_get_time();
+#endif
 
 #if !SIMULATE_IO
 #if PIDX_HAVE_MPI
@@ -302,7 +320,9 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
 #endif
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t4 = PIDX_get_time();
+#endif
 
 #ifdef PIDX_RECORD_TIME
       printf("V. [R %d] [O %lld C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, (long long)agg_buf->buffer_size, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));
@@ -326,7 +346,9 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
   int i = 0;
   uint32_t *headers;
   int total_header_size = 0;
+#ifdef PIDX_RECORD_TIME
   double t1, t2, t3, t4;
+#endif
   int rank = 0;
 
 #if PIDX_HAVE_MPI
@@ -348,7 +370,9 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
 
     if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
     {
+#ifdef PIDX_RECORD_TIME
       t1 = PIDX_get_time();
+#endif
 
       generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
@@ -363,7 +387,9 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
       fh = open(file_name, O_WRONLY);
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t2 = PIDX_get_time();
+#endif
 
       data_offset = 0;
       //TODO
@@ -437,7 +463,9 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
       }
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t3 = PIDX_get_time();
+#endif
 
 #if PIDX_HAVE_MPI
       mpi_ret = MPI_File_close(&fh);
@@ -450,7 +478,9 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
       close(fh);
 #endif
 
+#ifdef PIDX_RECORD_TIME
       t4 = PIDX_get_time();
+#endif
 
 #ifdef PIDX_RECORD_TIME
       printf("V. [R %d] [O %lld C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long) data_offset, (long long)agg_buf->buffer_size, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, (t2-t1), (t2-t2), (t3-t2), (t4-t3));

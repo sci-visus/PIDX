@@ -539,7 +539,6 @@ int main(int argc, char **argv)
 
   PIDX_access pidx_access;
   create_pidx_access(&pidx_access);
-  PIDX_time_step_caching_ON();
 
   hid_t plist_id = init_hdf5();
   determine_var_types(plist_id);
@@ -579,7 +578,6 @@ int main(int argc, char **argv)
     PIDX_close(pidx_file);
   }
 
-  PIDX_time_step_caching_OFF();
   PIDX_close_access(pidx_access);
   H5Pclose(plist_id);
 

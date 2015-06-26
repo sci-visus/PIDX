@@ -148,7 +148,6 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
-  //PIDX_time_step_caching_ON();
   for (ts = 0; ts < time_step_count; ts++)
   {
     //  PIDX mandatory calls
@@ -186,8 +185,6 @@ int main(int argc, char **argv)
     ret = PIDX_close(file);
     if (ret != PIDX_success)  report_error("PIDX_close", __FILE__, __LINE__);
   }
-
-  //PIDX_time_step_caching_OFF();
 
   ret = PIDX_close_access(access);
   if (ret != PIDX_success)  report_error("PIDX_close_access", __FILE__, __LINE__);

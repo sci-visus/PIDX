@@ -3,7 +3,7 @@
 
 #include "PIDX_config.h"
 
-//#define SIMULATE_IO 1
+#define SIMULATE_IO 0
 
 #ifdef BGQ
   #define _XOPEN_SOURCE 600
@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <time.h>
+#include <stdarg.h>
 
 #if PIDX_HAVE_MPI
   #include <mpi.h>

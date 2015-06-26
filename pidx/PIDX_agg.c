@@ -842,9 +842,13 @@ PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id)
   if (agg_id->idx->enable_agg == 0)
     return PIDX_success;
 
-  int i, p, e1, v, ret = 0;
+  int i, p, v, ret = 0;
+#if 0
   int send_index = 0;
-  int64_t index = 0, count = 0, hz_index = 0;
+  int e1;
+  int64_t hz_index = 0, index = 0;
+#endif
+  int64_t count = 0;
   int rank = 0;
 
 #if PIDX_HAVE_MPI
@@ -919,7 +923,11 @@ PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id)
     PIDX_variable var = agg_id->idx->variable[agg_id->first_index];
     for (p = 0; p < var->patch_group_count; p++)
     {
-      hz_index = 0, index = 0, count = 0, send_index = 0;
+      count = 0;
+#if 0
+      send_index = 0;
+      hz_index = 0, index = 0;
+#endif
       HZ_buffer hz_buf = var->hz_buffer[p];
       if(var->hz_buffer[p]->type == 0)
       {
@@ -1007,7 +1015,6 @@ PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id)
         {
           if ((hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2]) != 0)
           {
-            index = 0;
             count =  var->hz_buffer[p]->end_hz_index[i] - var->hz_buffer[p]->start_hz_index[i] + 1 - (var->hz_buffer[p]->missing_block_count_per_level[i] * agg_id->idx_d->samples_per_block);
 
 

@@ -17,12 +17,14 @@
  *****************************************************/
 
 #include <PIDX.h>
+#include "hdf5.h"
 
 #if PIDX_HAVE_MPI
   #include <mpi.h>
 #endif
 
 #define PIDX_IO 1
+#define HDF5_IO 0
 
 static int parse_args(int argc, char **argv);
 static void usage(void);
@@ -42,7 +44,6 @@ static char input_file[512];
 static char **file_name;
 static double **buffer;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
-static int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
 
 int main(int argc, char **argv)
 {
@@ -99,6 +100,10 @@ int main(int argc, char **argv)
   slice = rank % (sub_div[0] * sub_div[1]);
   local_box_offset[1] = (slice / sub_div[0]) * local_box_size[1];
   local_box_offset[0] = (slice % sub_div[0]) * local_box_size[0];
+#if HDF5_IO
+  hid_t file_id, plist_id, dataset_id;
+  hid_t file_dataspace, mem_dataspace;
+#endif
 
 #if PIDX_IO
   PIDX_point global_bounding_box, local_offset, local_size;
@@ -119,30 +124,38 @@ int main(int argc, char **argv)
 #endif
 #endif
 
+#if HDF5_IO
+  plist_id = H5Pcreate(H5P_FILE_ACCESS);
 
+#if PIDX_HAVE_MPI
+  H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+#endif
+#endif
+
+#if PIDX_IO
+  PIDX_time_step_caching_ON();
+#endif
   for (t = 0; t < time_step_count; t++)
   {
-    int fp = open(file_name[t], O_RDONLY);
+#if HDF5_IO
+    file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
     for(var = 0; var < variable_count; var++)
     {
-      values_per_sample[var] =  1;
-      int64_t variable_offset = var * global_box_size[0] * global_box_size[1] * global_box_size[2] * sizeof(double);
-      buffer[var] = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample[var]);
-      pread(fp, buffer[var], local_box_size[0] * local_box_size[1] * local_box_size[2] * sizeof(double), variable_offset + (rank * local_box_size[0] * local_box_size[1] * local_box_size[2] * sizeof(double)));
+      memset(buffer[var], 0, sizeof(double) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+      dataset_id = H5Dopen2(file_id, var_name[var], H5P_DEFAULT);
 
-      /*
-      const double pi = acos(-1.0);
-      for (k = 0; k < local_box_size[2]; k++)
-        for (j = 0; j < local_box_size[1]; j++)
-          for (i = 0; i < local_box_size[0]; i++)
-          {
-            int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-            for (spv = 0; spv < values_per_sample[var]; spv++)
-              double_data[var][index * values_per_sample[var] + spv] = 100 + var + ((global_box_size[0] * global_box_size[1]*(local_offset[2] + k))+(global_box_size[0]*(local_offset[1] + j)) + (local_offset[0] + i));
-          }
-      */
+      mem_dataspace = H5Screate_simple (3, local_box_size, NULL);
+      file_dataspace = H5Dget_space (dataset_id);
+      H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, local_box_offset, NULL, local_box_size, NULL);
+
+      H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer[var]);
+
+      H5Sclose(mem_dataspace);
+      H5Sclose(file_dataspace);
+      H5Dclose(dataset_id);
     }
-    close(fp);
+    H5Fclose(file_id);
+#endif
 
 #if PIDX_IO
     variable = malloc(sizeof(*variable) * variable_count);
@@ -151,7 +164,6 @@ int main(int argc, char **argv)
     PIDX_set_variable_count(file, variable_count);
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);
-    PIDX_set_restructuring_box(file, restructured_box_size);
     for(var = 0; var < variable_count; var++)
     {
       ret = PIDX_variable_create(var_name[var], sizeof(double) * 8, "1*float64", &variable[var]);
@@ -168,6 +180,13 @@ int main(int argc, char **argv)
 #endif
 
   }
+#if PIDX_IO
+  PIDX_time_step_caching_OFF();
+#endif
+
+#if HDF5_IO
+  H5Pclose(plist_id);
+#endif
 
 #if PIDX_IO
   PIDX_close_access(access);
@@ -334,6 +353,8 @@ static void usage(void)
   printf("  -f: IDX Filename\n");
   printf("  -i: list of input\n");
   printf("  -v: list of input fields\n");
+
+  //printf("pidx-s3d-checkpoint generates a 3D volume of size g_x g_y g_z specified by -g command line parameter\nEach process writes a sub-volume of size l_x l_y l_z specified by -l command line parameter. \nData is written in the idx format, with the filename Filename specified by -f command line parameter. \nThe number of time-steps and the number of fields can be optionally provided by -t and -v command line parameters.\n");
 
   printf("\n");
 
