@@ -12,13 +12,12 @@ static char output_file_name[512] = "test.idx";
 static PIDX_point global_size, local_offset, local_size;
 static int roi_type = 0;
 static int current_time_step = 0;
-static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list -i hdf5_file_names_list -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./hdf5-to-idx -g 4x4x4 -l 2x2x2 -f Filename_ -v var_list -i hdf5_file_names_list\n"
+static char *usage = "Serial Usage: ./roi_writes -g 128x128x128 -l 128x128x128 -f out_file_name -r 1\n"
+                     "Parallel Usage: mpirun -n 64 ./roi_writes -g 128x128x128 -l 32x32x32 -f out_file_name -r 1\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX filename\n"
-                     "  -i: file containing list of input hdf5 files\n"
-                     "  -v: file containing list of input fields\n";
+                     "  -r: ROI type (1, 2, 4)\n";
 
 
 //----------------------------------------------------------------
@@ -148,7 +147,7 @@ static void parse_args(int argc, char **argv)
       sprintf(output_file_name, "%s%s", output_file_template, ".idx");
       break;
 
-    case('r'): // a file with a list of variables
+    case('r'): // ROI type
       if (sscanf(optarg, "%d", &roi_type) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
