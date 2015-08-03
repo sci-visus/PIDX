@@ -87,4 +87,9 @@ IF (PIDX_BUILD_TUTORIAL)
   ADD_DEPENDENCIES(template_converter pidx)
   TARGET_LINK_LIBRARIES(template_converter ${TUTORIAL_LINK_LIBS})
 
+  SET(CHECKPOINT_RESTART 4_PIDX_Checkpoint_Restart/PIDX_checkpoint_restart.cpp)
+  PIDX_ADD_EXECUTABLE(checkpoint_restart "${CHECKPOINT_RESTART}")
+  ADD_DEPENDENCIES(checkpoint_restart pidx)
+  TARGET_LINK_LIBRARIES(checkpoint_restart ${TUTORIAL_LINK_LIBS})
+
 ENDIF()
