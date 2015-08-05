@@ -1019,12 +1019,12 @@ int one_sided_data_com_by_level(PIDX_agg_id agg_id, int HZ_agg_from, int HZ_agg_
 #else
   //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
 #endif
-  ret = MPI_Win_free(&(agg_id->win));
-  if (ret != MPI_SUCCESS)
-  {
-    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
-    return PIDX_err_agg;
-  }
+  //ret = MPI_Win_free(&(agg_id->win));
+  //if (ret != MPI_SUCCESS)
+  //{
+  //  fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+  //  return PIDX_err_agg;
+  //}
 #endif
 #endif
 
@@ -1055,7 +1055,7 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
     return PIDX_err_agg;
   }
 
-  int staged_aggregation = 0;
+  int staged_aggregation = 1;
   int hz_lev = 0;
   PIDX_variable var1 = agg_id->idx->variable[agg_id->first_index];
   HZ_buffer hz_buf1 = var1->hz_buffer[0];
@@ -1104,7 +1104,6 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
 #endif
 
   return PIDX_success;
-
 }
 
 
