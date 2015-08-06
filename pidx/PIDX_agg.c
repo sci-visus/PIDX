@@ -1055,7 +1055,7 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
     return PIDX_err_agg;
   }
 
-  int staged_aggregation = 1;
+  int staged_aggregation = 0;
   int hz_lev = 0;
   PIDX_variable var1 = agg_id->idx->variable[agg_id->first_index];
   HZ_buffer hz_buf1 = var1->hz_buffer[0];
