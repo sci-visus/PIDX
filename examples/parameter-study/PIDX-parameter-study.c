@@ -158,10 +158,7 @@ int main(int argc, char **argv)
     double_data = malloc(sizeof(double**) * variable_count);
     for (var = 0; var < variable_count; var++)
     {
-      if (var == 3 || var == 8)
-        values_per_sample[var] = 3;
-      else
-        values_per_sample[var] = 1;
+      values_per_sample[var] = 1;
 
       double_data[var] = malloc(sizeof(double*) * patch_count);
       for(p = 0 ; p < patch_count ; p++)
@@ -184,10 +181,7 @@ int main(int argc, char **argv)
     ulong_data = malloc(sizeof(double**) * variable_count);
     for (var = 0; var < variable_count; var++)
     {
-      if (var == 3 || var == 8)
-        values_per_sample[var] = 3;
-      else
-        values_per_sample[var] = 1;
+      values_per_sample[var] = 1;
 
       ulong_data[var] = malloc(sizeof(double*) * patch_count);
       for(p = 0 ; p < patch_count ; p++)
