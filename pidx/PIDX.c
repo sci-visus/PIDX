@@ -1787,8 +1787,8 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
     }
   }
 
-  //file->var_pipe_length = file->idx->variable_count - 1;
-  file->var_pipe_length = 1;
+  file->var_pipe_length = file->idx->variable_count - 1;
+  //file->var_pipe_length = 1;
 
   return PIDX_success;
 }
