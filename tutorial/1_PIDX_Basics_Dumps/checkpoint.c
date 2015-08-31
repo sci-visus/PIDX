@@ -219,7 +219,7 @@ int main(int argc, char **argv)
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
-  rank_0_print("Simulation Data Created\n");
+  //rank_0_print("Simulation Data Created\n");
 
   int ret;
   int var;

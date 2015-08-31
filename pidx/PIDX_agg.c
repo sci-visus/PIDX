@@ -1055,18 +1055,20 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
     return PIDX_err_agg;
   }
 
-  int staged_aggregation = 0;
   int hz_lev = 0;
   PIDX_variable var1 = agg_id->idx->variable[agg_id->first_index];
   HZ_buffer hz_buf1 = var1->hz_buffer[0];
 
   if (hz_buf1->HZ_agg_to <= log2(agg_id->idx->blocks_per_file) + agg_id->idx->bits_per_block + 1)
-    staged_aggregation = 0;
+    agg_id->idx_d->staged_aggregation = 0;
   else
+  {
+    agg_id->idx_d->staged_aggregation = 1;
     hz_lev = log2(agg_id->idx->blocks_per_file) + agg_id->idx->bits_per_block + 1;
+  }
 
   //printf("[%d] %d %d %d\n", staged_aggregation, hz_lev, hz_buf1->HZ_agg_to, agg_id->idx_d->max_file_count);
-  if (staged_aggregation == 0)
+  if (agg_id->idx_d->staged_aggregation == 0)
   {
     ret = one_sided_data_com(agg_id);
     if (ret != PIDX_success)

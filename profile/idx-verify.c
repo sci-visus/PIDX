@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "PIDX_config.h"
+//#include "PIDX_config.h"
 
 #if PIDX_HAVE_ZFP
   #include "zfp.h"

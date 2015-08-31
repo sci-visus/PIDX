@@ -21,11 +21,11 @@ PIDX_IO_OBJS = PIDX_io.o
 PIDX_DATA_STRUCTS = ../pidx/PIDX_memory_layout_data_structs.h ../pidx/PIDX_idx_data_structs.h
 
 MPICC = mpicc -Wall -g
-MPICXX = mpic++ -Wall -g
+#MPICXX = mpic++ -Wall -g
 MPI_LDFLAGS_PIDX = -L. -lPIDX -lm -I ../pidx
 MPI_CFLAGS = -Wno-write-strings -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -lm -I ../pidx
 
-all: PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_block_restructure.o PIDX_compression.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a pidxtest idx-verify idx-compare idx-dump-header
+all: PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_block_restructure.o PIDX_compression.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a checkpoint idx-verify idx-compare idx-dump-header
 
 PIDX_error_codes.o: ../pidx/PIDX_error_codes.c ../pidx/PIDX_error_codes.h ../pidx/PIDX_inc.h  ../pidx/PIDX_memory_layout_data_structs.h ../pidx/PIDX_idx_data_structs.h
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
@@ -33,11 +33,9 @@ PIDX_error_codes.o: ../pidx/PIDX_error_codes.c ../pidx/PIDX_error_codes.h ../pid
 PIDX_file_access_modes.o: ../pidx/PIDX_file_access_modes.c  ../pidx/PIDX_file_access_modes.h ../pidx/PIDX_inc.h  ../pidx/PIDX_memory_layout_data_structs.h ../pidx/PIDX_idx_data_structs.h
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
 	
-PIDX_data_types.o: ../pidx/PIDX_data_types.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
+PIDX_data_types.o: ../pidx/PIDX_data_types.c ../pidx/PIDX_data_types.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
 	
-#PIDX_topology.o: ../pidx/PIDX_topology.c ../pidx/PIDX_topology.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
-#	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
 
 PIDX_data_layout.o: ../pidx/PIDX_data_layout.c ../pidx/PIDX_data_layout.h ../pidx/PIDX_inc.h  $(PIDX_DATA_STRUCTS)
 	$(MPICC) $(MPI_CFLAGS) $< -c -o $@
@@ -84,9 +82,9 @@ $(PIDX_NEW_OBJS): %.o: ../pidx/PIDX.c ../pidx/PIDX.h ../pidx/PIDX_io.c ../pidx/P
 libPIDX.a: $(PIDX_NEW_OBJS) ../pidx/PIDX_io.c ../pidx/PIDX_io.h ../pidx/PIDX_agg.c ../pidx/PIDX_agg.h ../pidx/PIDX_compression.c ../pidx/PIDX_compression.h ../pidx/PIDX_hz_encode.c ../pidx/PIDX_hz_encode.h ../pidx/PIDX_block_restructure.c ../pidx/PIDX_block_restructure.h ../pidx/PIDX_rst.c ../pidx/PIDX_rst.h ../pidx/PIDX_header_io.c ../pidx/PIDX_header_io.h ../pidx/PIDX_blocks.c ../pidx/PIDX_blocks.h
 	ar rcs $@ $(PIDX_NEW_OBJS) PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_compression.o PIDX_block_restructure.o PIDX_agg.o PIDX.o
 
-pidxtest:  ../test/pidxtest.c ../test/testdefs.h ../test/pidxtest.h ../test/test-PIDX-reader.cpp ../test/test-mpi-to-idx.cpp ../test/test-HDF5-writer.c ../test/test-HDF5-reader.c ../test/test-PIDX-multi-idx-writer.cpp PIDX_data_layout.o  PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a
-	$(MPICXX) $(MPI_CFLAGS) $< ../test/test-PIDX-multi-idx-writer.cpp ../test/test-PIDX-reader.cpp ../test/test-mpi-to-idx.cpp ../test/test-HDF5-writer.c ../test/test-HDF5-reader.c ../test/test-PIDX-converter.cpp ../test/test-PIDX-converter2.cpp -o $@ $(MPI_LDFLAGS_PIDX)
-# 	rm *.o
+checkpoint: ../tutorial/1_PIDX_Basics_Dumps/checkpoint.c PIDX_data_layout.o PIDX_error_codes.o PIDX_file_access_modes.o PIDX_data_types.o PIDX_data_layout.o PIDX_comm.o PIDX_blocks.o PIDX_utils.o PIDX_point.o PIDX_file_name.o PIDX_header_io.o PIDX_rst.o PIDX_hz_encode.o PIDX_io.o PIDX_agg.o PIDX.o libPIDX.a
+	$(MPICC) $(MPI_CFLAGS) $< -o $@ $(MPI_LDFLAGS_PIDX)
+	rm *.o
 
 idx-verify: ../profile/idx-verify.c
 	cc   ../profile/idx-verify.c   -o idx-verify -lm
@@ -98,4 +96,4 @@ idx-dump-header:  ../profile/idx-dump-header.c
 	cc   ../profile/idx-dump-header.c   -o idx-dump-header -lm
 	
 clean::
-	rm -f *.o libPIDX* pidxtest idx-verify
+	rm -f *.o libPIDX* checkpoint idx-verify idx-compare idx-dump-header
