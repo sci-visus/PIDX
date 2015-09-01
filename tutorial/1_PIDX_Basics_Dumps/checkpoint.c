@@ -76,6 +76,7 @@ static void terminate_with_error_msg(const char *format, ...)
 }
 
 //----------------------------------------------------------------
+/*
 static void rank_0_print(const char *format, ...)
 {
   if (rank != 0) return;
@@ -84,6 +85,7 @@ static void rank_0_print(const char *format, ...)
   vfprintf(stderr, format, arg_ptr);
   va_end(arg_ptr);
 }
+*/
 
 //----------------------------------------------------------------
 static void init_mpi(int argc, char **argv)

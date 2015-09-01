@@ -601,8 +601,8 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id)
 int create_window(PIDX_agg_id agg_id)
 {
   int rank = 0, ret = 0;
-#if PIDX_HAVE_MPI
   Agg_buffer agg_buffer = agg_id->idx_d->agg_buffer;
+#if PIDX_HAVE_MPI
   MPI_Comm_rank(agg_id->comm, &rank);
 
   if (agg_id->idx_d->agg_buffer->buffer_size != 0)
@@ -630,7 +630,7 @@ int create_window(PIDX_agg_id agg_id)
     }
 #endif
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -646,20 +646,6 @@ int one_sided_data_com(PIDX_agg_id agg_id)
   MPI_Comm_rank(agg_id->comm, &rank);
 #endif
 
-#if !SIMULATE_IO
-#ifdef PIDX_ACTIVE_TARGET
-  ret = MPI_Win_fence(0, agg_id->win);
-  if (ret != MPI_SUCCESS)
-  {
-    fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
-    return PIDX_err_agg;
-  }
-#else
-  //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
-#endif
-#endif
-
-#endif
 
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
@@ -805,27 +791,6 @@ int one_sided_data_com(PIDX_agg_id agg_id)
     }
   }
 
-#if !SIMULATE_IO
-#if PIDX_HAVE_MPI
-#ifdef PIDX_ACTIVE_TARGET
-  ret = MPI_Win_fence(0, agg_id->win);
-  if (ret != MPI_SUCCESS)
-  {
-    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
-    return PIDX_err_agg;
-  }
-#else
-  //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
-#endif
-  //ret = MPI_Win_free(&(agg_id->win));
-  //if (ret != MPI_SUCCESS)
-  //{
-  //  fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
-  //  return PIDX_err_agg;
-  //}
-#endif
-#endif
-
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
   {
@@ -839,7 +804,6 @@ int one_sided_data_com(PIDX_agg_id agg_id)
 
 int one_sided_data_com_by_level(PIDX_agg_id agg_id, int HZ_agg_from, int HZ_agg_to)
 {
-
   int i, p, e1, v, ret = 0;
   int send_index = 0;
   int64_t index = 0, count = 0, hz_index = 0;
@@ -848,20 +812,6 @@ int one_sided_data_com_by_level(PIDX_agg_id agg_id, int HZ_agg_from, int HZ_agg_
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(agg_id->comm, &rank);
 #endif
-
-#if !SIMULATE_IO
-#ifdef PIDX_ACTIVE_TARGET
-  ret = MPI_Win_fence(0, agg_id->win);
-  if (ret != MPI_SUCCESS)
-  {
-    fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
-    return PIDX_err_agg;
-  }
-#else
-  //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
-#endif
-#endif
-
 
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
@@ -1007,27 +957,6 @@ int one_sided_data_com_by_level(PIDX_agg_id agg_id, int HZ_agg_from, int HZ_agg_
     }
   }
 
-#if !SIMULATE_IO
-#if PIDX_HAVE_MPI
-#ifdef PIDX_ACTIVE_TARGET
-  ret = MPI_Win_fence(0, agg_id->win);
-  if (ret != MPI_SUCCESS)
-  {
-    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
-    return PIDX_err_agg;
-  }
-#else
-  //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
-#endif
-  //ret = MPI_Win_free(&(agg_id->win));
-  //if (ret != MPI_SUCCESS)
-  //{
-  //  fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
-  //  return PIDX_err_agg;
-  //}
-#endif
-#endif
-
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
   {
@@ -1070,21 +999,94 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
   //printf("[%d] %d %d %d\n", staged_aggregation, hz_lev, hz_buf1->HZ_agg_to, agg_id->idx_d->max_file_count);
   if (agg_id->idx_d->staged_aggregation == 0)
   {
+    
+#if !SIMULATE_IO
+#ifdef PIDX_ACTIVE_TARGET
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#else
+  //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+#endif
+
     ret = one_sided_data_com(agg_id);
     if (ret != PIDX_success)
     {
       fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
+    
+#if !SIMULATE_IO
+#if PIDX_HAVE_MPI
+#ifdef PIDX_ACTIVE_TARGET
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#else
+  //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+#endif
+#endif
+    
+    
   }
   else
   {
+    
+#if !SIMULATE_IO
+#ifdef PIDX_ACTIVE_TARGET
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#else
+  //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+#endif
+    
     ret = one_sided_data_com_by_level(agg_id, hz_buf1->HZ_agg_from, hz_lev);
     if (ret != PIDX_success)
     {
       fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
+    
+#if !SIMULATE_IO
+#if PIDX_HAVE_MPI
+#ifdef PIDX_ACTIVE_TARGET
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#else
+  //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+#endif
+#endif
+
+#if !SIMULATE_IO
+#ifdef PIDX_ACTIVE_TARGET
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#else
+  //MPI_Win_free has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+#endif
 
     ret = one_sided_data_com_by_level(agg_id, hz_lev, hz_buf1->HZ_agg_to);
     if (ret != PIDX_success)
@@ -1092,6 +1094,23 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id)
       fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
+    
+#if !SIMULATE_IO
+#if PIDX_HAVE_MPI
+#ifdef PIDX_ACTIVE_TARGET
+  ret = MPI_Win_fence(0, agg_id->win);
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#else
+  //MPI_Win_create has barrier semantics and therefore adding MPI_Barrier here is unnecessary
+#endif
+#endif
+#endif
+    
+    
   }
 
 #if !SIMULATE_IO
