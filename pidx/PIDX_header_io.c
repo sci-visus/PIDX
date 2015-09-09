@@ -130,7 +130,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     if (nbits_blocknumber % 4) 
     {
       nbits_blocknumber += (4 - (nbits_blocknumber % 4));
-      assert(!(nbits_blocknumber % 4));
+      //assert(!(nbits_blocknumber % 4));
     }
     if (nbits_blocknumber <= 8) 
       strcat(header_io->filename_template, "/%02x.bin"); //no directories, 256 files
@@ -147,7 +147,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
       }
       strcat(header_io->filename_template, "/%04x.bin"); //max 65536  files
       nbits_blocknumber -= 16;
-      assert(nbits_blocknumber <= 0);
+      //assert(nbits_blocknumber <= 0);
     }
   }
   

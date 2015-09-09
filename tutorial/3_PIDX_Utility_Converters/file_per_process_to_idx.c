@@ -16,6 +16,10 @@
  **                                                 **
  *****************************************************/
 
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
+
 #include <getopt.h>
 #include <string.h>
 #include <assert.h>

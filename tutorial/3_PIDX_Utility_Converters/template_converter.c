@@ -19,7 +19,9 @@
 #define PIDX_IO 1
 #define HDF5_IO 0
 
-
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <PIDX.h>
 
 #if HDF5_HAVE_MPI

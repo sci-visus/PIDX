@@ -1,3 +1,24 @@
+/*****************************************************
+ **  PIDX Parallel I/O Library                      **
+ **  Copyright (c) 2010-2014 University of Utah     **
+ **  Scientific Computing and Imaging Institute     **
+ **  72 S Central Campus Drive, Room 3750           **
+ **  Salt Lake City, UT 84112                       **
+ **                                                 **
+ **  PIDX is licensed under the Creative Commons    **
+ **  Attribution-NonCommercial-NoDerivatives 4.0    **
+ **  International License. See LICENSE.md.         **
+ **                                                 **
+ **  For information about this project see:        **
+ **  http://www.cedmav.com/pidx                     **
+ **  or contact: pascucci@sci.utah.edu              **
+ **  For support: PIDX-support@visus.net            **
+ **                                                 **
+ *****************************************************/
+
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <PIDX.h>
 
 enum { X, Y, Z, NUM_DIMS };
@@ -73,6 +94,7 @@ static void shutdown_mpi()
 
 static void calculate_per_process_offsecurrent_time_step()
 {
+#if 0
   int sub_div[NUM_DIMS];
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
   sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
@@ -81,6 +103,95 @@ static void calculate_per_process_offsecurrent_time_step()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
+#endif
+  
+  if (rank == 0)
+  {
+    local_box_offset[0] = 0;
+    local_box_offset[1] = 5;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 11;
+    local_box_size[1] = 17;
+    local_box_size[2] = 32;
+  }
+  
+  if (rank == 1)
+  {
+    local_box_offset[0] = 11;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 18;
+    local_box_size[1] = 32;
+    local_box_size[2] = 32;
+  }
+  
+  if (rank == 2)
+  {
+    local_box_offset[0] = 29;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 18;
+    local_box_size[1] = 32;
+    local_box_size[2] = 32;
+  }
+  
+  if (rank == 3)
+  {
+    local_box_offset[0] = 47;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 18;
+    local_box_size[1] = 32;
+    local_box_size[2] = 32;
+  }
+  
+  if (rank == 4)
+  {
+    local_box_offset[0] = 65;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 18;
+    local_box_size[1] = 32;
+    local_box_size[2] = 32;
+  }
+  
+  if (rank == 5)
+  {
+    local_box_offset[0] = 83;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 18;
+    local_box_size[1] = 32;
+    local_box_size[2] = 32;
+  }
+  
+  if (rank == 6)
+  {
+    local_box_offset[0] = 101;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 10;
+    local_box_size[1] = 42;
+    local_box_size[2] = 32;
+  }
+  
+  if (rank == 7)
+  {
+    local_box_offset[0] = 111;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+    
+    local_box_size[0] = 21;
+    local_box_size[1] = 52;
+    local_box_size[2] = 32;
+  }
 }
 
 
@@ -136,9 +247,9 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('l'): // local dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
-          (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
-        terminate_with_error_msg("Invalid local dimension\n%s", usage);
+      //if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
+      //    (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
+      //  terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
     case('f'): // output file name
@@ -261,7 +372,7 @@ int main(int argc, char **argv)
 {
   init_mpi(argc, argv);
   parse_args(argc, argv);
-  check_args();
+  //check_args();
   calculate_per_process_offsecurrent_time_step();
 
   rank_0_print("Simulation Data Created\n");
@@ -300,10 +411,10 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, 1);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    ret = PIDX_set_ROI_writes(file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
+    //ret = PIDX_set_ROI_writes(file);
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
 
-    int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
+    int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
     ret = PIDX_set_restructuring_box(file, restructured_box_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 

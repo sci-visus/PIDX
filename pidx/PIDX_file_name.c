@@ -190,11 +190,9 @@ int generate_file_name_template(int maxh, int bits_per_block, char* filename, in
   char* data_set_path;
   
   directory_path = (char*) malloc(sizeof (char) * 1024);
-  assert(directory_path);
   memset(directory_path, 0, sizeof (char) * 1024);
 
   data_set_path = (char*) malloc(sizeof (char) * 1024);
-  assert(data_set_path);
   memset(data_set_path, 0, sizeof (char) * 1024);
 
   strncpy(directory_path, filename, strlen(filename) - 4);  
@@ -236,7 +234,7 @@ int generate_file_name_template(int maxh, int bits_per_block, char* filename, in
     if (nbits_blocknumber % 4) 
     {
       nbits_blocknumber += (4 - (nbits_blocknumber % 4));
-      assert(!(nbits_blocknumber % 4));
+      //assert(!(nbits_blocknumber % 4));
     }
     if (nbits_blocknumber <= 8) 
       strcat(filename_template, "/%02x.bin"); //no directories, 256 files
@@ -253,7 +251,7 @@ int generate_file_name_template(int maxh, int bits_per_block, char* filename, in
       }
       strcat(filename_template, "/%04x.bin"); //max 65536  files
       nbits_blocknumber -= 16;
-      assert(nbits_blocknumber <= 0);
+      //assert(nbits_blocknumber <= 0);
     }
   }
   

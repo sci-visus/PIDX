@@ -108,7 +108,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   tpatch = (int**) malloc(2 * sizeof (int*));
   tpatch[0] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
   tpatch[1] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
-  assert(tpatch);
 
   if(maxH <= 0)
   {

@@ -87,7 +87,7 @@ uint64_t ZStart(const char* bitmask,int maxh,int BlockingH)
 {
   if (!BlockingH) 
     return 0;
-  assert(BlockingH>=1 && BlockingH<=maxh);
+  //assert(BlockingH>=1 && BlockingH<=maxh);
   return ((uint64_t)1)<<(maxh-BlockingH);
 }
 
@@ -95,7 +95,7 @@ uint64_t ZEnd(const char* bitmask,int maxh,int BlockingH)
 {
   if (!BlockingH) 
     return 0;
-  assert(BlockingH>=1 && BlockingH<=maxh);
+  //assert(BlockingH>=1 && BlockingH<=maxh);
   return (ZBitmask(bitmask,maxh)-1)-(ZStart(bitmask,maxh,BlockingH)-1);
 }
 
@@ -106,7 +106,7 @@ void ZDelta(const char* bitmask, int maxh, int BlockingH, int* point)
     point[K] = 1;
   
   if (!BlockingH) return;
-  assert(BlockingH>=1 && BlockingH<=maxh);
+  //assert(BlockingH>=1 && BlockingH<=maxh);
   for (K=maxh;K>=BlockingH;K--)
   {
     bit=bitmask[K];
@@ -260,7 +260,7 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
   }
   else
   {
-    assert(H>=1 && H<=maxh);
+    //assert(H>=1 && H<=maxh);
     Deinterleave(bitmask,maxh,ZStart(bitmask,maxh,H), h_box[0]);
     Deinterleave(bitmask,maxh,ZEnd  (bitmask,maxh,H), h_box[1]);
   }
@@ -312,7 +312,7 @@ int RegExBitmaskBit(const char* bitmask_pattern,int N)
 {
   const char *OpenRegEx;
   int S, L;
-  assert(bitmask_pattern[0]=='V');
+  //assert(bitmask_pattern[0]=='V');
 
   if (!N) 
     return bitmask_pattern[0];

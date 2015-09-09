@@ -360,7 +360,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
   int fh;
 #endif
 
-  int total_chunk_size = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]);
+  //int total_chunk_size = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]);
 
   total_header_size = (10 + (10 * io_id->idx->blocks_per_file)) * sizeof (uint32_t) * io_id->idx->variable_count;
 

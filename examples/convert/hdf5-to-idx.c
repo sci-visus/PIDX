@@ -24,6 +24,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
 
 #if PIDX_HAVE_MPI
 #include <mpi.h>

@@ -16,6 +16,12 @@
  **                                                 **
  *****************************************************/
 
+#include <sys/stat.h> 
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
+
 #include <PIDX.h>
 
 #if PIDX_HAVE_MPI

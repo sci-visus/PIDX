@@ -471,7 +471,8 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           cnt++;
         }
       }
-      assert(cnt == var->patch_group_count);
+      if (cnt != var->patch_group_count)
+        return PIDX_err_rst;
     }
 #endif
   }
@@ -528,7 +529,8 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
           cnt++;
         }
       }
-      assert(cnt == var->patch_group_count);
+      if (cnt != var->patch_group_count)
+        return PIDX_err_rst;
     }
 #endif
   }

@@ -344,7 +344,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
           }
 
           // copy the elements (chunk_size[0] elements at a time)
-          int64_t num_elems_copy = min(patch_size[0] - patch_index[0], chunk_size[0]);
+          int64_t num_elems_copy = pmin(patch_size[0] - patch_index[0], chunk_size[0]);
 #if !SIMULATE_IO
           memcpy(&out_patch->patch[0]->buffer[j * bytes_per_value], &patch->buffer[i * bytes_per_value],   bytes_per_value * num_elems_copy);
 #endif
@@ -500,7 +500,7 @@ PIDX_return_code PIDX_chunk_read(PIDX_chunk_id chunk_id)
           }
 
           // copy the elements (chunk_size[0] elements at a time)
-          int64_t num_elems_copy = min(patch_size[0] - patch_index[0], chunk_size[0]);
+          int64_t num_elems_copy = pmin(patch_size[0] - patch_index[0], chunk_size[0]);
           memcpy(&patch->buffer[i * bytes_per_value], &out_patch->patch[0]->buffer[j * bytes_per_value],  bytes_per_value * num_elems_copy);
 
           // update the index inside the patch

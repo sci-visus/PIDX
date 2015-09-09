@@ -855,7 +855,7 @@ PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* filename, 
     if (nbits_blocknumber % 4) 
     {
       nbits_blocknumber += (4 - (nbits_blocknumber % 4));
-      assert(!(nbits_blocknumber % 4));
+      //assert(!(nbits_blocknumber % 4));
     }
     if (nbits_blocknumber <= 8) 
       strcat(file->idx->filename_template, "/%02x.bin"); //no directories, 256 files
@@ -872,7 +872,7 @@ PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* filename, 
       }
       strcat(file->idx->filename_template, "/%04x.bin"); //max 65536  files
       nbits_blocknumber -= 16;
-      assert(nbits_blocknumber <= 0);
+      //assert(nbits_blocknumber <= 0);
     }
   }
   
