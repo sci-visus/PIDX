@@ -1301,7 +1301,8 @@ PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_poi
 
 static PIDX_return_code populate_idx_dataset(PIDX_file file)
 {
-  int d;
+  int d, rank;
+  MPI_Comm_rank(file->comm, &rank);
 
   int i, j, counter = 0, file_number = 0;
     int bounding_box[2][5] = {
@@ -1350,9 +1351,9 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   file->idx->variable[file->local_variable_index]->global_block_layout = malloc(sizeof (*file->idx->variable[file->local_variable_index]->global_block_layout));
 
   PIDX_block_layout block_layout = file->idx->variable[file->local_variable_index]->global_block_layout;
-
-  if (file->ROI_writes == 0)
-  {
+#if 0
+  //if (file->ROI_writes == 0)
+  //{
     for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
     {
       bounding_box[0][i] = 0;
@@ -1375,9 +1376,11 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       }
       k = k * 2;
     }
-  }
-  else
-  {
+  //}
+#endif
+#if 1
+  //else
+  //{
     int p = 0, ctr = 1;
     PIDX_blocks_initialize_layout(block_layout, file->idx_d->maxh, file->idx->bits_per_block);
 
@@ -1443,13 +1446,13 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
           counter++;
         }
       }
+      memset(block_layout->hz_block_number_array[i]+counter, 0, (ctr-counter)*sizeof(int));
       ctr = ctr * 2;
     }
-    
-    //if (rank == 0)
-    //  PIDX_blocks_print_layout(block_layout);
-  }
-    
+  //}
+#endif
+  //if (rank == 0)
+  //  PIDX_blocks_print_layout(block_layout);
   file->idx->variable[file->local_variable_index]->file_index = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(file->idx->variable[file->local_variable_index]->file_index, 0, sizeof(int) * (file->idx_d->max_file_count));
   
@@ -2440,14 +2443,16 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     /*----------------------------------------Compression [start]--------------------------------------------*/
     compression_start[vp] = PIDX_get_time();
     /* Perform Compression */
+
     /*
     if (file->debug_do_compress == 1)
     {
-      ret = PIDX_compression(file->comp_id);
+      ret = PIDX_decompression(file->comp_id);
       if (ret != PIDX_success)
         return PIDX_err_compress;
     }
     */
+
     compression_end[vp] = PIDX_get_time();
     /*------------------------------------------Compression [end]--------------------------------------------*/
 

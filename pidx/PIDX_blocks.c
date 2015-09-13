@@ -132,7 +132,7 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
   printf("Number of levels: %d\n", layout->levels);
   for (i = 1; i < (layout->levels); i++) 
   {
-    printf("Number of blocks at level %d = %d :: ", i, layout->hz_block_count_array[i]);
+    printf("Number of blocks at level %d = %d [%d] :: ", i, layout->hz_block_count_array[i], ctr);
     for (j = 0 ; j <  ctr; j++)
       if (layout->hz_block_number_array[i][j] != 0)
         printf("%d ", layout->hz_block_number_array[i][j]);

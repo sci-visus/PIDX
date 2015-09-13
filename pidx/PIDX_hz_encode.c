@@ -216,6 +216,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
 
+        //if (j == 19)
+        //  printf("[%d] start : end :: %lld : %lld %lld\n", j, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], (hz_buf->end_hz_index[j] - hz_buf->start_hz_index[j] + 1));
+
         if (var->chunk_patch_group[p]->type == 2)
         {
           start_block_no = hz_buf->start_hz_index[j] / id->idx_d->samples_per_block;
@@ -253,7 +256,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
 PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 {
-#if !SIMULATE_IO
+
   int p = 0, c = 0, v = 0, bytes_for_datatype = 0;
 
   int maxH = id->idx_d->maxh;
@@ -266,8 +269,10 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
     PIDX_variable var = id->idx->variable[v];
     for (p = 0; p < var->patch_group_count; p++)
     {
+#if !SIMULATE_IO
       var->hz_buffer[p]->buffer = (unsigned char**)malloc( maxH * sizeof (unsigned char*));
       memset(var->hz_buffer[p]->buffer, 0,  maxH * sizeof (unsigned char*));
+#endif
 
       bytes_for_datatype = (var->bits_per_value / 8) * chunk_size * var->values_per_sample;
       if (var->chunk_patch_group[p]->type == 1 || var->chunk_patch_group[p]->type == 2)
@@ -275,13 +280,16 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
         for (c = 0 ; c < maxH ; c++)
         {
           int64_t samples_per_level = (var->hz_buffer[p]->end_hz_index[c] - var->hz_buffer[p]->start_hz_index[c] + 1);
+
+#if !SIMULATE_IO
           var->hz_buffer[p]->buffer[c] = malloc(bytes_for_datatype * samples_per_level);
           memset(var->hz_buffer[p]->buffer[c], 0, bytes_for_datatype * samples_per_level);
+#endif
         }
       }
     }
   }
-#endif
+
   return PIDX_success;
 }
 
@@ -645,6 +653,8 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 #endif
     }
 
+    int rank = 0;
+    MPI_Comm_rank(id->comm, &rank);
     int missing_sample_count = 0;
     if (var0->chunk_patch_group[y]->type == 2)
     {
@@ -675,10 +685,14 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                   int src = (sample + id->idx_d->samples_per_block - skipped_samples) * bytes_for_datatype;
                   int count = (samples_per_level - sample - id->idx_d->samples_per_block) * bytes_for_datatype;
 
+                  //printf("[%d] src dest count %d %d %d (%d - %d - %d)\n", rank, src, dest, count, samples_per_level, sample, id->idx_d->samples_per_block);
+
+                  if (count < 0)
+                    break;
+
 #if !SIMULATE_IO
                   memmove(var->hz_buffer[y]->buffer[j] + dest, var->hz_buffer[y]->buffer[j] + src, count);
 #endif
-
                   skipped_blocks++;
                   sample_start_index = sample;
                   break;

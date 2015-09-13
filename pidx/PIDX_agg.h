@@ -52,37 +52,31 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
 /// \return error code
 PIDX_return_code PIDX_agg_set_communicator(PIDX_agg_id io_id, MPI_Comm comm);
 
+
 PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm);
 #endif
 
 
+PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id);
+
 
 PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id);
-
-
-PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id);
-
-PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id);
 
 
 ///
 PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id);
 
 
+///
+PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id);
+
 
 ///
 PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id);
 
 
-
 ///
 PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id);
-
-
-
-///
-PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id);
-
 
 
 ///

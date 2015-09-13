@@ -104,7 +104,7 @@ static void calculate_per_process_offsecurrent_time_step()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 #endif
-  
+
   if (rank == 0)
   {
     local_box_offset[0] = 0;
@@ -137,7 +137,7 @@ static void calculate_per_process_offsecurrent_time_step()
     local_box_size[1] = 32;
     local_box_size[2] = 32;
   }
-  
+
   if (rank == 3)
   {
     local_box_offset[0] = 47;
@@ -194,7 +194,7 @@ static void calculate_per_process_offsecurrent_time_step()
   }
 }
 
-
+//(11*17*32)+(18*32*32)+(18*32*32)+(18*32*32)+(18*32*32)+(18*32*32)+(10*42*32)+(21*52*32)
 static void destroy_synthetic_simulation_data()
 {
   switch (roi_type)
@@ -290,8 +290,17 @@ static void create_synthetic_simulation_data_and_ROI_extents()
   {
     case 0:
       data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
-      for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
-        data[i] = rank;
+      //for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
+      //  data[i] = rank;
+
+      int k,j,i;
+      for (k = 0; k < local_box_size[2]; k++)
+        for (j = 0; j < local_box_size[1]; j++)
+          for (i = 0; i < local_box_size[0]; i++)
+          {
+            unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+            data[index] = 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          }
 
       PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
       break;
@@ -402,6 +411,12 @@ int main(int argc, char **argv)
     ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
+    PIDX_set_block_size(file, 15);
+
+    //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
+    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    //PIDX_set_lossy_compression_bit_rate(file, 8);
+
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
 
@@ -414,9 +429,9 @@ int main(int argc, char **argv)
     //ret = PIDX_set_ROI_writes(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
 
-    int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
-    ret = PIDX_set_restructuring_box(file, restructured_box_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
+    //int64_t restructured_box_size[5] = {128, 128, 128, 1, 1};
+    //ret = PIDX_set_restructuring_box(file, restructured_box_size);
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
     ret = PIDX_variable_create("ROI_Var", sizeof(unsigned long long) * 8, FLOAT64, &variable);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");

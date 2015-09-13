@@ -187,7 +187,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
           int compressed_element_count;
 
           compressed_element_count = compress_buffer(comp_id, buffer, element_count);
-          printf("Compressed element count = %d\n", compressed_element_count);
+          //printf("Compressed element count = %d\n", compressed_element_count);
           if (compressed_element_count < 0)
             return PIDX_err_compress;
 

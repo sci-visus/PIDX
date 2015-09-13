@@ -23,12 +23,13 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 
 //#include <fcntl.h>
 //#include <unistd.h>
 //#include <sys/types.h>
 //#include <time.h>
-//#include <assert.h>
+
 //#include <stdint.h>
 
 #if PIDX_HAVE_MPI
