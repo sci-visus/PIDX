@@ -600,12 +600,12 @@ int main(int argc, char **argv)
 
                 if (check_bit == 0)
                 {
-                  /*
+                  //
                   if (strcmp(variable_type[var], "float64") == 0)
                     printf("%f %f\n", dlhs, drhs);
                   else if (strcmp(variable_type[var], "uint64") == 0)
                       printf("%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
-                   */
+                   //
                   lost_element_count++;
                   //break;
                 }

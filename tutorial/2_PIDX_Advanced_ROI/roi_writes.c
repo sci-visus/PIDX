@@ -414,8 +414,8 @@ int main(int argc, char **argv)
     PIDX_set_block_size(file, 15);
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-    //PIDX_set_lossy_compression_bit_rate(file, 8);
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    PIDX_set_lossy_compression_bit_rate(file, 8);
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");

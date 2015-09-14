@@ -260,6 +260,9 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
+    //PIDX_set_lossy_compression_bit_rate(file, 8);
+
     char var_name[512];
     for (var = 0; var < variable_count; var++)
     {

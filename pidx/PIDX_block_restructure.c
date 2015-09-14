@@ -205,6 +205,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 
           // malloc the storage for all elements in the output array
           out_patch->patch[j]->buffer = malloc(bytes_per_value * num_elems_group);
+          memset(out_patch->patch[j]->buffer, -1, bytes_per_value * num_elems_group);
         }
       }
     }
@@ -368,6 +369,32 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
       }
     }
   }
+
+  int rank;
+  MPI_Comm_rank(chunk_id->comm, &rank);
+  char filename[100];
+  sprintf(filename, "%d", rank);
+  FILE *fp = fopen (filename, "w");
+  double dv;
+  int i;
+  for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
+  {
+    PIDX_variable var = chunk_id->idx->variable[v];
+
+    // loop through all groups
+    int g = 0;
+    for (g = 0; g < var->patch_group_count; ++g)
+    {
+      Ndim_patch_group out_patch = var->chunk_patch_group[g];
+      fprintf(fp, "Offset Count %d %d %d :: %d %d %d\n", (int)out_patch->reg_patch_offset[0], (int)out_patch->reg_patch_offset[1], (int)out_patch->reg_patch_offset[2], (int)out_patch->reg_patch_size[0], (int)out_patch->reg_patch_size[1], (int)out_patch->reg_patch_size[2]);
+      for (i = 0; i < out_patch->reg_patch_size[0] * out_patch->reg_patch_size[1] * out_patch->reg_patch_size[2]; i++)
+      {
+        memcpy(&dv, out_patch->patch[0]->buffer + (i*sizeof(double)), sizeof(double));
+        fprintf(fp, "%f\n", dv);
+      }
+    }
+  }
+  fclose(fp);
 
   return PIDX_success;
 }

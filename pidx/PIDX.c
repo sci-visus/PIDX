@@ -1756,6 +1756,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
     }
     else
     {
+      /*
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
         if (file->idx->bounds[d] % file->idx->chunk_size[d] != 0)
@@ -1768,6 +1769,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
           break;
         }
       }
+      */
     }
   }
 
