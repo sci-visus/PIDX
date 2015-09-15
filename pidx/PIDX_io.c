@@ -709,7 +709,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
             {
               index = 0;
               count = (io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
-              printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
+              //printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
               ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_WRITE);
               if (ret != PIDX_success)
               {
@@ -743,7 +743,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
 
                   //ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], index, PIDX_WRITE);
 
-                  printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
+                  //printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
                   ret = write_read_samples(io_id, v, index + io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_WRITE);
                   if (ret != PIDX_success)
                   {

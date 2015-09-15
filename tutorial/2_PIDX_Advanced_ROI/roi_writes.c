@@ -411,11 +411,11 @@ int main(int argc, char **argv)
     ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
-    PIDX_set_block_size(file, 15);
+    PIDX_set_block_size(file, 14);
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-    PIDX_set_lossy_compression_bit_rate(file, 8);
+    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    //PIDX_set_lossy_compression_bit_rate(file, 8);
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
