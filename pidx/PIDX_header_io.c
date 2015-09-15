@@ -369,6 +369,9 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
   }
   */
 
+  int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
+  memset(headers, 0, total_header_size);
+
   for (i = 0; i < header_io_id->idx->blocks_per_file; i++)
   {
     if (PIDX_blocks_is_block_present((i + (header_io_id->idx->blocks_per_file * file_number)), header_io_id->idx->variable[header_io_id->first_index]->global_block_layout))
@@ -395,6 +398,8 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
 
         //TODO
         //printf("%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bits_per_value / 8), total_chunk_size, header_io_id->idx->variable[j]->values_per_sample);
+        //if (file_number == 2)
+          //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample));
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample);
       }
@@ -403,7 +408,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
 #if 1
   if (mode == 1)
   {
-    int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
+    //int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
 #if PIDX_HAVE_MPI
     ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)

@@ -460,6 +460,7 @@ int main(int argc, char **argv)
   {
     int64_t lost_element_count = 0, element_count = 0;
     for (i = 0; i < max_files; i++)
+    //for (i = 3; i < 4; i++)
     {
       if (existing_file_index[i] == 1)
       {
@@ -515,7 +516,7 @@ int main(int argc, char **argv)
               data_offset = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 12]);
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
-              printf("[%d] [%d] Offset %lld Count %ld\n", var, bpf, (long long)data_offset, (long)data_size);
+              printf("[F %d] [V %d] [B %d] Offset %lld Count %ld\n", i, var, bpf, (long long)data_offset, (long)data_size);
 
               if (strcmp(variable_type[var], "float64") == 0)
               {
@@ -607,7 +608,7 @@ int main(int argc, char **argv)
                       printf("%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
                    //
                   lost_element_count++;
-                  //break;
+                  break;
                 }
                 else
                 {

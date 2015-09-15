@@ -678,9 +678,10 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
         {
           if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
+#if 0
             index = 0;
             count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1 - (var0->hz_buffer[p]->missing_block_count_per_level[i] * io_id->idx_d->samples_per_block);
-            //printf("%d [%d] count = %d %d\n", rank, i, var0->hz_buffer[p]->missing_block_count_per_level[i], count);
+            printf("[%d] count = %lld [%lld - %lld - (%d * %d)]\n", i, (unsigned long long)count, (unsigned long long)var0->hz_buffer[p]->end_hz_index[i], (unsigned long long)var0->hz_buffer[p]->start_hz_index[i], var0->hz_buffer[p]->missing_block_count_per_level[i], io_id->idx_d->samples_per_block);
 
 #ifdef PIDX_DUMP_IO
             if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)
@@ -698,6 +699,60 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
             {
               fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
               return PIDX_err_io;
+            }
+#endif
+            int start_block_index = io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] / io_id->idx_d->samples_per_block;
+            int end_block_index = io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] / io_id->idx_d->samples_per_block;
+            assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
+
+            if (end_block_index == start_block_index)
+            {
+              index = 0;
+              count = (io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
+              printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
+              ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_WRITE);
+              if (ret != PIDX_success)
+              {
+                fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                return PIDX_err_io;
+              }
+            }
+            else
+            {
+              int send_index = 0;
+              int bl;
+              for (bl = start_block_index; bl <= end_block_index; bl++)
+              {
+                if (PIDX_blocks_is_block_present(bl, io_id->idx->variable[io_id->first_index]->global_block_layout))
+                {
+                  if (bl == start_block_index)
+                  {
+                    index = 0;
+                    count = ((start_block_index + 1) * io_id->idx_d->samples_per_block) - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i];
+                  }
+                  else if (bl == end_block_index)
+                  {
+                    index = (end_block_index * io_id->idx_d->samples_per_block - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
+                    count = io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - ((end_block_index) * io_id->idx_d->samples_per_block) + 1;
+                  }
+                  else
+                  {
+                    index = (bl * io_id->idx_d->samples_per_block - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
+                    count = io_id->idx_d->samples_per_block;
+                  }
+
+                  //ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], index, PIDX_WRITE);
+
+                  printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
+                  ret = write_read_samples(io_id, v, index + io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_WRITE);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return PIDX_err_io;
+                  }
+                  send_index = send_index + count;
+                }
+              }
             }
           }
         }
@@ -940,6 +995,7 @@ int PIDX_io_per_process_read(PIDX_io_id io_id)
           {
             if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
             {
+#if 0
               index = 0;
               count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1 - (var0->hz_buffer[p]->missing_block_count_per_level[i] * io_id->idx_d->samples_per_block);
               //printf("%d [%d] count = %d %d\n", rank, i, var0->hz_buffer[p]->missing_block_count_per_level[i], count);
@@ -957,6 +1013,60 @@ int PIDX_io_per_process_read(PIDX_io_id io_id)
               {
                 fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
                 return PIDX_err_io;
+              }
+#endif
+              int start_block_index = io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] / io_id->idx_d->samples_per_block;
+              int end_block_index = io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] / io_id->idx_d->samples_per_block;
+              assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
+
+              if (end_block_index == start_block_index)
+              {
+                index = 0;
+                count = (io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
+                printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
+                ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_READ);
+                if (ret != PIDX_success)
+                {
+                  fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                  return PIDX_err_io;
+                }
+              }
+              else
+              {
+                int send_index = 0;
+                int bl;
+                for (bl = start_block_index; bl <= end_block_index; bl++)
+                {
+                  if (PIDX_blocks_is_block_present(bl, io_id->idx->variable[io_id->first_index]->global_block_layout))
+                  {
+                    if (bl == start_block_index)
+                    {
+                      index = 0;
+                      count = ((start_block_index + 1) * io_id->idx_d->samples_per_block) - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i];
+                    }
+                    else if (bl == end_block_index)
+                    {
+                      index = (end_block_index * io_id->idx_d->samples_per_block - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
+                      count = io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - ((end_block_index) * io_id->idx_d->samples_per_block) + 1;
+                    }
+                    else
+                    {
+                      index = (bl * io_id->idx_d->samples_per_block - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
+                      count = io_id->idx_d->samples_per_block;
+                    }
+
+                    //ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], index, PIDX_WRITE);
+
+                    printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
+                    ret = write_read_samples(io_id, v, index + io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_READ);
+                    if (ret != PIDX_success)
+                    {
+                      fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                      return PIDX_err_io;
+                    }
+                    send_index = send_index + count;
+                  }
+                }
               }
             }
           }

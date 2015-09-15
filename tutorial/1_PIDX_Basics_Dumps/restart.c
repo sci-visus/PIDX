@@ -157,8 +157,8 @@ static void destroy_synthetic_simulation_data()
             if (data[var][index * values_per_sample[var] + vps] != 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
-              if (rank == 0)
-                printf("[%d %d %d] Read error %f %lld\n", i,j ,k, data[var][index * values_per_sample[var] + vps], 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //if (rank == 0)
+              //printf("[%d %d %d] Read error %f %lld\n", i,j ,k, data[var][index * values_per_sample[var] + vps], 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
               read_count++;

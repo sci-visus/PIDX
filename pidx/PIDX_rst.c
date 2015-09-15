@@ -558,7 +558,7 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
 
 
 PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
-{ 
+{
   if (rst_id->idx->enable_rst != 1)
     return PIDX_success;
 

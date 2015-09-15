@@ -182,8 +182,14 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         hz_buf->nsamples_per_level[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
         memset(hz_buf->nsamples_per_level[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
 
-        hz_buf->missing_block_index_per_level[j] = malloc(sizeof (int) * (id->idx->blocks_per_file));
-        memset(hz_buf->missing_block_index_per_level[j], 0, (sizeof (int) * (id->idx->blocks_per_file)));
+        //hz_buf->missing_block_index_per_level[j] = malloc(sizeof (int) * (id->idx->blocks_per_file));
+        //memset(hz_buf->missing_block_index_per_level[j], 0, (sizeof (int) * (id->idx->blocks_per_file)));
+
+        if (j-id->idx->bits_per_block > 0)
+        {
+          hz_buf->missing_block_index_per_level[j] = malloc(sizeof (int) * pow(2, j-id->idx->bits_per_block));
+          memset(hz_buf->missing_block_index_per_level[j], 0, (sizeof (int) * pow(2, j-id->idx->bits_per_block)));
+        }
       }
 
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
