@@ -141,7 +141,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
     {
       hz_index = 0, index = 0, count = 0, send_index = 0;
       HZ_buffer hz_buf = var->hz_buffer[p];
-      printf("hz_buf->type = %d\n", hz_buf->type);
+      //printf("hz_buf->type = %d\n", hz_buf->type);
       if (hz_buf->type == 0)
       {
         for (i = 0; i < hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i++)

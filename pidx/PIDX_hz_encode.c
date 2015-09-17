@@ -668,7 +668,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
       {
         PIDX_variable var = id->idx->variable[i];
         bytes_for_datatype = (var->bits_per_value / 8) * var->values_per_sample;
-        for (j = 0; j < maxH; j++)
+        for (j = 0; j < maxH - id->idx_d->res_to; j++)
         {
           int skipped_blocks = 0;
           int skipped_samples = 0;
@@ -677,7 +677,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
             int samples_per_level = var0->hz_buffer[y]->end_hz_index[j] - var0->hz_buffer[y]->start_hz_index[j] + 1;
             missing_sample_count = var0->hz_buffer[y]->missing_block_count_per_level[j] * id->idx_d->samples_per_block;
             int adjusted_buffer_size = (samples_per_level- missing_sample_count) * bytes_for_datatype;
-            
+
             int sample_start_index = 0;
             for (n = 0; n < var0->hz_buffer[y]->missing_block_count_per_level[j]; n++)
             {
@@ -690,9 +690,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                   int dest = (sample - skipped_samples) * bytes_for_datatype;
                   int src = (sample + id->idx_d->samples_per_block - skipped_samples) * bytes_for_datatype;
                   int count = (samples_per_level - sample - id->idx_d->samples_per_block) * bytes_for_datatype;
-
                   //printf("[%d] src dest count %d %d %d (%d - %d - %d)\n", rank, src, dest, count, samples_per_level, sample, id->idx_d->samples_per_block);
-
                   if (count < 0)
                     break;
 
@@ -707,6 +705,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
               }
             }
 #if !SIMULATE_IO
+            printf("adjusted_buffer_size = %d\n", adjusted_buffer_size);
             unsigned char* temp_buffer = realloc(var->hz_buffer[y]->buffer[j], adjusted_buffer_size);
             if (temp_buffer == NULL)
             {

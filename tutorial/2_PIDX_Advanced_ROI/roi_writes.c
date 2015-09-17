@@ -103,7 +103,7 @@ static void calculate_per_process_offsecurrent_time_step()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
-
+#endif
 
   if (rank == 0)
   {
@@ -193,7 +193,8 @@ static void calculate_per_process_offsecurrent_time_step()
     local_box_size[2] = 32;
   }
 
-  
+#if 0
+
   [PIDX 0] [0] Offset and Count -1 9 -1 : 11 11 32
   [PIDX 1] [0] Offset and Count -1 20 -1 : 11 11 32
   [PIDX 2] [0] Offset and Count 9 -1 -1 : 11 11 32
@@ -218,7 +219,6 @@ static void calculate_per_process_offsecurrent_time_step()
   [PIDX 21] [0] Offset and Count 60 30 -1 : 11 10 32
   [PIDX 22] [0] Offset and Count 59 40 -1 : 12 11 32
 
-#endif
   
   //[PIDX 0] [0] Offset and Count -1 9 -1 : 11 11 32
   if (rank == 0)
@@ -495,6 +495,8 @@ static void calculate_per_process_offsecurrent_time_step()
     local_box_size[1] = 11;
     local_box_size[2] = 32;
   }
+#endif
+
 }
 
 //(11*17*32)+(18*32*32)+(18*32*32)+(18*32*32)+(18*32*32)+(18*32*32)+(10*42*32)+(21*52*32)
@@ -729,6 +731,9 @@ int main(int argc, char **argv)
 
     ret = PIDX_set_variable_count(file, 1);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
+
+    ret = PIDX_set_resolution(file, 0, 2);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_resolution");
 
     //ret = PIDX_set_ROI_writes(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
