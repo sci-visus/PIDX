@@ -621,7 +621,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
 
     else if (var0->hz_buffer[p]->type == 1)
     {
-      for (i = var0->hz_buffer[p]->HZ_io_from; i < var0->hz_buffer[p]->HZ_io_to; i++)
+      for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
       {
         //if (rank == 0)
         //  printf("[IO] Number of samples at level %d = %d\n", i, (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2]));
