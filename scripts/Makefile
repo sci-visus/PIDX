@@ -20,7 +20,7 @@ PIDX_AGG_OBJS = PIDX_agg.o
 PIDX_IO_OBJS = PIDX_io.o
 PIDX_DATA_STRUCTS = ../pidx/PIDX_memory_layout_data_structs.h ../pidx/PIDX_idx_data_structs.h
 
-MPICC = mpicc -Wall -g
+MPICC = mpicc
 #MPICXX = mpic++ -Wall -g
 MPI_LDFLAGS_PIDX = -L. -lPIDX -lm -I ../pidx
 MPI_CFLAGS = -Wno-write-strings -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE -lm -I ../pidx

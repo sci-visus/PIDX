@@ -7,17 +7,20 @@
 #ifndef _PIDX_CONFIG_H_
 #define _PIDX_CONFIG_H_
 
-#define PIDX_GIT_REVISION "df34739824ec64ceed36800c13d8b14ee455f9d6"
+#define PIDX_GIT_REVISION "9cf20791d8fec83d93a29900dfcf17adcf75aa95"
 
 #define PIDX_MAX_DIMENSIONS 5
 
 #define BUILD_SHARED_LIBS 0
 #define PIDX_HAVE_MPI 1
+#define PIDX_HAVE_ZFP 0
 #define PIDX_OPTION_PNETCDF 0
-#define PIDX_OPTION_HDF5 0
+#define PIDX_OPTION_HDF5 1
 
-#undef PIDX_HAVE_ZFP
-
-//#define PIDX_ACTIVE_TARGET 1
+//ACTIVE_TARGET is defined by MPI, but we may want to override it for specific configs
+//NOTE: disable for shaheen (how should we control machine-specific settings like this?)
+//NOTE: we want locks, not fences (ACTIVE_TARGET = 0) on ash (CHPC).
+#define PIDX_ACTIVE_TARGET ACTIVE_TARGET
+#undef PIDX_ACTIVE_TARGET
 
 #endif //_PIDX_CONFIG_H_
