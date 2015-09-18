@@ -621,6 +621,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
 
     else if (var0->hz_buffer[p]->type == 1)
     {
+      HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
       for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
       {
         //if (rank == 0)
@@ -636,7 +637,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
             //  fflush(io_dump_fp);
             //}
 #endif
-            HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
+            
             index = 0;
             count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1;
 

@@ -141,7 +141,7 @@ int main(int argc, char **argv)
   PIDX_point global_size, local_offset, local_size;
   PIDX_set_point_5D(global_size, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
   PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
-  PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
+  PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);  
 
   //  Creating access
   PIDX_access access;
@@ -162,6 +162,7 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  report_error("PIDX_set_current_time_step", __FILE__, __LINE__);
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  report_error("PIDX_set_variable_count", __FILE__, __LINE__);
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
 
     char var_name[512];
     for (var = 0; var < variable_count; var++)

@@ -217,6 +217,9 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
 {
+  int rank;
+  MPI_Comm_rank(chunk_id->comm, &rank);
+
   int64_t v,p,j;
   if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
   {
@@ -319,18 +322,16 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
         int64_t i = 0;
         int64_t patch_index[PIDX_MAX_DIMENSIONS] = { 0 }; // index of the current element in the current patch
         int64_t group_index[PIDX_MAX_DIMENSIONS] = { 0 }; // index of the current element in the current group
-        for (i = 0; i < num_elems_patch; i += chunk_size[0])
+        for (i = 0; i < num_elems_patch; )
         {
-          // compute the output linear index in row-major
-          int64_t j = 0; // output linear index
+          // compute the output linear index in row-major          
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
           {
-            group_index[d] = local_offset[d] + patch_index[d];
-            j += group_index[d] * group_stride[d];
+            group_index[d] = local_offset[d] + patch_index[d];            
           }
 
           // compute the output linear index in compression block major
-          j = 0;
+          int64_t j = 0; // output linear index
           patch_stride[0] = 1; // re-use this, but now means the stride at compression block level
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
           {
@@ -345,15 +346,15 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
           }
 
           // copy the elements (chunk_size[0] elements at a time)
-          int64_t num_elems_copy = pmin(patch_size[0] - patch_index[0], chunk_size[0]);
+          int64_t num_elems_copy = pmin(patch_size[0] - patch_index[0], chunk_size[0]);                    
 #if !SIMULATE_IO
           memcpy(&out_patch->patch[0]->buffer[j * bytes_per_value], &patch->buffer[i * bytes_per_value],   bytes_per_value * num_elems_copy);
+          i += num_elems_copy;
 #endif
-
           // update the index inside the patch
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
           {
-            patch_index[d] += d == 0 ? num_elems_copy : 1;
+            patch_index[d] += (d == 0) ? num_elems_copy : 1;
             if (patch_index[d] != patch_size[d])
             {
               // reset lower dimension indices to 0
@@ -370,8 +371,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
     }
   }
 
-  int rank;
-  MPI_Comm_rank(chunk_id->comm, &rank);
+  
   char filename[100];
   sprintf(filename, "%d", rank);
   FILE *fp = fopen (filename, "w");
