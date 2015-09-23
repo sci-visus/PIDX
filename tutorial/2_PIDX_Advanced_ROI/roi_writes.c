@@ -720,8 +720,8 @@ int main(int argc, char **argv)
 
     //PIDX_debug_rst(file, 1);
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-    //PIDX_set_lossy_compression_bit_rate(file, 8);
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    PIDX_set_lossy_compression_bit_rate(file, 32);
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
@@ -732,8 +732,8 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, 1);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    ret = PIDX_set_resolution(file, 0, 2);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_resolution");
+    //ret = PIDX_set_resolution(file, 0, 2);
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_resolution");
 
     //ret = PIDX_set_ROI_writes(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
