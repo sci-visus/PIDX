@@ -621,14 +621,14 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
 
     else if (var0->hz_buffer[p]->type == 1)
     {
-      HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
-      for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
+      for(v = io_id->first_index; v <= io_id->last_index; v++)
       {
-        //if (rank == 0)
-        //  printf("[IO] Number of samples at level %d = %d\n", i, (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2]));
-        if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
+        HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
+        for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
         {
-          for(v = io_id->first_index; v <= io_id->last_index; v++)
+          //if (rank == 0)
+          //  printf("[IO] Number of samples at level %d = %d\n", i, (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2]));
+          if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
 #ifdef PIDX_DUMP_IO
             //if (io_id->idx_d->dump_io_info == 1 && io_id->idx->current_time_step == 0)

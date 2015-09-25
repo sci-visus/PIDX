@@ -260,7 +260,8 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    PIDX_debug_rst(file, 1);
+    //PIDX_debug_rst(file, 1);
+    PIDX_set_block_count(file, 128);
 
     int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
     ret = PIDX_set_restructuring_box(file, restructured_box_size);

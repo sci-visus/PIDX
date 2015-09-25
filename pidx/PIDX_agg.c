@@ -253,62 +253,58 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
       }
       else if (hz_buf->type == 2)
       {
-        for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+        HZ_buffer hz_buf = agg_id->idx->variable[v]->hz_buffer[p];
+        for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
         {
-          HZ_buffer hz_buf = agg_id->idx->variable[v]->hz_buffer[p];
-          for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
+          if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
-            if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
+            int start_block_index = agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] / agg_id->idx_d->samples_per_block;
+            int end_block_index = agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] / agg_id->idx_d->samples_per_block;
+            assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
+
+            if (end_block_index == start_block_index)
             {
-              int start_block_index = agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] / agg_id->idx_d->samples_per_block;
-              int end_block_index = agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] / agg_id->idx_d->samples_per_block;
-              assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
-
-              if (end_block_index == start_block_index)
+              index = 0;
+              count = (agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
+              //printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
+              ret = aggregate_write_read(agg_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_WRITE);
+              if (ret != PIDX_success)
               {
-                index = 0;
-                count = (agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
-                //printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
-                ret = aggregate_write_read(agg_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_WRITE);
-                if (ret != PIDX_success)
-                {
-                  fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
-                  return PIDX_err_io;
-                }
+                fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+                return PIDX_err_io;
               }
-              else
+            }
+            else
+            {
+              int send_index = 0;
+              int bl;
+              for (bl = start_block_index; bl <= end_block_index; bl++)
               {
-                int send_index = 0;
-                int bl;
-                for (bl = start_block_index; bl <= end_block_index; bl++)
+                if (PIDX_blocks_is_block_present(bl, agg_id->idx->variable[agg_id->first_index]->global_block_layout))
                 {
-                  if (PIDX_blocks_is_block_present(bl, agg_id->idx->variable[agg_id->first_index]->global_block_layout))
+                  if (bl == start_block_index)
                   {
-                    if (bl == start_block_index)
-                    {
-                      index = 0;
-                      count = ((start_block_index + 1) * agg_id->idx_d->samples_per_block) - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i];
-                    }
-                    else if (bl == end_block_index)
-                    {
-                      index = (end_block_index * agg_id->idx_d->samples_per_block - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
-                      count = agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - ((end_block_index) * agg_id->idx_d->samples_per_block) + 1;
-                    }
-                    else
-                    {
-                      index = (bl * agg_id->idx_d->samples_per_block - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
-                      count = agg_id->idx_d->samples_per_block;
-                    }
-
-                    //printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
-                    ret = aggregate_write_read(agg_id, v, index + agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_WRITE);
-                    if (ret != PIDX_success)
-                    {
-                      fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
-                      return PIDX_err_io;
-                    }
-                    send_index = send_index + count;
+                    index = 0;
+                    count = ((start_block_index + 1) * agg_id->idx_d->samples_per_block) - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i];
                   }
+                  else if (bl == end_block_index)
+                  {
+                    index = (end_block_index * agg_id->idx_d->samples_per_block - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
+                    count = agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - ((end_block_index) * agg_id->idx_d->samples_per_block) + 1;
+                  }
+                  else
+                  {
+                    index = (bl * agg_id->idx_d->samples_per_block - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i]);
+                    count = agg_id->idx_d->samples_per_block;
+                  }
+                   //printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
+                  ret = aggregate_write_read(agg_id, v, index + agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_WRITE);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return PIDX_err_io;
+                  }
+                  send_index = send_index + count;
                 }
               }
             }
