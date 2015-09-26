@@ -709,7 +709,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
               }
             }
 #if !SIMULATE_IO
-            printf("adjusted_buffer_size = %d\n", adjusted_buffer_size);
+            //printf("adjusted_buffer_size = %d\n", adjusted_buffer_size);
             unsigned char* temp_buffer = realloc(var->hz_buffer[y]->buffer[j], adjusted_buffer_size);
             if (temp_buffer == NULL)
             {

@@ -1142,6 +1142,11 @@ PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per
   *variable = malloc(sizeof *(*variable));
   memset(*variable, 0, sizeof *(*variable));
 
+  int bits = 0;
+  PIDX_default_bits_per_datatype(type_name, &bits);
+  if (bits !=0 && bits != bits_per_sample)
+    return PIDX_err_type;
+
   (*variable)->values_per_sample = 1;
   (*variable)->bits_per_value = (bits_per_sample/1);
 
@@ -1809,9 +1814,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   int total_header_size;
   PIDX_return_code ret;
   //static int header_io = 0;
+  int rank = 0, nprocs = 1;
 
 #if PIDX_HAVE_MPI
-  int rank = 0, nprocs = 1;
   MPI_Comm_rank(file->comm, &rank);
   MPI_Comm_size(file->comm,  &nprocs);
 #endif
@@ -1819,6 +1824,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   ret = populate_idx_dataset(file);
   if (ret != PIDX_success)
     return PIDX_err_file;
+
+#if PIDX_DEBUG_OUTPUT
+  if (rank == 0)
+    printf("[1] Finish Populating IDX dataset: File Count %d maxh = %d\n", file->idx_d->max_file_count, file->idx_d->maxh);
+#endif
 
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)
@@ -1926,6 +1936,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   write_init_end[hp] = PIDX_get_time();
   hp++;
 
+#if PIDX_DEBUG_OUTPUT
+  if (rank == 0)
+    printf("[2] Finish Creating File heirarchy\n");
+#endif
+
 #if 1
   int start_index = 0, end_index = 0;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))
@@ -2005,6 +2020,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[3] All Modules [R B C H A I] Initialized: Variable index [%d %d] Variable Pipe length %d\n", start_index, end_index, file->var_pipe_length);
+#endif
+
     /*--------------------------------------------RST [start]------------------------------------------------*/
     rst_start[vp] = PIDX_get_time();
 
@@ -2032,7 +2052,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     rst_end[vp] = PIDX_get_time();
     /*--------------------------------------------RST [end]---------------------------------------------------*/
 
-
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[4] Restructuring Phase Complete\n");
+#endif
 
     /*----------------------------------------Chunking [start]------------------------------------------------*/
     chunk_start[vp] = PIDX_get_time();
@@ -2066,7 +2089,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     chunk_end[vp] = PIDX_get_time();
     /*-----------------------------------------Chunking [end]------------------------------------------------*/
 
-
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[5] Chunking Phase Complete\n");
+#endif
     
     /*----------------------------------------Compression [start]--------------------------------------------*/
     compression_start[vp] = PIDX_get_time();
@@ -2082,6 +2108,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     compression_end[vp] = PIDX_get_time();
     /*------------------------------------------Compression [end]--------------------------------------------*/
 
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[6] Compression Phase Complete\n");
+#endif
 
 
     /*---------------------------------------------HZ [start]------------------------------------------------*/
@@ -2117,6 +2147,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /*----------------------------------------------HZ [end]-------------------------------------------------*/
 
 
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[6] HZ Encoding Phase Complete\n");
+#endif
+
 
     /*----------------------------------------------Agg [start]-----------------------------------------------*/
     agg_start[vp] = PIDX_get_time();
@@ -2142,6 +2177,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     agg_end[vp] = PIDX_get_time();
     /*--------------------------------------------Agg [end]--------------------------------------------------*/
     
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[7] Aggregation Phase Complete\n");
+#endif
+
 #if 1
 
     /*--------------------------------------------IO [start]--------------------------------------------------*/
@@ -2172,6 +2212,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       if (ret != PIDX_success)
         return PIDX_err_io;
     }
+
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[8] I/O Phase Complete\n");
+#endif
 
     /* Destroy buffers allocated during aggregation phase */
     ret = PIDX_agg_buf_destroy(file->agg_id);
@@ -2239,6 +2284,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   var00->existing_file_index = 0;
 
   free(var00->file_index);
+
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[9] Complete !!!!\n");
+#endif
 
 #endif
   return PIDX_success;
@@ -2677,6 +2727,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
   sim_end = PIDX_get_time();
   
+#if PIDX_DEBUG_OUTPUT
   int i = 0;
   double total_time = sim_end - sim_start;
   double max_time = total_time;
@@ -2801,7 +2852,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     }
     
   }
-  
+#endif
 #if 1
   /*
   for (p = 0; p < file->idx->variable[0]->patch_group_count; p++)

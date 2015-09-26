@@ -31,7 +31,7 @@
 
 
 
-int maximum_neighbor_count = 128;
+int maximum_neighbor_count = 256;
 
 //Struct for restructuring ID
 struct PIDX_rst_struct 
@@ -379,6 +379,14 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
                     patch_grp->source_patch_rank[patch_count] = r;
                     patch_count++;
+
+                    if (patch_count >= maximum_neighbor_count)
+                    {
+                      if (rank == 0)
+                        printf("[ERROR] maximum_neighbor_count needs to be increased\n");
+                      return PIDX_err_rst;
+                    }
+
                     patch_grp->count = patch_count;
                   }
                   free(rank_r_patch);
@@ -746,7 +754,6 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     return (-1);
   }
 #endif
-
 
   free(req);
   req = 0;
@@ -1280,7 +1287,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                 for (i = 0; i < count_ptr[0]; i++) 
                 {
                   int64_t index = (count_ptr[0] * count_ptr[1] * count_ptr[2] * count_ptr[3] * a) + (count_ptr[0] * count_ptr[1] * count_ptr[2] * u) + (count_ptr[0] * count_ptr[1] * k) + (count_ptr[0] * j) + i;
-                  
+
                   int check_bit = 1;
                   for (s = 0; s < var->values_per_sample; s++)
                   {
@@ -1338,7 +1345,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
       }
     }
   }
-  
+
   int64_t global_volume;
 #if PIDX_HAVE_MPI
   MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, rst_id->comm);

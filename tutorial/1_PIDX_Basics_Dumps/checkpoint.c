@@ -47,7 +47,7 @@ static unsigned long long local_box_size[3] = {0, 0, 0};
 static int time_step_count = 1;
 static int variable_count = 1;
 static char output_file_template[512] = "test";
-static double **data;
+static float **data;
 static char output_file_name[512] = "test.idx";
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./checkpoint -g 32x32x32 -l 16x16x16 -f output_idx_file_name -v 3 -t 16\n"
@@ -262,8 +262,9 @@ int main(int argc, char **argv)
 
     //PIDX_debug_rst(file, 1);
     PIDX_set_block_count(file, 128);
+    PIDX_set_block_size(file, 16);
 
-    int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
+    int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
     ret = PIDX_set_restructuring_box(file, restructured_box_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
@@ -275,7 +276,7 @@ int main(int argc, char **argv)
     {
       sprintf(var_name, "variable_%d", var);
 
-      ret = PIDX_variable_create(var_name, sizeof(unsigned long long) * 8, FLOAT64, &variable[var]);
+      ret = PIDX_variable_create(var_name, sizeof(float) * 8, FLOAT32, &variable[var]);
       if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
       ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);

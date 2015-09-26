@@ -253,7 +253,6 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
       }
       else if (hz_buf->type == 2)
       {
-        HZ_buffer hz_buf = agg_id->idx->variable[v]->hz_buffer[p];
         for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
         {
           if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
