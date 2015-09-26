@@ -34,6 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
+#define PIDX_DEBUG_OUTPUT 1
 
 static int vp = 0;
 static int hp = 0;
