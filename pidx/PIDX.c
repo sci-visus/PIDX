@@ -1486,7 +1486,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   for (i = 0; i < file->idx_d->max_file_count; i++)
     if (file->idx->variable[file->local_variable_index]->file_index[i] == 1)
       file->idx->variable[file->local_variable_index]->existing_file_count++;
-  
+
   file->idx->variable[file->local_variable_index]->existing_file_index = (int*) malloc(file->idx->variable[file->local_variable_index]->existing_file_count * sizeof (int));
   memset(file->idx->variable[file->local_variable_index]->existing_file_index, 0, file->idx->variable[file->local_variable_index]->existing_file_count * sizeof (int));
   
@@ -1797,6 +1797,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
       else
         file->idx->enable_agg = 2;
     }
+
   }
 
   file->var_pipe_length = file->idx->variable_count - 1;
@@ -2854,7 +2855,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     
   }
 #endif
-#if 1
+
   /*
   for (p = 0; p < file->idx->variable[0]->patch_group_count; p++)
   {
@@ -2870,7 +2871,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d->agg_level_start);
   free(file->idx_d->agg_level_end);
   */
-
+#if 1
   for (i = 0; i < 1024; i++)
   {
     free(file->idx->variable[i]);
@@ -2883,7 +2884,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx);                        file->idx = 0;
   free(file->idx_d->file_bitmap);   file->idx_d->file_bitmap = 0;
   free(file->idx_d);                file->idx_d = 0;
-
 #endif
   
 #if PIDX_HAVE_MPI
@@ -2929,7 +2929,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(agg_4);                          agg_4                   = 0;
   free(agg_5);                          agg_5                   = 0;
   free(agg_6);                          agg_6                   = 0;
-  
+
   return PIDX_success;
 }
 

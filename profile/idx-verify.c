@@ -198,6 +198,8 @@ int main(int argc, char **argv)
               strcpy (variable_type[variable_count], "float64");
             else if (strcmp(pch1, "uint64") == 0)
               strcpy (variable_type[variable_count], "uint64");
+            else if (strcmp(pch1, "float32") == 0)
+              strcpy (variable_type[variable_count], "float32");
             else
             {
               fprintf(stderr, "Currently supporting only float64 types\n");
@@ -500,6 +502,7 @@ int main(int argc, char **argv)
         int bpf = 0;
         //uint64_t* long_long_buffer = NULL;
         double* double_buffer = NULL;
+        float* float_buffer = NULL;
         uint64_t* ulong_buffer = NULL;
         double* decompressed_double_buffer = NULL;
         int check_bit = 1, s = 0;
@@ -518,6 +521,7 @@ int main(int argc, char **argv)
 
               printf("[F %d] [V %d] [B %d] Offset %lld Count %ld\n", i, var, bpf, (long long)data_offset, (long)data_size);
 
+              int sample_size = 0;
               if (strcmp(variable_type[var], "float64") == 0)
               {
                 double_buffer = malloc(data_size);
@@ -532,6 +536,7 @@ int main(int argc, char **argv)
                   decompress(double_buffer, decompressed_double_buffer, data_size);
                   free(double_buffer);
                 }
+                sample_size = sizeof(double);
               }
               else if (strcmp(variable_type[var], "uint64") == 0)
               {
@@ -540,9 +545,19 @@ int main(int argc, char **argv)
 
                 ret = pread(fd, ulong_buffer, data_size, data_offset);
                 assert(ret == data_size);
+                sample_size = sizeof(uint64_t);
+              }
+              else if (strcmp(variable_type[var], "float32") == 0)
+              {
+                float_buffer = malloc(data_size);
+                memset(float_buffer, 0, data_size);
+
+                ret = pread(fd, float_buffer, data_size, data_offset);
+                //assert(ret == data_size);
+                sample_size = sizeof(float);
               }
 
-              for (hz_val = 0; hz_val < data_size/(sizeof(uint64_t) * values_per_sample[var] * total_compression_block_size); hz_val++)
+              for (hz_val = 0; hz_val < data_size/(sample_size * values_per_sample[var] * total_compression_block_size); hz_val++)
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
@@ -552,6 +567,7 @@ int main(int argc, char **argv)
 
                 uint64_t llhs, lrhs;
                 double dlhs, drhs;
+                float flhs, frhs;
                 check_bit = 1, s = 0;
                 int i = 0, j = 0, k = 0, index = 0;
                 for (k = 0; k < compression_block_size[2]; k++)
@@ -594,6 +610,13 @@ int main(int argc, char **argv)
 
                           check_bit = check_bit && (llhs == lrhs);
                         }
+                        else if (strcmp(variable_type[var], "float32") == 0)
+                        {
+                          frhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          flhs = float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
+
+                          check_bit = check_bit && (flhs == frhs);
+                        }
                       }
                     }
                   }
@@ -634,6 +657,11 @@ int main(int argc, char **argv)
               {
                 free(ulong_buffer);
                 ulong_buffer = 0;
+              }
+              else if (strcmp(variable_type[var], "float32") == 0)
+              {
+                free(float_buffer);
+                float_buffer = 0;
               }
             }
           }

@@ -724,7 +724,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
               int bl;
               for (bl = start_block_index; bl <= end_block_index; bl++)
               {
-                if (PIDX_blocks_is_block_present(bl, io_id->idx->variable[io_id->first_index]->global_block_layout))
+                if (PIDX_blocks_is_block_present(bl, io_id->idx->variable[io_id->init_index]->global_block_layout))
                 {
                   if (bl == start_block_index)
                   {
@@ -1038,7 +1038,7 @@ int PIDX_io_per_process_read(PIDX_io_id io_id)
                 int bl;
                 for (bl = start_block_index; bl <= end_block_index; bl++)
                 {
-                  if (PIDX_blocks_is_block_present(bl, io_id->idx->variable[io_id->first_index]->global_block_layout))
+                  if (PIDX_blocks_is_block_present(bl, io_id->idx->variable[io_id->init_index]->global_block_layout))
                   {
                     if (bl == start_block_index)
                     {

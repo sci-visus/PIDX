@@ -121,6 +121,10 @@ static void calculate_per_process_offsets()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
+
+  local_box_size[0] = local_box_size[0] ;
+  local_box_size[1] = local_box_size[1] ;
+  local_box_size[2] = local_box_size[2] / 2;
 }
 
 static void create_synthetic_simulation_data()
@@ -134,7 +138,7 @@ static void create_synthetic_simulation_data()
   // Synthetic simulation data
   for(var = 0; var < variable_count; var++)
   {
-    data[var] = malloc(sizeof (unsigned long long) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+    data[var] = malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -261,6 +265,9 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
     //PIDX_debug_rst(file, 1);
+    //PIDX_debug_disable_hz(file);
+    //PIDX_debug_disable_io(file);
+    //PIDX_dump_agg_info(file, 1);
     PIDX_set_block_count(file, 128);
     PIDX_set_block_size(file, 16);
 
