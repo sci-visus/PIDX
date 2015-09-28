@@ -2035,6 +2035,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[R] Restructuring Buffer Created\n");
+#endif
+
     /* Perform data restructuring */
     if (file->debug_do_rst == 1)
     {
@@ -2043,6 +2048,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         return PIDX_err_rst;
     }
 
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[R] Restructuring Phase Completed\n");
+#endif
+
     /* Verifying the correctness of the restructuring phase */
     if (file->debug_rst == 1)
     {
@@ -2050,6 +2060,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       if (ret != PIDX_success)
         return PIDX_err_rst;
     }
+
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[R] Restructuring Verified\n");
+#endif
 
     rst_end[vp] = PIDX_get_time();
     /*--------------------------------------------RST [end]---------------------------------------------------*/
@@ -2066,6 +2081,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     ret = PIDX_chunk_buf_create(file->chunk_id);
     if (ret != PIDX_success)
       return PIDX_err_chunk;
+
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[4] Restructuring Phase Complete\n");
+#endif
 
     /* Perform Chunking */
     if (file->debug_do_chunk == 1)
