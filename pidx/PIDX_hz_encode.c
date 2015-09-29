@@ -677,6 +677,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 #endif
     }
 
+    /*
     int rank = 0;
     MPI_Comm_rank(id->comm, &rank);
     int missing_sample_count = 0;
@@ -737,6 +738,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
         }
       }
     }
+    */
   }
   return PIDX_success;
 }

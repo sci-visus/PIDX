@@ -122,6 +122,7 @@ static void calculate_per_process_offsets()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
+  /*
   if (rank <= 63)
   {
     local_box_size[0] = local_box_size[0] / 2;
@@ -134,6 +135,8 @@ static void calculate_per_process_offsets()
     local_box_size[1] = 0;
     local_box_size[2] = 0;
   }
+  */
+
 }
 
 static void create_synthetic_simulation_data()
@@ -153,7 +156,7 @@ static void create_synthetic_simulation_data()
         for (i = 0; i < local_box_size[0]; i++)
         {
           unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-          data[var][index] = 100;// + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          data[var][index] = 100 + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
   }
 }

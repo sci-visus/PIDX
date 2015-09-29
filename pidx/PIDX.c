@@ -1816,6 +1816,18 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   if (file->local_variable_index == file->idx->variable_count)
     return PIDX_success;
 
+  unsigned long long l_populate = 0, g_populate = 0;
+  unsigned long long l_filec = 0, g_filec = 0;
+  unsigned long long l_init = 0, g_init = 0;
+  unsigned long long l_rst_buf = 0, g_rst_buf = 0;
+  unsigned long long l_rst = 0, g_rst = 0;
+  unsigned long long l_hz_buf = 0, g_hz_buf = 0;
+  unsigned long long l_hz = 0, g_hz = 0;
+  unsigned long long l_agg_buf = 0, g_agg_buf = 0;
+  unsigned long long l_agg = 0, g_agg = 0;
+  unsigned long long l_io = 0, g_io = 0;
+  unsigned long long l_pidx = 0, g_pidx = 0;
+
   int j = 0, p, var = 0, d = 0;
   int total_header_size;
   PIDX_return_code ret;
@@ -1832,8 +1844,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     return PIDX_err_file;
 
 #if PIDX_DEBUG_OUTPUT
-  if (rank == 0)
-    printf("[1] Finish Populating IDX dataset: File Count %d maxh = %d\n", file->idx_d->max_file_count, file->idx_d->maxh);
+  l_populate = 1;
+  MPI_Allreduce(&l_populate, &g_populate, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+  if (rank == 0 && g_populate == nprocs)
+    printf("Finished Populating IDX dataset (File Count %d maxh = %d)\n", file->idx_d->max_file_count, file->idx_d->maxh);
 #endif
 
   /// Initialization ONLY ONCE per IDX file
@@ -1943,8 +1957,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   hp++;
 
 #if PIDX_DEBUG_OUTPUT
-  if (rank == 0)
-    printf("[2] Finish Creating File heirarchy\n");
+  l_filec = 1;
+  MPI_Allreduce(&l_filec, &g_filec, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+  if (rank == 0 && g_filec == nprocs)
+    printf("Finished Creating File heirarchy\n");
 #endif
 
 #if 1
@@ -2027,8 +2043,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       return PIDX_err_rst;
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[3] All Modules [R B C H A I] Initialized: Variable index [%d %d] Variable Pipe length %d\n", start_index, end_index, file->var_pipe_length);
+    l_init = 1;
+    MPI_Allreduce(&l_init, &g_init, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_init == nprocs)
+      printf("All Modules Initialized (Variable index [%d %d] Variable Pipe length %d)\n", start_index, end_index, file->var_pipe_length);
 #endif
 
     /*--------------------------------------------RST [start]------------------------------------------------*/
@@ -2040,7 +2058,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       return PIDX_err_rst;
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
+    l_rst_buf = 1;
+    MPI_Allreduce(&l_rst_buf, &g_rst_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_rst_buf == nprocs)
       printf("[R] Restructuring Buffer Created\n");
 #endif
 
@@ -2053,8 +2073,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     }
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[R] Restructuring Phase Completed\n");
+    l_rst = 1;
+    MPI_Allreduce(&l_rst, &g_rst, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_rst == nprocs)
+      printf("[R] Restructuring Completed\n");
 #endif
 
     /* Verifying the correctness of the restructuring phase */
@@ -2065,18 +2087,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         return PIDX_err_rst;
     }
 
-#if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[R] Restructuring Verified\n");
-#endif
-
     rst_end[vp] = PIDX_get_time();
     /*--------------------------------------------RST [end]---------------------------------------------------*/
 
-#if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[4] Restructuring Phase Complete\n");
-#endif
+
 
     /*----------------------------------------Chunking [start]------------------------------------------------*/
     chunk_start[vp] = PIDX_get_time();
@@ -2086,10 +2100,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_chunk;
 
-#if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[5] Chunking buffer created\n");
-#endif
 
     /* Perform Chunking */
     if (file->debug_do_chunk == 1)
@@ -2115,10 +2125,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     chunk_end[vp] = PIDX_get_time();
     /*-----------------------------------------Chunking [end]------------------------------------------------*/
 
-#if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[5] Chunking Phase Complete\n");
-#endif
+
     
     /*----------------------------------------Compression [start]--------------------------------------------*/
     compression_start[vp] = PIDX_get_time();
@@ -2134,10 +2141,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     compression_end[vp] = PIDX_get_time();
     /*------------------------------------------Compression [end]--------------------------------------------*/
 
-#if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[6] Compression Phase Complete\n");
-#endif
 
 
     /*---------------------------------------------HZ [start]------------------------------------------------*/
@@ -2149,8 +2152,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       return PIDX_err_hz;
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[H] HZ Encoding Buffer Created\n");
+    l_hz_buf = 1;
+    MPI_Allreduce(&l_hz_buf, &g_hz_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_hz_buf == nprocs)
+      printf("[H] HZ Buffer Created\n");
 #endif
 
     /* Perform HZ encoding */
@@ -2162,8 +2167,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     }
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[H] HZ Encoding Performed\n");
+    l_hz = 1;
+    MPI_Allreduce(&l_hz, &g_hz, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_hz == nprocs)
+      printf("[H] HZ Encoding Finished\n");
 #endif
 
     /* Verify the HZ encoding */
@@ -2183,11 +2190,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /*----------------------------------------------HZ [end]-------------------------------------------------*/
 
 
-#if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[6] HZ Encoding Phase Complete\n");
-#endif
-
 
     /*----------------------------------------------Agg [start]-----------------------------------------------*/
     agg_start[vp] = PIDX_get_time();
@@ -2198,7 +2200,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       return PIDX_err_agg;
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
+    l_agg_buf = 1;
+    MPI_Allreduce(&l_agg_buf, &g_agg_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_agg_buf == nprocs)
       printf("[A] Aggregation Buffer Created\n");
 #endif
 
@@ -2211,7 +2215,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     }
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
+    l_agg = 1;
+    MPI_Allreduce(&l_agg, &g_agg, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_agg == nprocs)
       printf("[A] Aggregation Completed\n");
 #endif
 
@@ -2223,10 +2229,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     agg_end[vp] = PIDX_get_time();
     /*--------------------------------------------Agg [end]--------------------------------------------------*/
     
-#if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[7] Aggregation Phase Complete\n");
-#endif
 
 #if 1
 
@@ -2260,8 +2262,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     }
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[8] I/O Phase Complete\n");
+    l_io = 1;
+    MPI_Allreduce(&l_io, &g_io, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_io == nprocs)
+      printf("[I] I/O completed\n");
 #endif
 
     /* Destroy buffers allocated during aggregation phase */
@@ -2332,8 +2336,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   free(var00->file_index);
 
 #if PIDX_DEBUG_OUTPUT
-    if (rank == 0)
-      printf("[9] Complete !!!!\n");
+  l_pidx = 1;
+  MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+  if (rank == 0 && g_pidx == nprocs)
+    printf("PIDX closing file\n");
 #endif
 
 #endif

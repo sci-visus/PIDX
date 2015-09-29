@@ -753,6 +753,8 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
                   }
                   send_index = send_index + count;
                 }
+                else
+                  send_index = send_index + io_id->idx_d->samples_per_block;
               }
             }
           }

@@ -327,6 +327,8 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
 #endif
                   send_index = send_index + count;
                 }
+                else
+                  send_index = send_index + agg_id->idx_d->samples_per_block;
               }
             }
           }
