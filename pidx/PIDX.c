@@ -2088,7 +2088,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
 #if PIDX_DEBUG_OUTPUT
     if (rank == 0)
-      printf("[4] Restructuring Phase Complete\n");
+      printf("[5] Chunking buffer created\n");
 #endif
 
     /* Perform Chunking */
@@ -2148,6 +2148,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_hz;
 
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[H] HZ Encoding Buffer Created\n");
+#endif
+
     /* Perform HZ encoding */
     if (file->debug_do_hz == 1)
     {
@@ -2155,6 +2160,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       if (ret != PIDX_success)
         return PIDX_err_hz;
     }
+
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[H] HZ Encoding Performed\n");
+#endif
 
     /* Verify the HZ encoding */
     if(file->debug_hz == 1)
@@ -2187,6 +2197,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_agg;
 
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[A] Aggregation Buffer Created\n");
+#endif
+
     /* Perform Aggregation */
     if (file->debug_do_agg == 1)
     {
@@ -2194,6 +2209,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       if (ret != PIDX_success)
         return PIDX_err_agg;
     }
+
+#if PIDX_DEBUG_OUTPUT
+    if (rank == 0)
+      printf("[A] Aggregation Completed\n");
+#endif
 
     /* Destroy buffers allocated during HZ encoding phase */
     ret = PIDX_hz_encode_buf_destroy(file->hz_id);

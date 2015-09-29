@@ -213,7 +213,6 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
           }
         }
       }
-      /*
       else if (hz_buf->type == 1)
       {
 #ifdef PIDX_DUMP_AGG
@@ -253,12 +252,10 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
               fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
               return PIDX_err_agg;
             }
-            }
           }
         }
       }
-      */
-      else if (hz_buf->type == 2 || hz_buf->type == 1)
+      else if (hz_buf->type == 2)
       {
         for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
         {

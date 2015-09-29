@@ -225,12 +225,12 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
 
         //if (rank == 31 && j == maxH-1)
-        //  printf("[P %d] Number of samples at level %d = %d x %d x %d\n", p, j, hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
+        //  printf("[P %d T %d] Number of samples at level %d = %d x %d x %d\n", p, var->chunk_patch_group[p]->type, j, hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
 
         //if (rank == 31 && j == maxH-1)
-        //  printf("[P %d] [%d] start : end :: %lld : %lld %lld\n", p, j, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], (hz_buf->end_hz_index[j] - hz_buf->start_hz_index[j] + 1));
+        //  printf("[P %d T %d] [%d] start : end :: %lld : %lld %lld\n", p, var->chunk_patch_group[p]->type, j, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], (hz_buf->end_hz_index[j] - hz_buf->start_hz_index[j] + 1));
 
-        if (var->chunk_patch_group[p]->type == 2)
+        if (var->chunk_patch_group[p]->type == 2 || var->chunk_patch_group[p]->type == 1)
         {
           start_block_no = hz_buf->start_hz_index[j] / id->idx_d->samples_per_block;
           end_block_no = hz_buf->end_hz_index[j] / id->idx_d->samples_per_block;
@@ -238,8 +238,17 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
           count = 0;
           for (b = start_block_no; b <= end_block_no; b++)
           {
+            //if (rank == 31 && j == maxH-1)
+            //  printf("XX [P %d T %d] Block no %d\n", p, var->chunk_patch_group[p]->type, b);
+
             if (PIDX_blocks_is_block_present(b, id->idx->variable[id->init_index]->global_block_layout) == 0)
             {
+              //if (rank == 31 && j == maxH-1)
+              //  printf("YY [P %d T %d] Block no %d\n", p, var->chunk_patch_group[p]->type, b);
+
+              var->chunk_patch_group[p]->type = 2;
+              hz_buf->type = 2;
+
               hz_buf->missing_block_count_per_level[j]++;
               hz_buf->missing_block_index_per_level[j][count] = b;
               count++;

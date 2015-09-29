@@ -122,11 +122,11 @@ static void calculate_per_process_offsets()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
-  if (rank <= 32)
+  if (rank <= 63)
   {
     local_box_size[0] = local_box_size[0] / 2;
-    local_box_size[1] = local_box_size[1] / 10;
-    local_box_size[2] = local_box_size[2] / 5;
+    local_box_size[1] = local_box_size[1] / 2;
+    local_box_size[2] = local_box_size[2] / 2;
   }
   else
   {
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
-    ret = PIDX_set_current_time_step(file, ts);
+    ret = PIDX_set_current_time_step(file, 0);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
     //PIDX_debug_rst(file, 1);
     //PIDX_debug_disable_hz(file);
     //PIDX_debug_disable_io(file);
-    PIDX_dump_agg_info(file, 1);
+    //PIDX_dump_agg_info(file, 1);
     PIDX_set_block_count(file, 128);
     PIDX_set_block_size(file, 16);
 
