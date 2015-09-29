@@ -41,9 +41,9 @@
 
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
-static unsigned long long global_box_size[3] = {0, 0, 0};
+static unsigned long long global_box_size[3] = {400, 400, 100};
 static unsigned long long local_box_offset[3];
-static unsigned long long local_box_size[3] = {0, 0, 0};
+static unsigned long long local_box_size[3] = {20, 20, 20};
 static int time_step_count = 1;
 static int variable_count = 1;
 static char output_file_template[512] = "test";
@@ -122,9 +122,18 @@ static void calculate_per_process_offsets()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
-  local_box_size[0] = local_box_size[0] ;
-  local_box_size[1] = local_box_size[1] ;
-  local_box_size[2] = local_box_size[2] / 2;
+  if (rank <= 32)
+  {
+    local_box_size[0] = local_box_size[0] / 2;
+    local_box_size[1] = local_box_size[1] / 10;
+    local_box_size[2] = local_box_size[2] / 5;
+  }
+  else
+  {
+    local_box_size[0] = 0;
+    local_box_size[1] = 0;
+    local_box_size[2] = 0;
+  }
 }
 
 static void create_synthetic_simulation_data()
@@ -144,7 +153,7 @@ static void create_synthetic_simulation_data()
         for (i = 0; i < local_box_size[0]; i++)
         {
           unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-          data[var][index] = 100 + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          data[var][index] = 100;// + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
   }
 }
@@ -173,14 +182,12 @@ static void parse_args(int argc, char **argv)
     switch (one_opt)
     {
     case('g'): // global dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &global_box_size[0], &global_box_size[1], &global_box_size[2]) == EOF) ||
-          (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1))
+      if ((sscanf(optarg, "%lldx%lldx%lld", &global_box_size[0], &global_box_size[1], &global_box_size[2]) == EOF) || (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1))
         terminate_with_error_msg("Invalid global dimensions\n%s", usage);
       break;
 
     case('l'): // local dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
-          (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
+      if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||(local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
@@ -224,7 +231,7 @@ int main(int argc, char **argv)
 {
   init_mpi(argc, argv);
   parse_args(argc, argv);
-  check_args();
+  //check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
@@ -267,7 +274,7 @@ int main(int argc, char **argv)
     //PIDX_debug_rst(file, 1);
     //PIDX_debug_disable_hz(file);
     //PIDX_debug_disable_io(file);
-    //PIDX_dump_agg_info(file, 1);
+    PIDX_dump_agg_info(file, 1);
     PIDX_set_block_count(file, 128);
     PIDX_set_block_size(file, 16);
 

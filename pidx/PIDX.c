@@ -1492,11 +1492,15 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   
   int count = 0;
   for (i = 0; i < file->idx_d->max_file_count; i++)
+  {
     if (file->idx->variable[file->local_variable_index]->file_index[i] == 1)
     {
+      //if (rank == 0)
+      //  printf("BPF %d = %d\n", i, file->idx->variable[file->local_variable_index]->block_count_per_file[i]);
       file->idx->variable[file->local_variable_index]->existing_file_index[count] = i;
       count++;
     }
+  }
 
     
   return PIDX_success;

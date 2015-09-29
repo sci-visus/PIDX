@@ -196,14 +196,16 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       {
         tpatch[0][d] = var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d];
         tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group[p]->reg_patch_size[d] / id->idx->chunk_size[d]) - 1;
+        //if (rank == 31)
+        //  printf("%d (%d %d)\n", p, var->chunk_patch_group[p]->reg_patch_offset[d], var->chunk_patch_group[p]->reg_patch_size[d]);
       }
+
+      //if (rank == 31)
+        //printf("[HZ] [P] [%d] : %d %d %d %d %d - %d %d %d %d %d\n", p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[0][3], tpatch[0][4], tpatch[1][0], tpatch[1][1], tpatch[1][2], tpatch[1][3], tpatch[1][4]);
 
       for (j = id->idx_d->res_from; j < maxH - id->idx_d->res_to; j++)
       {
         Align((maxH - 1), j, id->idx->bitPattern, tpatch, allign_offset, allign_count, hz_buf->nsamples_per_level);
-
-        //if (rank == 0 && p == 0)
-        //  printf("Number of samples at level %d = %d x %d x %d\n", j, hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
 
         PointND startXYZ;
         startXYZ.x = allign_offset[j][0];
@@ -222,8 +224,11 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
 
-        //if (j == 19)
-        //  printf("[%d] start : end :: %lld : %lld %lld\n", j, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], (hz_buf->end_hz_index[j] - hz_buf->start_hz_index[j] + 1));
+        //if (rank == 31 && j == maxH-1)
+        //  printf("[P %d] Number of samples at level %d = %d x %d x %d\n", p, j, hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
+
+        //if (rank == 31 && j == maxH-1)
+        //  printf("[P %d] [%d] start : end :: %lld : %lld %lld\n", p, j, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], (hz_buf->end_hz_index[j] - hz_buf->start_hz_index[j] + 1));
 
         if (var->chunk_patch_group[p]->type == 2)
         {
