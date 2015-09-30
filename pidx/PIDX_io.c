@@ -626,6 +626,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
         HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
         for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
         {
+            printf("ssss\n");
           //if (rank == 0)
           //  printf("[IO] Number of samples at level %d = %d\n", i, (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2]));
           if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
@@ -677,6 +678,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
         HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
         for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
         {
+            printf("ssss\n");
           if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
 #if 0
@@ -711,7 +713,11 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
               index = 0;
               count = (io_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
               //printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
+#if !SIMULATE_IO
               ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, PIDX_WRITE);
+#else
+              ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, NULL, 0, PIDX_WRITE);
+#endif
               if (ret != PIDX_success)
               {
                 fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
@@ -745,7 +751,11 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
                   //ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], index, PIDX_WRITE);
 
                   //printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
+#if !SIMULATE_IO
                   ret = write_read_samples(io_id, v, index + io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, PIDX_WRITE);
+#else
+                  ret = write_read_samples(io_id, v, index + io_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, NULL, send_index, PIDX_WRITE);
+#endif
                   if (ret != PIDX_success)
                   {
                     fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);

@@ -122,8 +122,9 @@ static void calculate_per_process_offsets()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
+
   /*
-  if (rank <= 63)
+  if (rank <= 3)
   {
     local_box_size[0] = local_box_size[0] / 2;
     local_box_size[1] = local_box_size[1] / 2;
@@ -136,6 +137,7 @@ static void calculate_per_process_offsets()
     local_box_size[2] = 0;
   }
   */
+
 
 }
 
@@ -281,7 +283,7 @@ int main(int argc, char **argv)
     PIDX_set_block_count(file, 128);
     PIDX_set_block_size(file, 16);
 
-    int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
+    int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
     ret = PIDX_set_restructuring_box(file, restructured_box_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 

@@ -218,7 +218,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
 #ifdef PIDX_DUMP_AGG
         if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
         {
-          fprintf(agg_dump_fp, "Variable %d Patch %d\n", v, p);
+          fprintf(agg_dump_fp, "Type %d Variable %d Patch %d\n",hz_buf->type, v, p);
           fflush(agg_dump_fp);
         }
 #endif
@@ -243,8 +243,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
             ret = aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], 0, PIDX_WRITE);
 #else
             if (rank == 31 && i == hz_buf->HZ_agg_to - 1 && p == 1)
-            {
-            printf("[%d] %d  xx  %d [%d - %d + 1]\n", p, hz_buf->start_hz_index[i], count, hz_buf->end_hz_index[i], hz_buf->start_hz_index[i]);
+              printf("[%d] %d  xx  %d [%d - %d + 1]\n", p, hz_buf->start_hz_index[i], count, hz_buf->end_hz_index[i], hz_buf->start_hz_index[i]);
             ret = aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, PIDX_WRITE);
 #endif
             if (ret != PIDX_success)
@@ -257,10 +256,24 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id)
       }
       else if (hz_buf->type == 2)
       {
+#ifdef PIDX_DUMP_AGG
+        if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
+        {
+          fprintf(agg_dump_fp, "Type %d Variable %d Patch %d\n",hz_buf->type, v, p);
+          fflush(agg_dump_fp);
+        }
+#endif
         for (i = hz_buf->HZ_agg_from + agg_id->idx_d->res_from; i < hz_buf->HZ_agg_to - agg_id->idx_d->res_to; i++)
         {
           if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
+#ifdef PIDX_DUMP_AGG
+            if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
+            {
+              fprintf(agg_dump_fp, "[%d]: ", i);
+              fflush(agg_dump_fp);
+            }
+#endif
             int start_block_index = agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] / agg_id->idx_d->samples_per_block;
             int end_block_index = agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] / agg_id->idx_d->samples_per_block;
             assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);

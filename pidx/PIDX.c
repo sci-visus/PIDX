@@ -1785,11 +1785,17 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
 
   if (file->idx->variable_count == file->idx->variable_index_tracker)
   {
+    file->var_pipe_length = 0;//file->idx->variable_count - 1;
+    //file->var_pipe_length = 1;
+
     if (file->idx->enable_agg != 0)
     {
       int v, no_of_aggregators = 0;
-      for (v = 0; v < file->idx->variable_count ; v++)
+      for (v = var_index; v < var_index + file->var_pipe_length ; v++)
         no_of_aggregators = no_of_aggregators + file->idx->variable[v]->values_per_sample * file->idx->variable[file->local_variable_index]->existing_file_count;
+
+      //for (v = 0; v < file->idx->variable_count ; v++)
+      //  no_of_aggregators = no_of_aggregators + file->idx->variable[v]->values_per_sample * file->idx->variable[file->local_variable_index]->existing_file_count;
 
       if (nprocs < no_of_aggregators * file->idx_d->aggregation_factor)
       {
@@ -1803,9 +1809,6 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
     }
 
   }
-
-  file->var_pipe_length = file->idx->variable_count - 1;
-  //file->var_pipe_length = 1;
 
   return PIDX_success;
 }
@@ -3186,41 +3189,41 @@ int dump_meta_data(PIDX_variable variable
 
 static void PIDX_init_timming_buffers()
 {
-  init_start = malloc (sizeof(double) * 64);                    memset(init_start, 0, sizeof(double) * 64);
-  init_end = malloc (sizeof(double) * 64);                      memset(init_end, 0, sizeof(double) * 64);
-  write_init_start = malloc (sizeof(double) * 64);              memset(write_init_start, 0, sizeof(double) * 64);
-  write_init_end = malloc (sizeof(double) * 64);                memset(write_init_end, 0, sizeof(double) * 64);
-  rst_start = malloc (sizeof(double) * 64);                     memset(rst_start, 0, sizeof(double) * 64);
-  rst_end = malloc (sizeof(double) * 64);                       memset(rst_end, 0, sizeof(double) * 64);
-  hz_start = malloc (sizeof(double) * 64);                      memset(hz_start, 0, sizeof(double) * 64);
-  hz_end = malloc (sizeof(double) * 64);                        memset(hz_end, 0, sizeof(double) * 64);
-  agg_start = malloc (sizeof(double) * 64);                     memset(agg_start, 0, sizeof(double) * 64);
-  agg_end = malloc (sizeof(double) * 64);                       memset(agg_end, 0, sizeof(double) * 64);
-  io_start = malloc (sizeof(double) * 64);                      memset(io_start, 0, sizeof(double) * 64);
-  io_end = malloc (sizeof(double) * 64);                        memset(io_end, 0, sizeof(double) * 64);
-  cleanup_start = malloc (sizeof(double) * 64);                 memset(cleanup_start, 0, sizeof(double) * 64);
-  cleanup_end = malloc (sizeof(double) * 64);                   memset(cleanup_end, 0, sizeof(double) * 64);
-  finalize_start = malloc (sizeof(double) * 64);                memset(finalize_start, 0, sizeof(double) * 64);
-  finalize_end = malloc (sizeof(double) * 64);                  memset(finalize_end, 0, sizeof(double) * 64);
+  init_start = malloc (sizeof(double) * 160);                    memset(init_start, 0, sizeof(double) * 160);
+  init_end = malloc (sizeof(double) * 160);                      memset(init_end, 0, sizeof(double) * 160);
+  write_init_start = malloc (sizeof(double) * 160);              memset(write_init_start, 0, sizeof(double) * 160);
+  write_init_end = malloc (sizeof(double) * 160);                memset(write_init_end, 0, sizeof(double) * 160);
+  rst_start = malloc (sizeof(double) * 160);                     memset(rst_start, 0, sizeof(double) * 160);
+  rst_end = malloc (sizeof(double) * 160);                       memset(rst_end, 0, sizeof(double) * 160);
+  hz_start = malloc (sizeof(double) * 160);                      memset(hz_start, 0, sizeof(double) * 160);
+  hz_end = malloc (sizeof(double) * 160);                        memset(hz_end, 0, sizeof(double) * 160);
+  agg_start = malloc (sizeof(double) * 160);                     memset(agg_start, 0, sizeof(double) * 160);
+  agg_end = malloc (sizeof(double) * 160);                       memset(agg_end, 0, sizeof(double) * 160);
+  io_start = malloc (sizeof(double) * 160);                      memset(io_start, 0, sizeof(double) * 160);
+  io_end = malloc (sizeof(double) * 160);                        memset(io_end, 0, sizeof(double) * 160);
+  cleanup_start = malloc (sizeof(double) * 160);                 memset(cleanup_start, 0, sizeof(double) * 160);
+  cleanup_end = malloc (sizeof(double) * 160);                   memset(cleanup_end, 0, sizeof(double) * 160);
+  finalize_start = malloc (sizeof(double) * 160);                memset(finalize_start, 0, sizeof(double) * 160);
+  finalize_end = malloc (sizeof(double) * 160);                  memset(finalize_end, 0, sizeof(double) * 160);
 
-  buffer_start = malloc (sizeof(double) * 64);                  memset(buffer_start, 0, sizeof(double) * 64);
-  buffer_end = malloc (sizeof(double) * 64);                    memset(buffer_end, 0, sizeof(double) * 64);
+  buffer_start = malloc (sizeof(double) * 160);                  memset(buffer_start, 0, sizeof(double) * 160);
+  buffer_end = malloc (sizeof(double) * 160);                    memset(buffer_end, 0, sizeof(double) * 160);
 
-  chunk_start =  malloc (sizeof(double) * 64);              memset(chunk_start, 0, sizeof(double) * 64);
-  chunk_end =  malloc (sizeof(double) * 64);                memset(chunk_end, 0, sizeof(double) * 64);
-  compression_start =  malloc (sizeof(double) * 64);            memset(compression_start, 0, sizeof(double) * 64);
-  compression_end =  malloc (sizeof(double) * 64);              memset(compression_end, 0, sizeof(double) * 64);
+  chunk_start =  malloc (sizeof(double) * 160);              memset(chunk_start, 0, sizeof(double) * 160);
+  chunk_end =  malloc (sizeof(double) * 160);                memset(chunk_end, 0, sizeof(double) * 160);
+  compression_start =  malloc (sizeof(double) * 160);            memset(compression_start, 0, sizeof(double) * 160);
+  compression_end =  malloc (sizeof(double) * 160);              memset(compression_end, 0, sizeof(double) * 160);
 
-  block_1 = malloc (sizeof(double) * 64);                       memset(block_1, 0, sizeof(double) * 64);
-  block_2 = malloc (sizeof(double) * 64);                       memset(block_2, 0, sizeof(double) * 64);
-  block_3 = malloc (sizeof(double) * 64);                       memset(block_3, 0, sizeof(double) * 64);
+  block_1 = malloc (sizeof(double) * 160);                       memset(block_1, 0, sizeof(double) * 160);
+  block_2 = malloc (sizeof(double) * 160);                       memset(block_2, 0, sizeof(double) * 160);
+  block_3 = malloc (sizeof(double) * 160);                       memset(block_3, 0, sizeof(double) * 160);
 
-  agg_1 = malloc (sizeof(double) * 64);                         memset(agg_1, 0, sizeof(double) * 64);
-  agg_2 = malloc (sizeof(double) * 64);                         memset(agg_2, 0, sizeof(double) * 64);
-  agg_3 = malloc (sizeof(double) * 64);                         memset(agg_3, 0, sizeof(double) * 64);
-  agg_4 = malloc (sizeof(double) * 64);                         memset(agg_4, 0, sizeof(double) * 64);
-  agg_5 = malloc (sizeof(double) * 64);                         memset(agg_5, 0, sizeof(double) * 64);
-  agg_6 = malloc (sizeof(double) * 64);                         memset(agg_6, 0, sizeof(double) * 64);
+  agg_1 = malloc (sizeof(double) * 160);                         memset(agg_1, 0, sizeof(double) * 160);
+  agg_2 = malloc (sizeof(double) * 160);                         memset(agg_2, 0, sizeof(double) * 160);
+  agg_3 = malloc (sizeof(double) * 160);                         memset(agg_3, 0, sizeof(double) * 160);
+  agg_4 = malloc (sizeof(double) * 160);                         memset(agg_4, 0, sizeof(double) * 160);
+  agg_5 = malloc (sizeof(double) * 160);                         memset(agg_5, 0, sizeof(double) * 160);
+  agg_6 = malloc (sizeof(double) * 160);                         memset(agg_6, 0, sizeof(double) * 160);
 }
 
 
