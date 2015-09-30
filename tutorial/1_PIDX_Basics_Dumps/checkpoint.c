@@ -41,7 +41,7 @@
 
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
-static unsigned long long global_box_size[3] = {400, 400, 100};
+static unsigned long long global_box_size[3] = {162, 162, 42};
 static unsigned long long local_box_offset[3];
 static unsigned long long local_box_size[3] = {20, 20, 20};
 static int time_step_count = 1;
@@ -113,6 +113,89 @@ static void shutdown_mpi()
 
 static void calculate_per_process_offsets()
 {
+
+    if (rank == 0) { local_box_offset[0] = 0; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 4) { local_box_offset[0] = 21; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 15) { local_box_offset[0] = 40; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 12) { local_box_offset[0] = 40; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 20) { local_box_offset[0] = 61; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 5) { local_box_offset[0] = 21; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 36) { local_box_offset[0] = 101; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 40) { local_box_offset[0] = 101; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 13) { local_box_offset[0] = 40; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 44) { local_box_offset[0] = 101; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 7) { local_box_offset[0] = 21; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 55) { local_box_offset[0] = 121; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 52) { local_box_offset[0] = 121; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 27) { local_box_offset[0] = 81; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 60) { local_box_offset[0] = 120; local_box_offset[1] = 121; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 30) { local_box_offset[0] = 81; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 45) { local_box_offset[0] = 101; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 34) { local_box_offset[0] = 80; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 76) { local_box_offset[0] = 141; local_box_offset[1] = 121; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 50) { local_box_offset[0] = 121; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 24) { local_box_offset[0] = 81; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 2) { local_box_offset[0] = 0; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 53) { local_box_offset[0] = 121; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 47) { local_box_offset[0] = 101; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 11) { local_box_offset[0] = 41; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 9) { local_box_offset[0] = 41; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 8) { local_box_offset[0] = 41; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 14) { local_box_offset[0] = 40; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 31) { local_box_offset[0] = 81; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 17) { local_box_offset[0] = 61; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 67) { local_box_offset[0] = 141; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 6) { local_box_offset[0] = 21; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 74) { local_box_offset[0] = 141; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 16) { local_box_offset[0] = 61; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 10) { local_box_offset[0] = 41; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 37) { local_box_offset[0] = 101; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 18) { local_box_offset[0] = 61; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 33) { local_box_offset[0] = 80; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 32) { local_box_offset[0] = 80; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 26) { local_box_offset[0] = 81; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 64) { local_box_offset[0] = 141; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 25) { local_box_offset[0] = 81; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 28) { local_box_offset[0] = 81; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 38) { local_box_offset[0] = 101; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 21) { local_box_offset[0] = 61; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 42) { local_box_offset[0] = 101; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 22) { local_box_offset[0] = 61; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 51) { local_box_offset[0] = 121; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 49) { local_box_offset[0] = 121; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 39) { local_box_offset[0] = 101; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 48) { local_box_offset[0] = 121; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 54) { local_box_offset[0] = 121; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 19) { local_box_offset[0] = 61; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 71) { local_box_offset[0] = 141; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 57) { local_box_offset[0] = 121; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 46) { local_box_offset[0] = 101; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 70) { local_box_offset[0] = 141; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 56) { local_box_offset[0] = 121; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 1) { local_box_offset[0] = 0; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 77) { local_box_offset[0] = 141; local_box_offset[1] = 121; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 58) { local_box_offset[0] = 121; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 73) { local_box_offset[0] = 141; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 72) { local_box_offset[0] = 141; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 66) { local_box_offset[0] = 141; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 3) { local_box_offset[0] = 0; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 65) { local_box_offset[0] = 141; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 68) { local_box_offset[0] = 141; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 29) { local_box_offset[0] = 81; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 35) { local_box_offset[0] = 80; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 23) { local_box_offset[0] = 61; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 78) { local_box_offset[0] = 141; local_box_offset[1] = 141; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 61) { local_box_offset[0] = 120; local_box_offset[1] = 121; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 62) { local_box_offset[0] = 120; local_box_offset[1] = 141; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 79) { local_box_offset[0] = 141; local_box_offset[1] = 141; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+    if (rank == 59) { local_box_offset[0] = 121; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 41) { local_box_offset[0] = 101; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 43) { local_box_offset[0] = 101; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 69) { local_box_offset[0] = 141; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 75) { local_box_offset[0] = 141; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
+    if (rank == 63) { local_box_offset[0] = 120; local_box_offset[1] = 141; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+
+  /*
   int sub_div[NUM_DIMS];
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
   sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
@@ -121,7 +204,7 @@ static void calculate_per_process_offsets()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
-
+  */
 
   /*
   if (rank <= 3)
@@ -137,7 +220,193 @@ static void calculate_per_process_offsets()
     local_box_size[2] = 0;
   }
   */
+  /*
+  if (rank == 0)
+  {
+    local_box_offset[0] = 0;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
 
+    local_box_size[0] = 21;
+    local_box_size[1] = 21;
+    local_box_size[2] = 21;
+  }
+  if (rank == 9)
+  {
+    local_box_offset[0] = 41;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 21;
+
+    local_box_size[0] = 20;
+    local_box_size[1] = 21;
+    local_box_size[2] = 21;
+  }
+  if (rank == 23)
+  {
+    local_box_offset[0] = 61;
+    local_box_offset[1] = 61;
+    local_box_offset[2] = 21;
+
+    local_box_size[0] = 20;
+    local_box_size[1] = 21;
+    local_box_size[2] = 21;
+  }
+  if (rank == 25)
+  {
+    local_box_offset[0] = 81;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 21;
+
+    local_box_size[0] = 20;
+    local_box_size[1] = 21;
+    local_box_size[2] = 21;
+  }
+  if (rank == 33)
+  {
+    local_box_offset[0] = 80;
+    local_box_offset[1] = 81;
+    local_box_offset[2] = 21;
+
+    local_box_size[0] = 21;
+    local_box_size[1] = 20;
+    local_box_size[2] = 21;
+  }
+  if (rank == 40)
+  {
+    local_box_offset[0] = 101;
+    local_box_offset[1] = 41;
+    local_box_offset[2] = 0;
+
+    local_box_size[0] = 20;
+    local_box_size[1] = 20;
+    local_box_size[2] = 21;
+  }
+  if (rank == 13)
+  {
+    local_box_offset[0] = 40;
+    local_box_offset[1] = 41;
+    local_box_offset[2] = 21;
+
+    local_box_size[0] = 21;
+    local_box_size[1] = 20;
+    local_box_size[2] = 21;
+  }
+
+  if (rank == 8)
+  {
+    local_box_offset[0] = 41;
+    local_box_offset[1] = 0;
+    local_box_offset[2] = 0;
+
+    local_box_size[0] = 20;
+    local_box_size[1] = 21;
+    local_box_size[2] = 21;
+  }
+
+  if (rank == 39)
+  {
+    local_box_offset[0] = 101;
+    local_box_offset[1] = 21;
+    local_box_offset[2] = 21;
+
+    local_box_size[0] = 20;
+    local_box_size[1] = 20;
+    local_box_size[2] = 21;
+  }
+
+  if (rank == 15)
+  {
+    local_box_offset[0] = 40;
+    local_box_offset[1] = 61;
+    local_box_offset[2] = 21;
+
+    local_box_size[0] = 21;
+    local_box_size[1] = 21;
+    local_box_size[2] = 21;
+  }
+
+  [PIDX 0] [0] Offset and Count 0 0 0 : 21 21 21
+  [PIDX 9] [0] Offset and Count 41 0 21 : 20 21 21
+  [PIDX 23] [0] Offset and Count 61 61 21 : 20 21 21
+  [PIDX 25] [0] Offset and Count 81 0 21 : 20 21 21
+  [PIDX 33] [0] Offset and Count 80 81 21 : 21 20 21
+  [PIDX 40] [0] Offset and Count 101 41 0 : 20 20 21
+  [PIDX 13] [0] Offset and Count 40 41 21 : 21 20 21
+  [PIDX 8] [0] Offset and Count 41 0 0 : 20 21 21
+  [PIDX 39] [0] Offset and Count 101 21 21 : 20 20 21
+  [PIDX 15] [0] Offset and Count 40 61 21 : 21 21 21
+
+  [PIDX 21] [0] Offset and Count 61 41 21 : 20 20 21
+  [PIDX 7] [0] Offset and Count 21 21 21 : 20 21 21
+  [PIDX 6] [0] Offset and Count 21 21 0 : 20 21 21
+  [PIDX 20] [0] Offset and Count 61 41 0 : 20 20 21
+  [PIDX 17] [0] Offset and Count 61 0 21 : 20 21 21
+  [PIDX 18] [0] Offset and Count 61 21 0 : 20 20 21
+  [PIDX 4] [0] Offset and Count 21 0 0 : 20 21 21
+  [PIDX 49] [0] Offset and Count 121 0 21 : 20 21 21
+  [PIDX 34] [0] Offset and Count 80 101 0 : 21 21 21
+  [PIDX 36] [0] Offset and Count 101 0 0 : 20 21 21
+  [PIDX 1] [0] Offset and Count 0 0 21 : 21 21 21
+  [PIDX 24] [0] Offset and Count 81 0 0 : 20 21 21
+  [PIDX 63] [0] Offset and Count 120 141 21 : 21 21 21
+  [PIDX 19] [0] Offset and Count 61 21 21 : 20 20 21
+  [PIDX 32] [0] Offset and Count 80 81 0 : 21 20 21
+  [PIDX 28] [0] Offset and Count 81 41 0 : 20 20 21
+  [PIDX 30] [0] Offset and Count 81 61 0 : 20 20 21
+  [PIDX 2] [0] Offset and Count 0 21 0 : 21 21 21
+  [PIDX 26] [0] Offset and Count 81 21 0 : 20 20 21
+  [PIDX 54] [0] Offset and Count 121 61 0 : 20 20 21
+  [PIDX 12] [0] Offset and Count 40 41 0 : 21 20 21
+  [PIDX 5] [0] Offset and Count 21 0 21 : 20 21 21
+  [PIDX 10] [0] Offset and Count 41 21 0 : 20 20 21
+  [PIDX 27] [0] Offset and Count 81 21 21 : 20 20 21
+  [PIDX 65] [0] Offset and Count 141 0 21 : 21 21 21
+  [PIDX 73] [0] Offset and Count 141 81 21 : 21 20 21
+  [PIDX 35] [0] Offset and Count 80 101 21 : 21 21 21
+  [PIDX 22] [0] Offset and Count 61 61 0 : 20 21 21
+  [PIDX 37] [0] Offset and Count 101 0 21 : 20 21 21
+  [PIDX 31] [0] Offset and Count 81 61 21 : 20 20 21
+  [PIDX 16] [0] Offset and Count 61 0 0 : 20 21 21
+  [PIDX 53] [0] Offset and Count 121 41 21 : 20 20 21
+  [PIDX 48] [0] Offset and Count 121 0 0 : 20 21 21
+  [PIDX 79] [0] Offset and Count 141 141 21 : 21 21 21
+  [PIDX 55] [0] Offset and Count 121 61 21 : 20 20 21
+  [PIDX 61] [0] Offset and Count 120 121 21 : 21 20 21
+  [PIDX 47] [0] Offset and Count 101 101 21 : 20 21 21
+  [PIDX 46] [0] Offset and Count 101 101 0 : 20 21 21
+  [PIDX 60] [0] Offset and Count 120 121 0 : 21 20 21
+  [PIDX 3] [0] Offset and Count 0 21 21 : 21 21 21
+  [PIDX 57] [0] Offset and Count 121 81 21 : 20 20 21
+  [PIDX 58] [0] Offset and Count 121 101 0 : 20 20 21
+  [PIDX 44] [0] Offset and Count 101 81 0 : 20 20 21
+  [PIDX 74] [0] Offset and Count 141 101 0 : 21 20 21
+  [PIDX 76] [0] Offset and Count 141 121 0 : 21 20 21
+  [PIDX 41] [0] Offset and Count 101 41 21 : 20 20 21
+  [PIDX 64] [0] Offset and Count 141 0 0 : 21 21 21
+  [PIDX 59] [0] Offset and Count 121 101 21 : 20 20 21
+  [PIDX 11] [0] Offset and Count 41 21 21 : 20 20 21
+  [PIDX 72] [0] Offset and Count 141 81 0 : 21 20 21
+  [PIDX 68] [0] Offset and Count 141 41 0 : 21 20 21
+  [PIDX 70] [0] Offset and Count 141 61 0 : 21 20 21
+  [PIDX 42] [0] Offset and Count 101 61 0 : 20 20 21
+  [PIDX 66] [0] Offset and Count 141 21 0 : 21 20 21
+  [PIDX 14] [0] Offset and Count 40 61 0 : 21 21 21
+  [PIDX 52] [0] Offset and Count 121 41 0 : 20 20 21
+  [PIDX 45] [0] Offset and Count 101 81 21 : 20 20 21
+  [PIDX 50] [0] Offset and Count 121 21 0 : 20 20 21
+  [PIDX 67] [0] Offset and Count 141 21 21 : 21 20 21
+  [PIDX 38] [0] Offset and Count 101 21 0 : 20 20 21
+  [PIDX 75] [0] Offset and Count 141 101 21 : 21 20 21
+  [PIDX 62] [0] Offset and Count 120 141 0 : 21 21 21
+  [PIDX 77] [0] Offset and Count 141 121 21 : 21 20 21
+  [PIDX 29] [0] Offset and Count 81 41 21 : 20 20 21
+  [PIDX 71] [0] Offset and Count 141 61 21 : 21 20 21
+  [PIDX 56] [0] Offset and Count 121 81 0 : 20 20 21
+  [PIDX 43] [0] Offset and Count 101 61 21 : 20 20 21
+  [PIDX 51] [0] Offset and Count 121 21 21 : 20 20 21
+  [PIDX 78] [0] Offset and Count 141 141 0 : 21 21 21
+  [PIDX 69] [0] Offset and Count 141 41 21 : 21 20 21
+*/
 
 }
 
