@@ -1785,8 +1785,8 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
 
   if (file->idx->variable_count == file->idx->variable_index_tracker)
   {
-    file->var_pipe_length = 0;//file->idx->variable_count - 1;
-    //file->var_pipe_length = 1;
+    if (file->var_pipe_length >= file->idx->variable_count || file->var_pipe_length == 0)
+      file->var_pipe_length = file->idx->variable_count - 1;
 
     if (file->idx->enable_agg != 0)
     {
@@ -3072,6 +3072,19 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
   return PIDX_success;
 }
 
+
+
+PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_length)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  if (var_pipe_length <= 0)
+    return PIDX_err_size;
+
+  file->var_pipe_length = var_pipe_length;
+
+}
 
 
 PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variable)

@@ -113,7 +113,7 @@ static void shutdown_mpi()
 
 static void calculate_per_process_offsets()
 {
-
+/*
     if (rank == 0) { local_box_offset[0] = 0; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
     if (rank == 4) { local_box_offset[0] = 21; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
     if (rank == 15) { local_box_offset[0] = 40; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
@@ -194,8 +194,8 @@ static void calculate_per_process_offsets()
     if (rank == 69) { local_box_offset[0] = 141; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
     if (rank == 75) { local_box_offset[0] = 141; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
     if (rank == 63) { local_box_offset[0] = 120; local_box_offset[1] = 141; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
+*/
 
-  /*
   int sub_div[NUM_DIMS];
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
   sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
@@ -204,7 +204,7 @@ static void calculate_per_process_offsets()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
-  */
+
 
   /*
   if (rank <= 3)
@@ -552,9 +552,11 @@ int main(int argc, char **argv)
     PIDX_set_block_count(file, 128);
     PIDX_set_block_size(file, 16);
 
-    int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
-    ret = PIDX_set_restructuring_box(file, restructured_box_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
+    //PIDX_set_ROI_writes(file);
+    PIDX_set_variable_pile_length(file, 2);
+    //int64_t restructured_box_size[5] = {256, 256, 256, 1, 1};
+    //ret = PIDX_set_restructuring_box(file, restructured_box_size);
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
     //PIDX_set_lossy_compression_bit_rate(file, 8);
