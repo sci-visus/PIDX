@@ -106,8 +106,11 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   int maxH = id->idx_d->maxh;
 
   tpatch = (int**) malloc(2 * sizeof (int*));
+  memset(tpatch, 0, 2 * sizeof (int*));
   tpatch[0] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
   tpatch[1] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
+  memset(tpatch[0], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
+  memset(tpatch[1], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
 
   if(maxH <= 0)
   {
@@ -120,13 +123,11 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
     PIDX_variable var = id->idx->variable[v];
 
     var->hz_buffer = malloc(sizeof(*(var->hz_buffer)) * var->patch_group_count);
-    if (var->hz_buffer == NULL) return PIDX_err_hz;
     memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)) * var->patch_group_count);
 
     for (p = 0; p < var->patch_group_count; p++)
     {
       var->hz_buffer[p] = malloc(sizeof(*(var->hz_buffer[p])));
-      if (var->hz_buffer[p] == NULL) return PIDX_err_hz;
       memset(var->hz_buffer[p], 0, sizeof(*(var->hz_buffer[p])));
 
       HZ_buffer hz_buf = var->hz_buffer[p];
@@ -137,8 +138,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
           buffer_size = buffer_size * (var->chunk_patch_group[p]->patch[0]->size[d]/id->idx->chunk_size[d]);
 
         hz_buf->buffer_index = malloc(buffer_size * sizeof (int64_t));
-        if (hz_buf->buffer_index == NULL) return PIDX_err_hz;
-        memset(hz_buf->buffer_index, 0, buffer_size);
+        memset(hz_buf->buffer_index, 0, buffer_size * sizeof (int64_t));
       }
 
       hz_buf->type = var->chunk_patch_group[p]->type;
@@ -361,6 +361,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
         index_count = 0;
         hz_tupple *tupple = malloc(total_chunked_patch_size * sizeof(hz_tupple));
+        memset(tupple, 0, total_chunked_patch_size * sizeof(hz_tupple));
       
         number_levels = maxH - 1;
         PointND xyzuv_Index;
@@ -411,16 +412,22 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                         + (i - chunked_patch_offset[0]);
                   
                     tupple[index_count].value = malloc((id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+                    memset(tupple[index_count].value, 0, (id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+
                     for(v = id->first_index; v <= id->last_index; v++)
                     {
                       PIDX_variable var = id->idx->variable[v];
                       var->hz_buffer[y]->samples_per_level[level] = var->hz_buffer[y]->samples_per_level[level] + 1;
                       tupple[index_count].value[v - id->first_index] = malloc(var->values_per_sample * sizeof(unsigned char*));
+                      memset(tupple[index_count].value[v - id->first_index], 0, var->values_per_sample * sizeof(unsigned char*));
+
                       bytes_for_datatype = var->bits_per_value / 8;
                     
                       for (s = 0; s < var->values_per_sample; s++)
                       {
                         tupple[index_count].value[v - id->first_index][s] = malloc(bytes_for_datatype * chunk_size);
+                        memset(tupple[index_count].value[v - id->first_index][s], 0, bytes_for_datatype * chunk_size);
+
                         memcpy(tupple[index_count].value[v- id->first_index][s], var->chunk_patch_group[y]->patch[b]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype * chunk_size, bytes_for_datatype * chunk_size);
 
                         tupple[index_count].index = hz_order;
@@ -473,15 +480,21 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                         + (k - chunked_patch_offset[2]);
                   
                     tupple[index_count].value = malloc((id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+                    memset(tupple[index_count].value, 0, (id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+
                     for(v1 = id->first_index; v1 <= id->last_index; v1++)
                     {
                       id->idx->variable[v1]->hz_buffer[y]->samples_per_level[level] = id->idx->variable[v1]->hz_buffer[y]->samples_per_level[level] + 1;
                       tupple[index_count].value[v1 - id->first_index] = malloc(id->idx->variable[v1]->values_per_sample * sizeof(unsigned char*));
+                      memset(tupple[index_count].value[v1 - id->first_index], 0, id->idx->variable[v1]->values_per_sample * sizeof(unsigned char*));
+
                       bytes_for_datatype = id->idx->variable[v1]->bits_per_value / 8;
                     
                       for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
                       {
                         tupple[index_count].value[v1 - id->first_index][s] = malloc(bytes_for_datatype * chunk_size);
+                        memset(tupple[index_count].value[v1 - id->first_index][s], 0, bytes_for_datatype * chunk_size);
+
                         memcpy(tupple[index_count].value[v1 - id->first_index][s], id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype * chunk_size, bytes_for_datatype * chunk_size);
 
                         tupple[index_count].index = hz_order;
@@ -831,6 +844,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
 
         index_count = 0;
         hz_tupple *tupple = malloc(total_chunked_patch_size * sizeof(hz_tupple));
+        memset(tupple, 0, total_chunked_patch_size * sizeof(hz_tupple));
 
         number_levels = maxH - 1;
         PointND xyzuv_Index;
@@ -881,17 +895,23 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                         + (i - chunked_patch_offset[0]);
 
                     tupple[index_count].value = malloc((id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+                    memset(tupple[index_count].value, 0, (id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+
                     var0->hz_buffer[y]->samples_per_level[level] = var0->hz_buffer[y]->samples_per_level[level] + 1;
 
                     for(v = id->first_index; v <= id->last_index; v++)
                     {
                       PIDX_variable var = id->idx->variable[v];
                       tupple[index_count].value[v - id->first_index] = malloc(var->values_per_sample * sizeof(unsigned char*));
+                      memset(tupple[index_count].value[v - id->first_index], 0, var->values_per_sample * sizeof(unsigned char*));
+
                       bytes_for_datatype = var->bits_per_value / 8;
 
                       for (s = 0; s < var->values_per_sample; s++)
                       {
                         tupple[index_count].value[v - id->first_index][s] = malloc(bytes_for_datatype * chunk_size);
+                        memset(tupple[index_count].value[v - id->first_index][s], 0, bytes_for_datatype * chunk_size);
+
                         memcpy(tupple[index_count].value[v- id->first_index][s], var->chunk_patch_group[y]->patch[b]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype * chunk_size, bytes_for_datatype * chunk_size);
 
                         tupple[index_count].index = hz_order;
@@ -944,16 +964,22 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                         + (k - chunked_patch_offset[2]);
 
                     tupple[index_count].value = malloc((id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+                    memset(tupple[index_count].value, 0, (id->last_index - id->first_index + 1)* sizeof(unsigned char**));
+
                     var0->hz_buffer[y]->samples_per_level[level] = var0->hz_buffer[y]->samples_per_level[level] + 1;
 
                     for(var = id->first_index; var <= id->last_index; var++)
                     {
                       tupple[index_count].value[var - id->first_index] = malloc(id->idx->variable[var]->values_per_sample * sizeof(unsigned char*));
+                      memset(tupple[index_count].value[var - id->first_index], 0, id->idx->variable[var]->values_per_sample * sizeof(unsigned char*));
+
                       bytes_for_datatype = id->idx->variable[var]->bits_per_value / 8;
 
                       for (s = 0; s < id->idx->variable[var]->values_per_sample; s++)
                       {
                         tupple[index_count].value[var - id->first_index][s] = malloc(bytes_for_datatype * chunk_size);
+                        memset(tupple[index_count].value[var - id->first_index][s], 0, bytes_for_datatype * chunk_size);
+
                         memcpy(tupple[index_count].value[var - id->first_index][s], id->idx->variable[var]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[var]->values_per_sample) + s) * bytes_for_datatype * chunk_size, bytes_for_datatype * chunk_size);
 
                         tupple[index_count].index = hz_order;

@@ -467,10 +467,13 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           patch_group->count = rst_id->reg_patch_grp[i]->count;
           patch_group->type = rst_id->reg_patch_grp[i]->type;
           patch_group->patch = malloc(sizeof(*(patch_group->patch)) * rst_id->reg_patch_grp[i]->count);
+          memset(patch_group->patch, 0, sizeof(*(patch_group->patch)) * rst_id->reg_patch_grp[i]->count);
 
           for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
           {
             patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
+            memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
+
             memcpy(patch_group->patch[j]->offset, rst_id->reg_patch_grp[i]->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
             memcpy(patch_group->patch[j]->size, rst_id->reg_patch_grp[i]->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
           }
@@ -495,9 +498,13 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
         patch_group->count = 1;
         patch_group->type = 0;
         patch_group->patch = malloc(sizeof(*(patch_group->patch)) * patch_group->count);
+        memset(patch_group->patch, 0, sizeof(*(patch_group->patch)) * patch_group->count);
+
         for(j = 0; j < patch_group->count; j++)
         {
           patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
+          memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
+
           memcpy(patch_group->patch[j]->offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
           memcpy(patch_group->patch[j]->size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
         }
@@ -554,6 +561,8 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
         {
           patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample);
 
+          memset(patch_group->patch[j]->buffer, 0, patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample);
+
           memcpy(patch_group->patch[j]->buffer, var->sim_patch[p]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample));
         }
       }
@@ -596,6 +605,7 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(req, 0, sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
   if (!status) 
@@ -603,6 +613,7 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(status, 0, sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
@@ -803,6 +814,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(req, 0, sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
   if (!status)
@@ -810,6 +822,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(status, 0, sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
@@ -1008,6 +1021,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  memset(req, 0, sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
   if (!status) 
@@ -1015,6 +1029,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  memset(status, 0, sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {

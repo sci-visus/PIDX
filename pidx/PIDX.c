@@ -543,6 +543,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         //while (strcmp(line, "(version)") != 0 && strcmp(line, "(box)") != 0 && strcmp(line, "(bits)") && strcmp(line, "(bitsperblock)") != 0 && strcmp(line, "(blocksperfile)") != 0 && strcmp(line, "(filename_template)") != 0 && strcmp(line, "(time)") != 0)
         {
           (*file)->idx->variable[variable_counter] = malloc(sizeof (*((*file)->idx->variable[variable_counter])));
+          memset((*file)->idx->variable[variable_counter], 0, sizeof (*((*file)->idx->variable[variable_counter])));
           
           pch1 = strtok(line, " *+");
           while (pch1 != NULL)
@@ -626,7 +627,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   if(rank != 0)
   {
     for (var = 0; var < (*file)->idx->variable_count; var++)
+    {
       (*file)->idx->variable[var] = malloc(sizeof (*((*file)->idx->variable[var])));
+      memset((*file)->idx->variable[var], 0, sizeof (*((*file)->idx->variable[var])));
+    }
   }
 #endif
   
@@ -1264,6 +1268,8 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
 
   const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+  memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+
   memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
   memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 
@@ -1291,6 +1297,8 @@ PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_poi
 
   //const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+  memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+
   memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
   memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 
@@ -1355,6 +1363,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   memset(file->idx_d->file_bitmap, 0, file->idx_d->max_file_count * sizeof (int));
   
   file->idx->variable[file->local_variable_index]->global_block_layout = malloc(sizeof (*file->idx->variable[file->local_variable_index]->global_block_layout));
+  memset(file->idx->variable[file->local_variable_index]->global_block_layout, 0, sizeof (*file->idx->variable[file->local_variable_index]->global_block_layout));
 
   PIDX_block_layout block_layout = file->idx->variable[file->local_variable_index]->global_block_layout;
 #if 0
@@ -1391,6 +1400,8 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     PIDX_blocks_initialize_layout(block_layout, file->idx_d->maxh, file->idx->bits_per_block);
 
     PIDX_block_layout all_patch_local_block_layout = malloc(sizeof (*all_patch_local_block_layout));
+    memset(all_patch_local_block_layout, 0, sizeof (*all_patch_local_block_layout));
+
     PIDX_blocks_initialize_layout(all_patch_local_block_layout, file->idx_d->maxh, file->idx->bits_per_block);
 
     for (p = 0 ; p < file->idx->variable[file->local_variable_index]->sim_patch_count ; p++)
@@ -1402,6 +1413,8 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       }
       
       PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
+      memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
+
       PIDX_blocks_create_layout (bounding_box, file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->maxh, file->idx_d->res_from, file->idx_d->res_to, file->idx->bitPattern, per_patch_local_block_layout);
       
       ctr = 1;
@@ -3143,6 +3156,8 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
 
   const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+  memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+
   memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
   memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 

@@ -394,6 +394,8 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id)
       data_offset = 0;
       //TODO
       headers = malloc(total_header_size);
+      memset(headers, 0, total_header_size);
+
 #if PIDX_HAVE_MPI
       mpi_ret = MPI_File_read_at(fh, 0, headers, total_header_size , MPI_BYTE, &status);
       if (mpi_ret != MPI_SUCCESS)
@@ -626,7 +628,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
         HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
         for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
         {
-            printf("ssss\n");
+          //printf("ssss\n");
           //if (rank == 0)
           //  printf("[IO] Number of samples at level %d = %d\n", i, (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2]));
           if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
@@ -678,7 +680,7 @@ int PIDX_io_per_process_write(PIDX_io_id io_id)
         HZ_buffer hz_buf = io_id->idx->variable[v]->hz_buffer[p];
         for (i = hz_buf->HZ_io_from + io_id->idx_d->res_from; i < hz_buf->HZ_io_to - io_id->idx_d->res_to; i++)
         {
-            printf("ssss\n");
+          //printf("ssss\n");
           if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
           {
 #if 0

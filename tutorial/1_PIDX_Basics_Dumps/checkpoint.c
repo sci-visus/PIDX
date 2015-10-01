@@ -205,209 +205,51 @@ static void calculate_per_process_offsets()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
+  if (rank % 4 == 0)
+  {
+    local_box_size[0] = local_box_size[0];
+    local_box_size[1] = local_box_size[1];
+    local_box_size[2] = local_box_size[2];
+  }
+  else if (rank % 4 == 1)
+  {
+    local_box_offset[1] = (3 * local_box_offset[1]) / 4;
+    local_box_size[1] = (3 * local_box_size[1]) / 4;
+  }
+  else if (rank % 4 == 2)
+  {
+    local_box_offset[1] = (2 * local_box_offset[1]) / 4;
+    local_box_size[1] = (2 * local_box_size[1]) / 4;
+  }
+  else if (rank % 4 == 3)
+  {
+    local_box_offset[1] = (1 * local_box_offset[1]) / 4;
+    local_box_size[1] = (1 * local_box_size[1]) / 4;
+  }
 
   /*
-  if (rank <= 3)
+  if (rank >= 0 && rank < 16)
   {
-    local_box_size[0] = local_box_size[0] / 2;
-    local_box_size[1] = local_box_size[1] / 2;
-    local_box_size[2] = local_box_size[2] / 2;
+    local_box_size[0] = local_box_size[0];
+    local_box_size[1] = local_box_size[1];
+    local_box_size[2] = local_box_size[2];
   }
-  else
+  else if (rank >= 16 && rank < 32)
   {
-    local_box_size[0] = 0;
-    local_box_size[1] = 0;
-    local_box_size[2] = 0;
+    local_box_offset[1] = local_box_offset[1] / 2;
+    local_box_size[1] = local_box_size[1] / 2;
+  }
+  else if (rank >= 32 && rank < 48)
+  {
+    local_box_offset[1] = local_box_offset[1] / 4;
+    local_box_size[1] = local_box_size[1] / 4;
+  }
+  else if (rank >= 48 && rank < 64)
+  {
+    local_box_offset[1] = local_box_offset[1] / 8;
+    local_box_size[1] = local_box_size[1] / 8;
   }
   */
-  /*
-  if (rank == 0)
-  {
-    local_box_offset[0] = 0;
-    local_box_offset[1] = 0;
-    local_box_offset[2] = 0;
-
-    local_box_size[0] = 21;
-    local_box_size[1] = 21;
-    local_box_size[2] = 21;
-  }
-  if (rank == 9)
-  {
-    local_box_offset[0] = 41;
-    local_box_offset[1] = 0;
-    local_box_offset[2] = 21;
-
-    local_box_size[0] = 20;
-    local_box_size[1] = 21;
-    local_box_size[2] = 21;
-  }
-  if (rank == 23)
-  {
-    local_box_offset[0] = 61;
-    local_box_offset[1] = 61;
-    local_box_offset[2] = 21;
-
-    local_box_size[0] = 20;
-    local_box_size[1] = 21;
-    local_box_size[2] = 21;
-  }
-  if (rank == 25)
-  {
-    local_box_offset[0] = 81;
-    local_box_offset[1] = 0;
-    local_box_offset[2] = 21;
-
-    local_box_size[0] = 20;
-    local_box_size[1] = 21;
-    local_box_size[2] = 21;
-  }
-  if (rank == 33)
-  {
-    local_box_offset[0] = 80;
-    local_box_offset[1] = 81;
-    local_box_offset[2] = 21;
-
-    local_box_size[0] = 21;
-    local_box_size[1] = 20;
-    local_box_size[2] = 21;
-  }
-  if (rank == 40)
-  {
-    local_box_offset[0] = 101;
-    local_box_offset[1] = 41;
-    local_box_offset[2] = 0;
-
-    local_box_size[0] = 20;
-    local_box_size[1] = 20;
-    local_box_size[2] = 21;
-  }
-  if (rank == 13)
-  {
-    local_box_offset[0] = 40;
-    local_box_offset[1] = 41;
-    local_box_offset[2] = 21;
-
-    local_box_size[0] = 21;
-    local_box_size[1] = 20;
-    local_box_size[2] = 21;
-  }
-
-  if (rank == 8)
-  {
-    local_box_offset[0] = 41;
-    local_box_offset[1] = 0;
-    local_box_offset[2] = 0;
-
-    local_box_size[0] = 20;
-    local_box_size[1] = 21;
-    local_box_size[2] = 21;
-  }
-
-  if (rank == 39)
-  {
-    local_box_offset[0] = 101;
-    local_box_offset[1] = 21;
-    local_box_offset[2] = 21;
-
-    local_box_size[0] = 20;
-    local_box_size[1] = 20;
-    local_box_size[2] = 21;
-  }
-
-  if (rank == 15)
-  {
-    local_box_offset[0] = 40;
-    local_box_offset[1] = 61;
-    local_box_offset[2] = 21;
-
-    local_box_size[0] = 21;
-    local_box_size[1] = 21;
-    local_box_size[2] = 21;
-  }
-
-  [PIDX 0] [0] Offset and Count 0 0 0 : 21 21 21
-  [PIDX 9] [0] Offset and Count 41 0 21 : 20 21 21
-  [PIDX 23] [0] Offset and Count 61 61 21 : 20 21 21
-  [PIDX 25] [0] Offset and Count 81 0 21 : 20 21 21
-  [PIDX 33] [0] Offset and Count 80 81 21 : 21 20 21
-  [PIDX 40] [0] Offset and Count 101 41 0 : 20 20 21
-  [PIDX 13] [0] Offset and Count 40 41 21 : 21 20 21
-  [PIDX 8] [0] Offset and Count 41 0 0 : 20 21 21
-  [PIDX 39] [0] Offset and Count 101 21 21 : 20 20 21
-  [PIDX 15] [0] Offset and Count 40 61 21 : 21 21 21
-
-  [PIDX 21] [0] Offset and Count 61 41 21 : 20 20 21
-  [PIDX 7] [0] Offset and Count 21 21 21 : 20 21 21
-  [PIDX 6] [0] Offset and Count 21 21 0 : 20 21 21
-  [PIDX 20] [0] Offset and Count 61 41 0 : 20 20 21
-  [PIDX 17] [0] Offset and Count 61 0 21 : 20 21 21
-  [PIDX 18] [0] Offset and Count 61 21 0 : 20 20 21
-  [PIDX 4] [0] Offset and Count 21 0 0 : 20 21 21
-  [PIDX 49] [0] Offset and Count 121 0 21 : 20 21 21
-  [PIDX 34] [0] Offset and Count 80 101 0 : 21 21 21
-  [PIDX 36] [0] Offset and Count 101 0 0 : 20 21 21
-  [PIDX 1] [0] Offset and Count 0 0 21 : 21 21 21
-  [PIDX 24] [0] Offset and Count 81 0 0 : 20 21 21
-  [PIDX 63] [0] Offset and Count 120 141 21 : 21 21 21
-  [PIDX 19] [0] Offset and Count 61 21 21 : 20 20 21
-  [PIDX 32] [0] Offset and Count 80 81 0 : 21 20 21
-  [PIDX 28] [0] Offset and Count 81 41 0 : 20 20 21
-  [PIDX 30] [0] Offset and Count 81 61 0 : 20 20 21
-  [PIDX 2] [0] Offset and Count 0 21 0 : 21 21 21
-  [PIDX 26] [0] Offset and Count 81 21 0 : 20 20 21
-  [PIDX 54] [0] Offset and Count 121 61 0 : 20 20 21
-  [PIDX 12] [0] Offset and Count 40 41 0 : 21 20 21
-  [PIDX 5] [0] Offset and Count 21 0 21 : 20 21 21
-  [PIDX 10] [0] Offset and Count 41 21 0 : 20 20 21
-  [PIDX 27] [0] Offset and Count 81 21 21 : 20 20 21
-  [PIDX 65] [0] Offset and Count 141 0 21 : 21 21 21
-  [PIDX 73] [0] Offset and Count 141 81 21 : 21 20 21
-  [PIDX 35] [0] Offset and Count 80 101 21 : 21 21 21
-  [PIDX 22] [0] Offset and Count 61 61 0 : 20 21 21
-  [PIDX 37] [0] Offset and Count 101 0 21 : 20 21 21
-  [PIDX 31] [0] Offset and Count 81 61 21 : 20 20 21
-  [PIDX 16] [0] Offset and Count 61 0 0 : 20 21 21
-  [PIDX 53] [0] Offset and Count 121 41 21 : 20 20 21
-  [PIDX 48] [0] Offset and Count 121 0 0 : 20 21 21
-  [PIDX 79] [0] Offset and Count 141 141 21 : 21 21 21
-  [PIDX 55] [0] Offset and Count 121 61 21 : 20 20 21
-  [PIDX 61] [0] Offset and Count 120 121 21 : 21 20 21
-  [PIDX 47] [0] Offset and Count 101 101 21 : 20 21 21
-  [PIDX 46] [0] Offset and Count 101 101 0 : 20 21 21
-  [PIDX 60] [0] Offset and Count 120 121 0 : 21 20 21
-  [PIDX 3] [0] Offset and Count 0 21 21 : 21 21 21
-  [PIDX 57] [0] Offset and Count 121 81 21 : 20 20 21
-  [PIDX 58] [0] Offset and Count 121 101 0 : 20 20 21
-  [PIDX 44] [0] Offset and Count 101 81 0 : 20 20 21
-  [PIDX 74] [0] Offset and Count 141 101 0 : 21 20 21
-  [PIDX 76] [0] Offset and Count 141 121 0 : 21 20 21
-  [PIDX 41] [0] Offset and Count 101 41 21 : 20 20 21
-  [PIDX 64] [0] Offset and Count 141 0 0 : 21 21 21
-  [PIDX 59] [0] Offset and Count 121 101 21 : 20 20 21
-  [PIDX 11] [0] Offset and Count 41 21 21 : 20 20 21
-  [PIDX 72] [0] Offset and Count 141 81 0 : 21 20 21
-  [PIDX 68] [0] Offset and Count 141 41 0 : 21 20 21
-  [PIDX 70] [0] Offset and Count 141 61 0 : 21 20 21
-  [PIDX 42] [0] Offset and Count 101 61 0 : 20 20 21
-  [PIDX 66] [0] Offset and Count 141 21 0 : 21 20 21
-  [PIDX 14] [0] Offset and Count 40 61 0 : 21 21 21
-  [PIDX 52] [0] Offset and Count 121 41 0 : 20 20 21
-  [PIDX 45] [0] Offset and Count 101 81 21 : 20 20 21
-  [PIDX 50] [0] Offset and Count 121 21 0 : 20 20 21
-  [PIDX 67] [0] Offset and Count 141 21 21 : 21 20 21
-  [PIDX 38] [0] Offset and Count 101 21 0 : 20 20 21
-  [PIDX 75] [0] Offset and Count 141 101 21 : 21 20 21
-  [PIDX 62] [0] Offset and Count 120 141 0 : 21 21 21
-  [PIDX 77] [0] Offset and Count 141 121 21 : 21 20 21
-  [PIDX 29] [0] Offset and Count 81 41 21 : 20 20 21
-  [PIDX 71] [0] Offset and Count 141 61 21 : 21 20 21
-  [PIDX 56] [0] Offset and Count 121 81 0 : 20 20 21
-  [PIDX 43] [0] Offset and Count 101 61 21 : 20 20 21
-  [PIDX 51] [0] Offset and Count 121 21 21 : 20 20 21
-  [PIDX 78] [0] Offset and Count 141 141 0 : 21 21 21
-  [PIDX 69] [0] Offset and Count 141 41 21 : 21 20 21
-*/
-
 }
 
 static void create_synthetic_simulation_data()
@@ -427,7 +269,7 @@ static void create_synthetic_simulation_data()
         for (i = 0; i < local_box_size[0]; i++)
         {
           unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-          data[var][index] = 100 + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          data[var][index] = 100;// + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
   }
 }
@@ -554,9 +396,9 @@ int main(int argc, char **argv)
 
     //PIDX_set_ROI_writes(file);
     PIDX_set_variable_pile_length(file, 2);
-    //int64_t restructured_box_size[5] = {256, 256, 256, 1, 1};
-    //ret = PIDX_set_restructuring_box(file, restructured_box_size);
-    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
+    int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
+    ret = PIDX_set_restructuring_box(file, restructured_box_size);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
     //PIDX_set_lossy_compression_bit_rate(file, 8);

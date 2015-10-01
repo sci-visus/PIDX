@@ -482,7 +482,9 @@ int main(int argc, char **argv)
         if (fd < 0)
         {
           fprintf(stderr, "[File : %s] [Line : %d] open\n", __FILE__, __LINE__);
+          continue;
           return 0;
+
         }
 
         ret = read(fd, binheader, (sizeof (*binheader) * binheader_count));
@@ -553,7 +555,7 @@ int main(int argc, char **argv)
                 memset(float_buffer, 0, data_size);
 
                 ret = pread(fd, float_buffer, data_size, data_offset);
-                //assert(ret == data_size);
+                assert(ret == data_size);
                 sample_size = sizeof(float);
               }
 
@@ -612,7 +614,7 @@ int main(int argc, char **argv)
                         }
                         else if (strcmp(variable_type[var], "float32") == 0)
                         {
-                          frhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          frhs = 100;// + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           flhs = float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
                           check_bit = check_bit && (flhs == frhs);

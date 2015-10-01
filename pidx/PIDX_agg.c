@@ -1119,9 +1119,11 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
 
 
   agg_buffer->rank_holder = malloc(agg_id->idx_d->agg_file_count * sizeof (int**));
+  memset(agg_buffer->rank_holder, 0, agg_id->idx_d->agg_file_count * sizeof (int**));
   for (i = 0; i < agg_id->idx_d->agg_file_count; i++)
   {
     agg_buffer->rank_holder[i] = malloc((agg_id->last_index - agg_id->first_index + 1) * sizeof (int*));
+    memset(agg_buffer->rank_holder[i], 0, (agg_id->last_index - agg_id->first_index + 1) * sizeof (int*));
     for (j = agg_id->first_index; j <= agg_id->last_index; j++)
     {
       agg_buffer->rank_holder[i][j - agg_id->first_index] = malloc(agg_id->idx->variable[j]->values_per_sample * sizeof (int) * agg_id->idx_d->aggregation_factor);

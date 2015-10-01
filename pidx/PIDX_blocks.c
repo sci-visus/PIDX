@@ -35,12 +35,17 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int maxh, int bits_
   memset(layout->hz_block_count_array, 0, sizeof(int) * (layout->levels));
 
   layout->hz_block_number_array = (int**)malloc(sizeof(int*) * (layout->levels));
+  memset(layout->hz_block_number_array, 0, sizeof(int*) * (layout->levels));
+
   layout->hz_block_number_array[0] = (int*)malloc(sizeof(int) * ctr);
+  memset(layout->hz_block_number_array[0], 0, sizeof(int) * ctr);
   
   for (j = 1 ; j < (layout->levels) ; j++)
   {
     layout->hz_block_count_array[j] = 0;
     layout->hz_block_number_array[j] = (int*)malloc(sizeof(int) * ctr);
+    memset(layout->hz_block_number_array[j], 0, sizeof(int) * ctr);
+
     ctr = ctr * 2;
   }
 
@@ -74,8 +79,14 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int 
     layout->levels = maxH - bits_per_block;
 
   layout->hz_block_count_array = (int*)malloc(sizeof(int) * (layout->levels));
+  memset(layout->hz_block_count_array, 0, sizeof(int) * (layout->levels));
+
   layout->hz_block_number_array = (int**)malloc(sizeof(int*) * (layout->levels));
+  memset(layout->hz_block_number_array, 0, sizeof(int*) * (layout->levels));
+
   layout->hz_block_number_array[0] = (int*)malloc(sizeof(int) * 1);
+  memset(layout->hz_block_number_array[0], 0, sizeof(int) * 1);
+
   for (j = 1 ; j < (layout->levels) ; j++)
   {
     layout->hz_block_count_array[j] = 0;
@@ -104,6 +115,8 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int blocks_per_file, int 
       
       ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+      memset(ZYX_to, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+      memset(ZYX_from, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       
       Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
       Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
