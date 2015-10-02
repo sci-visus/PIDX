@@ -112,7 +112,7 @@ int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
     unsigned int output_buffer_size = (length / (bit_rate / 8.0)) * type_size; // DUONG_HARDCODE
     unsigned char* srcPtr = buffer;
     unsigned char* dstPtr = (unsigned char*) malloc(output_buffer_size);
-    memset(dstptr, 0, output_buffer_size);
+    memset(dstPtr, 0, output_buffer_size);
     unsigned int compressed_block_size = compression_block_num_elems * (bit_rate / 8.0);
     unsigned int uncompressed_block_size = compression_block_num_elems * type_size;
     while (input_offset < input_buffer_size) // decompress one compression block at a time
