@@ -194,14 +194,14 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
+        //assert(var->chunk_patch_group[p]->reg_patch_offset[d] % id->idx->chunk_size[d] == 0);
         tpatch[0][d] = var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d];
-        tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group[p]->reg_patch_size[d] / id->idx->chunk_size[d]) - 1;
-        //if (rank == 31)
-        //  printf("%d (%d %d)\n", p, var->chunk_patch_group[p]->reg_patch_offset[d], var->chunk_patch_group[p]->reg_patch_size[d]);
-      }
 
-      //if (rank == 31)
-        //printf("[HZ] [P] [%d] : %d %d %d %d %d - %d %d %d %d %d\n", p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[0][3], tpatch[0][4], tpatch[1][0], tpatch[1][1], tpatch[1][2], tpatch[1][3], tpatch[1][4]);
+        if (var->chunk_patch_group[p]->reg_patch_size[d] % id->idx->chunk_size[d] == 0)
+          tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group[p]->reg_patch_size[d] / id->idx->chunk_size[d]) - 1;
+        else
+          tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group[p]->reg_patch_size[d] / id->idx->chunk_size[d]) + 1) - 1;
+      }
 
       for (j = id->idx_d->res_from; j < maxH - id->idx_d->res_to; j++)
       {
@@ -317,7 +317,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 {
   uint64_t z_order = 0, hz_order = 0, index = 0;
-  int b = 0, level = 0, cnt = 0, c = 0, s = 0, y = 0, n = 0, m = 0, number_levels = 0;
+  int b = 0, level = 0, cnt = 0, c = 0, s = 0, y = 0, m = 0, number_levels = 0;
   uint64_t i = 0, j = 0, k = 0, u = 0, v = 0, l = 0, d = 0;
   int v1 = 0;
   int index_count = 0;

@@ -187,12 +187,14 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       Ndim_patch_group in_patch = var->rst_patch_group[p];
 
       int64_t *group_size = in_patch->reg_patch_size;
+
       for(j = 0; j < out_patch->count; j++)
       {
         if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
         {
           out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
           memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
+
           //memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
         }
         else if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP)
@@ -201,19 +203,24 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
           int64_t num_elems_group = 1; // number of elements in the group
           int d;
           for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
-            num_elems_group *= group_size[d];
+          {
+            if (out_patch->patch[j]->size[d] % chunk_id->idx->chunk_size[d] == 0)
+              num_elems_group *= group_size[d];
+            else
+              num_elems_group *= (((group_size[d]/chunk_id->idx->chunk_size[d]) + 1) * chunk_id->idx->chunk_size[d]);
+          }
 
           // malloc the storage for all elements in the output array
           out_patch->patch[j]->buffer = malloc(bytes_per_value * num_elems_group);
-          memset(out_patch->patch[j]->buffer, -1, bytes_per_value * num_elems_group);
+          memset(out_patch->patch[j]->buffer, 0, bytes_per_value * num_elems_group);
         }
       }
 
+      /*
       for(j = 0; j < in_patch->count; j++)
       {
         if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP)
         {
-          //XXX
           char filename[100];
           sprintf(filename, "%d_%d_%d",p, j, rank);
           FILE *fp = fopen (filename, "w");
@@ -230,6 +237,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
           fclose(fp);
         }
       }
+      */
 
     }
   }
@@ -273,19 +281,10 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
 
   // compute the intra compression block strides
   int64_t *chunk_size = chunk_id->idx->chunk_size;
-
   int64_t  cbz = 1;
   int d;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
     cbz = cbz * chunk_size[d];
-
-  int64_t compression_block_stride[PIDX_MAX_DIMENSIONS]; // stride inside a compression block
-  compression_block_stride[0] = 1;
-  for (d = 1; d < PIDX_MAX_DIMENSIONS; ++d)
-  {
-    compression_block_stride[d] = compression_block_stride[d - 1] * chunk_size[d - 1];
-  }
-  int64_t compression_block_num_elems = compression_block_stride[PIDX_MAX_DIMENSIONS - 1];
 
   // loop through all variables
   v = 0;
@@ -301,8 +300,21 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
     {
       // copy the size and offset to output
       Ndim_patch_group patch_group = var->rst_patch_group[g];
-      Ndim_patch_group out_patch = var->chunk_patch_group[g];      
-      unsigned char* temp_buffer = malloc(out_patch->patch[0]->size[0] * out_patch->patch[0]->size[1] * out_patch->patch[0]->size[2] * var->bits_per_value/8 );      
+      Ndim_patch_group out_patch = var->chunk_patch_group[g];
+
+      int nx=(int)out_patch->patch[0]->size[0];
+      if (out_patch->patch[0]->size[0] % chunk_id->idx->chunk_size[0] != 0)
+        nx = ((out_patch->patch[0]->size[0] / chunk_id->idx->chunk_size[0]) + 1) * chunk_id->idx->chunk_size[0];
+
+      int ny=(int)out_patch->patch[0]->size[1];
+      if (out_patch->patch[0]->size[1] % chunk_id->idx->chunk_size[1] != 0)
+        ny = ((out_patch->patch[0]->size[1] / chunk_id->idx->chunk_size[1]) + 1) * chunk_id->idx->chunk_size[1];
+
+      int nz=(int)out_patch->patch[0]->size[2];
+      if (out_patch->patch[0]->size[2] % chunk_id->idx->chunk_size[2] != 0)
+        nz = ((out_patch->patch[0]->size[2] / chunk_id->idx->chunk_size[2]) + 1) * chunk_id->idx->chunk_size[2];
+
+      unsigned char* temp_buffer = malloc(nx * ny * nz * var->bits_per_value/8 );
 
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
       for (r = 0; r < var->rst_patch_group[g]->count; r++)
@@ -316,18 +328,14 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
               index = ((patch_group->patch[r]->size[0])* (patch_group->patch[r]->size[1]) * (k1 - patch_group->patch[r]->offset[2])) + ((patch_group->patch[r]->size[0]) * (j1 - patch_group->patch[r]->offset[1])) + (i1 - patch_group->patch[r]->offset[0]);
               send_o = index * var->values_per_sample * (var->bits_per_value/8);
               send_c = (patch_group->patch[r]->size[0]);
-              recv_o = ((out_patch->patch[0]->size[0]) * (out_patch->patch[0]->size[1]) * (k1 - out_patch->patch[0]->offset[2])) + ((out_patch->patch[0]->size[0])* (j1 - out_patch->patch[0]->offset[1])) + (i1 - out_patch->patch[0]->offset[0]);              
+              recv_o = ((nx) * (ny) * (k1 - out_patch->patch[0]->offset[2])) + ((nx)* (j1 - out_patch->patch[0]->offset[1])) + (i1 - out_patch->patch[0]->offset[0]);
               memcpy(temp_buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));              
             }
           }
         }
       }
 
-
-      double* p=(double*)temp_buffer;
-      int nx=(int)out_patch->patch[0]->size[0];
-      int ny=(int)out_patch->patch[0]->size[1];
-      int nz=(int)out_patch->patch[0]->size[2];
+      float* p=(float*)temp_buffer;
       int dz=4*nx*(ny-(ny/4)*4);
       int dy=4*(nx-(nx/4)*4);
       int dx=4;      
@@ -336,13 +344,13 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
       int zz, yy, xx;      
       for (z=0;z<nz;z+=4)
       {
-        double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz);
+        float* s = (float*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz);
         for (y=0;y<ny;y+=4)
         {
           for (x=0;x<nx;x+=4)
           {
             int64_t diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
-            double* q=p+diff;
+            float* q=p+diff;
 
             for (zz = 0; zz < 4; ++zz)
             {
@@ -351,8 +359,9 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
                 for (xx = 0; xx < 4; ++xx)
                 {
                   int i = xx + yy * 4 + zz * 4 * 4;
-                  int j = xx + yy * out_patch->patch[0]->size[0] + zz * out_patch->patch[0]->size[0] * out_patch->patch[0]->size[1];
-                  s[i] = q[j];                                    
+                  int j = xx + yy * nx + zz * nx * ny;
+                  //printf("%d %d %f\n", i, j, s[i]);
+                  s[i] = q[j];
                 }
               }
             }
@@ -360,12 +369,12 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
           }
         }
       }
-
       free(temp_buffer);
-      
     }
-  }  
-/* Remove the comment to print debug info
+  }
+
+/*
+  Remove the comment to print debug info
   double dv;
   int i;
   for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
@@ -391,7 +400,6 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
     }
   }
   */
-
 
   return PIDX_success;
 }

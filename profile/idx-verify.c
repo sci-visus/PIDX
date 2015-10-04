@@ -460,7 +460,7 @@ int main(int argc, char **argv)
 
   for (t = start_time_step; t <= end_time_step; t++)
   {
-    int64_t lost_element_count = 0, element_count = 0;
+    int64_t lost_element_count = 0, element_count = 0, element_count1 = 0;
     for (i = 0; i < max_files; i++)
     //for (i = 3; i < 4; i++)
     {
@@ -604,6 +604,9 @@ int main(int argc, char **argv)
                             dlhs = decompressed_double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
                           check_bit = check_bit && (dlhs == drhs);
+
+                          if (dlhs == drhs)
+                            element_count1++;
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {
@@ -611,13 +614,19 @@ int main(int argc, char **argv)
                           llhs = ulong_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
                           check_bit = check_bit && (llhs == lrhs);
+
+                          if (llhs == lrhs)
+                            element_count1++;
                         }
                         else if (strcmp(variable_type[var], "float32") == 0)
                         {
-                          frhs = 100;// + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          frhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           flhs = float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
                           check_bit = check_bit && (flhs == frhs);
+
+                          if (flhs == frhs)
+                            element_count1++;
                         }
                       }
                     }
@@ -671,7 +680,7 @@ int main(int argc, char **argv)
       }
     }
 
-    printf("[=]%lld + [!=]%lld [%lld : %lld]\n", (long long) (element_count), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
+    printf("[=]%lld (%lld) + [!=]%lld [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
 
     assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
 
