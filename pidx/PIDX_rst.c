@@ -215,12 +215,22 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
       local_proc_patch->size[d] = rst_id->idx_derived->rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
     }
 
+    int64_t adjusted_bounds[PIDX_MAX_DIMENSIONS];
+    memcpy(adjusted_bounds, rst_id->idx->bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+
+    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    {
+      adjusted_bounds[d] = rst_id->idx->bounds[d];
+      if (rst_id->idx->bounds[d] % rst_id->idx->chunk_size[d] != 0)
+        adjusted_bounds[d] = ((rst_id->idx->bounds[d] / rst_id->idx->chunk_size[d]) + 1) * rst_id->idx->chunk_size[d];
+    }
+
     rst_id->reg_patch_grp_count = 0;
-    for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
-      for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
-        for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
-          for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
-            for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
+    for (i = 0; i < adjusted_bounds[0]; i = i + rst_id->reg_patch_size[0])
+      for (j = 0; j < adjusted_bounds[1]; j = j + rst_id->reg_patch_size[1])
+        for (k = 0; k < adjusted_bounds[2]; k = k + rst_id->reg_patch_size[2])
+          for (l = 0; l < adjusted_bounds[3]; l = l + rst_id->reg_patch_size[3])
+            for (m = 0; m < adjusted_bounds[4]; m = m + rst_id->reg_patch_size[4])
             {
               Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
               memset(reg_patch, 0, sizeof (*reg_patch));
@@ -238,16 +248,16 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
               reg_patch->size[4] = rst_id->reg_patch_size[4];
 
               //Edge regular patches
-              if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
-                reg_patch->size[0] = rst_id->idx->bounds[0] - i;
-              if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
-                reg_patch->size[1] = rst_id->idx->bounds[1] - j;
-              if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
-                reg_patch->size[2] = rst_id->idx->bounds[2] - k;
-              if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
-                reg_patch->size[3] = rst_id->idx->bounds[3] - l;
-              if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
-                reg_patch->size[4] = rst_id->idx->bounds[4] - m;
+              if ((i + rst_id->reg_patch_size[0]) > adjusted_bounds[0])
+                reg_patch->size[0] = adjusted_bounds[0] - i;
+              if ((j + rst_id->reg_patch_size[1]) > adjusted_bounds[1])
+                reg_patch->size[1] = adjusted_bounds[1] - j;
+              if ((k + rst_id->reg_patch_size[2]) > adjusted_bounds[2])
+                reg_patch->size[2] = adjusted_bounds[2] - k;
+              if ((l + rst_id->reg_patch_size[3]) > adjusted_bounds[3])
+                reg_patch->size[3] = adjusted_bounds[3] - l;
+              if ((m + rst_id->reg_patch_size[4]) > adjusted_bounds[4])
+                reg_patch->size[4] = adjusted_bounds[4] - m;
 
               if (intersectNDChunk(reg_patch, local_proc_patch))
                 rst_id->reg_patch_grp_count++;
@@ -260,11 +270,11 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
     reg_patch_count = 0;
     /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
-    for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
-      for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
-        for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
-          for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
-            for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
+    for (i = 0; i < adjusted_bounds[0]; i = i + rst_id->reg_patch_size[0])
+      for (j = 0; j < adjusted_bounds[1]; j = j + rst_id->reg_patch_size[1])
+        for (k = 0; k < adjusted_bounds[2]; k = k + rst_id->reg_patch_size[2])
+          for (l = 0; l < adjusted_bounds[3]; l = l + rst_id->reg_patch_size[3])
+            for (m = 0; m < adjusted_bounds[4]; m = m + rst_id->reg_patch_size[4])
             {
               Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
               memset(reg_patch, 0, sizeof (*reg_patch));
@@ -283,29 +293,29 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
               //Edge regular patches
               edge_case = 0;
-              if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
+              if ((i + rst_id->reg_patch_size[0]) > adjusted_bounds[0])
               {
-                reg_patch->size[0] = rst_id->idx->bounds[0] - i;
+                reg_patch->size[0] = adjusted_bounds[0] - i;
                 edge_case = 1;
               }
-              if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
+              if ((j + rst_id->reg_patch_size[1]) > adjusted_bounds[1])
               {
-                reg_patch->size[1] = rst_id->idx->bounds[1] - j;
+                reg_patch->size[1] = adjusted_bounds[1] - j;
                 edge_case = 1;
               }
-              if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
+              if ((k + rst_id->reg_patch_size[2]) > adjusted_bounds[2])
               {
-                reg_patch->size[2] = rst_id->idx->bounds[2] - k;
+                reg_patch->size[2] = adjusted_bounds[2] - k;
                 edge_case = 1;
               }
-              if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
+              if ((l + rst_id->reg_patch_size[3]) > adjusted_bounds[3])
               {
-                reg_patch->size[3] = rst_id->idx->bounds[3] - l;
+                reg_patch->size[3] = adjusted_bounds[3] - l;
                 edge_case = 1;
               }
-              if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
+              if ((m + rst_id->reg_patch_size[4]) > adjusted_bounds[4])
               {
-                reg_patch->size[4] = rst_id->idx->bounds[4] - m;
+                reg_patch->size[4] = adjusted_bounds[4] - m;
                 edge_case = 1;
               }
 
