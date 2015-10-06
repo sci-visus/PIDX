@@ -68,7 +68,7 @@ static PIDX_return_code create_window(PIDX_agg_id agg_id)
   if (agg_id->idx_d->agg_buffer->buffer_size != 0)
   {
     int total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
-    int bytes_per_datatype = total_chunk_size * (agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/8) / (64/agg_id->idx->compression_bit_rate);
+    int bytes_per_datatype = total_chunk_size * (agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/agg_id->idx->compression_bit_rate);
 
 #if !SIMULATE_IO
     ret = MPI_Win_create(agg_buffer->buffer, agg_buffer->buffer_size, bytes_per_datatype, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
@@ -587,7 +587,7 @@ static PIDX_return_code aggregate_write_read(PIDX_agg_id agg_id, int variable_in
 
   target_count = hz_count * values_per_sample;
 
-  bytes_per_datatype = ((agg_id->idx->variable[variable_index]->bits_per_value / 8) * total_chunk_size) / (64 / agg_id->idx->compression_bit_rate);
+  bytes_per_datatype = ((agg_id->idx->variable[variable_index]->bits_per_value / 8) * total_chunk_size) / (agg_id->idx->variable[variable_index]->bits_per_value / agg_id->idx->compression_bit_rate);
 
 #if !SIMULATE_IO
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
@@ -1224,7 +1224,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id)
 
           int total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
 
-          int bytes_per_datatype = (total_chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (64 / agg_id->idx->compression_bit_rate);
+          int bytes_per_datatype = (total_chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->variable[agg_buffer->var_number]->bits_per_value / agg_id->idx->compression_bit_rate);
 
           agg_buffer->buffer_size = sample_count * bytes_per_datatype;\
 
@@ -1474,7 +1474,7 @@ PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id)
   if (agg_id->idx_d->agg_buffer->buffer_size != 0)
   {
     int total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
-    int bytes_per_datatype = total_chunk_size * (agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/8) / (64/agg_id->idx->compression_bit_rate);
+    int bytes_per_datatype = total_chunk_size * (agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->variable[agg_id->idx_d->agg_buffer->var_number]->bits_per_value/agg_id->idx->compression_bit_rate);
 
     ret = MPI_Win_create(agg_buffer->buffer, agg_buffer->buffer_size, bytes_per_datatype, MPI_INFO_NULL, agg_id->comm, &(agg_id->win));
     if (ret != MPI_SUCCESS)

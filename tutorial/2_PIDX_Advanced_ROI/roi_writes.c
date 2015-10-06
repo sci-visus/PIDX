@@ -193,8 +193,8 @@ static void calculate_per_process_offsecurrent_time_step()
     local_box_size[2] = 32;
   }
 
-#if 0
 
+#if 0
   [PIDX 0] [0] Offset and Count -1 9 -1 : 11 11 32
   [PIDX 1] [0] Offset and Count -1 20 -1 : 11 11 32
   [PIDX 2] [0] Offset and Count 9 -1 -1 : 11 11 32
@@ -552,9 +552,9 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('l'): // local dimension
-      //if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
-      //    (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
-      //  terminate_with_error_msg("Invalid local dimension\n%s", usage);
+      if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
+          (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
+        terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
     case('f'): // output file name
@@ -719,9 +719,9 @@ int main(int argc, char **argv)
     PIDX_set_block_size(file, 15);
 
     //PIDX_debug_rst(file, 1);
-    PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-    //PIDX_set_lossy_compression_bit_rate(file, 32);
+    //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    PIDX_set_lossy_compression_bit_rate(file, 1);
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");

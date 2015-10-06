@@ -74,8 +74,25 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length)
     unsigned char* zip = malloc(outsize);
     memset(zip, 0, outsize);
 
-    for ( i = 0; i < length; i = i + total_chunk_size * typesize)
+    for ( i = 0; i < length * typesize; i = i + total_chunk_size * typesize)
     {
+      /*
+      char filename[100];
+        sprintf(filename, "%d", i/(total_chunk_size * typesize));
+
+        FILE *fp = fopen (filename, "w");
+        double dv = 0;
+        int i1 = 0;
+        for (i1 = 0; i1 < total_chunk_size; i1++)
+        {
+          dv = 0;
+          memcpy(&dv, buffer + (i + i1*typesize), typesize);
+          fprintf(fp, "%f\n", dv);
+        }
+        fclose(fp);
+
+        printf("filename = %s %d %d %d\n", filename, length, total_chunk_size, typesize);
+        */
       memset(zip, 0, outsize);
       outsize = zfp_compress(&params, buffer + i , zip, outsize);
       if (outsize == 0)

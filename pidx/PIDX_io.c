@@ -267,7 +267,7 @@ int PIDX_io_aggregated_write(PIDX_io_id io_id)
       for (k = 0; k < agg_buf->var_number; k++)
       {
         PIDX_variable vark = io_id->idx->variable[k];
-        int bytes_per_datatype =  ((vark->bits_per_value/8) * total_chunk_size) / (64/io_id->idx->compression_bit_rate);
+        int bytes_per_datatype =  ((vark->bits_per_value/8) * total_chunk_size) / (vark->bits_per_value/io_id->idx->compression_bit_rate);
         int64_t prev_var_sample = (int64_t) io_id->idx->variable[io_id->init_index]->block_count_per_file[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * io_id->idx->variable[k]->values_per_sample;
 
         data_offset = (int64_t) data_offset + prev_var_sample;
@@ -1127,7 +1127,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
     
   samples_per_file = io_id->idx_d->samples_per_block * io_id->idx->blocks_per_file;
 
-  bytes_per_datatype = (io_id->idx->variable[variable_index]->bits_per_value / 8) * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]) / (64/io_id->idx->compression_bit_rate);
+  bytes_per_datatype = (io_id->idx->variable[variable_index]->bits_per_value / 8) * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]) / (io_id->idx->variable[variable_index]->bits_per_value/io_id->idx->compression_bit_rate);
   
 #if !SIMULATE_IO
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * io_id->idx->variable[variable_index]->values_per_sample;
