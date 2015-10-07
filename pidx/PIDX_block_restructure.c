@@ -224,7 +224,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
           char filename[100];
           sprintf(filename, "%d_%d_%d",p, j, rank);
           FILE *fp = fopen (filename, "w");
-          double dv;
+          float dv;
           int i;
 
           fprintf(fp, "[%d] [%d] Offset Count %d %d %d :: %d %d %d\n", p, j, (int)in_patch->patch[j]->offset[0], (int)in_patch->patch[j]->offset[1], (int)in_patch->patch[j]->offset[2], (int)in_patch->patch[j]->size[0], (int)in_patch->patch[j]->size[1], (int)in_patch->patch[j]->size[2]);
@@ -314,7 +314,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
       if (out_patch->patch[0]->size[2] % chunk_id->idx->chunk_size[2] != 0)
         nz = ((out_patch->patch[0]->size[2] / chunk_id->idx->chunk_size[2]) + 1) * chunk_id->idx->chunk_size[2];
 
-      unsigned char* temp_buffer = malloc(nx * ny * nz * var->bits_per_value/8 );
+      unsigned char* temp_buffer = malloc(nx * ny * nz * var->bits_per_value/8 * var->values_per_sample);
 
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
       for (r = 0; r < var->rst_patch_group[g]->count; r++)
@@ -335,22 +335,25 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
         }
       }
 
-      double* p=(double*)temp_buffer;
+      float* p=(float*)temp_buffer;
       int dz=4*nx*(ny-(ny/4)*4);
       int dy=4*(nx-(nx/4)*4);
       int dx=4;      
 
+      int s1 = 0;
       int z, y, x;
       int zz, yy, xx;      
+      for (s1 = 0; s1 < var->values_per_sample; s1++)
+      {
       for (z=0;z<nz;z+=4)
       {
-        double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz);
+        float* s = (float*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz) + nx*ny*nz*s1;
         for (y=0;y<ny;y+=4)
         {
           for (x=0;x<nx;x+=4)
           {
             int64_t diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
-            double* q=p+diff;
+            float* q=p+var->values_per_sample*diff+s1;
 
             for (zz = 0; zz < 4; ++zz)
             {
@@ -358,10 +361,13 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
               {
                 for (xx = 0; xx < 4; ++xx)
                 {
-                  int i = xx + yy * 4 + zz * 4 * 4;
-                  int j = xx + yy * nx + zz * nx * ny;
-                  //printf("%d %d %f\n", i, j, s[i]);
-                  s[i] = q[j];
+
+                  //{
+                    int i = xx + yy * 4 + zz * 4 * 4;
+                    int j = xx + yy * nx + zz * nx * ny;
+                    //printf("%d %d %f\n", i, j, s[i]);
+                    s[nx*ny*nz*s1 + i*var->values_per_sample+s1] = q[j*var->values_per_sample + s1];
+                  //}
                 }
               }
             }
@@ -369,13 +375,14 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
           }
         }
       }
+      }
       free(temp_buffer);
     }
   }
 
 /*
   Remove the comment to print debug info
-  double dv;
+  float dv;
   int i;
   for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
   {

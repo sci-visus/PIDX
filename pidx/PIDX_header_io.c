@@ -340,7 +340,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
   int i = 0, j = 0, k = 0, all_scalars = 0;
   off_t data_offset = 0, base_offset = 0;
 
-  int64_t total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2] * header_io_id->idx->chunk_size[3] * header_io_id->idx->chunk_size[4]) / (64 / header_io_id->idx->compression_bit_rate);
+  int64_t total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2] * header_io_id->idx->chunk_size[3] * header_io_id->idx->chunk_size[4]);// / (64 / header_io_id->idx->compression_bit_rate);
 
 #if 1
   if (mode == 1)
@@ -386,12 +386,12 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
         if (all_scalars == 0)
         {
           for (k = 0; k < j; k++)
-            base_offset = base_offset + (header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample;
+            base_offset = base_offset + ((header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample) / (header_io_id->idx->variable[k]->bits_per_value / header_io_id->idx->compression_bit_rate);
         }
         else
-          base_offset =  j * (header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample;
+          base_offset =  j * (header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
 
-        data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample;
+        data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample  / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
 
         //printf("BLOCK %d = %d + %d + %d (%d %d)\n", i, (int)base_offset, (int)data_offset, (int)(header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size), header_io_id->idx_d->start_fs_block, header_io_id->idx_d->fs_block_size);
         data_offset = base_offset + data_offset + header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size;
@@ -401,7 +401,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
         //if (file_number == 2)
           //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample));
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
-        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample);
+        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate));
       }
     }
   }

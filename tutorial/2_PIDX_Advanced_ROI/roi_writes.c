@@ -28,7 +28,7 @@ static unsigned long long local_box_offset[3];
 static unsigned long long local_box_size[3] = {0, 0, 0};
 static int time_step_count = 1;
 static char output_file_template[512] = "test";
-static double *data;
+static float *data;
 static char output_file_name[512] = "test.idx";
 static PIDX_point global_size, local_offset, local_size;
 static int roi_type = 0;
@@ -104,7 +104,7 @@ static void calculate_per_process_offsecurrent_time_step()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 #endif
-
+#if 1
   if (rank == 0)
   {
     local_box_offset[0] = 0;
@@ -192,7 +192,7 @@ static void calculate_per_process_offsecurrent_time_step()
     local_box_size[1] = 52;
     local_box_size[2] = 32;
   }
-
+#endif
 
 #if 0
   [PIDX 0] [0] Offset and Count -1 9 -1 : 11 11 32
@@ -594,7 +594,7 @@ static void create_synthetic_simulation_data_and_ROI_extents()
   switch (roi_type)
   {
     case 0:
-      data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+      data = malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
       //for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
       //  data[i] = rank;
 
@@ -613,7 +613,7 @@ static void create_synthetic_simulation_data_and_ROI_extents()
     case 1:
       if (rank % 2 == 0)
       {
-        data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+        data = malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
         for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
           data[i] = 100;
 
@@ -631,7 +631,7 @@ static void create_synthetic_simulation_data_and_ROI_extents()
       {
         if (rank % 2 == 0)
         {
-          data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+          data = malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
           for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
             data[i] = 100;
           PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
@@ -646,7 +646,7 @@ static void create_synthetic_simulation_data_and_ROI_extents()
       {
         if (rank % 2 == 1)
         {
-          data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+          data = malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
           for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
             data[i] = 100;
 
@@ -663,7 +663,7 @@ static void create_synthetic_simulation_data_and_ROI_extents()
     case 4:
       if (rank == current_time_step * (global_box_size[X] / local_box_size[X]) * (global_box_size[Y] / local_box_size[Y]))
       {
-        data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+        data = malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
         for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
           data[i] = 100;
 
@@ -716,7 +716,7 @@ int main(int argc, char **argv)
     ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
-    PIDX_set_block_size(file, 15);
+    PIDX_set_block_size(file, 16);
 
     //PIDX_debug_rst(file, 1);
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
@@ -742,7 +742,7 @@ int main(int argc, char **argv)
     //ret = PIDX_set_restructuring_box(file, restructured_box_size);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
-    ret = PIDX_variable_create("ROI_Var", sizeof(unsigned long long) * 8, FLOAT64, &variable);
+    ret = PIDX_variable_create("ROI_Var", sizeof(float) * 8, FLOAT32, &variable);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
     ret = PIDX_variable_write_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
