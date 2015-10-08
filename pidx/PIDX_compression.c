@@ -98,7 +98,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int
       outsize = zfp_compress(&params, buffer + i , zip, outsize);
       if (outsize == 0)
       {
-        fprintf(stderr, "compression failed\n");
+        printf("compression failed\n");
         return -1;
       }
       memcpy(buffer + total_size, zip, outsize);
@@ -188,6 +188,9 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
   int rank;
   MPI_Comm_rank(comp_id->comm, &rank);
+
+  if (rank == 0)
+    printf("Compressin type = %d\n", comp_id->idx->compression_type);
 
   if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
     return PIDX_success;
