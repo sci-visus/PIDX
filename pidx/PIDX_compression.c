@@ -186,6 +186,9 @@ int PIDX_compression_set_communicator(PIDX_comp_id comp_id, MPI_Comm comm)
 
 PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
+  int rank;
+  MPI_Comm_rank(comp_id->comm, &rank);
+
   if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
     return PIDX_success;
 
@@ -205,15 +208,18 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
           Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
           unsigned char* buffer = patch->buffer;
           int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4] * var->values_per_sample;
-          int compressed_element_count;
 
+          printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+
+          int compressed_element_count = 0;
           compressed_element_count = compress_buffer(comp_id, buffer, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
-          //printf("Compressed element count = %d\n", compressed_element_count);
-          if (compressed_element_count < 0)
+
+          printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);
+
+          if (compressed_element_count <= 0)
             return PIDX_err_compress;
 
           unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
-
           if (temp_buffer == NULL)
             return PIDX_err_compress;
           else
