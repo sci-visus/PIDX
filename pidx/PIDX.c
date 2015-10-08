@@ -1836,7 +1836,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   unsigned long long l_filec = 0, g_filec = 0;
   unsigned long long l_init = 0, g_init = 0;
   unsigned long long l_rst_buf = 0, g_rst_buf = 0;
+  unsigned long long l_chunk_buf = 0, g_chunk_buf = 0;
   unsigned long long l_rst = 0, g_rst = 0;
+  unsigned long long l_chunk = 0, g_chunk = 0;
+  unsigned long long l_cmp = 0, g_cmp = 0;
   unsigned long long l_hz_buf = 0, g_hz_buf = 0;
   unsigned long long l_hz = 0, g_hz = 0;
   unsigned long long l_agg_buf = 0, g_agg_buf = 0;
@@ -2116,6 +2119,12 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_chunk;
 
+#if PIDX_DEBUG_OUTPUT
+    l_chunk_buf = 1;
+    MPI_Allreduce(&l_chunk_buf, &g_chunk_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_chunk_buf == nprocs)
+      printf("[C] Chunking Buffer Created\n");
+#endif
 
     /* Perform Chunking */
     if (file->debug_do_chunk == 1)
@@ -2125,12 +2134,19 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         return PIDX_err_chunk;
     }
 
+#if PIDX_DEBUG_OUTPUT
+    l_chunk = 1;
+    MPI_Allreduce(&l_chunk, &g_chunk, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_chunk == nprocs)
+      printf("[C] Chunking Completed\n");
+#endif
+
     /* Verifying the correctness of the chunking phase */
     if (file->debug_chunk == 1)
     {
-      ret = HELPER_chunking(file->chunk_id);
-      if (ret != PIDX_success)
-        return PIDX_err_chunk;
+      //ret = HELPER_chunking(file->chunk_id);
+      //if (ret != PIDX_success)
+      //  return PIDX_err_chunk;
     }
 
     /* Destroy buffers allocated during restructuring phase */
@@ -2153,6 +2169,13 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       if (ret != PIDX_success)
         return PIDX_err_compress;
     }
+
+#if PIDX_DEBUG_OUTPUT
+    l_cmp = 1;
+    MPI_Allreduce(&l_cmp, &g_cmp, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_cmp == nprocs)
+      printf("[CMP] Compression Completed\n");
+#endif
 
     compression_end[vp] = PIDX_get_time();
     /*------------------------------------------Compression [end]--------------------------------------------*/
@@ -3097,6 +3120,7 @@ PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_leng
 
   file->var_pipe_length = var_pipe_length;
 
+  return PIDX_success;
 }
 
 
@@ -3110,7 +3134,7 @@ PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variab
   
   (*variable) = file->idx->variable[file->idx->variable_index_tracker];
   
-  return PIDX_err_not_implemented;
+  return PIDX_success;
 }
 
 
