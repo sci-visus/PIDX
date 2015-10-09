@@ -207,7 +207,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->local_variable_index = 0;
   (*file)->local_variable_count = 0;
-  (*file)->var_pipe_length = 0;
+  (*file)->var_pipe_length = -1;
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
@@ -387,7 +387,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->local_variable_index = 0;
   (*file)->local_variable_count = 0;
-  (*file)->var_pipe_length = 0;
+  (*file)->var_pipe_length = -1;
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
@@ -1410,6 +1410,16 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       {
         bounding_box[0][i] = file->idx->variable[file->local_variable_index]->sim_patch[p]->offset[i];
         bounding_box[1][i] = file->idx->variable[file->local_variable_index]->sim_patch[p]->size[i] + file->idx->variable[file->local_variable_index]->sim_patch[p]->offset[i];
+
+        //if (bounding_box[0][i] % file->idx->chunk_size[i] == 0)
+        bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
+        //else
+        //bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]) - 1;
+
+        if (bounding_box[1][i] % file->idx->chunk_size[i] == 0)
+          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]);
+        else
+          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
       }
       
       PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
@@ -1470,8 +1480,8 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     }
   //}
 #endif
-  //if (rank == 0)
-  //  PIDX_blocks_print_layout(block_layout);
+  if (rank == 0)
+    PIDX_blocks_print_layout(block_layout);
   file->idx->variable[file->local_variable_index]->file_index = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(file->idx->variable[file->local_variable_index]->file_index, 0, sizeof(int) * (file->idx_d->max_file_count));
   
@@ -1798,7 +1808,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
 
   if (file->idx->variable_count == file->idx->variable_index_tracker)
   {
-    if (file->var_pipe_length >= file->idx->variable_count || file->var_pipe_length == 0)
+    if (file->var_pipe_length >= file->idx->variable_count || file->var_pipe_length == -1)
       file->var_pipe_length = file->idx->variable_count - 1;
 
     if (file->idx->enable_agg != 0)
@@ -3117,7 +3127,7 @@ PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_leng
   if(!file)
     return PIDX_err_file;
 
-  if (var_pipe_length <= 0)
+  if (var_pipe_length < 0)
     return PIDX_err_size;
 
   file->var_pipe_length = var_pipe_length;

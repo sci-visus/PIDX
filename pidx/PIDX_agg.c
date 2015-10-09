@@ -1226,7 +1226,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id)
 
           int bytes_per_datatype = (total_chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->variable[agg_buffer->var_number]->bits_per_value / agg_id->idx->compression_bit_rate);
 
-          agg_buffer->buffer_size = sample_count * bytes_per_datatype;\
+          agg_buffer->buffer_size = sample_count * bytes_per_datatype;
 
 #if !SIMULATE_IO
           agg_buffer->buffer = malloc(agg_buffer->buffer_size);
