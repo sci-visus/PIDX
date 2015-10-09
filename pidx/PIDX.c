@@ -34,7 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 1
+#define PIDX_DEBUG_OUTPUT 0
 
 static int vp = 0;
 static int hp = 0;
@@ -1832,6 +1832,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   if (file->local_variable_index == file->idx->variable_count)
     return PIDX_success;
 
+#if PIDX_DEBUG_OUTPUT
   unsigned long long l_populate = 0, g_populate = 0;
   unsigned long long l_filec = 0, g_filec = 0;
   unsigned long long l_init = 0, g_init = 0;
@@ -1846,6 +1847,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   unsigned long long l_agg = 0, g_agg = 0;
   unsigned long long l_io = 0, g_io = 0;
   unsigned long long l_pidx = 0, g_pidx = 0;
+#endif
 
   int j = 0, p, var = 0, d = 0;
   int total_header_size;
@@ -2818,7 +2820,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   
   sim_end = PIDX_get_time();
   
-#if PIDX_DEBUG_OUTPUT
+#if 1//PIDX_DEBUG_OUTPUT
   int i = 0;
   double total_time = sim_end - sim_start;
   double max_time = total_time;

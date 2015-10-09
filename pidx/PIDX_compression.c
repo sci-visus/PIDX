@@ -189,8 +189,8 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
   int rank;
   MPI_Comm_rank(comp_id->comm, &rank);
 
-  if (rank == 0)
-    printf("Compressin type = %d\n", comp_id->idx->compression_type);
+  //if (rank == 0)
+  //  printf("Compressin type = %d\n", comp_id->idx->compression_type);
 
   if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
     return PIDX_success;
@@ -212,12 +212,14 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
           unsigned char* buffer = patch->buffer;
           int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4] * var->values_per_sample;
 
-          printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+          //if (rank == 0)
+          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bits_per_value/8, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
 
           int compressed_element_count = 0;
           compressed_element_count = compress_buffer(comp_id, buffer, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
 
-          printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);
+          //if (rank == 0)
+          //printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);
 
           if (compressed_element_count <= 0)
             return PIDX_err_compress;
