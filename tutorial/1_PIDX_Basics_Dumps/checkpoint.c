@@ -260,14 +260,14 @@ static void create_synthetic_simulation_data()
   int var = 0;
   unsigned long long i, j, k, vps = 0;
 
-  data = malloc(sizeof(*data) * variable_count);
+  data = (float**)malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
   // Synthetic simulation data
 
   for(var = 0; var < variable_count; var++)
   {
-    data[var] = malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
+    data[var] = (float*)malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -364,7 +364,7 @@ int main(int argc, char **argv)
   PIDX_file file;            // IDX file descriptor
   PIDX_variable* variable;   // variable descriptor
 
-  variable = malloc(sizeof(*variable) * variable_count);
+  variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
 
   PIDX_point global_size, local_offset, local_size;
