@@ -451,6 +451,12 @@ PIDX_return_code PIDX_simulate_io();
 PIDX_return_code PIDX_set_ROI_writes(PIDX_file file);
 
 
+
+///
+PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
+
+
+
 ///
 double PIDX_get_time();
 

@@ -392,20 +392,22 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    //PIDX_debug_rst(file, 1);
+    PIDX_debug_rst(file, 1);
+    PIDX_debug_hz(file, 1);
     //PIDX_debug_disable_hz(file);
     //PIDX_debug_disable_io(file);
     //PIDX_dump_agg_info(file, 1);
     PIDX_set_block_count(file, 512);
     PIDX_set_block_size(file, 16);
 
-    //PIDX_set_ROI_writes(file);
+    PIDX_activate_local_aggregation(file);
+
     PIDX_set_variable_pile_length(file, 0);
-    //int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
+    //int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
     //ret = PIDX_set_restructuring_box(file, restructured_box_size);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
-    PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
+    //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
     //PIDX_set_lossy_compression_bit_rate(file, 16);
 
     char var_name[512];

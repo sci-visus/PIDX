@@ -73,6 +73,38 @@ static int RegExBitmaskBit(const char* bitmask_pattern,int N);
 static uint64_t getPowerOf2(int x);
 static int decompress(double* input_buffer, double* output_buffer, size_t buffer_size);
 
+double swap(double d)
+{
+   double a;
+   unsigned char *dst = (unsigned char *)&a;
+   unsigned char *src = (unsigned char *)&d;
+
+   dst[0] = src[7];
+   dst[1] = src[6];
+   dst[2] = src[5];
+   dst[3] = src[4];
+   dst[4] = src[3];
+   dst[5] = src[2];
+   dst[6] = src[1];
+   dst[7] = src[0];
+
+   return a;
+}
+
+float swap_float(float d)
+{
+   float a;
+   unsigned char *dst = (unsigned char *)&a;
+   unsigned char *src = (unsigned char *)&d;
+
+   dst[0] = src[3];
+   dst[1] = src[2];
+   dst[2] = src[1];
+   dst[3] = src[0];
+
+   return a;
+}
+
 static int decompress(double* input_buffer, double* output_buffer, size_t buffer_size)
 {
 #if PIDX_HAVE_ZFP
@@ -599,7 +631,7 @@ int main(int argc, char **argv)
                         {
                           drhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0 || compression_type == 1)
-                            dlhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
+                            dlhs = swap(swap(double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
                           else
                             dlhs = decompressed_double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
@@ -621,7 +653,7 @@ int main(int argc, char **argv)
                         else if (strcmp(variable_type[var], "float32") == 0)
                         {
                           frhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
-                          flhs = float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
+                          flhs = ((float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
 
                           check_bit = check_bit && (flhs == frhs);
 
@@ -635,12 +667,12 @@ int main(int argc, char **argv)
 
                 if (check_bit == 0)
                 {
-                  /*
+                  //
                   if (strcmp(variable_type[var], "float64") == 0)
                     printf("%f %f\n", dlhs, drhs);
                   else if (strcmp(variable_type[var], "uint64") == 0)
                       printf("%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
-                   */
+                   //
                   lost_element_count++;
                   //break;
                 }

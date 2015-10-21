@@ -113,6 +113,8 @@ struct PIDX_file_descriptor
   int debug_do_agg;                            ///< User controlled flag to activate/deactivate aggregation phase
   int debug_do_io;                             ///< User controlled flag to activate/deactivate I/O phase
 
+  int small_agg_comm;
+
   idx_dataset idx;                             ///< Contains all relevant IDX file info
                                                ///< Blocks per file, samples per block, bitmask, box, file name template
 
@@ -215,6 +217,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->debug_rst = 0;
   (*file)->debug_hz = 0;
   (*file)->idx_d->color = 0;
+
+  (*file)->small_agg_comm = 0;
 
 #if PIDX_HAVE_MPI
   //unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
@@ -391,6 +395,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
+
+  (*file)->small_agg_comm = 0;
 
   (*file)->debug_rst = 0;
   (*file)->debug_hz = 0;
@@ -1480,8 +1486,8 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     }
   //}
 #endif
-  if (rank == 0)
-    PIDX_blocks_print_layout(block_layout);
+  //if (rank == 0)
+  //  PIDX_blocks_print_layout(block_layout);
   file->idx->variable[file->local_variable_index]->file_index = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(file->idx->variable[file->local_variable_index]->file_index, 0, sizeof(int) * (file->idx_d->max_file_count));
   
@@ -2073,6 +2079,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
+    if (file->small_agg_comm == 1)
+      PIDX_create_local_aggregation_comm(file->agg_id);
+
 #if PIDX_DEBUG_OUTPUT
     l_init = 1;
     MPI_Allreduce(&l_init, &g_init, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
@@ -2242,8 +2251,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
 
 
-    /*----------------------------------------------Agg [start]-----------------------------------------------*/
+    /*----------------------------------------------Agg [staart]-----------------------------------------------*/
     agg_start[vp] = PIDX_get_time();
+
+
 
     /* Creating the buffers required for Aggregation */
     ret = PIDX_agg_buf_create(file->agg_id);
@@ -2346,6 +2357,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /*-------------------------------------------finalize [start]---------------------------------------------*/
     finalize_start[vp] = PIDX_get_time();
+
+    if (file->small_agg_comm == 1)
+      PIDX_destroy_local_aggregation_comm(file->agg_id);
 
     /* Deleting the I/O ID */
     PIDX_io_finalize(file->io_id);
@@ -2858,7 +2872,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "\n==========================================================================================================\n");
       fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx->current_time_step, file->idx->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d = %d x %d x %d\n", nprocs, (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
-      fprintf(stdout, "Rst = %d Comp = %d Agg = %d\n", file->idx->enable_rst, file->idx->compression_type, file->idx->enable_agg);
+      fprintf(stdout, "Rst = %d Comp = %d Agg = %d [%d]\n", file->idx->enable_rst, file->idx->compression_type, file->idx->enable_agg, file->small_agg_comm);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregation Factor %d Aggregator Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count, file->idx_d->aggregation_factor, file->idx->variable_count * file->idx_d->max_file_count * file->idx_d->aggregation_factor);
       fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
@@ -3162,6 +3176,17 @@ PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variabl
   file->idx->variable[file->idx->variable_index_tracker] = variable;
 
   return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_activate_local_aggregation(PIDX_file file)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  file->small_agg_comm = 1;
+
 }
 
 

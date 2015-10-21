@@ -1175,7 +1175,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
     fh = open(file_name, O_WRONLY);
 #endif
 #endif
-    
+
     data_offset = 0;
     bytes_per_sample = io_id->idx->variable[variable_index]->bits_per_value / 8;
     data_offset = file_index * bytes_per_sample * io_id->idx->variable[variable_index]->values_per_sample;

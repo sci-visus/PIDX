@@ -978,6 +978,47 @@ PIDX_return_code PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
 
   agg_id->comm = comm;
 
+
+  return PIDX_success;
+}
+
+
+PIDX_return_code PIDX_create_local_aggregation_comm(PIDX_agg_id agg_id)
+{
+  if (agg_id == NULL)
+    return PIDX_err_id;
+
+  int color;
+  int rank;
+  int nprocs;
+
+  MPI_Comm temp_comm = agg_id->comm;
+  MPI_Comm_rank(temp_comm, &rank);
+  MPI_Comm_size(agg_id->comm, &nprocs);
+  //printf("[Before] Agg size = %d\n", nprocs);
+
+  PIDX_variable var0 = agg_id->idx->variable[agg_id->first_index];
+  if (var0->patch_group_count == 0)
+    color = 0;
+  else
+    color = 1;
+
+  MPI_Comm_split(temp_comm, color, rank, &(agg_id->comm));
+
+  MPI_Comm_size(agg_id->comm, &nprocs);
+  //printf("[After] Agg size = %d\n", nprocs);
+
+  return PIDX_success;
+
+}
+
+PIDX_return_code PIDX_destroy_local_aggregation_comm(PIDX_agg_id agg_id)
+{
+  if (agg_id == NULL)
+    return PIDX_err_id;
+
+  MPI_Comm_free(&(agg_id->comm));
+
   return PIDX_success;
 }
 
