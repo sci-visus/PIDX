@@ -34,7 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 0
+#define PIDX_DEBUG_OUTPUT 1
 
 static int vp = 0;
 static int hp = 0;
@@ -1332,8 +1332,8 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   
   PointND bounds_point;
   
-  if(file->debug_do_chunk == 1)
-  {
+  //if(file->debug_do_chunk == 1)
+  //{
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
       if (file->idx->bounds[d] % file->idx->chunk_size[d] == 0)
@@ -1341,9 +1341,9 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       else
         file->idx->chunked_bounds[d] = (int) (file->idx->bounds[d] / file->idx->chunk_size[d]) + 1;
     }
-  }
-  else
-    memcpy(file->idx->chunked_bounds, file->idx->bounds, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
+  //}
+  //else
+  //  memcpy(file->idx->chunked_bounds, file->idx->bounds, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
 
   int64_t* cb = file->idx->chunked_bounds;
 
@@ -1427,7 +1427,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
         else
           bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
       }
-      
+      //printf("[%d (%d %d %d)] - %d %d %d    %d %d %d\n", rank, file->idx->chunk_size[0], file->idx->chunk_size[1], file->idx->chunk_size[2], bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
       PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
       memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
 
@@ -2075,12 +2075,13 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
+    if (file->small_agg_comm == 1)
+      PIDX_create_local_aggregation_comm(file->agg_id);
+
     ret = PIDX_agg_meta_data_create(file->agg_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
-    if (file->small_agg_comm == 1)
-      PIDX_create_local_aggregation_comm(file->agg_id);
 
 #if PIDX_DEBUG_OUTPUT
     l_init = 1;
@@ -2186,9 +2187,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /* Perform Compression */
     if (file->debug_do_compress == 1)
     {
+#if !SIMULATE_IO
       ret = PIDX_compression(file->comp_id);
       if (ret != PIDX_success)
         return PIDX_err_compress;
+#endif
     }
 
 #if PIDX_DEBUG_OUTPUT
@@ -2873,7 +2876,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx->current_time_step, file->idx->filename);
       fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d = %d x %d x %d\n", nprocs, (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count, file->idx_count[0] * file->idx_count[1] * file->idx_count[2], file->idx_count[0], file->idx_count[1], file->idx_count[2]);
       fprintf(stdout, "Rst = %d Comp = %d Agg = %d [%d]\n", file->idx->enable_rst, file->idx->compression_type, file->idx->enable_agg, file->small_agg_comm);
-      fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d Aggregation Factor %d Aggregator Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count, file->idx_d->aggregation_factor, file->idx->variable_count * file->idx_d->max_file_count * file->idx_d->aggregation_factor);
+      fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d (%d) Aggregation Factor %d Aggregator Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count, file->idx->variable[0]->existing_file_count, file->idx_d->aggregation_factor, file->idx->variable_count * file->idx_d->max_file_count * file->idx_d->aggregation_factor);
       fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
       fprintf(stdout, "Staged Aggregation = %d\n", file->idx_d->staged_aggregation);

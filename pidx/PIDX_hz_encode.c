@@ -161,10 +161,10 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         memset(hz_buf->samples_per_level, 0, maxH * sizeof (int64_t));
       }
 
-      hz_buf->missing_block_count_per_level = malloc(sizeof (int) * maxH);
-      hz_buf->missing_block_index_per_level = malloc(sizeof (int*) * maxH);
-      memset(hz_buf->missing_block_index_per_level, 0, sizeof (int*) * maxH);
-      memset(hz_buf->missing_block_count_per_level, 0, sizeof (int) * maxH);
+      //hz_buf->missing_block_count_per_level = malloc(sizeof (int) * maxH);
+      //hz_buf->missing_block_index_per_level = malloc(sizeof (int*) * maxH);
+      //memset(hz_buf->missing_block_index_per_level, 0, sizeof (int*) * maxH);
+      //memset(hz_buf->missing_block_count_per_level, 0, sizeof (int) * maxH);
 
       allign_offset = malloc(sizeof (int*) * maxH);
       allign_count = malloc(sizeof (int*) * maxH);
@@ -185,11 +185,11 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         //hz_buf->missing_block_index_per_level[j] = malloc(sizeof (int) * (id->idx->blocks_per_file));
         //memset(hz_buf->missing_block_index_per_level[j], 0, (sizeof (int) * (id->idx->blocks_per_file)));
 
-        if (j-id->idx->bits_per_block > 0)
-        {
-          hz_buf->missing_block_index_per_level[j] = malloc(sizeof (int) * pow(2, j-id->idx->bits_per_block));
-          memset(hz_buf->missing_block_index_per_level[j], 0, (sizeof (int) * pow(2, j-id->idx->bits_per_block)));
-        }
+        //if (j-id->idx->bits_per_block > 0)
+        //{
+        //  hz_buf->missing_block_index_per_level[j] = malloc(sizeof (int) * pow(2, j-id->idx->bits_per_block));
+        //  memset(hz_buf->missing_block_index_per_level[j], 0, (sizeof (int) * pow(2, j-id->idx->bits_per_block)));
+        //}
       }
 
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -249,8 +249,8 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
               var->chunk_patch_group[p]->type = 2;
               hz_buf->type = 2;
 
-              hz_buf->missing_block_count_per_level[j]++;
-              hz_buf->missing_block_index_per_level[j][count] = b;
+              //hz_buf->missing_block_count_per_level[j]++;
+              //hz_buf->missing_block_index_per_level[j][count] = b;
               count++;
             }
           }
@@ -796,6 +796,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
   int n = 0;
   for (y = 0; y < var0->patch_group_count; y++)
   {
+    /*
     if (var0->chunk_patch_group[y]->type == 2)
     {
       for (i = id->first_index; i <= id->last_index; i++)
@@ -833,6 +834,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
         }
       }
     }
+    */
 
     if (var0->chunk_patch_group[y]->type == 0)
     {
@@ -1231,7 +1233,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
         free(var->hz_buffer[p]->start_hz_index);
         free(var->hz_buffer[p]->end_hz_index);
 
-        free(var->hz_buffer[p]->missing_block_count_per_level);
+        //free(var->hz_buffer[p]->missing_block_count_per_level);
 
         if (var->hz_buffer[p]->type == 0)
           free(var->hz_buffer[p]->buffer_index);
@@ -1241,6 +1243,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
         free(var->hz_buffer[p]->nsamples_per_level);
       }
 
+      /*
       for (itr = 0; itr < id->idx_d->maxh; itr++)
       {
         free(var->hz_buffer[p]->missing_block_index_per_level[itr]);
@@ -1248,6 +1251,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
       }
       free(var->hz_buffer[p]->missing_block_index_per_level);
       var->hz_buffer[p]->missing_block_index_per_level = 0;
+      */
 
       free(var->hz_buffer[p]->buffer);
       var->hz_buffer[p]->buffer = 0;
@@ -1309,7 +1313,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               check_bit = 1, s = 0;    
               if (strcmp(var->type_name, FLOAT64) == 0)
               {
-                dvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                dvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                 dvalue_2 = *(*((double**)var->hz_buffer[b]->buffer + i) + ((k * var->values_per_sample) + s));
 
                 check_bit = check_bit && (dvalue_1  == dvalue_2);
@@ -1318,7 +1322,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               {
                 for (s = 0; s < 3; s++)
                 {
-                  dvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                  dvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
 
                   memcpy(&dvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
 
@@ -1327,7 +1331,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               }
               if (strcmp(var->type_name, UINT64) == 0)
               {
-                uvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                uvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                 uvalue_2 = *(*((unsigned long long**)var->hz_buffer[b]->buffer + i) + ((k * var->values_per_sample) + s));
                 check_bit = check_bit && (uvalue_1  == uvalue_2);
               }
@@ -1335,7 +1339,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               {
                 for (s = 0; s < 3; s++)
                 {
-                  uvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                  uvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                   memcpy(&uvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
 
                   check_bit = check_bit && (uvalue_1  == uvalue_2);

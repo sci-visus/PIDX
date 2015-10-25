@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <math.h>
 
-//#include "PIDX_config.h"
+#include "PIDX_config.h"
 
 #if PIDX_HAVE_ZFP
   #include "zfp.h"
@@ -71,7 +71,7 @@ static int VisusSplitFilename(const char* filename,char* dirname,char* basename)
 static void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz);
 static int RegExBitmaskBit(const char* bitmask_pattern,int N);
 static uint64_t getPowerOf2(int x);
-static int decompress(double* input_buffer, double* output_buffer, size_t buffer_size);
+static int decompress(float* input_buffer, float* output_buffer, size_t buffer_size);
 
 double swap(double d)
 {
@@ -105,29 +105,29 @@ float swap_float(float d)
    return a;
 }
 
-static int decompress(double* input_buffer, double* output_buffer, size_t buffer_size)
+static int decompress(float* input_buffer, float* output_buffer, size_t buffer_size)
 {
 #if PIDX_HAVE_ZFP
   int i;
   zfp_params params;
   size_t typesize, outsize;
 
-  typesize = sizeof(double);
-  params.type = ZFP_TYPE_DOUBLE;
+  typesize = sizeof(float);
+  params.type = ZFP_TYPE_FLOAT;
   params.nx = compression_block_size[0];
   params.ny = compression_block_size[1];
   params.nz = compression_block_size[2];
   zfp_set_rate(&params, compression_bit_rate);
   
-  
   outsize = compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize;
-  printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
+  //printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
 
   unsigned char* zip = (unsigned char*)malloc(outsize);
-  for (i = 0; i < buffer_size; i = i + (compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize)/(64/compression_bit_rate))
+  for (i = 0; i < buffer_size; i = i + (compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize)/(32/compression_bit_rate))
   {
-    zfp_decompress(&params, zip, (unsigned char*)input_buffer + (i), outsize/(64/compression_bit_rate));
-    memcpy((unsigned char*)output_buffer + (i*(64/compression_bit_rate)), zip, outsize);
+    //printf("%d \n", (i*(32/compression_bit_rate)));
+    zfp_decompress(&params, zip, (unsigned char*)input_buffer + (i), outsize/(32/compression_bit_rate));
+    memcpy((unsigned char*)output_buffer + (i*(32/compression_bit_rate)), zip, outsize);
   }
   free(zip);
   
@@ -492,7 +492,7 @@ int main(int argc, char **argv)
 
   for (t = start_time_step; t <= end_time_step; t++)
   {
-    int64_t lost_element_count = 0, element_count = 0, element_count1 = 0;
+    int64_t lost_element_count = 0, element_count = 0, element_count1 = 0, lost_element_count1= 0;
     for (i = 0; i < max_files; i++)
     //for (i = 3; i < 4; i++)
     {
@@ -539,6 +539,7 @@ int main(int argc, char **argv)
         float* float_buffer = NULL;
         uint64_t* ulong_buffer = NULL;
         double* decompressed_double_buffer = NULL;
+        float* decompressed_float_buffer = NULL;
         int check_bit = 1, s = 0;
         int64_t hz_index, hz_val;
 
@@ -564,12 +565,12 @@ int main(int argc, char **argv)
                 ret = pread(fd, double_buffer, data_size, data_offset);
                 //assert(ret == data_size);
               
-                if (compression_type == 2)
-                {
-                  decompressed_double_buffer = (double*) malloc(data_size * (64/compression_bit_rate));
-                  decompress(double_buffer, decompressed_double_buffer, data_size);
-                  free(double_buffer);
-                }
+                //if (compression_type == 2)
+                //{
+                //  decompressed_double_buffer = (double*) malloc(data_size * (64/compression_bit_rate));
+                //  decompress(double_buffer, decompressed_double_buffer, data_size);
+                //  free(double_buffer);
+                //}
                 sample_size = sizeof(double);
               }
               else if (strcmp(variable_type[var], "uint64") == 0)
@@ -589,8 +590,23 @@ int main(int argc, char **argv)
                 ret = pread(fd, float_buffer, data_size, data_offset);
                 assert(ret == data_size);
                 sample_size = sizeof(float);
+
+                if (compression_type == 2)
+                {
+                  //printf("buffer size = %d x %d - %d\n", data_size, (32/compression_bit_rate), data_size * (32/compression_bit_rate));
+                  decompressed_float_buffer = (float*) malloc(data_size * (32/compression_bit_rate));
+                  if (decompressed_float_buffer == NULL)
+                    printf("Error!!!!\n");
+
+                  decompress(float_buffer, decompressed_float_buffer, data_size);
+                  free(float_buffer);
+                  sample_size = compression_bit_rate/8;
+                }
+
               }
 
+
+              //printf("Block %d - %d\n", bpf, data_size/(sample_size * values_per_sample[var] * total_compression_block_size));
               for (hz_val = 0; hz_val < data_size/(sample_size * values_per_sample[var] * total_compression_block_size); hz_val++)
               {
                 hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
@@ -626,9 +642,13 @@ int main(int argc, char **argv)
                         int index_y = block_index_y * compression_block_size[1] + local_index_y;
                         int index_z = block_index_z * compression_block_size[2] + local_index_z;
 
+                        if (index_x >= global_bounds[0] || index_y >= global_bounds[1] || index_z >= global_bounds[2])
+                          continue;
+
                         //printf("compression_type = %d\n", compression_type);
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
+
                           drhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0 || compression_type == 1)
                             dlhs = swap(swap(double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
@@ -652,13 +672,24 @@ int main(int argc, char **argv)
                         }
                         else if (strcmp(variable_type[var], "float32") == 0)
                         {
-                          frhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
-                          flhs = ((float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
+                          frhs = var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          if (compression_type == 2)
+                            flhs = ((decompressed_float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
+                          else
+                            flhs = ((float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
 
                           check_bit = check_bit && (flhs == frhs);
 
                           if (flhs == frhs)
+                          {
                             element_count1++;
+                            //printf("A [%d]: %f %f\n", bpf, flhs, frhs);
+                          }
+                          else
+                          {
+                            lost_element_count1++;
+                            //printf("B [%d]: %f %f\n", bpf, flhs, frhs);
+                          }
                         }
                       }
                     }
@@ -668,11 +699,13 @@ int main(int argc, char **argv)
                 if (check_bit == 0)
                 {
                   //
-                  if (strcmp(variable_type[var], "float64") == 0)
-                    printf("%f %f\n", dlhs, drhs);
-                  else if (strcmp(variable_type[var], "uint64") == 0)
-                      printf("%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
+                  //if (strcmp(variable_type[var], "float64") == 0)
+                  //  printf("%f %f\n", dlhs, drhs);
+                  //else if (strcmp(variable_type[var], "uint64") == 0)
+                  //    printf("%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
                    //
+                  //if (strcmp(variable_type[var], "float32") == 0)
+                  //  printf("%f %f\n", flhs, frhs);
                   lost_element_count++;
                   //break;
                 }
@@ -682,6 +715,7 @@ int main(int argc, char **argv)
                 }
 
               }
+
 
               if (strcmp(variable_type[var], "float64") == 0)
               {
@@ -703,8 +737,16 @@ int main(int argc, char **argv)
               }
               else if (strcmp(variable_type[var], "float32") == 0)
               {
-                free(float_buffer);
-                float_buffer = 0;
+                if (compression_type == 2)
+                {
+                  free(decompressed_float_buffer);
+                  decompressed_float_buffer = 0;
+                }
+                else
+                {
+                  free(float_buffer);
+                  float_buffer = 0;
+                }
               }
             }
           }
@@ -712,7 +754,7 @@ int main(int argc, char **argv)
       }
     }
 
-    printf("[=]%lld (%lld) + [!=]%lld [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
+    printf("[=]%lld (%lld) + [!=]%lld (%lld) [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long)lost_element_count1, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
 
     assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
 

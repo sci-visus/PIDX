@@ -279,6 +279,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
     return PIDX_success;
   }
 
+
   // compute the intra compression block strides
   int64_t *chunk_size = chunk_id->idx->chunk_size;
   int64_t  cbz = 1;
@@ -315,6 +316,9 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
         nz = ((out_patch->patch[0]->size[2] / chunk_id->idx->chunk_size[2]) + 1) * chunk_id->idx->chunk_size[2];
 
       unsigned char* temp_buffer = malloc(nx * ny * nz * var->bits_per_value/8 * var->values_per_sample);
+      if (temp_buffer == NULL)
+        return PIDX_err_chunk;
+
 
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
       for (r = 0; r < var->rst_patch_group[g]->count; r++)
@@ -329,7 +333,9 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
               send_o = index * var->values_per_sample * (var->bits_per_value/8);
               send_c = (patch_group->patch[r]->size[0]);
               recv_o = ((nx) * (ny) * (k1 - out_patch->patch[0]->offset[2])) + ((nx)* (j1 - out_patch->patch[0]->offset[1])) + (i1 - out_patch->patch[0]->offset[0]);
-              memcpy(temp_buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));              
+#if !SIMULATE_IO
+              memcpy(temp_buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+#endif
             }
           }
         }
@@ -345,36 +351,39 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
       int zz, yy, xx;      
       for (s1 = 0; s1 < var->values_per_sample; s1++)
       {
-      for (z=0;z<nz;z+=4)
-      {
-        float* s = (float*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz) + nx*ny*nz*s1;
-        for (y=0;y<ny;y+=4)
+        for (z=0;z<nz;z+=4)
         {
-          for (x=0;x<nx;x+=4)
+#if !SIMULATE_IO
+          float* s = (float*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz) + nx*ny*nz*s1;
+#endif
+          for (y=0;y<ny;y+=4)
           {
-            int64_t diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
-            float* q=p+var->values_per_sample*diff+s1;
-
-            for (zz = 0; zz < 4; ++zz)
+            for (x=0;x<nx;x+=4)
             {
-              for (yy = 0; yy < 4; ++yy)
-              {
-                for (xx = 0; xx < 4; ++xx)
-                {
+              int64_t diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
+              float* q=p+var->values_per_sample*diff+s1;
 
-                  //{
+              for (zz = 0; zz < 4; ++zz)
+              {
+                for (yy = 0; yy < 4; ++yy)
+                {
+                  for (xx = 0; xx < 4; ++xx)
+                  {
                     int i = xx + yy * 4 + zz * 4 * 4;
                     int j = xx + yy * nx + zz * nx * ny;
                     //printf("%d %d %f\n", i, j, s[i]);
+#if !SIMULATE_IO
                     s[nx*ny*nz*s1 + i*var->values_per_sample+s1] = q[j*var->values_per_sample + s1];
-                  //}
+#endif
+                  }
                 }
               }
+#if !SIMULATE_IO
+              s += cbz;
+#endif
             }
-            s += cbz;
           }
         }
-      }
       }
       free(temp_buffer);
     }
