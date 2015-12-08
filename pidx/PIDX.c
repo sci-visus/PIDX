@@ -62,13 +62,13 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* file_name, int current_time_step);
 static PIDX_return_code PIDX_cache_headers(PIDX_file file);
-static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index);
+static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_validate(PIDX_file file);
 static PIDX_return_code populate_idx_dataset(PIDX_file file);
 
 /// PIDX File descriptor (equivalent to the descriptor returned by)
 /// POSIX or any other IO framework
-struct PIDX_file_descriptor 
+struct PIDX_file_descriptor
 {
   int flags;
 
@@ -88,15 +88,15 @@ struct PIDX_file_descriptor
   PIDX_hz_encode_id hz_id;                     ///< HZ encoding phase id
   PIDX_agg_id agg_id;                          ///< Aggregation phase id
   PIDX_io_id io_id;                            ///< IO phase id
-    
+
   int local_variable_index;                    ///<
   int local_variable_count;                    ///<
   int var_pipe_length;                         ///<
-  
+
   int flush_used;
   int write_on_close;                          ///< HPC Writes
   int one_time_initializations;                ///<
-  
+
   int ROI_writes;
 
   int debug_rst;                               ///< Debug restructuring phase, works only on the test application
@@ -104,7 +104,7 @@ struct PIDX_file_descriptor
   int debug_compress;                          ///< Debug compression phase, works only on the test application
   int debug_hz;                                ///< Debug HZ encoding phase, works only on the test application
   int debug_agg;                               ///< Debug aggregation phase, works only on the test application
-  
+
   /// Flags set by user
   int debug_do_rst;                            ///< User controlled flag to activate/deactivate restructuring phase
   int debug_do_chunk;                          ///< User controlled flag to activate/deactivate chunking phase
@@ -491,7 +491,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset((*file)->idx->bitSequence, 0, 512);
   memset((*file)->idx->reg_patch_size, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
 
-  (*file)->idx->compression_bit_rate = 64;
+  (*file)->idx->compression_bit_rate = 32;//64;
   for (i=0;i<PIDX_MAX_DIMENSIONS;i++)
     (*file)->idx->chunk_size[i] = 1;
 
@@ -569,8 +569,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
                 pch1[len] = 0;
               if (strcmp(pch1, "float64") == 0 && (*file)->idx->variable[variable_counter]->values_per_sample == 1)
                 strcpy((*file)->idx->variable[variable_counter]->type_name, "1*float64");
+              else if (strcmp(pch1, "float32") == 0 && (*file)->idx->variable[variable_counter]->values_per_sample == 1)
+                strcpy((*file)->idx->variable[variable_counter]->type_name, "1*float32");
               else if (strcmp(pch1, "float64") == 0 && (*file)->idx->variable[variable_counter]->values_per_sample == 3)
-                  strcpy((*file)->idx->variable[variable_counter]->type_name, "3*float64");
+                strcpy((*file)->idx->variable[variable_counter]->type_name, "3*float64");
             }
             count++;
             pch1 = strtok(NULL, " *+");
@@ -1329,9 +1331,9 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     {0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0}
   };
-  
+
   PointND bounds_point;
-  
+
   //if(file->debug_do_chunk == 1)
   //{
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -1354,20 +1356,20 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   bounds_point.v = (int) cb[4];
   GuessBitmaskPattern(file->idx->bitSequence, bounds_point);
   file->idx_d->maxh = strlen(file->idx->bitSequence);
-  
+
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
-  
+
   int64_t total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]) * getPowerOf2(cb[3]) * getPowerOf2(cb[4]));
   int64_t max_sample_per_file = (uint64_t) file->idx_d->samples_per_block * file->idx->blocks_per_file;
 
   file->idx_d->max_file_count = total_reg_sample_count / max_sample_per_file;
   if (total_reg_sample_count % max_sample_per_file)
     file->idx_d->max_file_count++;
-  
+
   file->idx_d->file_bitmap = malloc(file->idx_d->max_file_count * sizeof (int));
   memset(file->idx_d->file_bitmap, 0, file->idx_d->max_file_count * sizeof (int));
-  
+
   file->idx->variable[file->local_variable_index]->global_block_layout = malloc(sizeof (*file->idx->variable[file->local_variable_index]->global_block_layout));
   memset(file->idx->variable[file->local_variable_index]->global_block_layout, 0, sizeof (*file->idx->variable[file->local_variable_index]->global_block_layout));
 
@@ -1375,14 +1377,14 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
 #if 0
   //if (file->ROI_writes == 0)
   //{
-    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
+    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
     {
       bounding_box[0][i] = 0;
       bounding_box[1][i] = cb[i];
     }
 
     PIDX_blocks_create_layout(bounding_box, file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->maxh, file->idx_d->res_from, file->idx_d->res_to, file->idx->bitPattern, block_layout);
-    
+
     int k = 1;
     for (i = 1; i < (block_layout->levels); i++)
     {
@@ -1432,7 +1434,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
 
       PIDX_blocks_create_layout (bounding_box, file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->maxh, file->idx_d->res_from, file->idx_d->res_to, file->idx->bitPattern, per_patch_local_block_layout);
-      
+
       ctr = 1;
       for (i = 1; i < (all_patch_local_block_layout->levels); i++)
       {
@@ -1447,7 +1449,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       free(per_patch_local_block_layout);
       per_patch_local_block_layout = 0;
     }
-  
+
     int level_count = 1;
     for (i = 1; i < (block_layout->levels); i++)
     {
@@ -1458,11 +1460,11 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
 #endif
       level_count = level_count * 2;
     }
-    
+
     PIDX_blocks_free_layout(all_patch_local_block_layout);
     free(all_patch_local_block_layout);
     all_patch_local_block_layout = 0;
-    
+
     ctr = 1;
     for (i = 1; i < (block_layout->levels); i++)
     {
@@ -1470,8 +1472,8 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       {
         if(block_layout->hz_block_number_array[i][j] != 0)
           block_layout->hz_block_count_array[i]++;
-      }    
-      
+      }
+
       counter = 0;
       for (j = 0 ; j < ctr ; j++)
       {
@@ -1490,14 +1492,14 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   //  PIDX_blocks_print_layout(block_layout);
   file->idx->variable[file->local_variable_index]->file_index = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(file->idx->variable[file->local_variable_index]->file_index, 0, sizeof(int) * (file->idx_d->max_file_count));
-  
+
   file->idx->variable[file->local_variable_index]->block_count_per_file = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(file->idx->variable[file->local_variable_index]->block_count_per_file, 0, sizeof(int) * (file->idx_d->max_file_count));
 
   file->idx->variable[file->local_variable_index]->file_index[0] = 1;
   file->idx_d->file_bitmap[0] = 1;
   file->idx->variable[file->local_variable_index]->block_count_per_file[0] = 1;
-  
+
   for (i = 1; i < block_layout->levels; i++)
   {
     for (j = 0; j < block_layout->hz_block_count_array[i]; j++)
@@ -1508,9 +1510,9 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       file->idx->variable[file->local_variable_index]->block_count_per_file[file_number]++;
     }
   }
-  
+
   //PIDX_blocks_print_layout(block_layout);
-  
+
   file->idx->variable[file->local_variable_index]->existing_file_count = 0;
   for (i = 0; i < file->idx_d->max_file_count; i++)
     if (file->idx->variable[file->local_variable_index]->file_index[i] == 1)
@@ -1518,7 +1520,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
 
   file->idx->variable[file->local_variable_index]->existing_file_index = (int*) malloc(file->idx->variable[file->local_variable_index]->existing_file_count * sizeof (int));
   memset(file->idx->variable[file->local_variable_index]->existing_file_index, 0, file->idx->variable[file->local_variable_index]->existing_file_count * sizeof (int));
-  
+
   int count = 0;
   for (i = 0; i < file->idx_d->max_file_count; i++)
   {
@@ -1531,7 +1533,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     }
   }
 
-    
+
   return PIDX_success;
 }
 
@@ -1754,7 +1756,7 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_from, int *hz_to)
 }
 
 
-static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
+static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int start_var_index, int end_var_index)
 {
   int d, nprocs = 1;
 
@@ -1762,7 +1764,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
   int local_patch_count = 0, total_patch_count = 0;
   int ret;
   MPI_Comm_size(file->comm, &nprocs);
-  PIDX_variable var0 = file->idx->variable[var_index];
+  PIDX_variable var0 = file->idx->variable[start_var_index];
   if (file->idx->enable_rst == 1)
   {
     /// Calculate the total number of patches across all processes.
@@ -1820,7 +1822,33 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int var_index)
     if (file->idx->enable_agg != 0)
     {
       int v, no_of_aggregators = 0;
-      for (v = var_index; v < var_index + file->var_pipe_length ; v++)
+      for (v = start_var_index; v < start_var_index + file->var_pipe_length ; v++)
+        no_of_aggregators = no_of_aggregators + file->idx->variable[v]->values_per_sample * file->idx->variable[file->local_variable_index]->existing_file_count;
+
+      //for (v = 0; v < file->idx->variable_count ; v++)
+      //  no_of_aggregators = no_of_aggregators + file->idx->variable[v]->values_per_sample * file->idx->variable[file->local_variable_index]->existing_file_count;
+
+      if (nprocs < no_of_aggregators * file->idx_d->aggregation_factor)
+      {
+        if ((file->idx_d->max_file_count == 1 || nprocs == 1))
+          file->idx->enable_agg = 0;
+        else
+          file->idx->enable_agg = 1;
+      }
+      else
+        file->idx->enable_agg = 2;
+    }
+
+  }
+  else if (file->idx->variable_count > file->idx->variable_index_tracker)
+  {
+    if (file->var_pipe_length >= file->idx->variable_count || file->var_pipe_length == -1)
+      file->var_pipe_length = file->idx->variable_count - 1;
+
+    if (file->idx->enable_agg != 0)
+    {
+      int v, no_of_aggregators = 0;
+      for (v = start_var_index; v < end_var_index ; v++)
         no_of_aggregators = no_of_aggregators + file->idx->variable[v]->values_per_sample * file->idx->variable[file->local_variable_index]->existing_file_count;
 
       //for (v = 0; v < file->idx->variable_count ; v++)
@@ -1899,7 +1927,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (total_header_size % file->idx_d->fs_block_size)
       file->idx_d->start_fs_block++;
     
-    ret = PIDX_parameter_validate(file, start_var_index);
+    ret = PIDX_parameter_validate(file, start_var_index, end_var_index);
     if (ret != PIDX_success)
       return PIDX_err_file;
 
@@ -2421,6 +2449,23 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
   if (file->local_variable_index == file->idx->variable_count)
     return PIDX_success;
 
+#if PIDX_DEBUG_OUTPUT
+  unsigned long long l_populate = 0, g_populate = 0;
+  unsigned long long l_filec = 0, g_filec = 0;
+  unsigned long long l_init = 0, g_init = 0;
+  unsigned long long l_rst_buf = 0, g_rst_buf = 0;
+  unsigned long long l_chunk_buf = 0, g_chunk_buf = 0;
+  unsigned long long l_rst = 0, g_rst = 0;
+  unsigned long long l_chunk = 0, g_chunk = 0;
+  unsigned long long l_cmp = 0, g_cmp = 0;
+  unsigned long long l_hz_buf = 0, g_hz_buf = 0;
+  unsigned long long l_hz = 0, g_hz = 0;
+  unsigned long long l_agg_buf = 0, g_agg_buf = 0;
+  unsigned long long l_agg = 0, g_agg = 0;
+  unsigned long long l_io = 0, g_io = 0;
+  unsigned long long l_pidx = 0, g_pidx = 0;
+#endif
+
   int j = 0, p, var = 0, d = 0;
   int total_header_size;
   PIDX_return_code ret;
@@ -2434,6 +2479,13 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
 
   populate_idx_dataset(file);
 
+#if PIDX_DEBUG_OUTPUT
+  l_populate = 1;
+  MPI_Allreduce(&l_populate, &g_populate, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+  if (rank == 0 && g_populate == nprocs)
+    printf("Finished Populating IDX dataset (File Count %d maxh = %d)\n", file->idx_d->max_file_count, file->idx_d->maxh);
+#endif
+
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)
   {
@@ -2444,7 +2496,7 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     if (total_header_size % file->idx_d->fs_block_size)
       file->idx_d->start_fs_block++;
 
-    PIDX_parameter_validate(file, start_var_index);
+    PIDX_parameter_validate(file, start_var_index, end_var_index);
 
     file->one_time_initializations = 1;
   }
@@ -2535,22 +2587,25 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
 #endif
     /*------------------------------------Adding communicator [end]------------------------------------------*/
 
-
     ret = PIDX_rst_meta_data_create(file->rst_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
-
     ret = PIDX_chunk_meta_data_create(file->chunk_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
-
     ret = PIDX_hz_encode_meta_data_create(file->hz_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
-
     ret = PIDX_agg_meta_data_create(file->agg_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
+
+#if PIDX_DEBUG_OUTPUT
+    l_init = 1;
+    MPI_Allreduce(&l_init, &g_init, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_init == nprocs)
+      printf("All Modules Initialized (Variable index [%d %d] Variable Pipe length %d)\n", start_index, end_index, file->var_pipe_length);
+#endif
 
 
     /*----------------------------------------------IO [start]-----------------------------------------------*/
@@ -2565,6 +2620,13 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     ret = PIDX_hz_encode_buf_create(file->hz_id);
     if (ret != PIDX_success)
       return PIDX_err_hz;
+
+#if PIDX_DEBUG_OUTPUT
+    l_hz_buf = 1;
+    MPI_Allreduce(&l_hz_buf, &g_hz_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_hz_buf == nprocs)
+      printf("[H] HZ Buffer Created\n");
+#endif
 
     if (file->debug_do_io == 1)
     {
@@ -2626,6 +2688,14 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     */
 
     compression_end[vp] = PIDX_get_time();
+
+#if PIDX_DEBUG_OUTPUT
+    l_cmp = 1;
+    MPI_Allreduce(&l_cmp, &g_cmp, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_cmp == nprocs)
+      printf("[CMP] Compression Completed\n");
+#endif
+
     /*------------------------------------------Compression [end]--------------------------------------------*/
 
 
@@ -2637,6 +2707,13 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     ret = PIDX_chunk_buf_create(file->chunk_id);
     if (ret != PIDX_success)
       return PIDX_err_chunk;
+
+#if PIDX_DEBUG_OUTPUT
+    l_chunk_buf = 1;
+    MPI_Allreduce(&l_chunk_buf, &g_chunk_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_chunk_buf == nprocs)
+      printf("[C] Chunking Buffer Created\n");
+#endif
 
     /* Perform HZ encoding */
     if (file->debug_do_hz == 1)
@@ -2674,6 +2751,13 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
+#if PIDX_DEBUG_OUTPUT
+    l_rst_buf = 1;
+    MPI_Allreduce(&l_rst_buf, &g_rst_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_rst_buf == nprocs)
+      printf("[R] Restructuring Buffer Created\n");
+#endif
+
     /* Perform Chunking */
     if (file->debug_do_chunk == 1)
     {
@@ -2681,6 +2765,13 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
       if (ret != PIDX_success)
         return PIDX_err_chunk;
     }
+
+#if PIDX_DEBUG_OUTPUT
+    l_chunk = 1;
+    MPI_Allreduce(&l_chunk, &g_chunk, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_chunk == nprocs)
+      printf("[C] Chunking Completed\n");
+#endif
 
     /* Verifying the correctness of the restructuring phase */
     if (file->debug_rst == 1)
@@ -2708,6 +2799,13 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
       if (ret != PIDX_success)
         return PIDX_err_rst;
     }
+
+#if PIDX_DEBUG_OUTPUT
+    l_rst = 1;
+    MPI_Allreduce(&l_rst, &g_rst, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_rst == nprocs)
+      printf("[R] Restructuring Completed\n");
+#endif
 
     /* Destroy buffers allocated during restructuring phase */
     ret = PIDX_rst_buf_destroy(file->rst_id);
@@ -2781,6 +2879,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
   else if (file->flags == PIDX_MODE_RDONLY)
   {
+    //variable_index_tracker
     ret = PIDX_read(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
     if (ret != PIDX_success)
       return PIDX_err_flush;
@@ -2989,6 +3088,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d->agg_level_start);
   free(file->idx_d->agg_level_end);
   */
+
 #if 1
   for (i = 0; i < 1024; i++)
   {
@@ -3127,13 +3227,16 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
   if(!file)
     return PIDX_err_file;
   
-  if(variable_index <= 0)
+  if(variable_index < 0)
     return PIDX_err_size;
   
   if(file->idx->variable_index_tracker >= file->idx->variable_count)
     return PIDX_err_count;
   
   file->idx->variable_index_tracker = variable_index;
+  file->local_variable_count = 1;
+  file->local_variable_index = variable_index;
+
   return PIDX_success;
 }
 

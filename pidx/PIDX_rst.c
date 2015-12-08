@@ -877,6 +877,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
                             (i1 - sim_patch_offset[0]);
 
 
+                    //printf("MMMMMMMMMM %d %d\n", rst_id->first_index, rst_id->last_index);
                     for(v = rst_id->first_index; v <= rst_id->last_index; v++)
                     {
                       PIDX_variable var = rst_id->idx->variable[v];
@@ -1321,8 +1322,8 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
     //  printf("patch_group_count = %d [%d %d %d]\n", var->patch_group_count);
     for (m = 0; m < var->patch_group_count; m++)
     {
-      if (rank == 52)
-        printf("var->rst_patch_group[%d]->count = %d [%d %d %d :: %d %d %d] = %d\n",m, var->rst_patch_group[m]->count, var->rst_patch_group[m]->reg_patch_offset[0], var->rst_patch_group[m]->reg_patch_offset[1], var->rst_patch_group[m]->reg_patch_offset[2], var->rst_patch_group[m]->reg_patch_size[0], var->rst_patch_group[m]->reg_patch_size[1], var->rst_patch_group[m]->reg_patch_size[2], var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
+      //if (rank == 52)
+        //printf("var->rst_patch_group[%d]->count = %d [%d %d %d :: %d %d %d] = %d\n",m, var->rst_patch_group[m]->count, var->rst_patch_group[m]->reg_patch_offset[0], var->rst_patch_group[m]->reg_patch_offset[1], var->rst_patch_group[m]->reg_patch_offset[2], var->rst_patch_group[m]->reg_patch_size[0], var->rst_patch_group[m]->reg_patch_size[1], var->rst_patch_group[m]->reg_patch_size[2], var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
 
       //printf("%d + ", var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
       p_vol = 0;
@@ -1332,15 +1333,15 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
       {
         int64_t *count_ptr = var->rst_patch_group[m]->patch[n]->size;
         int64_t *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
-        if (rank == 52)
-        {
+        //if (rank == 52)
+        //{
 
-          printf("[%d %d] %d %d %d :: %d %d %d\n", m, n, offset_ptr[0], offset_ptr[1], offset_ptr[2], count_ptr[0], count_ptr[1], count_ptr[2]);
-          vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
-        }
+          //printf("[%d %d] %d %d %d :: %d %d %d\n", m, n, offset_ptr[0], offset_ptr[1], offset_ptr[2], count_ptr[0], count_ptr[1], count_ptr[2]);
+          //vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
+        //}
       }
-      if (rank == 52)
-      printf("[%d] - vol %d p_vol %d\n", rank, vol, p_vol);
+      //if (rank == 52)
+      //  printf("[%d] - vol %d p_vol %d\n", rank, vol, p_vol);
     }
   }
 

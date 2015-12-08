@@ -1286,6 +1286,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   int64_t ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
   double dvalue_1, dvalue_2;
+  float fvalue_1, fvalue_2;
   uint64_t uvalue_1, uvalue_2;
 
 #if PIDX_HAVE_MPI
@@ -1318,6 +1319,13 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 
                 check_bit = check_bit && (dvalue_1  == dvalue_2);
               }
+              else if (strcmp(var->type_name, FLOAT32) == 0)
+              {
+                fvalue_1 = (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                fvalue_2 = *(*((float**)var->hz_buffer[b]->buffer + i) + ((k * var->values_per_sample) + s));
+
+                check_bit = check_bit && (fvalue_1  == fvalue_2);
+              }
               else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
               {
                 for (s = 0; s < 3; s++)
@@ -1348,12 +1356,13 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 
               if (check_bit == 0)
               {
-                //printf("%lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", (long long)global_hz, dvalue_1, dvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
+                //printf("%lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", (long long)global_hz, fvalue_1, fvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
                 lost_element_count++;
               }
               else
               {
                 //printf("HZ [%d] %f %f\n", rank, dvalue_1, dvalue_2);
+                //printf("%lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", (long long)global_hz, fvalue_1, fvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
                 element_count++;
               }
             }

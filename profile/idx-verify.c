@@ -31,7 +31,8 @@
 #include <stdio.h>
 #include <math.h>
 
-#include "PIDX_config.h"
+//#define PIDX_HAVE_ZFP 1
+//#include "PIDX_config.h"
 
 #if PIDX_HAVE_ZFP
   #include "zfp.h"
@@ -559,7 +560,7 @@ int main(int argc, char **argv)
               int sample_size = 0;
               if (strcmp(variable_type[var], "float64") == 0)
               {
-                double_buffer = malloc(data_size);
+                double_buffer = (double*)malloc(data_size);
                 memset(double_buffer, 0, data_size);
 
                 ret = pread(fd, double_buffer, data_size, data_offset);
@@ -575,7 +576,7 @@ int main(int argc, char **argv)
               }
               else if (strcmp(variable_type[var], "uint64") == 0)
               {
-                ulong_buffer = malloc(data_size);
+                ulong_buffer = (uint64_t*)malloc(data_size);
                 memset(ulong_buffer, 0, data_size);
 
                 ret = pread(fd, ulong_buffer, data_size, data_offset);
@@ -584,11 +585,11 @@ int main(int argc, char **argv)
               }
               else if (strcmp(variable_type[var], "float32") == 0)
               {
-                float_buffer = malloc(data_size);
+                float_buffer = (float*)malloc(data_size);
                 memset(float_buffer, 0, data_size);
 
                 ret = pread(fd, float_buffer, data_size, data_offset);
-                assert(ret == data_size);
+                //assert(ret == data_size);
                 sample_size = sizeof(float);
 
                 if (compression_type == 2)
