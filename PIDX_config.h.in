@@ -11,11 +11,10 @@
 
 #define PIDX_MAX_DIMENSIONS 5
 
-#cmakedefine01 BUILD_SHARED_LIBS
 #cmakedefine01 PIDX_HAVE_MPI
 #cmakedefine01 PIDX_HAVE_ZFP
-#cmakedefine01 PIDX_OPTION_PNETCDF
-#cmakedefine01 PIDX_OPTION_HDF5
+#cmakedefine01 PIDX_HAVE_PNETCDF
+#cmakedefine01 PIDX_HAVE_HDF5
 
 //ACTIVE_TARGET is defined by MPI, but we may want to override it for specific configs
 //NOTE: disable for shaheen (how should we control machine-specific settings like this?)

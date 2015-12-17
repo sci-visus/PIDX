@@ -30,14 +30,17 @@ MACRO(PIDX_ADD_EXECUTABLE targetname files)
                   BUNDLE DESTINATION  bin)
 ENDMACRO()
 
-
 ###########################################
 # PIDX_ADD_LIBRARY
 ###########################################
 
 MACRO(PIDX_ADD_LIBRARY targetname files)
   #MESSAGE("Adding library " ${targetname} " from sources: " ${files})                        
-  ADD_LIBRARY(${targetname} ${files})
+  IF (${BUILD_SHARED_LIBS})
+    ADD_LIBRARY(${targetname} SHARED ${files})
+  ELSE()
+    ADD_LIBRARY(${targetname} STATIC ${files})
+  ENDIF()
   SET_TARGET_PROPERTIES(${targetname} PROPERTIES LINKER_LANGUAGE C)
   INSTALL(TARGETS ${targetname} 
                   ARCHIVE DESTINATION lib

@@ -24,6 +24,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 
 #if PIDX_HAVE_MPI
 #include <mpi.h>
@@ -352,8 +353,7 @@ static void determine_var_types()
     {
 //TODO:probably we can make it more clever to handle more dimensions as they are not related to the variable itself on netcdf
       type.atomic_type = INVALID; // we don't support arrays of more than 3 dimension
-
-      return type;
+      return;
     }
    else if (xtypep == NC_FLOAT || xtypep == NC_INT)
    {

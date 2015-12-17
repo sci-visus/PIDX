@@ -28,6 +28,7 @@
 #
 
 FIND_PATH(PIDX_INCLUDE_DIR NAMES PIDX.h PATHS ${PIDX_DIR}/include NO_DEFAULT_PATH)
+FIND_PATH(HDF5_INCLUDE_DIR NAMES PIDX.h)
 
 IF (PIDX_INCLUDE_DIR)
 
@@ -44,10 +45,13 @@ IF (PIDX_INCLUDE_DIR)
     ENDIF()
   ENDIF()
     
-  FIND_LIBRARY(PIDX_LIB     pidx    ${PIDX_DIR}/lib)
+  SET(PIDX_INCLUDE_DIRS "${PIDX_INCLUDE_DIR}")
+
+  FIND_LIBRARY(PIDX_LIBRARY     pidx    PATHS ${PIDX_DIR}/lib NO_DEFAULT_PATH)
+  FIND_LIBRARY(HDF5_LIBRARY     pidx    )
 
   SET(PIDX_LIBRARIES 
-    ${PIDX_LIB}
+    ${PIDX_LIBRARY}
     ${PIDX_MPI_LIBS}
     )
 
@@ -65,6 +69,10 @@ IF (PIDX_INCLUDE_DIR)
   ENDIF (CMAKE_VERBOSE_MAKEFILE)
 
 ELSE ()
-  MESSAGE("ERROR PIDX library not found on the system")
+  IF (PIDX_FIND_REQUIRED)
+    MESSAGE(FATAL_ERROR "PIDX library not found. Try setting PIDX_DIR")
+  ELSE()
+    MESSAGE("WARNING: PIDX library not found. Try setting PIDX_DIR")
+  ENDIF()
 ENDIF ()
                          

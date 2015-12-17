@@ -31,11 +31,16 @@ IF (PIDX_BUILD_TUTORIAL)
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
   SET(TUTORIAL_LINK_LIBS pidx) 
   IF (MPI_CXX_FOUND)
-    MESSAGE("Configuring examples with MPI support")
+    MESSAGE("Configuring tutorials with MPI support")
     INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
     SET(TUTORIAL_LINK_LIBS ${TUTORIAL_LINK_LIBS} ${MPI_LIBRARIES})
   ENDIF()
 
+  IF (ZFP_FOUND)
+    MESSAGE("Configuring tutorials with ZFP support")
+    INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
+    SET(TUTORIAL_LINK_LIBS ${TUTORIAL_LINK_LIBS} ${ZFP_LIBRARIES})
+  ENDIF()
 
   # ////////////////////////////////////////
   # executable
@@ -43,48 +48,38 @@ IF (PIDX_BUILD_TUTORIAL)
 
   SET(CHECKPOINT_SOURCES 1_PIDX_Basics_Dumps/checkpoint.c)
   PIDX_ADD_EXECUTABLE(checkpoint "${CHECKPOINT_SOURCES}")
-  ADD_DEPENDENCIES(checkpoint pidx)
   TARGET_LINK_LIBRARIES(checkpoint ${TUTORIAL_LINK_LIBS})
 
   SET(RESTART_SOURCES 1_PIDX_Basics_Dumps/restart.c)
   PIDX_ADD_EXECUTABLE(restart "${RESTART_SOURCES}")
-  ADD_DEPENDENCIES(restart pidx)
   TARGET_LINK_LIBRARIES(restart ${TUTORIAL_LINK_LIBS})
 
   SET(CHECKPOINT_MULTI_BUFFER_SOURCES 1_PIDX_Basics_Dumps/checkpoint_multi_buffer.c)
   PIDX_ADD_EXECUTABLE(checkpoint_multi_buffer "${CHECKPOINT_MULTI_BUFFER_SOURCES}")
-  ADD_DEPENDENCIES(checkpoint_multi_buffer pidx)
   TARGET_LINK_LIBRARIES(checkpoint_multi_buffer ${TUTORIAL_LINK_LIBS})
 
-  
   SET(ROI_SOURCES 2_PIDX_Advanced_ROI/roi_writes.c)
   PIDX_ADD_EXECUTABLE(roi_writes "${ROI_SOURCES}")
-  ADD_DEPENDENCIES(roi_writes pidx)
   TARGET_LINK_LIBRARIES(roi_writes ${TUTORIAL_LINK_LIBS})
 
   SET(REDUCED_RESOLUTION_WRITE_SOURCES 2_PIDX_Advanced_ROI/reduced_resolution_writes.c)
   PIDX_ADD_EXECUTABLE(reduced_resolution_writes "${REDUCED_RESOLUTION_WRITE_SOURCES}")
-  ADD_DEPENDENCIES(reduced_resolution_writes pidx)
   TARGET_LINK_LIBRARIES(reduced_resolution_writes ${TUTORIAL_LINK_LIBS})
 
   SET(ADAPTIVE_ROI_SOURCES 2_PIDX_Advanced_ROI/adaptive_roi_writes.c)
   PIDX_ADD_EXECUTABLE(adaptive_roi_writes "${ADAPTIVE_ROI_SOURCES}")
-  ADD_DEPENDENCIES(adaptive_roi_writes pidx)
   TARGET_LINK_LIBRARIES(adaptive_roi_writes ${TUTORIAL_LINK_LIBS})
 
   SET(RAW_TO_IDX_SOURCES 3_PIDX_Utility_Converters/raw_to_idx.c)
   PIDX_ADD_EXECUTABLE(raw_to_idx "${RAW_TO_IDX_SOURCES}")
-  ADD_DEPENDENCIES(raw_to_idx pidx)
   TARGET_LINK_LIBRARIES(raw_to_idx ${TUTORIAL_LINK_LIBS})
   
   SET(FILE_PER_PROCESS_SOURCES 3_PIDX_Utility_Converters/file_per_process_to_idx.c)
   PIDX_ADD_EXECUTABLE(file_per_process_to_idx "${FILE_PER_PROCESS_SOURCES}")
-  ADD_DEPENDENCIES(file_per_process_to_idx pidx)
   TARGET_LINK_LIBRARIES(file_per_process_to_idx ${TUTORIAL_LINK_LIBS})
   
   SET(TEMPLATE_CONVETER_SOURCES 3_PIDX_Utility_Converters/template_converter.c)
   PIDX_ADD_EXECUTABLE(template_converter "${TEMPLATE_CONVETER_SOURCES}")
-  ADD_DEPENDENCIES(template_converter pidx)
   TARGET_LINK_LIBRARIES(template_converter ${TUTORIAL_LINK_LIBS})
 
 ENDIF()
