@@ -122,11 +122,8 @@ IF (PIDX_BUILD_EXAMPLE)
     if (PIDX_OPTION_HDF5)
       if (HDF5_FOUND)
         INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-
         PIDX_ADD_EXECUTABLE(hdf5_to_idx "${HDF5_TO_IDX_SOURCES}")
-        TARGET_LINK_LIBRARIES(hdf5_to_idx pidx)
-
-        TARGET_LINK_LIBRARIES(hdf5_to_idx ${HDF5_LIBRARIES})
+        TARGET_LINK_LIBRARIES(hdf5_to_idx pidx ${HDF5_LIBRARIES})
       else()
          message(ERROR ": HDF5 library required to compile ${HDF5_TO_IDX_SOURCES}")
       endif()
