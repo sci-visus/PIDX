@@ -101,7 +101,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   int **allign_offset;
   int **allign_count;
   int start_block_no, end_block_no, b;
-  int j = 0, p = 0, d = 0, count = 0, v = 0;
+  int j = 0, p = 0, d = 0, v = 0;
 
   int maxH = id->idx_d->maxh;
 
@@ -230,31 +230,22 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         //if (rank == 31 && j == maxH-1)
         //  printf("[P %d T %d] [%d] start : end :: %lld : %lld %lld\n", p, var->chunk_patch_group[p]->type, j, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], (hz_buf->end_hz_index[j] - hz_buf->start_hz_index[j] + 1));
 
+        /*
         if (var->chunk_patch_group[p]->type == 2 || var->chunk_patch_group[p]->type == 1)
         {
           start_block_no = hz_buf->start_hz_index[j] / id->idx_d->samples_per_block;
           end_block_no = hz_buf->end_hz_index[j] / id->idx_d->samples_per_block;
 
-          count = 0;
           for (b = start_block_no; b <= end_block_no; b++)
           {
-            //if (rank == 31 && j == maxH-1)
-            //  printf("XX [P %d T %d] Block no %d\n", p, var->chunk_patch_group[p]->type, b);
-
             if (PIDX_blocks_is_block_present(b, id->idx->variable[id->init_index]->global_block_layout) == 0)
             {
-              //if (rank == 31 && j == maxH-1)
-              //  printf("YY [P %d T %d] Block no %d\n", p, var->chunk_patch_group[p]->type, b);
-
               var->chunk_patch_group[p]->type = 2;
               hz_buf->type = 2;
-
-              //hz_buf->missing_block_count_per_level[j]++;
-              //hz_buf->missing_block_index_per_level[j][count] = b;
-              count++;
             }
           }
         }
+        */
         free(allign_offset[j]);
         free(allign_count[j]);
       }

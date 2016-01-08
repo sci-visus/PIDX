@@ -417,7 +417,7 @@ int main(int argc, char **argv)
     //PIDX_set_variable_pile_length(file, 0);
     //int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
     //ret = PIDX_set_restructuring_box(file, restructured_box_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
 

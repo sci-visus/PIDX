@@ -30,7 +30,6 @@
 #include "PIDX_inc.h"
 
 
-
 int maximum_neighbor_count = 256;
 
 //Struct for restructuring ID

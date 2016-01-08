@@ -77,6 +77,7 @@ struct PIDX_variable_struct
 
   // Block level layout
   PIDX_block_layout global_block_layout;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
   int *block_count_per_file;                                             ///< The number of blocks a variable occupy within each file
   int existing_file_count;                                          ///< The number of files that exists for each of the variables
   int agg_existing_file_count;
