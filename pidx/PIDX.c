@@ -1723,8 +1723,8 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   {
     if (file->idx->variable[lvi]->file_index[i] == 1)
     {
-      if (rank == 0)
-        printf("BPF %d = %d FI = %d\n", i, file->idx->variable[lvi]->block_count_per_file[i], file->idx->variable[lvi]->file_index[i]);
+      //if (rank == 0)
+      //  printf("BPF %d = %d FI = %d\n", i, file->idx->variable[lvi]->block_count_per_file[i], file->idx->variable[lvi]->file_index[i]);
       file->idx->variable[lvi]->existing_file_index[count] = i;
       count++;
     }
