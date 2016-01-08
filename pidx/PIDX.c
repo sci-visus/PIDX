@@ -39,6 +39,8 @@
 static int vp = 0;
 static int hp = 0;
 static double file_create_time = 0;
+static double populate_idx_start_time = 0;
+static double populate_idx_end_time = 0;
 static double sim_start = 0, sim_end = 0;
 static double *write_init_start = 0, *write_init_end = 0;
 static double *init_start, *init_end;
@@ -2103,6 +2105,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   MPI_Comm_size(file->comm,  &nprocs);
 #endif
 
+  populate_idx_start_time = MPI_Wtime();
+
   ret = populate_idx_dataset(file);
   if (ret != PIDX_success)
     return PIDX_err_file;
@@ -2163,6 +2167,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
    *            pass the header buffer to the agg phase when no var pipelining is done (else if pipe, then go to if)
    *  STEP 3: at the end of all IO, write the .idx file
    */
+
+  populate_idx_end_time = MPI_Wtime();
 
   write_init_start[hp] = PIDX_get_time();
 
@@ -3181,7 +3187,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", max_time, (float) total_data / (1000 * 1000 * max_time));
       fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
       //printf("File creation time %f\n", write_init_end - write_init_start);
-      
+      printf("Block layout creation time %f\n", populate_idx_end_time - populate_idx_start_time);
       fprintf(stdout, "File Create Time: %f Seconds\n", (file_create_time - sim_start));
 
       for (var = 0; var < hp; var++)

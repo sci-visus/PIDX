@@ -106,6 +106,9 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
   int64_t hz_from = 0, hz_to = 0;
   int64_t *ZYX_from, *ZYX_to;
 
+  ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+  ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+
   if (layout->resolution_from <= layout->bits_per_block)
   {
     for (m = layout->resolution_from ; m <= layout->bits_per_block; m++)
@@ -121,8 +124,6 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         hz_to = (int64_t)pow(2, m) - 1;
       }
 
-      ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-      ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       memset(ZYX_to, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       memset(ZYX_from, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
 
@@ -131,11 +132,6 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
 
       if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] && ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] && ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
         layout->hz_block_number_array[m][0] = 0;
-
-      free(ZYX_from);
-      ZYX_from = 0;
-      free(ZYX_to);
-      ZYX_to = 0;
     }
 
     for (m = layout->bits_per_block + 1 ; m < layout->resolution_to; m++)
@@ -146,8 +142,6 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         hz_from = (int64_t)(block_number) * pow(2, layout->bits_per_block);
         hz_to = (int64_t)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
       
-        ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-        ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
         memset(ZYX_to, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
         memset(ZYX_from, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
       
@@ -157,11 +151,6 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] && ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] && ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
           layout->hz_block_number_array[m][t] = block_number;
       
-        free(ZYX_from);
-        ZYX_from = 0;
-        free(ZYX_to);
-        ZYX_to = 0;
-
         block_number++;
       }
     }
@@ -179,8 +168,6 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
           hz_from = (int64_t)(block_number) * pow(2, layout->bits_per_block);
           hz_to = (int64_t)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
 
-          ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-          ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
           memset(ZYX_to, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
           memset(ZYX_from, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
 
@@ -190,11 +177,6 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
           if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] && ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] && ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
             layout->hz_block_number_array[m][t] = block_number;
 
-          free(ZYX_from);
-          ZYX_from = 0;
-          free(ZYX_to);
-          ZYX_to = 0;
-
           block_number++;
         }
       }
@@ -202,6 +184,10 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         block_number = block_number + n_blocks;
     }
   }
+  free(ZYX_from);
+  ZYX_from = 0;
+  free(ZYX_to);
+  ZYX_to = 0;
 
   return 0;
 }
