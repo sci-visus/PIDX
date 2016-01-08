@@ -408,10 +408,10 @@ int main(int argc, char **argv)
 
     //PIDX_debug_disable_restructuring(file);
     //PIDX_debug_disable_chunking(file);
-    //PIDX_debug_disable_hz(file);
+    PIDX_debug_disable_hz(file);
     //PIDX_debug_disable_compression(file);
     //PIDX_debug_disable_agg(file);
-    //PIDX_debug_disable_io(file);
+    PIDX_debug_disable_io(file);
 
     //PIDX_activate_local_aggregation(file);
 

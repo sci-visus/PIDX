@@ -34,10 +34,11 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 1
+#define PIDX_DEBUG_OUTPUT 0
 
 static int vp = 0;
 static int hp = 0;
+static double file_create_time = 0;
 static double sim_start = 0, sim_end = 0;
 static double *write_init_start = 0, *write_init_end = 0;
 static double *init_start, *init_end;
@@ -345,6 +346,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, access_type->comm);
 #endif
     
+  file_create_time = PIDX_get_time();
+
   return PIDX_success;
 }
 
@@ -2165,6 +2168,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
 #if !SIMULATE_IO
 
+  if (file->debug_do_io == 1)
+  {
   /* STEP 1 */
   file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
 #if PIDX_HAVE_MPI
@@ -2211,6 +2216,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   ret = PIDX_header_io_finalize(file->header_io_id);
   if (ret != PIDX_success)
     return PIDX_err_header;
+  }
 
 #endif
 
@@ -2479,8 +2485,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /*----------------------------------------------Agg [staart]-----------------------------------------------*/
     agg_start[vp] = PIDX_get_time();
-
-
 
     /* Creating the buffers required for Aggregation */
     ret = PIDX_agg_buf_create(file->agg_id);
@@ -3173,26 +3177,28 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d (%d) Aggregation Factor %d Aggregator Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count, file->idx->variable[0]->existing_file_count, file->idx_d->aggregation_factor, file->idx_d->no_of_aggregators * file->idx_d->aggregation_factor);
       fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
-      fprintf(stdout, "Staged Aggregation = %d\n", file->idx_d->staged_aggregation);
+      //fprintf(stdout, "Staged Aggregation = %d\n", file->idx_d->staged_aggregation);
       fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", max_time, (float) total_data / (1000 * 1000 * max_time));
       fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
       //printf("File creation time %f\n", write_init_end - write_init_start);
       
+      fprintf(stdout, "File Create Time: %f Seconds\n", (file_create_time - sim_start));
+
       for (var = 0; var < hp; var++)
         fprintf(stdout, "File Create time (+ header IO) %f\n", (write_init_end[var] - write_init_start[var]));
       
       for (var = 0; var < vp; var++)
       {
         fprintf(stdout, "------------------------------------------------VG %d (START)----------------------------------------------\n", var);
-        fprintf(stdout, "Init time  [RST + BRST + HZ + AGG + IO] %f \n", (init_end[var] - init_start[var]));
+        //fprintf(stdout, "Init time  [RST + BRST + HZ + AGG + IO] %f \n", (init_end[var] - init_start[var]));
         
         fprintf(stdout, "Write time [RST + BRST + HZ + AGG + IO] %f + %f + %f + %f + %f = %f\n", (rst_end[var] - rst_start[var]), (chunk_end[var] - chunk_start[var]), (hz_end[var] - hz_start[var]), (agg_end[var] - agg_start[var]), (io_end[var] - io_start[var]), (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]) + (agg_end[var] - agg_start[var]) + (io_end[var] - io_start[var]));
         
-        fprintf(stdout, "Block Restructuring time %f = %f + %f\n", (chunk_end[var] - chunk_start[var]), (block_2[var] - block_1[var]), (block_3[var] - block_2[var]));
+        //fprintf(stdout, "Block Restructuring time %f = %f + %f\n", (chunk_end[var] - chunk_start[var]), (block_2[var] - block_1[var]), (block_3[var] - block_2[var]));
         
-        fprintf(stdout, "Agg time %f = %f + %f + %f + %f + %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
+        //fprintf(stdout, "Agg time %f = %f + %f + %f + %f + %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
         
-        fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
+        //fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
         fprintf(stdout, "-------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
       }
       
