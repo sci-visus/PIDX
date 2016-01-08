@@ -339,5 +339,5 @@ void PIDX_blocks_free_layout(PIDX_block_layout layout)
   free(layout->hz_block_number_array);
   layout->hz_block_number_array = 0;
 
-  return PIDX_success;
+  return;
 }

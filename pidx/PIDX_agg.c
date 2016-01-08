@@ -904,7 +904,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
     }
     return PIDX_success;
   }
-  int no_of_aggregators = 0;
+  agg_id->idx_d->no_of_aggregators = 0;
   int per_file_aggregator = 0;
   int i, j;
   int level;
@@ -914,12 +914,12 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
   agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count = agg_id->idx->variable[agg_id->init_index]->existing_file_count;
 
   for (v = agg_id->first_index; v <= agg_id->last_index; v++)
-    no_of_aggregators = no_of_aggregators + agg_id->idx->variable[v]->values_per_sample * agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count;
+    agg_id->idx_d->no_of_aggregators = agg_id->idx_d->no_of_aggregators + agg_id->idx->variable[v]->values_per_sample * agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count;
 
   for (v = agg_id->first_index; v <= agg_id->last_index; v++)
     per_file_aggregator = per_file_aggregator + agg_id->idx->variable[v]->values_per_sample;
 
-  if (nprocs < no_of_aggregators * agg_id->idx_d->aggregation_factor)
+  if (nprocs < agg_id->idx_d->no_of_aggregators * agg_id->idx_d->aggregation_factor)
   {
     if ((agg_id->idx_d->max_file_count == 1 || nprocs == 1))
     {
@@ -940,7 +940,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
     }
     else
     {
-      while (no_of_aggregators > nprocs)
+      while (agg_id->idx_d->no_of_aggregators > nprocs)
       {
         agg_id->idx_d->agg_file_count = agg_id->idx_d->agg_file_count / 2;
         agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count = 0;
@@ -949,7 +949,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
           if (agg_id->idx->variable[agg_id->init_index]->file_index[i] == 1)
             agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count++;
 
-        no_of_aggregators = per_file_aggregator * agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count * agg_id->idx_d->aggregation_factor;
+        agg_id->idx_d->no_of_aggregators = per_file_aggregator * agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count * agg_id->idx_d->aggregation_factor;
       }
 
       level = getLeveL((agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count * agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file) - 1);
@@ -985,10 +985,10 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
       }
     }
   }
-  //printf("agg_id->aggregator_interval = %d %d\n", no_of_aggregators, agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count);
-  agg_id->aggregator_interval = nprocs / (no_of_aggregators * agg_id->idx_d->aggregation_factor);
+  //printf("agg_id->aggregator_interval = %d %d\n", agg_id->idx_d->no_of_aggregators, agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count);
+  agg_id->aggregator_interval = nprocs / (agg_id->idx_d->no_of_aggregators * agg_id->idx_d->aggregation_factor);
   //assert(agg_id->aggregator_interval != 0);
-  //printf("agg_id->aggregator_interval = %d %d %d\n", agg_id->aggregator_interval, no_of_aggregators, agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count);
+  //printf("agg_id->aggregator_interval = %d %d %d\n", agg_id->aggregator_interval, agg_id->idx_d->no_of_aggregators, agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count);
 
 
   agg_id->idx_d->agg_buffer = malloc(sizeof(*agg_id->idx_d->agg_buffer));
@@ -1003,6 +1003,9 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id)
 
   agg_buffer->rank_holder = malloc(agg_id->idx_d->agg_file_count * sizeof (int**));
   memset(agg_buffer->rank_holder, 0, agg_id->idx_d->agg_file_count * sizeof (int**));
+  //printf("agg_id->idx_d->agg_file_count = %d\n", agg_id->idx_d->agg_file_count);
+  //printf("agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count = %d\n", agg_id->idx->variable[agg_id->init_index]->agg_existing_file_count);
+
   for (i = 0; i < agg_id->idx_d->agg_file_count; i++)
   {
     agg_buffer->rank_holder[i] = malloc((agg_id->last_index - agg_id->first_index + 1) * sizeof (int*));

@@ -397,11 +397,12 @@ int main(int argc, char **argv)
 
     //PIDX_debug_rst(file, 1);
     //PIDX_debug_hz(file, 1);
-    PIDX_debug_disable_hz(file);
+    //PIDX_debug_disable_hz(file);
     //PIDX_debug_disable_io(file);
     //PIDX_dump_agg_info(file, 1);
     PIDX_set_block_count(file, 256);
     PIDX_set_block_size(file, 15);
+    PIDX_set_aggregation_factor(file, 2);
 
 
 

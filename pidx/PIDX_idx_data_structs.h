@@ -151,6 +151,7 @@ struct idx_dataset_derived_metadata_struct
   int dump_io_info;
   char io_dump_dir_name[512];
 
+  int no_of_aggregators;
 
   int color;
   
