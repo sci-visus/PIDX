@@ -14,6 +14,7 @@
 #cmakedefine01 PIDX_HAVE_MPI
 #cmakedefine01 PIDX_HAVE_ZFP
 #cmakedefine01 PIDX_HAVE_PNETCDF
+#cmakedefine01 PIDX_HAVE_NETCDF
 #cmakedefine01 PIDX_HAVE_HDF5
 
 //ACTIVE_TARGET is defined by MPI, but we may want to override it for specific configs
