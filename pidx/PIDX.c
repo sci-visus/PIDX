@@ -2176,52 +2176,52 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
   if (file->debug_do_io == 1)
   {
-  /* STEP 1 */
-  file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
+    /* STEP 1 */
+    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
 #if PIDX_HAVE_MPI
-  ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
-  if (ret != PIDX_success)
-    return PIDX_err_header;
-#endif
-  ret = PIDX_header_io_file_create(file->header_io_id);
-  if (ret != PIDX_success)
-    return PIDX_err_header;
-
-  /* STEP 2 */
-  if (file->idx->variable_index_tracker < file->idx->variable_count )
-  {
-    // Create the header
-    ret = PIDX_header_io_file_write(file->header_io_id, 0);
+    ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
     if (ret != PIDX_success)
       return PIDX_err_header;
-    file->flush_used = 1;
-  }
+#endif
+    ret = PIDX_header_io_file_create(file->header_io_id);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
 
-  if (file->idx->variable_index_tracker == file->idx->variable_count)
-  {
-    // Write the header
-    if (file->flush_used == 1 || file->idx->enable_agg == 0 || file->idx->enable_agg == 1)
+    /* STEP 2 */
+    if (file->idx->variable_index_tracker < file->idx->variable_count )
     {
-      ret = PIDX_header_io_file_write(file->header_io_id, 1);
+      // Create the header
+      ret = PIDX_header_io_file_write(file->header_io_id, 0);
       if (ret != PIDX_success)
         return PIDX_err_header;
+      file->flush_used = 1;
     }
-    else if (/*(file->var_pipe_length < file->idx->variable_count - 1) && */ caching_state == 0)
+
+    if (file->idx->variable_index_tracker == file->idx->variable_count)
     {
-      ret = PIDX_header_io_file_write(file->header_io_id, 1);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
+      // Write the header
+      if (file->flush_used == 1 || file->idx->enable_agg == 0 || file->idx->enable_agg == 1)
+      {
+        ret = PIDX_header_io_file_write(file->header_io_id, 1);
+        if (ret != PIDX_success)
+          return PIDX_err_header;
+      }
+      else if (/*(file->var_pipe_length < file->idx->variable_count - 1) && */ caching_state == 0)
+      {
+        ret = PIDX_header_io_file_write(file->header_io_id, 1);
+        if (ret != PIDX_success)
+          return PIDX_err_header;
+      }
     }
-  }
 
-  /* STEP 3 */
-  ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename, file->idx->current_time_step);
-  if (ret != PIDX_success)
-    return PIDX_err_header;
+    /* STEP 3 */
+    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
 
-  ret = PIDX_header_io_finalize(file->header_io_id);
-  if (ret != PIDX_success)
-    return PIDX_err_header;
+    ret = PIDX_header_io_finalize(file->header_io_id);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
   }
 
 #endif
