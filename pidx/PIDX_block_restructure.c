@@ -224,7 +224,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
           char filename[100];
           sprintf(filename, "%d_%d_%d",p, j, rank);
           FILE *fp = fopen (filename, "w");
-          float dv;
+          double dv;
           int i;
 
           fprintf(fp, "[%d] [%d] Offset Count %d %d %d :: %d %d %d\n", p, j, (int)in_patch->patch[j]->offset[0], (int)in_patch->patch[j]->offset[1], (int)in_patch->patch[j]->offset[2], (int)in_patch->patch[j]->size[0], (int)in_patch->patch[j]->size[1], (int)in_patch->patch[j]->size[2]);
@@ -341,7 +341,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
         }
       }
 
-      float* p=(float*)temp_buffer;
+      double* p=(double*)temp_buffer;
       int dz=4*nx*(ny-(ny/4)*4);
       int dy=4*(nx-(nx/4)*4);
       int dx=4;      
@@ -354,14 +354,14 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
         for (z=0;z<nz;z+=4)
         {
 #if !SIMULATE_IO
-          float* s = (float*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz) + nx*ny*nz*s1;
+          double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz) + nx*ny*nz*s1;
 #endif
           for (y=0;y<ny;y+=4)
           {
             for (x=0;x<nx;x+=4)
             {
               int64_t diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
-              float* q=p+var->values_per_sample*diff+s1;
+              double* q=p+var->values_per_sample*diff+s1;
 
               for (zz = 0; zz < 4; ++zz)
               {
@@ -391,7 +391,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
 
 /*
   Remove the comment to print debug info
-  float dv;
+  double dv;
   int i;
   for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
   {

@@ -611,7 +611,10 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                       bytes_for_datatype = ((id->idx->variable[v1]->bits_per_value / 8) * chunk_size) / (id->idx->variable[v1]->bits_per_value / id->idx->compression_bit_rate);
                       for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
                       {
-                        //printf("Dest %d Src %d Count %d\n", (int)((hz_index * id->idx->variable[v1]->values_per_sample + s) * chunk_size), (int)((index * id->idx->variable[v1]->values_per_sample) + s) * chunk_size, (int)chunk_size);
+                        //double x;
+                        //memcpy(&x, id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+                        //printf("Dest %d %d Src %d Count %d byte size %d value %f\n", level, (int)((hz_index * id->idx->variable[v1]->values_per_sample + s) * chunk_size), (int)((index * id->idx->variable[v1]->values_per_sample) + s) * chunk_size, (int)chunk_size, id->idx->variable[v1]->bits_per_value, x);
+
 #if !SIMULATE_IO
                         memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[v1]->values_per_sample + s) * bytes_for_datatype),
                                 id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype,
@@ -1308,6 +1311,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
                 dvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                 dvalue_2 = *(*((double**)var->hz_buffer[b]->buffer + i) + ((k * var->values_per_sample) + s));
 
+                //printf("%f %f\n", dvalue_1, dvalue_2);
                 check_bit = check_bit && (dvalue_1  == dvalue_2);
               }
               else if (strcmp(var->type_name, FLOAT32) == 0)
