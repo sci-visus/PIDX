@@ -650,7 +650,7 @@ int main(int argc, char **argv)
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
 
-                          drhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          drhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0 || compression_type == 1)
                             dlhs = swap(swap(double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
                           else
@@ -663,7 +663,7 @@ int main(int argc, char **argv)
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {
-                          lrhs = 100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          lrhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           llhs = ulong_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
                           check_bit = check_bit && (llhs == lrhs);
@@ -673,7 +673,7 @@ int main(int argc, char **argv)
                         }
                         else if (strcmp(variable_type[var], "float32") == 0)
                         {
-                          frhs = var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          frhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 2)
                             flhs = ((decompressed_float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
                           else
