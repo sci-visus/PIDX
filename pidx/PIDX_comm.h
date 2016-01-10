@@ -35,6 +35,9 @@
 extern "C" {
 #endif
 
+/// PIDX_access is neccessary to manage reading and writing by parallel MPI processes. It must
+/// be created using PIDX_create_access() prior to opening or creating a PIDX file using
+/// PIDX_file_create() or PIDX_file_open().
 struct PIDX_access_struct
 {
   int parallel;
@@ -50,7 +53,7 @@ struct PIDX_access_struct
 typedef struct PIDX_access_struct* PIDX_access;
 
 
-///
+/// Call this before opening or creating a PIDX_file.
 PIDX_return_code PIDX_create_access(PIDX_access* access);
 
 

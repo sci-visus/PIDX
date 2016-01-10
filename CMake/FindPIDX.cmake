@@ -34,8 +34,8 @@ IF (PIDX_INCLUDE_DIR)
 
   # Read pidx_config.h to see if we need to link MPI
   FILE(STRINGS "${PIDX_INCLUDE_DIR}/PIDX_config.h" config)
-  LIST(FIND config "PIDX_HAVE_MPI 1" idx)
-  IF (IDX GREATER 0)
+  LIST(FIND config "#define PIDX_HAVE_MPI 1" have_mpi)
+  IF (have_mpi GREATER 0)
     FIND_PACKAGE(MPI REQUIRED)
     IF (MPI_C_FOUND)
       SET(PIDX_INCLUDE_DIR ${PIDX_INCLUDE_DIR} ${MPI_C_INCLUDE_PATH})
