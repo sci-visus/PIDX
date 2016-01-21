@@ -760,6 +760,29 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
 }
 
 
+PIDX_return_code PIDX_set_data_write_type_as_float(PIDX_file file)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  file->idx->compression_bit_rate = 32;
+  
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_set_data_write_type_as_double(PIDX_file file)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  file->idx->compression_bit_rate = 64;
+  
+  return PIDX_success;
+}
+
+
 
 PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims)
 {

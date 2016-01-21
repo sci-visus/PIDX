@@ -47,7 +47,7 @@ static unsigned long long local_box_size[3] = {20, 20, 20};
 static int time_step_count = 1;
 static int variable_count = 1;
 static char output_file_template[512] = "test";
-static float **data;
+static double **data;
 static char output_file_name[512] = "test.idx";
 static int values_per_sample = 1;
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
@@ -263,14 +263,14 @@ static void create_synthetic_simulation_data()
   int var = 0;
   unsigned long long i, j, k, vps = 0;
 
-  data = (float**)malloc(sizeof(*data) * variable_count);
+  data = (double**)malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
   // Synthetic simulation data
 
   for(var = 0; var < variable_count; var++)
   {
-    data[var] = (float*)malloc(sizeof (float) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
+    data[var] = (double*)malloc(sizeof (double) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -430,7 +430,7 @@ int main(int argc, char **argv)
     {
       sprintf(var_name, "variable_%d", var);
 
-      ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(float) * 8, FLOAT32 , &variable[var]);
+      ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64 , &variable[var]);
       if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
       ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
