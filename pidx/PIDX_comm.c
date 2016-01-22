@@ -43,7 +43,11 @@ PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm)
     return PIDX_err_access;
   
   access->parallel = 1;
-  MPI_Comm_dup(comm, &(access->comm));
+
+  int ret;
+  ret = MPI_Comm_dup(comm, &(access->comm));
+  if (ret != MPI_SUCCESS)
+    return PIDX_err_access;
   
   return PIDX_success;
 }

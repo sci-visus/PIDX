@@ -80,7 +80,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, INT8_RGBA) == 0)
     *bits = 32;
 
-  if (strcmp(type, UINT8) == 0)
+  else if (strcmp(type, UINT8) == 0)
     *bits = 8;
   else if (strcmp(type, UINT8_GA) == 0)
     *bits = 16;
@@ -89,7 +89,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, UINT8_RGBA) == 0)
     *bits = 32;
 
-  if (strcmp(type, INT16) == 0)
+  else if (strcmp(type, INT16) == 0)
     *bits = 16;
   else if (strcmp(type, INT16_GA) == 0)
     *bits = 32;
@@ -98,7 +98,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, INT16_RGBA) == 0)
     *bits = 64;
 
-  if (strcmp(type, UINT16) == 0)
+  else if (strcmp(type, UINT16) == 0)
     *bits = 16;
   else if (strcmp(type, UINT16_GA) == 0)
     *bits = 32;
@@ -107,7 +107,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, UINT16_RGBA) == 0)
     *bits = 64;
 
-  if (strcmp(type, INT32) == 0)
+  else if (strcmp(type, INT32) == 0)
     *bits = 32;
   else if (strcmp(type, INT32_GA) == 0)
     *bits = 64;
@@ -116,7 +116,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, INT32_RGBA) == 0)
     *bits = 128;
 
-  if (strcmp(type, UINT32) == 0)
+  else if (strcmp(type, UINT32) == 0)
     *bits = 32;
   else if (strcmp(type, UINT32_GA) == 0)
     *bits = 64;
@@ -125,7 +125,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, UINT32_RGBA) == 0)
     *bits = 128;
 
-  if (strcmp(type, INT64) == 0)
+  else if (strcmp(type, INT64) == 0)
     *bits = 64;
   else if (strcmp(type, INT64_GA) == 0)
     *bits = 128;
@@ -134,7 +134,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, INT64_RGBA) == 0)
     *bits = 256;
 
-  if (strcmp(type, UINT64) == 0)
+  else if (strcmp(type, UINT64) == 0)
     *bits = 64;
   else if (strcmp(type, UINT64_GA) == 0)
     *bits = 128;
@@ -143,7 +143,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, UINT64_RGBA) == 0)
     *bits = 256;
 
-  if (strcmp(type, FLOAT32) == 0)
+  else if (strcmp(type, FLOAT32) == 0)
     *bits = 32;
   else if (strcmp(type, FLOAT32_GA) == 0)
     *bits = 64;
@@ -152,7 +152,7 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
   else if (strcmp(type, FLOAT32_RGBA) == 0)
     *bits = 128;
 
-  if (strcmp(type, FLOAT64) == 0)
+  else if (strcmp(type, FLOAT64) == 0)
     *bits = 64;
   else if (strcmp(type, FLOAT64_GA) == 0)
     *bits = 128;

@@ -16,6 +16,9 @@
  **                                                 **
  *****************************************************/
 
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <PIDX.h>
 
 #if PIDX_HAVE_MPI
@@ -149,7 +152,7 @@ int main(int argc, char **argv)
 
     int bits_per_sample = 0;
     ret = PIDX_default_bits_per_datatype(variable[var]->type_name, &bits_per_sample);
-    if (ret != PIDX_success)  report_error("PIDX_default_bytes_per_datatype", __FILE__, __LINE__);
+    if (ret != PIDX_success)  report_error("PIDX_default_bits_per_datatype", __FILE__, __LINE__);
 
     data[var] = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
     memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);

@@ -1,7 +1,7 @@
 #ifndef CACHE_H
 #define CACHE_H
 
-#include "memory.h"
+#include "memory1.h"
 
 #ifdef CACHE_PROFILE
   // maintain stats on hit and miss rates

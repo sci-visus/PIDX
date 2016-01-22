@@ -34,6 +34,9 @@
 
 */
 
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <PIDX.h>
 
 enum { X, Y, Z, NUM_DIMS };
@@ -44,7 +47,7 @@ static unsigned long long local_box_size[3] = {0, 0, 0};             ///< local 
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 0;                        ///< Number of fields
 static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
-static double **data;
+static float **data;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
 static char output_file_name[512] = "test.idx";
 static char *usage = "Serial Usage: ./restart -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
@@ -116,33 +119,12 @@ static void calculate_per_process_offsets()
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 }
 
-static void create_synthetic_simulation_data()
-{
-  int var = 0;
-  unsigned long long i, j, k;
-
-  data = malloc(sizeof(*data) * variable_count);
-  memset(data, 0, sizeof(*data) * variable_count);
-
-  // Synthetic simulation data
-  for(var = 0; var < variable_count; var++)
-  {
-    data[var] = malloc(sizeof (unsigned long long) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
-    for (k = 0; k < local_box_size[2]; k++)
-      for (j = 0; j < local_box_size[1]; j++)
-        for (i = 0; i < local_box_size[0]; i++)
-        {
-          unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-          data[var][index] = 100 + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
-        }
-  }
-}
 
 static void destroy_synthetic_simulation_data()
 {
   int i, j, k, var, vps;
   int read_error_count = 0, read_count = 0;
-  for(var = 0; var < variable_count; var++)
+  for(var = 0; var < 1/*variable_count*/; var++)
   {
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
@@ -151,14 +133,18 @@ static void destroy_synthetic_simulation_data()
           int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
           for (vps = 0; vps < values_per_sample[var]; vps++)
           {
-            if (data[var][index * values_per_sample[var] + vps] != 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (data[var][index * values_per_sample[var] + vps] != var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
-              if (rank == 0)
-                printf("[%d %d %d] Read error %f %lld\n", i,j ,k, data[var][index * values_per_sample[var] + vps], 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //if (rank == 0)
+              //  printf("[%d %d %d] Read error %f %lld\n", i,j ,k, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
+            {
               read_count++;
+              //if (rank == 0)
+              //  printf("[%d %d %d] Read %f %lld\n", i,j ,k, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
           }
         }
   }
@@ -305,24 +291,39 @@ int main(int argc, char **argv)
   ret = PIDX_reset_variable_counter(file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_reset_variable_counter");
 
-  for (var = 0; var < variable_count; var++)
-  {
-    ret = PIDX_get_next_variable(file, &variable[var]);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_get_next_variable");
 
-    ret = PIDX_variable_read_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_read_data_layout");
+#if 1  // For single field
+  var = 0;
 
-    ret = PIDX_read_next_variable(file, variable[var]);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_read_next_variable");
-  }
+  ret = PIDX_set_current_variable_index(file, var);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index");
 
+  //ret = PIDX_get_current_variable(file, &variable[var]);
+  //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_get_current_variable");
+
+  ret = PIDX_variable_read_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_read_data_layout");
+
+#else  // For restarts
+
+    for (var = 0; var < variable_count; var++)
+    {
+      ret = PIDX_get_next_variable(file, &variable[var]);
+      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_get_next_variable");
+
+      ret = PIDX_variable_read_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_read_data_layout");
+
+      ret = PIDX_read_next_variable(file, variable[var]);
+      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_read_next_variable");
+    }
+
+#endif
   ret = PIDX_close(file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close");
 
-   ret = PIDX_close_access(access);
+  ret = PIDX_close_access(access);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close_access");
-
 
   destroy_synthetic_simulation_data();
   free(values_per_sample);

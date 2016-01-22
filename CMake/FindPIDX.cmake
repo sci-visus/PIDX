@@ -28,13 +28,14 @@
 #
 
 FIND_PATH(PIDX_INCLUDE_DIR NAMES PIDX.h PATHS ${PIDX_DIR}/include NO_DEFAULT_PATH)
+FIND_PATH(HDF5_INCLUDE_DIR NAMES PIDX.h)
 
 IF (PIDX_INCLUDE_DIR)
 
   # Read pidx_config.h to see if we need to link MPI
   FILE(STRINGS "${PIDX_INCLUDE_DIR}/PIDX_config.h" config)
-  LIST(FIND config "PIDX_HAVE_MPI 1" idx)
-  IF (IDX GREATER 0)
+  LIST(FIND config "#define PIDX_HAVE_MPI 1" have_mpi)
+  IF (have_mpi GREATER 0)
     FIND_PACKAGE(MPI REQUIRED)
     IF (MPI_C_FOUND)
       SET(PIDX_INCLUDE_DIR ${PIDX_INCLUDE_DIR} ${MPI_C_INCLUDE_PATH})
@@ -44,10 +45,13 @@ IF (PIDX_INCLUDE_DIR)
     ENDIF()
   ENDIF()
     
-  FIND_LIBRARY(PIDX_LIB     pidx    ${PIDX_DIR}/lib)
+  SET(PIDX_INCLUDE_DIRS "${PIDX_INCLUDE_DIR}")
+
+  FIND_LIBRARY(PIDX_LIBRARY     pidx    PATHS ${PIDX_DIR}/lib NO_DEFAULT_PATH)
+  FIND_LIBRARY(HDF5_LIBRARY     pidx    )
 
   SET(PIDX_LIBRARIES 
-    ${PIDX_LIB}
+    ${PIDX_LIBRARY}
     ${PIDX_MPI_LIBS}
     )
 
@@ -65,6 +69,10 @@ IF (PIDX_INCLUDE_DIR)
   ENDIF (CMAKE_VERBOSE_MAKEFILE)
 
 ELSE ()
-  MESSAGE("ERROR PIDX library not found on the system")
+  IF (PIDX_FIND_REQUIRED)
+    MESSAGE(FATAL_ERROR "PIDX library not found. Try setting PIDX_DIR")
+  ELSE()
+    MESSAGE("WARNING: PIDX library not found. Try setting PIDX_DIR")
+  ENDIF()
 ENDIF ()
                          

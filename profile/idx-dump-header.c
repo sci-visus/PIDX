@@ -77,9 +77,11 @@ int main(int argc, char **argv)
   {
     for (j = 0 ; j < blocks_per_file; j++)
     {
+      data_length1 = 0;
+      data_offset1 = 0;
       data_length1 = ntohl(binheader1[(j + blocks_per_file * var) * 10 + 14]);
       data_offset1 = ntohl(binheader1[(j + blocks_per_file * var) * 10 + 12]);
-      printf("[%d] Block %d: Offset %ld Count %ld\n", var, j, data_offset1, data_length1);
+      printf("[%d] Block %d: Offset %lld Count %lld\n", var, j, (unsigned long long)data_offset1, (unsigned long long)data_length1);
       
     }
   }

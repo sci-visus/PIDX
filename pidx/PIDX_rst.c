@@ -30,8 +30,7 @@
 #include "PIDX_inc.h"
 
 
-
-int maximum_neighbor_count = 128;
+int maximum_neighbor_count = 256;
 
 //Struct for restructuring ID
 struct PIDX_rst_struct 
@@ -73,7 +72,7 @@ static int getPowerOftwo(int x);
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 {
   int d = 0, check_bit = 0;
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++) 
+  for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
     check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
   
   return !(check_bit);
@@ -215,12 +214,22 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
       local_proc_patch->size[d] = rst_id->idx_derived->rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
     }
 
+    int64_t adjusted_bounds[PIDX_MAX_DIMENSIONS];
+    memcpy(adjusted_bounds, rst_id->idx->bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+
+    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    {
+      adjusted_bounds[d] = rst_id->idx->bounds[d];
+      if (rst_id->idx->bounds[d] % rst_id->idx->chunk_size[d] != 0)
+        adjusted_bounds[d] = ((rst_id->idx->bounds[d] / rst_id->idx->chunk_size[d]) + 1) * rst_id->idx->chunk_size[d];
+    }
+
     rst_id->reg_patch_grp_count = 0;
-    for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
-      for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
-        for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
-          for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
-            for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
+    for (i = 0; i < adjusted_bounds[0]; i = i + rst_id->reg_patch_size[0])
+      for (j = 0; j < adjusted_bounds[1]; j = j + rst_id->reg_patch_size[1])
+        for (k = 0; k < adjusted_bounds[2]; k = k + rst_id->reg_patch_size[2])
+          for (l = 0; l < adjusted_bounds[3]; l = l + rst_id->reg_patch_size[3])
+            for (m = 0; m < adjusted_bounds[4]; m = m + rst_id->reg_patch_size[4])
             {
               Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
               memset(reg_patch, 0, sizeof (*reg_patch));
@@ -238,16 +247,16 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
               reg_patch->size[4] = rst_id->reg_patch_size[4];
 
               //Edge regular patches
-              if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
-                reg_patch->size[0] = rst_id->idx->bounds[0] - i;
-              if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
-                reg_patch->size[1] = rst_id->idx->bounds[1] - j;
-              if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
-                reg_patch->size[2] = rst_id->idx->bounds[2] - k;
-              if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
-                reg_patch->size[3] = rst_id->idx->bounds[3] - l;
-              if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
-                reg_patch->size[4] = rst_id->idx->bounds[4] - m;
+              if ((i + rst_id->reg_patch_size[0]) > adjusted_bounds[0])
+                reg_patch->size[0] = adjusted_bounds[0] - i;
+              if ((j + rst_id->reg_patch_size[1]) > adjusted_bounds[1])
+                reg_patch->size[1] = adjusted_bounds[1] - j;
+              if ((k + rst_id->reg_patch_size[2]) > adjusted_bounds[2])
+                reg_patch->size[2] = adjusted_bounds[2] - k;
+              if ((l + rst_id->reg_patch_size[3]) > adjusted_bounds[3])
+                reg_patch->size[3] = adjusted_bounds[3] - l;
+              if ((m + rst_id->reg_patch_size[4]) > adjusted_bounds[4])
+                reg_patch->size[4] = adjusted_bounds[4] - m;
 
               if (intersectNDChunk(reg_patch, local_proc_patch))
                 rst_id->reg_patch_grp_count++;
@@ -258,13 +267,16 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
     rst_id->reg_patch_grp = (Ndim_patch_group*)malloc(sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
     memset(rst_id->reg_patch_grp, 0, sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
 
+    //if (rank == 52)
+    //  printf("rst_id->reg_patch_grp_count = %d\n", rst_id->reg_patch_grp_count);
+
     reg_patch_count = 0;
     /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
-    for (i = 0; i < rst_id->idx->bounds[0]; i = i + rst_id->reg_patch_size[0])
-      for (j = 0; j < rst_id->idx->bounds[1]; j = j + rst_id->reg_patch_size[1])
-        for (k = 0; k < rst_id->idx->bounds[2]; k = k + rst_id->reg_patch_size[2])
-          for (l = 0; l < rst_id->idx->bounds[3]; l = l + rst_id->reg_patch_size[3])
-            for (m = 0; m < rst_id->idx->bounds[4]; m = m + rst_id->reg_patch_size[4])
+    for (i = 0; i < adjusted_bounds[0]; i = i + rst_id->reg_patch_size[0])
+      for (j = 0; j < adjusted_bounds[1]; j = j + rst_id->reg_patch_size[1])
+        for (k = 0; k < adjusted_bounds[2]; k = k + rst_id->reg_patch_size[2])
+          for (l = 0; l < adjusted_bounds[3]; l = l + rst_id->reg_patch_size[3])
+            for (m = 0; m < adjusted_bounds[4]; m = m + rst_id->reg_patch_size[4])
             {
               Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
               memset(reg_patch, 0, sizeof (*reg_patch));
@@ -283,35 +295,38 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
               //Edge regular patches
               edge_case = 0;
-              if ((i + rst_id->reg_patch_size[0]) > rst_id->idx->bounds[0])
+              if ((i + rst_id->reg_patch_size[0]) > adjusted_bounds[0])
               {
-                reg_patch->size[0] = rst_id->idx->bounds[0] - i;
+                reg_patch->size[0] = adjusted_bounds[0] - i;
                 edge_case = 1;
               }
-              if ((j + rst_id->reg_patch_size[1]) > rst_id->idx->bounds[1])
+              if ((j + rst_id->reg_patch_size[1]) > adjusted_bounds[1])
               {
-                reg_patch->size[1] = rst_id->idx->bounds[1] - j;
+                reg_patch->size[1] = adjusted_bounds[1] - j;
                 edge_case = 1;
               }
-              if ((k + rst_id->reg_patch_size[2]) > rst_id->idx->bounds[2])
+              if ((k + rst_id->reg_patch_size[2]) > adjusted_bounds[2])
               {
-                reg_patch->size[2] = rst_id->idx->bounds[2] - k;
+                reg_patch->size[2] = adjusted_bounds[2] - k;
                 edge_case = 1;
               }
-              if ((l + rst_id->reg_patch_size[3]) > rst_id->idx->bounds[3])
+              if ((l + rst_id->reg_patch_size[3]) > adjusted_bounds[3])
               {
-                reg_patch->size[3] = rst_id->idx->bounds[3] - l;
+                reg_patch->size[3] = adjusted_bounds[3] - l;
                 edge_case = 1;
               }
-              if ((m + rst_id->reg_patch_size[4]) > rst_id->idx->bounds[4])
+              if ((m + rst_id->reg_patch_size[4]) > adjusted_bounds[4])
               {
-                reg_patch->size[4] = rst_id->idx->bounds[4] - m;
+                reg_patch->size[4] = adjusted_bounds[4] - m;
                 edge_case = 1;
               }
 
               /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
               if (intersectNDChunk(reg_patch, local_proc_patch))
               {
+                //if (rank == 52 && reg_patch->offset[0] == 0 && reg_patch->offset[1] == 768 && reg_patch->offset[2] == 128)
+                  //printf("[g] reg box %d %d %d : %d %d %d local box %d %d %d : %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], local_proc_patch->offset[0], local_proc_patch->offset[1], local_proc_patch->offset[2], local_proc_patch->size[0], local_proc_patch->size[1], local_proc_patch->size[2]);
+
                 rst_id->reg_patch_grp[reg_patch_count] = malloc(sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));
                 memset(rst_id->reg_patch_grp[reg_patch_count], 0, sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));
 
@@ -343,8 +358,13 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
                   }
 
                   //If process with rank r intersects with the regular patch, then calculate the offset, count and volume of the intersecting volume
+                  //if (rank == 52 && reg_patch->offset[0] == 0 && reg_patch->offset[1] == 768 && reg_patch->offset[2] == 128)
+                  //printf("[l %d] reg box %d %d %d : %d %d %d local box %d %d %d : %d %d %d\n", r, reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], rank_r_patch->offset[0], rank_r_patch->offset[1], rank_r_patch->offset[2], rank_r_patch->size[0], rank_r_patch->size[1], rank_r_patch->size[2]);
                   if (intersectNDChunk(reg_patch, rank_r_patch))
                   {
+                      //if (rank == 52 && reg_patch->offset[0] == 0 && reg_patch->offset[1] == 768 && reg_patch->offset[2] == 128)
+                        //printf("[li] reg box %d %d %d : %d %d %d local box %d %d %d : %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], rank_r_patch->offset[0], rank_r_patch->offset[1], rank_r_patch->offset[2], rank_r_patch->size[0], rank_r_patch->size[1], rank_r_patch->size[2]);
+
                     patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
                     memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
 
@@ -375,10 +395,22 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
                       //offset and count of intersecting regular patch
                       patch_grp->reg_patch_offset[d] = reg_patch->offset[d];
                       patch_grp->reg_patch_size[d] = reg_patch->size[d];
+
+
                     }
+                    //if (rank == 52 && reg_patch->offset[0] == 0 && reg_patch->offset[1] == 768 && reg_patch->offset[2] == 128)
+                       // printf("[%d] oc : %d %d %d :: %d %d %d\n", r, patch_grp->patch[patch_count]->offset[0], patch_grp->patch[patch_count]->offset[1], patch_grp->patch[patch_count]->offset[2], patch_grp->patch[patch_count]->size[0], patch_grp->patch[patch_count]->size[1], patch_grp->patch[patch_count]->size[2]);
 
                     patch_grp->source_patch_rank[patch_count] = r;
                     patch_count++;
+
+                    if (patch_count >= maximum_neighbor_count)
+                    {
+                      if (rank == 0)
+                        printf("[ERROR] maximum_neighbor_count needs to be increased\n");
+                      return PIDX_err_rst;
+                    }
+
                     patch_grp->count = patch_count;
                   }
                   free(rank_r_patch);
@@ -459,10 +491,13 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           patch_group->count = rst_id->reg_patch_grp[i]->count;
           patch_group->type = rst_id->reg_patch_grp[i]->type;
           patch_group->patch = malloc(sizeof(*(patch_group->patch)) * rst_id->reg_patch_grp[i]->count);
+          memset(patch_group->patch, 0, sizeof(*(patch_group->patch)) * rst_id->reg_patch_grp[i]->count);
 
           for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
           {
             patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
+            memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
+
             memcpy(patch_group->patch[j]->offset, rst_id->reg_patch_grp[i]->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
             memcpy(patch_group->patch[j]->size, rst_id->reg_patch_grp[i]->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
           }
@@ -471,7 +506,8 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           cnt++;
         }
       }
-      assert(cnt == var->patch_group_count);
+      if (cnt != var->patch_group_count)
+        return PIDX_err_rst;
     }
 #endif
   }
@@ -486,9 +522,13 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
         patch_group->count = 1;
         patch_group->type = 0;
         patch_group->patch = malloc(sizeof(*(patch_group->patch)) * patch_group->count);
+        memset(patch_group->patch, 0, sizeof(*(patch_group->patch)) * patch_group->count);
+
         for(j = 0; j < patch_group->count; j++)
         {
           patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
+          memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
+
           memcpy(patch_group->patch[j]->offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
           memcpy(patch_group->patch[j]->size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
         }
@@ -528,7 +568,8 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
           cnt++;
         }
       }
-      assert(cnt == var->patch_group_count);
+      if (cnt != var->patch_group_count)
+        return PIDX_err_rst;
     }
 #endif
   }
@@ -544,6 +585,8 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
         {
           patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample);
 
+          memset(patch_group->patch[j]->buffer, 0, patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample);
+
           memcpy(patch_group->patch[j]->buffer, var->sim_patch[p]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample));
         }
       }
@@ -556,7 +599,7 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
 
 
 PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
-{ 
+{
   if (rst_id->idx->enable_rst != 1)
     return PIDX_success;
 
@@ -586,6 +629,7 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(req, 0, sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
   if (!status) 
@@ -593,6 +637,7 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(status, 0, sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
@@ -745,7 +790,6 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
   }
 #endif
 
-
   free(req);
   req = 0;
   free(status);
@@ -794,6 +838,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(req, 0, sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
   if (!status)
@@ -801,6 +846,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
+  memset(status, 0, sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
@@ -830,6 +876,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
                             (i1 - sim_patch_offset[0]);
 
 
+                    //printf("MMMMMMMMMM %d %d\n", rst_id->first_index, rst_id->last_index);
                     for(v = rst_id->first_index; v <= rst_id->last_index; v++)
                     {
                       PIDX_variable var = rst_id->idx->variable[v];
@@ -999,6 +1046,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  memset(req, 0, sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   status = (MPI_Status*) malloc(sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
   if (!status) 
@@ -1006,6 +1054,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  memset(status, 0, sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
@@ -1257,19 +1306,67 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   float fvalue_1, fvalue_2;
   double dvalue_1, dvalue_2;
   uint64_t uvalue_1, uvalue_2;
+  int vol = 0;
+  int p_vol = 0;
 
   int64_t *bounds = rst_id->idx->bounds;
+
+
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = rst_id->idx->variable[v];
     bytes_for_datatype = var->bits_per_value / 8;
 
+    //if (rank == 0)
+    //  printf("patch_group_count = %d [%d %d %d]\n", var->patch_group_count);
     for (m = 0; m < var->patch_group_count; m++)
     {
+      //if (rank == 52)
+        //printf("var->rst_patch_group[%d]->count = %d [%d %d %d :: %d %d %d] = %d\n",m, var->rst_patch_group[m]->count, var->rst_patch_group[m]->reg_patch_offset[0], var->rst_patch_group[m]->reg_patch_offset[1], var->rst_patch_group[m]->reg_patch_offset[2], var->rst_patch_group[m]->reg_patch_size[0], var->rst_patch_group[m]->reg_patch_size[1], var->rst_patch_group[m]->reg_patch_size[2], var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
+
+      //printf("%d + ", var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
+      p_vol = 0;
+      p_vol = p_vol +   var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2];
+      vol = 0;
       for(n = 0; n < var->rst_patch_group[m]->count; n++)
       {
         int64_t *count_ptr = var->rst_patch_group[m]->patch[n]->size;
         int64_t *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
+        //if (rank == 52)
+        //{
+
+          //printf("[%d %d] %d %d %d :: %d %d %d\n", m, n, offset_ptr[0], offset_ptr[1], offset_ptr[2], count_ptr[0], count_ptr[1], count_ptr[2]);
+          //vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
+        //}
+      }
+      //if (rank == 52)
+      //  printf("[%d] - vol %d p_vol %d\n", rank, vol, p_vol);
+    }
+  }
+
+
+  for(v = rst_id->first_index; v <= rst_id->last_index; v++)
+  {
+    PIDX_variable var = rst_id->idx->variable[v];
+    bytes_for_datatype = var->bits_per_value / 8;
+
+    //if (rank == 0)
+    //  printf("patch_group_count = %d [%d %d %d]\n", var->patch_group_count);
+    for (m = 0; m < var->patch_group_count; m++)
+    {
+      //if (rank == 0)
+        //printf("var->rst_patch_group[%d]->count = %d [%d %d %d :: %d %d %d] = %d\n",m, var->rst_patch_group[m]->count, var->rst_patch_group[m]->reg_patch_offset[0], var->rst_patch_group[m]->reg_patch_offset[1], var->rst_patch_group[m]->reg_patch_offset[2], var->rst_patch_group[m]->reg_patch_size[0], var->rst_patch_group[m]->reg_patch_size[1], var->rst_patch_group[m]->reg_patch_size[2], var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
+
+        //printf("%d + ", var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
+      for(n = 0; n < var->rst_patch_group[m]->count; n++)
+      {
+        int64_t *count_ptr = var->rst_patch_group[m]->patch[n]->size;
+        int64_t *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
+        //if (rank == 0)
+        {
+          //printf("[%d %d] %d %d %d :: %d %d %d\n", m, n, offset_ptr[0], offset_ptr[1], offset_ptr[2], count_ptr[0], count_ptr[1], count_ptr[2]);
+          vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
+        }
         
         for (a = 0; a < count_ptr[4]; a++)
           for (u = 0; u < count_ptr[3]; u++)
@@ -1278,20 +1375,20 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                 for (i = 0; i < count_ptr[0]; i++) 
                 {
                   int64_t index = (count_ptr[0] * count_ptr[1] * count_ptr[2] * count_ptr[3] * a) + (count_ptr[0] * count_ptr[1] * count_ptr[2] * u) + (count_ptr[0] * count_ptr[1] * k) + (count_ptr[0] * j) + i;
-                  
+
                   int check_bit = 1;
                   for (s = 0; s < var->values_per_sample; s++)
                   {
                     if (strcmp(var->type_name, FLOAT32) == 0)
                     {
-                      fvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                      fvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
                       memcpy(&fvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
-
+\
                       check_bit = check_bit && (fvalue_1 == fvalue_2);
                     }
                     else if (strcmp(var->type_name, FLOAT64) == 0)
                     {
-                      dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                      dvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
                       memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
 
                       check_bit = check_bit && (dvalue_1 == dvalue_2);
@@ -1300,7 +1397,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                     {
                       for (s = 0; s < 3; s++)
                       {
-                        dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                        dvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
 
                         memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * 3) + s) * sizeof(double), sizeof(double));
                         //memcpy(&dvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
@@ -1310,7 +1407,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                     }
                     else if (strcmp(var->type_name, UINT64) == 0)
                     {
-                      uvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                      uvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
 
                       memcpy(&uvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
 
@@ -1322,8 +1419,9 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                   if (check_bit == 0)
                   {
                     lost_element_count++;
-                    //if (strcmp(var->type_name, FLOAT64) == 0)
-                    //  printf("[%d] [RST] [DOUBLEs] LOST Element : %f %f\n", rank, dvalue_1, dvalue_2);
+                    if (rank == 61)
+                      if (strcmp(var->type_name, FLOAT32) == 0)
+                        printf("[%d] [RST] [FLOATs] LOST Element : %f %f\n", rank, fvalue_1, fvalue_2);
                     //else if (strcmp(var->type_name, UINT64) == 0)
                     //  printf("[%d] [RST] [LONGs] LOST Element : %lld %lld\n", rank, (unsigned long long)uvalue_1, (unsigned long long)uvalue_2);
                   } 
@@ -1336,7 +1434,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
       }
     }
   }
-  
+
   int64_t global_volume;
 #if PIDX_HAVE_MPI
   MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, rst_id->comm);
@@ -1346,10 +1444,12 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
     
   if (global_volume != (int64_t) bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4] * (rst_id->last_index - rst_id->first_index + 1))
   {
-    if (rank == 0)
-      fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
+    //if (rank == 0)
+    //  fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
     
-    printf("[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", rank,  rst_id->idx_derived->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4]) * (rst_id->last_index - rst_id->first_index + 1));
+  //if (rank == 0)
+  //  printf("[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rank,  rst_id->idx_derived->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4]) * (rst_id->last_index - rst_id->first_index + 1), vol);
+   //   printf("%d + ", vol);
       
     return PIDX_err_rst;
   }

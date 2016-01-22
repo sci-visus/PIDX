@@ -77,8 +77,10 @@ struct PIDX_variable_struct
 
   // Block level layout
   PIDX_block_layout global_block_layout;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
   int *block_count_per_file;                                             ///< The number of blocks a variable occupy within each file
   int existing_file_count;                                          ///< The number of files that exists for each of the variables
+  int agg_existing_file_count;
   int *existing_file_index;                                         ///< The index of the existing files for each of the variables
   int *file_index;
   
@@ -131,6 +133,7 @@ struct idx_dataset_derived_metadata_struct
   int samples_per_block;
   int maxh;
   int max_file_count;
+  int agg_file_count;
   
   int fs_block_size;
   off_t start_fs_block;
@@ -148,6 +151,7 @@ struct idx_dataset_derived_metadata_struct
   int dump_io_info;
   char io_dump_dir_name[512];
 
+  int no_of_aggregators;
 
   int color;
   
@@ -157,6 +161,8 @@ struct idx_dataset_derived_metadata_struct
   //extents of meta-data
   int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
   int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
+  
+  int staged_aggregation;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

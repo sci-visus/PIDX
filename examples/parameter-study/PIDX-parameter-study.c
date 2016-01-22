@@ -42,20 +42,20 @@ static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 1;                        ///< Number of fields
 static char variable_type[512];   ///< output IDX file Name Template
 static char output_file_template[512];   ///< output IDX file Name Template
-static int patch_count;
-static int bits_per_block;
-static int blocks_per_file;
+static int patch_count = 1;
+static int bits_per_block = 15;
+static int blocks_per_file = 256;
 static int64_t restructured_box_size[5] = {1,1,1,1,1};
-static int compression_type;
-static int compression_bit_rate;
-static int perform_phases[6];
-static int debug_rst_hz[2];
-static int dump_agg_io[2];
-static int idx_count[3];
-static int aggregation_factor;
-static int is_rank_z_ordering;
-static int hz_from_to[2];
-static int rst_agg[2];
+static int compression_type = 0;
+static int compression_bit_rate = 64;
+static int perform_phases[6] = {1,1,1,1,1,1};
+static int debug_rst_hz[2] = {0,0};
+static int dump_agg_io[2] = {0,0};
+static int idx_count[3] = {1,1,1};
+static int aggregation_factor = 1;
+static int is_rank_z_ordering = 0;
+static int hz_from_to[2] = {0,0};
+static int rst_agg[2] = {1,1};
 
 int main(int argc, char **argv)
 {
@@ -163,7 +163,7 @@ int main(int argc, char **argv)
       double_data[var] = malloc(sizeof(double*) * patch_count);
       for(p = 0 ; p < patch_count ; p++)
       {
-        double_data[var][p] = malloc(sizeof (double) * local_patch_size[var][p][0] * local_patch_size[var][p][1] * local_patch_size[var][p][2] * local_patch_size[var][p][3]);
+        double_data[var][p] = malloc(sizeof (double) * local_patch_size[var][p][0] * local_patch_size[var][p][1] * local_patch_size[var][p][2] * values_per_sample[var]);
 
         for (k = 0; k < local_patch_size[var][p][2]; k++)
           for (j = 0; j < local_patch_size[var][p][1]; j++)
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
       ulong_data[var] = malloc(sizeof(double*) * patch_count);
       for(p = 0 ; p < patch_count ; p++)
       {
-        ulong_data[var][p] = malloc(sizeof (double) * local_patch_size[var][p][0] * local_patch_size[var][p][1] * local_patch_size[var][p][2] * local_patch_size[var][p][3]);
+        ulong_data[var][p] = malloc(sizeof (double) * local_patch_size[var][p][0] * local_patch_size[var][p][1] * local_patch_size[var][p][2] * values_per_sample[var]);
 
         for (k = 0; k < local_patch_size[var][p][2]; k++)
           for (j = 0; j < local_patch_size[var][p][1]; j++)
@@ -706,8 +706,8 @@ static int create_patches()
     local_patch_offset[var] = malloc(sizeof(int*) * patch_count);
     for(i = 0; i < patch_count ; i++)
     {
-      local_patch_size[var][i] = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
-      local_patch_offset[var][i] = malloc(sizeof(int) * PIDX_MAX_DIMENSIONS);
+      local_patch_size[var][i] = malloc(sizeof(int) * 3);
+      local_patch_offset[var][i] = malloc(sizeof(int) * 3);
     }
   }
 
@@ -716,7 +716,7 @@ static int create_patches()
     // One patch for this variable
     if (patch_count == 1)
     {
-      for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      for(d = 0; d < 3; d++)
       {
         local_patch_size[var][0][d] = local_box_size[d];
         local_patch_offset[var][0][d] = local_box_offset[d];
@@ -726,7 +726,7 @@ static int create_patches()
     // two patches for this variable
     else if (patch_count == 2)
     {
-      for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      for(d = 0; d < 3; d++)
       {
         local_patch_size[var][0][d] = local_box_size[d];
         local_patch_offset[var][0][d] = local_box_offset[d];
@@ -748,7 +748,7 @@ static int create_patches()
     {
       for(i = 0; i < patch_count; i++)
       {
-        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        for(d = 0; d < 3; d++)
         {
           local_patch_size[var][i][d] = local_box_size[d];
           local_patch_offset[var][i][d] = local_box_offset[d];
@@ -795,7 +795,7 @@ static int create_patches()
     {
       for(i = 0; i < patch_count; i++)
       {
-        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        for(d = 0; d < 3; d++)
         {
           local_patch_size[var][i][d] = local_box_size[d];
           local_patch_offset[var][i][d] = local_box_offset[d];

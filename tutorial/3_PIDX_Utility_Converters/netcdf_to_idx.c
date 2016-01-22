@@ -17,9 +17,6 @@
  *****************************************************/
 
 #define PIDX_IO    0
-#define HDF5_IO    0 && PIDX_HAVE_HDF5
-#define PNETCDF_IO 0 && PIDX_HAVE_PNETCDF
-#define NETCDF_IO  1 && PIDX_HAVE_NETCDF
 #define NVISUS_IO  1 && PIDX_HAVE_NVISUSIO
 
 #include <unistd.h>
@@ -31,14 +28,6 @@
   #include <mpi.h>
 #endif
 
-#if PIDX_HAVE_HDF5
-  #include <hdf5.h>
-#endif
-  
-#if PIDX_HAVE_PNETCDF
-  #include <pnetcdf.h>
-#endif
-  
 #if PIDX_HAVE_NETCDF
   #include <netcdf.h>
   #include <netcdf_par.h>
@@ -60,6 +49,16 @@ static char **file_name;
 static float **buffer;
 static int *values_per_sample;                            ///< Example: 1 for scalar 3 for vector
 
+///< Exit with the given status
+void abort(int status)
+{
+#if PIDX_HAVE_MPI
+    MPI_Abort(MPI_COMM_WORLD, status);
+#else
+    exit(status);
+#endif
+}
+
 ///< Print error and exit program
 static void handle_error(int status, char *message, char *filename, int line)
 {
@@ -69,20 +68,13 @@ static void handle_error(int status, char *message, char *filename, int line)
   fprintf(stderr,"(%d) ",rank);
 #endif
 
-#if PNETCDF_IO
-  fprintf(stderr, "Error at %s:%d: %s (%s)\n", filename, line, ncmpi_strerror(status), message);
-#elif HDF5_IO
-  fprintf(stderr, "Error at %s:%d: %s (%s)\n", filename, line, hdf5_strerror(status), message); //or whatever is hdf5 error function
-#elif NETCDF_IO
+#if PIDX_HAVE_NETCDF
   fprintf(stderr, "Error at %s:%d: %s (%s)\n", filename, line, nc_strerror(status), message);
 #else
   fprintf(stderr, "Error at %s:%d: status = %d, message = %s\n", filename, line, status, message);
 #endif
 
-#if PIDX_HAVE_MPI
-  MPI_Abort(MPI_COMM_WORLD, -1);
-#endif
-  exit(-1);
+  abort(-1);
 }
 
 
@@ -96,16 +88,10 @@ int main(int argc, char **argv)
   char output_file_name[1024];
   size_t local_box_offset[4];
 
-  // MPI initialization
 #if PIDX_HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
-
-#if NETCDF_IO
-  const char *str=nc_inq_libvers();
-  printf("NetCDF version: %s\n", str);
 #endif
 
   ret = parse_args(argc, argv);
@@ -115,24 +101,16 @@ int main(int argc, char **argv)
     handle_error(-1,"syntax error",__FILE__,__LINE__);
   }
 
-#if 0
-  // check if the num procs is appropriate
-  int num_bricks = (global_box_size[0] / local_box_size[0]) * (global_box_size[1] / local_box_size[1]) * (global_box_size[2] / local_box_size[2]);
-
-  if(num_bricks != nprocs)
-  {
-    fprintf(stderr, "Error: number of sub-blocks (%d) doesn't match number of procs (%d)\n", num_bricks, nprocs);
-    fprintf(stderr, "Incorrect distribution of data across processes i.e.\n(global_x / local_x) X (global_x / local_x) X (global_x / local_x) != nprocs\n(%d/%d) X (%d/%d) X (%d/%d) != %d\n", (int)global_box_size[0], (int)local_box_size[0], (int)global_box_size[1], (int)local_box_size[1], (int)global_box_size[2], (int)local_box_size[2], nprocs);
-
-#if PIDX_HAVE_MPI
-    MPI_Abort(MPI_COMM_WORLD, -1);
-#else
-    exit(-1);
-#endif
-  }
+#if NVISUS_IO
+  Visus::UniquePtr<Visus::Application> app(new Visus::Application(argc,argv));
 #endif
 
-#if NETCDF_IO
+#if PIDX_HAVE_NETCDF
+  const char *str=nc_inq_libvers();
+  printf("NetCDF version: %s\n", str);
+#endif
+
+#if PIDX_HAVE_NETCDF
   int ncid, varid;
   /* Open the file. NC_NOWRITE tells netCDF we want read-only access to the file.*/
   //int open_mode=NC_MPIIO;
@@ -174,11 +152,19 @@ int main(int argc, char **argv)
   }
 #endif
 
-  // Creating the filename
-  //sprintf(output_file_name, "%s%s", output_file_template,".idx");
+  // check if the num procs is appropriate
+  int num_bricks = (global_box_size[0] / local_box_size[0]) * (global_box_size[1] / local_box_size[1]) * (global_box_size[2] / local_box_size[2]);
+  if(num_bricks != nprocs)
+  {
+    fprintf(stderr, "Error: number of sub-blocks (%d) doesn't match number of procs (%d)\n", num_bricks, nprocs);
+    fprintf(stderr, "Incorrect distribution of data across processes i.e.\n(global_x / local_x) X (global_x / local_x) X (global_x / local_x) != nprocs\n(%d/%d) X (%d/%d) X (%d/%d) != %d\n", (int)global_box_size[0], (int)local_box_size[0], (int)global_box_size[1], (int)local_box_size[1], (int)global_box_size[2], (int)local_box_size[2], nprocs);
+    abort(-1);
+  }
+
+  // Create the filename
   sprintf(output_file_name, "%s", output_file_template);
 
-  // Calculating every process data's offset and size
+  // Calculate every process data's offset and size
   int sub_div[4];
   sub_div[0] = (global_box_size[0] / local_box_size[0]);
   sub_div[1] = (global_box_size[1] / local_box_size[1]);
@@ -189,13 +175,8 @@ int main(int argc, char **argv)
   slice = rank % (sub_div[0] * sub_div[1]);
   local_box_offset[1] = (slice / sub_div[0]) * local_box_size[1];
   local_box_offset[0] = (slice % sub_div[0]) * local_box_size[0];
-#if HDF5_IO
-  hid_t file_id, plist_id, dataset_id;
-  hid_t file_dataspace, mem_dataspace;
-#endif
 
-
-#if NETCDF_IO
+#if PIDX_HAVE_NETCDF
   /* Read the data. */  
   printf("(%d) offset: %d %d %d %d, size: %d %d %d %d\n",rank,local_box_offset[0],local_box_offset[1],local_box_offset[2],local_box_offset[3],local_box_size[0],local_box_size[1],local_box_size[2],local_box_size[3]);
 
@@ -217,138 +198,47 @@ int main(int argc, char **argv)
     handle_error(ret,"",__FILE__,__LINE__);
 #endif
 
-#if PNETCDF_IO
-  //char *filename="/Users/cam/data/uvcdat/c1440_NR.inst30mn_3d_CLOUD_Nv.20060616_1100z.nc4";
-  char *filename="/Users/cam/data/uvcdat/tas_Amon_CESM1-CAM5-1-FV2_historical_r1i1p1_185001-200512.nc";
-  char *var_name="CLOUD";
-  nc_type xtypep;
-  int varidp;
-
-  int ncfile,ndims,nvars,ngatts,unlimited;
-  MPI_Offset *dim_sizes, var_size;
-
-  ret = ncmpi_open(MPI_COMM_WORLD,filename, NC_NOWRITE, MPI_INFO_NULL, &ncfile);
-  if (ret != NC_NOERR) handle_error(ret, "", __FILE__, __LINE__);
-
-  /* no commnunication needed after ncmpi_open: all processors have a cached
-   * veiw of the metadata once ncmpi_open returns */
-
-  /* reader knows nothing about dataset, but we can interrogate with query
-   * routines: ncmpi_inq tells us how many of each kind of "thing"
-   * (dimension, variable, attribute) we will find in the file  */
-
-  ret = ncmpi_inq(ncfile, &ndims, &nvars, &ngatts, &unlimited);
-  if (ret != NC_NOERR) handle_error(ret,"", __FILE__, __LINE__);
-
-  printf("ndims: %d, nvars: %d, ngatts: %d, unlimited: %d\n",ndims,nvars,ngatts,unlimited);
-
-  /* we do not really need the name of the dimension or the variable for
-   * reading in this example.  we could, in a different example, take the
-   * name of a variable on the command line and read just that one */
-
-  dim_sizes = (MPI_Offset*) calloc(ndims, sizeof(MPI_Offset));
-  /* netcdf dimension identifiers are allocated sequentially starting
-   * at zero; same for variable identifiers */
-  for(i=0; i<ndims; i++)  
-  {
-    ret = ncmpi_inq_dimlen(ncfile, i, &(dim_sizes[i]) );
-    if (ret != NC_NOERR) handle_error(ret,"", __FILE__, __LINE__);
-  }
-
-#if 0 //finish me!
-  for(i=0; i<nvars; i++) { 
-    /* much less coordination in this case compared to rank 0 doing all
-     * the i/o: everyone already has the necessary information */
-    ret = ncmpi_inq_var(ncfile, i, varname, &type, &var_ndims, dimids,
-                        &var_natts);
-    if (ret != NC_NOERR) handle_error(ret,"", __FILE__, __LINE__);
-
-    start = (MPI_Offset*) calloc(var_ndims, sizeof(MPI_Offset));
-    count = (MPI_Offset*) calloc(var_ndims, sizeof(MPI_Offset));
-
-    /* we will simply decompose along one dimension.  Generally the
-     * application has some algorithim for domain decomposistion.  Note
-     * that data decomposistion can have an impact on i/o performance.
-     * Often it's best just to do what is natural for the application,
-     * but something to consider if performance is not what was
-     * expected/desired */
-
-    start[0] = (dim_sizes[dimids[0]]/nprocs)*rank;
-    count[0] = (dim_sizes[dimids[0]]/nprocs);
-    var_size = count[0];
-
-    for (j=1; j<var_ndims; j++) {
-      start[j] = 0;
-      count[j] = dim_sizes[dimids[j]];
-      var_size *= count[j];
-    }
-
-    switch(type) {
-      case NC_INT:
-        data = (int*) calloc(var_size, sizeof(int));
-        ret = ncmpi_get_vara_int_all(ncfile, i, start, count, data);
-        if (ret != NC_NOERR) handle_error(ret,"", __FILE__, __LINE__);
-        break;
-      default:
-        /* we can do this for all the known netcdf types but this
-         * example is already getting too long  */
-        fprintf(stderr, "unsupported NetCDF type \n");
-    }
-
-    free(start);
-    free(count);
-    if (data != NULL) free(data);
-  }
-#endif
-#endif
-
-#if HDF5_IO
-  plist_id = H5Pcreate(H5P_FILE_ACCESS);
-
-#if PIDX_HAVE_MPI
-  H5Pset_fapl_mpio(plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
-#endif
-#endif
-
 #if PIDX_IO
+  PIDX_file file;
+  PIDX_access access;
+  PIDX_variable *variable;
   PIDX_point global_bounding_box, local_offset, local_size;
   PIDX_set_point_5D(global_bounding_box, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
   PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
   PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
-
-  PIDX_file file;
-  PIDX_access access;
-  PIDX_variable *variable;
-
   PIDX_create_access(&access);
-
+  PIDX_time_step_caching_ON();
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
-  PIDX_time_step_caching_ON();
-#endif
-  for (t = 0; t < time_step_count; t++)
+#elif NVISUS_IO
+  //the data will be in the bounding box  p1(0,0,0) p2(15,15,15) (both p1 and p2 included) 
+  Visus::IdxFile idxfile;
+  idxfile.logic_box.setP2(Visus::NdPoint::one());
+  idxfile.logic_box.setP2(0,16);
+  idxfile.logic_box.setP2(1,16);
+  idxfile.logic_box.setP2(2,16);
   {
-#if HDF5_IO
-    file_id = H5Fopen(file_name[t], H5F_ACC_RDONLY, plist_id);
-    for(var = 0; var < variable_count; var++)
-    {
-      memset(buffer[var], 0, sizeof(double) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
-      dataset_id = H5Dopen2(file_id, var_name[var], H5P_DEFAULT);
+    Visus::Field field("myfield",Visus::DTypes::UINT32);
+    field.default_compression="zip";
+    field.default_layout=default_layout;
+    idxfile.fields.push_back(field);
+  }
+  idxfile.timesteps.addTimesteps(0,time_step_count-1,1);
+  idxfile.time_template="time%06d/"
+  VisusReleaseAssert(idxfile.save(filename));
 
-      mem_dataspace = H5Screate_simple (3, local_box_size, NULL);
-      file_dataspace = H5Dget_space (dataset_id);
-      H5Sselect_hyperslab(file_dataspace, H5S_SELECT_SET, local_box_offset, NULL, local_box_size, NULL);
+  //now create a Dataset, save it and reopen from disk
+  Visus::UniquePtr<Dataset> dataset(Visus::Dataset::loadDataset(filename));
+  VisusReleaseAssert(dataset && dataset->valid());
 
-      H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_dataspace, file_dataspace, H5P_DEFAULT, buffer[var]);
-
-      H5Sclose(mem_dataspace);
-      H5Sclose(file_dataspace);
-      H5Dclose(dataset_id);
-    }
-    H5Fclose(file_id);
+  //any time you need to read/write data from/to a Dataset I need a Access
+  Visus::UniquePtr<Visus::Access> access(dataset->createAccess());
 #endif
+
+  for (t=0; t<time_step_count; t++)
+  {
 
 #if PIDX_IO
     variable = malloc(sizeof(*variable) * variable_count);
@@ -380,18 +270,44 @@ int main(int argc, char **argv)
     PIDX_close(file);
     printf("done!\n");
     free(variable);
+
+#elif NVISUS_IO
+
+    //this is the bounding box of the region I'm going to write
+    NdBox local_box=dataset->getLogicBox();
+    local_box.setP1(2,nslice  );
+    local_box.setP1(2,nslice  );
+    local_box.setP1(2,nslice  );
+    local_box.setP2(2,nslice+1);
+    local_box.setP2(2,nslice+1);
+    local_box.setP2(2,nslice+1);
+
+    //prepare the write query
+    UniquePtr<Query> query(new Query(dataset.get(),'w'));
+    query->setTime(t);
+    query->setField(field);
+    query->setLogicPosition(local_box);
+    query->setAccess(access.get());
+    query->begin();
+    VisusReleaseAssert(!query->end() && query->getNumberOfSamples().innerProduct()==16*16);
+
+    //fill the buffers
+    SharedPtr<Array> buffer(new Array(query->getNumberOfSamples(),query->getField().dtype));
+    unsigned int* Dst=(unsigned int*)buffer->c_ptr();
+    for (int I=0;I<16*16;I++) *Dst++=cont++;
+    query->setBuffer(buffer);
+
+    //execute the writing
+    VisusReleaseAssert(query->execute());
 #endif
 
   }
+
 #if PIDX_IO
   printf("closing pidx access...\n");
   PIDX_time_step_caching_OFF();
   PIDX_close_access(access);
   printf("closed!\n");
-#endif
-
-#if HDF5_IO
-  H5Pclose(plist_id);
 #endif
 
   delete_buffers();

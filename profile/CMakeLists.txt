@@ -26,6 +26,7 @@ IF (PIDX_BUILD_PROFILE)
   SET(DUMPHEADER_SOURCES idx-dump-header.c)
   SET(IDXVERIFY_SOURCES idx-verify.c)
   # SET(HDF5VERIFY_SOURCES hdf5-verify.c)
+
   # ////////////////////////////////////////
   # includes
   # ////////////////////////////////////////
@@ -41,13 +42,12 @@ IF (PIDX_BUILD_PROFILE)
   PIDX_ADD_EXECUTABLE(idxdumpheader "${DUMPHEADER_SOURCES}")
   PIDX_ADD_EXECUTABLE(idxverify "${IDXVERIFY_SOURCES}")
   
-  IF (PIDX_HAVE_ZFP)
-    MESSAGE("Configuring idxverify with ZFP support")
-    TARGET_LINK_LIBRARIES(idxverify m stdc++ ${ZFP_DIR}/lib/libzfp.a)
-  ELSE()
-    TARGET_LINK_LIBRARIES(idxverify m)
-  ENDIF()  
-  
-  #TARGET_LINK_LIBRARIES(idxverify m)
+  IF (ZFP_FOUND)
+    MESSAGE("Configuring profiling with ZFP support")
+    INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
+    SET(PROFILE_LINK_LIBS ${PROFILE_LINK_LIBS} ${ZFP_LIBRARIES})
+  ENDIF()
+
+  TARGET_LINK_LIBRARIES(idxverify m ${PROFILE_LINK_LIBS})
 
 ENDIF()

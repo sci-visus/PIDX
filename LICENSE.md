@@ -1,34 +1,34 @@
+-----------------------------------------------
 PIDX Parallel I/O Library
 ===============================================
-#/*****************************************************
-# **  PIDX Parallel I/O Library                      **
-# **  Copyright (c) 2010-2014 University of Utah     **
-# **  Scientific Computing and Imaging Institute     **
-# **  72 S Central Campus Drive, Room 3750           **
-# **  Salt Lake City, UT 84112                       **
-# **                                                 **
-# **  PIDX is licensed under the Creative Commons    **
-# **  Attribution-NonCommercial-NoDerivatives 4.0    **
-# **  International License. See LICENSE.md.         **
-# **                                                 **
-# **  For information about this project see:        **
-# **  http://www.cedmav.com/pidx                     **
-# **  or contact: pascucci@sci.utah.edu              **
-# **  For support: PIDX-support@visus.net            **
-# **                                                 **
-# *****************************************************/
+-----------------------------------------------
+
+| PIDX Parallel I/O Library  
+| Copyright (c) 2010-2016 University of Utah  
+| Scientific Computing and Imaging Institute  
+| 72 S Central Campus Drive, Room 3750  
+| Salt Lake City, UT 84112  
+|  
+| PIDX is licensed under the Creative Commons  
+| Attribution-NonCommercial-NoDerivatives 4.0  
+| International License. See **LICENSE.md**.  
+|  
+| For information about this project see:  
+| <http://www.cedmav.com/pidx>  
+| or contact: <pascucci@sci.utah.edu>  
+| For support: <PIDX-support@visus.net>  
 
 --------------------------------------
 License
 --------------------------------------
 
 This work is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License. 
-To view a copy of this license, visit `Creative Commons BY-NC_ND 4.0 Overview`__ or 
+To view a copy of this license, visit <http://creativecommons.org/licenses/by-nc-nd/4.0> or 
 send a letter to Creative Commons, 444 Castro Street, Suite 900, Mountain View, California, 94041, USA.
-The full license is also available in the file PIDX-license-Creative Commons-NC-ND-4.pdf or on the web at:
-http://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
+The full license is also available in the file **PIDX-license-CreativeCommons-NC-ND-4.pdf** or on the web at:
+<http://creativecommons.org/licenses/by-nc-nd/4.0/legalcode>.
 
-Alternative license terms may be available. Contact pascucci@sci.utah.edu for details.
+Alternative license terms may be available. Contact <pascucci@sci.utah.edu> for details.
 
 --------------------------------------
 Overview of Rights
@@ -50,11 +50,6 @@ Overview of Rights
 * You do not have to comply with the license for elements of the material in the public domain or where your use is permitted by an applicable exception or limitation.
 * No warranties are given. The license may not give you all of the permissions necessary for your intended use. For example, other rights such as publicity, privacy, or moral rights may limit how you use the material.
 
-See `Creative Commons BY-NC-ND 4.0 Legal`__ for the complete license terms.
+See <http://creativecommons.org/licenses/by-nc-nd/4.0/legalcode> for the complete license terms.
 
 --------------------------------------
-
-.. _CCsummary: http://creativecommons.org/licenses/by-nc-nd/4.0
-__ CCsummary_
-.. _CClegal: http://creativecommons.org/licenses/by-nc-nd/4.0/legalcode
-__ CClegal_

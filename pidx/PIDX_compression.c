@@ -52,7 +52,7 @@ struct PIDX_comp_id_struct
 };
 
 #if PIDX_HAVE_ZFP
-int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length)
+int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int bytes_per_sample, int bit_rate)
 {
   int total_size = 0;
   int i = 0;
@@ -61,24 +61,44 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length)
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
     size_t typesize, outsize;
-    typesize = sizeof(double);
+    typesize = bytes_per_sample;//sizeof(double);
     zfp_params params;
-    params.type = ZFP_TYPE_DOUBLE;
+    //params.type = ZFP_TYPE_DOUBLE;
+    params.type = ZFP_TYPE_FLOAT;
     params.nx = comp_id->idx->chunk_size[0];
     params.ny = comp_id->idx->chunk_size[1];
     params.nz = comp_id->idx->chunk_size[2];
     total_size = 0;
-    zfp_set_rate(&params, comp_id->idx->compression_bit_rate);
+    zfp_set_rate(&params, bit_rate);
     outsize = zfp_estimate_compressed_size(&params);
 
     unsigned char* zip = malloc(outsize);
-    for ( i = 0; i < length; i = i + total_chunk_size * typesize)
+    memset(zip, 0, outsize);
+
+    for ( i = 0; i < length * typesize; i = i + total_chunk_size * typesize)
     {
+
+      /*
+      char filename[100];
+      sprintf(filename, "%d", i/(total_chunk_size * typesize));
+      FILE *fp = fopen (filename, "w");
+      float dv = 0;
+      int i1 = 0;
+      for (i1 = 0; i1 < total_chunk_size; i1++)
+      {
+        dv = 0;
+        memcpy(&dv, buffer + (i + i1*typesize), typesize);
+        fprintf(fp, "%f\n", dv);
+      }
+      fclose(fp);
+      printf("filename = %s %d %d %d\n", filename, length, total_chunk_size, typesize);
+      */
+
       memset(zip, 0, outsize);
       outsize = zfp_compress(&params, buffer + i , zip, outsize);
       if (outsize == 0)
       {
-        fprintf(stderr, "compression failed\n");
+        printf("compression failed\n");
         return -1;
       }
       memcpy(buffer + total_size, zip, outsize);
@@ -94,7 +114,7 @@ int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
   int64_t compression_block_num_elems = comp_id->idx->chunk_size[0] *
                                         comp_id->idx->chunk_size[1] *
                                         comp_id->idx->chunk_size[2];
-  unsigned int type_size = sizeof(double); // DUONG_HARDCODE
+  unsigned int type_size = sizeof(float); // DUONG_HARDCODE
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP) // zfp lossy compression
   {
     zfp_params zfp;
@@ -110,6 +130,7 @@ int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
     unsigned int output_buffer_size = (length / (bit_rate / 8.0)) * type_size; // DUONG_HARDCODE
     unsigned char* srcPtr = buffer;
     unsigned char* dstPtr = (unsigned char*) malloc(output_buffer_size);
+    memset(dstPtr, 0, output_buffer_size);
     unsigned int compressed_block_size = compression_block_num_elems * (bit_rate / 8.0);
     unsigned int uncompressed_block_size = compression_block_num_elems * type_size;
     while (input_offset < input_buffer_size) // decompress one compression block at a time
@@ -165,6 +186,12 @@ int PIDX_compression_set_communicator(PIDX_comp_id comp_id, MPI_Comm comm)
 
 PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
+  int rank;
+  MPI_Comm_rank(comp_id->comm, &rank);
+
+  //if (rank == 0)
+  //  printf("Compressin type = %d\n", comp_id->idx->compression_type);
+
   if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
     return PIDX_success;
 
@@ -183,16 +210,21 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
         {
           Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
           unsigned char* buffer = patch->buffer;
-          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4];
-          int compressed_element_count;
+          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4] * var->values_per_sample;
 
-          compressed_element_count = compress_buffer(comp_id, buffer, element_count);
-          printf("Compressed element count = %d\n", compressed_element_count);
-          if (compressed_element_count < 0)
+          //if (rank == 0)
+          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bits_per_value/8, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+
+          int compressed_element_count = 0;
+          compressed_element_count = compress_buffer(comp_id, buffer, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+
+          //if (rank == 0)
+          //printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);
+
+          if (compressed_element_count <= 0)
             return PIDX_err_compress;
 
           unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
-
           if (temp_buffer == NULL)
             return PIDX_err_compress;
           else

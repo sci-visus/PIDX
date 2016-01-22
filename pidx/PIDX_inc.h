@@ -12,25 +12,26 @@
 #endif
 #endif
 
-#define min(x, y) ((x) < (y) ? (x) : (y))
-#define max(x, y) ((x) > (y) ? (x) : (y))
+#define pmin(x, y) ((x) < (y) ? (x) : (y))
+#ifndef __cplusplus
+  #define max(x, y) ((x) > (y) ? (x) : (y))
+#endif
 
 #include <string.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <errno.h>
 #include <limits.h>
-#include <stdint.h>
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
-#include <stdarg.h>
+#include <assert.h>
+
+//#include <fcntl.h>
+//#include <unistd.h>
+//#include <sys/types.h>
+//#include <time.h>
+//#include <stdint.h>
 
 #if PIDX_HAVE_MPI
   #include <mpi.h>

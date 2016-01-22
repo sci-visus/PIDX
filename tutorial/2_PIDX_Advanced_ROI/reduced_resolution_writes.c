@@ -34,6 +34,9 @@
 
 */
 
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <PIDX.h>
 
 enum { X, Y, Z, NUM_DIMS };

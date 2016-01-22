@@ -59,12 +59,15 @@ typedef struct PIDX_file_descriptor* PIDX_file;
 /// flags, PIDX_FILE_RDWR and PIDX_FILE_RDONLY, respectively, are not relevant in this
 /// function. Further note that a specification of PIDX_FILE_RDONLY will be ignored;
 /// the file will be created in read-write mode, regardless.
+/// \param access Used to manage file access between processes. Must be created prior to calling 
+/// this function using PIDX_create_access().
+/// \param file Reference to PIDX_file object that will be initialized on successful completion of this function.
 /// \return file The file parameter is the IDX file handler created by this function.
 /// The file handle returned, file, can be subsequently used to access the IDX
 /// file until it is closed using PIDX_File_close.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
-PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
+PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_file* file);
 
 
 /// Opens an existing IDX file.
@@ -75,11 +78,14 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// \param filename The filename parameter specifies the name of the file to be opened.
 /// \param flags The flags parameter specifies whether the file will be opened in
 /// read-write or read-only mode, PIDX_FILE_RDWR or PIDX_FILE_RDONLY, respectively.
+/// \param access Used to manage file access between processes. Must be created prior to calling 
+/// this function using PIDX_create_access().
+/// \param file Reference to PIDX_file object that will be initialized on successful completion of this function.
 /// \return file: The return value file, is a file identifier for the opened idx file; this
 /// identifier should be closed by calling PIDX_File_close when it is no longer needed.
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file);
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_file* file);
 
 
 
@@ -369,6 +375,10 @@ PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int re
 
 
 ///
+PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_length);
+
+
+///
 PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *resolution_to);
 
 
@@ -445,6 +455,22 @@ PIDX_return_code PIDX_simulate_io();
 
 ///
 PIDX_return_code PIDX_set_ROI_writes(PIDX_file file);
+
+
+
+///
+PIDX_return_code PIDX_set_data_write_type_as_float(PIDX_file file);
+
+
+
+///
+PIDX_return_code PIDX_set_data_write_type_as_double(PIDX_file file);
+
+
+
+///
+PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
+
 
 
 ///

@@ -16,6 +16,42 @@
 # **                                                 **
 # *****************************************************/
 
+# See https://cmake.org/Wiki/CMake_Useful_Variables
+
+###########################################
+# PIDX_SET_COMPILER_OPTIONS
+###########################################
+
+MACRO(PIDX_SET_COMPILER_OPTIONS)
+  IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+    # using Clang
+    message("Using clang compiler")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit-function-declaration")
+  ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+    # using GCC
+    message("Using gcc compiler")
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror-implicit-function-declaration")
+  ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Intel")
+    # using Intel C++
+    message("Using intel compiler")
+  ELSEIF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+    # using Visual Studio C++
+    message("Using msvc compiler")
+    message(WARNING "PIDX is not yet supported on Windows")
+  ENDIF()
+ENDMACRO()
+
+###########################################
+# PIDX_SET_MACHINE_SPECIFIC_OPTIONS
+###########################################
+
+MACRO(PIDX_SET_MACHINE_SPECIFIC_OPTIONS)
+  IF ($ENV{HOSTNAME} MATCHES "mira")
+    #mira-specIFic options
+  ELSEIF($ENV{HOSTNAME} MATCHES "vulcan")
+    #vulcan-specIFic options
+  ENDIF()
+ENDMACRO()
 
 ###########################################
 # PIDX_ADD_EXECUTABLE
@@ -30,14 +66,17 @@ MACRO(PIDX_ADD_EXECUTABLE targetname files)
                   BUNDLE DESTINATION  bin)
 ENDMACRO()
 
-
 ###########################################
 # PIDX_ADD_LIBRARY
 ###########################################
 
 MACRO(PIDX_ADD_LIBRARY targetname files)
   #MESSAGE("Adding library " ${targetname} " from sources: " ${files})                        
-  ADD_LIBRARY(${targetname} ${files})
+  IF (${BUILD_SHARED_LIBS})
+    ADD_LIBRARY(${targetname} SHARED ${files})
+  ELSE()
+    ADD_LIBRARY(${targetname} STATIC ${files})
+  ENDIF()
   SET_TARGET_PROPERTIES(${targetname} PROPERTIES LINKER_LANGUAGE C)
   INSTALL(TARGETS ${targetname} 
                   ARCHIVE DESTINATION lib
