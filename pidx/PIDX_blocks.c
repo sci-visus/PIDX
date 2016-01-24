@@ -22,6 +22,8 @@ Block size = 1024
 Bits per block = 10
 Blocks per file = 4
 Dataset size = 32 x 32 x 32 (32768)
+maxh = 16
+#of agg levels = maxh - (bits_per_block + log2(blocks per file))
 Level #Elements [#Block_id] (HZ_start HZ_end) (HZ_start_form HZ_end_form)
 0 1 [0] (0,0) [0]
 1 1 [0] (1,1) [0] (pow(2, level-1), pow(2, level) - 1)
@@ -35,11 +37,11 @@ Level #Elements [#Block_id] (HZ_start HZ_end) (HZ_start_form HZ_end_form)
 9 256 [0] (256, 511) [0]
 10 512 [0] (512, 1023) [0]
 11 1024 [1] (1024, 2047) [0]
-12 2048 [2, 3] (2048, 4095) [0]
+12 2048 [2, 3] (2048, 4095) [0] ----> 1
 
-13 4096 [4, 5, 6, 7] (4096, 8191) [1]
-14 8192 [8, 9, 10, 11, 12, 13, 14, 15] (8192, 16383) [2, 3]
-15 16384 [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31] (16384, 32767) [4, 5, 6, 7]
+13 4096 [4, 5, 6, 7] (4096, 8191) [1]  ----> 2
+14 8192 [8, 9, 10, 11, 12, 13, 14, 15] (8192, 16383) [2, 3]  ----> 3, 4
+15 16384 [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31] (16384, 32767) [4, 5, 6, 7]  ----> 5, 6, 7, 8
 */
 
 #include "PIDX_inc.h"
@@ -50,14 +52,14 @@ const int PIDX_default_blocks_per_file      = 256;
 
 int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from, int resolution_to, int maxh, int bits_per_block)
 {
-  int ctr = 1, j, k = 0, levels;
+  int ctr = 1, j;
 
   layout->maxh = maxh;
   layout->resolution_from = resolution_from;
   layout->resolution_to = resolution_to;
   layout->bits_per_block = bits_per_block;
 
-  levels = (resolution_to - resolution_from);
+  //levels = (resolution_to - resolution_from);
   //printf("levels = %d\n (%d %d)\n", levels, layout->resolution_from, layout->resolution_to);
 
   layout->hz_block_number_array = malloc(sizeof(int*) * maxh);
@@ -109,6 +111,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
   ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
   ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
 
+  //printf("res from to to : %d %d\n", layout->resolution_from, layout->resolution_to);
   if (layout->resolution_from <= layout->bits_per_block)
   {
     for (m = layout->resolution_from ; m <= layout->bits_per_block; m++)
@@ -148,6 +151,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
         Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
       
+        //printf("m = %d\n", m);
         if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] && ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] && ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
           layout->hz_block_number_array[m][t] = block_number;
       
@@ -326,4 +330,22 @@ void PIDX_blocks_free_layout(PIDX_block_layout layout)
   layout->hz_block_number_array = 0;
 
   return;
+}
+
+void PIDX_free_layout(PIDX_block_layout layout)
+{
+  free(layout->file_bitmap);
+  layout->file_bitmap = 0;
+
+  free(layout->block_count_per_file);
+  layout->block_count_per_file = 0;
+
+  free(layout->existing_file_index);
+  layout->existing_file_index = 0;
+
+  free(layout->inverse_existing_file_index);
+  layout->inverse_existing_file_index = 0;
+
+  free(layout->file_index);
+  layout->file_index = 0;
 }

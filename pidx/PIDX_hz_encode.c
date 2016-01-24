@@ -1192,13 +1192,10 @@ PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
     PIDX_variable var = id->idx->variable[v];
     for (p = 0; p < var->patch_group_count; p++)
     { 
-      if (id->idx->enable_agg == 2 || id->idx->enable_agg == 1)
+      for (itr = 0; itr < id->idx_d->maxh; itr++)
       {
-        for (itr = var->hz_buffer[p]->HZ_agg_from; itr < var->hz_buffer[p]->HZ_agg_to; itr++)
-        {
-          free(var->hz_buffer[p]->buffer[itr]);
-          var->hz_buffer[p]->buffer[itr] = 0;
-        }
+        free(var->hz_buffer[p]->buffer[itr]);
+        var->hz_buffer[p]->buffer[itr] = 0;
       }
     }
   }
@@ -1209,51 +1206,33 @@ PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
 PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
 {
   int itr = 0, p = 0, v = 0;
-
   for (v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = id->idx->variable[v];
     for (p = 0; p < var->patch_group_count; p++)
     {
-      if (id->idx->enable_agg == 2)
+      if (var->chunk_patch_group[p]->type == 0)
       {
-
-        if (var->chunk_patch_group[p]->type == 0)
-        {
-          free(var->hz_buffer[p]->samples_per_level);
-          var->hz_buffer[p]->samples_per_level = 0;
-        }
-
-        free(var->hz_buffer[p]->start_hz_index);
-        free(var->hz_buffer[p]->end_hz_index);
-
-        //free(var->hz_buffer[p]->missing_block_count_per_level);
-
-        if (var->hz_buffer[p]->type == 0)
-          free(var->hz_buffer[p]->buffer_index);
-
-        for (itr = 0; itr < id->idx_d->maxh; itr++)
-          free(var->hz_buffer[p]->nsamples_per_level[itr]);
-        free(var->hz_buffer[p]->nsamples_per_level);
+        free(var->hz_buffer[p]->samples_per_level);
+        var->hz_buffer[p]->samples_per_level = 0;
       }
+      free(var->hz_buffer[p]->start_hz_index);
+      free(var->hz_buffer[p]->end_hz_index);
 
-      /*
+      if (var->hz_buffer[p]->type == 0)
+        free(var->hz_buffer[p]->buffer_index);
+
       for (itr = 0; itr < id->idx_d->maxh; itr++)
-      {
-        free(var->hz_buffer[p]->missing_block_index_per_level[itr]);
-        var->hz_buffer[p]->missing_block_index_per_level[itr] = 0;
-      }
-      free(var->hz_buffer[p]->missing_block_index_per_level);
-      var->hz_buffer[p]->missing_block_index_per_level = 0;
-      */
+        free(var->hz_buffer[p]->nsamples_per_level[itr]);
+      free(var->hz_buffer[p]->nsamples_per_level);
 
       free(var->hz_buffer[p]->buffer);
       var->hz_buffer[p]->buffer = 0;
 
       free(var->hz_buffer[p]);
       var->hz_buffer[p] = 0;
-
     }
+
     free(var->hz_buffer);
     var->hz_buffer = 0;
   }

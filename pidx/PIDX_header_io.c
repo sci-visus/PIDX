@@ -20,7 +20,7 @@
 #define MAX_TEMPLATE_DEPTH 6
 
 static uint32_t* headers;
-static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, char* bin_file, int mode);
+static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode);
 
 struct PIDX_header_io_struct 
 {
@@ -203,7 +203,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 }
 
 ///
-int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
+int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout)
 {
   int i = 0, rank = 0, j, ret;
   char bin_file[PATH_MAX];
@@ -229,9 +229,9 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
 #if PIDX_HAVE_MPI
-    if (i % nprocs == rank && header_io_id->idx_d->file_bitmap[i] == 1)
+    if (i % nprocs == rank && block_layout->file_bitmap[i] == 1)
 #else
-      if (rank == 0 && header_io_id->idx_d->file_bitmap[i] == 1)
+      if (rank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
         ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, i, bin_file, PATH_MAX);
@@ -293,7 +293,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, int mode)
+PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int mode)
 {
   int i = 0, rank = 0, nprocs = 1, ret;
   char bin_file[PATH_MAX];
@@ -306,9 +306,9 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, int m
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
 #if PIDX_HAVE_MPI
-    if (i % nprocs == rank && header_io_id->idx_d->file_bitmap[i] == 1)
+    if (i % nprocs == rank && block_layout->file_bitmap[i] == 1)
 #else
-    if (rank == 0 && header_io_id->idx_d->file_bitmap[i] == 1)
+    if (rank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
     {
       ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, i, bin_file, PATH_MAX);
@@ -318,7 +318,7 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, int m
         return 1;
       }
 
-      ret = populate_meta_data(header_io_id, i, bin_file, mode);
+      ret = populate_meta_data(header_io_id, block_layout, i, bin_file, mode);
       if (ret != PIDX_success) return PIDX_err_header;
     }
   }
@@ -326,7 +326,7 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, int m
   return PIDX_success;
 }
 
-static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, char* bin_file, int mode)
+static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode)
 {
   int block_negative_offset = 0;
 
@@ -386,10 +386,12 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, int file_number, c
         if (all_scalars == 0)
         {
           for (k = 0; k < j; k++)
-            base_offset = base_offset + ((header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample) / (header_io_id->idx->variable[k]->bits_per_value / header_io_id->idx->compression_bit_rate);
+            base_offset = base_offset + ((block_layout->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample) / (header_io_id->idx->variable[k]->bits_per_value / header_io_id->idx->compression_bit_rate);
+            //base_offset = base_offset + ((header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample) / (header_io_id->idx->variable[k]->bits_per_value / header_io_id->idx->compression_bit_rate);
         }
         else
-          base_offset =  j * (header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
+          base_offset =  j * (block_layout->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
+          //base_offset =  j * (header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
 
         data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample  / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
 

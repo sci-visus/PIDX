@@ -293,7 +293,7 @@ PIDX_return_code PIDX_chunk_write(PIDX_chunk_id chunk_id)
   for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
   {
     PIDX_variable var = chunk_id->idx->variable[v];
-    int bytes_per_value = var->bits_per_value / 8;
+    //int bytes_per_value = var->bits_per_value / 8;
 
     // loop through all groups
     int g = 0;

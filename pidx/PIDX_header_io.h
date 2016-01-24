@@ -41,12 +41,12 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 
 
 ///
-PIDX_return_code PIDX_header_io_file_create(PIDX_header_io_id header_io);
+int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout);
 
 
 
 ///
-PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, int mode);
+PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int mode);
 
 
 

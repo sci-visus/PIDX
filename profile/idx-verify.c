@@ -658,6 +658,7 @@ int main(int argc, char **argv)
 
                           check_bit = check_bit && (dlhs == drhs);
 
+                          //printf("%f %f\n", dlhs, drhs);
                           if (dlhs == drhs)
                             element_count1++;
                         }

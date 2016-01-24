@@ -28,11 +28,18 @@ struct PIDX_block_layout_struct
   int maxh;
 
   int resolution_from;
-
   int resolution_to;
-
   int bits_per_block;
-  
+
+  int existing_file_count;
+  int agg_existing_file_count;
+
+  int *file_bitmap;
+  int *block_count_per_file;
+  int *existing_file_index;
+  int *inverse_existing_file_index;
+  int *file_index;
+
   /// Indices of filled blocks
   int ** hz_block_number_array;
 };
@@ -87,5 +94,7 @@ int PIDX_blocks_find_negative_offset(int blocks_per_file, int block_number, PIDX
 /// \param layout
 ///
 void PIDX_blocks_free_layout(PIDX_block_layout layout);
+
+void PIDX_free_layout(PIDX_block_layout layout);
 
 #endif

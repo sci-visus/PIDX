@@ -459,16 +459,6 @@ PIDX_return_code PIDX_set_ROI_writes(PIDX_file file);
 
 
 ///
-PIDX_return_code PIDX_set_data_write_type_as_float(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_set_data_write_type_as_double(PIDX_file file);
-
-
-
-///
 PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
 
 

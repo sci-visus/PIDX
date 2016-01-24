@@ -68,7 +68,7 @@ struct PIDX_variable_struct
   // Memory layout (before, after HZ encoding phase)
   int sim_patch_count;                                                  ///< The actual number of patches (application layout), most probably more than 1 in uintah
   Ndim_patch sim_patch[1024];                                           ///< Pointer to the patches
-  HZ_buffer* hz_buffer;                                            ///< HZ encoded buffer of the patches
+  HZ_buffer* hz_buffer;                                                 ///< HZ encoded buffer of the patches
 
   // Memory layout before aggregation 
   int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase
@@ -76,14 +76,9 @@ struct PIDX_variable_struct
   Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
 
   // Block level layout
-  PIDX_block_layout global_block_layout;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
-  int *block_count_per_file;                                             ///< The number of blocks a variable occupy within each file
-  int existing_file_count;                                          ///< The number of files that exists for each of the variables
-  int agg_existing_file_count;
-  int *existing_file_index;                                         ///< The index of the existing files for each of the variables
-  int *file_index;
-  
+
   //Compression related
   int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
 };
@@ -128,30 +123,23 @@ typedef struct idx_file_struct* idx_dataset;
 /// idx_dataset_derived_metadata
 struct idx_dataset_derived_metadata_struct
 {
-  int *file_bitmap;
   int dimension;
   int samples_per_block;
   int maxh;
   int max_file_count;
-  int agg_file_count;
+  //int agg_file_count;
   
   int fs_block_size;
   off_t start_fs_block;
   
-  //PIDX_block_layout global_block_layout;
-  //int *block_count_per_file;
-  //int existing_file_count;
-  //int *existing_file_index;
-  
-  int aggregation_factor;
-  Agg_buffer agg_buffer;
+
+  Agg_buffer **agg_buffer;
 
   int dump_agg_info;
   char agg_dump_dir_name[512];
   int dump_io_info;
   char io_dump_dir_name[512];
 
-  int no_of_aggregators;
 
   int color;
   

@@ -1307,43 +1307,9 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   double dvalue_1, dvalue_2;
   uint64_t uvalue_1, uvalue_2;
   int vol = 0;
-  int p_vol = 0;
+  //int p_vol = 0;
 
   int64_t *bounds = rst_id->idx->bounds;
-
-
-  for(v = rst_id->first_index; v <= rst_id->last_index; v++)
-  {
-    PIDX_variable var = rst_id->idx->variable[v];
-    bytes_for_datatype = var->bits_per_value / 8;
-
-    //if (rank == 0)
-    //  printf("patch_group_count = %d [%d %d %d]\n", var->patch_group_count);
-    for (m = 0; m < var->patch_group_count; m++)
-    {
-      //if (rank == 52)
-        //printf("var->rst_patch_group[%d]->count = %d [%d %d %d :: %d %d %d] = %d\n",m, var->rst_patch_group[m]->count, var->rst_patch_group[m]->reg_patch_offset[0], var->rst_patch_group[m]->reg_patch_offset[1], var->rst_patch_group[m]->reg_patch_offset[2], var->rst_patch_group[m]->reg_patch_size[0], var->rst_patch_group[m]->reg_patch_size[1], var->rst_patch_group[m]->reg_patch_size[2], var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
-
-      //printf("%d + ", var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
-      p_vol = 0;
-      p_vol = p_vol +   var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2];
-      vol = 0;
-      for(n = 0; n < var->rst_patch_group[m]->count; n++)
-      {
-        int64_t *count_ptr = var->rst_patch_group[m]->patch[n]->size;
-        int64_t *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
-        //if (rank == 52)
-        //{
-
-          //printf("[%d %d] %d %d %d :: %d %d %d\n", m, n, offset_ptr[0], offset_ptr[1], offset_ptr[2], count_ptr[0], count_ptr[1], count_ptr[2]);
-          //vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
-        //}
-      }
-      //if (rank == 52)
-      //  printf("[%d] - vol %d p_vol %d\n", rank, vol, p_vol);
-    }
-  }
-
 
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
@@ -1419,9 +1385,9 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                   if (check_bit == 0)
                   {
                     lost_element_count++;
-                    if (rank == 61)
-                      if (strcmp(var->type_name, FLOAT32) == 0)
-                        printf("[%d] [RST] [FLOATs] LOST Element : %f %f\n", rank, fvalue_1, fvalue_2);
+                    //if (rank == 61)
+                    //  if (strcmp(var->type_name, FLOAT32) == 0)
+                    //    printf("[%d] [RST] [FLOATs] LOST Element : %f %f\n", rank, fvalue_1, fvalue_2);
                     //else if (strcmp(var->type_name, UINT64) == 0)
                     //  printf("[%d] [RST] [LONGs] LOST Element : %lld %lld\n", rank, (unsigned long long)uvalue_1, (unsigned long long)uvalue_2);
                   } 
