@@ -34,7 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 1
+#define PIDX_DEBUG_OUTPUT 0
 
 static int vp = 0;
 static int hp = 0;
@@ -46,8 +46,9 @@ static double *write_init_start = 0, *write_init_end = 0;
 static double *init_start, *init_end;
 static double *rst_start, *rst_end;
 static double *hz_start, *hz_end;
-static double *agg_start, *agg_end;
-static double *io_start, *io_end;
+static double **agg_start, **agg_end;
+static double **io_per_process_start, **io_per_process_end;
+static double **io_start, **io_end;
 static double *cleanup_start, *cleanup_end;
 static double *finalize_start, *finalize_end;
 static double *chunk_start, *chunk_end;
@@ -60,7 +61,10 @@ static int caching_state = 0;
 static int time_step_caching = 0;
 static uint32_t* cached_header_copy;
 
-static void PIDX_init_timming_buffers();
+static int static_var_counter = 0;
+
+static void PIDX_init_timming_buffers1();
+static void PIDX_init_timming_buffers2(PIDX_file file);
 static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* file_name, int current_time_step);
@@ -134,6 +138,9 @@ struct PIDX_file_descriptor
 double PIDX_get_time()
 {
 #if PIDX_HAVE_MPI
+  //double time = MPI_Wtime();
+  //printf("Time = %f\n", time);
+
   return MPI_Wtime();
 #else
   struct timeval temp;
@@ -166,7 +173,7 @@ PIDX_return_code PIDX_time_step_caching_OFF()
 /// Function to create IDX file descriptor (based on flags and access)
 PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
 {
-  PIDX_init_timming_buffers();
+  PIDX_init_timming_buffers1();
   
   sim_start = PIDX_get_time();
 
@@ -361,7 +368,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// Function to get file descriptor when opening an existing IDX file
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
 {
-  PIDX_init_timming_buffers();
+  PIDX_init_timming_buffers1();
   
   sim_start = PIDX_get_time();
   
@@ -2150,7 +2157,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int start_var_in
       */
     }
   }
-  file->var_pipe_length = file->idx->variable_count - 1;
+  //file->var_pipe_length = file->idx->variable_count - 1;
 
   /*
   if (file->idx->variable_count == file->idx->variable_index_tracker)
@@ -2215,6 +2222,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   if (file->local_variable_index == file->idx->variable_count)
     return PIDX_success;
 
+  file->var_pipe_length = file->idx->variable_count - 1;
+  if (file->var_pipe_length == 0)
+    file->var_pipe_length = 1;
+
 #if PIDX_DEBUG_OUTPUT
   unsigned long long l_populate = 0, g_populate = 0;
   unsigned long long l_filec = 0, g_filec = 0;
@@ -2248,6 +2259,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
   ret = populate_idx_dataset(file);
   if (ret != PIDX_success)
     return PIDX_err_file;
+
+  PIDX_init_timming_buffers2(file);
 
 #if PIDX_DEBUG_OUTPUT
   l_populate = 1;
@@ -2464,8 +2477,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       for (j = 1 ; j < agg_io_level; j++)
       {
         file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;//(int)pow(2, (agg_io_level - j));
-        if (rank == 0)
-          printf("[%d %d] factor at layout %d = %d\n", agg_io_level, file->layout_count, j, file->idx_d->agg_buffer[i][j]->aggregation_factor);
+        //if (rank == 0)
+        //  printf("[%d %d] factor at layout %d = %d\n", agg_io_level, file->layout_count, j, file->idx_d->agg_buffer[i][j]->aggregation_factor);
       }
     }
     /*------------------------------------Create ALL the IDs [end]-------------------------------------------*/
@@ -2584,7 +2597,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       if (ret != PIDX_success)
         return PIDX_err_rst;
     }
-
     rst_end[vp] = PIDX_get_time();
     /*--------------------------------------------RST [end]---------------------------------------------------*/
 
@@ -2705,7 +2717,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
 
     /*----------------------------------------------Agg [staart]-----------------------------------------------*/
-    agg_start[vp] = PIDX_get_time();
+
 
     /* Creating the buffers required for Aggregation */
     for (i = 0 ; i < (end_index - start_index + 1) ; i++)
@@ -2730,28 +2742,40 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /* Perform Aggregation */
     if (file->debug_do_agg == 1)
     {
+      static_var_counter = 0;
       for(i = 0 ; i < (end_index - start_index + 1) ; i++)
       {
         for(j = 0 ; j < agg_io_level; j++)
         {
+           agg_start[static_var_counter][j] = PIDX_get_time();
+
            ret = PIDX_local_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
           //ret = PIDX_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
           if (ret != PIDX_success)
             return PIDX_err_agg;
+
+          agg_end[static_var_counter][j] = PIDX_get_time();
         }
+        static_var_counter++;
       }
     }
 
     if (file->debug_do_io == 1)
     {
+      static_var_counter = 0;
       for(i = 0 ; i < (end_index - start_index + 1) ; i++)
       {
         for(j = agg_io_level; j < file->layout_count; j++)
         {
+          io_per_process_start[static_var_counter][j] = PIDX_get_time();
+
           ret = PIDX_io_per_process_write(file->tio_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
           if (ret != PIDX_success)
             return PIDX_err_io;
+
+          io_per_process_end[static_var_counter][j] = PIDX_get_time();
         }
+        static_var_counter++;
       }
     }
 
@@ -2767,14 +2791,13 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_hz;
 
-    agg_end[vp] = PIDX_get_time();
     /*--------------------------------------------Agg [end]--------------------------------------------------*/
 
 
 #if 1
 
     /*--------------------------------------------IO [start]--------------------------------------------------*/
-    io_start[vp] = PIDX_get_time();
+
 
     /* Initialization ONLY ONCE for all TIME STEPS (caching across time) */
     /*
@@ -2799,14 +2822,21 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
           PIDX_io_cached_data(cached_header_copy);
       }
 
+      static_var_counter = 0;
       for(i = 0 ; i < (end_index - start_index + 1) ; i++)
       {
         for(j = 0 ; j < agg_io_level; j++)
         {
+          io_start[static_var_counter][j] = PIDX_get_time();
+
           ret = PIDX_io_aggregated_write(file->tio_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
           if (ret != PIDX_success)
             return PIDX_err_io;
+
+          io_end[static_var_counter][j] = PIDX_get_time();
+
         }
+        static_var_counter++;
       }
     }
 
@@ -2818,6 +2848,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 #endif
 
     /* Destroy buffers allocated during aggregation phase */
+    static_var_counter = 0;
     for(i = 0 ; i < (end_index - start_index + 1) ; i++)
     {
       for(j = 0 ; j < agg_io_level; j++)
@@ -2826,9 +2857,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         if (ret != PIDX_success)
           return PIDX_err_agg;
       }
+      static_var_counter++;
     }
 
-    io_end[vp] = PIDX_get_time();
+
     /*----------------------------------------------IO [end]--------------------------------------------------*/
 
 
@@ -3876,22 +3908,50 @@ PIDX_return_code PIDX_close(PIDX_file file)
       for (var = 0; var < hp; var++)
         fprintf(stdout, "File Create time (+ header IO) %f\n", (write_init_end[var] - write_init_start[var]));
       
-      for (var = 0; var < vp; var++)
+
+      double total_time_ai = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
+      int p = 0;
+      for (var = 0; var < file->idx->variable_count; var++)
       {
-        fprintf(stdout, "------------------------------------------------VG %d (START)----------------------------------------------\n", var);
-        //fprintf(stdout, "Init time  [RST + BRST + HZ + AGG + IO] %f \n", (init_end[var] - init_start[var]));
-        
-        fprintf(stdout, "Write time [RST + BRST + HZ + AGG + IO] %f + %f + %f + %f + %f = %f\n", (rst_end[var] - rst_start[var]), (chunk_end[var] - chunk_start[var]), (hz_end[var] - hz_start[var]), (agg_end[var] - agg_start[var]), (io_end[var] - io_start[var]), (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]) + (agg_end[var] - agg_start[var]) + (io_end[var] - io_start[var]));
-        
-        //fprintf(stdout, "Block Restructuring time %f = %f + %f\n", (chunk_end[var] - chunk_start[var]), (block_2[var] - block_1[var]), (block_3[var] - block_2[var]));
-        
-        //fprintf(stdout, "Agg time %f = %f + %f + %f + %f + %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
-        
-        //fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
-        fprintf(stdout, "-------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
+        for (p = 0; p < file->layout_count; p++)
+        {
+          //fprintf(stdout, "------------------------------------------------VG %d (START)----------------------------------------------\n", var);
+
+          fprintf(stdout, "[%d %d] Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f = %f\n", var, p, (agg_end[var][p] - agg_start[var][p]), (io_end[var][p] - io_start[var][p]), (io_per_process_end[var][p] - io_per_process_start[var][p]), (agg_end[var][p] - agg_start[var][p]) + (io_end[var][p] - io_start[var][p]) + (io_per_process_end[var][p] - io_per_process_start[var][p]));
+
+          total_time_a = total_time_a + (agg_end[var][p] - agg_start[var][p]);
+          total_time_i = total_time_i + (io_end[var][p] - io_start[var][p]);
+          total_time_pi = total_time_pi + (io_per_process_end[var][p] - io_per_process_start[var][p]);
+
+          //fprintf(stdout, "Agg time + I/O time: %f + %f = %f\n", total_time_a, total_time_i, total_time_ai);
+
+          //fprintf(stdout, "-------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
+        }
       }
-      
-      //
+      total_time_ai = total_time_a + total_time_i + total_time_pi;
+      fprintf(stdout, "Agg time + AGG I/O time + Per-Process I/O time : %f + %f + %f = %f\n", total_time_a, total_time_i, total_time_pi, total_time_ai);
+
+      int timer_count = 0;
+      timer_count = file->idx->variable_count / (file->var_pipe_length + 1);
+      if (file->idx->variable_count % (file->var_pipe_length + 1) != 0)
+        timer_count = timer_count + 1;
+
+
+      double total_time_rch = 0;
+      for (var = 0; var < timer_count; var++)
+      {
+        //fprintf(stdout, "------------------------------------------------VG %d (START)----------------------------------------------\n", var);
+
+        fprintf(stdout, "[%d] RST + BRST + HZ = %f + %f + %f = %f\n", var, (rst_end[var] - rst_start[var]), (chunk_end[var] - chunk_start[var]), (hz_end[var] - hz_start[var]), (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]));
+        total_time_rch = total_time_rch + (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]);
+        
+        //fprintf(stdout, "-------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
+      }
+
+      fprintf(stdout, "Total Time = %f [%f + %f + %f + %f] [%f]\n", total_time_ai + total_time_rch + (file_create_time - sim_start) + (populate_idx_end_time - populate_idx_start_time), (populate_idx_end_time - populate_idx_start_time), (file_create_time - sim_start), total_time_rch, total_time_ai, max_time);
+
+
+
       //double total_agg_time = 0, all_time = 0;
       //for (p = 0; p < file->idx->variable[0]->patch_group_count; p++)
       //  for (var = 0; var < file->idx->variable_count; var++)
@@ -3979,31 +4039,43 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d->agg_level_end);
   */
 
+  vp = 0;
+  hp = 0;
+
+  for (i = 0; i < file->idx->variable_count; i++)
+  {
+    free(agg_start[i]);
+    free(agg_end[i]);
+
+    free(io_start[i]);
+    free(io_end[i]);
+
+    free(io_per_process_start[i]);
+    free(io_per_process_end[i]);
+  }
+
 #if 1
   for (i = 0; i < 1024; i++)
   {
     free(file->idx->variable[i]);
     file->idx->variable[i] = 0;
   }
-  
+
   file->idx->variable_count = 0;
-  
+
   //free(file->idx->bounds);        file->idx->bounds = 0;
   free(file->idx);                  file->idx = 0;
   free(file->idx_d);                file->idx_d = 0;
 #endif
-  
+
 #if PIDX_HAVE_MPI
   MPI_Comm_free(&(file->comm));
   if (file->idx_count[0] * file->idx_count[1] * file->idx_count[2] != 1)
   //if (file->access->topology_aware_io != 0)
     MPI_Comm_free(&(file->global_comm));
 #endif
-  
+
   free(file);
-  
-  vp = 0;
-  hp = 0;
   
   free(init_start);                     init_start        = 0;
   free(init_end);                       init_end          = 0;
@@ -4272,32 +4344,59 @@ int dump_meta_data(PIDX_variable variable
   return PIDX_success;
 }
 
-static void PIDX_init_timming_buffers()
+static void PIDX_init_timming_buffers2(PIDX_file file)
+{
+  int timer_count = file->idx->variable_count / (file->var_pipe_length + 1);
+  if (file->idx->variable_count % (file->var_pipe_length + 1) != 0)
+    timer_count = timer_count + 1;
+
+  rst_start = malloc (sizeof(double) * timer_count);                     memset(rst_start, 0, sizeof(double) * timer_count);
+  rst_end = malloc (sizeof(double) * timer_count);                       memset(rst_end, 0, sizeof(double) * timer_count);
+  hz_start = malloc (sizeof(double) * timer_count);                      memset(hz_start, 0, sizeof(double) * timer_count);
+  hz_end = malloc (sizeof(double) * timer_count);                        memset(hz_end, 0, sizeof(double) * timer_count);
+
+  cleanup_start = malloc (sizeof(double) * timer_count);                 memset(cleanup_start, 0, sizeof(double) * timer_count);
+  cleanup_end = malloc (sizeof(double) * timer_count);                   memset(cleanup_end, 0, sizeof(double) * timer_count);
+  finalize_start = malloc (sizeof(double) * timer_count);                memset(finalize_start, 0, sizeof(double) * timer_count);
+  finalize_end = malloc (sizeof(double) * timer_count);                  memset(finalize_end, 0, sizeof(double) * timer_count);
+
+  buffer_start = malloc (sizeof(double) * timer_count);                  memset(buffer_start, 0, sizeof(double) * timer_count);
+  buffer_end = malloc (sizeof(double) * timer_count);                    memset(buffer_end, 0, sizeof(double) * timer_count);
+
+  chunk_start =  malloc (sizeof(double) * timer_count);                  memset(chunk_start, 0, sizeof(double) * timer_count);
+  chunk_end =  malloc (sizeof(double) * timer_count);                    memset(chunk_end, 0, sizeof(double) * timer_count);
+  compression_start =  malloc (sizeof(double) * timer_count);            memset(compression_start, 0, sizeof(double) * timer_count);
+  compression_end =  malloc (sizeof(double) * timer_count);              memset(compression_end, 0, sizeof(double) * timer_count);
+
+  agg_start = malloc (sizeof(double*) * file->idx->variable_count);       memset(agg_start, 0, sizeof(double*) * file->idx->variable_count);
+  agg_end = malloc (sizeof(double*) * file->idx->variable_count);         memset(agg_end, 0, sizeof(double*) * file->idx->variable_count);
+  io_start = malloc (sizeof(double*) * file->idx->variable_count);        memset(io_start, 0, sizeof(double*) * file->idx->variable_count);
+  io_end = malloc (sizeof(double*) * file->idx->variable_count);          memset(io_end, 0, sizeof(double*) * file->idx->variable_count);
+  io_per_process_start = malloc (sizeof(double*) * file->idx->variable_count);          memset(io_per_process_start, 0, sizeof(double*) * file->idx->variable_count);
+  io_per_process_end = malloc (sizeof(double*) * file->idx->variable_count);          memset(io_per_process_end, 0, sizeof(double*) * file->idx->variable_count);
+
+  int i = 0;
+  for (i = 0; i < file->idx->variable_count; i++)
+  {
+    agg_start[i] = malloc (sizeof(double) * file->layout_count);       memset(agg_start[i], 0, sizeof(double) * file->layout_count);
+    agg_end[i] = malloc (sizeof(double) * file->layout_count);         memset(agg_end[i], 0, sizeof(double) * file->layout_count);
+    io_start[i] = malloc (sizeof(double) * file->layout_count);        memset(io_start[i], 0, sizeof(double) * file->layout_count);
+    io_end[i] = malloc (sizeof(double) * file->layout_count);          memset(io_end[i], 0, sizeof(double) * file->layout_count);
+
+    io_per_process_start[i] = malloc (sizeof(double) * file->layout_count);        memset(io_per_process_start[i], 0, sizeof(double) * file->layout_count);
+    io_per_process_end[i] = malloc (sizeof(double) * file->layout_count);          memset(io_per_process_end[i], 0, sizeof(double) * file->layout_count);
+  }
+}
+
+
+static void PIDX_init_timming_buffers1()
 {
   init_start = malloc (sizeof(double) * 160);                    memset(init_start, 0, sizeof(double) * 160);
   init_end = malloc (sizeof(double) * 160);                      memset(init_end, 0, sizeof(double) * 160);
   write_init_start = malloc (sizeof(double) * 160);              memset(write_init_start, 0, sizeof(double) * 160);
   write_init_end = malloc (sizeof(double) * 160);                memset(write_init_end, 0, sizeof(double) * 160);
-  rst_start = malloc (sizeof(double) * 160);                     memset(rst_start, 0, sizeof(double) * 160);
-  rst_end = malloc (sizeof(double) * 160);                       memset(rst_end, 0, sizeof(double) * 160);
-  hz_start = malloc (sizeof(double) * 160);                      memset(hz_start, 0, sizeof(double) * 160);
-  hz_end = malloc (sizeof(double) * 160);                        memset(hz_end, 0, sizeof(double) * 160);
-  agg_start = malloc (sizeof(double) * 160);                     memset(agg_start, 0, sizeof(double) * 160);
-  agg_end = malloc (sizeof(double) * 160);                       memset(agg_end, 0, sizeof(double) * 160);
-  io_start = malloc (sizeof(double) * 160);                      memset(io_start, 0, sizeof(double) * 160);
-  io_end = malloc (sizeof(double) * 160);                        memset(io_end, 0, sizeof(double) * 160);
-  cleanup_start = malloc (sizeof(double) * 160);                 memset(cleanup_start, 0, sizeof(double) * 160);
-  cleanup_end = malloc (sizeof(double) * 160);                   memset(cleanup_end, 0, sizeof(double) * 160);
-  finalize_start = malloc (sizeof(double) * 160);                memset(finalize_start, 0, sizeof(double) * 160);
-  finalize_end = malloc (sizeof(double) * 160);                  memset(finalize_end, 0, sizeof(double) * 160);
 
-  buffer_start = malloc (sizeof(double) * 160);                  memset(buffer_start, 0, sizeof(double) * 160);
-  buffer_end = malloc (sizeof(double) * 160);                    memset(buffer_end, 0, sizeof(double) * 160);
 
-  chunk_start =  malloc (sizeof(double) * 160);              memset(chunk_start, 0, sizeof(double) * 160);
-  chunk_end =  malloc (sizeof(double) * 160);                memset(chunk_end, 0, sizeof(double) * 160);
-  compression_start =  malloc (sizeof(double) * 160);            memset(compression_start, 0, sizeof(double) * 160);
-  compression_end =  malloc (sizeof(double) * 160);              memset(compression_end, 0, sizeof(double) * 160);
 
   block_1 = malloc (sizeof(double) * 160);                       memset(block_1, 0, sizeof(double) * 160);
   block_2 = malloc (sizeof(double) * 160);                       memset(block_2, 0, sizeof(double) * 160);
