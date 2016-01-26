@@ -446,6 +446,9 @@ int main(int argc, char **argv)
 
       ret = PIDX_append_and_write_variable(file, variable[var]);
       if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
+
+      //ret = PIDX_flush(file);
+      //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
     }
 
     ret = PIDX_close(file);

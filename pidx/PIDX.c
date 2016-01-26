@@ -2428,7 +2428,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     file->tio_id = malloc(sizeof(*(file->tio_id)) * (end_index - start_index + 1));
     memset(file->tio_id, 0, sizeof(*(file->tio_id)) * (end_index - start_index + 1));
 
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    //printf("COUNT [%d %d] : %d\n", start_index, end_index, (end_index - start_index + 1));
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       file->tagg_id[i] = malloc(sizeof(*(file->tagg_id[i])) * file->layout_count);
       memset(file->tagg_id[i], 0, sizeof(*(file->tagg_id[i])) * file->layout_count);
@@ -2437,7 +2438,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       memset(file->tio_id[i], 0, sizeof(*(file->tio_id[i])) * file->layout_count);
     }
 
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       for(j = 0 ; j < file->layout_count; j++)
       {
@@ -2448,7 +2449,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     file->idx_d->agg_buffer = malloc(sizeof(*(file->idx_d->agg_buffer)) * (end_index - start_index + 1));
     memset(file->idx_d->agg_buffer, 0, sizeof(*(file->idx_d->agg_buffer)) * (end_index - start_index + 1));
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       file->idx_d->agg_buffer[i] = malloc(sizeof(*(file->idx_d->agg_buffer[i])) * agg_io_level);
       memset(file->idx_d->agg_buffer[i], 0, sizeof(*(file->idx_d->agg_buffer[i])) * agg_io_level);
@@ -2509,7 +2510,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /* Attaching the communicator to the aggregation phase */
     /* Attaching the communicator to the I/O phase */
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       for(j = 0 ; j < file->layout_count; j++)
       {
@@ -2541,7 +2542,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     //if (file->small_agg_comm == 1)
     //  PIDX_create_local_aggregation_comm(file->agg_id);
 
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       for(j = 0 ; j < agg_io_level; j++)
       {
@@ -2720,7 +2721,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
 
     /* Creating the buffers required for Aggregation */
-    for (i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       for (j = 0 ; j < agg_io_level; j++)
       {
@@ -2743,7 +2744,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (file->debug_do_agg == 1)
     {
       static_var_counter = 0;
-      for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+      for(i = start_index ; i < (end_index + 1) ; i++)
       {
         for(j = 0 ; j < agg_io_level; j++)
         {
@@ -2763,7 +2764,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (file->debug_do_io == 1)
     {
       static_var_counter = 0;
-      for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+      for(i = start_index ; i < (end_index + 1) ; i++)
       {
         for(j = agg_io_level; j < file->layout_count; j++)
         {
@@ -2823,7 +2824,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       }
 
       static_var_counter = 0;
-      for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+      for(i = start_index ; i < (end_index + 1) ; i++)
       {
         for(j = 0 ; j < agg_io_level; j++)
         {
@@ -2849,7 +2850,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /* Destroy buffers allocated during aggregation phase */
     static_var_counter = 0;
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       for(j = 0 ; j < agg_io_level; j++)
       {
@@ -2864,7 +2865,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /*----------------------------------------------IO [end]--------------------------------------------------*/
 
 
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       for(j = 0 ; j < agg_io_level; j++)
       {
@@ -2878,7 +2879,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     file->idx_d->agg_buffer = 0;
 
 
-    for (i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       for (j = 0 ; j < agg_io_level; j++)
       {
@@ -2908,16 +2909,16 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     //  PIDX_destroy_local_aggregation_comm(file->agg_id);
 
     /* Deleting the I/O ID */
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
       for(j = 0 ; j < file->layout_count; j++)
         PIDX_io_finalize(file->tio_id[i][j]);
 
     /* Deleting the aggregation ID */
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
       for(j = 0 ; j < file->layout_count; j++)
         PIDX_agg_finalize(file->tagg_id[i][j]);
 
-    for(i = 0 ; i < (end_index - start_index + 1) ; i++)
+    for(i = start_index ; i < (end_index + 1) ; i++)
     {
       free(file->tagg_id[i]);
       file->tagg_id[i] = 0;
@@ -4008,11 +4009,11 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
         fprintf(stdout, "Init time  [RST + BRST + HZ + AGG + IO] %f\n", (init_end[var] - init_start[var]));
         
-        fprintf(stdout, "Write time [RST + BRST + HZ + AGG + IO] %f + %f + %f + %f + %f = %f\n", (rst_end[var] - rst_start[var]), (chunk_end[var] - chunk_start[var]), (hz_end[var] - hz_start[var]), (agg_end[var] - agg_start[var]), (io_end[var] - io_start[var]), (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]) + (agg_end[var] - agg_start[var]) + (io_end[var] - io_start[var]));
+        //fprintf(stdout, "Write time [RST + BRST + HZ + AGG + IO] %f + %f + %f + %f + %f = %f\n", (rst_end[var] - rst_start[var]), (chunk_end[var] - chunk_start[var]), (hz_end[var] - hz_start[var]), (agg_end[var] - agg_start[var]), (io_end[var] - io_start[var]), (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]) + (agg_end[var] - agg_start[var]) + (io_end[var] - io_start[var]));
         
         fprintf(stdout, "Block Restructuring time %f = %f + %f\n", (chunk_end[var] - chunk_start[var]), (block_2[var] - block_1[var]), (block_3[var] - block_2[var]));
         
-        fprintf(stdout, "Agg time %f = %f + %f + %f + %f = %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
+        //fprintf(stdout, "Agg time %f = %f + %f + %f + %f = %f\n", (agg_end[var] - agg_start[var]), (agg_2[var] - agg_1[var]), (agg_3[var] - agg_2[var]), (agg_4[var] - agg_3[var]), (agg_5[var] - agg_4[var]), (agg_6[var] - agg_5[var]));
         
         fprintf(stdout, "Cleanup time %f\n", cleanup_end[var] - cleanup_start[var]);
         fprintf(stdout, "--------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
