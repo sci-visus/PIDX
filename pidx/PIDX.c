@@ -2750,7 +2750,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         {
            agg_start[static_var_counter][j] = PIDX_get_time();
 
-           ret = PIDX_local_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
+           ret = PIDX_local_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j]);
           //ret = PIDX_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
           if (ret != PIDX_success)
             return PIDX_err_agg;

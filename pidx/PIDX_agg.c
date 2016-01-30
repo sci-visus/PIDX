@@ -30,6 +30,7 @@ static FILE* agg_dump_fp;
 //static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id, int mode);
 static PIDX_return_code aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout,  int MODE);
 static PIDX_return_code local_aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE);
+static PIDX_return_code local_aggregate_write_read_layout_zero(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, MPI_Datatype, int MODE);
 
 struct PIDX_agg_struct
 {
@@ -374,6 +375,63 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id, Agg_buffer agg_bu
     fclose(agg_dump_fp);
   }
 #endif
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code layout_zero(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int mode)
+{
+
+  int rank = 0;
+#if PIDX_HAVE_MPI
+  MPI_Comm_rank(agg_id->comm, &rank);
+#endif
+  int v = 0, p = 0, i = 0;
+  int total_count = 0, count = 0, bytes_for_datatype = 0, index = 0;
+  int ret = 0;
+  int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+
+  for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+  {
+    PIDX_variable var = agg_id->idx->variable[v];
+    total_count = 0;
+    for (p = 0; p < var->patch_group_count; p++)
+    {
+      bytes_for_datatype = ((var->bits_per_value / 8) * chunk_size * var->values_per_sample) / (var->bits_per_value / agg_id->idx->compression_bit_rate);
+      HZ_buffer hz_buf = var->hz_buffer[p];
+
+      MPI_Datatype chunk_data_type;
+      MPI_Type_indexed( (block_layout->resolution_to - block_layout->resolution_from), hz_buf->lower_hz_count, hz_buf->lower_hz_disp, MPI_DOUBLE, &chunk_data_type);
+      MPI_Type_commit(&chunk_data_type);
+
+      index = 0;
+      count = 0;
+      total_count = 0;
+      for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
+      {
+        if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
+        {
+          count =  hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
+          memcpy(hz_buf->lower_hz_buffer + index * bytes_for_datatype, hz_buf->buffer[i],  count * bytes_for_datatype);
+          total_count = total_count + count;
+
+          index = total_count;
+        }
+      }
+
+#if !SIMULATE_IO
+      ret = local_aggregate_write_read_layout_zero(agg_id, v, /*hz_buf->start_hz_index[i]*/0, total_count, agg_id->idx->variable[v]->hz_buffer[p]->lower_hz_buffer, 0, agg_buffer, block_layout, chunk_data_type, mode);
+#else
+      ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode);
+#endif
+      if (ret != PIDX_success)
+      {
+        fprintf(stderr, " Error in local_aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_agg;
+      }
+    }
+  }
 
   return PIDX_success;
 }
@@ -1092,6 +1150,121 @@ static PIDX_return_code aggregate_write_read(PIDX_agg_id agg_id, int variable_in
 
   return PIDX_success;
 }
+
+static PIDX_return_code local_aggregate_write_read_layout_zero(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, MPI_Datatype chunk_type, int MODE)
+{
+  int rank = 0, itr;// nrank = 0;
+  int bytes_per_datatype;
+  int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, values_per_sample;
+  int target_rank = 0;
+  int64_t start_agg_index = 0, end_agg_index = 0, target_disp = 0, target_count = 0, hz_start = 0, samples_in_file = 0;
+  int64_t samples_per_file = (int64_t) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
+  //MPI_Aint target_disp_address;
+
+  int64_t total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+
+#if PIDX_HAVE_MPI
+  int ret;
+  MPI_Comm_rank(agg_id->comm, &rank);
+  //MPI_Comm_rank(agg_id->global_comm, &nrank);
+#endif
+
+  values_per_sample = agg_id->idx->variable[variable_index]->values_per_sample; //number of samples for variable j
+
+  //starting HZ index for the data buffer at level "level" and for regular patch number "patch"
+  hz_start = hz_start_index;
+
+  //file number to which the first element of the buffer belongs to
+  file_no = hz_start / samples_per_file;
+
+  //block number for the first element of the buffer
+  block_no = hz_start / agg_id->idx_d->samples_per_block;
+
+  //number of empty blocks befor block "block_no" in the file "file_no"
+  //negative_block_offset = PIDX_blocks_find_negative_offset(agg_id->idx->blocks_per_file, block_no, agg_id->idx->variable[agg_id->init_index]->global_block_layout);
+  negative_block_offset = PIDX_blocks_find_negative_offset(agg_id->idx->blocks_per_file, block_no, block_layout);
+  if (negative_block_offset < 0)
+    return PIDX_err_agg;
+
+  //number of samples in file "file_no"
+  //samples_in_file = agg_id->idx->variable[agg_id->init_index]->block_count_per_file[file_no] * agg_id->idx_d->samples_per_block;
+  samples_in_file = block_layout->block_count_per_file[file_no] * agg_id->idx_d->samples_per_block;
+  if (samples_in_file > samples_per_file)
+    return PIDX_err_agg;
+
+  //Calculating the hz index of "hz_start" relative to the file to which it belongs also taking into account empty blocks in file
+  //assert(hz_start >= (samples_per_file * file_no) + (negative_block_offset * agg_id->idx_d->samples_per_block));
+
+
+  target_disp = ((hz_start - ((samples_per_file * file_no) + (negative_block_offset * agg_id->idx_d->samples_per_block))) * values_per_sample)
+    %
+    (samples_in_file * values_per_sample);
+  if (target_disp < 0)
+    return PIDX_err_agg;
+
+
+  sample_index = target_disp / (samples_in_file / agg_buffer->aggregation_factor);
+  if (sample_index >= agg_id->idx->variable[variable_index]->values_per_sample * agg_buffer->aggregation_factor)
+    return PIDX_err_agg;
+
+  target_disp = target_disp % (samples_in_file / agg_buffer->aggregation_factor);
+
+  target_rank = agg_id->rank_holder2[block_layout->inverse_existing_file_index[file_no]][variable_index - agg_id->first_index][sample_index];
+
+  target_count = hz_count * values_per_sample;
+
+  bytes_per_datatype = ((agg_id->idx->variable[variable_index]->bits_per_value / 8) * total_chunk_size) / (agg_id->idx->variable[variable_index]->bits_per_value / agg_id->idx->compression_bit_rate);
+
+#if !SIMULATE_IO
+  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * values_per_sample;
+#endif
+
+  start_agg_index = target_disp / (int64_t) (samples_in_file / agg_buffer->aggregation_factor);
+  end_agg_index = ((target_disp + target_count - 1) / (int64_t) (samples_in_file / agg_buffer->aggregation_factor));
+  //assert(start_agg_index >= 0 && end_agg_index >= 0 && end_agg_index >= start_agg_index);
+
+#if PIDX_HAVE_MPI
+#ifndef PIDX_ACTIVE_TARGET
+  MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , agg_id->win);
+#endif
+  //target_disp_address = target_disp;
+  if(MODE == PIDX_WRITE)
+  {
+#ifdef PIDX_DUMP_AGG
+    if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
+    {
+      fprintf(agg_dump_fp, "[D] Target Rank %d Count %lld Local Disp %d Target Disp %lld\n", target_rank,  (long long)hz_count, 0, (long long)target_disp);
+      fflush(agg_dump_fp);
+    }
+#endif
+
+#if !SIMULATE_IO
+    ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, 1, chunk_type, agg_id->win);
+    if(ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_agg;
+    }
+#endif
+  }
+  else
+  {
+    ret = MPI_Get(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, 1, chunk_type, agg_id->win);
+    if(ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_agg;
+    }
+  }
+#ifndef PIDX_ACTIVE_TARGET
+  MPI_Win_unlock(target_rank, agg_id->win);
+#endif
+#endif
+
+
+  return PIDX_success;
+}
+
 
 static PIDX_return_code local_aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE)
 {
@@ -1934,7 +2107,7 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_
 }
 
 
-PIDX_return_code PIDX_local_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout)
+PIDX_return_code PIDX_local_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout)
 {
   int ret;
   ret = create_window(agg_id, agg_buffer);
@@ -1944,6 +2117,47 @@ PIDX_return_code PIDX_local_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer,
     return PIDX_err_agg;
   }
 
+  if (layout_id == 0)
+  {
+    int p = 0, i = 0, samples_in_file = 0, bytes_for_datatype = 0, v = 0;
+    int64_t samples_per_file = (int64_t) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
+    int count = 0, total_count = 0, file_no = 0;
+    int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+    for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+    {
+      PIDX_variable var = agg_id->idx->variable[v];
+      total_count = 0;
+      for (p = 0; p < var->patch_group_count; p++)
+      {
+        bytes_for_datatype = ((var->bits_per_value / 8) * chunk_size * var->values_per_sample) / (var->bits_per_value / agg_id->idx->compression_bit_rate);
+        HZ_buffer hz_buf = var->hz_buffer[p];
+
+        hz_buf->lower_hz_disp = malloc(sizeof(int) * (block_layout->resolution_to - block_layout->resolution_from));
+        memset(hz_buf->lower_hz_disp, 0, sizeof(int) * (block_layout->resolution_to - block_layout->resolution_from));
+
+        hz_buf->lower_hz_count = malloc(sizeof(int) * (block_layout->resolution_to - block_layout->resolution_from));
+        memset(hz_buf->lower_hz_count, 0, sizeof(int) * (block_layout->resolution_to - block_layout->resolution_from));
+
+        for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
+        {
+          if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
+          {
+            count =  hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
+            total_count = total_count + count;
+
+            file_no = hz_buf->start_hz_index[i] / samples_per_file;
+            samples_in_file = block_layout->block_count_per_file[file_no] * agg_id->idx_d->samples_per_block;
+
+            hz_buf->lower_hz_disp[i] = (hz_buf->start_hz_index[i] - samples_per_file * file_no) % samples_in_file;
+            hz_buf->lower_hz_count[i] = count;
+          }
+        }
+
+        hz_buf->lower_hz_buffer = malloc(bytes_for_datatype * total_count);
+        memset(hz_buf->lower_hz_buffer, 0, bytes_for_datatype * total_count);
+      }
+    }
+  }
 
 #if !SIMULATE_IO
 #ifdef PIDX_ACTIVE_TARGET
@@ -1959,11 +2173,23 @@ PIDX_return_code PIDX_local_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer,
   //printf("Final Block Bitmap\n");
   //PIDX_blocks_print_layout(block_layout);
 
-  ret = local_one_sided_data_com(agg_id, agg_buffer, block_layout, PIDX_WRITE);
-  if (ret != PIDX_success)
+  if (layout_id == 0)
   {
-    fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
-    return PIDX_err_agg;
+    ret = layout_zero(agg_id, agg_buffer, block_layout, PIDX_WRITE);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
+  }
+  else
+  {
+    ret = local_one_sided_data_com(agg_id, agg_buffer, block_layout, PIDX_WRITE);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
   }
 
 #if !SIMULATE_IO
@@ -1989,6 +2215,27 @@ PIDX_return_code PIDX_local_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer,
   }
 #endif
 #endif
+
+  if (layout_id == 0)
+  {
+    int p = 0, v = 0, i = 0;
+    for(v = agg_id->first_index; v <= agg_id->last_index; v++)
+    {
+      PIDX_variable var = agg_id->idx->variable[v];
+      for (p = 0; p < var->patch_group_count; p++)
+      {
+        HZ_buffer hz_buf = var->hz_buffer[p];
+        free(hz_buf->lower_hz_disp);
+        hz_buf->lower_hz_disp = 0;
+
+        free(hz_buf->lower_hz_count);
+        hz_buf->lower_hz_count = 0;
+
+        free(hz_buf->lower_hz_buffer);
+        hz_buf->lower_hz_buffer = 0;
+      }
+    }
+  }
 
   return PIDX_success;
 }
