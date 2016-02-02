@@ -412,7 +412,7 @@ int main(int argc, char **argv)
     PIDX_set_block_size(file, 15);
     //PIDX_set_aggregation_factor(file, 2);
 
-    //PIDX_dump_agg_info(file, 1);
+    PIDX_dump_agg_info(file, 1);
 
 
     //PIDX_debug_disable_restructuring(file);

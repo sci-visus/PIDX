@@ -4397,8 +4397,6 @@ static void PIDX_init_timming_buffers1()
   write_init_start = malloc (sizeof(double) * 160);              memset(write_init_start, 0, sizeof(double) * 160);
   write_init_end = malloc (sizeof(double) * 160);                memset(write_init_end, 0, sizeof(double) * 160);
 
-
-
   block_1 = malloc (sizeof(double) * 160);                       memset(block_1, 0, sizeof(double) * 160);
   block_2 = malloc (sizeof(double) * 160);                       memset(block_2, 0, sizeof(double) * 160);
   block_3 = malloc (sizeof(double) * 160);                       memset(block_3, 0, sizeof(double) * 160);
