@@ -1,3 +1,6 @@
+#include <unistd.h>
+#include <stdarg.h>
+#include <stdint.h>
 #include <PIDX.h>
 
 #if PIDX_HAVE_MPI
@@ -390,7 +393,7 @@ int main(int argc, char** argv){
         {
             printf("time %d\n", t);
         }
-        sleep(1);
+        //sleep(1);
         
         for(int varidx=0; varidx < checkpoint_variable_count; varidx++)
             delete [] checkpoint_data[varidx];
