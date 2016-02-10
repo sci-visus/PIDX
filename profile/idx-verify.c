@@ -215,24 +215,33 @@ int main(int argc, char **argv)
         pch1 = strtok(line, " *+");
         while (pch1 != NULL)
         {
-          //printf("");
+          printf("count %d\n", count);
           if (count == 0)
             strcpy(variable_name[variable_count], strdup(pch1));
 
           if (count == 1)
+          {
             values_per_sample[variable_count] = atoi(pch1);
+            printf("values_per_sample[variable_count] = %d\n", values_per_sample[variable_count]);
+          }
 
           if (count == 2)
           {
             len = strlen(pch1) - 1;
             if (pch1[len] == '\n')
               pch1[len] = 0;
+            printf("VAR pch1 XXXXXXXXXX = %s\n", pch1);
             if (strcmp(pch1, "float64") == 0)
               strcpy (variable_type[variable_count], "float64");
             else if (strcmp(pch1, "uint64") == 0)
               strcpy (variable_type[variable_count], "uint64");
             else if (strcmp(pch1, "float32") == 0)
               strcpy (variable_type[variable_count], "float32");
+            else if (strcmp(pch1, "3*float64") == 0)
+            {
+              strcpy (variable_type[variable_count], "3*float64");
+              printf("VAR = %s\n", variable_type[variable_count]);
+            }
             else
             {
               fprintf(stderr, "Currently supporting only float64 types\n");
@@ -650,7 +659,7 @@ int main(int argc, char **argv)
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
 
-                          drhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          drhs = var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0 || compression_type == 1)
                             dlhs = swap(swap(double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
                           else
@@ -658,7 +667,7 @@ int main(int argc, char **argv)
 
                           check_bit = check_bit && (dlhs == drhs);
 
-                          //printf("%f %f\n", dlhs, drhs);
+                          //printf("[%d] %f %f\n", s, dlhs, drhs);
                           if (dlhs == drhs)
                             element_count1++;
                         }

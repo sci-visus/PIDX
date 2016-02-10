@@ -80,6 +80,10 @@ PIDX_return_code PIDX_rst_meta_data_destroy(PIDX_rst_id rst_id);
 PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id);
 
 
+
+PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id);
+
+
 ///
 /// \brief PIDX_rst_write Actually do the restructuring, using pre-calculated data associated with the id
 /// \param rst_id

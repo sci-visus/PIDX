@@ -195,12 +195,12 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
         //assert(var->chunk_patch_group[p]->reg_patch_offset[d] % id->idx->chunk_size[d] == 0);
-        tpatch[0][d] = var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d];
+        tpatch[0][d] = var->chunk_patch_group[p]->reg_patch->offset[d] / id->idx->chunk_size[d];
 
-        if (var->chunk_patch_group[p]->reg_patch_size[d] % id->idx->chunk_size[d] == 0)
-          tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group[p]->reg_patch_size[d] / id->idx->chunk_size[d]) - 1;
+        if (var->chunk_patch_group[p]->reg_patch->size[d] % id->idx->chunk_size[d] == 0)
+          tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch->offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group[p]->reg_patch->size[d] / id->idx->chunk_size[d]) - 1;
         else
-          tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch_offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group[p]->reg_patch_size[d] / id->idx->chunk_size[d]) + 1) - 1;
+          tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch->offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group[p]->reg_patch->size[d] / id->idx->chunk_size[d]) + 1) - 1;
       }
 
       for (j = id->idx_d->res_from; j < maxH - id->idx_d->res_to; j++)
@@ -285,7 +285,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
       memset(var->hz_buffer[p]->buffer, 0,  maxH * sizeof (unsigned char*));
 #endif
 
-      bytes_for_datatype = ((var->bits_per_value / 8) * chunk_size * var->values_per_sample) / (var->bits_per_value / id->idx->compression_bit_rate);
+      bytes_for_datatype = ((var->bits_per_value / 8) * chunk_size * var->values_per_sample) / id->idx->compression_factor;
       if (var->chunk_patch_group[p]->type == 1 || var->chunk_patch_group[p]->type == 2)
       {
         //for (c = 0 ; c < maxH ; c++)
@@ -607,20 +607,21 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     for(v1 = id->first_index; v1 <= id->last_index; v1++)
                     {
                       hz_index = hz_order - id->idx->variable[v1]->hz_buffer[y]->start_hz_index[level];
-                      //bytes_for_datatype = id->idx->variable[v1]->bits_per_value / 8;
-                      bytes_for_datatype = ((id->idx->variable[v1]->bits_per_value / 8) * chunk_size) / (id->idx->variable[v1]->bits_per_value / id->idx->compression_bit_rate);
-                      for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
-                      {
+                      bytes_for_datatype = ((id->idx->variable[v1]->bits_per_value / 8) * chunk_size * id->idx->variable[v1]->values_per_sample) / id->idx->compression_factor;
+                      //printf("bytes_for_datatype = %d\n", bytes_for_datatype);
+                      //for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
+                      //{
                         //double x;
                         //memcpy(&x, id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
-                        //printf("Dest %d %d Src %d Count %d byte size %d value %f\n", level, (int)((hz_index * id->idx->variable[v1]->values_per_sample + s) * chunk_size), (int)((index * id->idx->variable[v1]->values_per_sample) + s) * chunk_size, (int)chunk_size, id->idx->variable[v1]->bits_per_value, x);
+                        //printf("Dest %d %d Src %d Count %d byte size %d\n", level, (int)((hz_index * id->idx->variable[v1]->values_per_sample + s) * chunk_size), (int)((index * id->idx->variable[v1]->values_per_sample) + s) * chunk_size, (int)chunk_size, id->idx->variable[v1]->bits_per_value);
 
 #if !SIMULATE_IO
-                        memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[v1]->values_per_sample + s) * bytes_for_datatype),
-                                id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype,
-                                bytes_for_datatype);
+                        //memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[v1]->values_per_sample + s) * bytes_for_datatype), id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+                      memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype),
+                              id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype),
+                              bytes_for_datatype);
 #endif
-                      }
+                      //}
                     }
                   }
         }
@@ -1098,11 +1099,23 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                     int v1;
                     for(v1 = id->first_index; v1 <= id->last_index; v1++)
                     {
+                      hz_index = hz_order - id->idx->variable[v1]->hz_buffer[y]->start_hz_index[level];
+                      bytes_for_datatype = ((id->idx->variable[v1]->bits_per_value / 8) * chunk_size * id->idx->variable[v1]->values_per_sample) / id->idx->compression_factor;
+
+
+  #if !SIMULATE_IO
+                      //double x1;
+                      //memcpy(&x1, id->idx->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype) + sizeof(double), sizeof(double));
+                      //printf("XXXXXXXXXXXXx x1 = %f\n", x1);
+                      memcpy(id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype), id->idx->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype), bytes_for_datatype);
+  #endif
+                      /*
                       bytes_for_datatype = id->idx->variable[v1]->bits_per_value / 8;
                       for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
                       {
                         memcpy(id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype * chunk_size, id->idx->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[v1]->values_per_sample + s) * bytes_for_datatype * chunk_size), bytes_for_datatype * chunk_size);
                       }
+                      */
                     }
                   }
         }
@@ -1290,7 +1303,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
                 dvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                 dvalue_2 = *(*((double**)var->hz_buffer[b]->buffer + i) + ((k * var->values_per_sample) + s));
 
-                //printf("%f %f\n", dvalue_1, dvalue_2);
+                //printf("X[%d]  %f %f\n", v, dvalue_1, dvalue_2);
                 check_bit = check_bit && (dvalue_1  == dvalue_2);
               }
               else if (strcmp(var->type_name, FLOAT32) == 0)
@@ -1307,6 +1320,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
                   dvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
 
                   memcpy(&dvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
+                  //printf("Y[%d] %f -- %f\n", v, dvalue_1, dvalue_2);
 
                   check_bit = check_bit && (dvalue_1  == dvalue_2);
                 }

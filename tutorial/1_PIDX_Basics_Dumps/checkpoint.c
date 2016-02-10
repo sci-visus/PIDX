@@ -278,6 +278,11 @@ static void create_synthetic_simulation_data()
 
   for(var = 0; var < variable_count; var++)
   {
+    if (var == 0 || var == 3)
+      values_per_sample = 3;
+    else
+      values_per_sample = 1;
+
     data[var] = (double*)malloc(sizeof (double) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
@@ -285,7 +290,7 @@ static void create_synthetic_simulation_data()
         {
           unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
           for (vps = 0; vps < values_per_sample; vps++)
-            data[var][index * values_per_sample + vps] = var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+            data[var][index * values_per_sample + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
   }
 }
@@ -403,8 +408,8 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    //PIDX_debug_rst(file, 1);
-    //PIDX_debug_hz(file, 1);
+    PIDX_debug_rst(file, 1);
+    PIDX_debug_hz(file, 1);
     //PIDX_debug_disable_hz(file);
     //PIDX_debug_disable_io(file);
     //PIDX_dump_agg_info(file, 1);
@@ -412,7 +417,7 @@ int main(int argc, char **argv)
     PIDX_set_block_size(file, 15);
     //PIDX_set_aggregation_factor(file, 2);
 
-    PIDX_dump_agg_info(file, 1);
+    //PIDX_dump_agg_info(file, 1);
 
 
     //PIDX_debug_disable_restructuring(file);
@@ -439,8 +444,18 @@ int main(int argc, char **argv)
     {
       sprintf(var_name, "variable_%d", var);
 
-      ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64 , &variable[var]);
-      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
+      if (var == 0 || var == 3)
+      {
+        values_per_sample = 3;
+        ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
+        if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
+      }
+      else
+      {
+        values_per_sample = 1;
+        ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64 , &variable[var]);
+        if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
+      }
 
       ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
       if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_data_layout");

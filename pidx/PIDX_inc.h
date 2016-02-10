@@ -96,6 +96,7 @@
 #endif
 #endif
 
+enum IO_MODE {PIDX_READ, PIDX_WRITE};
 
 #ifdef __cplusplus
 extern "C" {

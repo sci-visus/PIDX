@@ -64,7 +64,7 @@ int PIDX_io_file_create(PIDX_io_id io_id, int time_step, char* data_set_path, in
 
 
 ///
-int PIDX_io_aggregated_write(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout);
+int PIDX_aggregated_io(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE);
 
 
 
@@ -74,7 +74,7 @@ int PIDX_io_aggregated_read(PIDX_io_id io_id, Agg_buffer agg_buffer);
 
 
 ///
-int PIDX_io_per_process_write(PIDX_io_id io_id, PIDX_block_layout block_layout);
+int PIDX_io_per_process(PIDX_io_id io_id, PIDX_block_layout block_layout, int MODE);
 
 
 

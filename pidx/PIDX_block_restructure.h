@@ -46,7 +46,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id id);
 
 
 ///
-PIDX_return_code PIDX_chunk_write(PIDX_chunk_id id);
+PIDX_return_code PIDX_chunk(PIDX_chunk_id id, int MODE);
 
 
 

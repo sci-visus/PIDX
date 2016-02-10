@@ -112,6 +112,7 @@ struct idx_file_struct
   /// 2 Only aggregation
   int enable_agg;                                               ///< counter to enable/disable (1/0) compression
 
+  int compression_factor;
   int compression_bit_rate;
   int64_t chunk_size[PIDX_MAX_DIMENSIONS];                              ///< size of the block at which compression is applied eg. (4x4x4)
                                                                         ///< the current compression schemes only work in three dimensions

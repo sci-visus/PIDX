@@ -47,7 +47,7 @@ static unsigned long long local_box_size[3] = {0, 0, 0};             ///< local 
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 0;                        ///< Number of fields
 static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
-static float **data;
+static double **data;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
 static char output_file_name[512] = "test.idx";
 static char *usage = "Serial Usage: ./restart -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
@@ -124,8 +124,13 @@ static void destroy_synthetic_simulation_data()
 {
   int i, j, k, var, vps;
   int read_error_count = 0, read_count = 0;
-  for(var = 0; var < 1/*variable_count*/; var++)
+  for(var = 4; var < 5/*variable_count*/; var++)
   {
+    if (var == 0 || var == 3)
+      values_per_sample[var] = 3;
+    else
+      values_per_sample[var] = 1;
+
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -133,17 +138,17 @@ static void destroy_synthetic_simulation_data()
           int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
           for (vps = 0; vps < values_per_sample[var]; vps++)
           {
-            if (data[var][index * values_per_sample[var] + vps] != var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (data[var][index * values_per_sample[var] + vps] != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
-              //  printf("[%d %d %d] Read error %f %lld\n", i,j ,k, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
               read_count++;
               //if (rank == 0)
-              //  printf("[%d %d %d] Read %f %lld\n", i,j ,k, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }
@@ -281,6 +286,7 @@ int main(int argc, char **argv)
     ret = PIDX_default_bits_per_datatype(variable[var]->type_name, &bits_per_sample);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_default_bytes_per_datatype");
 
+    //printf("(bits_per_sample/8) = %d variable[var]->values_per_sample = %d\n", (bits_per_sample/8), variable[var]->values_per_sample);
     data[var] = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
     memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
 
@@ -291,10 +297,15 @@ int main(int argc, char **argv)
   ret = PIDX_reset_variable_counter(file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_reset_variable_counter");
 
+  //PIDX_debug_hz(file, 1);
+  //PIDX_debug_rst(file, 1);
+
+  int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
+  ret = PIDX_set_restructuring_box(file, restructured_box_size);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
 #if 1  // For single field
-  var = 0;
-
+  var = 4;
   ret = PIDX_set_current_variable_index(file, var);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index");
 
