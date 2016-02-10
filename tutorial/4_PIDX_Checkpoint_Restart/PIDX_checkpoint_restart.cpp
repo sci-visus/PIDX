@@ -6,6 +6,7 @@
 
 #define VIS_DUMP // << ENABLE Visualization dump with downcasting
 
+
 static int parse_args(int argc, char **argv);
 static void usage(void);
 static void report_error(std::string func_name, std::string file_name, int line_no);

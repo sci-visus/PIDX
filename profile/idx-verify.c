@@ -667,7 +667,7 @@ int main(int argc, char **argv)
 
                           check_bit = check_bit && (dlhs == drhs);
 
-                          //printf("[%d] %f %f\n", s, dlhs, drhs);
+                          printf("[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
                           if (dlhs == drhs)
                             element_count1++;
                         }
@@ -765,9 +765,9 @@ int main(int argc, char **argv)
       }
     }
 
-    printf("[=]%lld (%lld) + [!=]%lld (%lld) [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long)lost_element_count1, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
+    //printf("[=]%lld (%lld) + [!=]%lld (%lld) [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long)lost_element_count1, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
 
-    assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
+    //assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
 
   }
 
