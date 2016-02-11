@@ -463,6 +463,13 @@ PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
 
 
 
+
+///
+PIDX_return_code PIDX_enable_raw_io(PIDX_file file);
+
+
+
+
 ///
 double PIDX_get_time();
 

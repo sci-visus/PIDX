@@ -124,7 +124,7 @@ static void destroy_synthetic_simulation_data()
 {
   int i, j, k, var, vps;
   int read_error_count = 0, read_count = 0;
-  for(var = 4; var < 5/*variable_count*/; var++)
+  for(var = 3; var < /*variable_count*/4; var++)
   {
     if (var == 0 || var == 3)
       values_per_sample[var] = 3;
@@ -142,7 +142,7 @@ static void destroy_synthetic_simulation_data()
             {
               read_error_count++;
               //if (rank == 0)
-              //  printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
@@ -158,7 +158,7 @@ static void destroy_synthetic_simulation_data()
   for(var = 0; var < variable_count; var++)
     var_sample_count = var_sample_count + values_per_sample[var];
 
-  printf("Read Error Count + Right Count : [%d + %d] Total Count = %lld\n", read_error_count, read_count, global_box_size[0]*global_box_size[1]*global_box_size[2] * var_sample_count);
+  printf("[%d] Read Error Count + Right Count : [%d + %d] Total Count = %lld\n", rank, read_error_count, read_count, global_box_size[0]*global_box_size[1]*global_box_size[2] * var_sample_count);
 
   for(var = 0; var < variable_count; var++)
   {
@@ -275,6 +275,12 @@ int main(int argc, char **argv)
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
+  //int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
+  //ret = PIDX_set_restructuring_box(file, restructured_box_size);
+  //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
+
+  //PIDX_enable_raw_io(file);
+
   for (var = 0; var < variable_count; var++)
   {
     ret = PIDX_get_next_variable(file, &variable[var]);
@@ -300,12 +306,8 @@ int main(int argc, char **argv)
   //PIDX_debug_hz(file, 1);
   //PIDX_debug_rst(file, 1);
 
-  int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
-  ret = PIDX_set_restructuring_box(file, restructured_box_size);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
-
-#if 1  // For single field
-  var = 4;
+#if 0  // For single field
+  var = 3;
   ret = PIDX_set_current_variable_index(file, var);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index");
 

@@ -225,7 +225,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
   MPI_Comm_rank(header_io_id->comm, &rank);
   MPI_Comm_size(header_io_id->comm, &nprocs);
 #endif
-  
+
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
 #if PIDX_HAVE_MPI
@@ -246,25 +246,26 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
         //walks up the tree attempting to mkdir() each segment every
         //time we switch to a new directory when creating binary files.
 
-        // see if we need to make parent directory 
+        // see if we need to make parent directory
         strcpy(this_path, bin_file);
-        if ((pos = rindex(this_path, '/'))) 
+        if ((pos = rindex(this_path, '/')))
         {
           pos[1] = '\0';
-          if (!strcmp(this_path, last_path) == 0) 
+          if (!strcmp(this_path, last_path) == 0)
           {
             //this file is in a previous directory than the last
             //one; we need to make sure that it exists and create
             //it if not.
             strcpy(last_path, this_path);
             memset(tmp_path, 0, PATH_MAX * sizeof (char));
-            //walk up path and mkdir each segment 
-            for (j = 0; j < (int)strlen(this_path); j++) 
+            //walk up path and mkdir each segment
+            for (j = 0; j < (int)strlen(this_path); j++)
             {
-              if (j > 0 && this_path[j] == '/') 
+              if (j > 0 && this_path[j] == '/')
               {
+                //printf("path = %s %s [T %s]\n", tmp_path, bin_file, header_io_id->idx->filename_template);
                 ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
-                if (ret != 0 && errno != EEXIST) 
+                if (ret != 0 && errno != EEXIST)
                 {
                   perror("mkdir");
                   fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);

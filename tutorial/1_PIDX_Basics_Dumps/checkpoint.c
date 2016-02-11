@@ -278,10 +278,10 @@ static void create_synthetic_simulation_data()
 
   for(var = 0; var < variable_count; var++)
   {
-    //if (var == 0 || var == 3)
-    //  values_per_sample = 3;
-    //else
-    values_per_sample = 1;
+    if (var == 0 || var == 3)
+      values_per_sample = 3;
+    else
+      values_per_sample = 1;
 
     data[var] = (double*)malloc(sizeof (double) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
     for (k = 0; k < local_box_size[2]; k++)
@@ -427,6 +427,8 @@ int main(int argc, char **argv)
     //PIDX_debug_disable_agg(file);
     //PIDX_debug_disable_io(file);
 
+    //PIDX_enable_raw_io(file);
+
     //PIDX_activate_local_aggregation(file);
 
     //PIDX_set_variable_pile_length(file, 0);
@@ -444,13 +446,13 @@ int main(int argc, char **argv)
     {
       sprintf(var_name, "variable_%d", var);
 
-      //if (var == 0 || var == 3)
-      //{
-      //  values_per_sample = 3;
-      //  ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
-      //  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
-      //}
-      //else
+      if (var == 0 || var == 3)
+      {
+        values_per_sample = 3;
+        ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
+        if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
+      }
+      else
       {
         values_per_sample = 1;
         ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64 , &variable[var]);

@@ -197,7 +197,7 @@ int generate_file_name_template(int maxh, int bits_per_block, char* filename, in
 
   strncpy(directory_path, filename, strlen(filename) - 4);  
   sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);
-  
+
   free(directory_path);
 
   nbits_blocknumber = (maxh - bits_per_block - 1);

@@ -215,7 +215,6 @@ int main(int argc, char **argv)
         pch1 = strtok(line, " *+");
         while (pch1 != NULL)
         {
-          printf("count %d\n", count);
           if (count == 0)
             strcpy(variable_name[variable_count], strdup(pch1));
 
@@ -230,7 +229,7 @@ int main(int argc, char **argv)
             len = strlen(pch1) - 1;
             if (pch1[len] == '\n')
               pch1[len] = 0;
-            printf("VAR pch1 XXXXXXXXXX = %s\n", pch1);
+
             if (strcmp(pch1, "float64") == 0)
               strcpy (variable_type[variable_count], "float64");
             else if (strcmp(pch1, "uint64") == 0)
@@ -240,7 +239,6 @@ int main(int argc, char **argv)
             else if (strcmp(pch1, "3*float64") == 0)
             {
               strcpy (variable_type[variable_count], "3*float64");
-              printf("VAR = %s\n", variable_type[variable_count]);
             }
             else
             {

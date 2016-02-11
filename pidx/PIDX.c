@@ -67,6 +67,8 @@ static void PIDX_init_timming_buffers1();
 static void PIDX_init_timming_buffers2(PIDX_file file);
 static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_var_index);
+static PIDX_return_code PIDX_raw_write(PIDX_file file, int start_var_index, int end_var_index);
+static PIDX_return_code PIDX_raw_read(PIDX_file file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_file file, char* file_name, int current_time_step);
 static PIDX_return_code PIDX_cache_headers(PIDX_file file);
 static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int start_var_index, int end_var_index);
@@ -129,6 +131,8 @@ struct PIDX_file_descriptor
 
   idx_dataset_derived_metadata idx_d;          ///< Contains all derieved IDX file info
                                                ///< number of files, files that are ging to be populated
+
+  int enable_raw_dump;
 
   int layout_count;
 };
@@ -233,6 +237,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->color = 0;
 
   (*file)->small_agg_comm = 0;
+
+  (*file)->enable_raw_dump = 0;
 
 #if PIDX_HAVE_MPI
   //unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
@@ -419,6 +425,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->debug_hz = 0;
   (*file)->idx_d->color = 0;
 
+  (*file)->enable_raw_dump = 0;
+
 #if PIDX_HAVE_MPI
   //unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
   int *colors;
@@ -530,7 +538,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   int var = 0, variable_counter = 0, count = 0, len = 0;
   char *pch, *pch1;
   char line [ 512 ];
-  
+
   if (rank == 0)
   {
     FILE *fp = fopen((*file)->idx->filename, "r");
@@ -1683,6 +1691,7 @@ static PIDX_return_code delete_idx_dataset(PIDX_file file)
   free(var->block_layout_by_level);
   var->block_layout_by_level = 0;
 
+  return PIDX_success;
 }
 
 
@@ -2138,6 +2147,20 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_from, int *hz_to)
 }
 
 
+
+PIDX_return_code PIDX_enable_raw_io(PIDX_file file)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->enable_raw_dump = 1;
+
+  return PIDX_success;
+}
+
+
+
+
 static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int start_var_index, int end_var_index)
 {
   int d, nprocs = 1;
@@ -2253,6 +2276,329 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_file file, int start_var_in
 
   return PIDX_success;
 }
+
+
+
+static PIDX_return_code PIDX_raw_write(PIDX_file file, int start_var_index, int end_var_index)
+{
+  if (file->local_variable_index == file->idx->variable_count)
+    return PIDX_success;
+
+  file->var_pipe_length = file->idx->variable_count - 1;
+  if (file->var_pipe_length == 0)
+    file->var_pipe_length = 1;
+
+
+  PIDX_return_code ret;
+  int rank = 0, nprocs = 1;
+
+#if PIDX_HAVE_MPI
+  MPI_Comm_rank(file->comm, &rank);
+  MPI_Comm_size(file->comm,  &nprocs);
+#endif
+
+#if PIDX_HAVE_MPI
+    file->idx_d->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
+    memset(file->idx_d->rank_r_offset, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+
+    file->idx_d->rank_r_count =  malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
+    memset(file->idx_d->rank_r_count, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+#endif
+
+  populate_idx_start_time = MPI_Wtime();
+
+  PIDX_init_timming_buffers2(file);
+  /// Initialization ONLY ONCE per IDX file
+  if (file->one_time_initializations == 0)
+  {
+    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
+
+    file->one_time_initializations = 1;
+  }
+
+  populate_idx_end_time = MPI_Wtime();
+
+  write_init_start[hp] = PIDX_get_time();
+
+#if !SIMULATE_IO
+  if (file->debug_do_io == 1)
+  {
+    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
+#if PIDX_HAVE_MPI
+    ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+#endif
+
+    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+
+    ret = PIDX_header_io_finalize(file->header_io_id);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+  }
+#endif
+
+  write_init_end[hp] = PIDX_get_time();
+  hp++;
+
+  int start_index = 0, end_index = 0;
+  for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))
+  {
+    end_index = ((start_index + file->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->var_pipe_length);
+
+
+    /*--------------------------------------Create RST IDs [start]------------------------------------------*/
+    /* Create the restructuring ID */
+    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+    /*----------------------------------------Create RST IDs [end]------------------------------------------*/
+
+
+
+    /*------------------------------------Adding communicator [start]----------------------------------------*/
+#if PIDX_HAVE_MPI
+    /* Attaching the communicator to the restructuring phase */
+    ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#endif
+    /*------------------------------------Adding communicator [end]------------------------------------------*/
+
+
+
+    /*--------------------------------------------RST [start]------------------------------------------------*/
+    rst_start[vp] = PIDX_get_time();
+
+    ret = PIDX_rst_meta_data_create(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+
+    /* Creating the buffers required for restructurig */
+    ret = PIDX_rst_buf_create(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+
+    /* Perform data restructuring */
+    if (file->debug_do_rst == 1)
+    {
+      ret = PIDX_rst_write(file->rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+    }
+
+    if (file->debug_do_io == 1)
+    {
+      PIDX_rst_buf_aggregate_write(file->rst_id);
+      PIDX_rst_buf_aggregate_read(file->rst_id);
+    }
+
+    /* Verifying the correctness of the restructuring phase */
+    if (file->debug_rst == 1)
+    {
+      ret = HELPER_rst(file->rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+    }
+    rst_end[vp] = PIDX_get_time();
+    /*--------------------------------------------RST [end]---------------------------------------------------*/
+
+
+
+    /*-------------------------------------------finalize [start]---------------------------------------------*/
+    finalize_start[vp] = PIDX_get_time();
+
+    ret = PIDX_rst_meta_data_destroy(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+
+    /* Deleting the restructuring ID */
+    PIDX_rst_finalize(file->rst_id);
+
+    finalize_end[vp] = PIDX_get_time();
+    /*-----------------------------------------finalize [end]--------------------------------------------------*/
+
+    vp++;
+  }
+
+#if PIDX_HAVE_MPI
+    free(file->idx_d->rank_r_offset);
+    file->idx_d->rank_r_offset = 0;
+
+    free(file->idx_d->rank_r_count);
+    file->idx_d->rank_r_count = 0;
+#endif
+
+  return PIDX_success;
+}
+
+
+
+
+static PIDX_return_code PIDX_raw_read(PIDX_file file, int start_var_index, int end_var_index)
+{
+  if (file->local_variable_index == file->idx->variable_count)
+    return PIDX_success;
+
+  file->var_pipe_length = file->idx->variable_count - 1;
+  if (file->var_pipe_length == 0)
+    file->var_pipe_length = 1;
+
+
+  PIDX_return_code ret;
+  int rank = 0, nprocs = 1;
+
+#if PIDX_HAVE_MPI
+  MPI_Comm_rank(file->comm, &rank);
+  MPI_Comm_size(file->comm,  &nprocs);
+#endif
+
+#if PIDX_HAVE_MPI
+    file->idx_d->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
+    memset(file->idx_d->rank_r_offset, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+
+    file->idx_d->rank_r_count =  malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
+    memset(file->idx_d->rank_r_count, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+#endif
+
+  populate_idx_start_time = MPI_Wtime();
+
+  PIDX_init_timming_buffers2(file);
+  /// Initialization ONLY ONCE per IDX file
+  if (file->one_time_initializations == 0)
+  {
+    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
+
+    file->one_time_initializations = 1;
+  }
+
+  populate_idx_end_time = MPI_Wtime();
+
+  int start_index = 0, end_index = 0;
+  for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))
+  {
+    end_index = ((start_index + file->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->var_pipe_length);
+
+
+    /*--------------------------------------Create RST IDs [start]------------------------------------------*/
+    /* Create the restructuring ID */
+    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+    /*----------------------------------------Create RST IDs [end]------------------------------------------*/
+
+
+
+    /*------------------------------------Adding communicator [start]----------------------------------------*/
+#if PIDX_HAVE_MPI
+    /* Attaching the communicator to the restructuring phase */
+    ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_rst;
+    }
+#endif
+    /*------------------------------------Adding communicator [end]------------------------------------------*/
+
+
+
+    /*--------------------------------------------RST [start]------------------------------------------------*/
+    rst_start[vp] = PIDX_get_time();
+
+    ret = PIDX_rst_meta_data_create(file->rst_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_rst;
+    }
+
+    /* Creating the buffers required for restructurig */
+    ret = PIDX_rst_buf_create(file->rst_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_rst;
+    }
+
+    if (file->debug_do_io == 1)
+    {
+      ret = PIDX_rst_buf_aggregate_read(file->rst_id);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_rst;
+      }
+    }
+
+    /* Verifying the correctness of the restructuring phase */
+    if (file->debug_rst == 1)
+    {
+      ret = HELPER_rst(file->rst_id);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_rst;
+      }
+    }
+
+    /* Perform data restructuring */
+    if (file->debug_do_rst == 1)
+    {
+      ret = PIDX_rst_read(file->rst_id);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_rst;
+      }
+    }
+
+    rst_end[vp] = PIDX_get_time();
+    /*--------------------------------------------RST [end]---------------------------------------------------*/
+
+
+
+    /*-------------------------------------------finalize [start]---------------------------------------------*/
+    finalize_start[vp] = PIDX_get_time();
+
+    ret = PIDX_rst_meta_data_destroy(file->rst_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_rst;
+    }
+
+    /* Deleting the restructuring ID */
+    PIDX_rst_finalize(file->rst_id);
+
+    finalize_end[vp] = PIDX_get_time();
+    /*-----------------------------------------finalize [end]--------------------------------------------------*/
+
+    vp++;
+  }
+
+#if PIDX_HAVE_MPI
+    free(file->idx_d->rank_r_offset);
+    file->idx_d->rank_r_offset = 0;
+
+    free(file->idx_d->rank_r_count);
+    file->idx_d->rank_r_count = 0;
+#endif
+
+  return PIDX_success;
+}
+
+
 
 
 static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_var_index)
@@ -2435,7 +2781,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     end_index = ((start_index + file->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->var_pipe_length);
 
     int agg_io_level = 0, no_of_aggregators = 0;
-    file->idx->variable[file->local_variable_index]->block_layout_by_level[j];
+    //file->idx->variable[file->local_variable_index]->block_layout_by_level[j];
 
     for (i = 0; i < file->layout_count ; i++)
     {
@@ -3126,7 +3472,7 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     end_index = ((start_index + file->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->var_pipe_length);
 
     int agg_io_level = 0, no_of_aggregators = 0;
-    file->idx->variable[file->local_variable_index]->block_layout_by_level[j];
+    //file->idx->variable[file->local_variable_index]->block_layout_by_level[j];
 
     for (i = 0; i < file->layout_count ; i++)
     {
@@ -4112,17 +4458,34 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
   if (file->flags == PIDX_MODE_CREATE)
   {
-    ret = PIDX_write(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
+    if (file->enable_raw_dump == 0)
+    {
+      ret = PIDX_write(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
+    else
+    {
+      ret = PIDX_raw_write(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
   }
 
   else if (file->flags == PIDX_MODE_RDONLY)
   {
-    //variable_index_tracker
-    ret = PIDX_read(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
+    if (file->enable_raw_dump == 0)
+    {
+      ret = PIDX_read(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
+    else
+    {
+      ret = PIDX_raw_read(file, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
   }
 
   else if (file->flags == PIDX_MODE_RDWR)

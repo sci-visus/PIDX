@@ -81,7 +81,13 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id);
 
 
 
-PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id);
+PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id);
+
+
+
+
+PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id);
+
 
 
 ///
