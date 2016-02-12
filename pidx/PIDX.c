@@ -2940,11 +2940,13 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     for(i = start_index ; i < (end_index + 1) ; i++)
     {
+      //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = 0 ; j < agg_io_level; j++)
       {
-        //file->local_variable_index
         //ret = PIDX_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], file->idx->variable[file->local_variable_index]->global_block_layout);
-        ret = PIDX_local_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+
+        //ret = PIDX_local_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+        ret = PIDX_local_agg_local_comm_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
         if (ret != PIDX_success)
           return PIDX_err_rst;
       }
@@ -3120,11 +3122,13 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /* Creating the buffers required for Aggregation */
     for(i = start_index ; i < (end_index + 1) ; i++)
     {
+      //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
       {
         /* Creating the buffers required for Aggregation */
         //ret = PIDX_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], file->idx->variable[file->local_variable_index]->global_block_layout, i, j);
-        ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], j/*0*/);
+        //ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], j/*0*/);
+          ret = PIDX_local_agg_local_comm_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], /*j*/0);
         if (ret != PIDX_success)
           return PIDX_err_agg;
       }
@@ -3137,18 +3141,23 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       printf("[A] Aggregation Buffer Created\n");
 #endif
 
+
+
     /* Perform Aggregation */
     if (file->debug_do_agg == 1)
     {
       static_var_counter = 0;
       for(i = start_index ; i < (end_index + 1) ; i++)
       {
+        //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
         for(j = 0 ; j < agg_io_level; j++)
         {
            agg_start[static_var_counter][j] = PIDX_get_time();
 
-           ret = PIDX_local_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
-          //ret = PIDX_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
+           //ret = PIDX_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
+           //ret = PIDX_local_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+           ret = PIDX_local_agg_local_comm(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+
           if (ret != PIDX_success)
             return PIDX_err_agg;
 
@@ -3157,6 +3166,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         static_var_counter++;
       }
     }
+
 
     if (file->debug_do_io == 1)
     {
@@ -3192,7 +3202,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /*--------------------------------------------Agg [end]--------------------------------------------------*/
 
 
-#if 1
+
 
     /*--------------------------------------------IO [start]--------------------------------------------------*/
 
@@ -3223,6 +3233,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       static_var_counter = 0;
       for(i = start_index ; i < (end_index + 1) ; i++)
       {
+        //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
         for(j = 0 ; j < agg_io_level; j++)
         {
           io_start[static_var_counter][j] = PIDX_get_time();
@@ -3245,10 +3256,12 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       printf("[I] I/O completed\n");
 #endif
 
+
     /* Destroy buffers allocated during aggregation phase */
     static_var_counter = 0;
     for(i = start_index ; i < (end_index + 1) ; i++)
     {
+      //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = 0 ; j < agg_io_level; j++)
       {
         ret = PIDX_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j]);
@@ -3278,15 +3291,17 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     for(i = start_index ; i < (end_index + 1) ; i++)
     {
+      //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
       {
         //ret = PIDX_agg_meta_data_destroy(file->tagg_id[i][j]);
-        ret = PIDX_local_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+        //ret = PIDX_local_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+        ret = PIDX_local_agg_local_comm_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
         if (ret != PIDX_success)
           return PIDX_err_rst;
       }
     }
-
+#if 1
     ret = PIDX_hz_encode_meta_data_destroy(file->hz_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
@@ -3301,6 +3316,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /*-------------------------------------------finalize [start]---------------------------------------------*/
     finalize_start[vp] = PIDX_get_time();
+
 
     //if (file->small_agg_comm == 1)
     //  PIDX_destroy_local_aggregation_comm(file->agg_id);

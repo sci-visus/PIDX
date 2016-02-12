@@ -66,18 +66,21 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_bu
 
 
 PIDX_return_code PIDX_local_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
+PIDX_return_code PIDX_local_agg_local_comm_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
 
 
 PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id);
 
 
 PIDX_return_code PIDX_local_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
+PIDX_return_code PIDX_local_agg_local_comm_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
 
 ///
 PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1);
 
 
 PIDX_return_code PIDX_local_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset);
+PIDX_return_code PIDX_local_agg_local_comm_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset);
 
 ///
 PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
@@ -87,6 +90,7 @@ PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
 PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout);
 
 PIDX_return_code PIDX_local_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int id, PIDX_block_layout block_layout, int MODE);
+PIDX_return_code PIDX_local_agg_local_comm(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE);
 
 ///
 PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout);
