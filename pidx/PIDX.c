@@ -43,6 +43,7 @@ static double populate_idx_start_time = 0;
 static double populate_idx_end_time = 0;
 static double sim_start = 0, sim_end = 0;
 static double *write_init_start = 0, *write_init_end = 0;
+static double *startup_start = 0, *startup_end = 0;
 static double *init_start, *init_end;
 static double *rst_start, *rst_end;
 static double *hz_start, *hz_end;
@@ -2778,6 +2779,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))
   {
+    startup_start[vp] = PIDX_get_time();
     end_index = ((start_index + file->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->var_pipe_length);
 
     int agg_io_level = 0, no_of_aggregators = 0;
@@ -2947,6 +2949,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
           return PIDX_err_rst;
       }
     }
+    startup_end[vp] = PIDX_get_time();
 
 #if PIDX_DEBUG_OUTPUT
     l_init = 1;
@@ -3121,7 +3124,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       {
         /* Creating the buffers required for Aggregation */
         //ret = PIDX_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], file->idx->variable[file->local_variable_index]->global_block_layout, i, j);
-        ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], /*j*/0);
+        ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], j/*0*/);
         if (ret != PIDX_success)
           return PIDX_err_agg;
       }
@@ -4588,8 +4591,12 @@ PIDX_return_code PIDX_close(PIDX_file file)
       printf("Block layout creation time %f\n", populate_idx_end_time - populate_idx_start_time);
       fprintf(stdout, "File Create Time: %f Seconds\n", (file_create_time - sim_start));
 
+      double header_io_time = 0;
       for (var = 0; var < hp; var++)
+      {
+        header_io_time = header_io_time + (write_init_end[var] - write_init_start[var]);
         fprintf(stdout, "File Create time (+ header IO) %f\n", (write_init_end[var] - write_init_start[var]));
+      }
       
 
       double total_time_ai = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
@@ -4625,13 +4632,13 @@ PIDX_return_code PIDX_close(PIDX_file file)
       {
         //fprintf(stdout, "------------------------------------------------VG %d (START)----------------------------------------------\n", var);
 
-        fprintf(stdout, "[%d] RST + BRST + HZ = %f + %f + %f = %f\n", var, (rst_end[var] - rst_start[var]), (chunk_end[var] - chunk_start[var]), (hz_end[var] - hz_start[var]), (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]));
-        total_time_rch = total_time_rch + (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]);
+        fprintf(stdout, "[%d] STARTUP + RST + BRST + HZ = %f + %f + %f + %f = %f\n", var, (startup_end[var] - startup_start[var]), (rst_end[var] - rst_start[var]), (chunk_end[var] - chunk_start[var]), (hz_end[var] - hz_start[var]), (startup_end[var] - startup_start[var]) + (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]));
+        total_time_rch = total_time_rch + (startup_end[var] - startup_start[var]) + (rst_end[var] - rst_start[var]) + (chunk_end[var] - chunk_start[var]) + (hz_end[var] - hz_start[var]);
         
         //fprintf(stdout, "-------------------------------------------------VG %d (END)-----------------------------------------------\n", var);
       }
 
-      fprintf(stdout, "Total Time = %f [%f + %f + %f + %f] [%f]\n", total_time_ai + total_time_rch + (file_create_time - sim_start) + (populate_idx_end_time - populate_idx_start_time), (populate_idx_end_time - populate_idx_start_time), (file_create_time - sim_start), total_time_rch, total_time_ai, max_time);
+      fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f + %f] [%f]\n", total_time_ai + total_time_rch + (file_create_time - sim_start) + (populate_idx_end_time - populate_idx_start_time) + header_io_time, (populate_idx_end_time - populate_idx_start_time), (file_create_time - sim_start), header_io_time, total_time_rch, total_time_ai, max_time);
 
 
 
@@ -4766,6 +4773,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(write_init_end);                 write_init_end          = 0;
   free(rst_start);                      rst_start               = 0;
   free(rst_end);                        rst_end                 = 0;
+  free(startup_start);                  startup_start           = 0;
+  free(startup_end);                    startup_end             = 0;
   free(hz_start);                       hz_start                = 0;
   free(hz_end);                         hz_end                  = 0;
   free(agg_start);                      agg_start               = 0;
@@ -5032,6 +5041,9 @@ static void PIDX_init_timming_buffers2(PIDX_file file)
   int timer_count = file->idx->variable_count / (file->var_pipe_length + 1);
   if (file->idx->variable_count % (file->var_pipe_length + 1) != 0)
     timer_count = timer_count + 1;
+
+  startup_start = malloc (sizeof(double) * timer_count);                 memset(startup_start, 0, sizeof(double) * timer_count);
+  startup_end = malloc (sizeof(double) * timer_count);                   memset(startup_end, 0, sizeof(double) * timer_count);
 
   rst_start = malloc (sizeof(double) * timer_count);                     memset(rst_start, 0, sizeof(double) * timer_count);
   rst_end = malloc (sizeof(double) * timer_count);                       memset(rst_end, 0, sizeof(double) * timer_count);

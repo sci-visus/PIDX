@@ -124,7 +124,7 @@ static void destroy_synthetic_simulation_data()
 {
   int i, j, k, var, vps;
   int read_error_count = 0, read_count = 0;
-  for(var = 3; var < /*variable_count*/4; var++)
+  for(var = 0; var < variable_count; var++)
   {
     if (var == 0 || var == 3)
       values_per_sample[var] = 3;
