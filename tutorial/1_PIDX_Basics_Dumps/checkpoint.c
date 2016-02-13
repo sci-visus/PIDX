@@ -414,7 +414,7 @@ int main(int argc, char **argv)
     //PIDX_debug_disable_hz(file);
     //PIDX_debug_disable_io(file);
     //PIDX_dump_agg_info(file, 1);
-    PIDX_set_block_count(file, 128);
+    PIDX_set_block_count(file, 256);
     PIDX_set_block_size(file, 15);
     //PIDX_set_aggregation_factor(file, 2);
 
@@ -423,10 +423,10 @@ int main(int argc, char **argv)
 
     //PIDX_debug_disable_restructuring(file);
     //PIDX_debug_disable_chunking(file);
-    //PIDX_debug_disable_hz(file);
-    //PIDX_debug_disable_compression(file);
+    PIDX_debug_disable_hz(file);
+    PIDX_debug_disable_compression(file);
     //PIDX_debug_disable_agg(file);
-    //PIDX_debug_disable_io(file);
+    PIDX_debug_disable_io(file);
 
     //PIDX_enable_raw_io(file);
 
