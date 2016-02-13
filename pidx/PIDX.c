@@ -135,6 +135,7 @@ struct PIDX_file_descriptor
 
   int enable_raw_dump;
 
+  int agg_type;
   int layout_count;
 };
 
@@ -232,6 +233,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
+  (*file)->agg_type = 1;
 
   (*file)->debug_rst = 0;
   (*file)->debug_hz = 0;
@@ -419,6 +421,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
+
+  (*file)->agg_type = 1;
 
   (*file)->small_agg_comm = 0;
 
@@ -2815,13 +2819,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     file->tio_id = malloc(sizeof(*(file->tio_id)) * file->idx->variable_count);
     memset(file->tio_id, 0, sizeof(*(file->tio_id)) * file->idx->variable_count);
 
-    //file->tagg_id = malloc(sizeof(*(file->tagg_id)) * (end_index - start_index + 1));
-    //memset(file->tagg_id, 0, sizeof(*(file->tagg_id)) * (end_index - start_index + 1));
-
-    //file->tio_id = malloc(sizeof(*(file->tio_id)) * (end_index - start_index + 1));
-    //memset(file->tio_id, 0, sizeof(*(file->tio_id)) * (end_index - start_index + 1));
-
-    //printf("COUNT [%d %d] : %d\n", start_index, end_index, (end_index - start_index + 1));
     for(i = start_index ; i < (end_index + 1) ; i++)
     {
       file->tagg_id[i] = malloc(sizeof(*(file->tagg_id[i])) * file->layout_count);
@@ -2839,9 +2836,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         file->tio_id[i][j] = PIDX_io_init(file->idx, file->idx_d, start_var_index, i, i);
       }
     }
-
-    //file->idx_d->agg_buffer = malloc(sizeof(*(file->idx_d->agg_buffer)) * (end_index - start_index + 1));
-    //memset(file->idx_d->agg_buffer, 0, sizeof(*(file->idx_d->agg_buffer)) * (end_index - start_index + 1));
 
     file->idx_d->agg_buffer = malloc(sizeof(*(file->idx_d->agg_buffer)) * file->idx->variable_count);
     memset(file->idx_d->agg_buffer, 0, sizeof(*(file->idx_d->agg_buffer)) * file->idx->variable_count);
@@ -2943,12 +2937,20 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = 0 ; j < agg_io_level; j++)
       {
-        //ret = PIDX_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], file->idx->variable[file->local_variable_index]->global_block_layout);
+        if (file->agg_type == 0)
+          ret = PIDX_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], file->idx->variable[file->local_variable_index]->global_block_layout);
 
-        //ret = PIDX_local_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
-        ret = PIDX_local_agg_local_comm_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+        else if (file->agg_type == 1)
+          ret = PIDX_local_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+
+        else
+          ret = PIDX_local_agg_local_comm_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+
         if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
+        }
       }
     }
     startup_end[vp] = PIDX_get_time();
@@ -3126,11 +3128,20 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       for (j = 0 ; j < agg_io_level; j++)
       {
         /* Creating the buffers required for Aggregation */
-        //ret = PIDX_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], file->idx->variable[file->local_variable_index]->global_block_layout, i, j);
-        //ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], j/*0*/);
+        if (file->agg_type == 0)
+          ret = PIDX_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], file->idx->variable[file->local_variable_index]->global_block_layout, i, j);
+
+        else if (file->agg_type == 1)
+          ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], j/*0*/);
+
+        else
           ret = PIDX_local_agg_local_comm_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], /*j*/0);
+
         if (ret != PIDX_success)
-          return PIDX_err_agg;
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_rst;
+        }
       }
     }
 
@@ -3154,14 +3165,22 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         {
            agg_start[static_var_counter][j] = PIDX_get_time();
 
-           //ret = PIDX_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
-           //ret = PIDX_local_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
-           ret = PIDX_local_agg_local_comm(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+           if (file->agg_type == 0)
+             ret = PIDX_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
 
-          if (ret != PIDX_success)
-            return PIDX_err_agg;
+           else if (file->agg_type == 1)
+             ret = PIDX_local_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
 
-          agg_end[static_var_counter][j] = PIDX_get_time();
+           else
+             ret = PIDX_local_agg_local_comm(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+
+           if (ret != PIDX_success)
+           {
+             fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+             return PIDX_err_rst;
+           }
+
+           agg_end[static_var_counter][j] = PIDX_get_time();
         }
         static_var_counter++;
       }
@@ -3264,7 +3283,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = 0 ; j < agg_io_level; j++)
       {
-        ret = PIDX_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j]);
+        ret = PIDX_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->agg_type);
         if (ret != PIDX_success)
           return PIDX_err_agg;
       }
@@ -3294,11 +3313,20 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
       {
-        //ret = PIDX_agg_meta_data_destroy(file->tagg_id[i][j]);
-        //ret = PIDX_local_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
-        ret = PIDX_local_agg_local_comm_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+        if (file->agg_type == 0)
+          ret = PIDX_agg_meta_data_destroy(file->tagg_id[i][j]);
+
+        else if (file->agg_type == 1)
+          ret = PIDX_local_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+
+        else
+          ret = PIDX_local_agg_local_comm_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);
+
         if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
+        }
       }
     }
 #if 1
@@ -3754,7 +3782,7 @@ static PIDX_return_code PIDX_read(PIDX_file file, int start_var_index, int end_v
     {
       for(j = 0 ; j < agg_io_level; j++)
       {
-        ret = PIDX_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j]);
+        ret = PIDX_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], 0);
         if (ret != PIDX_success)
           return PIDX_err_agg;
       }
