@@ -1736,9 +1736,13 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     return PIDX_err_file;
   }
 
+#if 1
   file->layout_count = (file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
   if (file->layout_count <= 0)
     file->layout_count = 1;
+#else
+  file->layout_count = 1;
+#endif
 
   var->block_layout_by_level = malloc(sizeof(*(var->block_layout_by_level)) * file->layout_count);
   memset(var->block_layout_by_level, 0, sizeof(*(var->block_layout_by_level)) * file->layout_count);
@@ -1748,9 +1752,10 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     memset(var->block_layout_by_level[i], 0, sizeof(*(var->block_layout_by_level[i])));
   }
 
+#if 1
   lower_level_low_layout = 0;
   higher_level_low_layout = file->idx->bits_per_block + log2(file->idx->blocks_per_file) + 1;
-  //printf("X [%d] %d %d\n", file->layout_count, lower_level_low_layout, higher_level_low_layout);
+
   if (higher_level_low_layout >= file->idx_d->maxh)
     higher_level_low_layout = file->idx_d->maxh;
 
@@ -1779,6 +1784,40 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
     memcpy(block_layout->hz_block_number_array[j], file->idx->variable[lvi]->block_layout_by_level[0]->hz_block_number_array[j], sizeof(int) * ctr);
     ctr = ctr * 2;
   }
+#else
+  lower_level_low_layout = 0;
+  higher_level_low_layout = file->idx_d->maxh;
+
+  if (higher_level_low_layout >= file->idx_d->maxh)
+    higher_level_low_layout = file->idx_d->maxh;
+
+  ret_code = PIDX_blocks_initialize_layout(file->idx->variable[lvi]->block_layout_by_level[0], lower_level_low_layout, higher_level_low_layout, file->idx_d->maxh, file->idx->bits_per_block);
+  if (ret_code != PIDX_success)
+  {
+    fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  ret_code = populate_idx_layout(file, file->idx->variable[lvi]->block_layout_by_level[0], lower_level_low_layout, higher_level_low_layout);
+  if (ret_code != PIDX_success)
+  {
+    fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  for (j = 0 ; j < file->idx->bits_per_block + 1 ; j++)
+    memcpy(block_layout->hz_block_number_array[j], file->idx->variable[lvi]->block_layout_by_level[0]->hz_block_number_array[j], sizeof(int));
+
+  ctr = 1;
+  int temp_level = file->idx->bits_per_block + log2(file->idx->blocks_per_file) + 1;
+  if (temp_level >= file->idx_d->maxh)
+    temp_level = file->idx_d->maxh;
+
+  for (j = file->idx->bits_per_block + 1 ; j < file->idx_d->maxh ; j++)
+  {
+    memcpy(block_layout->hz_block_number_array[j], file->idx->variable[lvi]->block_layout_by_level[0]->hz_block_number_array[j], sizeof(int) * ctr);
+    ctr = ctr * 2;
+  }
+#endif
 
 
   for (i = 1; i < file->layout_count; i++)
