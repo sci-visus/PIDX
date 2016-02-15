@@ -35,6 +35,7 @@
 
 #include "PIDX.h"
 #define PIDX_DEBUG_OUTPUT 0
+#define PIDX_agg_var 0
 
 static int vp = 0;
 static int hp = 0;
@@ -2871,14 +2872,17 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /* Create the aggregation ID */
     /* Create the I/O ID */
-
     file->tagg_id = malloc(sizeof(*(file->tagg_id)) * file->idx->variable_count);
     memset(file->tagg_id, 0, sizeof(*(file->tagg_id)) * file->idx->variable_count);
 
     file->tio_id = malloc(sizeof(*(file->tio_id)) * file->idx->variable_count);
     memset(file->tio_id, 0, sizeof(*(file->tio_id)) * file->idx->variable_count);
 
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       file->tagg_id[i] = malloc(sizeof(*(file->tagg_id[i])) * file->layout_count);
       memset(file->tagg_id[i], 0, sizeof(*(file->tagg_id[i])) * file->layout_count);
@@ -2887,18 +2891,32 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       memset(file->tio_id[i], 0, sizeof(*(file->tio_id[i])) * file->layout_count);
     }
 
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       for(j = 0 ; j < file->layout_count; j++)
       {
+#if PIDX_agg_var
+        file->tagg_id[i][j] = PIDX_agg_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+        file->tio_id[i][j] = PIDX_io_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+#else
         file->tagg_id[i][j] = PIDX_agg_init(file->idx, file->idx_d, start_var_index, i, i);
         file->tio_id[i][j] = PIDX_io_init(file->idx, file->idx_d, start_var_index, i, i);
+#endif
       }
     }
 
     file->idx_d->agg_buffer = malloc(sizeof(*(file->idx_d->agg_buffer)) * file->idx->variable_count);
     memset(file->idx_d->agg_buffer, 0, sizeof(*(file->idx_d->agg_buffer)) * file->idx->variable_count);
+
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       file->idx_d->agg_buffer[i] = malloc(sizeof(*(file->idx_d->agg_buffer[i])) * agg_io_level);
       memset(file->idx_d->agg_buffer[i], 0, sizeof(*(file->idx_d->agg_buffer[i])) * agg_io_level);
@@ -2960,7 +2978,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /* Attaching the communicator to the aggregation phase */
     /* Attaching the communicator to the I/O phase */
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       for(j = 0 ; j < file->layout_count; j++)
       {
@@ -2992,7 +3014,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     //if (file->small_agg_comm == 1)
     //  PIDX_create_local_aggregation_comm(file->agg_id);
 
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = 0 ; j < agg_io_level; j++)
@@ -3182,7 +3208,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
 
     /* Creating the buffers required for Aggregation */
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
@@ -3218,7 +3248,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (file->debug_do_agg == 1)
     {
       static_var_counter = 0;
+#if PIDX_agg_var
+      i = 0;
+#else
       for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
       {
         //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
         for(j = 0 ; j < agg_io_level; j++)
@@ -3250,7 +3284,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (file->debug_do_io == 1)
     {
       static_var_counter = 0;
+#if PIDX_agg_var
+      i = 0;
+#else
       for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
       {
         for(j = agg_io_level; j < file->layout_count; j++)
         {
@@ -3310,7 +3348,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       }
 
       static_var_counter = 0;
+#if PIDX_agg_var
+      i = 0;
+#else
       for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
       {
         //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
         for(j = 0 ; j < agg_io_level; j++)
@@ -3338,7 +3380,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
     /* Destroy buffers allocated during aggregation phase */
     static_var_counter = 0;
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = 0 ; j < agg_io_level; j++)
@@ -3354,7 +3400,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     /*----------------------------------------------IO [end]--------------------------------------------------*/
 
 
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       for(j = 0 ; j < agg_io_level; j++)
       {
@@ -3368,7 +3418,11 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     file->idx_d->agg_buffer = 0;
 
 
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
     {
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
@@ -3410,12 +3464,20 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     //  PIDX_destroy_local_aggregation_comm(file->agg_id);
 
     /* Deleting the I/O ID */
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
       for(j = 0 ; j < file->layout_count; j++)
         PIDX_io_finalize(file->tio_id[i][j]);
 
     /* Deleting the aggregation ID */
+#if PIDX_agg_var
+    i = 0;
+#else
     for(i = start_index ; i < (end_index + 1) ; i++)
+#endif
       for(j = 0 ; j < file->layout_count; j++)
         PIDX_agg_finalize(file->tagg_id[i][j]);
 
@@ -4702,7 +4764,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       }
       double total_time_ai = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
       int p = 0;
-      for (var = 0; var < file->idx->variable_count; var++)
+      for (var = 0; var < /*file->idx->variable_count*/static_var_counter; var++)
       {
         for (p = 0; p < file->layout_count; p++)
         {
@@ -4721,6 +4783,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
       if (file->idx->variable_count % (file->var_pipe_length + 1) != 0)
         timer_count = timer_count + 1;
 
+
+      //printf("static_var_counter = %d\n", static_var_counter);
       double total_time_rch = 0;
       for (var = 0; var < timer_count; var++)
       {
