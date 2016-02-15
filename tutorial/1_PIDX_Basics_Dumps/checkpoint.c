@@ -44,6 +44,7 @@ static int process_count = 1, rank = 0;
 static unsigned long long global_box_size[3] = {162, 162, 42};
 static unsigned long long local_box_offset[3];
 static unsigned long long local_box_size[3] = {20, 20, 20};
+int sub_div[NUM_DIMS] = {1,1,1};
 static int time_step_count = 1;
 static int variable_count = 1;
 static char output_file_template[512] = "test";
@@ -197,7 +198,7 @@ static void calculate_per_process_offsets()
     if (rank == 63) { local_box_offset[0] = 120; local_box_offset[1] = 141; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
 */
 
-  int sub_div[NUM_DIMS];
+
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
   sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
   sub_div[Z] = (global_box_size[Z] / local_box_size[Z]);
@@ -388,11 +389,22 @@ int main(int argc, char **argv)
   PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
   PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
 
+
+  unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice;
+  rank_z = rank / (sub_div[0] * sub_div[1]);
+  rank_slice = rank % (sub_div[0] * sub_div[1]);
+  rank_y = (rank_slice / sub_div[0]);
+  rank_x = (rank_slice % sub_div[0]);
+  static int idx_count[3] = {1,1,1};
+
   //  Creating access
   PIDX_access access;
   PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+  PIDX_set_idx_count(access, idx_count[0], idx_count[1], idx_count[2]);
+  PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
+  PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -423,10 +435,10 @@ int main(int argc, char **argv)
 
     //PIDX_debug_disable_restructuring(file);
     //PIDX_debug_disable_chunking(file);
-    PIDX_debug_disable_hz(file);
+    //PIDX_debug_disable_hz(file);
     PIDX_debug_disable_compression(file);
     //PIDX_debug_disable_agg(file);
-    PIDX_debug_disable_io(file);
+    //PIDX_debug_disable_io(file);
 
     //PIDX_enable_raw_io(file);
 

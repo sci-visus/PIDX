@@ -32,7 +32,7 @@ struct PIDX_block_layout_struct
   int bits_per_block;
 
   int existing_file_count;
-  int agg_existing_file_count;
+  //int agg_existing_file_count;
 
   int *file_bitmap;
   int *block_count_per_file;

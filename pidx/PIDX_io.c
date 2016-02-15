@@ -322,7 +322,7 @@ int PIDX_aggregated_io(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout b
 #if PIDX_HAVE_MPI
     if (MODE == PIDX_WRITE)
     {
-      //printf("W [%d] size = %d and offset = %d\n", rank, agg_buf->buffer_size, data_offset);
+      //printf("W [%d] [%d %d %d] size = %d and offset = %d\n", rank, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, agg_buf->buffer_size, data_offset);
       mpi_ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
       if (mpi_ret != MPI_SUCCESS)
       {
