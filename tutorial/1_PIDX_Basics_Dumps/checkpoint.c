@@ -415,7 +415,7 @@ int main(int argc, char **argv)
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
-    ret = PIDX_set_current_time_step(file, 0);
+    ret = PIDX_set_current_time_step(file, ts);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
