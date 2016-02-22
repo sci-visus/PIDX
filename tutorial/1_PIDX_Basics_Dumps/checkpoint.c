@@ -272,7 +272,7 @@ static void create_synthetic_simulation_data()
   int var = 0;
   unsigned long long i, j, k, vps = 0;
 
-  data = (double**)malloc(sizeof(*data) * variable_count);
+  data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
   // Synthetic simulation data
@@ -284,7 +284,7 @@ static void create_synthetic_simulation_data()
     //else
     values_per_sample = 1;
 
-    data[var] = (double*)malloc(sizeof (double) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
+    data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -369,7 +369,7 @@ int main(int argc, char **argv)
 {
   init_mpi(argc, argv);
   parse_args(argc, argv);
-  //check_args();
+  check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
@@ -390,21 +390,23 @@ int main(int argc, char **argv)
   PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
 
 
+  /*
   unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice;
   rank_z = rank / (sub_div[0] * sub_div[1]);
   rank_slice = rank % (sub_div[0] * sub_div[1]);
   rank_y = (rank_slice / sub_div[0]);
   rank_x = (rank_slice % sub_div[0]);
   static int idx_count[3] = {1,1,1};
+  */
 
   //  Creating access
   PIDX_access access;
   PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
-  PIDX_set_idx_count(access, idx_count[0], idx_count[1], idx_count[2]);
-  PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
-  PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
+  //PIDX_set_idx_count(access, idx_count[0], idx_count[1], idx_count[2]);
+  //PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
+  //PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -420,6 +422,8 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
+    PIDX_debug_output(file);
+
     //PIDX_debug_rst(file, 1);
     //PIDX_debug_hz(file, 1);
 
@@ -427,16 +431,15 @@ int main(int argc, char **argv)
     //PIDX_debug_disable_io(file);
     //PIDX_dump_agg_info(file, 1);
     PIDX_set_block_count(file, 256);
-    PIDX_set_block_size(file, 15);
+    PIDX_set_block_size(file, 12);
     //PIDX_set_aggregation_factor(file, 2);
 
     //PIDX_dump_agg_info(file, 1);
 
-
     //PIDX_debug_disable_restructuring(file);
     //PIDX_debug_disable_chunking(file);
     //PIDX_debug_disable_hz(file);
-    PIDX_debug_disable_compression(file);
+    //PIDX_debug_disable_compression(file);
     //PIDX_debug_disable_agg(file);
     //PIDX_debug_disable_io(file);
 
@@ -445,14 +448,14 @@ int main(int argc, char **argv)
     //PIDX_activate_local_aggregation(file);
 
     //PIDX_set_variable_pile_length(file, 0);
-    //int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
-    //ret = PIDX_set_restructuring_box(file, restructured_box_size);
-    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
+    int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
+    ret = PIDX_set_restructuring_box(file, restructured_box_size);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
 
-    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-    //PIDX_set_lossy_compression_bit_rate(file, 8);
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    PIDX_set_lossy_compression_bit_rate(file, 2);
 
     char var_name[512];
     for (var = 0; var < variable_count; var++)

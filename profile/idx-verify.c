@@ -659,13 +659,14 @@ int main(int argc, char **argv)
 
                           drhs = var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0 || compression_type == 1)
-                            dlhs = swap(swap(double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
+                            dlhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                           else
                             dlhs = decompressed_double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
                           check_bit = check_bit && (dlhs == drhs);
 
-                          printf("[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
+                          //printf("X  %f %f\n", dlhs, drhs);
+                          //printf("[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
                           if (dlhs == drhs)
                             element_count1++;
                         }
@@ -763,9 +764,9 @@ int main(int argc, char **argv)
       }
     }
 
-    //printf("[=]%lld (%lld) + [!=]%lld (%lld) [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long)lost_element_count1, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
+    printf("[=]%lld (%lld) + [!=]%lld (%lld) [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long)lost_element_count1, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
 
-    //assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
+    assert(element_count == (int64_t) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
 
   }
 

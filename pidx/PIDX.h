@@ -375,11 +375,12 @@ PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int re
 
 
 ///
-PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_length);
+PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *resolution_to);
+
 
 
 ///
-PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *resolution_to);
+PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_length);
 
 
 
@@ -482,6 +483,11 @@ PIDX_return_code PIDX_time_step_caching_ON();
 
 ///
 PIDX_return_code PIDX_time_step_caching_OFF();
+
+
+
+///
+PIDX_return_code PIDX_debug_output(PIDX_file file);
 
 
 #ifdef __cplusplus

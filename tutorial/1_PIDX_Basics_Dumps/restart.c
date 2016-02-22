@@ -126,10 +126,10 @@ static void destroy_synthetic_simulation_data()
   int read_error_count = 0, read_count = 0;
   for(var = 0; var < variable_count; var++)
   {
-    if (var == 0 || var == 3)
-      values_per_sample[var] = 3;
-    else
-      values_per_sample[var] = 1;
+    //if (var == 0 || var == 3)
+    //  values_per_sample[var] = 3;
+    //else
+    values_per_sample[var] = 1;
 
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
@@ -141,8 +141,8 @@ static void destroy_synthetic_simulation_data()
             if (data[var][index * values_per_sample[var] + vps] != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
-              //if (rank == 0)
-                //printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              if (rank == 10)
+                printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
@@ -265,6 +265,10 @@ int main(int argc, char **argv)
 
   ret = PIDX_set_current_time_step(file, 0);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
+
+  PIDX_dump_agg_info(file, 1);
+
+  PIDX_debug_output(file);
 
   values_per_sample = malloc(sizeof(*values_per_sample) * variable_count);
   memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count);

@@ -59,11 +59,14 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from
   layout->resolution_to = resolution_to;
   layout->bits_per_block = bits_per_block;
 
+  if (layout->maxh < bits_per_block + 1)
+    layout->maxh = bits_per_block + 1;
+
   //levels = (resolution_to - resolution_from);
   //printf("levels = %d\n (%d %d)\n", levels, layout->resolution_from, layout->resolution_to);
 
-  layout->hz_block_number_array = malloc(sizeof(int*) * maxh);
-  memset(layout->hz_block_number_array, 0, sizeof(int*) * maxh);
+  layout->hz_block_number_array = malloc(sizeof(int*) * layout->maxh);
+  memset(layout->hz_block_number_array, 0, sizeof(int*) * layout->maxh);
 
   //if (resolution_from <= bits_per_block)
   //{
@@ -74,7 +77,7 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from
     }
 
     ctr = 1;
-    for (j = bits_per_block + 1 ; j < maxh ; j++)
+    for (j = bits_per_block + 1 ; j < layout->maxh ; j++)
     {
       layout->hz_block_number_array[j] = malloc(sizeof(int) * ctr);
       memset(layout->hz_block_number_array[j], 0, sizeof(int) * ctr);

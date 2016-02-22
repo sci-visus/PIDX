@@ -110,32 +110,38 @@ int main(int argc, char **argv)
 
       //printf("%ld %ld :: %ld %ld\n", data_length1, data_offset1, data_length2, data_offset2);
       
-      pread(fd1, data_buffer1, data_length1, data_offset1);
-      pread(fd2, data_buffer2, data_length2, data_offset2);
+      int ret2;
+      ret2 = pread(fd1, data_buffer1, data_length1, data_offset1);
+      //printf("I O %d %d\n", ret2, data_length);
+      assert(ret2 == data_length1);
+
+      ret2 = pread(fd2, data_buffer2, data_length2, data_offset2);
+      //printf("I O %d %d\n", ret2, data_length2);
+      assert(ret2 == data_length2);
       
       if(data_length1 != data_length2)
       {
-	fprintf(stderr, "Different block length for block %d (%ld %ld)\n", j, data_length1, data_length2);
-	return -1;
+        fprintf(stderr, "Different block length for block %d (%ld %ld)\n", j, data_length1, data_length2);
+        return -1;
       }
       
       for (i = 0; i < data_length1 / sizeof(double); i++)
       {
-	if (data_buffer1[i] == 0 && data_buffer2[i] == 0)
-	  zero_count[var]++;
-	else
-	{
-	  if (data_buffer1[i] == data_buffer2[i])
+        if (data_buffer1[i] == 0 && data_buffer2[i] == 0)
+          zero_count[var]++;
+        else
+        {
+          if (data_buffer1[i] == data_buffer2[i])
           {
-	    non_zero_equal_count[var]++;
-            printf("[R] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+            non_zero_equal_count[var]++;
+            //printf("[R] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
           }
-	  else
-	  {
-	    non_zero_unequal_count[var]++;
-	    printf("[W] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
-	  }
-	}
+          else
+          {
+            non_zero_unequal_count[var]++;
+            printf("[W] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+          }
+        }
       }
       free(data_buffer1);
       free(data_buffer2);

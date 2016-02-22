@@ -87,7 +87,7 @@ PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer,
 
 
 ///
-PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout);
+PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int PIDX_MODE);
 
 PIDX_return_code PIDX_local_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int id, PIDX_block_layout block_layout, int MODE);
 PIDX_return_code PIDX_local_agg_local_comm(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE);

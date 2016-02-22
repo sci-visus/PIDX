@@ -144,8 +144,10 @@ struct idx_dataset_derived_metadata_struct
 
   int color;
   
-  int res_from;
-  int res_to;
+  int parallel_mode;
+
+  //int res_from;
+  //int res_to;
   
   //extents of meta-data
   int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension

@@ -51,11 +51,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id id, int MODE);
 
 
 ///
-PIDX_return_code PIDX_chunk_read(PIDX_chunk_id id);
-
-
-
-///
 PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id id);
 
 

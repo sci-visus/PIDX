@@ -79,11 +79,6 @@ int PIDX_io_per_process(PIDX_io_id io_id, PIDX_block_layout block_layout, int MO
 
 
 ///
-int PIDX_io_per_process_read(PIDX_io_id io_id);
-
-
-
-///
 int PIDX_io_finalize(PIDX_io_id io_id);
 
 #endif

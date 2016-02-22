@@ -62,10 +62,6 @@ typedef struct PIDX_Ndim_patch_group_struct* Ndim_patch_group;
 struct PIDX_HZ_buffer_struct
 {
   int type;                                             ///< decide the type of the group
-  int HZ_io_from;                                       ///< starting HZ level
-  int HZ_io_to;                                         ///< ending HZ level
-  int HZ_agg_from;                                      ///< starting HZ level
-  int HZ_agg_to;                                        ///< ending HZ level
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   int64_t *samples_per_level;                           ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   int64_t *start_hz_index;                              ///< Starting HZ index at of the data at all the HZ levels
@@ -75,7 +71,9 @@ struct PIDX_HZ_buffer_struct
 
   int* lower_hz_disp;
   int* lower_hz_count;
+  int lower_hz_buffer_size;
   unsigned char* lower_hz_buffer;                               ///< data buffer at all the HZ levels
+  MPI_Datatype lower_level_datatype;
 };
 typedef struct PIDX_HZ_buffer_struct* HZ_buffer;
 
