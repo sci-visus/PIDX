@@ -2964,7 +2964,6 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int l
     }
   }
 
-
 #if !SIMULATE_IO
 #ifdef PIDX_ACTIVE_TARGET
   ret = MPI_Win_fence(0, agg_id->win);

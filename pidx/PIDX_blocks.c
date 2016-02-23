@@ -281,7 +281,7 @@ int PIDX_blocks_is_block_present(int block_number, PIDX_block_layout layout)
   int res_level = 0, res_index = 0;
   
   if (block_number == 0)
-    res_level = 0;
+    res_level = layout->bits_per_block;
   else
   {
     res_level = log2 (block_number) + 1 + layout->bits_per_block;
@@ -295,7 +295,6 @@ int PIDX_blocks_is_block_present(int block_number, PIDX_block_layout layout)
     return 1;
 
   return 0;
-
 }
 
 

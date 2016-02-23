@@ -239,7 +239,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
-  (*file)->agg_type = 1;
+  (*file)->agg_type = 0;
 
   (*file)->debug_rst = 0;
   (*file)->debug_hz = 0;
@@ -2040,8 +2040,9 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   /*
   if (rank == 0)
   {
-    printf("Final Block Bitmap\n");
-    //PIDX_blocks_print_layout(file->idx->variable[lvi]->block_layout_by_level[0]);
+    printf("[A] Final Block Bitmap [%d %d]\n", file->idx->variable[lvi]->block_layout_by_level[0]->resolution_from, file->idx->variable[lvi]->block_layout_by_level[0]->resolution_to);
+    PIDX_blocks_print_layout(file->idx->variable[lvi]->block_layout_by_level[0]);
+    printf("[B] Final Block Bitmap\n");
     PIDX_blocks_print_layout(block_layout);
   }
   */
@@ -2977,7 +2978,6 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
   int start_index = 0, end_index = 0;
   int i = 0;
-  //int agg_by_level_file = 2;//(file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
 
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->var_pipe_length + 1))
   {
@@ -3029,7 +3029,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     file->tio_id = malloc(sizeof(*(file->tio_id)) * file->idx->variable_count);
     memset(file->tio_id, 0, sizeof(*(file->tio_id)) * file->idx->variable_count);
 
-    int agg_var_pipe = 1;
+    int agg_var_pipe = 0;
     int agg_end_index = 0;
 
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
@@ -3073,19 +3073,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       }
 
       /*
-      int start_agg_index;
-      if (agg_io_level == 1)
-        start_agg_index = 1;
-      if (agg_io_level == 2)
-        start_agg_index = 2;
-
-      file->idx_d->agg_buffer[i][0]->aggregation_factor = 1;//(int)pow(2, (agg_io_level - 1));
       for (j = 1 ; j < agg_io_level; j++)
-      {
         file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;//(int)pow(2, (agg_io_level - j));
-        //if (rank == 0)
-        //  printf("[%d %d] factor at layout %d = %d\n", agg_io_level, file->layout_count, j, file->idx_d->agg_buffer[i][j]->aggregation_factor);
-      }
       */
     }
     /*------------------------------------Create ALL the IDs [end]-------------------------------------------*/
