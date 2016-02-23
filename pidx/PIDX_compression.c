@@ -51,7 +51,7 @@ struct PIDX_comp_id_struct
 
 };
 
-#if 1//PIDX_HAVE_ZFP
+#if PIDX_HAVE_ZFP
 int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int bytes_per_sample, int bit_rate)
 {
   int total_size = 0;
@@ -246,7 +246,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-#if 1//PIDX_HAVE_ZFP
+#if PIDX_HAVE_ZFP
     int v, p, b;
     PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
 
@@ -297,7 +297,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-#if 1//PIDX_HAVE_ZFP
+#if PIDX_HAVE_ZFP
     int v, p, b;
     PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
 
