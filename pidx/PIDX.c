@@ -3030,7 +3030,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     file->tio_id = malloc(sizeof(*(file->tio_id)) * file->idx->variable_count);
     memset(file->tio_id, 0, sizeof(*(file->tio_id)) * file->idx->variable_count);
 
-    int agg_var_pipe = 0;
+    int agg_var_pipe = 1;
     int agg_end_index = 0;
 
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))

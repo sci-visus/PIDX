@@ -2339,12 +2339,13 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
     {
       for (j = 0; j < agg_id->idx->variable[i]->values_per_sample * agg_buffer->aggregation_factor; j++)
       {
-        agg_id->rank_holder[global_block_layout->existing_file_index[k]][i - agg_id->first_index][j] = rank_counter;
+        //agg_id->rank_holder[global_block_layout->existing_file_index[k]][i - agg_id->first_index][j] = rank_counter;
+        agg_id->rank_holder[k][i - agg_id->first_index][j] = rank_counter;
         rank_counter = rank_counter + agg_buffer->aggregator_interval;
 
         if ((k >= file_from && k < file_to) || (file_from == 0 && file_to == 0))
         {
-          if(rank == agg_id->rank_holder[global_block_layout->existing_file_index[k]][i - agg_id->first_index][j])
+          if(rank == agg_id->rank_holder[k][i - agg_id->first_index][j])
           {
             agg_buffer->file_number = global_block_layout->existing_file_index[k];
             agg_buffer->var_number = i;
@@ -2374,7 +2375,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
     }
   }
 
-#if 0
+#if 1
   if (rank == 0)
   {
     for (i = 0; i < global_block_layout->existing_file_count; i++)
@@ -2383,7 +2384,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
       {
         for (k = 0; k < agg_id->idx->variable[j]->values_per_sample * agg_buffer->aggregation_factor; k++)
         {
-          printf("[%d %d %d] -> %d\n", k, i, j, agg_id->rank_holder[i][j-agg_id->first_index][k]);
+          printf("[%d %d] [%d %d %d] -> %d\n", i1, j1, k, i, j, agg_id->rank_holder[i][j-agg_id->first_index][k]);
         }
       }
     }
