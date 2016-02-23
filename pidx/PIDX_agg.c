@@ -406,7 +406,7 @@ static PIDX_return_code local_one_sided_data_com(PIDX_agg_id agg_id, Agg_buffer 
 
             ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], 0, agg_buffer, block_layout, mode, agg_id->comm);
 #else
-            ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode);
+            ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode, agg_id->comm);
 #endif
             if (ret != PIDX_success)
             {
@@ -568,7 +568,7 @@ static PIDX_return_code local_one_sided_data_com_local_comm(PIDX_agg_id agg_id, 
 
             ret = local_aggregate_local_comm_write_read(agg_id, v, hz_buf->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], 0, agg_buffer, block_layout, mode, agg_id->local_comm);
 #else
-            ret = local_aggregate_local_comm_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode);
+            ret = local_aggregate_local_comm_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode, agg_id->local_comm);
 #endif
             if (ret != PIDX_success)
             {
@@ -2469,7 +2469,7 @@ PIDX_return_code PIDX_local_agg_local_comm_buf_create(PIDX_agg_id agg_id, Agg_bu
   int rank = 0, nprocs = 1;
 
   int rank_counter = 0, i = 0, j = 0, k = 0;
-  rank_counter = 0;//agg_offset;
+  rank_counter = agg_offset;
 
   int64_t samples_per_file = (int64_t) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
   PIDX_variable var0 = agg_id->idx->variable[agg_id->first_index];
@@ -2558,7 +2558,7 @@ PIDX_return_code PIDX_local_agg_local_comm_buf_create(PIDX_agg_id agg_id, Agg_bu
   //int target_rank = agg_id->rank_holder3[local_block_layout->inverse_existing_file_index[file_no]][v - agg_id->first_index][0];
   //MPI_Comm_split(agg_id->comm, file_no, rank, &(agg_id->local_comm));
 
-#if 0
+#if 1
   if (rank == 0)
   {
     for (i = 0; i < 1; i++)
@@ -2929,7 +2929,7 @@ PIDX_return_code destroy_file_zero_buffer(PIDX_agg_id agg_id)
 
 PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE)
 {
-  int file_zero = 1;
+  int file_zero = 0;
   int ret;
 
   int rank = 0;

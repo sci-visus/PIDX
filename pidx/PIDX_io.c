@@ -496,7 +496,7 @@ int PIDX_io_per_process(PIDX_io_id io_id, PIDX_block_layout block_layout, int MO
 #if !SIMULATE_IO
             ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
 #else
-            ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, NULL, 0, block_layout, mode);
+            ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, NULL, 0, block_layout, MODE);
 #endif
             if (ret != PIDX_success)
             {

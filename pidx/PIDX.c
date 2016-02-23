@@ -34,7 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 0
+#define PIDX_DEBUG_OUTPUT 1
 
 static int vp = 0;
 static int hp = 0;
@@ -3349,7 +3349,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
         }
 
         else
-          ret = PIDX_local_agg_local_comm_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], j/*0*/);
+          if (no_of_aggregators * file->idx->variable_count <= nprocs)
+            ret = PIDX_local_agg_local_comm_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], i);
+          else
+            ret = PIDX_local_agg_local_comm_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j], 0);
 
         if (ret != PIDX_success)
         {
