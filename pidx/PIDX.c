@@ -34,7 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 1
+#define PIDX_DEBUG_OUTPUT 0
 
 static int vp = 0;
 static int hp = 0;
@@ -48,6 +48,7 @@ static double *init_start, *init_end;
 static double *rst_start, *rst_end;
 static double *hz_start, *hz_end;
 static double **agg_start, **agg_end;
+static double **agg_buf_start, **agg_buf_end;
 static double **io_per_process_start, **io_per_process_end;
 static double **io_start, **io_end;
 static double *cleanup_start, *cleanup_end;
@@ -3326,11 +3327,13 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
 
     /* Creating the buffers required for Aggregation */
+    static_var_counter = 0;
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
       {
+        agg_buf_start[static_var_counter][j] = PIDX_get_time();
         /* Creating the buffers required for Aggregation */
         if (file->agg_type == 0)
         {
@@ -3359,7 +3362,9 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
           fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
+        agg_buf_end[static_var_counter][j] = PIDX_get_time();
       }
+      static_var_counter++;
     }
 
 #if PIDX_DEBUG_OUTPUT
@@ -4470,21 +4475,22 @@ PIDX_return_code PIDX_close(PIDX_file file)
           header_io_time = header_io_time + (write_init_end[var] - write_init_start[var]);
           fprintf(stdout, "File Create time (+ header IO) %f\n", (write_init_end[var] - write_init_start[var]));
         }
-        double total_time_ai = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
+        double total_time_ai = 0, total_time_bc = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
         int p = 0;
         for (var = 0; var < /*file->idx->variable_count*/static_var_counter; var++)
         {
           for (p = 0; p < file->layout_count; p++)
           {
-            fprintf(stdout, "[%d %d] Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f = %f\n", var, p, (agg_end[var][p] - agg_start[var][p]), (io_end[var][p] - io_start[var][p]), (io_per_process_end[var][p] - io_per_process_start[var][p]), (agg_end[var][p] - agg_start[var][p]) + (io_end[var][p] - io_start[var][p]) + (io_per_process_end[var][p] - io_per_process_start[var][p]));
+            fprintf(stdout, "[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f + %f = %f\n", var, p, (agg_buf_end[var][p] - agg_buf_start[var][p]), (agg_end[var][p] - agg_start[var][p]), (io_end[var][p] - io_start[var][p]), (io_per_process_end[var][p] - io_per_process_start[var][p]), (agg_buf_end[var][p] - agg_buf_start[var][p]) + (agg_end[var][p] - agg_start[var][p]) + (io_end[var][p] - io_start[var][p]) + (io_per_process_end[var][p] - io_per_process_start[var][p]));
 
+            total_time_bc = total_time_bc + (agg_buf_end[var][p] - agg_buf_start[var][p]);
             total_time_a = total_time_a + (agg_end[var][p] - agg_start[var][p]);
             total_time_i = total_time_i + (io_end[var][p] - io_start[var][p]);
             total_time_pi = total_time_pi + (io_per_process_end[var][p] - io_per_process_start[var][p]);
           }
         }
-        total_time_ai = total_time_a + total_time_i + total_time_pi;
-        fprintf(stdout, "Agg time + AGG I/O time + Per-Process I/O time : %f + %f + %f = %f\n", total_time_a, total_time_i, total_time_pi, total_time_ai);
+        total_time_ai = total_time_bc + total_time_a + total_time_i + total_time_pi;
+        fprintf(stdout, "Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time : %f + %f + %f + %f = %f\n", total_time_bc, total_time_a, total_time_i, total_time_pi, total_time_ai);
 
         int timer_count = 0;
         timer_count = file->idx->variable_count / (file->var_pipe_length + 1);
@@ -4593,6 +4599,9 @@ PIDX_return_code PIDX_close(PIDX_file file)
     free(agg_start[i]);
     free(agg_end[i]);
 
+    free(agg_buf_start[i]);
+    free(agg_buf_end[i]);
+
     free(io_start[i]);
     free(io_end[i]);
 
@@ -4638,6 +4647,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(hz_end);                         hz_end                  = 0;
   free(agg_start);                      agg_start               = 0;
   free(agg_end);                        agg_end                 = 0;
+  free(agg_buf_start);                  agg_buf_start           = 0;
+  free(agg_buf_end);                    agg_buf_end             = 0;
   free(io_start);                       io_start                = 0;
   free(io_end);                         io_end                  = 0;
   free(cleanup_start);                  cleanup_start           = 0;
@@ -4915,6 +4926,8 @@ static void PIDX_init_timming_buffers2(PIDX_file file)
 
   agg_start = malloc (sizeof(double*) * file->idx->variable_count);       memset(agg_start, 0, sizeof(double*) * file->idx->variable_count);
   agg_end = malloc (sizeof(double*) * file->idx->variable_count);         memset(agg_end, 0, sizeof(double*) * file->idx->variable_count);
+  agg_buf_start = malloc (sizeof(double*) * file->idx->variable_count);   memset(agg_buf_start, 0, sizeof(double*) * file->idx->variable_count);
+  agg_buf_end = malloc (sizeof(double*) * file->idx->variable_count);     memset(agg_buf_end, 0, sizeof(double*) * file->idx->variable_count);
   io_start = malloc (sizeof(double*) * file->idx->variable_count);        memset(io_start, 0, sizeof(double*) * file->idx->variable_count);
   io_end = malloc (sizeof(double*) * file->idx->variable_count);          memset(io_end, 0, sizeof(double*) * file->idx->variable_count);
   io_per_process_start = malloc (sizeof(double*) * file->idx->variable_count);          memset(io_per_process_start, 0, sizeof(double*) * file->idx->variable_count);
@@ -4925,6 +4938,8 @@ static void PIDX_init_timming_buffers2(PIDX_file file)
   {
     agg_start[i] = malloc (sizeof(double) * file->layout_count);       memset(agg_start[i], 0, sizeof(double) * file->layout_count);
     agg_end[i] = malloc (sizeof(double) * file->layout_count);         memset(agg_end[i], 0, sizeof(double) * file->layout_count);
+    agg_buf_start[i] = malloc (sizeof(double) * file->layout_count);   memset(agg_buf_start[i], 0, sizeof(double) * file->layout_count);
+    agg_buf_end[i] = malloc (sizeof(double) * file->layout_count);     memset(agg_buf_end[i], 0, sizeof(double) * file->layout_count);
     io_start[i] = malloc (sizeof(double) * file->layout_count);        memset(io_start[i], 0, sizeof(double) * file->layout_count);
     io_end[i] = malloc (sizeof(double) * file->layout_count);          memset(io_end[i], 0, sizeof(double) * file->layout_count);
 

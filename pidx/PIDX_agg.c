@@ -2558,7 +2558,7 @@ PIDX_return_code PIDX_local_agg_local_comm_buf_create(PIDX_agg_id agg_id, Agg_bu
   //int target_rank = agg_id->rank_holder3[local_block_layout->inverse_existing_file_index[file_no]][v - agg_id->first_index][0];
   //MPI_Comm_split(agg_id->comm, file_no, rank, &(agg_id->local_comm));
 
-#if 1
+#if 0
   if (rank == 0)
   {
     for (i = 0; i < 1; i++)
