@@ -138,8 +138,6 @@ struct PIDX_file_descriptor
   int agg_type;
 
   int layout_count;
-  int layout_start_index;
-  int layout_end_index;
 
   int reduced_res_from;
   int reduced_res_to;
@@ -309,15 +307,25 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     }
     else
       MPI_Comm_dup(access_type->comm, &((*file)->comm));
+
+    (*file)->idx->enable_rst = 1;
+    (*file)->idx->enable_agg = 1;
   }
+  else
+  {
+    (*file)->idx->enable_rst = 0;
+    (*file)->idx->enable_agg = 0;
+  }
+#else
+  (*file)->idx->enable_rst = 0;
+  (*file)->idx->enable_agg = 0;
 #endif
 
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;
   (*file)->idx->variable_index_tracker = 0;
 
-  (*file)->idx->enable_rst = 1;
-  (*file)->idx->enable_agg = 1;
+
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
 
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
@@ -1609,7 +1617,7 @@ static PIDX_return_code populate_idx_layout(PIDX_file file, PIDX_block_layout bl
         return PIDX_err_file;
       }
 
-      ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, per_patch_local_block_layout);
+      ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, per_patch_local_block_layout, file->reduced_res_from, file->reduced_res_to);
       if (ret_code != PIDX_success)
       {
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
@@ -1720,7 +1728,7 @@ static PIDX_return_code populate_idx_layout(PIDX_file file, PIDX_block_layout bl
       bounding_box[1][i] = file->idx->chunked_bounds[i];
     }
 
-    ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, block_layout);
+    ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, block_layout, file->reduced_res_from, file->reduced_res_to);
     if (ret_code != PIDX_success)
     {
       fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
@@ -1737,6 +1745,7 @@ static PIDX_return_code populate_idx_layout(PIDX_file file, PIDX_block_layout bl
 
   block_layout->block_count_per_file = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(block_layout->block_count_per_file, 0, sizeof(int) * (file->idx_d->max_file_count));
+
 
   int file_number = 0;
   if (block_layout->resolution_from <= block_layout->bits_per_block)
@@ -1790,7 +1799,6 @@ static PIDX_return_code populate_idx_layout(PIDX_file file, PIDX_block_layout bl
       ctr = ctr * 2;
     }
   }
-
 
   block_layout->existing_file_count = 0;
   for (i = 0; i < file->idx_d->max_file_count; i++)
@@ -1877,14 +1885,26 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   memset(file->idx->variable[lvi]->global_block_layout, 0, sizeof (*file->idx->variable[lvi]->global_block_layout));
   PIDX_block_layout block_layout = file->idx->variable[lvi]->global_block_layout;
 
-  lower_hz_level = file->reduced_res_from;
-  higher_hz_level = file->idx_d->maxh - file->reduced_res_to;
+  lower_hz_level = 0;//file->reduced_res_from;
+  higher_hz_level = file->idx_d->maxh;// - file->reduced_res_to;
   ret_code = PIDX_blocks_initialize_layout(block_layout, lower_hz_level, higher_hz_level, file->idx_d->maxh, file->idx->bits_per_block);
   if (ret_code != PIDX_success)
   {
     fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+  /*
+  int local_layout_count;
+#if 1
+  local_layout_count = (higher_hz_level - (file->idx->bits_per_block + log2(file->idx->blocks_per_file))) - file->reduced_res_to;
+  if (local_layout_count <= 0)
+    local_layout_count = 1;
+#else
+  local_layout_count = 1;
+#endif
+  */
+
 
 #if 1
   file->layout_count = (higher_hz_level - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
@@ -1894,8 +1914,6 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   file->layout_count = 1;
 #endif
 
-  //file->layout_start_index = 0;
-  //file->layout_end_index = file->layout_count;
 
   var->block_layout_by_level = malloc(sizeof(*(var->block_layout_by_level)) * file->layout_count);
   memset(var->block_layout_by_level, 0, sizeof(*(var->block_layout_by_level)) * file->layout_count);
@@ -1906,14 +1924,14 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   }
 
 #if 1
-  lower_level_low_layout = lower_hz_level;
+  lower_level_low_layout = 0;
   higher_level_low_layout = file->idx->bits_per_block + log2(file->idx->blocks_per_file) + 1;
 
-  //if (higher_level_low_layout >= file->idx_d->maxh)
-  //  higher_level_low_layout = file->idx_d->maxh;
+  if (higher_level_low_layout >= file->idx_d->maxh)
+    higher_level_low_layout = file->idx_d->maxh;
 
-  if (higher_level_low_layout >= higher_hz_level)
-    higher_level_low_layout = higher_hz_level;
+  //if (higher_level_low_layout >= file->idx_d->maxh - file->reduced_res_to)
+  //  higher_level_low_layout = (file->idx_d->maxh - file->reduced_res_to);
 
   ret_code = PIDX_blocks_initialize_layout(file->idx->variable[lvi]->block_layout_by_level[0], lower_level_low_layout, higher_level_low_layout, file->idx_d->maxh, file->idx->bits_per_block);
   if (ret_code != PIDX_success)
@@ -2042,9 +2060,45 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
   if (rank == 0)
   {
     printf("[A] Final Block Bitmap [%d %d]\n", file->idx->variable[lvi]->block_layout_by_level[0]->resolution_from, file->idx->variable[lvi]->block_layout_by_level[0]->resolution_to);
-    PIDX_blocks_print_layout(file->idx->variable[lvi]->block_layout_by_level[0]);
-    printf("[B] Final Block Bitmap\n");
+    //PIDX_blocks_print_layout(file->idx->variable[lvi]->block_layout_by_level[file->layout_count - 3]);
+    //printf("[B] Final Block Bitmap\n");
     PIDX_blocks_print_layout(block_layout);
+
+    int p = 0;
+    int bounding_box[2][5];
+    for (p = 0 ; p < file->idx->variable[lvi]->sim_patch_count ; p++)
+    {
+      for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+      {
+        bounding_box[0][i] = file->idx->variable[lvi]->sim_patch[p]->offset[i];
+        bounding_box[1][i] = file->idx->variable[lvi]->sim_patch[p]->size[i] + file->idx->variable[lvi]->sim_patch[p]->offset[i];
+
+        bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
+
+        if (bounding_box[1][i] % file->idx->chunk_size[i] == 0)
+          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]);
+        else
+          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
+      }
+
+      PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
+      memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
+      ret_code = PIDX_blocks_initialize_layout(per_patch_local_block_layout, 22, 23, file->idx_d->maxh, file->idx->bits_per_block);
+      if (ret_code != PIDX_success)
+      {
+        fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, per_patch_local_block_layout, file->reduced_res_from, file->reduced_res_to);
+      if (ret_code != PIDX_success)
+      {
+        fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      PIDX_blocks_print_layout(per_patch_local_block_layout);
+    }
   }
   */
 
@@ -2133,12 +2187,6 @@ static PIDX_return_code populate_idx_dataset(PIDX_file file)
       count++;
     }
   }
-
-  //if (rank == 0)
-  //{
-  //  for (i = 0; i < file->idx_d->max_file_count; i++)
-  //  printf("[X] i(%d) = count(%d)\n", i, block_layout->inverse_existing_file_index[i]);
-  //}
 
   return PIDX_success;
 }
@@ -2844,7 +2892,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
             }
 
   populate_idx_start_time = MPI_Wtime();
-
+#if 1
   ret = populate_idx_dataset(file);
   if (ret != PIDX_success)
     return PIDX_err_file;
@@ -3133,6 +3181,10 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
+    ret = PIDX_hz_encode_set_resolution(file->hz_id, file->reduced_res_from, file->reduced_res_to);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+
     ret = PIDX_hz_encode_meta_data_create(file->hz_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
@@ -3382,8 +3434,8 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       static_var_counter = 0;
       for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
       {
-        //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
         for(j = 0 ; j < agg_io_level; j++)
+        //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
         {
            agg_start[static_var_counter][j] = PIDX_get_time();
 
@@ -3631,7 +3683,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
 
   free(file->idx_d->rank_r_count);
   file->idx_d->rank_r_count = 0;
-
+#endif
   return PIDX_success;
 }
 

@@ -424,8 +424,9 @@ int PIDX_aggregated_io(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout b
 
 int PIDX_io_per_process(PIDX_io_id io_id, PIDX_block_layout block_layout, int MODE)
 {
-  int i = 0, p = 0, v = 0, ret;
+  int i = 0, p = 0, v = 0, ret, e1 = 0;
   int send_index = 0;
+  int hz_index = 0;
   int64_t index = 0, count = 0;
   int rank = 0;
 
@@ -465,6 +466,88 @@ int PIDX_io_per_process(PIDX_io_id io_id, PIDX_block_layout block_layout, int MO
   PIDX_variable var0 = io_id->idx->variable[io_id->first_index];
   for (p = 0; p < var0->patch_group_count; p++)
   {
+
+    hz_index = 0, index = 0, count = 0, send_index = 0;
+    if(var0->hz_buffer[p]->type == 0)
+    {
+      for (i = 0; i < block_layout->resolution_from; i++)
+        hz_index = hz_index + var0->hz_buffer[p]->samples_per_level[i];
+
+      for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
+      {
+        for(e1 = 0; e1 < var0->hz_buffer[p]->samples_per_level[i] ; e1++)
+        {
+          if(e1 == 0)
+          {
+            index = var0->hz_buffer[p]->buffer_index[hz_index];
+            send_index = e1;
+            count = 1;
+
+            if(var0->hz_buffer[p]->samples_per_level[i] == 1)
+            {
+              for(v = io_id->first_index; v <= io_id->last_index; v++)
+              {
+                ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, block_layout, MODE);
+                if (ret != PIDX_success)
+                {
+                  fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                  return PIDX_err_io;
+                }
+              }
+            }
+          }
+          else
+          {
+            if(var0->hz_buffer[p]->buffer_index[hz_index] - var0->hz_buffer[p]->buffer_index[hz_index - 1] == 1)
+            {
+              count++;
+              if (e1 == var0->hz_buffer[p]->samples_per_level[i] - 1)
+              {
+                for(v = io_id->first_index; v <= io_id->last_index; v++)
+                {
+                  ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, block_layout, MODE);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return PIDX_err_io;
+                  }
+                }
+              }
+            }
+            else
+            {
+              for(v = io_id->first_index; v <= io_id->last_index; v++)
+              {
+                ret = write_read_samples(io_id, v, index, count, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, block_layout, MODE);
+                if (ret != PIDX_success)
+                {
+                  fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                  return PIDX_err_io;
+                }
+              }
+
+              if(e1 == var0->hz_buffer[p]->samples_per_level[i] - 1)
+              {
+                for(v = io_id->first_index; v <= io_id->last_index; v++)
+                {
+                  ret = write_read_samples(io_id, v, var0->hz_buffer[p]->buffer_index[hz_index], 1, io_id->idx->variable[v]->hz_buffer[p]->buffer[i], e1,  block_layout, MODE);
+                  if (ret != PIDX_success)
+                  {
+                    fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
+                    return PIDX_err_io;
+                  }
+                }
+              }
+              index = var0->hz_buffer[p]->buffer_index[hz_index];
+              count = 1;
+              send_index = e1;
+            }
+          }
+          hz_index++;
+        }
+      }
+    }
+
     index = 0, count = 0, send_index = 0;
     if (var0->hz_buffer[p]->type == 1)
     {
@@ -687,7 +770,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
         mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
         if (mpi_ret != MPI_SUCCESS)
         {
-          fprintf(stderr, "[%s] [%d] MPI_File_open() failed. (%s)\n", __FILE__, __LINE__, file_name);
+          fprintf(stderr, "[%s] [%d] MPI_File_open() failed. (%s) [%d]\n", __FILE__, __LINE__, file_name, file_number);
           return PIDX_err_io;
         }
 

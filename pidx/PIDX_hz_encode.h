@@ -87,6 +87,8 @@ PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id);
 PIDX_return_code PIDX_hz_encode_finalize(PIDX_hz_encode_id id);
 
 
+PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_from, int resolution_to);
+
 
 ///
 int HELPER_Hz_encode(PIDX_hz_encode_id id);

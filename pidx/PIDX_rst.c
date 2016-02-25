@@ -523,7 +523,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
       {
         Ndim_patch_group patch_group = var->rst_patch_group[p];
         patch_group->count = 1;
-        patch_group->type = 2;
+        patch_group->type = 0;
         patch_group->patch = malloc(sizeof(*(patch_group->patch)) * patch_group->count);
         memset(patch_group->patch, 0, sizeof(*(patch_group->patch)) * patch_group->count);
 
@@ -614,9 +614,7 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
       {
         Ndim_patch_group patch_group = var->rst_patch_group[p];
         for(j = 0; j < patch_group->count; j++)
-        {
           memcpy(patch_group->patch[j]->buffer, var->sim_patch[p]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample));
-        }
       }
     }
     return PIDX_success;
@@ -836,9 +834,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
       {
         Ndim_patch_group patch_group = var->rst_patch_group[p];
         for(j = 0; j < patch_group->count; j++)
-        {
           memcpy(var->sim_patch[p]->buffer, patch_group->patch[j]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->bits_per_value/8 * var->values_per_sample));
-        }
       }
     }
     return PIDX_success;

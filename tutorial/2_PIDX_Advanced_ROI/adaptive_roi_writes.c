@@ -258,10 +258,6 @@ int main(int argc, char **argv)
     ret = PIDX_set_ROI_writes(file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
 
-    int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
-    ret = PIDX_set_restructuring_box(file, restructured_box_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
-
     ret = PIDX_variable_create("ROI_Var", sizeof(unsigned long long) * 8, FLOAT64, &variable);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
