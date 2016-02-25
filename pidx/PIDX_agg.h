@@ -69,7 +69,7 @@ PIDX_return_code PIDX_local_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer 
 PIDX_return_code PIDX_local_agg_local_comm_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
 
 
-PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id);
+PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout block_layout);
 
 
 PIDX_return_code PIDX_local_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);

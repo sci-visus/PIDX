@@ -2353,10 +2353,11 @@ PIDX_return_code PIDX_local_agg_local_comm_meta_data_create(PIDX_agg_id agg_id, 
 
 
 
-PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id)
+PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout block_layout)
 {
   int i = 0, j = 0;
-  for (i = 0; i < agg_id->idx->variable[agg_id->first_index]->global_block_layout->existing_file_count; i++)
+  //for (i = 0; i < agg_id->idx->variable[agg_id->first_index]->global_block_layout->existing_file_count; i++)
+  for (i = 0; i < block_layout->existing_file_count; i++)
   {
     for (j = agg_id->first_index; j <= agg_id->last_index; j++)
     {

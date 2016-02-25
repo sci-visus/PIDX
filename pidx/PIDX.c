@@ -34,7 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 0
+#define PIDX_DEBUG_OUTPUT 1
 
 static int vp = 0;
 static int hp = 0;
@@ -3587,7 +3587,7 @@ static PIDX_return_code PIDX_write(PIDX_file file, int start_var_index, int end_
       for (j = 0 ; j < agg_io_level; j++)
       {
         if (file->agg_type == 0)
-          ret = PIDX_agg_meta_data_destroy(file->tagg_id[i][j]);
+          ret = PIDX_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->global_block_layout);
 
         else if (file->agg_type == 1)
           ret = PIDX_local_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[file->local_variable_index]->block_layout_by_level[j]);

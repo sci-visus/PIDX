@@ -266,7 +266,7 @@ int main(int argc, char **argv)
   ret = PIDX_set_current_time_step(file, 0);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
 
-  PIDX_dump_agg_info(file, 1);
+  //PIDX_dump_agg_info(file, 1);
 
   PIDX_debug_output(file);
 

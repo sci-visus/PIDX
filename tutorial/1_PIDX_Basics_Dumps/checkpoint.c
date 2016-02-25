@@ -422,7 +422,7 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    //PIDX_debug_output(file);
+    PIDX_debug_output(file);
 
     //PIDX_debug_rst(file, 1);
     //PIDX_debug_hz(file, 1);
