@@ -42,7 +42,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define RAW_DUMP 0
+#define RAW_DUMP 1
 
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
@@ -249,7 +249,7 @@ int main(int argc, char **argv)
 #if RAW_DUMP
   char file_name[1024];
   sprintf(file_name, "rank_C_%d", rank);
-  int fpx = open(file_name, O_CREAT | O_WRONLY);
+  int fpx = open(file_name, O_CREAT | O_WRONLY, 0600);
   ret = pwrite(fpx, data, ((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample), 0);
   assert(ret == ((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample));
   close(fpx);

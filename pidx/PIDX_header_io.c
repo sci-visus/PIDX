@@ -162,6 +162,53 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
   {
     //fprintf(stderr, "writing IDX file...\n", __FILE__, __LINE__);
 
+    if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
+    {
+      char visus_data_path[PATH_MAX];
+      char filename_skeleton[PATH_MAX];
+      strncpy(filename_skeleton, data_set_path, strlen(data_set_path) - 4);
+      filename_skeleton[strlen(filename_skeleton) - 4] = '\0';
+      sprintf(visus_data_path, "%s_visus.idx", filename_skeleton);
+
+      idx_file_p = fopen(visus_data_path, "w");
+      if (!idx_file_p)
+      {
+        fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
+        return -1;
+      }
+
+      fprintf(idx_file_p, "(version)\n6\n");
+      fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
+
+
+      if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
+      {
+        fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
+        fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->chunked_bounds[0] - 1), (long long)(header_io->idx->chunked_bounds[1] - 1), (long long)(header_io->idx->chunked_bounds[2] - 1), (long long)(header_io->idx->chunked_bounds[3] - 1), (long long)(header_io->idx->chunked_bounds[4] - 1));
+
+        fprintf(idx_file_p, "(original box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+
+        fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
+
+        fprintf(idx_file_p, "(fields)\n");
+        for (l = 0; l < header_io->last_index; l++)
+        {
+          fprintf(idx_file_p, "%s %d*float64", header_io->idx->variable[l]->var_name, header_io->idx->compression_bit_rate);
+          if (l != header_io->last_index - 1)
+            fprintf(idx_file_p, " + \n");
+        }
+      }
+
+
+      fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
+      fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
+
+
+      fprintf(idx_file_p, "(filename_template)\n./%s\n", header_io->filename_template);
+      fprintf(idx_file_p, "(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
+      fclose(idx_file_p);
+    }
+
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p) 
     {
@@ -180,8 +227,8 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
       fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld %lld %lld\n", (long long)(header_io->idx->chunk_size[0]), (long long)(header_io->idx->chunk_size[1]), (long long)(header_io->idx->chunk_size[2]), (long long)(header_io->idx->chunk_size[3]), (long long)(header_io->idx->chunk_size[4]));
       fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
     }
-    fprintf(idx_file_p, "(fields)\n");  
-    
+    fprintf(idx_file_p, "(fields)\n");
+
     for (l = 0; l < header_io->last_index; l++)
     {
       fprintf(idx_file_p, "%s %s", header_io->idx->variable[l]->var_name, header_io->idx->variable[l]->type_name);

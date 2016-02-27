@@ -709,6 +709,12 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
         (*file)->idx->compression_type = atoi(line);
+        if ((*file)->idx->compression_type != PIDX_NO_COMPRESSION)
+        {
+          int i1 = 0;
+          for (i1 = 0; i1 < PIDX_MAX_DIMENSIONS; i1++)
+            (*file)->idx->chunk_size[i1] = 4;
+        }
       }
 
       if (strcmp(line, "(compressed box)") == 0)
@@ -728,24 +734,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
         if((*file)->idx->chunk_size[0] < 0 || (*file)->idx->chunk_size[1] < 0 || (*file)->idx->chunk_size[2] < 0 || (*file)->idx->chunk_size[3] < 0 || (*file)->idx->chunk_size[4] < 0)
           return PIDX_err_box;
-
-        /*
-        int reduce_by_sample = 1;
-        uint64_t total_chunk_size = (*file)->idx->chunk_size[0] * (*file)->idx->chunk_size[1] * (*file)->idx->chunk_size[2] * (*file)->idx->chunk_size[3] * (*file)->idx->chunk_size[4];
-        if (reduce_by_sample == 1)
-        {
-          (*file)->idx->bits_per_block = (*file)->idx->bits_per_block - (int)log2(total_chunk_size);
-          (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
-
-          if ((*file)->idx->bits_per_block <= 0)
-          {
-            (*file)->idx->bits_per_block = 1;
-            (*file)->idx_d->samples_per_block = 1;
-          }
-        }
-        else
-          (*file)->idx->blocks_per_file = (*file)->idx->blocks_per_file / total_chunk_size;
-        */
       }
 
       if (strcmp(line, "(compression bit rate)") == 0)
