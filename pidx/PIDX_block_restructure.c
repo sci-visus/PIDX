@@ -380,7 +380,10 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
                     if (MODE == PIDX_WRITE)
                       s[nx*ny*nz*s1 + i*var->values_per_sample+s1] = q[j*var->values_per_sample + s1];
                     else
+                    {
+                      //printf("VAL %f\n", s[nx*ny*nz*s1 + i*var->values_per_sample+s1]);
                       q[j*var->values_per_sample + s1] = s[nx*ny*nz*s1 + i*var->values_per_sample+s1];
+                    }
 #endif
                   }
                 }

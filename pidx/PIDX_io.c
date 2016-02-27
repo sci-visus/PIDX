@@ -300,22 +300,6 @@ int PIDX_aggregated_io(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout b
         return PIDX_err_io;
       }
   #endif
-
-      int var_num = agg_buf->var_number;
-      data_offset = htonl(headers[12 + ((0 + (io_id->idx->blocks_per_file * var_num))*10 )]);
-      for (i = 1; i < io_id->idx->blocks_per_file; i++)
-      {
-        if (htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * var_num))*10 )])== 0)
-          continue;
-        if (htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * var_num))*10 )]) < data_offset)
-        {
-          data_offset = htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * var_num))*10 )]);
-        }
-      }
-      free(headers);
-
-      for (i = 0; i < agg_buf->sample_number; i++)
-        data_offset = (int64_t) data_offset + agg_buf->buffer_size;
     }
 
 #if !SIMULATE_IO
@@ -340,32 +324,30 @@ int PIDX_aggregated_io(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout b
     }
     else
     {
-      //printf("R [%d] [%d %d %d] size = %d and offset = %d\n", rank, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, agg_buf->buffer_size, data_offset);
-      mpi_ret = MPI_File_read_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
-      if (mpi_ret != MPI_SUCCESS)
+      int data_size = 0;
+      for (i = 0; i < io_id->idx->blocks_per_file; i++)
       {
-        fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
-        return PIDX_err_io;
-      }
-      /*
-      double x1, x2, x3, x4, x5;
-      memcpy(&x1, agg_buf->buffer, sizeof(double));
-      memcpy(&x2, agg_buf->buffer + sizeof(double), sizeof(double));
-      memcpy(&x3, agg_buf->buffer + 2*sizeof(double), sizeof(double));
-      memcpy(&x4, agg_buf->buffer + 3*sizeof(double), sizeof(double));
-      memcpy(&x5, agg_buf->buffer + 4*sizeof(double), sizeof(double));
-      printf("%f %f %f %f %f\n", x1, x2, x3, x4, x5);
-      */
+        if (PIDX_blocks_is_block_present(agg_buf->file_number * io_id->idx->blocks_per_file + i, block_layout))
+        {
+          data_offset = htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * agg_buf->var_number))*10 )]);
+          data_size = htonl(headers[14 + ((i + (io_id->idx->blocks_per_file * agg_buf->var_number))*10 )]);
 
-      //
-      int read_count = 0;
-      MPI_Get_count(&status, MPI_BYTE, &read_count);
-      if (read_count != agg_buf->buffer_size)
-      {
-        fprintf(stderr, "[%d] [%s] [%d] MPI_File_write_at() failed. %d != %d\n", rank, __FILE__, __LINE__, read_count, agg_buf->buffer_size);
-        return PIDX_err_io;
+          mpi_ret = MPI_File_read_at(fh, data_offset, agg_buf->buffer + (i * io_id->idx_d->samples_per_block * (io_id->idx->variable[agg_buf->var_number]->bits_per_value/8) * io_id->idx->variable[agg_buf->var_number]->values_per_sample * io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]) / io_id->idx->compression_factor, /*agg_buf->buffer_size*/data_size , MPI_BYTE, &status);
+          if (mpi_ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+            return PIDX_err_io;
+          }
+
+          int read_count = 0;
+          MPI_Get_count(&status, MPI_BYTE, &read_count);
+          if (read_count != /*agg_buf->buffer_size*/data_size)
+          {
+            fprintf(stderr, "[%d] [%s] [%d] MPI_File_write_at() failed. %d != %d\n", rank, __FILE__, __LINE__, read_count, agg_buf->buffer_size);
+            return PIDX_err_io;
+          }
+        }
       }
-      //
     }
 
 #else
@@ -840,6 +822,7 @@ static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_
           return PIDX_err_io;
         }
 
+        printf("[%d] DO %d\n", file_number, data_offset);
         mpi_ret = MPI_File_read_at(fh, data_offset, hz_buffer, file_count * io_id->idx->variable[variable_index]->values_per_sample * (io_id->idx->variable[variable_index]->bits_per_value/8), MPI_BYTE, &status);
         if (mpi_ret != MPI_SUCCESS)
         {

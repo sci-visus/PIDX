@@ -38,6 +38,9 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <PIDX.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
@@ -124,13 +127,10 @@ static void destroy_synthetic_simulation_data()
 {
   int i, j, k, var, vps;
   int read_error_count = 0, read_count = 0;
+  //
   for(var = 0; var < variable_count; var++)
   {
-    //if (var == 0 || var == 3)
-    //  values_per_sample[var] = 3;
-    //else
     values_per_sample[var] = 1;
-
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -141,7 +141,7 @@ static void destroy_synthetic_simulation_data()
             if (data[var][index * values_per_sample[var] + vps] != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
-              if (rank == 10)
+              if (rank == 0)
                 printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
@@ -153,6 +153,7 @@ static void destroy_synthetic_simulation_data()
           }
         }
   }
+  //
 
   int var_sample_count = 0;
   for(var = 0; var < variable_count; var++)
@@ -160,11 +161,13 @@ static void destroy_synthetic_simulation_data()
 
   printf("[%d] Read Error Count + Right Count : [%d + %d] Total Count = %lld\n", rank, read_error_count, read_count, global_box_size[0]*global_box_size[1]*global_box_size[2] * var_sample_count);
 
+
   for(var = 0; var < variable_count; var++)
   {
     free(data[var]);
     data[var] = 0;
   }
+
   free(data);
   data = 0;
 
@@ -173,7 +176,7 @@ static void destroy_synthetic_simulation_data()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:";
+  char flags[] = "g:l:f:t:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -184,33 +187,28 @@ static void parse_args(int argc, char **argv)
     case('g'): // global dimension
       if ((sscanf(optarg, "%lldx%lldx%lld", &global_box_size[0], &global_box_size[1], &global_box_size[2]) == EOF) ||
           (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1))
-        terminate_with_error_msg("Invalid global dimensions\n%s", usage);
+        terminate_with_error_msg("[g] Invalid global dimensions\n%s", usage);
       break;
 
     case('l'): // local dimension
       if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
           (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
-        terminate_with_error_msg("Invalid local dimension\n%s", usage);
+        terminate_with_error_msg("[l] Invalid local dimension\n%s", usage);
       break;
 
     case('f'): // input file name
       if (sprintf(output_file_template, "%s", optarg) < 0)
-        terminate_with_error_msg("Invalid output file name template\n%s", usage);
+        terminate_with_error_msg("[f] Invalid output file name template\n%s", usage);
       sprintf(output_file_name, "%s%s", output_file_template, ".idx");
       break;
 
     case('t'): // number of timesteps
       if (sscanf(optarg, "%d", &time_step_count) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
-
-    case('v'): // number of variables
-      if (sscanf(optarg, "%d", &variable_count) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
+        terminate_with_error_msg("[t] Invalid variable file\n%s", usage);
       break;
 
     default:
-      terminate_with_error_msg("Wrong arguments\n%s", usage);
+      terminate_with_error_msg("[D] Wrong arguments\n%s", usage);
     }
   }
 }
@@ -263,10 +261,8 @@ int main(int argc, char **argv)
   ret = PIDX_get_variable_count(file, &variable_count);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-  ret = PIDX_set_current_time_step(file, 0);
+  ret = PIDX_set_current_time_step(file, time_step_count);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
-
-  //PIDX_dump_agg_info(file, 1);
 
   PIDX_debug_output(file);
 
@@ -283,8 +279,6 @@ int main(int argc, char **argv)
   //ret = PIDX_set_restructuring_box(file, restructured_box_size);
   //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
-  //PIDX_enable_raw_io(file);
-
   for (var = 0; var < variable_count; var++)
   {
     ret = PIDX_get_next_variable(file, &variable[var]);
@@ -296,7 +290,6 @@ int main(int argc, char **argv)
     ret = PIDX_default_bits_per_datatype(variable[var]->type_name, &bits_per_sample);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_default_bytes_per_datatype");
 
-    //printf("(bits_per_sample/8) = %d variable[var]->values_per_sample = %d\n", (bits_per_sample/8), variable[var]->values_per_sample);
     data[var] = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
     memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
 
@@ -307,35 +300,18 @@ int main(int argc, char **argv)
   ret = PIDX_reset_variable_counter(file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_reset_variable_counter");
 
-  //PIDX_debug_hz(file, 1);
-  //PIDX_debug_rst(file, 1);
+  for (var = 0; var < variable_count; var++)
+  {
+    ret = PIDX_get_next_variable(file, &variable[var]);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_get_next_variable");
 
-#if 0  // For single field
-  var = 3;
-  ret = PIDX_set_current_variable_index(file, var);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index");
+    ret = PIDX_variable_read_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_read_data_layout");
 
-  //ret = PIDX_get_current_variable(file, &variable[var]);
-  //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_get_current_variable");
+    ret = PIDX_read_next_variable(file, variable[var]);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_read_next_variable");
+  }
 
-  ret = PIDX_variable_read_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_read_data_layout");
-
-#else  // For restarts
-
-    for (var = 0; var < variable_count; var++)
-    {
-      ret = PIDX_get_next_variable(file, &variable[var]);
-      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_get_next_variable");
-
-      ret = PIDX_variable_read_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
-      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_read_data_layout");
-
-      ret = PIDX_read_next_variable(file, variable[var]);
-      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_read_next_variable");
-    }
-
-#endif
   ret = PIDX_close(file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close");
 

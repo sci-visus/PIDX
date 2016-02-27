@@ -39,6 +39,8 @@
 #include <stdint.h>
 #include <PIDX.h>
 
+#define RAW_DUMP 0
+
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
 static unsigned long long global_box_size[3] = {162, 162, 42};
@@ -81,7 +83,6 @@ static void terminate_with_error_msg(const char *format, ...)
 }
 
 //----------------------------------------------------------------
-/*
 static void rank_0_print(const char *format, ...)
 {
   if (rank != 0) return;
@@ -90,7 +91,6 @@ static void rank_0_print(const char *format, ...)
   vfprintf(stderr, format, arg_ptr);
   va_end(arg_ptr);
 }
-*/
 
 //----------------------------------------------------------------
 static void init_mpi(int argc, char **argv)
@@ -115,90 +115,6 @@ static void shutdown_mpi()
 
 static void calculate_per_process_offsets()
 {
-/*
-    if (rank == 0) { local_box_offset[0] = 0; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 4) { local_box_offset[0] = 21; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 15) { local_box_offset[0] = 40; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 12) { local_box_offset[0] = 40; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 20) { local_box_offset[0] = 61; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 5) { local_box_offset[0] = 21; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 36) { local_box_offset[0] = 101; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 40) { local_box_offset[0] = 101; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 13) { local_box_offset[0] = 40; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 44) { local_box_offset[0] = 101; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 7) { local_box_offset[0] = 21; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 55) { local_box_offset[0] = 121; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 52) { local_box_offset[0] = 121; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 27) { local_box_offset[0] = 81; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 60) { local_box_offset[0] = 120; local_box_offset[1] = 121; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 30) { local_box_offset[0] = 81; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 45) { local_box_offset[0] = 101; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 34) { local_box_offset[0] = 80; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 76) { local_box_offset[0] = 141; local_box_offset[1] = 121; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 50) { local_box_offset[0] = 121; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 24) { local_box_offset[0] = 81; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 2) { local_box_offset[0] = 0; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 53) { local_box_offset[0] = 121; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 47) { local_box_offset[0] = 101; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 11) { local_box_offset[0] = 41; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 9) { local_box_offset[0] = 41; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 8) { local_box_offset[0] = 41; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 14) { local_box_offset[0] = 40; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 31) { local_box_offset[0] = 81; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 17) { local_box_offset[0] = 61; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 67) { local_box_offset[0] = 141; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 6) { local_box_offset[0] = 21; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 74) { local_box_offset[0] = 141; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 16) { local_box_offset[0] = 61; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 10) { local_box_offset[0] = 41; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 37) { local_box_offset[0] = 101; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 18) { local_box_offset[0] = 61; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 33) { local_box_offset[0] = 80; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 32) { local_box_offset[0] = 80; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 26) { local_box_offset[0] = 81; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 64) { local_box_offset[0] = 141; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 25) { local_box_offset[0] = 81; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 28) { local_box_offset[0] = 81; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 38) { local_box_offset[0] = 101; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 21) { local_box_offset[0] = 61; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 42) { local_box_offset[0] = 101; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 22) { local_box_offset[0] = 61; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 51) { local_box_offset[0] = 121; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 49) { local_box_offset[0] = 121; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 39) { local_box_offset[0] = 101; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 48) { local_box_offset[0] = 121; local_box_offset[1] = 0; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 54) { local_box_offset[0] = 121; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 19) { local_box_offset[0] = 61; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 71) { local_box_offset[0] = 141; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 57) { local_box_offset[0] = 121; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 46) { local_box_offset[0] = 101; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 70) { local_box_offset[0] = 141; local_box_offset[1] = 61; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 56) { local_box_offset[0] = 121; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 1) { local_box_offset[0] = 0; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 77) { local_box_offset[0] = 141; local_box_offset[1] = 121; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 58) { local_box_offset[0] = 121; local_box_offset[1] = 101; local_box_offset[2] = 0; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 73) { local_box_offset[0] = 141; local_box_offset[1] = 81; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 72) { local_box_offset[0] = 141; local_box_offset[1] = 81; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 66) { local_box_offset[0] = 141; local_box_offset[1] = 21; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 3) { local_box_offset[0] = 0; local_box_offset[1] = 21; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 65) { local_box_offset[0] = 141; local_box_offset[1] = 0; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 68) { local_box_offset[0] = 141; local_box_offset[1] = 41; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 29) { local_box_offset[0] = 81; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 35) { local_box_offset[0] = 80; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 23) { local_box_offset[0] = 61; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 78) { local_box_offset[0] = 141; local_box_offset[1] = 141; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 61) { local_box_offset[0] = 120; local_box_offset[1] = 121; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 62) { local_box_offset[0] = 120; local_box_offset[1] = 141; local_box_offset[2] = 0; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 79) { local_box_offset[0] = 141; local_box_offset[1] = 141; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-    if (rank == 59) { local_box_offset[0] = 121; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 41) { local_box_offset[0] = 101; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 43) { local_box_offset[0] = 101; local_box_offset[1] = 61; local_box_offset[2] = 21; local_box_size[0] = 20; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 69) { local_box_offset[0] = 141; local_box_offset[1] = 41; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 75) { local_box_offset[0] = 141; local_box_offset[1] = 101; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 20; local_box_size[2] = 21; }
-    if (rank == 63) { local_box_offset[0] = 120; local_box_offset[1] = 141; local_box_offset[2] = 21; local_box_size[0] = 21; local_box_size[1] = 21; local_box_size[2] = 21; }
-*/
-
-
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
   sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
   sub_div[Z] = (global_box_size[Z] / local_box_size[Z]);
@@ -206,65 +122,6 @@ static void calculate_per_process_offsets()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
-
-  /*
-  if (rank % 2 == 0)
-  {
-    local_box_size[X] = 0;
-    local_box_size[Y] = 0;
-    local_box_size[Z] = 0;
-  }
-  */
-  //if (local_box_offset[1] == 750 && local_box_offset[2] == 150)
-  //  printf("rank === %d\n", rank);
-
-  /*
-  if (rank % 4 == 0)
-  {
-    local_box_size[0] = local_box_size[0];
-    local_box_size[1] = local_box_size[1];
-    local_box_size[2] = local_box_size[2];
-  }
-  else if (rank % 4 == 1)
-  {
-    local_box_offset[1] = (3 * local_box_offset[1]) / 4;
-    local_box_size[1] = (3 * local_box_size[1]) / 4;
-  }
-  else if (rank % 4 == 2)
-  {
-    local_box_offset[1] = (2 * local_box_offset[1]) / 4;
-    local_box_size[1] = (2 * local_box_size[1]) / 4;
-  }
-  else if (rank % 4 == 3)
-  {
-    local_box_offset[1] = (1 * local_box_offset[1]) / 4;
-    local_box_size[1] = (1 * local_box_size[1]) / 4;
-  }
-  */
-
-  /*
-  if (rank >= 0 && rank < 16)
-  {
-    local_box_size[0] = local_box_size[0];
-    local_box_size[1] = local_box_size[1];
-    local_box_size[2] = local_box_size[2];
-  }
-  else if (rank >= 16 && rank < 32)
-  {
-    local_box_offset[1] = local_box_offset[1] / 2;
-    local_box_size[1] = local_box_size[1] / 2;
-  }
-  else if (rank >= 32 && rank < 48)
-  {
-    local_box_offset[1] = local_box_offset[1] / 4;
-    local_box_size[1] = local_box_size[1] / 4;
-  }
-  else if (rank >= 48 && rank < 64)
-  {
-    local_box_offset[1] = local_box_offset[1] / 8;
-    local_box_size[1] = local_box_size[1] / 8;
-  }
-  */
 }
 
 static void create_synthetic_simulation_data()
@@ -284,7 +141,17 @@ static void create_synthetic_simulation_data()
     //else
     values_per_sample = 1;
 
+
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
+#if RAW_DUMP
+    int ret = 0;
+    char file_name[1024];
+    sprintf(file_name, "rank_C_%d", rank);
+    int fpx = open(file_name, O_RDONLY);
+    ret = pread(fpx, data[var], (sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample), 0);
+    assert(ret == (sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample));
+    close(fpx);
+#else
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -293,6 +160,7 @@ static void create_synthetic_simulation_data()
           for (vps = 0; vps < values_per_sample; vps++)
             data[var][index * values_per_sample + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
+#endif
   }
 }
 
@@ -362,7 +230,6 @@ static void check_args()
                     (int)((global_box_size[Z] + local_box_size[Z] - 1) / local_box_size[Z]);
   if(brick_count != process_count)
     terminate_with_error_msg("ERROR: Number of sub-blocks (%d) doesn't match number of processes (%d)\n", brick_count, process_count);
-
 }
 
 int main(int argc, char **argv)
@@ -422,38 +289,13 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    PIDX_debug_output(file);
+    //PIDX_debug_output(file);
 
-    //PIDX_debug_rst(file, 1);
-    //PIDX_debug_hz(file, 1);
-
-    //PIDX_debug_disable_hz(file);
-    //PIDX_debug_disable_io(file);
-    //PIDX_dump_agg_info(file, 1);
     PIDX_set_block_count(file, 256);
     PIDX_set_block_size(file, 15);
-    //PIDX_set_aggregation_factor(file, 2);
 
-    //PIDX_dump_agg_info(file, 1);
-
-    //PIDX_debug_disable_restructuring(file);
-    //PIDX_debug_disable_chunking(file);
-    //PIDX_debug_disable_hz(file);
-    //PIDX_debug_disable_compression(file);
-    //PIDX_debug_disable_agg(file);
-    //PIDX_debug_disable_io(file);
-
-    //PIDX_enable_raw_io(file);
-
-    //PIDX_activate_local_aggregation(file);
-
-    //PIDX_set_variable_pile_length(file, 0);
-    //int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
-    //ret = PIDX_set_restructuring_box(file, restructured_box_size);
-    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
     //PIDX_set_lossy_compression_bit_rate(file, 2);
 

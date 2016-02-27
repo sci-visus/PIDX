@@ -16,31 +16,50 @@
  **                                                 **
  *****************************************************/
 
+/*
+
+                                         *---------*--------*
+                                       /         /         /| P7
+                                      *---------*---------* |
+                                     /         /         /| |
+                                    *---------*---------* | *
+                                    |         |         | |/|
+                                    |         |         | * |
+                                    | P4      | P5      |/| | P3
+        IDX Format      ------>     *---------*---------* | *
+                                    |         |         | |/
+                                    |         |         | *
+                                    | P0      | P1      |/
+                                    *---------*---------*
+
+*/
+
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <PIDX.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
+#define RAW_DUMP 0
 
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
-static unsigned long long global_box_size[3] = {0, 0, 0};
 static unsigned long long local_box_offset[3];
-static unsigned long long local_box_size[3] = {0, 0, 0};
-static int time_step_count = 1;
-static char output_file_template[512] = "test";
-static double *data;
+static unsigned long long global_box_size[3] = {0, 0, 0};            ///< global dimensions of 3D volume
+static unsigned long long local_box_size[3] = {0, 0, 0};             ///< local dimensions of the per-process block
+static int time_step_count = 1;                       ///< Number of time-steps
+static int variable_index = 0;
+static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
+static unsigned char *data;
 static char output_file_name[512] = "test.idx";
-static PIDX_point global_size, local_offset, local_size;
-static int roi_type = 0;
-static int current_time_step = 0;
-static int reduced_resolution = 2;
-static char *usage = "Serial Usage: ./adaptive_roi_writes -g 32x32x128 -l 32x32x128 -f file_name -r 4\n"
-                     "Parallel Usage: mpirun -n 32 ./adaptive_roi_writes -g 32x32x128 -l 32x32x4 -f file_name -r 4\n"
+static char *usage = "Serial Usage: ./vis_read -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX filename\n"
-                     "  -r: ROI type (1,2,4)\n";
-
+                     "  -v: Variable Index";
 
 //----------------------------------------------------------------
 static void terminate()
@@ -93,7 +112,7 @@ static void shutdown_mpi()
 #endif
 }
 
-static void calculate_per_process_offset()
+static void calculate_per_process_offsets()
 {
   int sub_div[NUM_DIMS];
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
@@ -106,15 +125,10 @@ static void calculate_per_process_offset()
 }
 
 
-static void destroy_synthetic_simulation_data()
-{
-  free(data);
-}
-
-///< Parse the input argumencurrent_time_step
+///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:r:";
+  char flags[] = "g:l:f:t:v:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -134,14 +148,19 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
-    case('f'): // output file name
+    case('f'): // input file name
       if (sprintf(output_file_template, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
       sprintf(output_file_name, "%s%s", output_file_template, ".idx");
       break;
 
-    case('r'): // ROI type
-      if (sscanf(optarg, "%d", &roi_type) < 0)
+    case('t'): // number of timesteps
+      if (sscanf(optarg, "%d", &time_step_count) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('v'): // number of variables
+      if (sscanf(optarg, "%d", &variable_index) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -165,102 +184,19 @@ static void check_args()
 
 }
 
-static void set_ROI_extents(PIDX_file file)
-{
-  switch (roi_type)
-  {
-    case 0:
-      PIDX_set_resolution(file, 0, reduced_resolution);
-
-      break;
-
-    case 1:
-      if (rank % 2 == 0)
-        PIDX_set_resolution(file, 0, reduced_resolution);
-
-      break;
-
-    case 2:
-      if (rank % 4 == 0)
-      {
-        local_box_size[0] = local_box_size[0];
-        local_box_size[1] = local_box_size[1];
-        local_box_size[2] = local_box_size[2];
-      }
-      else if (rank % 4 == 1)
-      {
-        local_box_offset[1] = (3 * local_box_offset[1]) / 4;
-        local_box_size[1] = (3 * local_box_size[1]) / 4;
-      }
-      else if (rank % 4 == 2)
-      {
-        local_box_offset[1] = (2 * local_box_offset[1]) / 4;
-        local_box_size[1] = (2 * local_box_size[1]) / 4;
-      }
-      else if (rank % 4 == 3)
-      {
-        local_box_offset[1] = (1 * local_box_offset[1]) / 4;
-        local_box_size[1] = (1 * local_box_size[1]) / 4;
-      }
-      break;
-
-    case 3:
-      if (rank >= 0 && rank < 16)
-      {
-        local_box_size[0] = local_box_size[0];
-        local_box_size[1] = local_box_size[1];
-        local_box_size[2] = local_box_size[2];
-      }
-      else if (rank >= 16 && rank < 32)
-      {
-        local_box_offset[1] = local_box_offset[1] / 2;
-        local_box_size[1] = local_box_size[1] / 2;
-      }
-      else if (rank >= 32 && rank < 48)
-      {
-        local_box_offset[1] = local_box_offset[1] / 4;
-        local_box_size[1] = local_box_size[1] / 4;
-      }
-      else if (rank >= 48 && rank < 64)
-      {
-        local_box_offset[1] = local_box_offset[1] / 8;
-        local_box_size[1] = local_box_size[1] / 8;
-      }
-      break;
-
-    case 4:
-      if (rank != current_time_step * (global_box_size[X] / local_box_size[X]) * (global_box_size[Y] / local_box_size[Y]))
-        PIDX_set_resolution(file, 0, reduced_resolution);
-
-      break;
-
-    default:
-      break;
-  }
-}
-
-static void create_synthetic_simulation_data()
-{
-  int i;
-  data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
-  for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
-    data[i] = 100;
-}
-
 int main(int argc, char **argv)
 {
   init_mpi(argc, argv);
   parse_args(argc, argv);
   check_args();
-  calculate_per_process_offset();
-  create_synthetic_simulation_data();
-
-  rank_0_print("Simulation Data Created\n");
+  calculate_per_process_offsets();
 
   int ret;
+  int variable_count;
   PIDX_file file;            // IDX file descriptor
   PIDX_variable variable;   // variable descriptor
 
+  PIDX_point global_size, local_offset, local_size;
   PIDX_set_point_5D(global_size, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
   PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
   PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
@@ -272,45 +208,55 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
-  if (roi_type == 4)
-    time_step_count = global_box_size[Z]/local_box_size[Z];
+  //  PIDX mandatory calls
+  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, access, &file);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
-  for (current_time_step = 0; current_time_step < 5/*time_step_count*/; current_time_step++)
-  {
-    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
+  ret = PIDX_get_dims(file, global_size);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
 
-    set_ROI_extents(file);
+  ret = PIDX_get_variable_count(file, &variable_count);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    ret = PIDX_set_dims(file, global_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
+  ret = PIDX_set_current_time_step(file, time_step_count);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
 
-    ret = PIDX_set_current_time_step(file, current_time_step);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
+  PIDX_debug_output(file);
 
-    ret = PIDX_set_variable_count(file, 1);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
+  if (variable_index >= variable_count) terminate_with_error_msg("Variable index more than variable count\n");
+  ret = PIDX_set_current_variable_index(file, variable_index);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index");
 
-    ret = PIDX_set_ROI_writes(file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
+  ret = PIDX_get_current_variable(file, &variable);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_get_current_variable");
 
-    ret = PIDX_variable_create("ROI_Var", sizeof(unsigned long long) * 8, FLOAT64, &variable);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
+  int bits_per_sample = 0;
+  ret = PIDX_default_bits_per_datatype(variable->type_name, &bits_per_sample);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_default_bytes_per_datatype");
 
-    ret = PIDX_variable_write_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_data_layout");
+  data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample);
+  memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample);
 
-    ret = PIDX_append_and_write_variable(file, variable);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
+  ret = PIDX_variable_read_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_read_data_layout");
 
-    ret = PIDX_close(file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close");
-  }
+  ret = PIDX_close(file);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close");
 
   ret = PIDX_close_access(access);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close_access");
 
-  destroy_synthetic_simulation_data();
+#if RAW_DUMP
+  char file_name[1024];
+  sprintf(file_name, "rank_C_%d", rank);
+  int fpx = open(file_name, O_CREAT | O_WRONLY);
+  ret = pwrite(fpx, data, ((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample), 0);
+  assert(ret == ((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample));
+  close(fpx);
+#endif
+
+  free(data);
+
   shutdown_mpi();
 
   return 0;

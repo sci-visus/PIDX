@@ -34,7 +34,7 @@
 // 31 32 33
 
 #include "PIDX.h"
-#define PIDX_DEBUG_OUTPUT 1
+#define PIDX_DEBUG_OUTPUT 0
 
 static int vp = 0;
 static int hp = 0;
@@ -4713,6 +4713,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(chunk_end);                  chunk_end           = 0;
   free(compression_start);              compression_start       = 0;
   free(compression_end);                compression_end         = 0;
+  free(io_per_process_start);
+  free(io_per_process_end);
 
   return PIDX_success;
 }

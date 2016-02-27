@@ -218,12 +218,17 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         endXYZ.v = allign_count[j][4];
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
+      }
 
+
+      for (j = 0; j < maxH; j++)
+      {
         free(allign_offset[j]);
         free(allign_count[j]);
       }
       free(allign_offset);
       free(allign_count);
+
     }
   }
 
@@ -510,7 +515,22 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                 bytes_for_datatype = ((id->idx->variable[v1]->bits_per_value / 8) * chunk_size) / id->idx->compression_factor;
                 memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[c] + ((s * id->idx->variable[v1]->values_per_sample + i) * bytes_for_datatype), tupple[cnt].value[v1 - id->first_index][i], bytes_for_datatype);
                 id->idx->variable[id->first_index]->hz_buffer[y]->buffer_index[cnt] = tupple[cnt].index;
+              }
+            }
+            cnt++;
+          }
+        }
 
+        /*
+        cnt = 0;
+        for (c = 0; c < maxH; c++)
+        {
+          for (s = 0; s < var0->hz_buffer[y]->samples_per_level[c]; s++)
+          {
+            for (v1 = id->first_index; v1 <= id->last_index; v1++)
+            {
+              for (i = 0; i < id->idx->variable[v1]->values_per_sample; i++)
+              {
                 free(tupple[cnt].value[v1 - id->first_index][i]);
               }
               free(tupple[cnt].value[v1 - id->first_index]);
@@ -521,6 +541,34 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
         }
         free(tupple);
         tupple = 0;
+        */
+
+        if (var0->data_layout == PIDX_row_major)
+        {
+          index_count = 0;
+          for (m = chunked_patch_offset[4]; m < chunked_patch_offset[4] + chunked_patch_size[4]; m++)
+            for (u = chunked_patch_offset[3]; u < chunked_patch_offset[3] + chunked_patch_size[3]; u++)
+              for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
+                for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
+                  for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
+                  {
+                    for(v = id->first_index; v <= id->last_index; v++)
+                    {
+                      PIDX_variable var = id->idx->variable[v];
+                      for (s = 0; s < var->values_per_sample; s++)
+                      {
+                        free(tupple[index_count].value[v - id->first_index][s]);
+                      }
+                      free(tupple[index_count].value[v - id->first_index]);
+                    }
+                    free(tupple[index_count].value);
+                    index_count++;
+                  }
+        }
+        free(tupple);
+
+
+
 #endif
       }
     }
@@ -1228,7 +1276,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
       if (var->hz_buffer[p]->type == 0)
         free(var->hz_buffer[p]->buffer_index);
 
-      for (itr = id->resolution_from; itr < id->idx_d->maxh - id->resolution_to; itr++)
+      for (itr = 0; itr < id->idx_d->maxh; itr++)
         free(var->hz_buffer[p]->nsamples_per_level[itr]);
       free(var->hz_buffer[p]->nsamples_per_level);
 
