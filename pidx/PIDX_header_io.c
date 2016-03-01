@@ -36,6 +36,8 @@ struct PIDX_header_io_struct
   //number of files, files that are ging to be populated
   idx_dataset_derived_metadata idx_d;
 
+  int enable_raw_dump;
+
   int first_index;
   int last_index;
   char filename_template[1024];
@@ -57,6 +59,8 @@ PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data,
 
   header_io_id->first_index = first_index;
   header_io_id->last_index = last_index;
+
+  header_io_id->enable_raw_dump = 0;
 
   if (first_index == 0)
   {
@@ -85,6 +89,17 @@ PIDX_return_code PIDX_header_io_set_communicator(PIDX_header_io_id header_io, MP
   return PIDX_success;
 }
 #endif
+
+PIDX_return_code PIDX_header_io_enable_raw_dump(PIDX_header_io_id header_io, int enable_raw_dump)
+{
+  if (header_io == NULL)
+    return PIDX_err_id;
+
+  header_io->enable_raw_dump = enable_raw_dump;
+
+  return PIDX_success;
+}
+
 
 PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step)
 {
@@ -199,12 +214,10 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
         }
       }
 
-
       fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
       fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
-
-
       fprintf(idx_file_p, "(filename_template)\n./%s\n", header_io->filename_template);
+
       fprintf(idx_file_p, "(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
       fclose(idx_file_p);
     }
@@ -235,15 +248,19 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
       if (l != header_io->last_index - 1)
         fprintf(idx_file_p, " + \n");
     }
-    
-    fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
-    fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
 
-    //if (header_io->idx_d->res_to != 0)
-    //  fprintf(idx_file_p, "(resolution)\n%d\n", header_io->idx_d->res_to);
+    if (header_io->enable_raw_dump != 1)
+    {
+      fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
+      fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
 
-    fprintf(idx_file_p, "(filename_template)\n./%s\n", header_io->filename_template);
-    fprintf(idx_file_p, "(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
+      //if (header_io->idx_d->res_to != 0)
+      //  fprintf(idx_file_p, "(resolution)\n%d\n", header_io->idx_d->res_to);
+
+      fprintf(idx_file_p, "(filename_template)\n./%s\n", header_io->filename_template);
+    }
+
+    fprintf(idx_file_p, "\n(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
   
@@ -254,7 +271,6 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout)
 {
   int i = 0, rank = 0, j, ret;
-  int nprocs = 1;
   char bin_file[PATH_MAX];
   char last_path[PATH_MAX] = {0};
   char this_path[PATH_MAX] = {0};
@@ -262,6 +278,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
   char* pos;
 
 #if PIDX_HAVE_MPI
+  int nprocs = 1;
   if (header_io_id->idx_d->parallel_mode == 1)
   {
     MPI_Comm_rank(header_io_id->comm, &rank);
@@ -352,10 +369,11 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
 
 PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int mode)
 {
-  int i = 0, rank = 0, nprocs = 1, ret;
+  int i = 0, rank = 0, ret;
   char bin_file[PATH_MAX];
   
 #if PIDX_HAVE_MPI
+  int nprocs = 1;
   if (header_io_id->idx_d->parallel_mode == 1)
   {
     MPI_Comm_rank(header_io_id->comm, &rank);
@@ -389,10 +407,9 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
 static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode)
 {
   int block_negative_offset = 0;
-  int ret = 0;
   int i = 0, j = 0, k = 0, all_scalars = 0;
   off_t data_offset = 0, base_offset = 0;
-  int total_file_size = 0;
+  //int total_file_size = 0;
 
   int64_t total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2] * header_io_id->idx->chunk_size[3] * header_io_id->idx->chunk_size[4]);// / (64 / header_io_id->idx->compression_bit_rate);
 
@@ -444,7 +461,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor));
 
-        total_file_size = data_offset + header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor);
+        //total_file_size = data_offset + header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor);
       }
     }
   }
@@ -457,6 +474,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
     {
       MPI_File fh;
       MPI_Status status;
+      int ret = 0;
       ret = MPI_File_open(MPI_COMM_SELF, bin_file, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
       if (ret != MPI_SUCCESS)
       {
@@ -464,6 +482,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         return PIDX_err_io;
       }
 
+      /*
       if(total_file_size != 0)
       {
         ret = MPI_File_set_size(fh, total_file_size);
@@ -473,6 +492,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
           return PIDX_err_io;
         }
       }
+      */
 
       ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
@@ -492,7 +512,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
     {
       int fh = 0;
       fh = open(bin_file, O_WRONLY, 0664);
-      ftruncate(fh, total_file_size);
+      //ftruncate(fh, total_file_size);
       ssize_t ret_size = pwrite(fh, headers, total_header_size, 0);
       if (ret_size != total_header_size)
       {
@@ -505,6 +525,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
 #else
     int fh = 0;
     fh = open(bin_file, O_WRONLY, 0664);
+    //ftruncate(fh, total_file_size);
     ssize_t ret_size = pwrite(fh, headers, total_header_size, 0);
     if (ret_size != total_header_size)
     {

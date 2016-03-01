@@ -141,8 +141,8 @@ static void create_synthetic_simulation_data()
         for (i = 0; i < local_box_size[0]; i++)
         {
           unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-          data[var][index] = var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
-          //data[var][index] = cos(2 * pi * i / local_box_size[0]) * cos(2 * pi * j / local_box_size[1]) * cos(2 * pi * k / local_box_size[2]);
+          //data[var][index] = var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          data[var][index] = cos(2 * pi * i / local_box_size[0]) * cos(2 * pi * j / local_box_size[1]) * cos(2 * pi * k / local_box_size[2]);
         }
   }
 }

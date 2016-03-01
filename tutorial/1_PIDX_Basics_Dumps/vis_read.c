@@ -42,8 +42,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define RAW_DUMP 1
-
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
 static unsigned long long local_box_offset[3];
@@ -52,13 +50,14 @@ static unsigned long long local_box_size[3] = {0, 0, 0};             ///< local 
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_index = 0;
 static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
-static unsigned char *data;
+static double *data;
 static char output_file_name[512] = "test.idx";
 static char *usage = "Serial Usage: ./vis_read -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX filename\n"
+                     "  -t: time step index that needs to be read\n"
                      "  -v: Variable Index";
 
 //----------------------------------------------------------------
@@ -79,16 +78,6 @@ static void terminate_with_error_msg(const char *format, ...)
   vfprintf(stderr, format, arg_ptr);
   va_end(arg_ptr);
   terminate();
-}
-
-//----------------------------------------------------------------
-static void rank_0_print(const char *format, ...)
-{
-  if (rank != 0) return;
-  va_list arg_ptr;
-  va_start(arg_ptr, format);
-  vfprintf(stderr, format, arg_ptr);
-  va_end(arg_ptr);
 }
 
 //----------------------------------------------------------------
@@ -246,14 +235,23 @@ int main(int argc, char **argv)
   ret = PIDX_close_access(access);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close_access");
 
-#if RAW_DUMP
-  char file_name[1024];
-  sprintf(file_name, "rank_C_%d", rank);
-  int fpx = open(file_name, O_CREAT | O_WRONLY, 0600);
-  ret = pwrite(fpx, data, ((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample), 0);
-  assert(ret == ((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample));
-  close(fpx);
-#endif
+  int read_error_count = 0, read_count = 0;
+  int i = 0, j = 0, k = 0, vps = 0;
+  for (k = 0; k < local_box_size[2]; k++)
+    for (j = 0; j < local_box_size[1]; j++)
+      for (i = 0; i < local_box_size[0]; i++)
+      {
+        int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+        for (vps = 0; vps < variable->values_per_sample; vps++)
+        {
+          if (data[index * variable->values_per_sample + vps] != variable_index + vps + ((global_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            read_error_count++;
+          else
+            read_count++;
+        }
+      }
+
+  printf("Correct Sample Count %d Incorrect Sample Count %d\n", read_count, read_error_count);
 
   free(data);
 

@@ -39,7 +39,7 @@
 #include <stdint.h>
 #include <PIDX.h>
 
-#define RAW_DUMP 0
+#define RAW_DUMP 1
 
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
@@ -127,8 +127,6 @@ static void calculate_per_process_offsets()
 static void create_synthetic_simulation_data()
 {
   int var = 0;
-  unsigned long long i, j, k, vps = 0;
-
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
@@ -146,12 +144,13 @@ static void create_synthetic_simulation_data()
 #if RAW_DUMP
     int ret = 0;
     char file_name[1024];
-    sprintf(file_name, "rank_C_%d", rank);
+    sprintf(file_name, "rank_%d", rank);
     int fpx = open(file_name, O_RDONLY);
     ret = pread(fpx, data[var], (sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample), 0);
     assert(ret == (sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample));
     close(fpx);
 #else
+    unsigned long long i, j, k, vps = 0;
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -296,8 +295,8 @@ int main(int argc, char **argv)
 
 
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-    //PIDX_set_lossy_compression_bit_rate(file, 2);
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    PIDX_set_lossy_compression_bit_rate(file, 16);
 
     char var_name[512];
     for (var = 0; var < variable_count; var++)

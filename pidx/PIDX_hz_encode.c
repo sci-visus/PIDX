@@ -514,7 +514,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                 //bytes_for_datatype = id->idx->variable[v1]->bits_per_value / 8;
                 bytes_for_datatype = ((id->idx->variable[v1]->bits_per_value / 8) * chunk_size) / id->idx->compression_factor;
                 memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[c] + ((s * id->idx->variable[v1]->values_per_sample + i) * bytes_for_datatype), tupple[cnt].value[v1 - id->first_index][i], bytes_for_datatype);
-                id->idx->variable[id->first_index]->hz_buffer[y]->buffer_index[cnt] = tupple[cnt].index;
+                id->idx->variable[/*id->first_index*/v1]->hz_buffer[y]->buffer_index[cnt] = tupple[cnt].index;
               }
             }
             cnt++;
@@ -1315,9 +1315,9 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   double dvalue_1, dvalue_2;
   float fvalue_1, fvalue_2;
   uint64_t uvalue_1, uvalue_2;
-  int rank = 0;
 
 #if PIDX_HAVE_MPI
+  int rank = 0;
   if (id->idx_d->parallel_mode == 1)
     MPI_Comm_rank(id->comm, &rank);
 #endif

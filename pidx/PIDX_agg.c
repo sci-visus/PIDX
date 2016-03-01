@@ -29,11 +29,13 @@ static FILE* agg_dump_fp;
 //static PIDX_return_code create_window(PIDX_agg_id agg_id);
 //static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id, int mode);
 
+#if PIDX_HAVE_MPI
 static PIDX_return_code aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout,  int MODE);
 
 static PIDX_return_code local_aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm);
 
 static PIDX_return_code local_aggregate_local_comm_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout,  int MODE, MPI_Comm comm);
+#endif
 
 struct PIDX_agg_struct
 {
@@ -63,6 +65,7 @@ struct PIDX_agg_struct
   int ***rank_holder3;
 };
 
+#if PIDX_HAVE_MPI
 static PIDX_return_code create_window(PIDX_agg_id agg_id, Agg_buffer agg_buffer, MPI_Comm comm)
 {
   int rank = 0, ret = 0;
@@ -98,8 +101,9 @@ static PIDX_return_code create_window(PIDX_agg_id agg_id, Agg_buffer agg_buffer,
 #endif
   return PIDX_success;
 }
+#endif
 
-
+#if PIDX_HAVE_MPI
 static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int mode)
 {
   int i, p, v, ret = 0, e1 = 0;
@@ -356,8 +360,9 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id agg_id, Agg_buffer agg_bu
 
   return PIDX_success;
 }
+#endif
 
-
+#if PIDX_HAVE_MPI
 static PIDX_return_code layout_zero(PIDX_agg_id agg_id, PIDX_block_layout block_layout)
 {
 
@@ -399,8 +404,10 @@ static PIDX_return_code layout_zero(PIDX_agg_id agg_id, PIDX_block_layout block_
 
   return PIDX_success;
 }
+#endif
 
 
+#if PIDX_HAVE_MPI
 static PIDX_return_code one_sided_file_zero(PIDX_agg_id agg_id, PIDX_block_layout block_layout)
 {
 
@@ -453,8 +460,10 @@ static PIDX_return_code one_sided_file_zero(PIDX_agg_id agg_id, PIDX_block_layou
 
   return PIDX_success;
 }
+#endif
 
 
+#if PIDX_HAVE_MPI
 static PIDX_return_code local_one_sided_data_com(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int mode)
 {
   int i, p, v, ret = 0;
@@ -613,9 +622,10 @@ static PIDX_return_code local_one_sided_data_com(PIDX_agg_id agg_id, Agg_buffer 
 
   return PIDX_success;
 }
+#endif
 
 
-
+#if PIDX_HAVE_MPI
 static PIDX_return_code local_one_sided_data_com_local_comm(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int mode)
 {
   int i, p, v, ret = 0;
@@ -778,9 +788,10 @@ static PIDX_return_code local_one_sided_data_com_local_comm(PIDX_agg_id agg_id, 
 
   return PIDX_success;
 }
+#endif
 
 
-
+#if PIDX_HAVE_MPI
 static PIDX_return_code aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int MODE)
 {
   int rank = 0, itr;// nrank = 0;
@@ -1210,9 +1221,10 @@ static PIDX_return_code aggregate_write_read(PIDX_agg_id agg_id, int variable_in
 
   return PIDX_success;
 }
+#endif
 
 
-
+#if PIDX_HAVE_MPI
 static PIDX_return_code local_aggregate_local_comm_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm)
 {
   int rank = 0, itr;// nrank = 0;
@@ -1645,9 +1657,11 @@ static PIDX_return_code local_aggregate_local_comm_write_read(PIDX_agg_id agg_id
 
   return PIDX_success;
 }
+#endif
 
 
 
+#if PIDX_HAVE_MPI
 static PIDX_return_code local_aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm)
 {
   int rank = 0, itr;// nrank = 0;
@@ -2152,6 +2166,7 @@ static PIDX_return_code local_aggregate_write_read(PIDX_agg_id agg_id, int varia
 
   return PIDX_success;
 }
+#endif
 
 
 PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
@@ -2236,12 +2251,12 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm c
 
 PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout)
 {
-  int rank = 0, nprocs = 1;
-
 #if PIDX_HAVE_MPI
+
+  int rank = 0, nprocs = 1;
   MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
-#endif
+
 
   int i, j, d = 0;
 
@@ -2283,19 +2298,18 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_bu
     }
   }
   */
-
+#endif
   return PIDX_success;
 }
 
 
 PIDX_return_code PIDX_local_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout)
 {
+#if PIDX_HAVE_MPI
   int i = 0, j = 0, d = 0;
   int rank = 0, nprocs = 1;
-#if PIDX_HAVE_MPI
   MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
-#endif
 
   agg_buffer->aggregator_interval = nprocs / ((agg_id->last_index - agg_id->first_index + 1) * local_block_layout->existing_file_count * agg_buffer->aggregation_factor);
   //assert(agg_buffer->aggregator_interval != 0);
@@ -2319,6 +2333,7 @@ PIDX_return_code PIDX_local_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer 
         agg_id->rank_holder2[i][j - agg_id->first_index][d] = -1;
     }
   }
+#endif
 
   return PIDX_success;
 }
@@ -2415,12 +2430,10 @@ PIDX_return_code PIDX_local_agg_local_comm_meta_data_destroy(PIDX_agg_id agg_id,
 
 PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1)
 {
-
-  int rank = 0, nprocs = 1;
 #if PIDX_HAVE_MPI
+  int rank = 0, nprocs = 1;
   MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
-#endif
 
   int file_from = pow(2, local_block_layout->resolution_from -1) / ((agg_id->idx->blocks_per_file) * pow(2,agg_id->idx->bits_per_block));
   int file_to = pow(2, local_block_layout->resolution_to -1) / ((agg_id->idx->blocks_per_file) * pow(2,agg_id->idx->bits_per_block));
@@ -2485,6 +2498,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
     }
   }
 #endif
+#endif
 
   return PIDX_success;
 }
@@ -2492,12 +2506,10 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
 
 PIDX_return_code PIDX_local_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset)
 {
-  int rank = 0, nprocs = 1;
-
 #if PIDX_HAVE_MPI
+  int rank = 0, nprocs = 1;
   MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
-#endif
 
   int rank_counter = 0, i = 0, j = 0, k = 0;
   rank_counter = agg_offset;
@@ -2555,6 +2567,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_bu
     }
   }
 #endif
+#endif
 
   return PIDX_success;
 }
@@ -2605,9 +2618,9 @@ PIDX_return_code PIDX_local_agg_local_comm_buf_create(PIDX_agg_id agg_id, Agg_bu
     */
   }
 
+#if PIDX_HAVE_MPI
   //printf("[%d] File Number %d\n", rank, file_no);
   MPI_Comm_split(agg_id->comm, file_no, rank, &(agg_id->local_comm));
-#if PIDX_HAVE_MPI
   MPI_Comm_size(agg_id->local_comm, &nprocs);
   MPI_Comm_rank(agg_id->local_comm, &rank);
 #endif
@@ -2677,7 +2690,7 @@ PIDX_return_code PIDX_local_agg_local_comm_buf_create(PIDX_agg_id agg_id, Agg_bu
 
 PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int type)
 {
-
+#if PIDX_HAVE_MPI
 #if !SIMULATE_IO
   if (agg_buffer->buffer_size != 0)
   {
@@ -2688,7 +2701,7 @@ PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer,
 
   if (type == 2)
     MPI_Comm_free(&(agg_id->local_comm));
-
+#endif
   return PIDX_success;
 }
 
@@ -2743,6 +2756,7 @@ PIDX_return_code close_log_file (PIDX_agg_id agg_id)
   return PIDX_success;
 }
 
+#if PIDX_HAVE_MPI
 PIDX_return_code create_file_zero_buffer(PIDX_agg_id agg_id, PIDX_block_layout block_layout)
 {
   int rank = 0;
@@ -2995,6 +3009,7 @@ PIDX_return_code create_file_zero_buffer(PIDX_agg_id agg_id, PIDX_block_layout b
 
   return PIDX_success;
 }
+#endif
 
 
 PIDX_return_code destroy_file_zero_buffer(PIDX_agg_id agg_id)
@@ -3015,8 +3030,9 @@ PIDX_return_code destroy_file_zero_buffer(PIDX_agg_id agg_id)
 
       free(hz_buf->lower_hz_buffer);
       hz_buf->lower_hz_buffer = 0;
-
+#if PIDX_HAVE_MPI
       MPI_Type_free(&hz_buf->lower_level_datatype);
+#endif
     }
   }
 
@@ -3025,13 +3041,12 @@ PIDX_return_code destroy_file_zero_buffer(PIDX_agg_id agg_id)
 
 PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE)
 {
+#if PIDX_HAVE_MPI
   int file_zero = 0;
   int ret;
 
   int rank = 0;
-#if PIDX_HAVE_MPI
   MPI_Comm_rank(agg_id->comm, &rank);
-#endif
 
   ret = create_window(agg_id, agg_buffer, agg_id->comm);
   if (ret != PIDX_success)
@@ -3157,13 +3172,14 @@ PIDX_return_code PIDX_agg_write(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int l
     fprintf(stderr, " [%s] [%d] PIDX error (create_open_log_file).\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
-
+#endif
   return PIDX_success;
 }
 
 
 PIDX_return_code PIDX_local_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE)
 {
+#if PIDX_HAVE_MPI
   int file_zero = 0;
   int ret;
 
@@ -3291,6 +3307,7 @@ PIDX_return_code PIDX_local_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int l
     fprintf(stderr, " [%s] [%d] PIDX error (create_open_log_file).\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+#endif
 
   return PIDX_success;
 }
@@ -3299,6 +3316,7 @@ PIDX_return_code PIDX_local_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int l
 
 PIDX_return_code PIDX_local_agg_local_comm(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE)
 {
+#if PIDX_HAVE_MPI
   int ret;
   ret = create_window(agg_id, agg_buffer, agg_id->local_comm);
   if (ret != PIDX_success)
@@ -3404,6 +3422,7 @@ PIDX_return_code PIDX_local_agg_local_comm(PIDX_agg_id agg_id, Agg_buffer agg_bu
   }
 #endif
 
+#endif
   return PIDX_success;
 }
 
@@ -3412,7 +3431,7 @@ PIDX_return_code PIDX_local_agg_local_comm(PIDX_agg_id agg_id, Agg_buffer agg_bu
 
 PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout)
 {
-
+#if PIDX_HAVE_MPI
   int ret;
   ret = create_window(agg_id, agg_buffer, agg_id->comm);
   if (ret != PIDX_success)
@@ -3470,6 +3489,7 @@ PIDX_return_code PIDX_agg_read(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_b
 #endif
 #endif
 
+#endif
   return PIDX_success;
 }
 

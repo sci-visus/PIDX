@@ -71,7 +71,13 @@ int main(int argc, char **argv)
   binheader_count = 10 + 10 * blocks_per_file * variable_count;
   binheader1 = malloc(sizeof(*binheader1)*(binheader_count));
   
-  read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
+  ssize_t rc = 0;
+  rc = read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
+  if (rc != (sizeof(*binheader1) * binheader_count))
+  {
+    printf("Error reading header\n");
+    exit(0);
+  }
   
   for (var = 0; var < variable_count; var++ )
   {

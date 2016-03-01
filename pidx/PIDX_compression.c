@@ -112,13 +112,12 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int
 
 int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int bytes_per_sample, int bit_rate)
 {
-  int total_size = 0;
   int i = 0;
   int64_t total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-    size_t typesize, outsize;
+    size_t typesize;
     typesize = bytes_per_sample;
     zfp_params params;
     if (bytes_per_sample == sizeof(double))
@@ -129,9 +128,7 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, i
     params.nx = comp_id->idx->chunk_size[0];
     params.ny = comp_id->idx->chunk_size[1];
     params.nz = comp_id->idx->chunk_size[2];
-    total_size = 0;
     zfp_set_rate(&params, bit_rate);
-    outsize = zfp_estimate_compressed_size(&params);
 
     unsigned char* temp_buffer = malloc(length * bytes_per_sample);
     memset(temp_buffer, 0,length * bytes_per_sample);
@@ -153,7 +150,7 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, i
       memcpy(buffer, temp_buffer, length * bytes_per_sample);
 
   }
-  return total_size;
+  return 0;
 }
 
 /*
@@ -298,7 +295,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
 #if PIDX_HAVE_ZFP
-    int v, p, b;
+    int v, p, b, ret = 0;
     PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
 
     for (v = comp_id->first_index; v <= comp_id->last_index; v++)
@@ -315,8 +312,9 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
           //if (rank == 0)
           //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bits_per_value/8, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
 
-          int compressed_element_count = 0;
-          compressed_element_count = decompress_buffer(comp_id, buffer, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+          ret = decompress_buffer(comp_id, buffer, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+          if (ret == -1)
+            return PIDX_err_compress;
 
           //if (rank == 0)
           //printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);

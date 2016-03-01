@@ -22,7 +22,7 @@
 #include <PIDX.h>
 
 enum { X, Y, Z, NUM_DIMS };
-static int process_count = 1, rank = 0;
+static int rank = 0;
 static unsigned long long global_box_size[3] = {0, 0, 0};
 static unsigned long long local_box_offset[3];
 static unsigned long long local_box_size[3] = {0, 0, 0};
@@ -77,8 +77,6 @@ static void init_mpi(int argc, char **argv)
 #if PIDX_HAVE_MPI
   if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Init error\n");
-  if (MPI_Comm_size(MPI_COMM_WORLD, &process_count) != MPI_SUCCESS)
-    terminate_with_error_msg("ERROR: MPI_Comm_size error\n");
   if (MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Comm_rank error\n");
 #endif
@@ -574,23 +572,9 @@ static void parse_args(int argc, char **argv)
   }
 }
 
-static void check_args()
-{
-  if (global_box_size[X] < local_box_size[X] || global_box_size[Y] < local_box_size[Y] || global_box_size[Z] < local_box_size[Z])
-    terminate_with_error_msg("ERROR: Global box is smaller than local box in one of the dimensions\n");
-
-  // check if the number of processes given by the user is consistent with the actual number of processes needed
-  int brick_count = (int)((global_box_size[X] + local_box_size[X] - 1) / local_box_size[X]) *
-                    (int)((global_box_size[Y] + local_box_size[Y] - 1) / local_box_size[Y]) *
-                    (int)((global_box_size[Z] + local_box_size[Z] - 1) / local_box_size[Z]);
-  if(brick_count != process_count)
-    terminate_with_error_msg("ERROR: Number of sub-blocks (%d) doesn't match number of processes (%d)\n", brick_count, process_count);
-
-}
 
 static void create_synthetic_simulation_data_and_ROI_extents()
 {
-  int i;
   switch (roi_type)
   {
     case 0:
@@ -686,7 +670,6 @@ int main(int argc, char **argv)
 {
   init_mpi(argc, argv);
   parse_args(argc, argv);
-  //check_args();
   calculate_per_process_offsecurrent_time_step();
 
   rank_0_print("Simulation Data Created\n");

@@ -73,7 +73,9 @@ struct PIDX_HZ_buffer_struct
   int* lower_hz_count;
   int lower_hz_buffer_size;
   unsigned char* lower_hz_buffer;                               ///< data buffer at all the HZ levels
+#if PIDX_HAVE_MPI
   MPI_Datatype lower_level_datatype;
+#endif
 };
 typedef struct PIDX_HZ_buffer_struct* HZ_buffer;
 

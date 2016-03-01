@@ -57,7 +57,8 @@ static char *usage = "Serial Usage: ./restart -g 32x32x32 -l 32x32x32 -f output_
                      "Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -f: IDX filename\n";
+                     "  -f: IDX filename\n"
+                     "  -t: the timestep to read\n";
 
 //----------------------------------------------------------------
 static void terminate()
@@ -77,16 +78,6 @@ static void terminate_with_error_msg(const char *format, ...)
   vfprintf(stderr, format, arg_ptr);
   va_end(arg_ptr);
   terminate();
-}
-
-//----------------------------------------------------------------
-static void rank_0_print(const char *format, ...)
-{
-  if (rank != 0) return;
-  va_list arg_ptr;
-  va_start(arg_ptr, format);
-  vfprintf(stderr, format, arg_ptr);
-  va_end(arg_ptr);
 }
 
 //----------------------------------------------------------------
@@ -275,9 +266,12 @@ int main(int argc, char **argv)
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
-  //int64_t restructured_box_size[5] = {64, 64, 64, 1, 1};
-  //ret = PIDX_set_restructuring_box(file, restructured_box_size);
-  //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
+  /*
+  PIDX_enable_raw_io(file);
+  PIDX_point reg_patch_size;
+  PIDX_set_point_5D(reg_patch_size, 64, 64, 64, 1, 1);
+  PIDX_set_restructuring_box(file, reg_patch_size);
+  */
 
   for (var = 0; var < variable_count; var++)
   {

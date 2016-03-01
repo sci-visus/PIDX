@@ -115,13 +115,7 @@ int PIDX_chunk_set_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm)
 
 PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
 {
-  int rank = 0;
   int v = 0, p = 0, j = 0;
-#if PIDX_HAVE_MPI
-  if (chunk_id->idx_derived->parallel_mode == 1)
-    MPI_Comm_rank(chunk_id->comm, &rank);
-#endif
-
   for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
   {
     PIDX_variable var = chunk_id->idx->variable[v];

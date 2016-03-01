@@ -101,11 +101,11 @@ int create_data(T** data, unsigned variable_count, int* values_per_sample, int t
 
         data[var] = (double*)malloc(sizeof (T) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample[var]);
 
-        for (unsigned k = 0; k < local_box_size[2]; k++)
+        for (int k = 0; k < local_box_size[2]; k++)
         {
-            for (unsigned j = 0; j < local_box_size[1]; j++)
+            for (int j = 0; j < local_box_size[1]; j++)
             {
-                for (unsigned i = 0; i < local_box_size[0]; i++)
+                for (int i = 0; i < local_box_size[0]; i++)
                 {
                     int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
                     for (int vps = 0; vps < values_per_sample[var]; vps++){
@@ -357,9 +357,9 @@ int main(int argc, char** argv){
 
         // Create syntethic data for the checkpoint
         double t1, t2;
-        t1 = MPI_Wtime();
+        t1 = PIDX_get_time();
         create_data<double>(checkpoint_data, checkpoint_variable_count, checkpoint_values_per_sample, t);
-        t2 = MPI_Wtime();
+        t2 = PIDX_get_time();
 
         if(rank == 0)
             printf( "Generating state data time is %f\n", t2 - t1 );

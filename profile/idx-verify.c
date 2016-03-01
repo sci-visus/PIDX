@@ -152,8 +152,8 @@ int main(int argc, char **argv)
   int maxh;
   char bitSequence[512];
   char bitPattern[512];
-  int bits_per_block;
-  int samples_per_block;
+  int bits_per_block = 0;
+  int samples_per_block = 0;
   int blocks_per_file = 0;
   int start_time_step = 0, end_time_step = 1;
   int idx_data_offset;
@@ -203,10 +203,11 @@ int main(int argc, char **argv)
     }
     if (strcmp(line, "(fields)") == 0)
     {
-      fgets(line, sizeof (line), fp);
+      if( fgets(line, sizeof (line), fp) == NULL)
+        exit(0);
       len = strlen(line) - 1;
       if (line[len] == '\n')
-	line[len] = 0;
+        line[len] = 0;
       count = 0;
       variable_count = 0;
 
@@ -251,7 +252,8 @@ int main(int argc, char **argv)
         }
         count = 0;
 
-        fgets(line, sizeof (line), fp);
+        if( fgets(line, sizeof (line), fp) == NULL)
+          exit(0);
         len = strlen(line) - 1;
         if (line[len] == '\n')
           line[len] = 0;
@@ -665,7 +667,7 @@ int main(int argc, char **argv)
 
                           check_bit = check_bit && (dlhs == drhs);
 
-                          //printf("X  %f %f\n", dlhs, drhs);
+                          //printf("%d:  %f %f\n", var, dlhs, drhs);
                           //printf("[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
                           if (dlhs == drhs)
                             element_count1++;

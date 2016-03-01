@@ -183,12 +183,13 @@ PIDX_return_code PIDX_rst_set_communicator(PIDX_rst_id rst_id, MPI_Comm comm)
 PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 {
 
+  PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
+  int p = 0, v = 0, j = 0;
+
 #if PIDX_HAVE_MPI
   int r, d, c, nprocs, rank;
-  int64_t i, j, k, l, m, v, max_vol, patch_count;
+  int64_t i, k, l, m, max_vol, patch_count;
   int reg_patch_count, edge_case = 0;
-  
-  PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
 
   if (rst_id->idx->enable_rst == 0)
     var0->patch_group_count = var0->sim_patch_count;
@@ -452,9 +453,6 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
   var0->patch_group_count = var0->sim_patch_count;
 #endif
 
-
-
-  int p = 0;
   for (v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = rst_id->idx->variable[v];
@@ -1072,14 +1070,19 @@ PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
 PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
 {
   int rank = 0;
-  int ret = 0;
+
 #if PIDX_HAVE_MPI
   MPI_Comm_rank(rst_id->comm, &rank);
 #endif
 
 #if !SIMULATE_IO
   int v;
+
+#if PIDX_HAVE_MPI
   MPI_File fh;
+#else
+  int fp;
+#endif
 
   char *directory_path;
   char *data_set_path;
@@ -1118,7 +1121,6 @@ PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
       if (var->rst_patch_group[g]->reg_patch->buffer == NULL)
         return PIDX_err_chunk;
 
-      MPI_Status status;
       int data_offset = 0, v1 = 0;
       for (v1 = 0; v1 < v; v1++)
         data_offset = data_offset + (out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (rst_id->idx->variable[v1]->values_per_sample * (rst_id->idx->variable[v1]->bits_per_value/8)));
@@ -1131,6 +1133,10 @@ PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
       memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
       sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+
+#if PIDX_HAVE_MPI
+      MPI_Status status;
+      int ret = 0;
       ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
       if (ret != MPI_SUCCESS)
       {
@@ -1151,7 +1157,19 @@ PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
         fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
         return PIDX_err_rst;
       }
+#else
+      fp = open(file_name, O_CREAT, 0664);
 
+      ssize_t read_count = pread(fp, out_patch->buffer, buffer_size, data_offset);
+      if (read_count != buffer_size)
+      {
+        fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
+
+      close(fp);
+
+#endif
 
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
       for (r = 0; r < var->rst_patch_group[g]->count; r++)
@@ -1174,7 +1192,6 @@ PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
           }
         }
       }
-
 
       free(var->rst_patch_group[g]->reg_patch->buffer);
       var->rst_patch_group[g]->reg_patch->buffer = 0;
@@ -1255,8 +1272,10 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
       }
     }
   }
+#if PIDX_HAVE_MPI
   if (rst_id->idx_derived->parallel_mode == 1)
     MPI_Barrier(rst_id->comm);
+#endif
 
   for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
   {
@@ -1339,16 +1358,20 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
       }
       else
       {
-        int fp = open(file_name, O_CREAT || O_WRONLY);
+        int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
         pwrite(fp, out_patch->buffer, buffer_size, data_offset);
         close(fp);
       }
 #else
-      int fp = open(file_name, O_CREAT || O_WRONLY);
-      pwrite(fp, out_patch->buffer, buffer_size, data_offset);
+      int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
+      ssize_t write_count = pwrite(fp, out_patch->buffer, buffer_size, data_offset);
+      if (write_count != buffer_size)
+      {
+        fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
       close(fp);
 #endif
-
 
       free(var->rst_patch_group[g]->reg_patch->buffer);
       var->rst_patch_group[g]->reg_patch->buffer = 0;

@@ -89,8 +89,19 @@ int main(int argc, char **argv)
   binheader1 = malloc(sizeof(*binheader1)*(binheader_count));
   binheader2 = malloc(sizeof(*binheader2)*(binheader_count));
   
-  read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
-  read(fd2, binheader2, (sizeof(*binheader2) * binheader_count));
+  ssize_t rc = 0;
+  rc = read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
+  if (rc != (sizeof(*binheader1) * binheader_count))
+  {
+    printf("Error reading header\n");
+    exit(0);
+  }
+
+  rc = read(fd2, binheader2, (sizeof(*binheader2) * binheader_count));
+  {
+    printf("Error reading header\n");
+    exit(0);
+  }
   
   for (var = 0; var < variable_count; var++ )
   {
@@ -119,7 +130,7 @@ int main(int argc, char **argv)
       //printf("I O %d %d\n", ret2, data_length2);
       assert(ret2 == data_length2);
       
-      if(data_length1 != data_length2)
+      if(data_length1 != ret2)
       {
         fprintf(stderr, "Different block length for block %d (%ld %ld)\n", j, data_length1, data_length2);
         return -1;

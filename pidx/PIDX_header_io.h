@@ -34,6 +34,9 @@ PIDX_return_code PIDX_header_io_set_communicator(PIDX_header_io_id header_io, MP
 #endif
 
 
+///
+PIDX_return_code PIDX_header_io_enable_raw_dump(PIDX_header_io_id header_io, int enable_raw_dump);
+
 
 ///
 PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step);
