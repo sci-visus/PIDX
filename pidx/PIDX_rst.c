@@ -1359,7 +1359,12 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
       else
       {
         int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
-        pwrite(fp, out_patch->buffer, buffer_size, data_offset);
+        ssize_t write_count = pwrite(fp, out_patch->buffer, buffer_size, data_offset);
+        if (write_count != buffer_size)
+        {
+          fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+          return PIDX_err_io;
+        }
         close(fp);
       }
 #else
