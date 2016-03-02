@@ -106,10 +106,6 @@ static void calculate_per_process_offset()
 }
 
 
-static void destroy_synthetic_simulation_data()
-{
-  free(data);
-}
 
 ///< Parse the input argumencurrent_time_step
 static void parse_args(int argc, char **argv)
@@ -170,17 +166,22 @@ static void set_ROI_extents(PIDX_file file)
   switch (roi_type)
   {
     case 0:
-      PIDX_set_resolution(file, 0, reduced_resolution);
-
       break;
 
     case 1:
-      if (rank % 2 == 0)
-        PIDX_set_resolution(file, 0, reduced_resolution);
-
+      PIDX_set_resolution(file, 0, reduced_resolution);
       break;
 
     case 2:
+      if (rank % 3 == 0)
+      {
+        local_box_size[0] = 0;
+        local_box_size[1] = 0;
+        local_box_size[2] = 0;
+      }
+      break;
+
+    case 3:
       if (rank % 4 == 0)
       {
         local_box_size[0] = local_box_size[0];
@@ -202,9 +203,10 @@ static void set_ROI_extents(PIDX_file file)
         local_box_offset[1] = (1 * local_box_offset[1]) / 4;
         local_box_size[1] = (1 * local_box_size[1]) / 4;
       }
+      //printf ("%d: %d %d %d\n", rank, local_box_offset[0], local_box_offset[1], local_box_offset[2]);
       break;
 
-    case 3:
+    case 4:
       if (rank >= 0 && rank < 16)
       {
         local_box_size[0] = local_box_size[0];
@@ -228,10 +230,13 @@ static void set_ROI_extents(PIDX_file file)
       }
       break;
 
-    case 4:
+    case 5:
       if (rank != current_time_step * (global_box_size[X] / local_box_size[X]) * (global_box_size[Y] / local_box_size[Y]))
-        PIDX_set_resolution(file, 0, reduced_resolution);
-
+      {
+        PIDX_set_point_5D(local_size, 0, 0, 0, 1, 1);
+      }
+      else
+        PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
       break;
 
     default:
@@ -241,10 +246,19 @@ static void set_ROI_extents(PIDX_file file)
 
 static void create_synthetic_simulation_data()
 {
-  int i;
+  int i = 0, j = 0, k = 0;
+  const double pi = acos(-1.0);
+
   data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
-  for (i = 0; i < local_box_size[0] * local_box_size[1] * local_box_size[2]; i++)
-    data[i] = 100;
+  for (k = 0; k < local_box_size[2]; k++)
+    for (j = 0; j < local_box_size[1]; j++)
+      for (i = 0; i < local_box_size[0]; i++)
+      {
+        unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+        data[index] = 100;
+        if (roi_type == 0)
+          data[index] = cos(2 * pi * i / local_box_size[0]) * cos(2 * pi * j / local_box_size[1]) * cos(2 * pi * k / local_box_size[2]);
+      }
 }
 
 int main(int argc, char **argv)
@@ -253,17 +267,12 @@ int main(int argc, char **argv)
   parse_args(argc, argv);
   check_args();
   calculate_per_process_offset();
-  create_synthetic_simulation_data();
 
   rank_0_print("Simulation Data Created\n");
 
   int ret;
   PIDX_file file;            // IDX file descriptor
   PIDX_variable variable;   // variable descriptor
-
-  PIDX_set_point_5D(global_size, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
-  PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
-  PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
 
   //  Creating access
   PIDX_access access;
@@ -272,15 +281,28 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
-  if (roi_type == 4)
+  PIDX_set_point_5D(global_size, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
+
+  if (roi_type == 5)
     time_step_count = global_box_size[Z]/local_box_size[Z];
 
-  for (current_time_step = 0; current_time_step < 5/*time_step_count*/; current_time_step++)
+  for (current_time_step = 0; current_time_step < time_step_count; current_time_step++)
   {
     ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
+    PIDX_point reg_patch_size;
+    PIDX_set_point_5D(reg_patch_size, 32, 32, 32, 1, 1);
+    PIDX_set_restructuring_box(file, reg_patch_size);
+
     set_ROI_extents(file);
+    create_synthetic_simulation_data();
+    PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
+    if (roi_type != 5)
+      PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
+
+    PIDX_debug_output(file);
+    PIDX_set_block_size(file, 12);
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
@@ -310,7 +332,7 @@ int main(int argc, char **argv)
   ret = PIDX_close_access(access);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close_access");
 
-  destroy_synthetic_simulation_data();
+  //free(data);
   shutdown_mpi();
 
   return 0;

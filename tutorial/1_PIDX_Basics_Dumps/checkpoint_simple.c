@@ -1,3 +1,6 @@
+//field9@llnl.gov
+//marathe1@llnl.gov - Annirudha
+// Precision as input
 /*****************************************************
  **  PIDX Parallel I/O Library                      **
  **  Copyright (c) 2010-2014 University of Utah     **
@@ -259,14 +262,14 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
 
-    /*
+    //
     PIDX_enable_raw_io(file);
     PIDX_point reg_patch_size;
     PIDX_set_point_5D(reg_patch_size, 64, 64, 64, 1, 1);
     PIDX_set_restructuring_box(file, reg_patch_size);
-    */
+    //
 
-    //PIDX_set_block_count(file, 2);
+    PIDX_set_block_count(file, 2);
 
     ret = PIDX_debug_output(file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
@@ -276,7 +279,8 @@ int main(int argc, char **argv)
     {
       sprintf(var_name, "variable_%d", var);
       ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64 , &variable[var]);
-      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
+      if (ret != PIDX_success)   for (ts = 0; ts < time_step_count; ts++)
+ terminate_with_error_msg("PIDX_variable_create");
 
       ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
       if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_data_layout");
