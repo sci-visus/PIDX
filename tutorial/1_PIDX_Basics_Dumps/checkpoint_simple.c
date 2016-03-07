@@ -246,7 +246,7 @@ int main(int argc, char **argv)
   PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
-  PIDX_set_idx_count(access, 2, 2, 2);
+  //PIDX_set_idx_count(access, 2, 2, 2);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -263,12 +263,12 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
 
-    //
+    /*
     PIDX_enable_raw_io(file);
     PIDX_point reg_patch_size;
     PIDX_set_point_5D(reg_patch_size, 64, 64, 64, 1, 1);
     PIDX_set_restructuring_box(file, reg_patch_size);
-    //
+    */
 
     PIDX_set_block_count(file, 2);
 

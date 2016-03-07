@@ -79,7 +79,6 @@ struct PIDX_file_descriptor
 
   idx_debug idx_dbg;
 
-  int partition_dump;
   int enable_raw_dump;
   int debug_output;
 
@@ -183,7 +182,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->small_agg_comm = 0;
 
   (*file)->enable_raw_dump = 0;
-  (*file)->partition_dump = 1;
+  //(*file)->partition_dump = 1;
 
   (*file)->debug_output = 0;
 
@@ -1463,7 +1462,7 @@ PIDX_return_code PIDX_enable_raw_io(PIDX_file file)
 
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
-  int i, p, var = 0, d = 0, j = 0;
+  int i, p;
   int ret;
   if (file->idx->variable_count <= 0)
     return PIDX_err_variable;
@@ -1474,7 +1473,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
     //if (file->partition_dump == 1)
     //{
-      /*
+      /*PIDX_idx_write
       file->partitioned_idx_io = PIDX_partitioned_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
       if (file->partitioned_idx_io == NULL)
         return PIDX_err_flush;
@@ -1543,17 +1542,6 @@ PIDX_return_code PIDX_flush(PIDX_file file)
     {
       if (file->local_variable_index == file->idx->variable_count)
         return PIDX_success;
-
-      if (file->idx_d->idx_count[0] != 1 || file->idx_d->idx_count[1] != 1 || file->idx_d->idx_count[2] != 1 )
-        for (var = file->local_variable_index; var < file->local_variable_index + file->local_variable_count; var++)
-          for (p = 0; p < file->idx->variable[var]->sim_patch_count; p++)
-            for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
-              for (j = 0; j < file->idx->bounds[d] * file->idx_d->idx_count[d]; j = j + (file->idx->bounds[d]))
-                if (file->idx->variable[var]->sim_patch[p]->offset[d] >= j && file->idx->variable[var]->sim_patch[p]->offset[d] < (j + file->idx->bounds[d]))
-                {
-                  file->idx->variable[var]->sim_patch[p]->offset[d] = file->idx->variable[var]->sim_patch[p]->offset[d] - j;
-                  break;
-                }
 
       file->idx_io = PIDX_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
       if (file->idx_io == NULL)
@@ -1702,7 +1690,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_time time = file->idx_d->time;
   time->sim_end = PIDX_get_time();
 
-  /*
   if (file->debug_output == 1)
   {
 
@@ -1850,13 +1837,11 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
         fprintf(stdout, "==========================================================================================================\n");
       }
-    
     }
   }
 
   PIDX_delete_timming_buffers1(file->idx_d->time);
   PIDX_delete_timming_buffers2(file->idx_d->time, file->idx->variable_count);
-  */
 
   //printf("file->idx->variable_count = %d\n", file->idx->variable_count);
   for (i = 0; i < 1024/*file->idx->variable_count*/; i++)
@@ -1871,24 +1856,13 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   //free(file->idx->bounds);        file->idx->bounds = 0;
 
-#if PIDX_HAVE_MPI
-//  if (file->idx_d->parallel_mode == 1)
-//  {
-//    MPI_Comm_free(&(file->comm));
-    //if (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2] != 1)
-    //  MPI_Comm_free(&(file->global_comm));
-//  }
-#endif
-
   free(file->idx);                  file->idx = 0;
   free(file->idx_d->time);          file->idx_d->time = 0;
   free(file->idx_d);                file->idx_d = 0;
   free(file->idx_dbg);              file->idx_dbg = 0;
 
-
   free(file);
   
-
   return PIDX_success;
 }
 

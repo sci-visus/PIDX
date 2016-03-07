@@ -17,7 +17,6 @@
  *****************************************************/
 
 #include "../../PIDX_inc.h"
-#include <sys/time.h>
 
 #define PIDX_ACTIVE_TARGET
 #define PIDX_DUMP_AGG
@@ -31,35 +30,11 @@ static FILE* agg_dump_fp;
 
 #if PIDX_HAVE_MPI
 static PIDX_return_code local_aggregate_write_read(PIDX_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm);
+
+static PIDX_return_code create_open_log_file (PIDX_agg_id agg_id);
+
 #endif
 
-struct PIDX_agg_struct
-{
-#if PIDX_HAVE_MPI
-  MPI_Comm comm;
-  MPI_Comm global_comm;
-  MPI_Comm local_comm;
-  MPI_Win win;
-#endif
-
-  /// Contains all relevant IDX file info
-  /// Blocks per file, samples per block, bitmask, patch, file name template and more
-  idx_dataset idx;
-  
-  /// Contains all derieved IDX file info
-  /// number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_d;
-
-  int init_index;
-  int first_index;
-  int last_index;
-
-  //int agg_existing_file_count;
-
-  int ***rank_holder;
-  int ***rank_holder2;
-  int ***rank_holder3;
-};
 
 #if PIDX_HAVE_MPI
 static PIDX_return_code create_window(PIDX_agg_id agg_id, Agg_buffer agg_buffer, MPI_Comm comm)
@@ -816,86 +791,6 @@ static PIDX_return_code local_aggregate_write_read(PIDX_agg_id agg_id, int varia
 #endif
 
 
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
-{
-  PIDX_agg_id agg_id;
-
-  agg_id = malloc(sizeof (*agg_id));
-  memset(agg_id, 0, sizeof (*agg_id));
-
-  agg_id->idx = idx_meta_data;
-  agg_id->idx_d = idx_d;
-
-  agg_id->init_index = init_index;
-  agg_id->first_index = first_index;
-  agg_id->last_index = last_index;
-
-  return agg_id;
-}
-
-
-#if PIDX_HAVE_MPI
-PIDX_return_code PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
-{
-  if (agg_id == NULL)
-    return PIDX_err_id;
-
-  agg_id->comm = comm;
-
-
-  return PIDX_success;
-}
-
-
-PIDX_return_code PIDX_create_local_aggregation_comm(PIDX_agg_id agg_id)
-{
-  if (agg_id == NULL)
-    return PIDX_err_id;
-
-  int color;
-  int rank;
-  int nprocs;
-
-  MPI_Comm temp_comm = agg_id->comm;
-  MPI_Comm_rank(temp_comm, &rank);
-  MPI_Comm_size(agg_id->comm, &nprocs);
-  //printf("[Before] Agg size = %d\n", nprocs);
-
-  PIDX_variable var0 = agg_id->idx->variable[agg_id->first_index];
-  if (var0->patch_group_count == 0)
-    color = 0;
-  else
-    color = 1;
-
-  MPI_Comm_split(temp_comm, color, rank, &(agg_id->comm));
-  MPI_Comm_size(agg_id->comm, &nprocs);
-
-  return PIDX_success;
-}
-
-PIDX_return_code PIDX_destroy_local_aggregation_comm(PIDX_agg_id agg_id)
-{
-  if (agg_id == NULL)
-    return PIDX_err_id;
-
-  MPI_Comm_free(&(agg_id->comm));
-
-  return PIDX_success;
-}
-
-
-PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
-{
-  if (agg_id == NULL)
-    return PIDX_err_id;
-
-  agg_id->global_comm = comm;
-
-  return PIDX_success;
-}
-#endif
-
-
 
 PIDX_return_code PIDX_local_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout)
 {
@@ -1037,7 +932,7 @@ PIDX_return_code PIDX_local_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_b
 }
 
 
-PIDX_return_code create_open_log_file (PIDX_agg_id agg_id)
+static PIDX_return_code create_open_log_file (PIDX_agg_id agg_id)
 {
   int rank = 0;
   int ret = 0;
@@ -1074,7 +969,7 @@ PIDX_return_code create_open_log_file (PIDX_agg_id agg_id)
   return PIDX_success;
 }
 
-PIDX_return_code close_log_file (PIDX_agg_id agg_id)
+static PIDX_return_code close_log_file (PIDX_agg_id agg_id)
 {
 #ifdef PIDX_DUMP_AGG
   if (agg_id->idx_d->dump_agg_info == 1 && agg_id->idx->current_time_step == 0)
@@ -1088,7 +983,7 @@ PIDX_return_code close_log_file (PIDX_agg_id agg_id)
 }
 
 #if PIDX_HAVE_MPI
-PIDX_return_code create_file_zero_buffer(PIDX_agg_id agg_id, PIDX_block_layout block_layout)
+static PIDX_return_code create_file_zero_buffer(PIDX_agg_id agg_id, PIDX_block_layout block_layout)
 {
   int rank = 0;
 #if PIDX_HAVE_MPI
@@ -1343,7 +1238,7 @@ PIDX_return_code create_file_zero_buffer(PIDX_agg_id agg_id, PIDX_block_layout b
 #endif
 
 
-PIDX_return_code destroy_file_zero_buffer(PIDX_agg_id agg_id)
+static PIDX_return_code destroy_file_zero_buffer(PIDX_agg_id agg_id)
 {
   int p = 0, v = 0;
   for(v = agg_id->first_index; v <= agg_id->last_index; v++)
@@ -1507,11 +1402,3 @@ PIDX_return_code PIDX_local_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int l
 }
 
 
-PIDX_return_code PIDX_agg_finalize(PIDX_agg_id agg_id)
-{
-
-  free(agg_id);
-  agg_id = 0;
-
-  return PIDX_success;
-}

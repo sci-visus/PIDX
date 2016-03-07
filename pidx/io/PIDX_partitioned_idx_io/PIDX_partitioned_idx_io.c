@@ -840,15 +840,6 @@ static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int s
   return PIDX_success;
 }
 
-static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
-{
-  int d = 0, check_bit = 0;
-  for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
-    check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
-
-  return !(check_bit);
-}
-
 
 PIDX_partitioned_idx_io PIDX_partitioned_idx_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg)
 {
@@ -2406,8 +2397,6 @@ PIDX_return_code PIDX_partitioned_idx_read(PIDX_partitioned_idx_io file, int sta
 
 PIDX_return_code PIDX_partitioned_idx_io_finalize(PIDX_partitioned_idx_io file)
 {
-  if (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2] != 1)
-    MPI_Comm_free(&(file->comm));
 
   free(file);
   file = 0;

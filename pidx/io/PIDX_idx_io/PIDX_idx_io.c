@@ -1,19 +1,18 @@
 #include "../PIDX_io.h"
 
-//#include "PIDX_idx_io.h"
-
 static PIDX_return_code populate_idx_layout(PIDX_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_idx_io file, char* file_name, int current_time_step);
 static PIDX_return_code PIDX_parameter_validate(PIDX_idx_io file, int start_var_index, int end_var_index);
-static PIDX_return_code partition_setup(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
+static PIDX_return_code partition_setup(PIDX_idx_io file, int start_var_index, int end_var_index);
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 
 struct PIDX_idx_io_descriptor
 {
 
 #if PIDX_HAVE_MPI
+  MPI_Comm global_comm;                               ///< MPI sub-communicator (including all processes per IDX file)
   MPI_Comm comm;                               ///< MPI sub-communicator (including all processes per IDX file)
 #endif
 
@@ -863,14 +862,23 @@ PIDX_return_code PIDX_idx_io_set_communicator(PIDX_idx_io id, MPI_Comm comm)
   if (id == NULL)
     return PIDX_err_id;
 
-  id->comm = comm;
+  id->global_comm = comm;
 
   return PIDX_success;
 }
 #endif
 
 
-static PIDX_return_code partition_setup(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index)
+static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
+{
+  int d = 0, check_bit = 0;
+  for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
+    check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
+
+  return !(check_bit);
+}
+
+static PIDX_return_code partition_setup(PIDX_idx_io file, int start_var_index, int end_var_index)
 {
   int *colors;
   int i = 0, j = 0, k = 0, d = 0;
@@ -997,11 +1005,6 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   //static int header_io = 0;
   int nprocs = 1;
 
-#if PIDX_HAVE_MPI
-  if (file->idx_d->parallel_mode == 1)
-    MPI_Comm_size(file->comm,  &nprocs);
-#endif
-
   PIDX_time time = file->idx_d->time;
   time->populate_idx_start_time = PIDX_get_time();
 #if 1
@@ -1013,6 +1016,11 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   ret = populate_idx_dataset(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
     return PIDX_err_file;
+
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+    MPI_Comm_size(file->comm,  &nprocs);
+#endif
 
 #if PIDX_DEBUG_OUTPUT
   l_populate = 1;
@@ -2511,6 +2519,9 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
 
 PIDX_return_code PIDX_idx_io_finalize(PIDX_idx_io file)
 {
+  if (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2] != 1)
+    MPI_Comm_free(&(file->comm));
+
   free(file);
   file = 0;
 
