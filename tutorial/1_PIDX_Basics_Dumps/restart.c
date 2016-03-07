@@ -50,7 +50,7 @@ static unsigned long long local_box_size[3] = {0, 0, 0};             ///< local 
 static int time_step_count = 1;                       ///< Number of time-steps
 static int variable_count = 0;                        ///< Number of fields
 static char output_file_template[512] = "test_idx";   ///< output IDX file Name Template
-static double **data;
+static unsigned char **data;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
 static char output_file_name[512] = "test.idx";
 static char *usage = "Serial Usage: ./restart -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
@@ -116,43 +116,7 @@ static void calculate_per_process_offsets()
 
 static void destroy_synthetic_simulation_data()
 {
-  int i, j, k, var, vps;
-  int read_error_count = 0, read_count = 0;
-  //
-  for(var = 0; var < variable_count; var++)
-  {
-    values_per_sample[var] = 1;
-    for (k = 0; k < local_box_size[2]; k++)
-      for (j = 0; j < local_box_size[1]; j++)
-        for (i = 0; i < local_box_size[0]; i++)
-        {
-          int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-          for (vps = 0; vps < values_per_sample[var]; vps++)
-          {
-            if (data[var][index * values_per_sample[var] + vps] != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
-            {
-              read_error_count++;
-              if (rank == 0)
-                printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
-            }
-            else
-            {
-              read_count++;
-              //if (rank == 0)
-              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
-            }
-          }
-        }
-  }
-  //
-
-  int var_sample_count = 0;
-  for(var = 0; var < variable_count; var++)
-    var_sample_count = var_sample_count + values_per_sample[var];
-
-  printf("[%d] Read Error Count + Right Count : [%d + %d] Total Count = %lld\n", rank, read_error_count, read_count, global_box_size[0]*global_box_size[1]*global_box_size[2] * var_sample_count);
-
-
+  int var;
   for(var = 0; var < variable_count; var++)
   {
     free(data[var]);
@@ -311,6 +275,74 @@ int main(int argc, char **argv)
 
   ret = PIDX_close_access(access);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close_access");
+
+  int i, j, k, vps;
+  int read_error_count = 0, read_count = 0;
+  int int_val = 0;
+  double double_val = 0;
+  int v_per_sample;
+  int bits_per_sample;
+
+  for(var = 0; var < variable_count; var++)
+  {
+    PIDX_values_per_datatype(variable[var]->type_name, &v_per_sample, &bits_per_sample);
+    bits_per_sample = bits_per_sample / 8;
+    for (k = 0; k < local_box_size[2]; k++)
+      for (j = 0; j < local_box_size[1]; j++)
+        for (i = 0; i < local_box_size[0]; i++)
+        {
+          int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+
+          if (strcmp(variable[var]->type_name, INT32) == 0)
+          {
+            for (vps = 0; vps < v_per_sample; vps++)
+            {
+              memcpy(&int_val, data[var] + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
+              if (int_val != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              {
+                read_error_count++;
+                if (rank == 0)
+                  printf("W[%d %d %d] [%d] Read error %d %lld\n", i,j ,k, vps, int_val, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              }
+              else
+              {
+                read_count++;
+                //if (rank == 0)
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              }
+            }
+          }
+
+          else if (strcmp(variable[var]->type_name, FLOAT64) == 0 || strcmp(variable[var]->type_name, FLOAT64_RGB) == 0)
+          {
+            for (vps = 0; vps < v_per_sample; vps++)
+            {
+              memcpy(&double_val, data[var] + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
+              if (double_val != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              {
+                read_error_count++;
+                if (rank == 0)
+                  printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, double_val, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              }
+              else
+              {
+                read_count++;
+                //if (rank == 0)
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              }
+            }
+          }
+
+        }
+  }
+  //
+
+  int var_sample_count = 0;
+  for(var = 0; var < variable_count; var++)
+    var_sample_count = var_sample_count + values_per_sample[var];
+
+  printf("[%d] Read Error Count + Right Count : [%d + %d] Total Count = %lld\n", rank, read_error_count, read_count, global_box_size[0]*global_box_size[1]*global_box_size[2] * var_sample_count);
+
 
   destroy_synthetic_simulation_data();
   free(values_per_sample);

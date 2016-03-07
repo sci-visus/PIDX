@@ -36,15 +36,19 @@
 #ifndef __PIDX_H
 #define __PIDX_H
 
-#include "PIDX_inc.h"
+//#include "./io/PIDX_raw_io/PIDX_raw_io.h"
+//#include "./io/PIDX_idx_io/PIDX_idx_io.h"
+#include "./io/PIDX_io.h"
+//#include "PIDX_inc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
-struct PIDX_file_descriptor;
+//struct PIDX_file_descriptor;
 typedef struct PIDX_file_descriptor* PIDX_file;
+
 
 
 /// Creates an IDX file.
@@ -340,16 +344,6 @@ PIDX_return_code PIDX_close(PIDX_file file);
 
 
 ///
-PIDX_return_code PIDX_set_aggregation_factor(PIDX_file file, int agg_factor);
-
-
-
-///
-PIDX_return_code PIDX_get_aggregation_factor(PIDX_file file, int *agg_factor);
-
-
-
-///
 PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst);
 
 
@@ -468,11 +462,6 @@ PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
 ///
 PIDX_return_code PIDX_enable_raw_io(PIDX_file file);
 
-
-
-
-///
-double PIDX_get_time();
 
 
 

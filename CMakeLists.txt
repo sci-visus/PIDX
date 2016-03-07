@@ -84,7 +84,7 @@ MESSAGE("PIDX_BUILD_EXAMPLE ${PIDX_BUILD_EXAMPLE}")
 OPTION(PIDX_BUILD_CONVERT "Build pidx convert tools" FALSE)
 MESSAGE("PIDX_BUILD_CONVERT ${PIDX_BUILD_CONVERT}")
 
-OPTION(PIDX_BUILD_PROFILE "pidx profile tools" FALSE)
+OPTION(PIDX_BUILD_PROFILE "pidx profile tools" TRUE)
 MESSAGE("PIDX_BUILD_PROFILE ${PIDX_BUILD_PROFILE}")
 
 # ///////////////////////////////////////////////
@@ -150,7 +150,7 @@ ADD_SUBDIRECTORY(external)
 ADD_SUBDIRECTORY(pidx)
 ADD_SUBDIRECTORY(tutorial)
 ADD_SUBDIRECTORY(profile)
-ADD_SUBDIRECTORY(examples)
+# ADD_SUBDIRECTORY(examples)
 
 # ///////////////////////////////////////////////
 # installation

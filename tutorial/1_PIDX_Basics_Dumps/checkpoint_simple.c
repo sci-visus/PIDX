@@ -246,6 +246,7 @@ int main(int argc, char **argv)
   PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+  PIDX_set_idx_count(access, 2, 2, 2);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
