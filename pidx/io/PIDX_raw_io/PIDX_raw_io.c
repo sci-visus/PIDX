@@ -1,5 +1,8 @@
 #include "../PIDX_io.h"
 
+static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
+
+
 struct PIDX_raw_io_descriptor
 {
 
@@ -130,18 +133,18 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
       pcounter++;
     }
 
-    file->idx_d->global_patch_offset = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t));
-    memset(file->idx_d->global_patch_offset, 0,(nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t));
+    file->idx_d->global_patch_offset = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t));
+    memset(file->idx_d->global_patch_offset, 0,(nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t));
 
-    file->idx_d->global_patch_size = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t));
-    memset(file->idx_d->global_patch_size, 0, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t));
+    file->idx_d->global_patch_size = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t));
+    memset(file->idx_d->global_patch_size, 0, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t));
 
 #if PIDX_HAVE_MPI
     if (file->idx_d->parallel_mode == 1)
     {
-      MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->idx_d->global_patch_offset + 1, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->comm);
+      MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->idx_d->global_patch_offset + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->comm);
 
-      MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->idx_d->global_patch_size + 1, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->comm);
+      MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->idx_d->global_patch_size + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_LONG_LONG, file->comm);
     }
     else
     {
@@ -152,14 +155,16 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     }
     file->idx_d->global_patch_size[0] = nprocs;
     file->idx_d->global_patch_offset[0] = nprocs;
+    file->idx_d->global_patch_size[1] = max_patch_count;
+    file->idx_d->global_patch_offset[1] = max_patch_count;
 
     int rank = 0;
     MPI_Comm_rank(file->comm, &rank);
     if (rank == 0)
     {
       int fp = open("Offset_File", O_CREAT | O_WRONLY, 0664);
-      ssize_t write_count = pwrite(fp, file->idx_d->global_patch_offset, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t), 0);
-      if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t))
+      ssize_t write_count = pwrite(fp, file->idx_d->global_patch_offset, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t), 0);
+      if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t))
       {
         fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
         return PIDX_err_io;
@@ -167,8 +172,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
       close(fp);
 
       fp = open("Size_File", O_CREAT | O_WRONLY, 0664);
-      write_count = pwrite(fp, file->idx_d->global_patch_size, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t), 0);
-      if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 1) * sizeof(int64_t))
+      write_count = pwrite(fp, file->idx_d->global_patch_size, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t), 0);
+      if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(int64_t))
       {
         fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
         return PIDX_err_io;
@@ -191,7 +196,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
       */
     }
 
-    //printf("%d Max Patch Count %d\n", patch_count, max_patch_count);
+    free(local_patch_offset);
+    free(local_patch_size);
 
     ret = PIDX_rst_meta_data_destroy(temp_id);
     if (ret != PIDX_success)
@@ -334,15 +340,30 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     /*-----------------------------------------finalize [end]--------------------------------------------------*/
   }
 
-    free(file->idx_d->rank_r_offset);
-    file->idx_d->rank_r_offset = 0;
+  free(file->idx_d->rank_r_offset);
+  file->idx_d->rank_r_offset = 0;
 
-    free(file->idx_d->rank_r_count);
-    file->idx_d->rank_r_count = 0;
+  free(file->idx_d->rank_r_count);
+  file->idx_d->rank_r_count = 0;
+
+  free(file->idx_d->global_patch_offset);
+  file->idx_d->global_patch_offset = 0;
+
+  free(file->idx_d->global_patch_size);
+  file->idx_d->global_patch_size = 0;
 
   return PIDX_success;
 }
 
+
+  static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
+  {
+    int d = 0, check_bit = 0;
+    for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
+      check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
+
+    return !(check_bit);
+  }
 
 
 PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int end_var_index)
@@ -351,14 +372,57 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   if (file->idx_d->var_pipe_length == 0)
     file->idx_d->var_pipe_length = 1;
 
-
-  PIDX_return_code ret;
-  int nprocs = 1;
+  int nprocs = 1, rank = 0;
 
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
+  {
     MPI_Comm_size(file->comm,  &nprocs);
+    MPI_Comm_rank(file->comm,  &rank);
+  }
 #endif
+
+  int number_cores;
+  int fp = open("Size_File", O_RDONLY);
+  ssize_t write_count = pread(fp, &number_cores, sizeof(int64_t), 0);
+  if (write_count != sizeof(int64_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+
+  int max_patch_count;
+  write_count = pread(fp, &max_patch_count, sizeof(int64_t), sizeof(int64_t));
+  if (write_count != sizeof(int64_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+
+  uint64_t *size_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t));
+  memset(size_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t));
+
+  write_count = pread(fp, size_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t), 2 * sizeof(int64_t));
+  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+
+  close(fp);
+
+
+  uint64_t *offset_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t));
+  memset(offset_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t));
+
+  int fp1 = open("Offset_File", O_RDONLY);
+  write_count = pread(fp1, offset_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t), 2 * sizeof(int64_t));
+  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(int64_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+  close(fp1);
 
 
   PIDX_time time = file->idx_d->time;
@@ -370,119 +434,98 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
     PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
     PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, 0);
 
+    /*
+    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
+    */
+
     file->one_time_initializations = 1;
   }
 
   time->populate_idx_end_time = PIDX_get_time();
 
-  int start_index = 0, end_index = 0;
+  char *file_name;
+  file_name = malloc(PATH_MAX * sizeof(*file_name));
+  memset(file_name, 0, PATH_MAX * sizeof(*file_name));
+
+  char *directory_path;
+  char *data_set_path;
+
+  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+
+  data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
+  memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
+
+  strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
+  sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
+
+  int start_index = 0, end_index = 0, v = 0;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->idx_d->var_pipe_length + 1))
   {
     end_index = ((start_index + file->idx_d->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->idx_d->var_pipe_length);
 
 
-    /*--------------------------------------Create RST IDs [start]------------------------------------------*/
-    /* Create the restructuring ID */
-    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
-    /*----------------------------------------Create RST IDs [end]------------------------------------------*/
-
-
-
-    /*------------------------------------Adding communicator [start]----------------------------------------*/
-#if PIDX_HAVE_MPI
-    /* Attaching the communicator to the restructuring phase */
-    if (file->idx_d->parallel_mode == 1)
+    int n = 0, m = 0, d = 0;
+    Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
+    memset(local_proc_patch, 0, sizeof (*local_proc_patch));
+    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
-      if (ret != PIDX_success)
+      local_proc_patch->offset[d] = file->idx->variable[start_index]->sim_patch[0]->offset[d];
+      local_proc_patch->size[d] = file->idx->variable[start_index]->sim_patch[0]->size[d];
+    }
+
+    // PC - - - - - - - - - -     PC - - - - - - - - - -            PC - - - - -
+    // 0  1 2 3 4 5  6 7 8 9 10   11 12 13 14 15 16 17 18 19 20 21  22
+    Ndim_patch n_proc_patch = (Ndim_patch)malloc(sizeof (*n_proc_patch));
+    memset(n_proc_patch, 0, sizeof (*n_proc_patch));
+    int p_counter = 1;
+    int pc = 0, pc_index = 0;
+    for (n = 0; n < number_cores; n++)
+    {
+      pc = offset_buffer[n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)];
+      pc_index = n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1);
+      for (m = 0; m < pc; m++)
       {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
-        return PIDX_err_rst;
+        for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        {
+          n_proc_patch->offset[d] = offset_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
+          n_proc_patch->size[d] = size_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
+        }
+
+        //printf("[%d] %d :: [%d] %d: [%d %d %d -- %d %d %d] [%d %d %d -- %d %d %d]\n",number_cores, n, max_patch_count, m, local_proc_patch->offset[0], local_proc_patch->offset[1], local_proc_patch->offset[2], local_proc_patch->size[0], local_proc_patch->size[1], local_proc_patch->size[2], n_proc_patch->offset[0], n_proc_patch->offset[1], n_proc_patch->offset[2], n_proc_patch->size[0], n_proc_patch->size[1], n_proc_patch->size[2]);
+        if (intersectNDChunk(local_proc_patch, n_proc_patch))
+        {
+          sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
+          if (rank == 1)
+          {
+            printf("intersection between query and block: %s\n", file_name);
+            printf("[%d] %d :: [%d] %d: [%d %d %d -- %d %d %d] [%d %d %d -- %d %d %d]\n",number_cores, n, max_patch_count, m, local_proc_patch->offset[0], local_proc_patch->offset[1], local_proc_patch->offset[2], local_proc_patch->size[0], local_proc_patch->size[1], local_proc_patch->size[2], n_proc_patch->offset[0], n_proc_patch->offset[1], n_proc_patch->offset[2], n_proc_patch->size[0], n_proc_patch->size[1], n_proc_patch->size[2]);
+          }
+
+          int fpx = open(file_name, O_RDONLY);
+          for (v = start_index; v <= end_index; v++)
+          {
+            //write_count = pread(fpx, ,)
+          }
+          close(fpx);
+        }
+        p_counter++;
       }
     }
-#endif
-    /*------------------------------------Adding communicator [end]------------------------------------------*/
-
-
-
-    /*--------------------------------------------RST [start]------------------------------------------------*/
-    time->rst_start[start_index] = PIDX_get_time();
-
-    ret = PIDX_rst_meta_data_create(file->rst_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
-      return PIDX_err_rst;
-    }
-
-    /* Creating the buffers required for restructurig */
-    ret = PIDX_rst_buf_create(file->rst_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
-      return PIDX_err_rst;
-    }
-
-    if (file->idx_dbg->debug_do_io == 1)
-    {
-      ret = PIDX_rst_buf_aggregate_read(file->rst_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
-        return PIDX_err_rst;
-      }
-    }
-
-    /* Verifying the correctness of the restructuring phase */
-    if (file->idx_dbg->debug_rst == 1)
-    {
-      ret = HELPER_rst(file->rst_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
-        return PIDX_err_rst;
-      }
-    }
-
-    /* Perform data restructuring */
-    if (file->idx_dbg->debug_do_rst == 1)
-    {
-      ret = PIDX_rst_read(file->rst_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
-        return PIDX_err_rst;
-      }
-    }
-
-    time->rst_end[start_index] = PIDX_get_time();
-    /*--------------------------------------------RST [end]---------------------------------------------------*/
-
-
-
-    /*-------------------------------------------finalize [start]---------------------------------------------*/
-    time->finalize_start[start_index] = PIDX_get_time();
-
-    ret = PIDX_rst_meta_data_destroy(file->rst_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
-      return PIDX_err_rst;
-    }
-
-    /* Deleting the restructuring ID */
-    PIDX_rst_finalize(file->rst_id);
 
     time->finalize_end[start_index] = PIDX_get_time();
     /*-----------------------------------------finalize [end]--------------------------------------------------*/
 
   }
 
-  free(file->idx_d->rank_r_offset);
-  file->idx_d->rank_r_offset = 0;
+  free(file_name);
+  free(data_set_path);
+  free(directory_path);
 
-  free(file->idx_d->rank_r_count);
-  file->idx_d->rank_r_count = 0;
+  free(offset_buffer);
+  free(size_buffer);
 
   return PIDX_success;
 }

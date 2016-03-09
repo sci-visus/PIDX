@@ -1,7 +1,5 @@
 #include "../PIDX_io.h"
 
-//#include "PIDX_idx_io.h"
-
 static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
@@ -410,6 +408,7 @@ static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int st
 }
 
 
+
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 {
   int d = 0, check_bit = 0;
@@ -418,6 +417,8 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 
   return !(check_bit);
 }
+
+
 
 static PIDX_return_code delete_idx_dataset(PIDX_partitioned_idx_io file, int start_index, int end_index)
 {

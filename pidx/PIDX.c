@@ -305,6 +305,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d = (idx_dataset_derived_metadata)malloc(sizeof (*((*file)->idx_d)));
   memset((*file)->idx_d, 0, sizeof (*((*file)->idx_d)));
 
+  (*file)->idx_dbg = malloc(sizeof (*((*file)->idx_dbg)));
+  memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));
+
   (*file)->idx_d->time = malloc(sizeof (*((*file)->idx_d->time)));
   memset((*file)->idx_d->time, 0, sizeof (*((*file)->idx_d->time)));
   (*file)->idx_d->time->sim_start = PIDX_get_time();
@@ -1568,7 +1571,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
       if (ret != PIDX_success)
         return PIDX_err_flush;
 
-      ret = PIDX_raw_read(file->raw_io, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+      ret = PIDX_forced_raw_read(file->raw_io, file->local_variable_index, file->local_variable_index + file->local_variable_count);
       if (ret != PIDX_success)
         return PIDX_err_flush;
 
