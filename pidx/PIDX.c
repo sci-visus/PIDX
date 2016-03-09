@@ -79,6 +79,7 @@ struct PIDX_file_descriptor
 
   idx_debug idx_dbg;
 
+  int partition_dump;
   int enable_raw_dump;
   int debug_output;
 
@@ -178,12 +179,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->one_time_initializations = 0;
 
   (*file)->idx_d->color = 0;
-
   (*file)->small_agg_comm = 0;
-
   (*file)->enable_raw_dump = 0;
-  //(*file)->partition_dump = 1;
-
   (*file)->debug_output = 0;
 
   (*file)->idx_d->reduced_res_from = 0;
@@ -201,8 +198,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   }
   else
   {
-    (*file)->idx->enable_rst = 0;
-    (*file)->idx->enable_agg = 0;
+    (*file)->idx->enable_rst = 1;
+    (*file)->idx->enable_agg = 1;
   }
 #else
   (*file)->idx->enable_rst = 0;
@@ -1470,10 +1467,9 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
   if (file->flags == PIDX_MODE_CREATE)
   {
-
-    //if (file->partition_dump == 1)
-    //{
-      /*PIDX_idx_write
+    //file->partition_dump = 1;
+    if (file->partition_dump == 1)
+    {
       file->partitioned_idx_io = PIDX_partitioned_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
       if (file->partitioned_idx_io == NULL)
         return PIDX_err_flush;
@@ -1489,9 +1485,9 @@ PIDX_return_code PIDX_flush(PIDX_file file)
       ret = PIDX_partitioned_idx_io_finalize(file->partitioned_idx_io);
       if (ret != PIDX_success)
         return PIDX_err_flush;
-      */
-    //}
-    if (file->enable_raw_dump == 0)
+    }
+
+    else if (file->enable_raw_dump == 0)
     {
       if (file->local_variable_index == file->idx->variable_count)
         return PIDX_success;
@@ -1690,6 +1686,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_time time = file->idx_d->time;
   time->sim_end = PIDX_get_time();
 
+  /*
   if (file->debug_output == 1)
   {
 
@@ -1842,6 +1839,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   PIDX_delete_timming_buffers1(file->idx_d->time);
   PIDX_delete_timming_buffers2(file->idx_d->time, file->idx->variable_count);
+  */
 
   //printf("file->idx->variable_count = %d\n", file->idx->variable_count);
   for (i = 0; i < 1024/*file->idx->variable_count*/; i++)

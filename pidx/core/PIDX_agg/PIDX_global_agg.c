@@ -1449,6 +1449,19 @@ PIDX_return_code PIDX_global_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int 
 #endif
 #endif
 
+
+  /*
+  int nprocs;
+  MPI_Comm_size(agg_id->comm, &nprocs);
+  if (nprocs == 1)
+  {
+  double x;
+  memcpy(&x, agg_buffer->buffer, sizeof(double));
+  printf("Value = %f\n", x);
+  }
+  */
+
+
   if (file_zero == 1)
   {
     if (layout_id == 0)

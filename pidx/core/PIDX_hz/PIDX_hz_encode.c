@@ -647,9 +647,14 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                       //printf("bytes_for_datatype = %d\n", bytes_for_datatype);
                       //for (s = 0; s < id->idx->variable[v1]->values_per_sample; s++)
                       //{
-                        //double x;
-                        //memcpy(&x, id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype), bytes_for_datatype);
-                        //printf("Dest %d %d Src %d Count %d byte size %d V %f\n", level, (int)((hz_index * id->idx->variable[v1]->values_per_sample + s) * chunk_size), (int)((index * id->idx->variable[v1]->values_per_sample) + s) * chunk_size, (int)chunk_size, id->idx->variable[v1]->bits_per_value, x);
+                      /*
+                      int nprocs;
+                      MPI_Comm_size(id->comm, &nprocs);
+                        double x;
+                        memcpy(&x, id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype), bytes_for_datatype);
+                        if (nprocs == 1)
+                        printf("Dest %d %d Src %d Count %d byte size %d V %f\n", level, (int)((hz_index * id->idx->variable[v1]->values_per_sample + s) * chunk_size), (int)((index * id->idx->variable[v1]->values_per_sample) + s) * chunk_size, (int)chunk_size, id->idx->variable[v1]->bits_per_value, x);
+                        */
 
 #if !SIMULATE_IO
                         //memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * id->idx->variable[v1]->values_per_sample + s) * bytes_for_datatype), id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * id->idx->variable[v1]->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);

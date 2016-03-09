@@ -46,14 +46,13 @@ typedef struct PIDX_Ndim_patch_struct* Ndim_patch;
 /// Struct to store a group of Ndim_buffer
 struct PIDX_Ndim_patch_group_struct
 {
+  int data_source;
   int type;                                             ///< decide the type of the group
   int count;                                            ///< how many Ndim_buffer are there in the group
   Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
   int *source_patch_rank;                               ///<
   int max_patch_rank;                                   ///<
   Ndim_patch reg_patch;                                ///< Pointer to the reg patch
-  //int64_t reg_patch_offset[PIDX_MAX_DIMENSIONS];        ///< If restructuring used then this contains the offset of the power-two block
-  //int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];          ///< If restructuring used then this contains the extents of the power-two block
 };
 typedef struct PIDX_Ndim_patch_group_struct* Ndim_patch_group;
 

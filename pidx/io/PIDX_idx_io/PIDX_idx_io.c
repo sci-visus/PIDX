@@ -951,12 +951,13 @@ static PIDX_return_code partition_setup(PIDX_idx_io file, int start_var_index, i
     for (var = start_var_index; var < end_var_index; var++)
       for (p = 0; p < file->idx->variable[var]->sim_patch_count; p++)
         for (d = 0; d < 3; d++)
-          for (j = 0; j < file->idx->bounds[d]; j = j + (file->idx->bounds[d]  / local_proc_patch->size[d]))
-            if (file->idx->variable[var]->sim_patch[p]->offset[d] >= j && file->idx->variable[var]->sim_patch[p]->offset[d] < (j + file->idx->bounds[d]))
+          for (j = 0; j < file->idx->bounds[d]; j = j + (file->idx->bounds[d]  / file->idx_d->idx_count[d]))
+            if (file->idx->variable[var]->sim_patch[p]->offset[d] >= j && file->idx->variable[var]->sim_patch[p]->offset[d] < (j + (file->idx->bounds[d]  / file->idx_d->idx_count[d])))
             {
               file->idx->variable[var]->sim_patch[p]->offset[d] = file->idx->variable[var]->sim_patch[p]->offset[d] - j;
               break;
             }
+
      file->idx->bounds[0] = file->idx->bounds[0] / file->idx_d->idx_count[0];
      file->idx->bounds[1] = file->idx->bounds[1] / file->idx_d->idx_count[1];
      file->idx->bounds[2] = file->idx->bounds[2] / file->idx_d->idx_count[2];

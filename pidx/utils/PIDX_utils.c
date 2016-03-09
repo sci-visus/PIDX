@@ -158,7 +158,7 @@ void GuessBitmaskPattern(char* _bits, PointND dims)
   char* p=_bits;
 	      
   PointND id,sorted_id;
-    
+
   *p++='V';
 
   For(D)
@@ -177,10 +177,10 @@ void GuessBitmaskPattern(char* _bits, PointND dims)
       int ref1=PGET(id,D+1),dim1=PGET(dims,ref1);
       if (!(dim0<dim1 || (dim0==dim1 && ref0<ref1)))
       {
-	int _temp=PGET(id,D);
-	PGET(id,D)=PGET(id,D+1);
-	PGET(id,D+1)=_temp;
-	ordered=0;
+    int _temp=PGET(id,D);
+    PGET(id,D)=PGET(id,D+1);
+    PGET(id,D+1)=_temp;
+    ordered=0;
       }
     }
   }
@@ -193,13 +193,13 @@ void GuessBitmaskPattern(char* _bits, PointND dims)
       ordered=1;
       OffsetFor(N,D,-1)
       {
-	if (PGET(sorted_id,N+0)<PGET(sorted_id,N+1)) 
-	{
-	  int _temp=PGET(sorted_id,N);
-	  PGET(sorted_id,N)=PGET(sorted_id,N+1);
-	  PGET(sorted_id,N+1)=_temp;
-	  ordered=0;
-	}
+    if (PGET(sorted_id,N+0)<PGET(sorted_id,N+1))
+    {
+      int _temp=PGET(sorted_id,N);
+      PGET(sorted_id,N)=PGET(sorted_id,N+1);
+      PGET(sorted_id,N+1)=_temp;
+      ordered=0;
+    }
       }
     }
     //while dim is not consumed
@@ -207,7 +207,7 @@ void GuessBitmaskPattern(char* _bits, PointND dims)
     {
       OffsetFor(N,D,0)
       {
-	*p++='0'+PGET(sorted_id,N);	
+    *p++='0'+PGET(sorted_id,N);
       }
     }
   }

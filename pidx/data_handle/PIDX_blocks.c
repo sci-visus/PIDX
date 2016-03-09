@@ -59,6 +59,9 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from
   layout->resolution_to = resolution_to;
   layout->bits_per_block = bits_per_block;
 
+  if (maxh == 0)
+    return PIDX_success;
+
   if (layout->maxh < bits_per_block + 1)
     layout->maxh = bits_per_block + 1;
 
@@ -289,7 +292,10 @@ int PIDX_blocks_is_block_present(int block_number, PIDX_block_layout layout)
   int res_level = 0, res_index = 0;
   
   if (block_number == 0)
-    res_level = layout->bits_per_block;
+  {
+    return 1;
+    //res_level = layout->bits_per_block;
+  }
   else
   {
     res_level = log2 (block_number) + 1 + layout->bits_per_block;

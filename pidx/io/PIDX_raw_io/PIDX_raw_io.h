@@ -1,6 +1,3 @@
-//#include "../../PIDX_inc.h"
-//#include "../PIDX_io.h"
-
 #ifndef __PIDX_RAW_IO_H
 #define __PIDX_RAW_IO_H
 
@@ -27,6 +24,11 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
 
 ///
 PIDX_return_code PIDX_raw_read(PIDX_raw_io file, int start_var_index, int end_var_index);
+
+
+
+///
+PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int end_var_index);
 
 
 ///

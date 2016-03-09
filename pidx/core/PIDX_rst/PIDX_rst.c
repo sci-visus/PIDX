@@ -564,6 +564,7 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
         if (rank == rst_id->reg_patch_grp[i]->max_patch_rank)
         {
           Ndim_patch_group patch_group = var->rst_patch_group[cnt];
+          patch_group->data_source = 0;
           for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
           {
             patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * patch_group->patch[j]->size[3] * patch_group->patch[j]->size[4] * var->values_per_sample * var->bits_per_value/8);
@@ -1204,6 +1205,84 @@ PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
 }
 
 
+PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id, int mode)
+{
+  int v = 0;
+  for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
+  {
+    PIDX_variable var = rst_id->idx->variable[v];
+    //int bytes_per_value = var->bits_per_value / 8;
+
+    // loop through all groups
+    int g = 0;
+    for (g = 0; g < var->patch_group_count; ++g)
+    {
+      // copy the size and offset to output
+      Ndim_patch_group patch_group = var->rst_patch_group[g];
+      Ndim_patch out_patch = var->rst_patch_group[g]->reg_patch;
+
+      int nx = out_patch->size[0];
+      int ny = out_patch->size[1];
+      int nz = out_patch->size[2];
+
+      patch_group->data_source = 1;
+
+      //printf("[R REG] %d %d %d\n", nx, ny, nz);
+
+      var->rst_patch_group[g]->reg_patch->buffer = malloc(nx * ny * nz * (var->bits_per_value/8) * var->values_per_sample);
+      memset(var->rst_patch_group[g]->reg_patch->buffer, 0, nx * ny * nz * (var->bits_per_value/8) * var->values_per_sample);
+
+      if (var->rst_patch_group[g]->reg_patch->buffer == NULL)
+        return PIDX_err_chunk;
+
+      int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
+      for (r = 0; r < var->rst_patch_group[g]->count; r++)
+      {
+        for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
+        {
+          for (j1 = patch_group->patch[r]->offset[1]; j1 < patch_group->patch[r]->offset[1] + patch_group->patch[r]->size[1]; j1++)
+          {
+            for (i1 = patch_group->patch[r]->offset[0]; i1 < patch_group->patch[r]->offset[0] + patch_group->patch[r]->size[0]; i1 = i1 + patch_group->patch[r]->size[0])
+            {
+              index = ((patch_group->patch[r]->size[0])* (patch_group->patch[r]->size[1]) * (k1 - patch_group->patch[r]->offset[2])) + ((patch_group->patch[r]->size[0]) * (j1 - patch_group->patch[r]->offset[1])) + (i1 - patch_group->patch[r]->offset[0]);
+              send_o = index * var->values_per_sample * (var->bits_per_value/8);
+              send_c = (patch_group->patch[r]->size[0]);
+              recv_o = (nx * ny * (k1 - out_patch->offset[2])) + (nx * (j1 - out_patch->offset[1])) + (i1 - out_patch->offset[0]);
+
+#if !SIMULATE_IO
+              if (mode == PIDX_WRITE)
+                memcpy(out_patch->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+              else
+                memcpy(var->rst_patch_group[g]->patch[r]->buffer + send_o, out_patch->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), send_c * var->values_per_sample * (var->bits_per_value/8));
+#endif
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_rst_aggregate_buf_destroy(PIDX_rst_id rst_id)
+{
+  int v = 0;
+  for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
+  {
+    PIDX_variable var = rst_id->idx->variable[v];
+    //int bytes_per_value = var->bits_per_value / 8;
+
+    // loop through all groups
+    int g = 0;
+    for (g = 0; g < var->patch_group_count; ++g)
+    {
+      free(var->rst_patch_group[g]->reg_patch->buffer);
+    }
+  }
+
+  return PIDX_success;
+}
 
 
 

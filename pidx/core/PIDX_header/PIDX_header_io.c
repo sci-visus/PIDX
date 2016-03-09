@@ -431,10 +431,17 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
   //memset(headers, 0, total_header_size);
 
+  //int nprocs;
+  //MPI_Comm_size(header_io_id->comm, &nprocs);
+
   for (i = 0; i < header_io_id->idx->blocks_per_file; i++)
   {
+    //if (nprocs == 1)
+    //  printf("[B] [%d %d] : %d\n", header_io_id->idx->variable[header_io_id->first_index]->global_block_layout->resolution_from, header_io_id->idx->variable[header_io_id->first_index]->global_block_layout->resolution_to, i);
     if (PIDX_blocks_is_block_present((i + (header_io_id->idx->blocks_per_file * file_number)), header_io_id->idx->variable[header_io_id->first_index]->global_block_layout))
     {
+        //if (nprocs == 1)
+        //  printf("[A] %d\n", i);
       block_negative_offset = PIDX_blocks_find_negative_offset(header_io_id->idx->blocks_per_file, (i + (header_io_id->idx->blocks_per_file * file_number)), header_io_id->idx->variable[header_io_id->first_index]->global_block_layout);
 
 
@@ -460,6 +467,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         //TODO
         //printf("%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bits_per_value / 8), total_chunk_size, header_io_id->idx->variable[j]->values_per_sample);
         //if (file_number == 2)
+        //if (nprocs == 1)
         //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample));
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor));

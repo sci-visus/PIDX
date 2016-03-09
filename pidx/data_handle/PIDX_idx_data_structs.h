@@ -155,6 +155,8 @@ struct idx_dataset_derived_metadata_struct
   int parallel_mode;
 
   //extents of meta-data
+  int64_t *global_patch_offset;
+  int64_t *global_patch_size;
   int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
   int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
   
