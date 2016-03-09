@@ -262,14 +262,14 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
 
-    //
+    /*
     PIDX_enable_raw_io(file);
     PIDX_point reg_patch_size;
     PIDX_set_point_5D(reg_patch_size, 64, 64, 64, 1, 1);
     PIDX_set_restructuring_box(file, reg_patch_size);
-    //
+    */
 
-    PIDX_set_block_count(file, 2);
+    //PIDX_set_block_count(file, 2);
 
     ret = PIDX_debug_output(file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
