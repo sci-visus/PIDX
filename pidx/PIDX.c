@@ -80,6 +80,7 @@ struct PIDX_file_descriptor
   idx_debug idx_dbg;
 
   int partition_dump;
+  int data_core_count;
   int enable_raw_dump;
   int debug_output;
 
@@ -181,6 +182,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->color = 0;
   (*file)->small_agg_comm = 0;
   (*file)->enable_raw_dump = 0;
+  (*file)->data_core_count = -1;
   (*file)->debug_output = 0;
 
   (*file)->idx_d->reduced_res_from = 0;
@@ -449,6 +451,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   //(*file)->idx_d->agg_buffer->aggregation_factor = 1;
   (*file)->idx_d->dump_agg_info = 0;
   (*file)->idx_d->dump_io_info = 0;
+  (*file)->data_core_count = -1;
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
@@ -504,6 +507,13 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         }
         (*file)->idx->reg_patch_size[3] = 1;
         (*file)->idx->reg_patch_size[4] = 1;
+      }
+      if (strcmp(line, "(cores)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+        (*file)->data_core_count = atoi(line);
       }
 
       if (strcmp(line, "(fields)") == 0)
@@ -656,6 +666,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->comm);
+    MPI_Bcast(&((*file)->data_core_count), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->compression_bit_rate), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->enable_raw_dump), 1, MPI_INT, 0, (*file)->comm);
@@ -1531,7 +1542,6 @@ PIDX_return_code PIDX_flush(PIDX_file file)
       ret = PIDX_raw_io_finalize(file->raw_io);
       if (ret != PIDX_success)
         return PIDX_err_flush;
-
     }
   }
 
@@ -1571,7 +1581,14 @@ PIDX_return_code PIDX_flush(PIDX_file file)
       if (ret != PIDX_success)
         return PIDX_err_flush;
 
-      ret = PIDX_forced_raw_read(file->raw_io, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+      int ncores = 1;
+#if PIDX_HAVE_MPI
+      MPI_Comm_size(file->comm, &ncores);
+#endif
+      if (file->data_core_count == ncores)
+        ret = PIDX_raw_read(file->raw_io, file->local_variable_index, file->local_variable_index + file->local_variable_count);
+      else
+        ret = PIDX_forced_raw_read(file->raw_io, file->local_variable_index, file->local_variable_index + file->local_variable_count);
       if (ret != PIDX_success)
         return PIDX_err_flush;
 
@@ -1689,7 +1706,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_time time = file->idx_d->time;
   time->sim_end = PIDX_get_time();
 
-  /*
   if (file->debug_output == 1)
   {
 
@@ -1842,10 +1858,10 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   PIDX_delete_timming_buffers1(file->idx_d->time);
   PIDX_delete_timming_buffers2(file->idx_d->time, file->idx->variable_count);
-  */
 
   //printf("file->idx->variable_count = %d\n", file->idx->variable_count);
-  for (i = 0; i < 1024/*file->idx->variable_count*/; i++)
+  //for (i = 0; i < 1024/*file->idx->variable_count*/; i++)
+  for (i = 0; i < file->idx->variable_count; i++)
   {
     //printf("[%d] ----->  %d %s\n", i, file->idx->variable[i], file->idx->variable[i]->var_name);
     //printf("[%d] ----->  %d \n", i, file->idx->variable[i]);

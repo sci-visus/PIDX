@@ -1419,7 +1419,6 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
       memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
       sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
-      free(directory_path);
 
 #if PIDX_HAVE_MPI
       if (rst_id->idx_derived->parallel_mode == 1)
@@ -1467,6 +1466,7 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
       free(file_name);
     }
   }
+  free(directory_path);
 
 #endif
   return PIDX_success;

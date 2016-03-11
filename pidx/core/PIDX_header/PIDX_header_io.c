@@ -103,13 +103,16 @@ PIDX_return_code PIDX_header_io_enable_raw_dump(PIDX_header_io_id header_io)
 
 PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step)
 {
-  int l = 0, rank = 0, N;
+  int l = 0, rank = 0, N, ncores = 1;
   FILE* idx_file_p;
   char dirname[1024], basename[1024];
   
 #if PIDX_HAVE_MPI
   if (header_io->idx_d->parallel_mode == 1)
+  {
     MPI_Comm_rank(header_io->comm, &rank);
+    MPI_Comm_size(header_io->comm, &ncores);
+  }
 #endif
   
   int nbits_blocknumber = (header_io->idx_d->maxh - header_io->idx->bits_per_block - 1);
@@ -235,7 +238,10 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
     
     if (header_io->enable_raw_dump == 1)
+    {
       fprintf(idx_file_p, "(raw_dump)\n%lld %lld %lld\n", (long long)header_io->idx->reg_patch_size[0], (long long)header_io->idx->reg_patch_size[1], (long long)header_io->idx->reg_patch_size[2]);
+      fprintf(idx_file_p, "(cores)\n%d\n", ncores);
+    }
 
     if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
     {
