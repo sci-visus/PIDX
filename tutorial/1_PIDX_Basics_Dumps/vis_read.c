@@ -223,7 +223,13 @@ int main(int argc, char **argv)
   ret = PIDX_default_bits_per_datatype(variable->type_name, &bits_per_sample);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_default_bytes_per_datatype");
 
+<<<<<<< HEAD
   int values_per_sample_l = variable->values_per_sample;
+=======
+  int vbits_per_sample = 0, v_per_sample = 0;
+  PIDX_values_per_datatype(variable->type_name, &v_per_sample, &vbits_per_sample);
+
+>>>>>>> working
   data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample);
   memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->values_per_sample);
 
@@ -243,9 +249,15 @@ int main(int argc, char **argv)
       for (i = 0; i < local_box_size[0]; i++)
       {
         int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+<<<<<<< HEAD
         for (vps = 0; vps < values_per_sample_l; vps++)
         {
           if (data[index * values_per_sample_l + vps] != variable_index + vps + ((global_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+=======
+        for (vps = 0; vps < v_per_sample; vps++)
+        {
+          if (data[index * v_per_sample + vps] != variable_index + vps + ((global_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+>>>>>>> working
             read_error_count++;
           else
             read_count++;

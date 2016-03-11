@@ -1,0 +1,9 @@
+#include "../PIDX_inc.h"
+
+#ifndef __PIDX_WRITE_1_H
+#define __PIDX_WRITE_1_H
+
+PIDX_return_code PIDX_raw_write(PIDX_file file, int start_var_index, int end_var_index);
+PIDX_return_code PIDX_raw_read(PIDX_file file, int start_var_index, int end_var_index);
+
+#endif

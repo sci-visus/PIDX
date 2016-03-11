@@ -39,8 +39,6 @@
 #include <stdint.h>
 #include <PIDX.h>
 
-#define RAW_DUMP 1
-
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
 static unsigned long long global_box_size[3] = {162, 162, 42};
@@ -51,6 +49,7 @@ static int time_step_count = 1;
 static int variable_count = 1;
 static char output_file_template[512] = "test";
 static double **data;
+static int *int_data;
 static char output_file_name[512] = "test.idx";
 static int values_per_sample = 1;
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
@@ -127,6 +126,7 @@ static void calculate_per_process_offsets()
 static void create_synthetic_simulation_data()
 {
   int var = 0;
+  unsigned long long i, j, k, vps = 0;
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
@@ -134,32 +134,37 @@ static void create_synthetic_simulation_data()
 
   for(var = 0; var < variable_count; var++)
   {
-    //if (var == 0 || var == 3)
-    //  values_per_sample = 3;
-    //else
-    values_per_sample = 1;
+    if (var == 0)
+    {
+      values_per_sample = 1;
+      int_data = malloc(sizeof (*(int_data)) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+      for (k = 0; k < local_box_size[2]; k++)
+        for (j = 0; j < local_box_size[1]; j++)
+          for (i = 0; i < local_box_size[0]; i++)
+          {
+            unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+            for (vps = 0; vps < values_per_sample; vps++)
+              int_data[index * values_per_sample + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          }
+    }
 
+    else
+    {
+      if (var == 2)
+        values_per_sample = 3;
+      else
+        values_per_sample = 1;
 
-    data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
-#if RAW_DUMP
-    int ret = 0;
-    char file_name[1024];
-    sprintf(file_name, "rank_%d", rank);
-    int fpx = open(file_name, O_RDONLY);
-    ret = pread(fpx, data[var], (sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample), 0);
-    assert(ret == (sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample));
-    close(fpx);
-#else
-    unsigned long long i, j, k, vps = 0;
-    for (k = 0; k < local_box_size[2]; k++)
-      for (j = 0; j < local_box_size[1]; j++)
-        for (i = 0; i < local_box_size[0]; i++)
-        {
-          unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-          for (vps = 0; vps < values_per_sample; vps++)
-            data[var][index * values_per_sample + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
-        }
-#endif
+      data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
+      for (k = 0; k < local_box_size[2]; k++)
+        for (j = 0; j < local_box_size[1]; j++)
+          for (i = 0; i < local_box_size[0]; i++)
+          {
+            unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+            for (vps = 0; vps < values_per_sample; vps++)
+              data[var][index * values_per_sample + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          }
+    }
   }
 }
 
@@ -168,6 +173,9 @@ static void destroy_synthetic_simulation_data()
   int var = 0;
   for(var = 0; var < variable_count; var++)
   {
+    if (var == 0)
+      continue;
+
     free(data[var]);
     data[var] = 0;
   }
@@ -239,7 +247,7 @@ int main(int argc, char **argv)
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
-  //rank_0_print("Simulation Data Created\n");
+  rank_0_print("Simulation Data Created\n");
 
   int ret;
   int var;
@@ -255,24 +263,11 @@ int main(int argc, char **argv)
   PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
   PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
 
-
-  /*
-  unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice;
-  rank_z = rank / (sub_div[0] * sub_div[1]);
-  rank_slice = rank % (sub_div[0] * sub_div[1]);
-  rank_y = (rank_slice / sub_div[0]);
-  rank_x = (rank_slice % sub_div[0]);
-  static int idx_count[3] = {1,1,1};
-  */
-
   //  Creating access
   PIDX_access access;
   PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
-  //PIDX_set_idx_count(access, idx_count[0], idx_count[1], idx_count[2]);
-  //PIDX_set_process_extent(access, sub_div[0], sub_div[1], sub_div[2]);
-  //PIDX_set_process_rank_decomposition(access, rank_x, rank_y, rank_z);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -288,36 +283,47 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    //PIDX_debug_output(file);
+    PIDX_debug_output(file);
 
     PIDX_set_block_count(file, 256);
     PIDX_set_block_size(file, 15);
 
-
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-    PIDX_set_lossy_compression_bit_rate(file, 16);
+    //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+    //PIDX_set_lossy_compression_bit_rate(file, 16);
 
     char var_name[512];
     for (var = 0; var < variable_count; var++)
     {
       sprintf(var_name, "variable_%d", var);
 
-      //if (var == 0 || var == 3)
-      //{
-      //  values_per_sample = 3;
-      //  ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
-      //  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
-      //}
-      //else
-      //{
+      if (var == 0)
+      {
         values_per_sample = 1;
-        ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64 , &variable[var]);
-        if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
-      //}
+        ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(int) * 8, INT32 , &variable[var]);
+        if (ret != PIDX_success)  terminate_with_error_msg("A PIDX_variable_create");
 
-      ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
-      if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_data_layout");
+        ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, int_data, PIDX_row_major);
+        if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_data_layout");
+      }
+      else
+      {
+        if (var == 2)
+        {
+          values_per_sample = 3;
+          ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
+          if (ret != PIDX_success)  terminate_with_error_msg("B[%d] [%d] PIDX_variable_create", var, ret);
+        }
+        else
+        {
+          values_per_sample = 1;
+          ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64 , &variable[var]);
+          if (ret != PIDX_success)  terminate_with_error_msg("B[%d] [%d] PIDX_variable_create", var, ret);
+        }
+
+        ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+        if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_data_layout");
+      }
 
       ret = PIDX_append_and_write_variable(file, variable[var]);
       if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");

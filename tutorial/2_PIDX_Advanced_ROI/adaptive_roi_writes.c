@@ -291,9 +291,9 @@ int main(int argc, char **argv)
     ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
-    PIDX_point reg_patch_size;
-    PIDX_set_point_5D(reg_patch_size, 32, 32, 32, 1, 1);
-    PIDX_set_restructuring_box(file, reg_patch_size);
+    //PIDX_point reg_patch_size;
+    //PIDX_set_point_5D(reg_patch_size, 32, 32, 32, 1, 1);
+    //PIDX_set_restructuring_box(file, reg_patch_size);
 
     set_ROI_extents(file);
     create_synthetic_simulation_data();

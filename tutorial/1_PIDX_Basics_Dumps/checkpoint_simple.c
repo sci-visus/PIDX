@@ -138,7 +138,11 @@ static void create_synthetic_simulation_data()
 
   for(var = 0; var < variable_count; var++)
   {
-    values_per_sample[var] = 1;
+    if (var == 4)
+      values_per_sample[var] = 3;
+    else
+      values_per_sample[var] = 1;
+
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample[var]);
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
@@ -246,6 +250,7 @@ int main(int argc, char **argv)
   PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
+  //PIDX_set_idx_count(access, 2, 2, 2);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -278,7 +283,12 @@ int main(int argc, char **argv)
     for (var = 0; var < variable_count; var++)
     {
       sprintf(var_name, "variable_%d", var);
-      ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64 , &variable[var]);
+
+      if (var == 4)
+        ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
+      else
+        ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64 , &variable[var]);
+
       if (ret != PIDX_success)   for (ts = 0; ts < time_step_count; ts++)
  terminate_with_error_msg("PIDX_variable_create");
 

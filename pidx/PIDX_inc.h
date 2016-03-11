@@ -4,6 +4,7 @@
 #include "PIDX_config.h"
 
 #define SIMULATE_IO 0
+#define PIDX_MAX_TEMPLATE_DEPTH 6
 
 #ifdef BGQ
   #define _XOPEN_SOURCE 600
@@ -102,26 +103,32 @@ enum IO_MODE {PIDX_READ, PIDX_WRITE};
 extern "C" {
 #endif
 
-#include "PIDX_error_codes.h"
-#include "PIDX_data_layout.h"
-#include "PIDX_data_types.h"
-#include "PIDX_file_access_modes.h"
+#include "./utils/PIDX_error_codes.h"
+#include "./utils/PIDX_point.h"
+#include "./utils/PIDX_utils.h"
+#include "./utils/PIDX_file_name.h"
+#include "./utils/PIDX_file_access_modes.h"
 
-#include "PIDX_blocks.h"
-#include "PIDX_idx_data_structs.h"
-#include "PIDX_comm.h"
-#include "PIDX_utils.h"
-#include "PIDX_point.h"
-#include "PIDX_file_name.h"
-#include "PIDX_topology.h"
+#include "./comm/PIDX_comm.h"
 
-#include "PIDX_header_io.h"
-#include "PIDX_rst.h"
-#include "PIDX_hz_encode.h"
-#include "PIDX_block_restructure.h"
-#include "PIDX_compression.h"
-#include "PIDX_agg.h"
-#include "PIDX_io.h"
+
+#include "./data_handle/PIDX_data_layout.h"
+#include "./data_handle/PIDX_data_types.h"
+#include "./data_handle/PIDX_blocks.h"
+#include "./data_handle/PIDX_idx_data_structs.h"
+
+
+#include "./topology/PIDX_topology.h"
+
+#include "./core/PIDX_header/PIDX_header_io.h"
+#include "./core/PIDX_rst/PIDX_rst.h"
+#include "./core/PIDX_hz/PIDX_hz_encode.h"
+#include "./core/PIDX_block_rst/PIDX_block_restructure.h"
+#include "./core/PIDX_cmp/PIDX_compression.h"
+#include "./core/PIDX_agg/PIDX_agg.h"
+#include "./core/PIDX_file_io/PIDX_file_io.h"
+
+
 
 #ifdef __cplusplus
 }

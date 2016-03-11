@@ -237,6 +237,8 @@ int main(int argc, char **argv)
               strcpy (variable_type[variable_count], "uint64");
             else if (strcmp(pch1, "float32") == 0)
               strcpy (variable_type[variable_count], "float32");
+            else if (strcmp(pch1, "int32") == 0)
+              strcpy (variable_type[variable_count], "int32");
             else if (strcmp(pch1, "3*float64") == 0)
             {
               strcpy (variable_type[variable_count], "3*float64");
@@ -548,6 +550,7 @@ int main(int argc, char **argv)
         double* double_buffer = NULL;
         float* float_buffer = NULL;
         uint64_t* ulong_buffer = NULL;
+        int32_t* iint_buffer = NULL;
         double* decompressed_double_buffer = NULL;
         float* decompressed_float_buffer = NULL;
         int check_bit = 1, s = 0;
@@ -592,6 +595,15 @@ int main(int argc, char **argv)
                 assert(ret == data_size);
                 sample_size = sizeof(uint64_t);
               }
+              else if (strcmp(variable_type[var], "int32") == 0)
+              {
+                iint_buffer = (int32_t*)malloc(data_size);
+                memset(iint_buffer, 0, data_size);
+
+                ret = pread(fd, iint_buffer, data_size, data_offset);
+                assert(ret == data_size);
+                sample_size = sizeof(int32_t);
+              }
               else if (strcmp(variable_type[var], "float32") == 0)
               {
                 float_buffer = (float*)malloc(data_size);
@@ -628,6 +640,7 @@ int main(int argc, char **argv)
                 uint64_t llhs, lrhs;
                 double dlhs, drhs;
                 float flhs, frhs;
+                int iilhs, iirhs;
                 check_bit = 1, s = 0;
                 int i = 0, j = 0, k = 0, index = 0;
                 for (k = 0; k < compression_block_size[2]; k++)
@@ -680,6 +693,16 @@ int main(int argc, char **argv)
                           check_bit = check_bit && (llhs == lrhs);
 
                           if (llhs == lrhs)
+                            element_count1++;
+                        }
+                        else if (strcmp(variable_type[var], "int32") == 0)
+                        {
+                          iirhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          iilhs = iint_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
+                          check_bit = check_bit && (iilhs == iirhs);
+
+                          //printf("%d:  %d %d\n", var, iilhs, iirhs);
+                          if (iilhs == iirhs)
                             element_count1++;
                         }
                         else if (strcmp(variable_type[var], "float32") == 0)

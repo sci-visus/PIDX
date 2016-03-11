@@ -46,9 +46,9 @@ IF (PIDX_BUILD_TUTORIAL)
   # executable
   # ////////////////////////////////////////
 
-  #SET(CHECKPOINT_SOURCES 1_PIDX_Basics_Dumps/checkpoint.c)
-  #PIDX_ADD_EXECUTABLE(checkpoint "${CHECKPOINT_SOURCES}")
-  #TARGET_LINK_LIBRARIES(checkpoint ${TUTORIAL_LINK_LIBS})
+  SET(CHECKPOINT_SOURCES 1_PIDX_Basics_Dumps/checkpoint.c)
+  PIDX_ADD_EXECUTABLE(checkpoint "${CHECKPOINT_SOURCES}")
+  TARGET_LINK_LIBRARIES(checkpoint ${TUTORIAL_LINK_LIBS})
 
   SET(CHECKPOINT_SIMPLE_SOURCES 1_PIDX_Basics_Dumps/checkpoint_simple.c)
   PIDX_ADD_EXECUTABLE(checkpoint_simple "${CHECKPOINT_SIMPLE_SOURCES}")

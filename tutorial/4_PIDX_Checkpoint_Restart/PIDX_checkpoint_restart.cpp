@@ -357,9 +357,9 @@ int main(int argc, char** argv){
 
         // Create syntethic data for the checkpoint
         double t1, t2;
-        t1 = PIDX_get_time();
+        t1 = MPI_Wtime();
         create_data<double>(checkpoint_data, checkpoint_variable_count, checkpoint_values_per_sample, t);
-        t2 = PIDX_get_time();
+        t2 = MPI_Wtime();
 
         if(rank == 0)
             printf( "Generating state data time is %f\n", t2 - t1 );

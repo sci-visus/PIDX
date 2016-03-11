@@ -19,6 +19,14 @@
 # sources
 # ////////////////////////////////////////
 
+
+ADD_SUBDIRECTORY(utils)
+ADD_SUBDIRECTORY(comm)
+ADD_SUBDIRECTORY(data_handle)
+ADD_SUBDIRECTORY(topology)
+ADD_SUBDIRECTORY(core)
+ADD_SUBDIRECTORY(io)
+
 FILE(GLOB PIDX_SOURCES *.h *.c)
 
 
@@ -43,5 +51,7 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx m ${PIDX_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx m pidx_comm pidx_data_handle pidx_topology pidx_utils pidx_core pidx_io ${PIDX_LINK_LIBS})
+
+
 SET_TARGET_PROPERTIES(pidx PROPERTIES LINKER_LANGUAGE CXX)
