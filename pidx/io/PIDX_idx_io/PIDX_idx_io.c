@@ -880,6 +880,7 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 
 static PIDX_return_code partition_setup(PIDX_idx_io file, int start_var_index, int end_var_index)
 {
+#if PIDX_HAVE_MPI
   int *colors;
   int i = 0, j = 0, k = 0, d = 0;
   int index_i = 0, index_j = 0, index_k = 0;
@@ -972,6 +973,7 @@ static PIDX_return_code partition_setup(PIDX_idx_io file, int start_var_index, i
     sprintf(file->idx->filename, "%s_%d.idx", file_name_skeleton, file->idx_d->color);
 
   free(local_proc_patch);
+#endif
 
   return PIDX_success;
 }
@@ -1010,9 +1012,11 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   time->populate_idx_start_time = PIDX_get_time();
 #if 1
 
+#if PIDX_HAVE_MPI
   ret = partition_setup(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
     return PIDX_err_file;
+#endif
 
   ret = populate_idx_dataset(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
@@ -2520,8 +2524,10 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
 
 PIDX_return_code PIDX_idx_io_finalize(PIDX_idx_io file)
 {
+#if PIDX_HAVE_MPI
   if (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2] != 1)
     MPI_Comm_free(&(file->comm));
+#endif
 
   free(file);
   file = 0;

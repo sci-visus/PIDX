@@ -45,6 +45,7 @@ struct PIDX_timming_struct
    double *startup_start, *startup_end;
    double *init_start, *init_end;
    double *rst_start, *rst_end;
+   double *rst_io_start, *rst_io_end;
    double *hz_start, *hz_end;
    double *cleanup_start, *cleanup_end;
    double *finalize_start, *finalize_end;

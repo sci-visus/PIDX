@@ -68,6 +68,9 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
   PIDX_return_code ret;
   int nprocs = 1;
 
+  PIDX_time time = file->idx_d->time;
+  time->populate_idx_start_time = PIDX_get_time();
+
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
     MPI_Comm_size(file->comm,  &nprocs);
@@ -118,9 +121,11 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     PIDX_rst_id temp_id;
     temp_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_var_index, start_var_index);
 
+#if PIDX_HAVE_MPI
     ret = PIDX_rst_set_communicator(temp_id, file->comm);
     if (ret != PIDX_success)
       return PIDX_err_rst;
+#endif
 
     ret = PIDX_rst_meta_data_create(temp_id);
     if (ret != PIDX_success)
@@ -227,9 +232,6 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
   file->idx->enable_rst = 0;
 #endif
 
-  PIDX_time time = file->idx_d->time;
-  time->populate_idx_start_time = PIDX_get_time();
-
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)
   {
@@ -325,11 +327,14 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
       if (ret != PIDX_success)
         return PIDX_err_rst;
     }
+    time->rst_end[start_index] = PIDX_get_time();
 
+    time->rst_io_start[start_index] = PIDX_get_time();
     if (file->idx_dbg->debug_do_io == 1)
     {
-      PIDX_rst_buf_aggregate_write(file->rst_id);
-      //PIDX_rst_buf_aggregate_read(file->rst_id);
+      ret = PIDX_rst_buf_aggregate_write(file->rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
     }
 
     /* Verifying the correctness of the restructuring phase */
@@ -339,7 +344,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
       if (ret != PIDX_success)
         return PIDX_err_rst;
     }
-    time->rst_end[start_index] = PIDX_get_time();
+    time->rst_io_end[start_index] = PIDX_get_time();
+
     /*--------------------------------------------RST [end]---------------------------------------------------*/
 
 

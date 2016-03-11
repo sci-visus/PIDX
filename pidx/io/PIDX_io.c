@@ -30,6 +30,10 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
 
   time->rst_start = malloc (sizeof(double) * variable_count);                     memset(time->rst_start, 0, sizeof(double) * variable_count);
   time->rst_end = malloc (sizeof(double) * variable_count);                       memset(time->rst_end, 0, sizeof(double) * variable_count);
+
+  time->rst_io_start = malloc (sizeof(double) * variable_count);                  memset(time->rst_io_start, 0, sizeof(double) * variable_count);
+  time->rst_io_end = malloc (sizeof(double) * variable_count);                    memset(time->rst_io_end, 0, sizeof(double) * variable_count);
+
   time->hz_start = malloc (sizeof(double) * variable_count);                      memset(time->hz_start, 0, sizeof(double) * variable_count);
   time->hz_end = malloc (sizeof(double) * variable_count);                        memset(time->hz_end, 0, sizeof(double) * variable_count);
 
@@ -89,6 +93,10 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
 
   free(time->rst_start);
   free(time->rst_end);
+
+  free(time->rst_io_end);
+  free(time->rst_io_start);
+
   free(time->hz_start);
   free(time->hz_end);
 

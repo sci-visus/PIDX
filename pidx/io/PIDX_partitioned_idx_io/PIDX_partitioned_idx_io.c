@@ -1,5 +1,6 @@
 #include "../PIDX_io.h"
 
+#if PIDX_HAVE_MPI
 static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
@@ -532,10 +533,16 @@ static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int s
   int i = 0, j = 0, ctr;
   int file_number = 0;
 
-  int rank;
-  int nprocs;
-  MPI_Comm_rank(file->comm, &rank);
-  MPI_Comm_size(file->comm, &nprocs);
+  int rank = 0;
+  int nprocs = 1;
+
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+  {
+    MPI_Comm_rank(file->comm, &rank);
+    MPI_Comm_size(file->comm, &nprocs);
+  }
+#endif
 
   PIDX_return_code ret_code;
 
@@ -925,9 +932,12 @@ static PIDX_return_code partition_setup(PIDX_partitioned_idx_io file, int start_
     end_index = ((start_index + file->idx_d->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->idx_d->var_pipe_length);
 
     file->rst_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+
+#if PIDX_HAVE_MPI
     ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
     if (ret != PIDX_success)
       return PIDX_err_rst;
+#endif
 
     int reg_box_size = 16;
     int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
@@ -2676,3 +2686,4 @@ PIDX_return_code PIDX_partitioned_idx_io_finalize(PIDX_partitioned_idx_io file)
 
   return PIDX_success;
 }
+#endif

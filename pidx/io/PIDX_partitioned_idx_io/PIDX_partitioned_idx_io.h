@@ -4,7 +4,7 @@
 #ifndef __PIDX_PARTITIONED_IDX_IO_H
 #define __PIDX_PARTITIONED_IDX_IO_H
 
-
+#if PIDX_HAVE_MPI
 struct PIDX_partitioned_idx_io_descriptor;
 typedef struct PIDX_partitioned_idx_io_descriptor* PIDX_partitioned_idx_io;
 
@@ -33,4 +33,5 @@ PIDX_return_code PIDX_partitioned_idx_read(PIDX_partitioned_idx_io file, int sta
 ///
 PIDX_return_code PIDX_partitioned_idx_io_finalize(PIDX_partitioned_idx_io file);
 
+#endif
 #endif
