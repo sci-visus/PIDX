@@ -578,9 +578,10 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   unsigned char ***temp_patch_buffer;
   temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (end_var_index - start_var_index));
   memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (end_var_index - start_var_index));
-  for (i = start_var_index; i < end_var_index; i++)
+  //printf("start_var_index = %d end_var_index %d\n", start_var_index, end_var_index);
+  for (i = 0; i < (end_var_index - start_var_index); i++)
   {
-    PIDX_variable var = file->idx->variable[i];
+    PIDX_variable var = file->idx->variable[i + start_var_index];
     temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
     memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
@@ -636,7 +637,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
 
             //size_t preadc = pread(fp, patch_grp->patch[i]->buffer + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, send_o * var->bits_per_value/8);
 
-            size_t preadc = pread(fp, temp_patch_buffer[start_index][i] + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, other_offset + (send_o * var->bits_per_value/8));
+            size_t preadc = pread(fp, temp_patch_buffer[start_index - start_var_index][i] + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, other_offset + (send_o * var->bits_per_value/8));
 
             if (preadc != send_c * var->bits_per_value/8)
             {
@@ -677,7 +678,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
 
 #if !SIMULATE_IO
             //memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), patch_grp->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
-            memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), temp_patch_buffer[start_index][r] + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+            memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), temp_patch_buffer[start_index - start_var_index][r] + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
           }
 #endif
         }
@@ -690,6 +691,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   {
     for (j = 0; j < patch_count; j++)
       free(temp_patch_buffer[i][j]);
+
     free(temp_patch_buffer[i]);
   }
   free(temp_patch_buffer);
