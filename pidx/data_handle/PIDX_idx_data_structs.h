@@ -168,6 +168,8 @@ struct idx_dataset_derived_metadata_struct
   int reduced_res_to;
 
   PIDX_time time;
+
+  int data_core_count;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

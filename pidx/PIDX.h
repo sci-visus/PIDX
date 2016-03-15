@@ -460,8 +460,20 @@ PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
 
 
 ///
+/// \brief PIDX_enable_raw_io
+/// \param file
+/// \return
+///
 PIDX_return_code PIDX_enable_raw_io(PIDX_file file);
 
+
+
+///
+/// \brief PIDX_enable_partitioned_io
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file);
 
 
 

@@ -26,9 +26,6 @@ PIDX_return_code PIDX_partitioned_idx_io_set_communicator(PIDX_partitioned_idx_i
 PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 
 
-///
-PIDX_return_code PIDX_partitioned_idx_read(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
-
 
 ///
 PIDX_return_code PIDX_partitioned_idx_io_finalize(PIDX_partitioned_idx_io file);

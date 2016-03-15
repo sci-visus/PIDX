@@ -23,8 +23,8 @@ struct PIDX_idx_io_descriptor
   PIDX_hz_encode_id hz_id;                     ///< HZ encoding phase id
   PIDX_agg_id agg_id;                          ///< Aggregation phase id
   PIDX_agg_id** tagg_id;                          ///< Aggregation phase id
-  PIDX_io_id io_id;                            ///< IO phase id
-  PIDX_io_id** tio_id;                            ///< IO phase id
+  PIDX_file_io_id io_id;                            ///< IO phase id
+  PIDX_file_io_id** tio_id;                            ///< IO phase id
 
   //int flush_used;
   //int write_on_close;                          ///< HPC Writes
@@ -706,13 +706,19 @@ static PIDX_return_code populate_idx_dataset(PIDX_idx_io file, int start_index, 
   */
 
   /*
+  int rank = 0;
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+    MPI_Comm_rank(file->comm, &rank);
+#endif
   if (rank == 0)
   {
-    printf("[A] Final Block Bitmap [%d %d]\n", file->idx->variable[lvi]->block_layout_by_level[0]->resolution_from, file->idx->variable[lvi]->block_layout_by_level[0]->resolution_to);
+    printf("[B] Final Block Bitmap [%d %d]\n", file->idx->variable[lvi]->block_layout_by_level[0]->resolution_from, file->idx->variable[lvi]->block_layout_by_level[0]->resolution_to);
     //PIDX_blocks_print_layout(file->idx->variable[lvi]->block_layout_by_level[file->idx_d->layout_count - 3]);
     //printf("[B] Final Block Bitmap\n");
     PIDX_blocks_print_layout(block_layout);
 
+    //
     int p = 0;
     int bounding_box[2][5];
     for (p = 0 ; p < file->idx->variable[lvi]->sim_patch_count ; p++)
@@ -748,6 +754,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_idx_io file, int start_index, 
 
       PIDX_blocks_print_layout(per_patch_local_block_layout);
     }
+    //
   }
   */
 
@@ -1235,7 +1242,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
       for(j = 0 ; j < file->idx_d->layout_count; j++)
       {
         file->tagg_id[i][j] = PIDX_agg_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
-        file->tio_id[i][j] = PIDX_io_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
+        file->tio_id[i][j] = PIDX_file_io_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
       }
     }
 
@@ -1303,7 +1310,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
           if (ret != PIDX_success)
             return PIDX_err_agg;
 
-          ret = PIDX_io_set_communicator(file->tio_id[i][j], file->comm);
+          ret = PIDX_file_io_set_communicator(file->tio_id[i][j], file->comm);
           if (ret != PIDX_success)
             return PIDX_err_io;
         }
@@ -1609,7 +1616,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
         {
           time->io_per_process_start[i][j] = PIDX_get_time();
 
-          ret = PIDX_io_per_process(file->tio_id[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+          ret = PIDX_file_io_per_process(file->tio_id[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
           if (ret != PIDX_success)
             return PIDX_err_io;
 
@@ -1660,7 +1667,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
       if (time_step_caching == 1)
       {
         if (file->flush_used == 0)
-          PIDX_io_cached_data(cached_header_copy);
+          PIDX_file_io_cached_data(cached_header_copy);
       }
       */
 
@@ -1781,7 +1788,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     /* Deleting the I/O ID */
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
       for(j = 0 ; j < file->idx_d->layout_count; j++)
-        PIDX_io_finalize(file->tio_id[i][j]);
+        PIDX_file_io_finalize(file->tio_id[i][j]);
 
     /* Deleting the aggregation ID */
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
@@ -2016,7 +2023,7 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
       for(j = 0 ; j < file->idx_d->layout_count; j++)
       {
         file->tagg_id[i][j] = PIDX_agg_init(file->idx, file->idx_d, start_var_index, i, i);
-        file->tio_id[i][j] = PIDX_io_init(file->idx, file->idx_d, start_var_index, i, i);
+        file->tio_id[i][j] = PIDX_file_io_init(file->idx, file->idx_d, start_var_index, i, i);
       }
     }
 
@@ -2096,7 +2103,7 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
         if (ret != PIDX_success)
           return PIDX_err_agg;
 
-        ret = PIDX_io_set_communicator(file->tio_id[i][j], file->comm);
+        ret = PIDX_file_io_set_communicator(file->tio_id[i][j], file->comm);
         if (ret != PIDX_success)
           return PIDX_err_io;
       }
@@ -2244,7 +2251,7 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
         {
           time->io_per_process_start[i][j] = PIDX_get_time();
 
-          ret = PIDX_io_per_process(file->tio_id[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_READ);
+          ret = PIDX_file_io_per_process(file->tio_id[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_READ);
           if (ret != PIDX_success)
             return PIDX_err_io;
 
@@ -2464,7 +2471,7 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
     /* Deleting the I/O ID */
     for(i = start_index ; i < (end_index + 1) ; i++)
       for(j = 0 ; j < file->idx_d->layout_count; j++)
-        PIDX_io_finalize(file->tio_id[i][j]);
+        PIDX_file_io_finalize(file->tio_id[i][j]);
 
     /* Deleting the aggregation ID */
     for(i = start_index ; i < (end_index + 1) ; i++)

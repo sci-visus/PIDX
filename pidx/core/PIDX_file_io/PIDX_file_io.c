@@ -29,7 +29,7 @@ static int enable_caching = 0;
 static FILE* io_dump_fp;
 #endif
 
-struct PIDX_io_struct
+struct PIDX_file_io_struct
 {
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
@@ -49,15 +49,15 @@ struct PIDX_io_struct
   int last_index;
 };
 
-static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, PIDX_block_layout layout, int MODE);
+static int write_read_samples(PIDX_file_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, PIDX_block_layout layout, int MODE);
 
 
-PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
+PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
 {
-  PIDX_io_id io_id;
+  PIDX_file_io_id io_id;
 
   //Creating the IO ID
-  io_id = (PIDX_io_id)malloc(sizeof (*io_id));
+  io_id = (PIDX_file_io_id)malloc(sizeof (*io_id));
   memset(io_id, 0, sizeof (*io_id));
 
   io_id->idx = idx_meta_data;
@@ -71,7 +71,7 @@ PIDX_io_id PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata 
 }
 
 #if PIDX_HAVE_MPI
-int PIDX_io_set_communicator(PIDX_io_id io_id, MPI_Comm comm)
+int PIDX_file_io_set_communicator(PIDX_file_io_id io_id, MPI_Comm comm)
 {
   if (io_id == NULL)
     return PIDX_err_id;
@@ -82,7 +82,7 @@ int PIDX_io_set_communicator(PIDX_io_id io_id, MPI_Comm comm)
 }
 #endif
 
-int PIDX_io_cached_data(uint32_t* cached_header)
+int PIDX_file_io_cached_data(uint32_t* cached_header)
 {
   cached_header_copy = cached_header;
   enable_caching = 1;
@@ -91,7 +91,7 @@ int PIDX_io_cached_data(uint32_t* cached_header)
 }
 
 
-int PIDX_aggregated_io(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE)
+int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE)
 {
   int64_t data_offset = 0;  
   char file_name[PATH_MAX];
@@ -407,7 +407,7 @@ int PIDX_aggregated_io(PIDX_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout b
 
 
 
-int PIDX_io_per_process(PIDX_io_id io_id, PIDX_block_layout block_layout, int MODE)
+int PIDX_file_io_per_process(PIDX_file_io_id io_id, PIDX_block_layout block_layout, int MODE)
 {
   int i = 0, p = 0, v = 0, ret, e1 = 0;
   int send_index = 0;
@@ -662,7 +662,7 @@ int PIDX_io_per_process(PIDX_io_id io_id, PIDX_block_layout block_layout, int MO
 
 
 
-int PIDX_io_finalize(PIDX_io_id io_id) 
+int PIDX_file_io_finalize(PIDX_file_io_id io_id)
 {
 
   free(io_id);
@@ -672,7 +672,7 @@ int PIDX_io_finalize(PIDX_io_id io_id)
 }
 
 
-static int write_read_samples(PIDX_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, PIDX_block_layout layout, int MODE)
+static int write_read_samples(PIDX_file_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, PIDX_block_layout layout, int MODE)
 {
   int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
   int bytes_per_sample, bytes_per_datatype;
