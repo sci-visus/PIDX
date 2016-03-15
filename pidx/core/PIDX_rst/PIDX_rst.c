@@ -1324,7 +1324,8 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
 
     // see if we need to make parent directory
     strcpy(this_path, data_set_path);
-    if ((pos = rindex(this_path, '/')))
+    if ((pos = strrchr(this_path, '/')))
+    //if ((pos = rindex(this_path, '/')))
     {
       pos[1] = '\0';
       if (!strcmp(this_path, last_path) == 0)

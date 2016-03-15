@@ -318,7 +318,8 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
 
         // see if we need to make parent directory
         strcpy(this_path, bin_file);
-        if ((pos = rindex(this_path, '/')))
+        if ((pos = strrchr(this_path, '/')))
+        //if ((pos = rindex(this_path, '/')))
         {
           pos[1] = '\0';
           if (!strcmp(this_path, last_path) == 0)

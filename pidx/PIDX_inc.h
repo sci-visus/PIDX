@@ -5,7 +5,7 @@
 
 #define SIMULATE_IO 0
 #define PIDX_MAX_TEMPLATE_DEPTH 6
-
+#define _XOPEN_SOURCE 600
 #ifdef BGQ
   #define _XOPEN_SOURCE 600
 #ifndef _GNU_SOURCE

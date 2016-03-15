@@ -1,7 +1,6 @@
-#include <unistd.h>
+#include <PIDX.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <PIDX.h>
 #include <string>
 
 #if PIDX_HAVE_MPI

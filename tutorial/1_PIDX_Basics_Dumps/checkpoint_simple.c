@@ -269,8 +269,9 @@ int main(int argc, char **argv)
 
     //
     PIDX_enable_raw_io(file);
+    //
     PIDX_point reg_patch_size;
-    PIDX_set_point_5D(reg_patch_size, 64, 64, 64, 1, 1);
+    PIDX_set_point_5D(reg_patch_size, 100, 100, 100, 1, 1);
     PIDX_set_restructuring_box(file, reg_patch_size);
     //
 
