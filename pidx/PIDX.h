@@ -46,7 +46,7 @@ extern "C" {
 #endif
 
 
-//struct PIDX_file_descriptor;
+struct PIDX_file_descriptor;
 typedef struct PIDX_file_descriptor* PIDX_file;
 
 
@@ -475,6 +475,13 @@ PIDX_return_code PIDX_enable_raw_io(PIDX_file file);
 ///
 PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file);
 
+
+///
+/// \brief PIDX_enable_partition_merge_io
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file);
 
 
 ///

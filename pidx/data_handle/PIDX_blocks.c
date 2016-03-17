@@ -223,7 +223,7 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
   {
     for (i = layout->resolution_from; i <= layout->bits_per_block; i++)
     {
-      printf("Number of blocks at level %d = %d :: ", i, ctr);
+      printf("A Number of blocks at level %d = %d :: ", i, ctr);
       for (j = 0 ; j <  ctr; j++)
       {
         if (layout->hz_block_number_array[i][j] == 0)
@@ -241,7 +241,7 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
 
     for (i = layout->bits_per_block + 1; i < layout->resolution_to; i++)
     {
-      printf("Number of blocks at level %d = %d :: ", i, ctr);
+      printf("B Number of blocks at level %d = %d :: ", i, ctr);
       for (j = 0 ; j <  ctr; j++)
       {
         if (layout->hz_block_number_array[i][j] == 0)
@@ -265,7 +265,7 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
     {
       if (i >= layout->resolution_from)
       {
-        printf("Number of blocks at level %d = %d :: ", i, ctr);
+        printf("C Number of blocks at level %d = %d :: ", i, ctr);
         for (j = 0 ; j <  ctr; j++)
         {
           if (layout->hz_block_number_array[i][j] == 0)
@@ -279,7 +279,7 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
         }
       }
       ctr = ctr * 2;
-      if (i > layout->resolution_from)
+      if (i >= layout->resolution_from)
         printf("\n");
     }
   }

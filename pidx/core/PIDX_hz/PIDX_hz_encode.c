@@ -635,6 +635,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     hz_order = z_order;
                     
                     level = getLeveL(hz_order);
+                    //printf("%lld %lld -> %lld %d\n", (long long)i, (long long)j, (long long)hz_order, level);
 
                     //if (level >= maxH)
                     if (level >= maxH - id->resolution_to)
@@ -799,6 +800,176 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   return PIDX_success;
 }
 
+
+#if 0
+int PIDX_hz_encode_read(PIDX_hz_encode_id id, PIDX_Ndim_buffer** in_buf, PIDX_HZ_buffer** out_buf_array, int num_regular_blocks)
+{
+    long long hz_index = 0, index = 0;
+    long long mins[PIDX_MAX_DIMENSIONS], maxes[PIDX_MAX_DIMENSIONS], l_x, l_y, l_z, l_u, l_v, hzaddress, hz_mins, hz_maxes;
+    int i =0, j = 0, k = 0, d = 0, s = 0, buffer_count = 0, rank = 0, y = 0, spv, number_levels = 0, nprocs;
+
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+
+    long long lastbitmask = ((long long) 1) << id->maxh - 1;
+    long long n = 0, m = 0;
+
+
+    if(rank == 0)
+    printf("[read] Cache Status: %d\n", var_cache);
+
+    if(var_cache == 1)
+    {
+    for (y = 0; y < id->number_of_buffers; y++)
+    {
+        if (num_regular_blocks > 1)
+        if (y == id->regular_block_index[buffer_count + 1])
+            buffer_count++;
+    }
+    //printf("Buffer Count %d\n", buffer_count);
+    index_cache = (int***)malloc(sizeof(int**) * id->number_of_buffers);
+    memset(index_cache, -1, sizeof(int**) * id->number_of_buffers);
+    for(i = 0; i < id->number_of_buffers; i++)
+    {
+        index_cache[i] = (int**)malloc(sizeof(int*) * (id->maxh-id->resh));
+        memset(index_cache[i], -1, sizeof(int*) * (id->maxh-id->resh));
+        for (j = 0; j < (id->maxh-id->resh); j++)
+        {
+        if ((out_buf_array[buffer_count]->n_samples[j][0] * out_buf_array[buffer_count]->n_samples[j][1] * out_buf_array[buffer_count]->n_samples[j][2] * out_buf_array[buffer_count]->n_samples[j][3] * out_buf_array[buffer_count]->n_samples[j][4]) != 0)
+        {
+            hz_mins = out_buf_array[buffer_count]->allign_start_hz[j];
+            hz_maxes = out_buf_array[buffer_count]->allign_end_hz[j] + 1;
+
+            index_cache[i][j] = (int*)malloc(sizeof(int) * (hz_maxes - hz_mins));
+            memset(index_cache[i][j], -1, sizeof(int) * (hz_maxes - hz_mins));
+        }
+        }
+    }
+
+    for(i = 0; i < id->number_of_buffers; i++)
+    {
+        for (j = 0; j < (id->maxh-id->resh); j++)
+        {
+        if ((out_buf_array[buffer_count]->n_samples[j][0] * out_buf_array[buffer_count]->n_samples[j][1] * out_buf_array[buffer_count]->n_samples[j][2] * out_buf_array[buffer_count]->n_samples[j][3] * out_buf_array[buffer_count]->n_samples[j][4]) != 0)
+        {
+            hz_mins = out_buf_array[buffer_count]->allign_start_hz[j];
+            hz_maxes = out_buf_array[buffer_count]->allign_end_hz[j] + 1;
+
+            for(k = 0; k < hz_maxes-hz_mins ; k++)
+            index_cache[i][j][k] = -1;//(int*)malloc(sizeof(int) * (hz_maxes - hz_mins));
+        }
+        }
+    }
+    }
+
+    for (y = 0; y < id->number_of_buffers; y++)
+    {
+    if (num_regular_blocks > 1)
+        if (y == id->regular_block_index[buffer_count + 1])
+          buffer_count++;
+
+    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    {
+        mins[d] = in_buf[y]->lower_bounds[d];
+        maxes[d] = in_buf[y]->upper_bounds[d];
+    }
+    l_x = maxes[0] - mins[0];
+    l_y = maxes[1] - mins[1];
+    l_z = maxes[2] - mins[2];
+    l_u = maxes[3] - mins[3];
+    l_v = maxes[4] - mins[4];
+
+    for (j = 0; j < id->maxh-id->resh; j++)
+    {
+        //printf("[%d] Samples at Level [%d] = %d x %d x %d x %d x %d\n", rank, j, out_buf_array[buffer_count]->n_samples[j][0], out_buf_array[buffer_count]->n_samples[j][1], out_buf_array[buffer_count]->n_samples[j][2], out_buf_array[buffer_count]->n_samples[j][3], out_buf_array[buffer_count]->n_samples[j][4]);
+        if ((out_buf_array[buffer_count]->n_samples[j][0] * out_buf_array[buffer_count]->n_samples[j][1] * out_buf_array[buffer_count]->n_samples[j][2] * out_buf_array[buffer_count]->n_samples[j][3] * out_buf_array[buffer_count]->n_samples[j][4]) != 0)
+        {
+        hz_mins = out_buf_array[buffer_count]->allign_start_hz[j];
+        hz_maxes = out_buf_array[buffer_count]->allign_end_hz[j] + 1;
+
+        //printf("[%d] Range at %d : %lld %lld : [%d %d %d %d %d]\n", rank, j, hz_mins, hz_maxes, l_x, l_y, l_z, l_u, l_v);
+        number_levels = id->maxh - 1;
+
+        for (m = hz_mins; m < hz_maxes; m++)
+        {
+            if(var_cache == 1)
+            {
+            hzaddress = m;
+            hzaddress <<= 1;
+            hzaddress |= 1;
+            while ((lastbitmask & hzaddress) == 0) hzaddress <<= 1;
+            hzaddress &= lastbitmask - 1;
+
+            PointND cnt;
+            PointND p;
+            n = 0;
+
+            memset(&cnt, 0, sizeof (PointND));
+            memset(&p, 0, sizeof (PointND));
+
+            for (; hzaddress; hzaddress >>= 1, ++n, number_levels--) {
+              int bit = id->bitPattern[number_levels];
+              PGET(p, bit) |= (hzaddress & 1) << PGET(cnt, bit);
+              ++PGET(cnt, bit);
+            }
+            number_levels = id->maxh - 1;
+            //printf("HZ [%lld] : [%lld %lld %lld] : %f\n", m, p.x, p.y, p.z, out_buf_array[buffer_count]->buffer[j][m - hz_mins]);
+            //index = (l_x * l_y * (k - in_buf[y]->lower_bounds[2])) + (l_x * (j - in_buf[y]->lower_bounds[1])) + (i - in_buf[y]->lower_bounds[0]);
+
+            if (p.x >= id->global_extents[0] || p.y >= id->global_extents[1] || p.z >= id->global_extents[2] || p.u >= id->global_extents[3] || p.v >= id->global_extents[4]){
+              //printf("Case 1\n");
+              continue;
+            }
+            if (p.x < in_buf[y]->lower_bounds[0] || p.y < in_buf[y]->lower_bounds[1] || p.z < in_buf[y]->lower_bounds[2] || p.u < in_buf[y]->lower_bounds[3] || p.v < in_buf[y]->lower_bounds[4]) {
+              //printf("Case 2\n");
+              continue;
+            }
+            if (p.x >= in_buf[y]->upper_bounds[0] || p.y >= in_buf[y]->upper_bounds[1] || p.z >= in_buf[y]->upper_bounds[2] || p.u >= in_buf[y]->upper_bounds[3] || p.v >= in_buf[y]->upper_bounds[4]) {
+              //printf("Case 3\n");
+              continue;
+            }
+
+            hz_index = m - hz_mins;
+            index = (l_x * l_y * (p.z - in_buf[y]->lower_bounds[2])) + (l_x * (p.y - in_buf[y]->lower_bounds[1])) + (p.x - in_buf[y]->lower_bounds[0]);
+
+            if(m-hz_mins >= 0 && m-hz_mins < (hz_maxes - hz_mins))
+            {
+                index_cache[y][j][m-hz_mins] = index;
+            }
+
+            //if(rank == 0)
+            //printf("R [%d %d] [%d] [%d] [%lld] [%d %d %d %d %d] : HZ Index %lld : Index %lld : [L : %d %d %d] [B : %d %d %d]\n", y, buffer_count, rank, j, m, p.x, p.y, p.z, p.u, p.v, hz_index, index, l_x, l_y, l_z, in_buf[y]->lower_bounds[0], in_buf[y]->lower_bounds[1], in_buf[y]->lower_bounds[2]);
+            spv = out_buf_array[buffer_count]->sample_per_variable;
+            for (s = 0; s < spv; s++) {
+              in_buf[y]->buffer[(index * spv) + s] = out_buf_array[buffer_count]->buffer[j][(hz_index * spv) + s];
+            }
+
+            if(j == (id->maxh-id->resh -1) && m == (hz_maxes - 1) && y == (id->number_of_buffers - 1))
+                var_cache = 0;
+            }
+            else
+            {
+            if(index_cache[y][j][m-hz_mins] == -1)
+                continue;
+            hz_index = m - hz_mins;populate_idx_dataset
+            spv = out_buf_array[buffer_count]->sample_per_variable;
+            memcpy(in_buf[y]->buffer + (index_cache[y][j][m-hz_mins] * spv), out_buf_array[buffer_count]->buffer[j] + (hz_index * spv), sizeof(double)*spv );
+            /*
+            for (s = 0; s < spv; s++)
+            {
+                //TODO: Endian
+                in_buf[y]->buffer[(index_cache[y][j][m-hz_mins] * spv) + s] = out_buf_array[buffer_count]->buffer[j][(hz_index * spv) + s];
+            }
+            */
+            }
+        }
+        }
+    }
+    }
+    //TODO: return ?
+    return 1;
+}
+#endif
 
 PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
 {

@@ -2,13 +2,15 @@
 #include "./PIDX_idx_io/PIDX_idx_io.h"
 #include "./PIDX_raw_io/PIDX_raw_io.h"
 #include "./PIDX_partitioned_idx_io/PIDX_partitioned_idx_io.h"
+#include "./PIDX_partition_merge_idx_io/PIDX_partition_merge_idx_io.h"
 
 #ifndef __PIDX_IO_H
 #define __PIDX_IO_H
 
-#define PIDX_RAW_IO                          1
-#define PIDX_IDX_IO                          2
-#define PIDX_PARTITIONED_IDX_IO              3
+#define PIDX_RAW_IO                              1
+#define PIDX_IDX_IO                              2
+#define PIDX_PARTITIONED_IDX_IO                  3
+#define PIDX_PARTITION_MERGE_IDX_IO              4
 
 struct PIDX_io_descriptor;
 typedef struct PIDX_io_descriptor* PIDX_io;

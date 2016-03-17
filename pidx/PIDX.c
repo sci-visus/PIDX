@@ -1485,6 +1485,19 @@ PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file)
 
 
 
+PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->io_type = PIDX_PARTITION_MERGE_IDX_IO;
+
+  return PIDX_success;
+}
+
+
+
+
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
   int i, p;

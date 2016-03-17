@@ -273,6 +273,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
     reg_patch_count = 0;
     /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
+
     for (i = 0; i < adjusted_bounds[0]; i = i + rst_id->reg_patch_size[0])
       for (j = 0; j < adjusted_bounds[1]; j = j + rst_id->reg_patch_size[1])
         for (k = 0; k < adjusted_bounds[2]; k = k + rst_id->reg_patch_size[2])

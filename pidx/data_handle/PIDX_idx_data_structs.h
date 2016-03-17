@@ -163,6 +163,8 @@ struct idx_dataset_derived_metadata_struct
   
   //int staged_aggregation;
   int agg_type;
+  int start_layout_index;
+  int end_layout_index;
   int layout_count;
   int reduced_res_from;
   int reduced_res_to;

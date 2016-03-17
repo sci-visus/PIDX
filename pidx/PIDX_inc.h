@@ -103,6 +103,10 @@ enum IO_MODE {PIDX_READ, PIDX_WRITE};
 extern "C" {
 #endif
 
+#define PIDX_NO_COMPRESSION 0
+#define PIDX_CHUNKING_ONLY 1
+#define PIDX_CHUNKING_ZFP 2
+
 #include "./utils/PIDX_error_codes.h"
 #include "./utils/PIDX_point.h"
 #include "./utils/PIDX_utils.h"

@@ -20,12 +20,6 @@
 #define __PIDX_COMPRESSION_H 
 
 
-#define PIDX_NO_COMPRESSION 0
-#define PIDX_CHUNKING_ONLY 1
-#define PIDX_CHUNKING_ZFP 2
-
-
-
 struct PIDX_comp_id_struct;
 typedef struct PIDX_comp_id_struct* PIDX_comp_id;
 
