@@ -7,6 +7,10 @@
 #ifndef __PIDX_IO_H
 #define __PIDX_IO_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define PIDX_RAW_IO                              1
 #define PIDX_IDX_IO                              2
 #define PIDX_PARTITIONED_IDX_IO                  3
@@ -112,5 +116,9 @@ PIDX_return_code PIDX_io_finalize(PIDX_io file);
 
 ///
 //PIDX_return_code PIDX_parameter_validate(idx_dataset file, int start_var_index, int end_var_index);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
