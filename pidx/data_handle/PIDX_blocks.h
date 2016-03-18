@@ -19,8 +19,8 @@
 #ifndef __PIDX_BLOCKS_H
 #define __PIDX_BLOCKS_H
 
-extern const int PIDX_default_bits_per_block;
-extern const int PIDX_default_blocks_per_file;
+//extern const int PIDX_default_bits_per_block;
+//extern const int PIDX_default_blocks_per_file;
 
 struct PIDX_block_layout_struct
 {

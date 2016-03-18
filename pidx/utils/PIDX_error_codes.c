@@ -15,7 +15,7 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
-#include "PIDX_error_codes.h"
+#include "../PIDX_inc.h"
 
 
 /////////////////////////////////////////////////

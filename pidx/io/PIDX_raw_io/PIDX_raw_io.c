@@ -418,7 +418,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   sprintf(size_path, "%s_SIZE", idx_directory_path);
   free(idx_directory_path);
 
-  int number_cores;
+  int64_t number_cores = 0;
   int fp = open(size_path, O_RDONLY);
   ssize_t write_count = pread(fp, &number_cores, sizeof(int64_t), 0);
   if (write_count != sizeof(int64_t))
@@ -427,7 +427,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
     return PIDX_err_io;
   }
 
-  int max_patch_count;
+  int64_t max_patch_count = 0;
   write_count = pread(fp, &max_patch_count, sizeof(int64_t), sizeof(int64_t));
   if (write_count != sizeof(int64_t))
   {

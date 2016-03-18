@@ -15,7 +15,7 @@
  **  For support: PIDX-support@visus.net            **
  **                                                 **
  *****************************************************/
-#include "PIDX_data_layout.h"
+#include "../PIDX_inc.h"
 
 /////////////////////////////////////////////////
 // DATA LAYOUT

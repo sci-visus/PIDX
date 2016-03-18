@@ -33,7 +33,7 @@ Level #Elements [#Block_id] (HZ_start HZ_end) (HZ_start_form HZ_end_form)
 5 16 [0] (16, 31) [0]
 6 32 [0] (32, 63) [0]
 7 64 [0] (64, 127) [0]
-8 128 [0] (128, 255) [0]
+8 128 [0] (128, 255) [0]PIDX_row_maPIDX_row_majorjor
 9 256 [0] (256, 511) [0]
 10 512 [0] (512, 1023) [0]
 11 1024 [1] (1024, 2047) [0]
@@ -46,8 +46,8 @@ Level #Elements [#Block_id] (HZ_start HZ_end) (HZ_start_form HZ_end_form)
 
 #include "../PIDX_inc.h"
 
-const int PIDX_default_bits_per_block       = 15;
-const int PIDX_default_blocks_per_file      = 256;
+//const int PIDX_default_bits_per_block       = 15;
+//const int PIDX_default_blocks_per_file      = 256;
 
 
 int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from, int resolution_to, int maxh, int bits_per_block)

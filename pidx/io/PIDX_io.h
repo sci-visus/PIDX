@@ -12,6 +12,26 @@
 #define PIDX_PARTITIONED_IDX_IO                  3
 #define PIDX_PARTITION_MERGE_IDX_IO              4
 
+#define PIDX_default_bits_per_block              15
+#define PIDX_default_blocks_per_file             256
+
+
+/// Create the file if it does not exist.
+#define PIDX_MODE_CREATE              1
+
+/// Error creating a file that already exists.
+#define PIDX_MODE_EXCL               64
+
+#define PIDX_MODE_RDONLY              2  /* ADIO_RDONLY */
+#define PIDX_MODE_WRONLY              4  /* ADIO_WRONLY  */
+#define PIDX_MODE_RDWR                8  /* ADIO_RDWR  */
+#define PIDX_MODE_DELETE_ON_CLOSE    16  /* ADIO_DELETE_ON_CLOSE */
+#define PIDX_MODE_UNIQUE_OPEN        32  /* ADIO_UNIQUE_OPEN */
+
+#define PIDX_MODE_APPEND            128  /* ADIO_APPEND */
+#define PIDX_MODE_SEQUENTIAL        256  /* ADIO_SEQUENTIAL */
+
+
 struct PIDX_io_descriptor;
 typedef struct PIDX_io_descriptor* PIDX_io;
 
