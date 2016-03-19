@@ -1,11 +1,8 @@
-#include <PIDX.h>
+#include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <string>
-
-#if PIDX_HAVE_MPI
-#include <mpi.h>
-#endif
+#include <PIDX.h>
 
 #define VIS_DUMP // << ENABLE Visualization dump with downcasting
 

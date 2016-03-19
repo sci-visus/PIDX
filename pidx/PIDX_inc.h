@@ -107,6 +107,10 @@ extern "C" {
 #define PIDX_CHUNKING_ONLY 1
 #define PIDX_CHUNKING_ZFP 2
 
+#define PIDX_row_major                           0
+#define PIDX_column_major                        1
+
+
 #include "./utils/PIDX_error_codes.h"
 #include "./utils/PIDX_point.h"
 #include "./utils/PIDX_utils.h"

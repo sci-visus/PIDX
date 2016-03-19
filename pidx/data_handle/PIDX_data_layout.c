@@ -21,5 +21,5 @@
 // DATA LAYOUT
 /////////////////////////////////////////////////
 
-PIDX_data_layout PIDX_row_major             = 0;
-PIDX_data_layout PIDX_column_major          = 1;
+//PIDX_data_layout PIDX_row_major             = 0;
+//PIDX_data_layout PIDX_column_major          = 1;
