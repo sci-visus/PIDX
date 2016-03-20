@@ -27,7 +27,8 @@ ADD_SUBDIRECTORY(topology)
 ADD_SUBDIRECTORY(core)
 ADD_SUBDIRECTORY(io)
 
-FILE(GLOB PIDX_SOURCES *.h *.c)
+FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./data_handle/*.h ./data_handle/*.c ./core/PIDX_agg/*.h ./core/PIDX_agg/*.c ./core/PIDX_block_rst/*.h ./core/PIDX_block_rst/*.c ./core/PIDX_cmp/*.h ./core/PIDX_cmp/*.c ./core/PIDX_file_io/*.h ./core/PIDX_file_io/*.c ./core/PIDX_header/*.h ./core/PIDX_header/*.c ./core/PIDX_hz/*.h ./core/PIDX_hz/*.c ./core/PIDX_rst/*.h ./core/PIDX_rst/*.c ./io/*.h ./io/*.c ./io/PIDX_idx_io/*.h ./io/PIDX_idx_io/*.c ./io/PIDX_partitioned_idx_io/*.h ./io/PIDX_partitioned_idx_io/*.c ./io/PIDX_partition_merge_idx_io/*.h ./io/PIDX_partition_merge_idx_io/*.c ./io/PIDX_raw_io/*.h ./io/PIDX_raw_io/*.c
+)
 
 
 # ////////////////////////////////////////
@@ -49,7 +50,10 @@ ENDIF()
 # ////////////////////////////////////////
 # library
 # ////////////////////////////////////////
-
+MESSAGE("XXXX")
+MESSAGE("${PIDX_SOURCES}")
+MESSAGE("XXXX")
+MESSAGE("${PIDX_UTILS_SOURCES}")
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
 TARGET_LINK_LIBRARIES(pidx m pidx_comm pidx_data_handle pidx_topology pidx_utils pidx_core pidx_io ${PIDX_LINK_LIBS})
 
