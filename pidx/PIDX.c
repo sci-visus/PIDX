@@ -161,7 +161,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
     (*file)->idx_d->idx_count[i] = 1;//access_type->idx_count[i];
 
-  memcpy ((*file)->idx_d->idx_count, access_type->idx_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
+  //memcpy ((*file)->idx_d->idx_count, access_type->idx_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
 
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;

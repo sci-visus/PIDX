@@ -118,7 +118,11 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     t1 = PIDX_get_time();
 #endif
 
-    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
+    int adjusted_file_index = 0;
+    int l = pow(2, ((int)log2((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file)));
+    adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
+
+    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) /*agg_buf->file_number*/adjusted_file_index, file_name, PATH_MAX);
 
 #if !SIMULATE_IO
 #if PIDX_HAVE_MPI
@@ -233,7 +237,11 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     t1 = PIDX_get_time();
 #endif
 
-    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
+    int adjusted_file_index = 0;
+    int l = pow(2, ((int)log2((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file)));
+    adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
+
+    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) adjusted_file_index/*agg_buf->file_number*/, file_name, PATH_MAX);
 
 #if !SIMULATE_IO
 #if PIDX_HAVE_MPI
@@ -676,7 +684,7 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, uint64_
 {
   int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
   int bytes_per_sample, bytes_per_datatype;
-  int i = 0, l = 0;
+  int i = 0;
   char file_name[PATH_MAX];
   off_t data_offset = 0;
 
@@ -699,7 +707,11 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, uint64_
       file_count = hz_count;
 
     // build file name
-    ret = generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, file_number, file_name, PATH_MAX);
+    int adjusted_file_index = 0;
+    int l = pow(2, ((int)log2((unsigned int) file_number * io_id->idx->blocks_per_file)));
+    adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
+
+    ret = generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, /*file_number*/adjusted_file_index, file_name, PATH_MAX);
     if (ret == 1)
     {
       fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);

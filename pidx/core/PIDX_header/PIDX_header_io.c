@@ -304,11 +304,20 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
       if (rank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
-        //int l = pow(2, ((int)log2(header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2])));
-        //int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
-        //int i1 = l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + (i - l);
-        //printf("%d -> MAP -> %d\n", i, i1);
-        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, i, bin_file, PATH_MAX);
+        /*
+        int adjusted_file_index = i;
+        if (layout_type != 0)
+        {
+          int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
+          adjusted_file_index = l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + (i - l) + (header_io_id->idx_d->color * l);
+        }
+        */
+        int adjusted_file_index = 0;
+        int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
+        adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+        printf("%d -> MAP -> %d\n", i, adjusted_file_index);
+
+        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, adjusted_file_index, bin_file, PATH_MAX);
         if (ret == 1)
         {
           fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
@@ -403,7 +412,11 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
     if (rank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
     {
-      ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, i, bin_file, PATH_MAX);
+      int adjusted_file_index = 0;
+      int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
+      adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+
+      ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, adjusted_file_index/*i*/, bin_file, PATH_MAX);
       if (ret == 1)
       {
         fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
