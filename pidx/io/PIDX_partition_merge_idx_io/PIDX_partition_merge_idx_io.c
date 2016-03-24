@@ -2,7 +2,7 @@
 
 #if PIDX_HAVE_MPI
 
-static int regular_bounds[PIDX_MAX_DIMENSIONS] = {128, 128, 128, 1, 1};
+static int regular_bounds[PIDX_MAX_DIMENSIONS] = {4, 4, 4, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int hz_level_from, int hz_level_to);
@@ -1038,7 +1038,7 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
       return PIDX_err_rst;
 #endif
 
-    int reg_box_size = 64;
+    int reg_box_size = 4;
     int64_t reg_patch_size[PIDX_MAX_DIMENSIONS] = {1,1,1,1,1};
 
     restructure_loop:
@@ -1095,6 +1095,8 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
     file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
     if (file->idx->bounds[d] % regular_bounds[d] != 0)
       file->idx_d->idx_count[d]++;
+
+    file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));
   }
 
   return PIDX_success;
@@ -1937,8 +1939,9 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
 
   int partion_level = (int) ceil((log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2])));
+  //partion_level = (int) pow(2, ((int)log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2])));
 
-  //printf("[%d %d %d]: %d\n", file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2], partion_level);
+  printf("PL [%d %d %d]: %d\n", file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2], partion_level);
 
   //printf("file->idx->blocks_per_file = %d %d\n", file->idx->blocks_per_file, log2(file->idx->blocks_per_file));
 
@@ -1991,7 +1994,9 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   }
 
   if (file->idx_d->maxh == 0)
+  {
     return PIDX_success;
+  }
 
 
   ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);

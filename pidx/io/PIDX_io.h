@@ -1,11 +1,12 @@
 #ifndef __PIDX_IO_H
 #define __PIDX_IO_H
 
+#include "../PIDX_inc.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "../PIDX_inc.h"
 #include "./PIDX_idx_io/PIDX_idx_io.h"
 #include "./PIDX_raw_io/PIDX_raw_io.h"
 #include "./PIDX_partitioned_idx_io/PIDX_partitioned_idx_io.h"

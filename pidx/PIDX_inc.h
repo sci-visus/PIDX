@@ -13,10 +13,10 @@
 #endif
 #endif
 
-#define pmin(x, y) ((x) < (y) ? (x) : (y))
-#ifndef __cplusplus
-  #define max(x, y) ((x) > (y) ? (x) : (y))
-#endif
+//#define pmin(x, y) ((x) < (y) ? (x) : (y))
+//#ifndef __cplusplus
+//  #define max(x, y) ((x) > (y) ? (x) : (y))
+//#endif
 
 #include <string.h>
 #include <stdlib.h>

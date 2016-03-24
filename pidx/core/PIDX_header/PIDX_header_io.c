@@ -304,6 +304,10 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
       if (rank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
+        //int l = pow(2, ((int)log2(header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2])));
+        //int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
+        //int i1 = l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + (i - l);
+        //printf("%d -> MAP -> %d\n", i, i1);
         ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, i, bin_file, PATH_MAX);
         if (ret == 1)
         {

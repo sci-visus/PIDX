@@ -133,9 +133,13 @@ IF (PIDX_BUILD_TUTORIAL)
   #  TARGET_LINK_LIBRARIES(netcdf_to_idx_cpp ${NVISUSIO_LIBRARIES})
   #ENDIF()
 
-  #SET(CHECKPOINT_RESTART 4_PIDX_Checkpoint_Restart/PIDX_checkpoint_restart.cpp)
-  #PIDX_ADD_EXECUTABLE(checkpoint_restart "${CHECKPOINT_RESTART}")
+  #SET(ADAPTIVE_ROI_SOURCES 2_PIDX_Advanced_ROI/adaptive_roi_writes.c)
+  #PIDX_ADD_EXECUTABLE(adaptive_roi_writes "${ADAPTIVE_ROI_SOURCES}")
+  #TARGET_LINK_LIBRARIES(adaptive_roi_writes ${TUTORIAL_LINK_LIBS})
+
+  SET(CHECKPOINT_RESTART 4_PIDX_Checkpoint_Restart/PIDX_checkpoint_restart.cpp)
+  PIDX_ADD_EXECUTABLE(checkpoint_restart "${CHECKPOINT_RESTART}")
   #ADD_DEPENDENCIES(checkpoint_restart pidx)
-  #TARGET_LINK_LIBRARIES(checkpoint_restart ${TUTORIAL_LINK_LIBS})
+  TARGET_LINK_LIBRARIES(checkpoint_restart ${TUTORIAL_LINK_LIBS})
 
 ENDIF()
