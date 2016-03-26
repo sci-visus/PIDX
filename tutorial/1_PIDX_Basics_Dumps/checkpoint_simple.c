@@ -274,10 +274,10 @@ int main(int argc, char **argv)
     //PIDX_set_restructuring_box(file, reg_patch_size);
     //
 
-    //PIDX_set_block_count(file, 32);
-    //PIDX_set_block_size(file, 12);
-    PIDX_set_block_count(file, 1);
-    PIDX_set_block_size(file, 3);
+    PIDX_set_block_count(file, 128);
+    PIDX_set_block_size(file, 12);
+    //PIDX_set_block_count(file, 1);
+    //PIDX_set_block_size(file, 3);
 
     //PIDX_enable_partitioned_io(file);
 

@@ -801,6 +801,140 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 }
 
 
+
+
+PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz_index, int end_hz_index)
+{
+  uint64_t hz_order = 0, index = 0;
+  int b = 0, level = 0, y = 0, m = 0;
+  uint64_t j = 0, l = 0;
+  int v1 = 0;
+  int bytes_for_datatype;
+  uint64_t hz_index;
+  uint64_t total_chunked_patch_size = 1;
+  int maxH = id->idx_d->maxh;
+  int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
+  PIDX_variable var0 = id->idx->variable[id->first_index];
+
+  int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
+  int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
+
+  if (var0->sim_patch_count < 0)
+  {
+    fprintf(stderr, "[%s] [%d] id->idx_d->count not set.\n", __FILE__, __LINE__);
+    return PIDX_err_hz;
+  }
+
+  if (maxH <= 0)
+  {
+    fprintf(stderr, "[%s] [%d] maxH not set.\n", __FILE__, __LINE__);
+    return PIDX_err_hz;
+  }
+
+  //
+  for (y = 0; y < var0->patch_group_count; y++)
+  {
+#if !SIMULATE_IO
+    for (b = 0; b < var0->chunk_patch_group[y]->count; b++)
+    {
+      total_chunked_patch_size = 0;
+
+      for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
+      {
+        chunked_patch_offset[l] = var0->chunk_patch_group[y]->patch[b]->offset[l] / id->idx->chunk_size[l];
+        chunked_patch_size[l] = var0->chunk_patch_group[y]->patch[b]->size[l] / id->idx->chunk_size[l];
+        total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
+      }
+
+      if(var0->data_layout == PIDX_row_major)
+      {
+        uint64_t hz_mins = 0, hz_maxes = 0, mindex = 0;
+        //for (j = 0; j < id->idx_d->maxh - id->resolution_to; j++)
+        for (j = start_hz_index; j < end_hz_index; j++)
+        {
+
+          if (id->idx->variable[id->first_index]->hz_buffer[y]->nsamples_per_level[j][0] * id->idx->variable[id->first_index]->hz_buffer[y]->nsamples_per_level[j][1] * id->idx->variable[id->first_index]->hz_buffer[y]->nsamples_per_level[j][2] != 0)
+          {
+            hz_mins = id->idx->variable[id->first_index]->hz_buffer[y]->start_hz_index[j];// out_buf_array[buffer_count]->allign_start_hz[j];
+            hz_maxes = id->idx->variable[id->first_index]->hz_buffer[y]->end_hz_index[j] + 1;// out_buf_array[buffer_count]->allign_end_hz[j] + 1;
+
+            //printf("[%d (%d - %d)] ----> %d %d\n", j, maxH, id->resolution_to, hz_mins, hz_maxes);
+
+            for (m = hz_mins; m < hz_maxes; m++)
+            {
+
+              mindex = m;
+              maxH = id->idx_d->maxh - 1;
+              int64_t lastbitmask=((int64_t)1)<<maxH;
+
+              mindex <<= 1;
+              mindex  |= 1;
+              while ((lastbitmask & mindex) == 0) mindex <<= 1;
+                mindex &= lastbitmask - 1;
+
+              PointND cnt;
+              PointND p  ;
+              int n = 0;
+
+              memset(&cnt,0,sizeof(PointND));
+              memset(&p  ,0,sizeof(PointND));
+
+              for (;mindex; mindex >>= 1,++n, maxH--)
+              {
+                int bit= id->idx->bitPattern[maxH];
+                PGET(p,bit) |= (mindex & 1) << PGET(cnt,bit);
+                ++PGET(cnt,bit);
+              }
+
+
+
+              if (p.x >= id->idx->bounds[0] || p.y >= id->idx->bounds[1] || p.z >= id->idx->bounds[2])
+              {
+                //printf("A [%d %d %d]\n", p.x, p.y, p.z);
+                continue;
+              }
+
+              if (p.x < chunked_patch_offset[0] || p.y < chunked_patch_offset[1] || p.z < chunked_patch_offset[2])
+              {
+                //printf("B [%d %d %d]\n", p.x, p.y, p.z);
+                continue;
+              }
+
+              if (p.x >= chunked_patch_offset[0] + chunked_patch_size[0] || p.y >= chunked_patch_offset[1] + chunked_patch_size[1] || p.z >= chunked_patch_offset[2] + chunked_patch_size[2])
+              {
+                //printf("C [%d %d %d]\n", p.x, p.y, p.z);
+                continue;
+              }
+
+              hz_index = m - hz_mins;
+              index = (chunked_patch_size[0] * chunked_patch_size[1] * (p.z - chunked_patch_offset[2])) + (chunked_patch_size[0] * (p.y - chunked_patch_offset[1])) + (p.x - chunked_patch_offset[0]);
+
+
+              //printf("%d < ---- > %d %d\n", index, m, hz_index);
+              for(v1 = id->first_index; v1 <= id->last_index; v1++)
+              {
+                //hz_index = hz_order - id->idx->variable[v1]->hz_buffer[y]->start_hz_index[level];
+                bytes_for_datatype = ((id->idx->variable[v1]->bits_per_value / 8) * chunk_size * id->idx->variable[v1]->values_per_sample) / id->idx->compression_factor;
+#if !SIMULATE_IO
+                memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[j] + (hz_index * bytes_for_datatype),
+                        id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype),
+                        bytes_for_datatype);
+#endif
+              }
+
+            }
+          }
+
+        }
+      }
+    }
+#endif
+  }
+  //
+  return PIDX_success;
+}
+
+
 #if 0
 int PIDX_hz_encode_read(PIDX_hz_encode_id id, PIDX_Ndim_buffer** in_buf, PIDX_HZ_buffer** out_buf_array, int num_regular_blocks)
 {

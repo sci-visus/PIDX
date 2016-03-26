@@ -56,40 +56,90 @@ int PIDX_hz_encode_set_communicator(PIDX_hz_encode_id id, MPI_Comm comm);
 
 
 ///
+/// \brief PIDX_hz_encode_meta_data_create
+/// \param id
+/// \return
+///
 PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id);
 
 
+///
+/// \brief PIDX_hz_encode_meta_data_destroy
+/// \param id
+/// \return
 ///
 PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id);
 
 
 ///
+/// \brief PIDX_hz_encode_buf_create
+/// \param id
+/// \return
+///
 PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id);
 
 
 
+
+///
+/// \brief PIDX_hz_encode_write_inverse
+/// \param id
+/// \param start_hz_index
+/// \param end_hz_index
+/// \return
+///
+PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz_index, int end_hz_index);
+
+
+///
+/// \brief PIDX_hz_encode_write
+/// \param id
+/// \return
 ///
 PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id);
 
 
 
 ///
+/// \brief PIDX_hz_encode_read
+/// \param id
+/// \return
+///
 PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id);
 
 
 
+///
+/// \brief PIDX_hz_encode_buf_destroy
+/// \param id
+/// \return
 ///
 PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id);
 
 
 
 ///
+/// \brief PIDX_hz_encode_finalize
+/// \param id
+/// \return
+///
 PIDX_return_code PIDX_hz_encode_finalize(PIDX_hz_encode_id id);
 
 
+///
+/// \brief PIDX_hz_encode_set_resolution
+/// \param id
+/// \param resolution_from
+/// \param resolution_to
+/// \return
+///
 PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_from, int resolution_to);
 
 
+///
+/// \brief HELPER_Hz_encode
+/// \param id
+/// \return
 ///
 int HELPER_Hz_encode(PIDX_hz_encode_id id);
 

@@ -315,7 +315,8 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
         int adjusted_file_index = 0;
         int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
         adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
-        printf("%d -> MAP -> %d\n", i, adjusted_file_index);
+        //if (nprocs == 2)
+
 
         ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, adjusted_file_index, bin_file, PATH_MAX);
         if (ret == 1)
@@ -323,6 +324,8 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
           fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
           return 1;
         }
+
+        printf("%d -> MAP [%d %d %d] -> %d [%s (%s)]\n", i, header_io_id->idx_d->idx_count[0], header_io_id->idx_d->idx_count[1], header_io_id->idx_d->idx_count[2], adjusted_file_index, bin_file, header_io_id->idx->filename_template);
 
         //TODO: the logic for creating the subdirectory hierarchy could
         //be made to be more efficient than this. This implementation
