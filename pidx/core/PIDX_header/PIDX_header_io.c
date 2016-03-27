@@ -325,7 +325,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
           return 1;
         }
 
-        printf("%d -> MAP [%d %d %d] -> %d [%s (%s)]\n", i, header_io_id->idx_d->idx_count[0], header_io_id->idx_d->idx_count[1], header_io_id->idx_d->idx_count[2], adjusted_file_index, bin_file, header_io_id->idx->filename_template);
+        //printf("%d -> MAP [%d %d %d] -> %d [%s (%s)]\n", i, header_io_id->idx_d->idx_count[0], header_io_id->idx_d->idx_count[1], header_io_id->idx_d->idx_count[2], adjusted_file_index, bin_file, header_io_id->idx->filename_template);
 
         //TODO: the logic for creating the subdirectory hierarchy could
         //be made to be more efficient than this. This implementation

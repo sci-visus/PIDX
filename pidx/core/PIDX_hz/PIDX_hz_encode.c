@@ -47,6 +47,7 @@ struct PIDX_hz_encode_struct
   
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
+  MPI_Comm global_comm;
 #endif
 };
 
@@ -59,6 +60,16 @@ PIDX_return_code PIDX_hz_encode_set_communicator(PIDX_hz_encode_id hz_id, MPI_Co
     return PIDX_err_id;
 
   hz_id->comm = comm;
+
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_hz_encode_set_global_communicator(PIDX_hz_encode_id hz_id, MPI_Comm comm)
+{
+  if (hz_id == NULL)
+    return PIDX_err_id;
+
+  hz_id->global_comm = comm;
 
   return PIDX_success;
 }
@@ -113,6 +124,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   int **allign_offset;
   int **allign_count;
   int j = 0, p = 0, d = 0, v = 0;
+  int rank, nprocs;
+  MPI_Comm_rank(id->global_comm, &rank);
+  MPI_Comm_size(id->global_comm, &nprocs);
 
   int maxH = id->idx_d->maxh;
 
@@ -218,6 +232,8 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         endXYZ.v = allign_count[j][4];
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
+        //if (rank == 1)
+        //printf("[%d (%d): %d %d %d %d %d - %d %d %d %d %d] [%s] SE %d %d T %d %d %d\n", j, maxH, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[0][3], tpatch[0][4], tpatch[1][0], tpatch[1][1], tpatch[1][2], tpatch[1][3], tpatch[1][4], id->idx->bitPattern, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
       }
 
 
@@ -805,6 +821,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
 PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz_index, int end_hz_index)
 {
+  int rank, nprocs;
   uint64_t hz_order = 0, index = 0;
   int b = 0, level = 0, y = 0, m = 0;
   uint64_t j = 0, l = 0;
@@ -819,6 +836,9 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
   int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
   int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
 
+  MPI_Comm_rank(id->global_comm, &rank);
+  MPI_Comm_size(id->global_comm, &nprocs);
+
   if (var0->sim_patch_count < 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_d->count not set.\n", __FILE__, __LINE__);
@@ -830,6 +850,7 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
     fprintf(stderr, "[%s] [%d] maxH not set.\n", __FILE__, __LINE__);
     return PIDX_err_hz;
   }
+
 
   //
   for (y = 0; y < var0->patch_group_count; y++)
@@ -853,16 +874,18 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
         for (j = start_hz_index; j < end_hz_index; j++)
         {
 
+          //if (rank == 1)
+          //  printf("At level %d\n", j);
           if (id->idx->variable[id->first_index]->hz_buffer[y]->nsamples_per_level[j][0] * id->idx->variable[id->first_index]->hz_buffer[y]->nsamples_per_level[j][1] * id->idx->variable[id->first_index]->hz_buffer[y]->nsamples_per_level[j][2] != 0)
           {
             hz_mins = id->idx->variable[id->first_index]->hz_buffer[y]->start_hz_index[j];// out_buf_array[buffer_count]->allign_start_hz[j];
             hz_maxes = id->idx->variable[id->first_index]->hz_buffer[y]->end_hz_index[j] + 1;// out_buf_array[buffer_count]->allign_end_hz[j] + 1;
 
-            //printf("[%d (%d - %d)] ----> %d %d\n", j, maxH, id->resolution_to, hz_mins, hz_maxes);
+            //if (rank == 1)
+            //  printf("[%d (%d - %d)] ----> %d %d\n", j, maxH, id->resolution_to, hz_mins, hz_maxes);
 
             for (m = hz_mins; m < hz_maxes; m++)
             {
-
               mindex = m;
               maxH = id->idx_d->maxh - 1;
               int64_t lastbitmask=((int64_t)1)<<maxH;
@@ -886,8 +909,6 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
                 ++PGET(cnt,bit);
               }
 
-
-
               if (p.x >= id->idx->bounds[0] || p.y >= id->idx->bounds[1] || p.z >= id->idx->bounds[2])
               {
                 //printf("A [%d %d %d]\n", p.x, p.y, p.z);
@@ -910,7 +931,6 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
               index = (chunked_patch_size[0] * chunked_patch_size[1] * (p.z - chunked_patch_offset[2])) + (chunked_patch_size[0] * (p.y - chunked_patch_offset[1])) + (p.x - chunked_patch_offset[0]);
 
 
-              //printf("%d < ---- > %d %d\n", index, m, hz_index);
               for(v1 = id->first_index; v1 <= id->last_index; v1++)
               {
                 //hz_index = hz_order - id->idx->variable[v1]->hz_buffer[y]->start_hz_index[level];
@@ -919,6 +939,15 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
                 memcpy(id->idx->variable[v1]->hz_buffer[y]->buffer[j] + (hz_index * bytes_for_datatype),
                         id->idx->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype),
                         bytes_for_datatype);
+
+                /*
+                if (rank == 1)
+                {
+                  double xx;
+                  memcpy(&xx, id->idx->variable[v1]->hz_buffer[y]->buffer[j] + (hz_index * bytes_for_datatype), sizeof(double));
+                  printf("[%d] value %d %d - %f\n", j, index, hz_index, xx);
+                }
+                */
 #endif
               }
 

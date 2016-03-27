@@ -34,6 +34,8 @@ PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_met
 
 #if PIDX_HAVE_MPI
 int PIDX_chunk_set_communicator(PIDX_chunk_id id, MPI_Comm comm);
+
+int PIDX_chunk_set_global_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm);
 #endif
 
 /// Restructures the voxels in (m x n x p) blocks

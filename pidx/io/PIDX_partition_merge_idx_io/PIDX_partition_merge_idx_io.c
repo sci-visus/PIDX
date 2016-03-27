@@ -603,13 +603,6 @@ static PIDX_return_code populate_idx_dataset(PIDX_partition_merge_idx_io file, i
   file->idx_d->end_layout_index = 1;
 #endif
 
-#if 1
-  file->idx_d->layout_count = (higher_hz_level - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
-  if (file->idx_d->layout_count <= 0)
-    file->idx_d->layout_count = 1;
-#else
-  file->idx_d->layout_count = 1;
-#endif
 
   file->idx_d->layout_count = file->idx_d->end_layout_index - file->idx_d->start_layout_index;
 
@@ -899,7 +892,7 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
     GuessBitmaskPattern(bitSequence, bounds_point);
     maxH = strlen(bitSequence);
 
-    printf("IDX C %d %d %d mh %d\n", file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2], maxH);
+    //printf("IDX C %d %d %d mh %d\n", file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2], maxH);
     for (i = 0; i <= maxH; i++)
       bitPattern[i] = RegExBitmaskBit(bitSequence, i);
 
@@ -967,7 +960,7 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
               PGET(xyzuv_Index, bit) >>= 1;
             }
 
-            int clr = (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * index_k) + (file->idx_d->idx_count[0] * index_j) + (index_i);
+            //int clr = (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * index_k) + (file->idx_d->idx_count[0] * index_j) + (index_i);
             //printf("[R %d] %d ----> %d Color %d\n", rank, clr, z_order, colors[z_order]);
 
             //file->idx_d->color = colors[clr];
@@ -980,6 +973,27 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
             var->rst_patch_group[0]->reg_patch->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0] - distance_x;
             var->rst_patch_group[0]->reg_patch->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1] - distance_y;
             var->rst_patch_group[0]->reg_patch->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2] - distance_z;
+
+            //chunk_patch_group
+            Ndim_patch_group out_patch = var->chunk_patch_group[0];
+            out_patch->count = 1;
+
+            out_patch->reg_patch->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
+            out_patch->reg_patch->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1];
+            out_patch->reg_patch->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2];
+            out_patch->reg_patch->offset[3] = 0;
+            out_patch->reg_patch->offset[4] = 0;
+
+            out_patch->reg_patch->size[0] = var->rst_patch_group[0]->reg_patch->size[0];
+            out_patch->reg_patch->size[1] = var->rst_patch_group[0]->reg_patch->size[1];
+            out_patch->reg_patch->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
+            out_patch->reg_patch->size[3] = 1;
+            out_patch->reg_patch->size[4] = 1;
+
+            memcpy(out_patch->patch[0]->size, out_patch->reg_patch->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+            memcpy(out_patch->patch[0]->offset, out_patch->reg_patch->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+
+            //var->chunk_patch_group[p]->reg_patch->size
 
             var->sim_patch_count = 1;
             var->sim_patch[0]->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
@@ -1096,7 +1110,10 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
     file->rst_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
 
     /* Create the chunking ID */
-    //file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+    file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+
+    /* Create the compression ID */
+    file->comp_id = PIDX_compression_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
 
 #if PIDX_HAVE_MPI
     ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
@@ -1104,14 +1121,14 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
       return PIDX_err_rst;
 
     /* Attaching the communicator to the chunking phase */
-    /*
+    //
     ret = PIDX_chunk_set_communicator(file->chunk_id, file->comm);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_chunk;
     }
-    */
+    //
 #endif
 
     int reg_box_size = 4;
@@ -1142,7 +1159,7 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
     }
 
 
-    printf("[%d] Reg Box Count %d\n", reg_box_size, file->idx->reg_patch_size[0]);
+    //printf("[%d] Reg Box Count %d\n", reg_box_size, file->idx->reg_patch_size[0]);
 
     /* Creating the buffers required for restructurig */
     ret = PIDX_rst_buf_create(file->rst_id);
@@ -1165,15 +1182,15 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
         return PIDX_err_rst;
     }
 
-    /*
+    //
     ret = PIDX_chunk_meta_data_create(file->chunk_id);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
-    */
-#if 0
+    //
+#if 1
     /*----------------------------------------Chunking [start]------------------------------------------------*/
     //time->chunk_start[start_index] = PIDX_get_time();
 
@@ -1213,6 +1230,40 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
 
     //time->chunk_end[start_index] = PIDX_get_time();
     /*-----------------------------------------Chunking [end]------------------------------------------------*/
+
+    /*----------------------------------------Compression [start]--------------------------------------------*/
+    //time->compression_start[start_index] = PIDX_get_time();
+
+    /* Perform Compression */
+    if (file->idx_dbg->debug_do_compress == 1)
+    {
+      /* Attaching the communicator to the compression phase */
+      ret = PIDX_compression_set_communicator(file->comp_id, file->comm);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_compress;
+      }
+
+#if !SIMULATE_IO
+      ret = PIDX_compression(file->comp_id);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_compress;
+      }
+#endif
+    }
+
+#if PIDX_DEBUG_OUTPUT
+    l_cmp = 1;
+    MPI_Allreduce(&l_cmp, &g_cmp, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_cmp == nprocs)
+      printf("[CMP] Compression Completed\n");
+#endif
+
+    //time->compression_end[start_index] = PIDX_get_time();
+    /*------------------------------------------Compression [end]--------------------------------------------*/
 #endif
   }
   return PIDX_success;
@@ -1220,27 +1271,26 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
 
 static PIDX_return_code initialize_once_per_idx(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index)
 {
-  PIDX_return_code ret;
+  //PIDX_return_code ret;
   int total_header_size;
 
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)
   {
     PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
-    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->layout_count);
+    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
 
     total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
     file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
     if (total_header_size % file->idx_d->fs_block_size)
       file->idx_d->start_fs_block++;
 
-    ret = PIDX_parameter_validate(file, start_var_index, end_var_index);
-    if (ret != PIDX_success)
-      return PIDX_err_file;
+    //ret = PIDX_parameter_validate(file, start_var_index, end_var_index);
+    //if (ret != PIDX_success)
+    //  return PIDX_err_file;
 
     file->one_time_initializations = 1;
   }
-
   return PIDX_success;
 }
 
@@ -1324,12 +1374,13 @@ static PIDX_return_code write_headers(PIDX_partition_merge_idx_io file, int star
 }
 
 
-static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int start_res_level, int end_res_level)
+static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int start_res_level, int end_res_level, int partition_index)
 {
   PIDX_return_code ret;
   int start_index = 0, end_index = 0;
   int i = 0, j = 0;
   int nprocs, rank;
+  int gnprocs, grank;
 
   //PIDX_time time = file->idx_d->time;
 
@@ -1338,12 +1389,16 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
   {
     MPI_Comm_size(file->comm,  &nprocs);
     MPI_Comm_rank(file->comm,  &rank);
+
+    MPI_Comm_size(file->global_comm,  &gnprocs);
+    MPI_Comm_rank(file->global_comm,  &grank);
   }
 #endif
 
+  PIDX_time time = file->idx_d->time;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->idx_d->var_pipe_length + 1))
   {
-    //time->startup_start[start_index] = PIDX_get_time();
+    time->startup_start[time->variable_counter] = PIDX_get_time();
     end_index = ((start_index + file->idx_d->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->idx_d->var_pipe_length);
 
     int agg_io_level = 0, no_of_aggregators = 0;
@@ -1372,19 +1427,14 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       agg_io_level = file->idx_d->start_layout_index;//0;
 
 
-    //printf("AAAAAAAAa [%d %d] [%d] %d\n", file->idx_d->start_layout_index, file->idx_d->end_layout_index, file->idx_d->layout_count, agg_io_level);
-
     /*------------------------------------Create ALL the IDs [start]---------------------------------------*/
-
 
     /* Create the HZ encoding ID */
     file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
 
     /* Create the chunking ID */
-    file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+    //file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
 
-    /* Create the compression ID */
-    file->comp_id = PIDX_compression_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
 
     /* Create the aggregation ID */
     /* Create the I/O ID */
@@ -1414,7 +1464,6 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
 
       for(j = file->idx_d->start_layout_index ; j < file->idx_d->end_layout_index; j++)
         file->tio_id[i][j - file->idx_d->start_layout_index] = PIDX_file_io_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
-
     }
 
     file->idx_d->agg_buffer = malloc(sizeof(*(file->idx_d->agg_buffer)) * file->idx->variable_count);
@@ -1456,26 +1505,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     if (file->idx_d->parallel_mode)
     {
 
-      /* Attaching the communicator to the chunking phase */
-      //
-      ret = PIDX_chunk_set_communicator(file->chunk_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-      //
-
-      /* Attaching the communicator to the compression phase */
-      ret = PIDX_compression_set_communicator(file->comp_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_compress;
-      }
-
       /* Attaching the communicator to the HZ encodig phase phase */
       ret = PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
+      ret = PIDX_hz_encode_set_global_communicator(file->hz_id, file->global_comm);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -1510,15 +1542,6 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     }
 #endif
     /*------------------------------------Adding communicator [end]------------------------------------------*/
-
-    //
-    ret = PIDX_chunk_meta_data_create(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
-    }
-    //
 
     ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
     if (ret != PIDX_success)
@@ -1555,103 +1578,11 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
         }
       }
     }
-    //time->startup_end[start_index] = PIDX_get_time();
-
-
-
-    /*--------------------------------------------RST [start]------------------------------------------------*/
-    //time->rst_start[start_index] = PIDX_get_time();
-
-#if PIDX_DEBUG_OUTPUT
-    l_rst_buf = 1;
-    MPI_Allreduce(&l_rst_buf, &g_rst_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
-    if (rank == 0 && g_rst_buf == nprocs)
-      printf("[R] Restructuring Buffer Created\n");
-#endif
-
-
-#if PIDX_DEBUG_OUTPUT
-    l_rst = 1;
-    MPI_Allreduce(&l_rst, &g_rst, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
-    if (rank == 0 && g_rst == nprocs)
-      printf("[R] Restructuring Completed\n");
-#endif
-
-    //time->rst_end[start_index] = PIDX_get_time();
-    /*--------------------------------------------RST [end]---------------------------------------------------*/
-
-#if 1
-    /*----------------------------------------Chunking [start]------------------------------------------------*/
-    //time->chunk_start[start_index] = PIDX_get_time();
-
-    /* Creating the buffers required for chunking */
-    ret = PIDX_chunk_buf_create(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_chunk;
-    }
-
-#if PIDX_DEBUG_OUTPUT
-    l_chunk_buf = 1;
-    MPI_Allreduce(&l_chunk_buf, &g_chunk_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
-    if (rank == 0 && g_chunk_buf == nprocs)
-      printf("[C] Chunking Buffer Created\n");
-#endif
-
-    /* Perform Chunking */
-    if (file->idx_dbg->debug_do_chunk == 1)
-    {
-      ret = PIDX_chunk(file->chunk_id, PIDX_WRITE);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-    }
-
-#if PIDX_DEBUG_OUTPUT
-    l_chunk = 1;
-    MPI_Allreduce(&l_chunk, &g_chunk, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
-    if (rank == 0 && g_chunk == nprocs)
-      printf("[C] Chunking Completed\n");
-#endif
-
-
-    //time->chunk_end[start_index] = PIDX_get_time();
-    /*-----------------------------------------Chunking [end]------------------------------------------------*/
-#endif
-
-
-    /*----------------------------------------Compression [start]--------------------------------------------*/
-    //time->compression_start[start_index] = PIDX_get_time();
-
-    /* Perform Compression */
-    if (file->idx_dbg->debug_do_compress == 1)
-    {
-#if !SIMULATE_IO
-      ret = PIDX_compression(file->comp_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_compress;
-      }
-#endif
-    }
-
-#if PIDX_DEBUG_OUTPUT
-    l_cmp = 1;
-    MPI_Allreduce(&l_cmp, &g_cmp, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
-    if (rank == 0 && g_cmp == nprocs)
-      printf("[CMP] Compression Completed\n");
-#endif
-
-    //time->compression_end[start_index] = PIDX_get_time();
-    /*------------------------------------------Compression [end]--------------------------------------------*/
+    time->startup_end[time->variable_counter] = PIDX_get_time();
 
 
     /*---------------------------------------------HZ [start]------------------------------------------------*/
-    //time->hz_start[start_index] = PIDX_get_time();
+    time->hz_start[time->variable_counter] = PIDX_get_time();
 
     /* Creating the buffers required for HZ encoding */
     ret = PIDX_hz_encode_buf_create(file->hz_id);
@@ -1671,6 +1602,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     /* Perform HZ encoding */
     if (file->idx_dbg->debug_do_hz == 1)
     {
+      //printf("RN %d %d ----> %d %d\n", grank, gnprocs, start_res_level, end_res_level);
       //ret = PIDX_hz_encode_write(file->hz_id);
       //ret = PIDX_hz_encode_write_inverse(file->hz_id, 0, file->idx_d->maxh);
       ret = PIDX_hz_encode_write_inverse(file->hz_id, start_res_level, end_res_level);
@@ -1699,27 +1631,8 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       }
     }
 
-    /* Destroy buffers allocated during chunking phase */
-
-    ret = PIDX_chunk_buf_destroy(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_chunk;
-    }
-
-
-    //time->hz_end[start_index] = PIDX_get_time();
+    time->hz_end[time->variable_counter] = PIDX_get_time();
     /*----------------------------------------------HZ [end]-------------------------------------------------*/
-
-
-
-#if PIDX_DEBUG_OUTPUT
-    l_init = 1;
-    MPI_Allreduce(&l_init, &g_init, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
-    if (rank == 0 && g_init == nprocs)
-      printf("All Modules Initialized (Variable index [%d %d] Variable Pipe length %d)\n", start_index, end_index, file->idx_d->var_pipe_length);
-#endif
 
 
 
@@ -1733,7 +1646,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
       //for (j = 0 ; j < agg_io_level; j++)
       {
-        //time->agg_buf_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        time->agg_buf_start[i + partition_index * file->idx->variable_count][j - file->idx_d->start_layout_index] = PIDX_get_time();
         /* Creating the buffers required for Aggregation */
         if (file->idx_d->agg_type == 0)
         {
@@ -1764,7 +1677,8 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
             return PIDX_err_rst;
           }
         }
-        //time->agg_buf_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        time->agg_buf_end[i + partition_index * file->idx->variable_count][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        //printf("i + partition_index * file->idx->variable_count = %d\n", i + partition_index * file->idx->variable_count);
       }
       //static_var_counter++;
     }
@@ -1786,7 +1700,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
         //for(j = 0 ; j < agg_io_level; j++)
         for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
         {
-           //time->agg_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+           time->agg_start[i + partition_index * file->idx->variable_count][j - file->idx_d->start_layout_index] = PIDX_get_time();
 
            //printf("[%d - %d] = %d\n", j, file->idx_d->start_layout_index, (j - file->idx_d->start_layout_index));
            if (file->idx_d->agg_type == 0)
@@ -1804,7 +1718,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
              return PIDX_err_rst;
            }
 
-           //time->agg_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+           time->agg_end[i + partition_index * file->idx->variable_count][j - file->idx_d->start_layout_index] = PIDX_get_time();
         }
       }
     }
@@ -1817,7 +1731,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
         for(j = agg_io_level ; j < file->idx_d->end_layout_index; j++)
         //for(j = agg_io_level; j < file->idx_d->layout_count; j++)
         {
-          //time->io_per_process_start[i][j - agg_io_level] = PIDX_get_time();
+          time->io_per_process_start[i + partition_index * file->idx->variable_count][j - agg_io_level] = PIDX_get_time();
 
           ret = PIDX_file_io_per_process(file->tio_id[i][j - agg_io_level], file->idx->variable[start_var_index]->block_layout_by_level[j - agg_io_level], PIDX_WRITE);
           if (ret != PIDX_success)
@@ -1825,8 +1739,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
             fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
             return PIDX_err_io;
           }
-
-          //time->io_per_process_end[i][j - agg_io_level] = PIDX_get_time();
+          time->io_per_process_end[i + partition_index * file->idx->variable_count][j - agg_io_level] = PIDX_get_time();
         }
       }
     }
@@ -1860,7 +1773,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
         for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
         //for(j = 0 ; j < agg_io_level; j++)
         {
-          //time->io_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+          time->io_start[i + partition_index * file->idx->variable_count][j - file->idx_d->start_layout_index] = PIDX_get_time();
 
           ret = PIDX_aggregated_io(file->tio_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE);
           if (ret != PIDX_success)
@@ -1869,8 +1782,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
             return PIDX_err_io;
           }
 
-          //time->io_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
-
+          time->io_end[i + partition_index * file->idx->variable_count][j - file->idx_d->start_layout_index] = PIDX_get_time();
         }
       }
     }
@@ -1882,6 +1794,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       printf("[I] I/O completed\n");
 #endif
 
+    time->finalize_start[time->variable_counter] = PIDX_get_time();
     /* Destroy buffers allocated during aggregation phase */
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
@@ -1950,18 +1863,8 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       return PIDX_err_rst;
     }
 
-    //
-    ret = PIDX_chunk_meta_data_destroy(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
-    }
-    //
 
     /*-------------------------------------------finalize [start]---------------------------------------------*/
-    //time->finalize_start[start_index] = PIDX_get_time();
-
 
     //if (file->small_agg_comm == 1)
     //  PIDX_destroy_local_aggregation_comm(file->agg_id);
@@ -1978,8 +1881,8 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
       //for(j = 0 ; j < file->idx_d->layout_count; j++)
-      for(j = agg_io_level ; j < file->idx_d->end_layout_index; j++)
-        PIDX_agg_finalize(file->tagg_id[i][j - agg_io_level]);
+      for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
+        PIDX_agg_finalize(file->tagg_id[i][j - file->idx_d->start_layout_index]);
     }
 
     for(i = 0 ; i < file->idx->variable_count ; i++)
@@ -1999,14 +1902,10 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     /* Deleting the HZ encoding ID */
     PIDX_hz_encode_finalize(file->hz_id);
 
-    /* Deleting the compression ID */
-    PIDX_compression_finalize(file->comp_id);
-
-    /* Deleting the chunking ID */
-    PIDX_chunk_finalize(file->chunk_id);
 #endif
 
-    //time->finalize_end[start_index] = PIDX_get_time();
+    time->finalize_end[time->variable_counter] = PIDX_get_time();
+    time->variable_counter++;
     /*-----------------------------------------finalize [end]--------------------------------------------------*/
 #endif
 
@@ -2047,14 +1946,8 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   //static int header_io = 0;
   //int nprocs = 1;
 
-  //PIDX_time time = file->idx_d->time;
 
-  //time->populate_idx_start_time = PIDX_get_time();
-
-  ret = partition_setup(file, start_var_index, end_var_index, file->idx_d->var_pipe_length);
-  if (ret != PIDX_success)
-    return PIDX_err_file;
-
+  PIDX_time time = file->idx_d->time;
 
   ret = populate_idx_file_structure(file);
   if (ret != PIDX_success)
@@ -2062,6 +1955,24 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     fprintf(stderr, "[%s] [%d ]Error in populate_idx_file_structure\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+#if 1
+  file->idx_d->perm_layout_count = (file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
+  if (file->idx_d->perm_layout_count <= 0)
+    file->idx_d->perm_layout_count = 1;
+#else
+  file->idx_d->perm_layout_count = 1;
+#endif
+
+  ret = initialize_once_per_idx(file, start_var_index, end_var_index);
+  if (ret != PIDX_success)
+    return PIDX_err_file;
+
+  time->populate_idx_start_time = PIDX_get_time();
+
+  ret = partition_setup(file, start_var_index, end_var_index, file->idx_d->var_pipe_length);
+  if (ret != PIDX_success)
+    return PIDX_err_file;
 
 
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -2081,7 +1992,6 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
 
   int total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
-
   if (total_partiton_level > file->idx_d->maxh)
     total_partiton_level = file->idx_d->maxh;
 
@@ -2095,12 +2005,12 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
   int remainder_level = file->idx_d->maxh - total_partiton_level;
 
-  printf("To level [%d + %d (%d) + %d] : %d RL %d \n", file->idx->bits_per_block,
-                                            (int)log2(file->idx->blocks_per_file) + 1,
-                                            file->idx->blocks_per_file,
-                                            partion_level,
-                                            file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level,
-                                            remainder_level);
+  //printf("To level [%d + %d (%d) + %d] : %d RL %d \n", file->idx->bits_per_block,
+  //                                          (int)log2(file->idx->blocks_per_file) + 1,
+  //                                          file->idx->blocks_per_file,
+  //                                          partion_level,
+  //                                          file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level,
+  //                                          remainder_level);
 
   //printf("[1] Maxh = %d %d [%d %d]\n", file->idx_d->maxh, file->idx_d->layout_count, file->idx_d->start_layout_index, file->idx_d->end_layout_index);
 
@@ -2109,18 +2019,21 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   if (ret != PIDX_success)
     return PIDX_err_file;
 
-  ret = initialize_once_per_idx(file, start_var_index, end_var_index);
-  if (ret != PIDX_success)
-    return PIDX_err_file;
+  time->populate_idx_end_time = PIDX_get_time();
 
+  time->write_init_start[time->header_counter] = PIDX_get_time();
   ret = write_headers(file, start_var_index, end_var_index, 0);
   if (ret != PIDX_success)
     return PIDX_err_file;
+  time->write_init_end[time->header_counter] = PIDX_get_time();
+  time->header_counter++;
 
-  ret = PIDX_partition_merge_write_io(file, start_var_index, end_var_index, 0, total_partiton_level);
+  ret = PIDX_partition_merge_write_io(file, start_var_index, end_var_index, 0, total_partiton_level, 0);
   if (ret != PIDX_success)
     return PIDX_err_file;
 #if 1
+
+  time->partition_start_time = PIDX_get_time();
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
     file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
@@ -2153,6 +2066,7 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);
   if (ret != PIDX_success)
     return PIDX_err_file;
+  time->partition_end_time = PIDX_get_time();
 
   //printf("[B] Maxh = [%d %d] %d [%d %d]\n", file->idx_d->maxh, file->idx_d->maxh - remainder_level, file->idx_d->layout_count, file->idx_d->start_layout_index, file->idx_d->end_layout_index);
 
@@ -2161,12 +2075,15 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   //if (ret != PIDX_success)
   //  return PIDX_err_file;
 
+  time->write_init_start[time->header_counter] = PIDX_get_time();
   ret = write_headers(file, start_var_index, end_var_index, 1);
   if (ret != PIDX_success)
     return PIDX_err_file;
+  time->write_init_end[time->header_counter] = PIDX_get_time();
+  time->header_counter++;
 
 
-  ret = PIDX_partition_merge_write_io(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);
+  ret = PIDX_partition_merge_write_io(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh, 1);
   if (ret != PIDX_success)
     return PIDX_err_file;
 
@@ -2179,13 +2096,27 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     return PIDX_err_rst;
   }
 
+  ret = PIDX_chunk_buf_destroy(file->chunk_id);
+  if (ret != PIDX_success)
+    return PIDX_err_chunk;
+
+
+  ret = PIDX_chunk_meta_data_destroy(file->chunk_id);
+  if (ret != PIDX_success)
+    return PIDX_err_rst;
+
   ret = PIDX_rst_meta_data_destroy(file->rst_id);
   if (ret != PIDX_success)
     return PIDX_err_rst;
 
+  /* Deleting the compression ID */
+  PIDX_compression_finalize(file->comp_id);
+
+  /* Deleting the chunking ID */
+  PIDX_chunk_finalize(file->chunk_id);
+
   /* Deleting the restructuring ID */
   PIDX_rst_finalize(file->rst_id);
-
 
 
 #endif

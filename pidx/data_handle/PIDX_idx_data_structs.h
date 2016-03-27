@@ -37,7 +37,10 @@
 struct PIDX_timming_struct
 {
    int header_counter;
+   int variable_counter;
    double file_create_time;
+   double partition_start_time;
+   double partition_end_time;
    double populate_idx_start_time;
    double populate_idx_end_time;
    double sim_start, sim_end;
@@ -165,6 +168,7 @@ struct idx_dataset_derived_metadata_struct
   int agg_type;
   int start_layout_index;
   int end_layout_index;
+  int perm_layout_count;
   int layout_count;
   int reduced_res_from;
   int reduced_res_to;

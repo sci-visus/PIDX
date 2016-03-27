@@ -51,6 +51,15 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_der
 /// \param comm the communicator
 /// \return error code
 int PIDX_hz_encode_set_communicator(PIDX_hz_encode_id id, MPI_Comm comm);
+
+
+///
+/// \brief PIDX_hz_encode_set_global_communicator
+/// \param hz_id
+/// \param comm
+/// \return
+///
+PIDX_return_code PIDX_hz_encode_set_global_communicator(PIDX_hz_encode_id hz_id, MPI_Comm comm);
 #endif
 
 

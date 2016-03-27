@@ -1537,7 +1537,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 }
 
 
-PIDX_return_code PIDX_close(PIDX_file file) 
+PIDX_return_code PIDX_close(PIDX_file file)
 {
   int ret;
   int i = 0;
@@ -1550,160 +1550,45 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_time time = file->idx_d->time;
   time->sim_end = PIDX_get_time();
 
-#if 0
+  int rank;
+  MPI_Comm_rank(file->comm, &rank);
+
+#if 1
   if (file->debug_output == 1)
   {
-
-    double total_time = time->sim_end - time->sim_start;
-    double max_time = total_time;
-    int sample_sum = 0, var = 0, rank = 0, nprocs = 1;
-
-#if PIDX_HAVE_MPI
-    if (file->idx_d->parallel_mode == 1)
+    if (rank == 0)
     {
-      MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
-      MPI_Comm_rank(file->comm, &rank);
-      MPI_Comm_size(file->comm, &nprocs);
+      fprintf(stdout, "\n==========================================================================================================\n");
+      fprintf(stdout, "Time step %d File name %s\n", file->idx->current_time_step, file->idx->filename);
+      fprintf(stdout, "Global Data %lld %lld %lld Variables %d\n", (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count);
+      fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2], file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2]);
+      fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
+      fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
+      fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
+      fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
+      fprintf(stdout, "Aggregation Type = %d\n", file->idx_d->agg_type);
     }
-    else
-      total_time = max_time;
-#endif
 
-    //if (file->idx_d->idx_count[0] *  file->idx_d->idx_count[1] * file->idx_d->idx_count[2] == 1)
-    {
-      if (max_time == total_time)
-      {
-        for (var = 0; var < file->idx->variable_count; var++)
-          sample_sum = sample_sum + file->idx->variable[var]->values_per_sample;
-      
-        int64_t total_data = file->idx->bounds[0] * file->idx->bounds[1] * file->idx->bounds[2] * file->idx->bounds[3] * file->idx->bounds[4] * sample_sum * 8;
-        fprintf(stdout, "\n==========================================================================================================\n");
-        fprintf(stdout, "[%d] Time step %d File name %s\n", rank, file->idx->current_time_step, file->idx->filename);
-        fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX count %d = %d x %d x %d\n", nprocs, (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count, file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2], file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2]);
-        fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);//, file->idx->enable_agg, file->small_agg_comm);
-        fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);//, file->idx->variable[0]->existing_file_count);
-        fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
-        fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
-        fprintf(stdout, "Aggregation Type = %d\n", file->idx_d->agg_type);
-        fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", max_time, (float) total_data / (1000 * 1000 * max_time));
-        fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
-        printf("Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
-        fprintf(stdout, "File Create Time: %f Seconds\n", (time->file_create_time - time->sim_start));
-
-        double header_io_time = 0;
-        for (var = 0; var < time->header_counter; var++)
-        {
-          header_io_time = header_io_time + (time->write_init_end[var] - time->write_init_start[var]);
-          fprintf(stdout, "File Create time (+ header IO) %f\n", (time->write_init_end[var] - time->write_init_start[var]));
-        }
-        double total_time_ai = 0, total_time_bc = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
-        int p = 0;
-        for (var = 0; var <  file->idx->variable_count; var++)
-        {
-          for (p = 0; p < file->idx_d->layout_count; p++)
-          {
-            fprintf(stdout, "[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f + %f = %f\n", var, p, (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]), (time->agg_end[var][p] - time->agg_start[var][p]), (time->io_end[var][p] - time->io_start[var][p]), (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]), (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
-
-            total_time_bc = total_time_bc + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]);
-            total_time_a = total_time_a + (time->agg_end[var][p] - time->agg_start[var][p]);
-            total_time_i = total_time_i + (time->io_end[var][p] - time->io_start[var][p]);
-            total_time_pi = total_time_pi + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]);
-          }
-        }
-        total_time_ai = total_time_bc + total_time_a + total_time_i + total_time_pi;
-        fprintf(stdout, "Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time : %f + %f + %f + %f = %f\n", total_time_bc, total_time_a, total_time_i, total_time_pi, total_time_ai);
-
-
-       //printf("static_var_counter = %d\n", static_var_counter);
-        double total_time_rch = 0;
-        for (var = 0; var < file->idx->variable_count; var++)
-        {
-          fprintf(stdout, "[%d] STARTUP + RST + RST I/O + BRST + HZ = %f + %f + %f + %f + %f = %f\n", var, (time->startup_end[var] - time->startup_start[var]), (time->rst_end[var] - time->rst_start[var]), (time->rst_io_end[var] - time->rst_io_start[var]), (time->chunk_end[var] - time->chunk_start[var]), (time->hz_end[var] - time->hz_start[var]), (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]));
-          total_time_rch = total_time_rch + (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->rst_io_end[var] - time->rst_io_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]);
-      }
-
-        fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f + %f] [%f]\n", total_time_ai + total_time_rch + (time->file_create_time - time->sim_start) + (time->populate_idx_end_time - time->populate_idx_start_time) + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), (time->file_create_time - time->sim_start), header_io_time, total_time_rch, total_time_ai, max_time);
-
-        fprintf(stdout, "==========================================================================================================\n");
-      }
-    }
-    /*
-    else
+    if (file->io_type == PIDX_IDX_IO)
     {
 
-      for (var = 0; var < file->idx->variable_count; var++)
-        sample_sum = sample_sum + file->idx->variable[var]->values_per_sample;
-    
-      int64_t total_data = file->idx->bounds[0] * file->idx->bounds[1] * file->idx->bounds[2] * file->idx->bounds[3] * file->idx->bounds[4] * sample_sum * 8 * file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2];
-      if (max_time == total_time)
-        fprintf(stdout, "[EXTRA INFO] %d %s Time %f Seconds Throughput %f MB/sec\n", file->idx->current_time_step, file->idx->filename, max_time, (float) total_data / (1000 * 1000 * max_time));
-    
-      int global_rank = 0, global_nprocs = 1;
-      double global_max_time = 0;
-    
-#if PIDX_HAVE_MPI
-      if (file->idx_d->parallel_mode == 1)
-      {
-        MPI_Allreduce(&max_time, &global_max_time, 1, MPI_DOUBLE, MPI_MAX, file->global_comm);
-        MPI_Comm_rank(file->global_comm, &global_rank);
-        MPI_Comm_size(file->global_comm, &global_nprocs);
-      }
-      else
-        max_time = global_max_time;
-#endif
-    
-      if (global_max_time == total_time)
-      {
-        fprintf(stdout, "\n==========================================================================================================\n");
-        fprintf(stdout, "[%d] Combined Time step %d File name %s\n", global_rank, file->idx->current_time_step, file->idx->filename);
-        fprintf(stdout, "Cores %d Global Data %lld %lld %lld Variables %d IDX Count %d = %d x %d x %d\n", global_nprocs, (long long) file->idx->bounds[0] * file->idx_d->idx_count[0], (long long) file->idx->bounds[1] * file->idx_d->idx_count[1], (long long) file->idx->bounds[2] * file->idx_d->idx_count[2], file->idx->variable_count, file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2], file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2]);
-        fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);//, file->idx->variable[0]->existing_file_count);
-        fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
-        fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
-        fprintf(stdout, "Aggregation Type = %d\n", file->idx_d->agg_type);
-        fprintf(stdout, "Time Taken: %f Seconds Throughput %f MB/sec\n", max_time, (float) total_data / (1000 * 1000 * max_time));
-        fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
-        printf("Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
-        fprintf(stdout, "File Create Time: %f Seconds\n", (time->file_create_time - time->sim_start));
-
-        double header_io_time = 0;
-        for (var = 0; var < time->header_counter; var++)
-        {
-          header_io_time = header_io_time + (time->write_init_end[var] - time->write_init_start[var]);
-          fprintf(stdout, "File Create time (+ header IO) %f\n", (time->write_init_end[var] - time->write_init_start[var]));
-        }
-        double total_time_ai = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
-        int p = 0;
-        for (var = 0; var < file->idx->variable_count; var++)
-        {
-          for (p = 0; p < file->idx_d->layout_count; p++)
-          {
-            fprintf(stdout, "[%d %d] Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f = %f\n", var, p, (time->agg_end[var][p] - time->agg_start[var][p]), (time->io_end[var][p] - time->io_start[var][p]), (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]), (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
-
-            total_time_a = total_time_a + (time->agg_end[var][p] - time->agg_start[var][p]);
-            total_time_i = total_time_i + (time->io_end[var][p] - time->io_start[var][p]);
-            total_time_pi = total_time_pi + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]);
-          }
-        }
-        total_time_ai = total_time_a + total_time_i + total_time_pi;
-        fprintf(stdout, "Agg time + AGG I/O time + Per-Process I/O time : %f + %f + %f = %f\n", total_time_a, total_time_i, total_time_pi, total_time_ai);
-
-
-        double total_time_rch = 0;
-        for (var = 0; var < file->idx->variable_count; var++)
-        {
-          fprintf(stdout, "[%d] STARTUP + RST + BRST + HZ = %f + %f + %f + %f = %f\n", var, (time->startup_end[var] - time->startup_start[var]), (time->rst_end[var] - time->rst_start[var]), (time->chunk_end[var] - time->chunk_start[var]), (time->hz_end[var] - time->hz_start[var]), (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]));
-          total_time_rch = total_time_rch + (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]);
-        }
-
-        fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f + %f] [%f]\n", total_time_ai + total_time_rch + (time->file_create_time - time->sim_start) + (time->populate_idx_end_time - time->populate_idx_start_time) + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), (time->file_create_time - time->sim_start), header_io_time, total_time_rch, total_time_ai, max_time);
-
-        fprintf(stdout, "==========================================================================================================\n");
-      }
     }
-    */
+    else if (file->io_type == PIDX_RAW_IO)
+    {
+
+    }
+    else if (file->io_type == PIDX_PARTITIONED_IDX_IO)
+    {
+
+    }
+    else if (file->io_type == PIDX_PARTITION_MERGE_IDX_IO)
+    {
+      PIDX_print_partition_merge_timing(file->comm, time, file->idx->variable_count, file->idx_d->perm_layout_count);
+    }
+
+    if (rank == 0)
+      fprintf(stdout, "==========================================================================================================\n");
   }
-
 
   PIDX_delete_timming_buffers1(file->idx_d->time);
   PIDX_delete_timming_buffers2(file->idx_d->time, file->idx->variable_count);

@@ -35,6 +35,7 @@ struct PIDX_chunk_id_struct
 #if PIDX_HAVE_MPI
   /// Passed by PIDX API
   MPI_Comm comm;
+  MPI_Comm global_comm;
 #endif
 
   /// Contains all relevant IDX file info
@@ -107,6 +108,16 @@ int PIDX_chunk_set_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm)
     return PIDX_err_id;
 
   chunk_id->comm = comm;
+
+  return PIDX_success;
+}
+
+int PIDX_chunk_set_global_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm)
+{
+  if (chunk_id == NULL)
+    return PIDX_err_id;
+
+  chunk_id->global_comm = comm;
 
   return PIDX_success;
 }
@@ -273,6 +284,19 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
           else
           {
+
+            //printf("CB Size = %d\n", out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * out_patch->reg_patch->size[3] * out_patch->reg_patch->size[4]);
+            int rank;
+            //MPI_Comm_rank(chunk_id->global_comm, &rank);
+            int sc = 0;
+            for (sc = 0; sc < (out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * out_patch->reg_patch->size[3] * out_patch->reg_patch->size[4]); sc++)
+            {
+              double xx;
+              memcpy(&xx, in_patch->reg_patch->buffer + sc * sizeof(double), sizeof(double));
+
+              //if (rank == 0)
+              //  printf("Value at %d = %f\n", sc,  xx);
+            }
             if (MODE == PIDX_WRITE)
               memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * out_patch->reg_patch->size[3] * out_patch->reg_patch->size[4] * bytes_per_value * var->values_per_sample);
             else

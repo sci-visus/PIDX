@@ -81,6 +81,9 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count);
 
 
 
+void PIDX_print_partition_merge_timing(MPI_Comm file, PIDX_time time, int var_count, int layout_count);
+
+
 ///
 /// \brief PIDX_io_init
 /// \param idx_meta_data

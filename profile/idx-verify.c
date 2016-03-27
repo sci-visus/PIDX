@@ -683,7 +683,12 @@ int main(int argc, char **argv)
                           //printf("%d:  %f %f\n", var, dlhs, drhs);
                           //printf("[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
                           if (dlhs == drhs)
+                          {
+                            //printf("[C] Expected %f Found %f\n", drhs, dlhs);
                             element_count1++;
+                          }
+                          //else
+                          //  printf("[W] Expected %f Found %f\n", drhs, dlhs);
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {
