@@ -16,6 +16,8 @@
  **                                                 **
  *****************************************************/
 
+#define _XOPEN_SOURCE 600
+
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
@@ -30,8 +32,6 @@
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <math.h>
-
-#define _XOPEN_SOURCE 600
 
 //#define PIDX_HAVE_ZFP 1
 //#include "PIDX_config.h"
