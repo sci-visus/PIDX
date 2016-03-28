@@ -31,6 +31,8 @@
 #include <stdio.h>
 #include <math.h>
 
+#define _XOPEN_SOURCE 600
+
 //#define PIDX_HAVE_ZFP 1
 //#include "PIDX_config.h"
 
