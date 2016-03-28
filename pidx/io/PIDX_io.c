@@ -165,6 +165,51 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
 
 }
 
+
+
+void PIDX_print_raw_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count)
+{
+
+  double total_time = time->sim_end - time->sim_start;
+  double max_time = total_time;
+  int var = 0, rank = 0, nprocs = 1;
+
+#if PIDX_HAVE_MPI
+  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, comm);
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &nprocs);
+#else
+  total_time = max_time;
+#endif
+
+  if (max_time == total_time)
+  {
+    fprintf(stdout, "Time Taken: %f Seconds\n", max_time);
+    fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
+    printf("Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
+    printf("Meta data IO time %f\n", time->meta_data_end_io - time->meta_data_start_io);
+
+    double header_io_time = 0;
+    for (var = 0; var < time->header_counter; var++)
+    {
+      header_io_time = header_io_time + (time->write_init_end[var] - time->write_init_start[var]);
+      fprintf(stdout, "File Create time (+ header IO) %f\n", (time->write_init_end[var] - time->write_init_start[var]));
+    }
+
+    double total_time_rch = 0;
+    for (var = 0; var < var_count; var++)
+    {
+      fprintf(stdout, "[%d] RST + RST IO + FINALIZE = %f + %f + %f = %f\n", var, (time->rst_end[var] - time->rst_start[var]), (time->rst_io_end[var] - time->rst_io_start[var]), (time->finalize_end[var] - time->finalize_start[var]), ((time->rst_end[var] - time->rst_start[var]) + (time->rst_io_end[var] - time->rst_io_start[var]) + (time->finalize_end[var] - time->finalize_start[var])) );
+      total_time_rch = total_time_rch + ((time->rst_end[var] - time->rst_start[var]) + (time->rst_io_end[var] - time->rst_io_start[var]) + (time->finalize_end[var] - time->finalize_start[var]));
+    }
+
+    fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f] [%f]\n", (time->populate_idx_end_time - time->populate_idx_start_time) + (time->meta_data_end_io - time->meta_data_start_io) + total_time_rch + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), (time->meta_data_end_io - time->meta_data_start_io), header_io_time, total_time_rch, max_time);
+
+    fprintf(stdout, "==========================================================================================================\n");
+  }
+}
+
+
 void PIDX_print_partition_merge_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count)
 {
 

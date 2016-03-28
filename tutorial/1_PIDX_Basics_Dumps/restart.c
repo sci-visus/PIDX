@@ -355,6 +355,9 @@ int main(int argc, char **argv)
     free(type_name[v]);
   free(type_name);
 
+  free(variable);
+  variable = 0;
+
   destroy_synthetic_simulation_data();
 
   shutdown_mpi();

@@ -30,32 +30,12 @@
 #ifndef __PIDX_AGG_H
 #define __PIDX_AGG_H 
 
+#include "../../PIDX_inc.h"
 
-struct PIDX_agg_struct
-{
-#if PIDX_HAVE_MPI
-  MPI_Comm comm;
-  MPI_Comm global_comm;
-  MPI_Comm local_comm;
-  MPI_Win win;
-#endif
+#include "./PIDX_local_agg/PIDX_local_agg.h"
+#include "./PIDX_global_agg/PIDX_global_agg.h"
 
-  /// Contains all relevant IDX file info
-  /// Blocks per file, samples per block, bitmask, patch, file name template and more
-  idx_dataset idx;
-
-  /// Contains all derieved IDX file info
-  /// number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_d;
-
-  int init_index;
-  int first_index;
-  int last_index;
-
-  int ***rank_holder;
-  int ***rank_holder2;
-  int ***rank_holder3;
-};
+struct PIDX_agg_struct;
 typedef struct PIDX_agg_struct* PIDX_agg_id;
 
 
@@ -86,40 +66,25 @@ PIDX_return_code PIDX_destroy_local_aggregation_comm(PIDX_agg_id agg_id);
 
 
 ///
-PIDX_return_code PIDX_global_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout global_block_layout);
+PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout global_block_layout, PIDX_block_layout local_block_layout);
 
-PIDX_return_code PIDX_local_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
-
-PIDX_return_code PIDX_partitioned_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
-
-///
-PIDX_return_code PIDX_global_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout block_layout);
-
-PIDX_return_code PIDX_local_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
-
-PIDX_return_code PIDX_partitioned_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
-
-///
-PIDX_return_code PIDX_global_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1);
-
-PIDX_return_code PIDX_local_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset);
-
-PIDX_return_code PIDX_partitioned_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset);
-
-///
-PIDX_return_code PIDX_global_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
-
-PIDX_return_code PIDX_local_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
-
-PIDX_return_code PIDX_partitioned_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
 
 
 ///
-PIDX_return_code PIDX_global_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int PIDX_MODE);
+PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout);
 
-PIDX_return_code PIDX_local_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int id, PIDX_block_layout block_layout, int MODE);
 
-PIDX_return_code PIDX_partitioned_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE);
+///
+PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1);
+
+
+///
+PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
+
+
+
+///
+PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout, int PIDX_MODE);
 
 
 ///

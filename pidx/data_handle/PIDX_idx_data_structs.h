@@ -43,6 +43,8 @@ struct PIDX_timming_struct
    double partition_end_time;
    double populate_idx_start_time;
    double populate_idx_end_time;
+   double meta_data_start_io;
+   double meta_data_end_io;
    double sim_start, sim_end;
    double *write_init_start, *write_init_end;
    double *startup_start, *startup_end;
@@ -159,8 +161,7 @@ struct idx_dataset_derived_metadata_struct
   int parallel_mode;
 
   //extents of meta-data
-  int64_t *global_patch_offset;
-  int64_t *global_patch_size;
+
   int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
   int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
   

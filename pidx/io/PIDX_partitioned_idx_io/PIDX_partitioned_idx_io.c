@@ -1423,14 +1423,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
       {
-        if (file->idx_d->agg_type == 0)
-          ret = PIDX_global_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->global_block_layout);
-
-        else if (file->idx_d->agg_type == 1)
-          ret = PIDX_local_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
-
-        else
-          ret = PIDX_partitioned_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
+        ret = PIDX_agg_meta_data_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->global_block_layout, file->idx->variable[start_var_index]->block_layout_by_level[j]);
 
         if (ret != PIDX_success)
         {
@@ -1598,35 +1591,15 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
       {
         time->agg_buf_start[i][j] = PIDX_get_time();
         /* Creating the buffers required for Aggregation */
-        if (file->idx_d->agg_type == 0)
+
+        ret = PIDX_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], file->idx->variable[start_var_index]->global_block_layout, i, j);
+
+        if (ret != PIDX_success)
         {
-          if (no_of_aggregators * file->idx->variable_count <= nprocs)
-            ret = PIDX_global_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], file->idx->variable[start_var_index]->global_block_layout, i, j);
-          else
-            ret = PIDX_global_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], file->idx->variable[start_var_index]->global_block_layout, 0, j);
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_rst;
         }
 
-        else if (file->idx_d->agg_type == 1)
-        {
-          if (no_of_aggregators * file->idx->variable_count <= nprocs)
-            ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], j/*0*/);
-          else
-            ret = PIDX_local_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], 0);
-        }
-
-        else
-        {
-          if (no_of_aggregators * file->idx->variable_count <= nprocs)
-            ret = PIDX_partitioned_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], i);
-          else
-            ret = PIDX_partitioned_agg_buf_create(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], 0);
-
-          if (ret != PIDX_success)
-          {
-            fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-            return PIDX_err_rst;
-          }
-        }
         time->agg_buf_end[i][j] = PIDX_get_time();
       }
       //static_var_counter++;
@@ -1651,14 +1624,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
         {
            time->agg_start[i][j] = PIDX_get_time();
 
-           if (file->idx_d->agg_type == 0)
-             ret = PIDX_global_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
-
-           else if (file->idx_d->agg_type == 1)
-             ret = PIDX_local_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
-
-           else
-             ret = PIDX_partitioned_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+           ret = PIDX_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
 
            if (ret != PIDX_success)
            {
@@ -1739,12 +1705,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = 0 ; j < agg_io_level; j++)
       {
-        if (file->idx_d->agg_type == 0)
-          ret = PIDX_global_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j]);
-        if (file->idx_d->agg_type == 1)
-          ret = PIDX_local_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j]);
-        if (file->idx_d->agg_type == 2)
-          ret = PIDX_partitioned_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j]);
+        ret = PIDX_agg_buf_destroy(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j]);
         if (ret != PIDX_success)
           return PIDX_err_agg;
       }
@@ -1773,14 +1734,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
       //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for (j = 0 ; j < agg_io_level; j++)
       {
-        if (file->idx_d->agg_type == 0)
-          ret = PIDX_global_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[start_var_index]->global_block_layout);
-
-        else if (file->idx_d->agg_type == 1)
-          ret = PIDX_local_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
-
-        else
-          ret = PIDX_partitioned_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
+        ret = PIDX_agg_meta_data_destroy(file->tagg_id[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j], file->idx->variable[start_var_index]->global_block_layout);
 
         if (ret != PIDX_success)
         {
