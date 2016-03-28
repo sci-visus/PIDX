@@ -822,8 +822,8 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz_index, int end_hz_index)
 {
   int rank, nprocs;
-  uint64_t hz_order = 0, index = 0;
-  int b = 0, level = 0, y = 0, m = 0;
+  uint64_t index = 0;
+  int b = 0, y = 0, m = 0;
   uint64_t j = 0, l = 0;
   int v1 = 0;
   int bytes_for_datatype;
