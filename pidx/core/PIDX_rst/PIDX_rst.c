@@ -1425,6 +1425,15 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
 #if PIDX_HAVE_MPI
       if (rst_id->idx_derived->parallel_mode == 1)
       {
+        int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
+        ssize_t write_count = pwrite(fp, out_patch->buffer, buffer_size, data_offset);
+        if (write_count != buffer_size)
+        {
+          fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+          return PIDX_err_io;
+        }
+        close(fp);
+#if 0
         MPI_File fh;
         MPI_Status status;
 
@@ -1439,6 +1448,7 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
         ret = MPI_File_close(&fh);
         if (ret != MPI_SUCCESS)
           return PIDX_err_rst;
+#endif
       }
       else
       {
@@ -1468,6 +1478,7 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
       free(file_name);
     }
   }
+
   free(directory_path);
 
 #endif

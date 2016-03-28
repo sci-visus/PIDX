@@ -138,7 +138,7 @@ static void create_synthetic_simulation_data()
 
   for(var = 0; var < variable_count; var++)
   {
-    if (var == 4)
+    if (var == 3 || var == 5)
       values_per_sample[var] = 3;
     else
       values_per_sample[var] = 1;
@@ -270,7 +270,7 @@ int main(int argc, char **argv)
     //
     PIDX_enable_raw_io(file);
     PIDX_point reg_patch_size;
-    PIDX_set_point_5D(reg_patch_size, 100, 100, 100, 1, 1);
+    PIDX_set_point_5D(reg_patch_size, 32, 32, 32, 1, 1);
     PIDX_set_restructuring_box(file, reg_patch_size);
     //
 
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
 
     //PIDX_enable_partition_merge_io(file);
 
-    //ret = PIDX_debug_output(file);
+    ret = PIDX_debug_output(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
     char var_name[512];
@@ -291,7 +291,7 @@ int main(int argc, char **argv)
     {
       sprintf(var_name, "variable_%d", var);
 
-      if (var == 4)
+      if (var == 3 || var == 5)
         ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
       else
         ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64 , &variable[var]);
@@ -317,6 +317,9 @@ int main(int argc, char **argv)
 
   free(variable);
   variable = 0;
+
+  free(values_per_sample);
+  values_per_sample = 0;
 
   destroy_synthetic_simulation_data();
   shutdown_mpi();

@@ -79,10 +79,6 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     MPI_Comm_size(file->comm,  &nprocs);
 #endif
 
-  char *file_name;
-  file_name = malloc(PATH_MAX * sizeof(*file_name));
-  memset(file_name, 0, PATH_MAX * sizeof(*file_name));
-
   char *directory_path;
   char offset_path[PATH_MAX];
   char size_path[PATH_MAX];
@@ -357,6 +353,11 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
       if (ret != PIDX_success)
         return PIDX_err_rst;
     }
+
+    ret = PIDX_rst_buf_destroy(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+
     time->rst_io_end[time->variable_counter] = PIDX_get_time();
 
     /*--------------------------------------------RST [end]---------------------------------------------------*/
