@@ -905,7 +905,7 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
   int index_i = 0, index_j = 0, index_k = 0;
   int i = 0, j = 0, k = 0, d = 0;
   //PIDX_return_code ret;
-  int regular_bounds[PIDX_MAX_DIMENSIONS] = {64, 64, 64, 1, 1};
+  int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 512, 1, 1};
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
     file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
@@ -915,7 +915,6 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
 
   int rank = 0;
   MPI_Comm_rank(file->global_comm, &rank);
-
 
   colors = malloc(sizeof(*colors) * file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
   memset(colors, 0, sizeof(*colors) * file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
@@ -1090,7 +1089,7 @@ static PIDX_return_code partition_setup(PIDX_partitioned_idx_io file, int start_
       return PIDX_err_rst;
 #endif
 
-    int reg_box_size = 16;
+    int reg_box_size = 32;
     int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
 
     restructure_loop:
@@ -1898,7 +1897,6 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
   if (ret != PIDX_success)
     return PIDX_err_file;
   */
-
 
   ret = PIDX_partitioned_write_io(file, start_var_index, end_var_index);
   if (ret != PIDX_success)

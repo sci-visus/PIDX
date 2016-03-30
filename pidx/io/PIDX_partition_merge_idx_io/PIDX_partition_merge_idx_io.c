@@ -1,5 +1,7 @@
 #include "../PIDX_io.h"
 
+#define PIDX_DEBUG_OUTPUT 1
+
 #if PIDX_HAVE_MPI
 
 static int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 512, 1, 1};
@@ -13,6 +15,24 @@ static PIDX_return_code write_headers(PIDX_partition_merge_idx_io file, int star
 static PIDX_return_code initialize_once_per_idx(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index);
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
+
+#if PIDX_DEBUG_OUTPUT
+  static unsigned long long l_populate = 0, g_populate = 0;
+  static unsigned long long l_filec = 0, g_filec = 0;
+  static unsigned long long l_init = 0, g_init = 0;
+  static unsigned long long l_rst_buf = 0, g_rst_buf = 0;
+  static unsigned long long l_chunk_buf = 0, g_chunk_buf = 0;
+  static unsigned long long l_rst = 0, g_rst = 0;
+  static unsigned long long l_chunk = 0, g_chunk = 0;
+  static unsigned long long l_cmp = 0, g_cmp = 0;
+  static unsigned long long l_hz_buf = 0, g_hz_buf = 0;
+  static unsigned long long l_hz = 0, g_hz = 0;
+  static unsigned long long l_agg_buf = 0, g_agg_buf = 0;
+  static unsigned long long l_agg = 0, g_agg = 0;
+  static unsigned long long l_io = 0, g_io = 0;
+  static unsigned long long l_pidx = 0, g_pidx = 0;
+#endif
+
 
 struct PIDX_partition_merge_idx_io_descriptor
 {
@@ -1085,7 +1105,7 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
 static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int pipe_len)
 {
 
-  int d = 0, ret = 0, nprocs = 1;
+  int d = 0, ret = 0, nprocs = 1, rank = 0;
   int start_index = 0, end_index = 0;
 
   //PIDX_time time = file->idx_d->time;
@@ -1094,7 +1114,10 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
   file->comm = file->global_comm;
 
   if (file->idx_d->parallel_mode == 1)
+  {
     MPI_Comm_size(file->comm,  &nprocs);
+    MPI_Comm_rank(file->comm,  &rank);
+  }
 #endif
 
   file->idx_d->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
@@ -1895,22 +1918,7 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   if (file->idx_d->var_pipe_length == 0)
     file->idx_d->var_pipe_length = 1;
 
-#if PIDX_DEBUG_OUTPUT
-  unsigned long long l_populate = 0, g_populate = 0;
-  unsigned long long l_filec = 0, g_filec = 0;
-  unsigned long long l_init = 0, g_init = 0;
-  unsigned long long l_rst_buf = 0, g_rst_buf = 0;
-  unsigned long long l_chunk_buf = 0, g_chunk_buf = 0;
-  unsigned long long l_rst = 0, g_rst = 0;
-  unsigned long long l_chunk = 0, g_chunk = 0;
-  unsigned long long l_cmp = 0, g_cmp = 0;
-  unsigned long long l_hz_buf = 0, g_hz_buf = 0;
-  unsigned long long l_hz = 0, g_hz = 0;
-  unsigned long long l_agg_buf = 0, g_agg_buf = 0;
-  unsigned long long l_agg = 0, g_agg = 0;
-  unsigned long long l_io = 0, g_io = 0;
-  unsigned long long l_pidx = 0, g_pidx = 0;
-#endif
+
 
   PIDX_return_code ret;
   //static int header_io = 0;
@@ -2092,6 +2100,9 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
 #endif
 
+  int rank = 0, nprocs = 1;
+  MPI_Comm_size(file->global_comm, &nprocs);
+  MPI_Comm_rank(file->global_comm, &rank);
 
 #if PIDX_DEBUG_OUTPUT
   l_pidx = 1;
