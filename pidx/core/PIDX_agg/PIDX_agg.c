@@ -25,7 +25,6 @@ struct PIDX_agg_struct
   int first_index;
   int last_index;
 };
-typedef struct PIDX_agg_struct* PIDX_agg_id;
 
 
 PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
