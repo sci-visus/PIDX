@@ -30,7 +30,7 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
   static unsigned long long l_agg_buf = 0, g_agg_buf = 0;
   static unsigned long long l_agg = 0, g_agg = 0;
   static unsigned long long l_io = 0, g_io = 0;
-  static unsigned long long l_agg_des = 0, g_agg_Des = 0;
+  static unsigned long long l_agg_des = 0, g_agg_des = 0;
   static unsigned long long l_pidx = 0, g_pidx = 0;
 #endif
 
