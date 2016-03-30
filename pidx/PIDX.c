@@ -1579,7 +1579,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     }
     else if (file->io_type == PIDX_PARTITIONED_IDX_IO)
     {
-
+      PIDX_print_partition_timing(file->comm, time, file->idx->variable_count, file->idx_d->perm_layout_count);
     }
     else if (file->io_type == PIDX_PARTITION_MERGE_IDX_IO)
     {

@@ -5,7 +5,7 @@ static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int st
 static PIDX_return_code delete_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_partitioned_idx_io file, char* file_name, int current_time_step);
-static PIDX_return_code PIDX_parameter_validate(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
+//static PIDX_return_code PIDX_parameter_validate(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code partition_setup(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, int pipe_len);
 static PIDX_return_code write_headers(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code initialize_once_per_idx(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
@@ -50,6 +50,7 @@ struct PIDX_partitioned_idx_io_descriptor
 };
 
 
+/*
 static PIDX_return_code PIDX_parameter_validate(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index)
 {
 #if PIDX_HAVE_MPI
@@ -102,7 +103,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_partitioned_idx_io file, in
 
   return PIDX_success;
 }
-
+*/
 
 static PIDX_return_code populate_idx_file_structure(PIDX_partitioned_idx_io file)
 {
@@ -550,13 +551,6 @@ static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int s
 #endif
 
   PIDX_return_code ret_code;
-
-  ret_code = populate_idx_file_structure(file);
-  if (ret_code != PIDX_success)
-  {
-    fprintf(stderr, "[%s] [%d ]Error in populate_idx_file_structure\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
 
   int lvi = start_index;//file->local_variable_index;
   int lower_hz_level = 0, higher_hz_level = 0;
@@ -1146,7 +1140,7 @@ static PIDX_return_code partition_setup(PIDX_partitioned_idx_io file, int start_
 
 static PIDX_return_code initialize_once_per_idx(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index)
 {
-  PIDX_return_code ret;
+  //PIDX_return_code ret;
   int total_header_size;
 
   /// Initialization ONLY ONCE per IDX file
@@ -1155,18 +1149,14 @@ static PIDX_return_code initialize_once_per_idx(PIDX_partitioned_idx_io file, in
     PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
     PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->layout_count);
 
-    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
-    if (ret != PIDX_success)
-      return PIDX_err_file;
-
     total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
     file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
     if (total_header_size % file->idx_d->fs_block_size)
       file->idx_d->start_fs_block++;
 
-    ret = PIDX_parameter_validate(file, start_var_index, end_var_index);
-    if (ret != PIDX_success)
-      return PIDX_err_file;
+    //ret = PIDX_parameter_validate(file, start_var_index, end_var_index);
+    //if (ret != PIDX_success)
+    //  return PIDX_err_file;
 
     file->one_time_initializations = 1;
   }
@@ -1840,8 +1830,23 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
 
   PIDX_time time = file->idx_d->time;
 
+  ret = populate_idx_file_structure(file);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr, "[%s] [%d ]Error in populate_idx_file_structure\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  file->idx_d->perm_layout_count = (file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
+  if (file->idx_d->perm_layout_count <= 0)
+    file->idx_d->perm_layout_count = 1;
+
+  ret = initialize_once_per_idx(file, start_var_index, end_var_index);
+  if (ret != PIDX_success)
+    return PIDX_err_file;
+
   time->populate_idx_start_time = PIDX_get_time();
 
+#if 1
   ret = partition_setup(file, start_var_index, end_var_index, file->idx_d->var_pipe_length);
   if (ret != PIDX_success)
     return PIDX_err_file;
@@ -1850,9 +1855,16 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
   if (ret != PIDX_success)
     return PIDX_err_file;
 
-  ret = initialize_once_per_idx(file, start_var_index, end_var_index);
+  ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
   if (ret != PIDX_success)
     return PIDX_err_file;
+
+  ret = populate_idx_file_structure(file);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr, "[%s] [%d ]Error in populate_idx_file_structure\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
 
   ret = populate_idx_dataset(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
@@ -1921,7 +1933,9 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
 #endif
 
 #endif
+#endif
   return PIDX_success;
+
 }
 
 
