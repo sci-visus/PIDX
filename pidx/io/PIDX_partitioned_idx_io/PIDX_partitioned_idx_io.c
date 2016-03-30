@@ -1147,7 +1147,7 @@ static PIDX_return_code initialize_once_per_idx(PIDX_partitioned_idx_io file, in
   if (file->one_time_initializations == 0)
   {
     PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
-    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->layout_count);
+    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
 
     total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
     file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
