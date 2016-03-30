@@ -1145,7 +1145,7 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
     //
 #endif
 
-    int reg_box_size = 4;
+    int reg_box_size = 32;
     int64_t reg_patch_size[PIDX_MAX_DIMENSIONS] = {1,1,1,1,1};
 
     restructure_loop:
