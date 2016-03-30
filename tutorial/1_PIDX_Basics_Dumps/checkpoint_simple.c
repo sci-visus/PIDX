@@ -266,22 +266,24 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
+    int io_type = PIDX_PARTITION_MERGE_IDX_IO;
+    switch (io_type)
+    {
+      case PIDX_PARTITION_MERGE_IDX_IO:
+        PIDX_enable_partition_merge_io(file);
+        break;
 
-    //
-    PIDX_enable_raw_io(file);
-    PIDX_point reg_patch_size;
-    PIDX_set_point_5D(reg_patch_size, 32, 32, 32, 1, 1);
-    PIDX_set_restructuring_box(file, reg_patch_size);
-    //
+      case PIDX_PARTITIONED_IDX_IO:
+        PIDX_enable_partitioned_io(file);
+        break;
 
-    //PIDX_set_block_count(file, 128);
-    //PIDX_set_block_size(file, 12);
-    //PIDX_set_block_count(file, 1);
-    //PIDX_set_block_size(file, 3);
-
-    //PIDX_enable_partitioned_io(file);
-
-    //PIDX_enable_partition_merge_io(file);
+      case PIDX_RAW_IO:
+        PIDX_enable_raw_io(file);
+        PIDX_point reg_patch_size;
+        PIDX_set_point_5D(reg_patch_size, 32, 32, 32, 1, 1);
+        PIDX_set_restructuring_box(file, reg_patch_size);
+        break;
+    }
 
     ret = PIDX_debug_output(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
@@ -290,7 +292,6 @@ int main(int argc, char **argv)
     for (var = 0; var < variable_count; var++)
     {
       sprintf(var_name, "variable_%d", var);
-
       if (var == 3 || var == 5)
         ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
       else

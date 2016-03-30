@@ -2,12 +2,12 @@
 
 #if PIDX_HAVE_MPI
 
-static int regular_bounds[PIDX_MAX_DIMENSIONS] = {128, 128, 128, 1, 1};
+static int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 512, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
-static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index);
+static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int hz_level_from, int hz_level_to);
 static PIDX_return_code populate_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int hz_level_from, int hz_level_to);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_partition_merge_idx_io file, char* file_name, int current_time_step);
-static PIDX_return_code PIDX_parameter_validate(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index);
+//static PIDX_return_code PIDX_parameter_validate(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int pipe_len);
 static PIDX_return_code write_headers(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int layout_type);
 static PIDX_return_code initialize_once_per_idx(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index);
@@ -52,6 +52,7 @@ struct PIDX_partition_merge_idx_io_descriptor
 };
 
 
+/*
 static PIDX_return_code PIDX_parameter_validate(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index)
 {
 #if PIDX_HAVE_MPI
@@ -104,6 +105,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_partition_merge_idx_io file
 
   return PIDX_success;
 }
+*/
 
 
 static PIDX_return_code populate_idx_file_structure(PIDX_partition_merge_idx_io file)
@@ -429,7 +431,7 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 
 
 
-static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int start_index, int end_index)
+static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int start_index, int end_index, int start_hz_level, int end_hz_level)
 {
   int lvi = start_index;//file->local_variable_index;
   PIDX_variable var = file->idx->variable[lvi];
@@ -441,14 +443,17 @@ static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int
   file->idx->variable[lvi]->global_block_layout = 0;
 
   int i = 0;
-  for (i = 0; i < file->idx_d->layout_count ; i++)
-  {
-    PIDX_blocks_free_layout(var->block_layout_by_level[i]);
-    PIDX_free_layout(var->block_layout_by_level[i]);
 
-    free(var->block_layout_by_level[i]);
-    var->block_layout_by_level[i] = 0;
+  for (i = file->idx_d->start_layout_index; i < file->idx_d->end_layout_index ; i++)
+  {
+    PIDX_blocks_free_layout(var->block_layout_by_level[i - file->idx_d->start_layout_index]);
+    PIDX_free_layout(var->block_layout_by_level[i - file->idx_d->start_layout_index]);
+
+    free(var->block_layout_by_level[i - file->idx_d->start_layout_index]);
+    var->block_layout_by_level[i - file->idx_d->start_layout_index] = 0;
   }
+
+
   free(var->block_layout_by_level);
   var->block_layout_by_level = 0;
 
@@ -866,8 +871,8 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
   Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
   memset(local_proc_patch, 0, sizeof (*local_proc_patch));
 
-  PIDX_variable var = file->idx->variable[start_var_index];
-  if (var->patch_group_count == 1)
+  PIDX_variable var0 = file->idx->variable[start_var_index];
+  if (var0->patch_group_count == 1)
   {
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
@@ -930,11 +935,8 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
             reg_patch->size[2] = file->idx->bounds[2] - k;
             */
 
-
-
           if (intersectNDChunk(reg_patch, local_proc_patch))
           {
-
             PointND xyzuv_Index;
             xyzuv_Index.x = index_i;
             xyzuv_Index.y = index_j;
@@ -970,50 +972,57 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
             distance_y = index_j * regular_bounds[1];
             distance_z = index_k * regular_bounds[2];
 
-            var->rst_patch_group[0]->reg_patch->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0] - distance_x;
-            var->rst_patch_group[0]->reg_patch->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1] - distance_y;
-            var->rst_patch_group[0]->reg_patch->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2] - distance_z;
+            int start_index = 0;
+            //printf("start_var_index = %d end_var_index = %d pipe %d\n", start_var_index, end_var_index, file->idx_d->var_pipe_length);
+            for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + 1)
+            {
+              PIDX_variable var = file->idx->variable[start_index];
 
-            //chunk_patch_group
-            Ndim_patch_group out_patch = var->chunk_patch_group[0];
-            out_patch->count = 1;
+              var->rst_patch_group[0]->reg_patch->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0] - distance_x;
+              var->rst_patch_group[0]->reg_patch->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1] - distance_y;
+              var->rst_patch_group[0]->reg_patch->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2] - distance_z;
 
-            out_patch->reg_patch->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
-            out_patch->reg_patch->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1];
-            out_patch->reg_patch->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2];
-            out_patch->reg_patch->offset[3] = 0;
-            out_patch->reg_patch->offset[4] = 0;
 
-            out_patch->reg_patch->size[0] = var->rst_patch_group[0]->reg_patch->size[0];
-            out_patch->reg_patch->size[1] = var->rst_patch_group[0]->reg_patch->size[1];
-            out_patch->reg_patch->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
-            out_patch->reg_patch->size[3] = 1;
-            out_patch->reg_patch->size[4] = 1;
+              Ndim_patch_group out_patch = var->chunk_patch_group[0];
+              out_patch->count = 1;
 
-            memcpy(out_patch->patch[0]->size, out_patch->reg_patch->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-            memcpy(out_patch->patch[0]->offset, out_patch->reg_patch->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+              out_patch->reg_patch->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
+              out_patch->reg_patch->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1];
+              out_patch->reg_patch->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2];
+              out_patch->reg_patch->offset[3] = 0;
+              out_patch->reg_patch->offset[4] = 0;
 
-            //var->chunk_patch_group[p]->reg_patch->size
+              out_patch->reg_patch->size[0] = var->rst_patch_group[0]->reg_patch->size[0];
+              out_patch->reg_patch->size[1] = var->rst_patch_group[0]->reg_patch->size[1];
+              out_patch->reg_patch->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
+              out_patch->reg_patch->size[3] = 1;
+              out_patch->reg_patch->size[4] = 1;
 
-            var->sim_patch_count = 1;
-            var->sim_patch[0]->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
-            var->sim_patch[0]->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1];
-            var->sim_patch[0]->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2];
-            var->sim_patch[0]->offset[3] = 0;
-            var->sim_patch[0]->offset[4] = 0;
+              memcpy(out_patch->patch[0]->size, out_patch->reg_patch->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+              memcpy(out_patch->patch[0]->offset, out_patch->reg_patch->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 
-            var->sim_patch[0]->size[0] = var->rst_patch_group[0]->reg_patch->size[0];
-            var->sim_patch[0]->size[1] = var->rst_patch_group[0]->reg_patch->size[1];
-            var->sim_patch[0]->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
-            var->sim_patch[0]->size[3] = 1;
-            var->sim_patch[0]->size[4] = 1;
+              //var->chunk_patch_group[p]->reg_patch->size
+
+              var->sim_patch_count = 1;
+              var->sim_patch[0]->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
+              var->sim_patch[0]->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1];
+              var->sim_patch[0]->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2];
+              var->sim_patch[0]->offset[3] = 0;
+              var->sim_patch[0]->offset[4] = 0;
+
+              var->sim_patch[0]->size[0] = var->rst_patch_group[0]->reg_patch->size[0];
+              var->sim_patch[0]->size[1] = var->rst_patch_group[0]->reg_patch->size[1];
+              var->sim_patch[0]->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
+              var->sim_patch[0]->size[3] = 1;
+              var->sim_patch[0]->size[4] = 1;
+            }
 
             file->idx->bounds[0] = reg_patch->size[0];
             file->idx->bounds[1] = reg_patch->size[1];
             file->idx->bounds[2] = reg_patch->size[2];
 
             //printf("[UO %d] : %d %d %d\n", rank, var->rst_patch_group[0]->reg_patch->offset[0], var->rst_patch_group[0]->reg_patch->offset[1], var->rst_patch_group[0]->reg_patch->offset[2]);
-            //printf("[B %d] : %d %d %d\n", rank, file->idx->bounds[0], file->idx->bounds[1], file->idx->bounds[2]);
+              //printf("[B %d] : %d %d %d\n", rank, file->idx->bounds[0], file->idx->bounds[1], file->idx->bounds[2]);
 
             break;
           }
@@ -1028,18 +1037,23 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
     file->idx->bounds[1] = 0;//reg_patch->size[1];
     file->idx->bounds[2] = 0;//reg_patch->size[2];
 
-    var->sim_patch_count = 0;
-    var->sim_patch[0]->offset[0] = 0;
-    var->sim_patch[0]->offset[1] = 0;
-    var->sim_patch[0]->offset[2] = 0;
-    var->sim_patch[0]->offset[3] = 0;
-    var->sim_patch[0]->offset[4] = 0;
+    int start_index = 0;
+    for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->idx_d->var_pipe_length + 1))
+    {
+      PIDX_variable var = file->idx->variable[start_index];
+      var->sim_patch_count = 0;
+      var->sim_patch[0]->offset[0] = 0;
+      var->sim_patch[0]->offset[1] = 0;
+      var->sim_patch[0]->offset[2] = 0;
+      var->sim_patch[0]->offset[3] = 0;
+      var->sim_patch[0]->offset[4] = 0;
 
-    var->sim_patch[0]->size[0] = 0;//-1;
-    var->sim_patch[0]->size[1] = 0;//-1;
-    var->sim_patch[0]->size[2] = 0;//-1;
-    var->sim_patch[0]->size[3] = 0;//-1;
-    var->sim_patch[0]->size[4] = 0;//-1;
+      var->sim_patch[0]->size[0] = 0;//-1;
+      var->sim_patch[0]->size[1] = 0;//-1;
+      var->sim_patch[0]->size[2] = 0;//-1;
+      var->sim_patch[0]->size[3] = 0;//-1;
+      var->sim_patch[0]->size[4] = 0;//-1;
+    }
   }
 
   MPI_Comm_split(file->global_comm, file->idx_d->color, rank, &(file->comm));
@@ -1462,8 +1476,12 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
         file->tagg_id[i][j - file->idx_d->start_layout_index] = PIDX_agg_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
 
+
       for(j = file->idx_d->start_layout_index ; j < file->idx_d->end_layout_index; j++)
+      {
+        //printf("LC %d j %d index %d\n", file->idx_d->layout_count, j, (j - file->idx_d->start_layout_index));
         file->tio_id[i][j - file->idx_d->start_layout_index] = PIDX_file_io_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
+      }
     }
 
     file->idx_d->agg_buffer = malloc(sizeof(*(file->idx_d->agg_buffer)) * file->idx->variable_count);
@@ -1595,9 +1613,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     if (file->idx_dbg->debug_do_hz == 1)
     {
       //printf("RN %d %d ----> %d %d\n", grank, gnprocs, start_res_level, end_res_level);
-      //ret = PIDX_hz_encode_write(file->hz_id);
+      ret = PIDX_hz_encode_write(file->hz_id);
       //ret = PIDX_hz_encode_write_inverse(file->hz_id, 0, file->idx_d->maxh);
-      ret = PIDX_hz_encode_write_inverse(file->hz_id, start_res_level, end_res_level);
+      //ret = PIDX_hz_encode_write_inverse(file->hz_id, start_res_level, end_res_level);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -1824,7 +1842,8 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
       //for(j = 0 ; j < file->idx_d->layout_count; j++)
-      for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
+      //for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
+      for(j = file->idx_d->start_layout_index ; j < file->idx_d->end_layout_index; j++)
         PIDX_file_io_finalize(file->tio_id[i][j - file->idx_d->start_layout_index]);
     }
 
@@ -1982,8 +2001,10 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   ret = PIDX_partition_merge_write_io(file, start_var_index, end_var_index, 0, total_partiton_level, 0);
   if (ret != PIDX_success)
     return PIDX_err_file;
-#if 1
 
+
+  delete_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
+#if 1
   time->partition_start_time = PIDX_get_time();
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
@@ -2006,18 +2027,15 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     return PIDX_err_file;
   }
 
-  if (file->idx_d->maxh == 0)
-  {
-    return PIDX_success;
-  }
-
   //printf("[%d %d %d %d %d] max H = %d\n", file->idx->chunked_bounds[0], file->idx->chunked_bounds[1], file->idx->chunked_bounds[2], file->idx->chunked_bounds[3], file->idx->chunked_bounds[4], file->idx_d->maxh);
-
 
   ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);
   if (ret != PIDX_success)
     return PIDX_err_file;
   time->partition_end_time = PIDX_get_time();
+
+  if (file->idx_d->maxh == 0 || remainder_level == 0)
+    goto cleanup;
 
   //printf("[B] Maxh = [%d %d] %d [%d %d]\n", file->idx_d->maxh, file->idx_d->maxh - remainder_level, file->idx_d->layout_count, file->idx_d->start_layout_index, file->idx_d->end_layout_index);
 
@@ -2047,10 +2065,12 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     return PIDX_err_rst;
   }
 
+  delete_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
+
+  cleanup:
   ret = PIDX_chunk_buf_destroy(file->chunk_id);
   if (ret != PIDX_success)
     return PIDX_err_chunk;
-
 
   ret = PIDX_chunk_meta_data_destroy(file->chunk_id);
   if (ret != PIDX_success)
@@ -2071,7 +2091,6 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
 
 #endif
-  delete_idx_dataset(file, start_var_index, end_var_index);
 
 
 #if PIDX_DEBUG_OUTPUT

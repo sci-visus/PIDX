@@ -260,9 +260,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   {
     //TODO: close and delete the file (there is a way to do this automatically by fopen...)
     struct stat stat_buf;
-    FILE *dummy = fopen("dummy.txt", "w");
+    FILE *dummy = fopen(".dummy.txt", "w");
     fclose(dummy);
-    ret = stat("dummy.txt", &stat_buf);
+    ret = stat(".dummy.txt", &stat_buf);
     if (ret != 0)
     {
       fprintf(stderr, "[%s] [%d] Unable to identify File-System block size\n", __FILE__, __LINE__);
