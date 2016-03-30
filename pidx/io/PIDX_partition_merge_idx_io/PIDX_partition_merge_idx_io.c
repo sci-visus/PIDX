@@ -1885,8 +1885,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     l_agg_des = 1;
     MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
     if (rank == 0 && g_io == nprocs)
-      printf("[I] HZ meta data destroyed\n");
+      printf("[I] %d HZ meta data destroyed\n", nprocs);
 #endif
+    l_agg_des = 0, g_agg_des = 0;
 
     /*-------------------------------------------finalize [start]---------------------------------------------*/
 
@@ -1927,6 +1928,14 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     /* Deleting the HZ encoding ID */
     PIDX_hz_encode_finalize(file->hz_id);
 
+#if PIDX_DEBUG_OUTPUT
+    l_agg_des = 1;
+    MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_io == nprocs)
+      printf("[I] %d HZ finalized\n", nprocs);
+#endif
+    l_agg_des = 0, g_agg_des = 0;
+
 #endif
 
     time->finalize_end[time->variable_counter] = PIDX_get_time();
@@ -1938,6 +1947,13 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     //  printf("Finished Writing %d variables\n", end_index - start_index + 1);
     //start_index++;
   }
+
+#if PIDX_DEBUG_OUTPUT
+    l_agg_des = 1;
+    MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_io == nprocs)
+      printf("[I] %d IO Finished %d \n", partition_index, nprocs);
+#endif
 
   return PIDX_success;
 }
@@ -2097,6 +2113,20 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     return PIDX_err_file;
 
 
+  int rank = 0, nprocs = 1;
+  MPI_Comm_size(file->global_comm, &nprocs);
+  MPI_Comm_rank(file->global_comm, &rank);
+
+
+  l_pidx = 0;
+  g_pidx = 0;
+#if PIDX_DEBUG_OUTPUT
+  l_pidx = 1;
+  MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+  if (rank == 0 && g_pidx == nprocs)
+    printf("Done with IO %d\n", nprocs);
+#endif
+
   /* Destroy buffers allocated during restructuring phase */
   ret = PIDX_rst_aggregate_buf_destroy(file->rst_id);
   if (ret != PIDX_success)
@@ -2104,6 +2134,15 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+
+  l_pidx = 0;
+  g_pidx = 0;
+#if PIDX_DEBUG_OUTPUT
+  l_pidx = 1;
+  MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+  if (rank == 0 && g_pidx == nprocs)
+    printf("RST buffer destroyed %d\n", nprocs);
+#endif
 
   delete_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
 
@@ -2120,6 +2159,15 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   if (ret != PIDX_success)
     return PIDX_err_rst;
 
+  l_pidx = 0;
+  g_pidx = 0;
+#if PIDX_DEBUG_OUTPUT
+  l_pidx = 1;
+  MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+  if (rank == 0 && g_pidx == nprocs)
+    printf("Cleanup done %d\n", nprocs);
+#endif
+
   /* Deleting the compression ID */
   PIDX_compression_finalize(file->comp_id);
 
@@ -2132,16 +2180,12 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
 #endif
 
-  int rank = 0, nprocs = 1;
-  MPI_Comm_size(file->global_comm, &nprocs);
-  MPI_Comm_rank(file->global_comm, &rank);
 
 #if PIDX_DEBUG_OUTPUT
   l_pidx = 1;
   MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
   if (rank == 0 && g_pidx == nprocs)
     printf("PIDX closing file\n");
-
 #endif
 
   free(file->idx_d->rank_r_offset);
