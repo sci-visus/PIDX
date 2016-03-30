@@ -1571,7 +1571,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
     if (file->io_type == PIDX_IDX_IO)
     {
-
+      PIDX_print_idx_io_timing(file->comm, time, file->idx->variable_count, file->idx_d->layout_count);
     }
     else if (file->io_type == PIDX_RAW_IO)
     {

@@ -86,7 +86,7 @@ void PIDX_print_partition_merge_timing(MPI_Comm file, PIDX_time time, int var_co
 
 void PIDX_print_raw_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count);
 void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count);
-
+void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count);
 
 ///
 /// \brief PIDX_io_init

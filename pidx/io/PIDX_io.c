@@ -209,6 +209,64 @@ void PIDX_print_raw_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
   }
 }
 
+void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count)
+{
+  double total_time = time->sim_end - time->sim_start;
+  double max_time = total_time;
+  int var = 0, rank = 0, nprocs = 1;
+
+#if PIDX_HAVE_MPI
+  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, comm);
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &nprocs);
+#else
+  total_time = max_time;
+#endif
+  if (max_time == total_time)
+  {
+    fprintf(stdout, "Time Taken: %f Seconds\n", max_time);
+    fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
+    printf("Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
+    fprintf(stdout, "File Create Time: %f Seconds\n", (time->file_create_time - time->sim_start));
+
+    double header_io_time = 0;
+    for (var = 0; var < time->header_counter; var++)
+    {
+      header_io_time = header_io_time + (time->write_init_end[var] - time->write_init_start[var]);
+      fprintf(stdout, "File Create time (+ header IO) %f\n", (time->write_init_end[var] - time->write_init_start[var]));
+    }
+    double total_time_ai = 0, total_time_bc = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
+    int p = 0;
+    for (var = 0; var < var_count; var++)
+    {
+      for (p = 0; p < layout_count; p++)
+      {
+        fprintf(stdout, "[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f + %f = %f\n", var, p, (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]), (time->agg_end[var][p] - time->agg_start[var][p]), (time->io_end[var][p] - time->io_start[var][p]), (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]), (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
+
+        total_time_bc = total_time_bc + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]);
+        total_time_a = total_time_a + (time->agg_end[var][p] - time->agg_start[var][p]);
+        total_time_i = total_time_i + (time->io_end[var][p] - time->io_start[var][p]);
+        total_time_pi = total_time_pi + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]);
+      }
+    }
+    total_time_ai = total_time_bc + total_time_a + total_time_i + total_time_pi;
+    fprintf(stdout, "Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time : %f + %f + %f + %f = %f\n", total_time_bc, total_time_a, total_time_i, total_time_pi, total_time_ai);
+
+
+
+    //printf("static_var_counter = %d\n", static_var_counter);
+    double total_time_rch = 0;
+    for (var = 0; var < var_count; var++)
+    {
+      fprintf(stdout, "[%d] STARTUP + RST + BRST + HZ = %f + %f + %f + %f = %f\n", var, (time->startup_end[var] - time->startup_start[var]), (time->rst_end[var] - time->rst_start[var]), (time->chunk_end[var] - time->chunk_start[var]), (time->hz_end[var] - time->hz_start[var]), (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]));
+      total_time_rch = total_time_rch + (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]);
+    }
+
+    fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f + %f] [%f]\n", total_time_ai + total_time_rch + (time->file_create_time - time->sim_start) + (time->populate_idx_end_time - time->populate_idx_start_time) + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), (time->file_create_time - time->sim_start), header_io_time, total_time_rch, total_time_ai, max_time);
+
+    fprintf(stdout, "==========================================================================================================\n");
+  }
+}
 
 
 void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count)

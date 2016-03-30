@@ -953,7 +953,7 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
             reg_patch->size[1] = file->idx->bounds[1] - j;
           if ((k + regular_bounds[2]) > file->idx->bounds[2])
             reg_patch->size[2] = file->idx->bounds[2] - k;
-            */
+          */
 
           if (intersectNDChunk(reg_patch, local_proc_patch))
           {
@@ -1531,10 +1531,13 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
         file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->aggregation_factor = 1;
       }
 
-      /*
-      for (j = 1 ; j < agg_io_level; j++)
-        file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;//(int)pow(2, (agg_io_level - j));
-      */
+      //
+      //if (partition_index == 0)
+      //{
+      //  for (j = file->idx_d->start_layout_index + 1; j < agg_io_level; j++)
+      //    file->idx_d->agg_buffer[i][j]->aggregation_factor = 2;//(int)pow(2, (agg_io_level - j));
+      //}
+      //
     }
     /*------------------------------------Create ALL the IDs [end]-------------------------------------------*/
 
