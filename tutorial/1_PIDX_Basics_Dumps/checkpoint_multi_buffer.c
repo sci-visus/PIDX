@@ -322,7 +322,7 @@ static void create_synthetic_simulation_data()
           for (i = 0; i < var_count[var][p][0]; i++)
           {
             int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
-            double_data[var][p][index] = 100 + var + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
+            double_data[var][p][index] = var + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
           }
     }
   }
@@ -452,8 +452,8 @@ int main(int argc, char **argv)
     PIDX_set_current_time_step(file, ts);
     PIDX_set_variable_count(file, variable_count);
 
-    PIDX_debug_rst(file, 1);
-    PIDX_debug_hz(file, 1);
+    //PIDX_debug_rst(file, 1);
+    //PIDX_debug_hz(file, 1);
 
     for (var = 0; var < variable_count; var++)
     {

@@ -62,9 +62,9 @@ IF (PIDX_BUILD_TUTORIAL)
   PIDX_ADD_EXECUTABLE(vis_read "${VIS_READ_SOURCES}")
   TARGET_LINK_LIBRARIES(vis_read ${TUTORIAL_LINK_LIBS})
   
-  #SET(CHECKPOINT_MULTI_BUFFER_SOURCES 1_PIDX_Basics_Dumps/checkpoint_multi_buffer.c)
-  #PIDX_ADD_EXECUTABLE(checkpoint_multi_buffer "${CHECKPOINT_MULTI_BUFFER_SOURCES}")
-  #TARGET_LINK_LIBRARIES(checkpoint_multi_buffer ${TUTORIAL_LINK_LIBS})
+  SET(CHECKPOINT_MULTI_BUFFER_SOURCES 1_PIDX_Basics_Dumps/checkpoint_multi_buffer.c)
+  PIDX_ADD_EXECUTABLE(checkpoint_multi_buffer "${CHECKPOINT_MULTI_BUFFER_SOURCES}")
+  TARGET_LINK_LIBRARIES(checkpoint_multi_buffer ${TUTORIAL_LINK_LIBS})
 
   SET(ROI_SOURCES 2_PIDX_Advanced_ROI/roi_writes.c)
   PIDX_ADD_EXECUTABLE(roi_writes "${ROI_SOURCES}")

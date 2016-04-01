@@ -1,6 +1,6 @@
 #include "../PIDX_io.h"
 
-#define PIDX_DEBUG_OUTPUT 1
+//#define PIDX_DEBUG_OUTPUT 1
 
 #if PIDX_HAVE_MPI
 
@@ -1822,8 +1822,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
     if (rank == 0 && g_io == nprocs)
       printf("[I] Agg buffer cleanup completed\n");
-#endif
     l_agg_des = 0, g_agg_des = 0;
+#endif
+
 
     /*----------------------------------------------IO [end]--------------------------------------------------*/
 
@@ -1847,8 +1848,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
     if (rank == 0 && g_io == nprocs)
       printf("[I] Agg buffer destroyed\n");
-#endif
     l_agg_des = 0, g_agg_des = 0;
+#endif
+
 
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
@@ -1870,8 +1872,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
     if (rank == 0 && g_io == nprocs)
       printf("[I] Agg meta data destroyed\n");
-#endif
     l_agg_des = 0, g_agg_des = 0;
+#endif
+
 
  #if 1
     ret = PIDX_hz_encode_meta_data_destroy(file->hz_id);
@@ -1886,8 +1889,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
     if (rank == 0 && g_io == nprocs)
       printf("[I] %d HZ meta data destroyed\n", nprocs);
-#endif
     l_agg_des = 0, g_agg_des = 0;
+#endif
+
 
     /*-------------------------------------------finalize [start]---------------------------------------------*/
 
@@ -1933,8 +1937,9 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     MPI_Allreduce(&l_agg_des, &g_agg_des, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
     if (rank == 0 && g_io == nprocs)
       printf("[I] %d HZ finalized\n", nprocs);
-#endif
     l_agg_des = 0, g_agg_des = 0;
+#endif
+
 
 #endif
 
@@ -2118,9 +2123,10 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   MPI_Comm_rank(file->global_comm, &rank);
 
 
+
+#if PIDX_DEBUG_OUTPUT
   l_pidx = 0;
   g_pidx = 0;
-#if PIDX_DEBUG_OUTPUT
   l_pidx = 1;
   MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
   if (rank == 0 && g_pidx == nprocs)
@@ -2135,9 +2141,9 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     return PIDX_err_rst;
   }
 
+#if PIDX_DEBUG_OUTPUT
   l_pidx = 0;
   g_pidx = 0;
-#if PIDX_DEBUG_OUTPUT
   l_pidx = 1;
   MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
   if (rank == 0 && g_pidx == nprocs)
@@ -2159,9 +2165,10 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   if (ret != PIDX_success)
     return PIDX_err_rst;
 
+
+#if PIDX_DEBUG_OUTPUT
   l_pidx = 0;
   g_pidx = 0;
-#if PIDX_DEBUG_OUTPUT
   l_pidx = 1;
   MPI_Allreduce(&l_pidx, &g_pidx, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
   if (rank == 0 && g_pidx == nprocs)

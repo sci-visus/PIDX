@@ -14,7 +14,11 @@
 
 #define SIMULATE_IO 0
 #define PIDX_MAX_TEMPLATE_DEPTH 6
-#define _XOPEN_SOURCE 600
+
+#ifndef __cplusplus
+#  define _XOPEN_SOURCE 600
+#endif
+
 #ifdef BGQ
   #define _XOPEN_SOURCE 600
 #ifndef _GNU_SOURCE
@@ -139,6 +143,7 @@ extern "C" {
 
 #include "./core/PIDX_header/PIDX_header_io.h"
 #include "./core/PIDX_rst/PIDX_rst.h"
+#include "./core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.h"
 #include "./core/PIDX_hz/PIDX_hz_encode.h"
 #include "./core/PIDX_block_rst/PIDX_block_restructure.h"
 #include "./core/PIDX_cmp/PIDX_compression.h"

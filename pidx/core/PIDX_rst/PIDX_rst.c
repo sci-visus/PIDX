@@ -30,7 +30,7 @@
 #include "../../PIDX_inc.h"
 
 
-int maximum_neighbor_count = 256;
+static int maximum_neighbor_count = 256;
 
 //Struct for restructuring ID
 struct PIDX_rst_struct 

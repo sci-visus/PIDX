@@ -16,7 +16,7 @@
  **                                                 **
  *****************************************************/
 
-#ifndef __PIDX_FIlE_IO_H
+#ifndef __PIDX_FILE_IO_H
 #define __PIDX_FILE_IO_H 
 
 /**
