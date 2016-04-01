@@ -51,9 +51,9 @@ ENDIF()
 # ////////////////////////////////////////
 # library
 # ////////////////////////////////////////
-MESSAGE("XXXX")
-MESSAGE("${PIDX_SOURCES}")
-MESSAGE("XXXX")
+#MESSAGE("XXXX")
+#MESSAGE("${PIDX_SOURCES}")
+#MESSAGE("XXXX")
 MESSAGE("${PIDX_UTILS_SOURCES}")
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
 TARGET_LINK_LIBRARIES(pidx m pidx_comm pidx_data_handle pidx_topology pidx_utils pidx_core pidx_io ${PIDX_LINK_LIBS})

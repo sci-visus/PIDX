@@ -27,7 +27,7 @@ FILE(GLOB PIDX_HEADER_SOURCES *.h *.c)
 # ////////////////////////////////////////
 
 IF (MPI_C_FOUND)
-  MESSAGE("Configuring pidx with MPI support")
+  #MESSAGE("Configuring pidx with MPI support")
   INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
   SET(PIDX_HEADER_LINK_LIBS ${PIDX_HEADER_LINK_LIBS} ${MPI_C_LIBRARIES})
 ENDIF()
