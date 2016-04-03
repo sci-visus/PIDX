@@ -1570,21 +1570,16 @@ PIDX_return_code PIDX_close(PIDX_file file)
     }
 
     if (file->io_type == PIDX_IDX_IO)
-    {
       PIDX_print_idx_io_timing(file->comm, time, file->idx->variable_count, file->idx_d->layout_count);
-    }
+
     else if (file->io_type == PIDX_RAW_IO)
-    {
       PIDX_print_raw_io_timing(file->comm, time, time->variable_counter, file->idx_d->perm_layout_count);
-    }
+
     else if (file->io_type == PIDX_PARTITIONED_IDX_IO)
-    {
       PIDX_print_partition_timing(file->comm, time, file->idx->variable_count, file->idx_d->perm_layout_count);
-    }
+
     else if (file->io_type == PIDX_PARTITION_MERGE_IDX_IO)
-    {
       PIDX_print_partition_merge_timing(file->comm, time, file->idx->variable_count, file->idx_d->perm_layout_count);
-    }
 
     if (rank == 0)
       fprintf(stdout, "==========================================================================================================\n");
@@ -1594,19 +1589,10 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_delete_timming_buffers2(file->idx_d->time, file->idx->variable_count);
 #endif
 
-  //printf("file->idx->variable_count = %d\n", file->idx->variable_count);
-  //for (i = 0; i < 1024/*file->idx->variable_count*/; i++)
   for (i = 0; i < file->idx->variable_count; i++)
-  {
-    //printf("[%d] ----->  %d %s\n", i, file->idx->variable[i], file->idx->variable[i]->var_name);
-    //printf("[%d] ----->  %d \n", i, file->idx->variable[i]);
     free(file->idx->variable[i]);
-    //file->idx->variable[i] = 0;
-  }
 
   file->idx->variable_count = 0;
-
-  //free(file->idx->bounds);        file->idx->bounds = 0;
 
   free(file->idx);                  file->idx = 0;
   free(file->idx_d->time);          file->idx_d->time = 0;

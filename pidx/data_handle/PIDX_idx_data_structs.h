@@ -43,14 +43,13 @@ struct PIDX_timming_struct
    double partition_end_time;
    double populate_idx_start_time;
    double populate_idx_end_time;
-   double meta_data_start_io;
-   double meta_data_end_io;
    double sim_start, sim_end;
    double *write_init_start, *write_init_end;
    double *startup_start, *startup_end;
    double *init_start, *init_end;
    double *rst_start, *rst_end;
    double *rst_io_start, *rst_io_end;
+   double *rst_meta_data_start_io, *rst_meta_data_end_io;
    double *hz_start, *hz_end;
    double *cleanup_start, *cleanup_end;
    double *finalize_start, *finalize_end;

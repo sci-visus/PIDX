@@ -407,28 +407,97 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
   }
 #endif
 
-  for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
+  if (header_io_id->enable_raw_dump == 0)
   {
-#if PIDX_HAVE_MPI
-    if (i % nprocs == rank && block_layout->file_bitmap[i] == 1)
-#else
-    if (rank == 0 && block_layout->file_bitmap[i] == 1)
-#endif
+    for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
     {
-      int adjusted_file_index = 0;
-      int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
-      adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
-
-      ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, adjusted_file_index/*i*/, bin_file, PATH_MAX);
-      if (ret == 1)
+#if PIDX_HAVE_MPI
+      if (i % nprocs == rank && block_layout->file_bitmap[i] == 1)
+#else
+      if (rank == 0 && block_layout->file_bitmap[i] == 1)
+#endif
       {
-        fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
-        return 1;
-      }
+        int adjusted_file_index = 0;
+        int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
+        adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
 
-      ret = populate_meta_data(header_io_id, block_layout, i, bin_file, mode);
-      if (ret != PIDX_success) return PIDX_err_header;
+        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, adjusted_file_index/*i*/, bin_file, PATH_MAX);
+        if (ret == 1)
+        {
+          fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
+          return 1;
+        }
+
+        ret = populate_meta_data(header_io_id, block_layout, i, bin_file, mode);
+        if (ret != PIDX_success) return PIDX_err_header;
+      }
     }
+  }
+  else
+  {
+    char last_path[PATH_MAX] = {0};
+    char this_path[PATH_MAX] = {0};
+    char tmp_path[PATH_MAX] = {0};
+    char* pos;
+
+    char *directory_path;
+    char *data_set_path;
+
+    directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+    memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+
+    data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
+    memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
+
+    strncpy(directory_path, header_io_id->idx->filename, strlen(header_io_id->idx->filename) - 4);
+    sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
+    free(directory_path);
+
+    if (rank == 0)
+    {
+      //TODO: the logic for creating the subdirectory hierarchy could
+      //be made to be more efficient than this. This implementation
+      //walks up the tree attempting to mkdir() each segment every
+      //time we switch to a new directory when creating binary files.
+
+      // see if we need to make parent directory
+      int j = 0;
+      strcpy(this_path, data_set_path);
+      if ((pos = strrchr(this_path, '/')))
+      //if ((pos = rindex(this_path, '/')))
+      {
+        pos[1] = '\0';
+        if (!strcmp(this_path, last_path) == 0)
+        {
+          //this file is in a previous directory than the last
+          //one; we need to make sure that it exists and create
+          //it if not.
+          strcpy(last_path, this_path);
+          memset(tmp_path, 0, PATH_MAX * sizeof (char));
+          //walk up path and mkdir each segment
+          for (j = 0; j < (int)strlen(this_path); j++)
+          {
+            if (j > 0 && this_path[j] == '/')
+            {
+              ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
+              if (ret != 0 && errno != EEXIST)
+              {
+                perror("mkdir");
+                fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
+                return 1;
+              }
+            }
+            tmp_path[j] = this_path[j];
+          }
+        }
+      }
+    }
+#if PIDX_HAVE_MPI
+    if (header_io_id->idx_d->parallel_mode == 1)
+      MPI_Barrier(header_io_id->comm);
+#endif
+
+    free(data_set_path);
   }
   
   return PIDX_success;

@@ -200,6 +200,7 @@ PIDX_return_code PIDX_get_bits_per_sample(PIDX_data_type type_name, unsigned int
 PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout);
 
 
+
 PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* read_from_this_buffer, PIDX_data_layout data_layout);
 
 

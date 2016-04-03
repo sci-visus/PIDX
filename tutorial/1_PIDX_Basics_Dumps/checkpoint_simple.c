@@ -266,10 +266,12 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    int io_type = PIDX_IDX_IO;// PIDX_PARTITIONED_IDX_IO;//PIDX_PARTITION_MERGE_IDX_IO;
+    int io_type = PIDX_RAW_IO;//PIDX_IDX_IO;// PIDX_PARTITIONED_IDX_IO;//PIDX_PARTITION_MERGE_IDX_IO;
     switch (io_type)
     {
       case PIDX_PARTITION_MERGE_IDX_IO:
+        PIDX_set_block_count(file,1);
+        PIDX_set_block_size(file, 3);
         PIDX_enable_partition_merge_io(file);
         break;
 
@@ -285,8 +287,8 @@ int main(int argc, char **argv)
         break;
     }
 
-    ret = PIDX_debug_disable_io(file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
+    //ret = PIDX_debug_disable_io(file);
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
     ret = PIDX_debug_output(file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");

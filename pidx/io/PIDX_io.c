@@ -56,6 +56,9 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
   time->startup_start = malloc (sizeof(double) * variable_count);                 memset(time->startup_start, 0, sizeof(double) * variable_count);
   time->startup_end = malloc (sizeof(double) * variable_count);                   memset(time->startup_end, 0, sizeof(double) * variable_count);
 
+  time->rst_meta_data_start_io = malloc (sizeof(double) * variable_count);        memset(time->rst_meta_data_start_io, 0, sizeof(double) * variable_count);
+  time->rst_meta_data_end_io = malloc (sizeof(double) * variable_count);          memset(time->rst_meta_data_end_io, 0, sizeof(double) * variable_count);
+
   time->rst_start = malloc (sizeof(double) * variable_count);                     memset(time->rst_start, 0, sizeof(double) * variable_count);
   time->rst_end = malloc (sizeof(double) * variable_count);                       memset(time->rst_end, 0, sizeof(double) * variable_count);
 
@@ -188,7 +191,6 @@ void PIDX_print_raw_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
     fprintf(stdout, "Time Taken: %f Seconds\n", max_time);
     fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
     printf("Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
-    printf("Meta data IO time %f\n", time->meta_data_end_io - time->meta_data_start_io);
 
     double header_io_time = 0;
     for (var = 0; var < time->header_counter; var++)
@@ -200,11 +202,11 @@ void PIDX_print_raw_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
     double total_time_rch = 0;
     for (var = 0; var < var_count; var++)
     {
-      fprintf(stdout, "[%d] RST + RST IO + FINALIZE = %f + %f + %f = %f\n", var, (time->rst_end[var] - time->rst_start[var]), (time->rst_io_end[var] - time->rst_io_start[var]), (time->finalize_end[var] - time->finalize_start[var]), ((time->rst_end[var] - time->rst_start[var]) + (time->rst_io_end[var] - time->rst_io_start[var]) + (time->finalize_end[var] - time->finalize_start[var])) );
-      total_time_rch = total_time_rch + ((time->rst_end[var] - time->rst_start[var]) + (time->rst_io_end[var] - time->rst_io_start[var]) + (time->finalize_end[var] - time->finalize_start[var]));
+      fprintf(stdout, "[%d] METADATA IO + RST + RST IO + FINALIZE = %f + %f + %f + %f = %f\n", var, (time->rst_meta_data_end_io[var] - time->rst_meta_data_start_io[var]), (time->rst_end[var] - time->rst_start[var]), (time->rst_io_end[var] - time->rst_io_start[var]), (time->finalize_end[var] - time->finalize_start[var]), ((time->rst_meta_data_end_io[var] - time->rst_meta_data_start_io[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->rst_io_end[var] - time->rst_io_start[var]) + (time->finalize_end[var] - time->finalize_start[var])) );
+      total_time_rch = total_time_rch + ((time->rst_meta_data_end_io[var] - time->rst_meta_data_start_io[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->rst_io_end[var] - time->rst_io_start[var]) + (time->finalize_end[var] - time->finalize_start[var]));
     }
 
-    fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f] [%f]\n", (time->populate_idx_end_time - time->populate_idx_start_time) + (time->meta_data_end_io - time->meta_data_start_io) + total_time_rch + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), (time->meta_data_end_io - time->meta_data_start_io), header_io_time, total_time_rch, max_time);
+    fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f] [%f]\n", (time->populate_idx_end_time - time->populate_idx_start_time) + total_time_rch + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), header_io_time, total_time_rch, max_time);
 
     fprintf(stdout, "==========================================================================================================\n");
   }
