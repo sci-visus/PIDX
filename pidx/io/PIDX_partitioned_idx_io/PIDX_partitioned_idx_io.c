@@ -539,14 +539,17 @@ static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int s
   int i = 0, j = 0, ctr;
   int file_number = 0;
 
-  int rank = 0;
-  int nprocs = 1;
+  int rank = 0, grank = 0;
+  int nprocs = 1, gnprocs = 1;
 
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
   {
     MPI_Comm_rank(file->comm, &rank);
     MPI_Comm_size(file->comm, &nprocs);
+
+    MPI_Comm_rank(file->global_comm, &grank);
+    MPI_Comm_size(file->global_comm, &gnprocs);
   }
 #endif
 
@@ -725,6 +728,12 @@ static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int s
     return PIDX_err_file;
   }
   */
+
+  if (grank == 0)
+  {
+    printf("[A %d %d] [H %d] Final Block Bitmap [%d %d]\n", nprocs, gnprocs, file->idx_d->maxh, file->idx->variable[lvi]->block_layout_by_level[0]->resolution_from, file->idx->variable[lvi]->block_layout_by_level[0]->resolution_to);
+    PIDX_blocks_print_layout(block_layout);
+  }
 
   /*
   if (rank == 0)
@@ -917,7 +926,9 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
   for (k = 0; k < file->idx_d->idx_count[2]; k++)
     for (j = 0; j < file->idx_d->idx_count[1]; j++)
       for (i = 0; i < file->idx_d->idx_count[0]; i++)
+      {
         colors[(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * k) + (file->idx_d->idx_count[0] * j) + i] = (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * k) + (file->idx_d->idx_count[0] * j) + i;
+      }
 
   Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
   memset(local_proc_patch, 0, sizeof (*local_proc_patch));
@@ -935,6 +946,34 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
     Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
     memset(reg_patch, 0, sizeof (*reg_patch));
     int distance_x = 0, distance_y = 0, distance_z = 0;
+
+    PointND bounds_point;
+    int maxH = 0;
+    bounds_point.x = (int) file->idx_d->idx_count[0];
+    bounds_point.y = (int) file->idx_d->idx_count[1];
+    bounds_point.z = (int) file->idx_d->idx_count[2];
+    bounds_point.u = (int) 1;
+    bounds_point.v = (int) 1;
+    char bitSequence[512];
+    char bitPattern[512];
+    GuessBitmaskPattern(bitSequence, bounds_point);
+    maxH = strlen(bitSequence);
+
+    //printf("IDX C %d %d %d mh %d\n", file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2], maxH);
+    for (i = 0; i <= maxH; i++)
+      bitPattern[i] = RegExBitmaskBit(bitSequence, i);
+
+    //printf("maxH = %d\n", maxH);
+    int z_order = 0;
+    int number_levels = maxH - 1;
+
+    if ((regular_bounds[0]) > file->idx->bounds[0])
+      regular_bounds[0] = file->idx->bounds[0];
+    if ((regular_bounds[1]) > file->idx->bounds[1])
+      regular_bounds[1] = file->idx->bounds[1];
+    if ((regular_bounds[2]) > file->idx->bounds[2])
+      regular_bounds[2] = file->idx->bounds[2];
+
     for (i = 0, index_i = 0; i < file->idx->bounds[0]; i = i + regular_bounds[0], index_i++)
     {
       for (j = 0, index_j = 0; j < file->idx->bounds[1]; j = j + regular_bounds[1], index_j++)
@@ -949,19 +988,42 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
           reg_patch->size[2] = regular_bounds[2];
 
           //Edge regular patches
+          /*
           if ((i + regular_bounds[0]) > file->idx->bounds[0])
             reg_patch->size[0] = file->idx->bounds[0] - i;
           if ((j + regular_bounds[1]) > file->idx->bounds[1])
             reg_patch->size[1] = file->idx->bounds[1] - j;
           if ((k + regular_bounds[2]) > file->idx->bounds[2])
             reg_patch->size[2] = file->idx->bounds[2] - k;
+          */
 
           if (intersectNDChunk(reg_patch, local_proc_patch))
           {
-            int clr = (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * index_k) + (file->idx_d->idx_count[0] * index_j) + (index_i);
-            //printf("R %d ----> %d\n", rank, clr);
+            PointND xyzuv_Index;
+            xyzuv_Index.x = index_i;
+            xyzuv_Index.y = index_j;
+            xyzuv_Index.z = index_k;
+            xyzuv_Index.u = 0;
+            xyzuv_Index.v = 0;
 
-            file->idx_d->color = colors[clr];
+            z_order = 0;
+            PointND zero;
+            zero.x = 0;
+            zero.y = 0;
+            zero.z = 0;
+            zero.u = 0;
+            zero.v = 0;
+            memset(&zero, 0, sizeof (PointND));
+
+            int cnt = 0;
+            for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+            {
+              int bit = bitPattern[number_levels];
+              z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+              PGET(xyzuv_Index, bit) >>= 1;
+            }
+
+            file->idx_d->color = colors[z_order];
 
             distance_x = index_i * regular_bounds[0];
             distance_y = index_j * regular_bounds[1];
