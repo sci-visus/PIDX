@@ -85,6 +85,18 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
   time->agg_end = malloc (sizeof(double*) * variable_count);         memset(time->agg_end, 0, sizeof(double*) * variable_count);
   time->agg_buf_start = malloc (sizeof(double*) * variable_count);   memset(time->agg_buf_start, 0, sizeof(double*) * variable_count);
   time->agg_buf_end = malloc (sizeof(double*) * variable_count);     memset(time->agg_buf_end, 0, sizeof(double*) * variable_count);
+
+  time->windows_start = malloc (sizeof(double*) * variable_count);       memset(time->windows_start, 0, sizeof(double*) * variable_count);
+  time->windows_end = malloc (sizeof(double*) * variable_count);     memset(time->windows_end, 0, sizeof(double*) * variable_count);
+
+  time->first_fence_end = malloc (sizeof(double*) * variable_count);       memset(time->first_fence_end, 0, sizeof(double*) * variable_count);
+  time->first_fence_start = malloc (sizeof(double*) * variable_count);     memset(time->first_fence_start, 0, sizeof(double*) * variable_count);
+
+  time->second_fence_end = malloc (sizeof(double*) * variable_count);       memset(time->second_fence_end, 0, sizeof(double*) * variable_count);
+  time->second_fence_start = malloc (sizeof(double*) * variable_count);     memset(time->second_fence_start, 0, sizeof(double*) * variable_count);
+
+  time->fence_free = malloc (sizeof(double*) * variable_count);       memset(time->fence_free, 0, sizeof(double*) * variable_count);
+
   time->io_start = malloc (sizeof(double*) * variable_count);        memset(time->io_start, 0, sizeof(double*) * variable_count);
   time->io_end = malloc (sizeof(double*) * variable_count);          memset(time->io_end, 0, sizeof(double*) * variable_count);
   time->io_per_process_start = malloc (sizeof(double*) * variable_count);          memset(time->io_per_process_start, 0, sizeof(double*) * variable_count);
@@ -97,6 +109,19 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
     time->agg_end[i] = malloc (sizeof(double) * layout_count);         memset(time->agg_end[i], 0, sizeof(double) * layout_count);
     time->agg_buf_start[i] = malloc (sizeof(double) * layout_count);   memset(time->agg_buf_start[i], 0, sizeof(double) * layout_count);
     time->agg_buf_end[i] = malloc (sizeof(double) * layout_count);     memset(time->agg_buf_end[i], 0, sizeof(double) * layout_count);
+
+    time->first_fence_end[i] = malloc (sizeof(double) * layout_count);   memset(time->first_fence_end[i], 0, sizeof(double) * layout_count);
+    time->first_fence_start[i] = malloc (sizeof(double) * layout_count); memset(time->first_fence_start[i], 0, sizeof(double) * layout_count);
+
+
+    time->windows_end[i] = malloc (sizeof(double) * layout_count);   memset(time->windows_end[i], 0, sizeof(double) * layout_count);
+    time->windows_start[i] = malloc (sizeof(double) * layout_count); memset(time->windows_start[i], 0, sizeof(double) * layout_count);
+
+    time->fence_free[i] = malloc (sizeof(double) * layout_count);   memset(time->fence_free[i], 0, sizeof(double) * layout_count);
+
+    time->second_fence_end[i] = malloc (sizeof(double) * layout_count);   memset(time->second_fence_end[i], 0, sizeof(double) * layout_count);
+    time->second_fence_start[i] = malloc (sizeof(double) * layout_count); memset(time->second_fence_start[i], 0, sizeof(double) * layout_count);
+
     time->io_start[i] = malloc (sizeof(double) * layout_count);        memset(time->io_start[i], 0, sizeof(double) * layout_count);
     time->io_end[i] = malloc (sizeof(double) * layout_count);          memset(time->io_end[i], 0, sizeof(double) * layout_count);
 
@@ -152,6 +177,17 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
     free(time->agg_end[i]);
     free(time->agg_buf_start[i]);
     free(time->agg_buf_end[i]);
+
+    free(time->first_fence_start[i]);
+    free(time->first_fence_end[i]);
+
+
+    free(time->windows_start[i]);
+    free(time->windows_end[i]);
+
+    free(time->second_fence_start[i]);
+    free(time->second_fence_end[i]);
+
     free(time->io_start[i]);
     free(time->io_end[i]);
 
@@ -162,6 +198,16 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
   free(time->agg_end);
   free(time->agg_buf_start);
   free(time->agg_buf_end);
+
+  free(time->first_fence_start);
+  free(time->first_fence_end);
+
+  free(time->windows_end);
+  free(time->windows_start);
+
+  free(time->second_fence_start);
+  free(time->second_fence_end);
+
   free(time->io_start);
   free(time->io_end);
   free(time->io_per_process_start);
@@ -244,7 +290,25 @@ void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
     {
       for (p = 0; p < layout_count; p++)
       {
-        fprintf(stdout, "[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f + %f = %f\n", var, p, (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]), (time->agg_end[var][p] - time->agg_start[var][p]), (time->io_end[var][p] - time->io_start[var][p]), (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]), (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
+        fprintf(stdout, "[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f (%f = %f + %f + %f + %f + %f) + %f + %f = %f\n", var, p,
+                (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]),
+                (time->agg_end[var][p] - time->agg_start[var][p]),
+
+                (time->windows_end[var][p] - time->windows_start[var][p]) +
+                (time->first_fence_end[var][p] - time->first_fence_start[var][p]) +
+                (time->second_fence_start[var][p] - time->first_fence_end[var][p]) +
+                (time->second_fence_end[var][p] - time->second_fence_start[var][p]) +
+                (time->fence_free[var][p] - time->second_fence_end[var][p]),
+
+                (time->windows_end[var][p] - time->windows_start[var][p]),
+                (time->first_fence_end[var][p] - time->first_fence_start[var][p]),
+                (time->second_fence_start[var][p] - time->first_fence_end[var][p]),
+                (time->second_fence_end[var][p] - time->second_fence_start[var][p]),
+                (time->fence_free[var][p] - time->second_fence_end[var][p]),
+
+                (time->io_end[var][p] - time->io_start[var][p]),
+                (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]),
+                (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
 
         total_time_bc = total_time_bc + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]);
         total_time_a = total_time_a + (time->agg_end[var][p] - time->agg_start[var][p]);
@@ -289,7 +353,7 @@ void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, i
 
   if (max_time == total_time)
   {
-    fprintf(stdout, "Time Taken: %f Seconds\n", max_time);
+    fprintf(stdout, "[P] Time Taken: %f Seconds\n", max_time);
     fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
     printf("Partition time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
     fprintf(stdout, "File Create Time: %f Seconds\n", (time->file_create_time - time->sim_start));
@@ -306,7 +370,25 @@ void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, i
     {
       for (p = 0; p < layout_count; p++)
       {
-        fprintf(stdout, "[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f + %f = %f\n", var, p, (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]), (time->agg_end[var][p] - time->agg_start[var][p]), (time->io_end[var][p] - time->io_start[var][p]), (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]), (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
+          fprintf(stdout, "[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f (%f = %f + %f + %f + %f + %f) + %f + %f = %f\n", var, p,
+                  (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]),
+                  (time->agg_end[var][p] - time->agg_start[var][p]),
+
+                  (time->windows_end[var][p] - time->windows_start[var][p]) +
+                  (time->first_fence_end[var][p] - time->first_fence_start[var][p]) +
+                  (time->second_fence_start[var][p] - time->first_fence_end[var][p]) +
+                  (time->second_fence_end[var][p] - time->second_fence_start[var][p]) +
+                  (time->fence_free[var][p] - time->second_fence_end[var][p]),
+
+                  (time->windows_end[var][p] - time->windows_start[var][p]),
+                  (time->first_fence_end[var][p] - time->first_fence_start[var][p]),
+                  (time->second_fence_start[var][p] - time->first_fence_end[var][p]),
+                  (time->second_fence_end[var][p] - time->second_fence_start[var][p]),
+                  (time->fence_free[var][p] - time->second_fence_end[var][p]),
+
+                  (time->io_end[var][p] - time->io_start[var][p]),
+                  (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]),
+                  (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
 
         total_time_bc = total_time_bc + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]);
         total_time_a = total_time_a + (time->agg_end[var][p] - time->agg_start[var][p]);

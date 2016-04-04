@@ -21,6 +21,7 @@
 #define PIDX_ACTIVE_TARGET
 #define PIDX_DUMP_AGG
 
+double PIDX_get_time();
 
 struct PIDX_global_agg_struct
 {
@@ -1363,7 +1364,7 @@ static PIDX_return_code destroy_file_zero_buffer(PIDX_global_agg_id agg_id)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE)
+PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE, int vi, int bi)
 {
 #if PIDX_HAVE_MPI
   int file_zero = 0;
@@ -1372,6 +1373,7 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   int rank = 0;
   MPI_Comm_rank(agg_id->comm, &rank);
 
+  agg_id->idx_d->time->windows_start[vi][bi] = PIDX_get_time();
   ret = create_window(agg_id, agg_buffer, agg_id->comm);
   if (ret != PIDX_success)
   {
@@ -1379,6 +1381,7 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
     return PIDX_err_agg;
   }
 
+  /*
   ret = create_open_log_file(agg_id);
   if (ret != PIDX_success)
   {
@@ -1398,15 +1401,19 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
       }
     }
   }
+  */
+  agg_id->idx_d->time->windows_end[vi][bi] = PIDX_get_time();
 
 #if !SIMULATE_IO
 #ifdef PIDX_ACTIVE_TARGET
+  agg_id->idx_d->time->first_fence_start[vi][bi] = PIDX_get_time();
   ret = MPI_Win_fence(0, agg_id->win);
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+  agg_id->idx_d->time->first_fence_end[vi][bi] = PIDX_get_time();
 #endif
 #endif
 
@@ -1456,12 +1463,14 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
 #if !SIMULATE_IO
 #if PIDX_HAVE_MPI
 #ifdef PIDX_ACTIVE_TARGET
+  agg_id->idx_d->time->second_fence_start[vi][bi] = PIDX_get_time();
   ret = MPI_Win_fence(0, agg_id->win);
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+  agg_id->idx_d->time->second_fence_end[vi][bi] = PIDX_get_time();
 #endif
 #endif
 #endif
@@ -1474,6 +1483,9 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
     fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+  agg_id->idx_d->time->fence_free[vi][bi] = PIDX_get_time();
+
+
 #endif
 #endif
 
@@ -1490,6 +1502,7 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   */
 
 
+  /*
   if (file_zero == 1)
   {
     if (layout_id == 0)
@@ -1509,7 +1522,9 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
     fprintf(stderr, " [%s] [%d] PIDX error (create_open_log_file).\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+  */
 #endif
+
   return PIDX_success;
 }
 

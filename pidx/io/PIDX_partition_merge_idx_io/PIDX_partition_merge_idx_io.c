@@ -1716,7 +1716,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
         {
            time->agg_start[i + partition_index * file->idx->variable_count][j - file->idx_d->start_layout_index] = PIDX_get_time();
 
-           ret = PIDX_agg(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], j - file->idx_d->start_layout_index, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE);
+           ret = PIDX_agg(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], j - file->idx_d->start_layout_index, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE, i, j - file->idx_d->start_layout_index);
 
            if (ret != PIDX_success)
            {

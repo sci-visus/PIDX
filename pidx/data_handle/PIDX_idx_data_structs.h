@@ -58,6 +58,11 @@ struct PIDX_timming_struct
    double *compression_start, *compression_end;
    double **agg_start, **agg_end;
    double **agg_buf_start, **agg_buf_end;
+
+   double **windows_start, **windows_end;
+   double **first_fence_start, **first_fence_end;
+   double **second_fence_start, **second_fence_end;
+   double **fence_free;
    double **io_per_process_start, **io_per_process_end;
    double **io_start, **io_end;
 };

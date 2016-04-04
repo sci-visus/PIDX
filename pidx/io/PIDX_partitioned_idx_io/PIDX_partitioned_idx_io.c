@@ -899,7 +899,7 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
   int index_i = 0, index_j = 0, index_k = 0;
   int i = 0, j = 0, k = 0, d = 0;
   //PIDX_return_code ret;
-  int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 512, 1, 1};
+  int regular_bounds[PIDX_MAX_DIMENSIONS] = {64, 64, 64, 1, 1};
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
     file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
@@ -1613,7 +1613,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
         {
            time->agg_start[i][j] = PIDX_get_time();
 
-           ret = PIDX_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+           ret = PIDX_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE, i, j);
 
            if (ret != PIDX_success)
            {

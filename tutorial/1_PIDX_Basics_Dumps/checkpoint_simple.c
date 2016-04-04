@@ -266,7 +266,7 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    int io_type = PIDX_RAW_IO;//PIDX_IDX_IO;// PIDX_PARTITIONED_IDX_IO;//PIDX_PARTITION_MERGE_IDX_IO;
+    int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_PARTITION_MERGE_IDX_IO;
     switch (io_type)
     {
       case PIDX_PARTITION_MERGE_IDX_IO:

@@ -1488,7 +1488,7 @@ PIDX_return_code PIDX_multi_patch_idx_write(PIDX_multi_patch_idx_io file, int st
         {
            time->agg_start[i][j] = PIDX_get_time();
 
-           ret = PIDX_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE);
+           ret = PIDX_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_WRITE, i, j);
 
            if (ret != PIDX_success)
            {
@@ -2112,7 +2112,7 @@ PIDX_return_code PIDX_multi_patch_idx_read(PIDX_multi_patch_idx_io file, int sta
         {
           time->agg_start[i][j] = PIDX_get_time();
 
-          ret = PIDX_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_READ);
+          ret = PIDX_agg(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], j, file->idx->variable[start_var_index]->block_layout_by_level[j], PIDX_READ, i, j);
           //ret = PIDX_agg_write(file->tagg_id[i][j], file->idx_d->agg_buffer[i][j], file->idx->variable[start_var_index]->block_layout_by_level[j]);
           if (ret != PIDX_success)
             return PIDX_err_agg;

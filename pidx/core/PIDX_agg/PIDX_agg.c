@@ -27,6 +27,7 @@ struct PIDX_agg_struct
 };
 
 
+
 PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
 {
   PIDX_agg_id agg_id;
@@ -167,12 +168,12 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
 }
 
 
-PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout,  int PIDX_MODE)
+PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout,  int PIDX_MODE, int vi, int bi)
 {
   PIDX_return_code ret = PIDX_success;
 
   if (agg_id->idx_d->agg_type == 0)
-    ret = PIDX_global_agg(agg_id->global_id, agg_buffer, layout_id, local_block_layout, PIDX_MODE);
+    ret = PIDX_global_agg(agg_id->global_id, agg_buffer, layout_id, local_block_layout, PIDX_MODE, vi, bi);
 
   else if (agg_id->idx_d->agg_type == 1)
     ret = PIDX_local_agg(agg_id->local_id, agg_buffer, layout_id, local_block_layout, PIDX_MODE);
