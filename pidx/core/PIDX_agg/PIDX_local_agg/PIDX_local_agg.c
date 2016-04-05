@@ -947,7 +947,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           bytes_per_datatype = (chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->compression_factor);
 
           agg_buffer->buffer_size = sample_count * bytes_per_datatype;
-          printf("(LOCAL) [G %d L %d] [%d %d %d] buffer_size = %d Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, agg_buffer->aggregator_interval);
+          printf("(LOCAL) [L %d G %d] [%d %d %d] buffer_size = %d Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, agg_buffer->aggregator_interval);
 
 #if !SIMULATE_IO
           //printf("Buffer size = %d x %d / %d x %d\n", local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, agg_buffer->aggregation_factor, bytes_per_datatype);

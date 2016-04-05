@@ -1412,7 +1412,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     file->idx_d->idx_count[d] = 1;
   file->idx_d->color = 0;
 
-  ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
+  //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
+  ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh - 1);
   if (ret != PIDX_success)
     return PIDX_err_file;
 
