@@ -879,6 +879,17 @@ PIDX_return_code PIDX_global_agg_set_communicator(PIDX_global_agg_id agg_id, MPI
 
   return PIDX_success;
 }
+
+PIDX_return_code PIDX_global_agg_set_global_communicator(PIDX_global_agg_id agg_id, MPI_Comm comm)
+{
+  if (agg_id == NULL)
+    return PIDX_err_id;
+
+  agg_id->global_comm = comm;
+
+
+  return PIDX_success;
+}
 #endif
 
 
@@ -942,9 +953,10 @@ PIDX_return_code PIDX_global_agg_meta_data_destroy(PIDX_global_agg_id agg_id, PI
 PIDX_return_code PIDX_global_agg_buf_create(PIDX_global_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1)
 {
 #if PIDX_HAVE_MPI
-  int rank = 0, nprocs = 1;
+  int rank = 0, nprocs = 1, grank = 0;
   MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
+  MPI_Comm_rank(agg_id->global_comm, &grank);
 
   int file_from = pow(2, local_block_layout->resolution_from -1) / ((agg_id->idx->blocks_per_file) * pow(2,agg_id->idx->bits_per_block));
   int file_to = pow(2, local_block_layout->resolution_to -1) / ((agg_id->idx->blocks_per_file) * pow(2,agg_id->idx->bits_per_block));
@@ -977,7 +989,7 @@ PIDX_return_code PIDX_global_agg_buf_create(PIDX_global_agg_id agg_id, Agg_buffe
             int bytes_per_datatype = (total_chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / ( agg_id->idx->compression_factor);
 
             agg_buffer->buffer_size = sample_count * bytes_per_datatype;
-            //printf("O [%d] [%d %d %d] buffer_size = %d (%d %d)\n", rank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, i1, j1);
+            printf("(GLOBAL) [%d %d] [%d %d %d] buffer_size = %d (%d %d) Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, i1, j1, agg_buffer->aggregator_interval);
 
 #if !SIMULATE_IO
             agg_buffer->buffer = malloc(agg_buffer->buffer_size);

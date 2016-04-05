@@ -251,7 +251,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
-  (*file)->idx_d->agg_type = 0;
+  (*file)->idx_d->agg_type = 1;
   (*file)->idx_d->layout_count = 0;
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;

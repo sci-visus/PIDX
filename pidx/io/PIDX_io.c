@@ -156,6 +156,9 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
   free(time->hz_start);
   free(time->hz_end);
 
+  free(time->rst_meta_data_end_io);
+  free(time->rst_meta_data_start_io);
+
   free(time->cleanup_start);
   free(time->cleanup_end);
   free(time->finalize_start);
@@ -193,6 +196,8 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
 
     free(time->io_per_process_start[i]);
     free(time->io_per_process_end[i]);
+
+    free(time->fence_free[i]);
   }
   free(time->agg_start);
   free(time->agg_end);
@@ -201,6 +206,7 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
 
   free(time->first_fence_start);
   free(time->first_fence_end);
+  free(time->fence_free);
 
   free(time->windows_end);
   free(time->windows_start);
@@ -353,7 +359,7 @@ void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, i
 
   if (max_time == total_time)
   {
-    fprintf(stdout, "[P] Time Taken: %f Seconds\n", max_time);
+    fprintf(stdout, "[P %d] Time Taken: %f Seconds\n", rank, max_time);
     fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
     printf("Partition time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
     fprintf(stdout, "File Create Time: %f Seconds\n", (time->file_create_time - time->sim_start));

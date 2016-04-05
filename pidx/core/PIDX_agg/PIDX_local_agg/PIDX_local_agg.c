@@ -25,6 +25,7 @@ struct PIDX_local_agg_struct
 {
 #if PIDX_HAVE_MPI
   MPI_Comm comm;
+  MPI_Comm global_comm;
   MPI_Comm local_comm;
   MPI_Win win;
 #endif
@@ -843,6 +844,17 @@ PIDX_return_code PIDX_local_agg_set_communicator(PIDX_local_agg_id agg_id, MPI_C
 
   return PIDX_success;
 }
+
+PIDX_return_code PIDX_local_agg_set_global_communicator(PIDX_local_agg_id agg_id, MPI_Comm comm)
+{
+  if (agg_id == NULL)
+    return PIDX_err_id;
+
+  agg_id->global_comm = comm;
+
+
+  return PIDX_success;
+}
 #endif
 
 
@@ -905,9 +917,10 @@ PIDX_return_code PIDX_local_agg_meta_data_destroy(PIDX_local_agg_id agg_id, PIDX
 PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset)
 {
 #if PIDX_HAVE_MPI
-  int rank = 0, nprocs = 1;
+  int rank = 0, nprocs = 1, grank = 0;
   MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
+  MPI_Comm_rank(agg_id->global_comm, &grank);
 
   int rank_counter = 0, i = 0, j = 0, k = 0;
   rank_counter = agg_offset;
@@ -934,6 +947,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           bytes_per_datatype = (chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->compression_factor);
 
           agg_buffer->buffer_size = sample_count * bytes_per_datatype;
+          printf("(LOCAL) [G %d L %d] [%d %d %d] buffer_size = %d Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, agg_buffer->aggregator_interval);
 
 #if !SIMULATE_IO
           //printf("Buffer size = %d x %d / %d x %d\n", local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, agg_buffer->aggregation_factor, bytes_per_datatype);

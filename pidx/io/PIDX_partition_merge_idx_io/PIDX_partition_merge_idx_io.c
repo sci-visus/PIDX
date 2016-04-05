@@ -4,7 +4,7 @@
 
 #if PIDX_HAVE_MPI
 
-static int regular_bounds[PIDX_MAX_DIMENSIONS] = {4, 4, 4, 1, 1};
+static int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int hz_level_from, int hz_level_to);
 static PIDX_return_code populate_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int hz_level_from, int hz_level_to);
@@ -129,7 +129,7 @@ static PIDX_return_code PIDX_parameter_validate(PIDX_partition_merge_idx_io file
 */
 
 
-static PIDX_return_code populate_idx_file_structure(PIDX_partition_merge_idx_io file)
+static PIDX_return_code populate_idx_file_structure(PIDX_partition_merge_idx_io file, int partition_level)
 {
   PointND bounds_point;
   int d = 0, i = 0;
@@ -147,7 +147,47 @@ static PIDX_return_code populate_idx_file_structure(PIDX_partition_merge_idx_io 
   bounds_point.z = (int) cb[2];
   bounds_point.u = (int) cb[3];
   bounds_point.v = (int) cb[4];
+  /*
   GuessBitmaskPattern(file->idx->bitSequence, bounds_point);
+  printf("Initial %s %d\n", file->idx->bitSequence, strlen(file->idx->bitSequence));
+  */
+
+
+  if (partition_level == 0)
+  {
+    PointND idx_g_point;
+    idx_g_point.x = (int) file->idx_d->idx_count[0];
+    idx_g_point.y = (int) file->idx_d->idx_count[1];
+    idx_g_point.z = (int) file->idx_d->idx_count[2];
+    idx_g_point.u = (int) file->idx_d->idx_count[3];
+    idx_g_point.v = (int) file->idx_d->idx_count[4];
+    GuessBitmaskPattern(file->idx->idx_cg_bitSequence, idx_g_point);
+    //printf("Global %s\n", file->idx->idx_cg_bitSequence);
+
+
+    PointND idx_l_point;
+    idx_l_point.x = (int) regular_bounds[0];
+    idx_l_point.y = (int) regular_bounds[1];
+    idx_l_point.z = (int) regular_bounds[2];
+    idx_l_point.u = (int) regular_bounds[3];
+    idx_l_point.v = (int) regular_bounds[4];
+    GuessBitmaskPattern(file->idx->idx_cl_bitSequence, idx_l_point);
+    //printf("Local %s\n", file->idx->idx_cl_bitSequence);
+
+    //merge_bitmask(file->idx->idx_cg_bitSequence, file->idx->idx_cl_bitSequence, file->idx->bitSequence);
+    strcpy(file->idx->bitSequence, file->idx->idx_cg_bitSequence);
+    strcat(file->idx->bitSequence, file->idx->idx_cl_bitSequence + 1);
+    //printf("Final %s %d\n", file->idx->bitSequence, strlen(file->idx->bitSequence));
+  }
+  else
+  {
+    //file->idx->bitSequence = "";
+    memset(file->idx->bitSequence, 0, 512);
+    memset(file->idx->bitPattern, 0, 512);
+    GuessBitmaskPattern(file->idx->bitSequence, bounds_point);
+    //printf("Initial %s %d\n", file->idx->bitSequence, strlen(file->idx->bitSequence));
+  }
+
   file->idx_d->maxh = strlen(file->idx->bitSequence);
 
   for (i = 0; i <= file->idx_d->maxh; i++)
@@ -710,6 +750,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_partition_merge_idx_io file, i
       ctr = ctr * 2;
 
 
+    ctr = (int)pow(2, file->idx_d->start_layout_index - 1) * file->idx->blocks_per_file;
     //if (rank == 0)
     //  printf("LI %d %d\n", file->idx_d->start_layout_index, file->idx_d->end_layout_index);
     for (i = file->idx_d->start_layout_index; i < file->idx_d->end_layout_index; i++)
@@ -736,11 +777,13 @@ static PIDX_return_code populate_idx_dataset(PIDX_partition_merge_idx_io file, i
   }
 
 
+  /*
   if (rank == 0 && nprocs == 2)
   {
     printf("[B] Final Block Bitmap\n");
     PIDX_blocks_print_layout(block_layout);
   }
+  */
 
 
   block_layout->file_bitmap = malloc(file->idx_d->max_file_count * sizeof (int));
@@ -984,7 +1027,7 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
             }
 
             //int clr = (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * index_k) + (file->idx_d->idx_count[0] * index_j) + (index_i);
-            //printf("[R %d] %d ----> %d Color %d\n", rank, clr, z_order, colors[z_order]);
+            //printf("[R %d] %d ----> Color %d\n", rank, z_order, colors[z_order]);
 
             //file->idx_d->color = colors[clr];
             file->idx_d->color = colors[z_order];
@@ -1036,14 +1079,16 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
               var->sim_patch[0]->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
               var->sim_patch[0]->size[3] = 1;
               var->sim_patch[0]->size[4] = 1;
+
+              //printf("RC [%d %d] : %d %d %d\n", rank, file->idx_d->color, var->sim_patch[0]->offset[0], var->sim_patch[0]->offset[1], var->sim_patch[0]->offset[2]);
             }
 
             file->idx->bounds[0] = reg_patch->size[0];
             file->idx->bounds[1] = reg_patch->size[1];
             file->idx->bounds[2] = reg_patch->size[2];
 
-            //printf("[UO %d] : %d %d %d\n", rank, var->rst_patch_group[0]->reg_patch->offset[0], var->rst_patch_group[0]->reg_patch->offset[1], var->rst_patch_group[0]->reg_patch->offset[2]);
-              //printf("[B %d] : %d %d %d\n", rank, file->idx->bounds[0], file->idx->bounds[1], file->idx->bounds[2]);
+
+            //printf("[B %d] : %d %d %d\n", rank, file->idx->bounds[0], file->idx->bounds[1], file->idx->bounds[2]);
 
             break;
           }
@@ -1081,9 +1126,9 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
   free(colors);
 
 
-  int nprocs;
-  MPI_Comm_rank(file->comm, &rank);
-  MPI_Comm_size(file->comm, &nprocs);
+  //int nprocs;
+  //MPI_Comm_rank(file->comm, &rank);
+  //MPI_Comm_size(file->comm, &nprocs);
   //printf("NP [%d] ------ R %d\n", nprocs, rank);
 
   /*
@@ -1169,7 +1214,7 @@ static PIDX_return_code partition_setup(PIDX_partition_merge_idx_io file, int st
     //
 #endif
 
-    int reg_box_size = 4;
+    int reg_box_size = 32;
     int64_t reg_patch_size[PIDX_MAX_DIMENSIONS] = {1,1,1,1,1};
 
     restructure_loop:
@@ -1473,7 +1518,6 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
     /* Create the chunking ID */
     //file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
 
-
     /* Create the aggregation ID */
     /* Create the I/O ID */
     file->tagg_id = malloc(sizeof(*(file->tagg_id)) * file->idx->variable_count);
@@ -1500,12 +1544,8 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
         file->tagg_id[i][j - file->idx_d->start_layout_index] = PIDX_agg_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
 
-
       for(j = file->idx_d->start_layout_index ; j < file->idx_d->end_layout_index; j++)
-      {
-        //printf("LC %d j %d index %d\n", file->idx_d->layout_count, j, (j - file->idx_d->start_layout_index));
         file->tio_id[i][j - file->idx_d->start_layout_index] = PIDX_file_io_init(file->idx, file->idx_d, start_var_index, i, agg_end_index);
-      }
     }
 
     file->idx_d->agg_buffer = malloc(sizeof(*(file->idx_d->agg_buffer)) * file->idx->variable_count);
@@ -1544,7 +1584,6 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
 
 
 
-
     /*------------------------------------Adding communicator [start]----------------------------------------*/
 #if PIDX_HAVE_MPI
     if (file->idx_d->parallel_mode)
@@ -1566,6 +1605,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
         for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
         //for(j = 0 ; j < file->idx_d->layout_count; j++)
         {
+          ret = PIDX_agg_set_global_communicator(file->tagg_id[i][j - file->idx_d->start_layout_index], file->global_comm);
           ret = PIDX_agg_set_communicator(file->tagg_id[i][j - file->idx_d->start_layout_index], file->comm);
           if (ret != PIDX_success)
           {
@@ -1602,6 +1642,16 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       return PIDX_err_rst;
     }
 
+
+#if PIDX_DEBUG_OUTPUT
+    l_hz_buf = 1;
+    MPI_Allreduce(&l_hz_buf, &g_hz_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_hz_buf == nprocs)
+      printf("[H] HZ Metadata Created\n");
+    l_hz_buf = 1;
+    g_hz_buf = 0;
+#endif
+
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
@@ -1629,7 +1679,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       return PIDX_err_hz;
     }
 
- #if PIDX_DEBUG_OUTPUT
+#if PIDX_DEBUG_OUTPUT
     l_hz_buf = 1;
     MPI_Allreduce(&l_hz_buf, &g_hz_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
     if (rank == 0 && g_hz_buf == nprocs)
@@ -1807,8 +1857,7 @@ static PIDX_return_code PIDX_partition_merge_write_io(PIDX_partition_merge_idx_i
       //for(j = 0 ; j < agg_io_level; j++)
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
       {
-        PIDX_agg_buf_destroy(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]);
-
+        ret = PIDX_agg_buf_destroy(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]);
         if (ret != PIDX_success)
         {
           fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -1980,7 +2029,17 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
   PIDX_time time = file->idx_d->time;
 
-  ret = populate_idx_file_structure(file);
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  {
+    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
+    if (file->idx->bounds[d] % regular_bounds[d] != 0)
+      file->idx_d->idx_count[d]++;
+
+    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], regular_bounds[d]);
+    file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));
+  }
+
+  ret = populate_idx_file_structure(file, 0);
   if (ret != PIDX_success)
   {
     fprintf(stderr, "[%s] [%d ]Error in populate_idx_file_structure\n", __FILE__, __LINE__);
@@ -2005,16 +2064,6 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   if (ret != PIDX_success)
     return PIDX_err_file;
 
-
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-  {
-    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
-    if (file->idx->bounds[d] % regular_bounds[d] != 0)
-      file->idx_d->idx_count[d]++;
-
-    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], regular_bounds[d]);
-    file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));
-  }
 
   int partion_level = (int) log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
   //partion_level = (int) pow(2, ((int)log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2])));
@@ -2065,7 +2114,7 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
 
   delete_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
-#if 1
+
   time->partition_start_time = PIDX_get_time();
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
@@ -2081,7 +2130,7 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
     return PIDX_err_file;
 
 
-  ret = populate_idx_file_structure(file);
+  ret = populate_idx_file_structure(file, 1);
   if (ret != PIDX_success)
   {
     fprintf(stderr, "[%s] [%d ]Error in populate_idx_file_structure\n", __FILE__, __LINE__);
@@ -2117,12 +2166,10 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   if (ret != PIDX_success)
     return PIDX_err_file;
 
-
+#if 1
   int rank = 0, nprocs = 1;
   MPI_Comm_size(file->global_comm, &nprocs);
   MPI_Comm_rank(file->global_comm, &rank);
-
-
 
 #if PIDX_DEBUG_OUTPUT
   l_pidx = 0;

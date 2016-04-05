@@ -107,6 +107,8 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm c
     return PIDX_err_id;
 
   agg_id->global_comm = comm;
+  PIDX_global_agg_set_global_communicator(agg_id->global_id, comm);
+  PIDX_local_agg_set_global_communicator(agg_id->local_id, comm);
 
   return PIDX_success;
 }

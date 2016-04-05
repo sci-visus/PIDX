@@ -42,6 +42,7 @@ PIDX_local_agg_id PIDX_local_agg_init(idx_dataset idx_meta_data, idx_dataset_der
 /// \param comm the communicator
 /// \return error code
 PIDX_return_code PIDX_local_agg_set_communicator(PIDX_local_agg_id io_id, MPI_Comm comm);
+PIDX_return_code PIDX_local_agg_set_global_communicator(PIDX_local_agg_id agg_id, MPI_Comm comm);
 
 
 PIDX_return_code PIDX_local_agg_set_local_communicator(PIDX_local_agg_id local_agg_id, MPI_Comm comm);

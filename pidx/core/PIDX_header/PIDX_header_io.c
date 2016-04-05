@@ -325,7 +325,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
           return 1;
         }
 
-        //printf("%d -> MAP [%d %d %d] -> %d [%s (%s)]\n", i, header_io_id->idx_d->idx_count[0], header_io_id->idx_d->idx_count[1], header_io_id->idx_d->idx_count[2], adjusted_file_index, bin_file, header_io_id->idx->filename_template);
+        printf("[COLOR %d] %d -> MAP [%d %d %d] L %d -> %d [%s (%s)]\n", header_io_id->idx_d->color, i, header_io_id->idx_d->idx_count[0], header_io_id->idx_d->idx_count[1], header_io_id->idx_d->idx_count[2], l, adjusted_file_index, bin_file, header_io_id->idx->filename_template);
 
         //TODO: the logic for creating the subdirectory hierarchy could
         //be made to be more efficient than this. This implementation
@@ -508,7 +508,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   int block_negative_offset = 0;
   int i = 0, j = 0, k = 0, all_scalars = 0;
   off_t data_offset = 0, base_offset = 0;
-  //int total_file_size = 0;
+  int total_file_size = 0;
 
   int64_t total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2] * header_io_id->idx->chunk_size[3] * header_io_id->idx->chunk_size[4]);// / (64 / header_io_id->idx->compression_bit_rate);
 
@@ -568,7 +568,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor));
 
-        //total_file_size = data_offset + header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor);
+        total_file_size = data_offset + header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor);
       }
     }
   }

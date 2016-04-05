@@ -120,6 +120,13 @@ struct idx_file_struct
   double transform[16];
   char bitSequence[512];
   char bitPattern[512];
+
+  char idx_cg_bitSequence[512];
+  char idx_cg_bitPattern[512];
+
+  char idx_cl_bitSequence[512];
+  char idx_cl_bitPattern[512];
+
   char filename_template[1024];                                         ///< Depends on the time step
   
   int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
