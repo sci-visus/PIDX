@@ -1385,7 +1385,7 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   int rank = 0;
   MPI_Comm_rank(agg_id->comm, &rank);
 
-  agg_id->idx_d->time->windows_start[vi][bi] = PIDX_get_time();
+  agg_id->idx_d->time->windows_start[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
   ret = create_window(agg_id, agg_buffer, agg_id->comm);
   if (ret != PIDX_success)
   {
@@ -1414,18 +1414,18 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
     }
   }
   */
-  agg_id->idx_d->time->windows_end[vi][bi] = PIDX_get_time();
+  agg_id->idx_d->time->windows_end[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
 
 #if !SIMULATE_IO
 #ifdef PIDX_ACTIVE_TARGET
-  agg_id->idx_d->time->first_fence_start[vi][bi] = PIDX_get_time();
+  agg_id->idx_d->time->first_fence_start[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
   ret = MPI_Win_fence(0, agg_id->win);
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
-  agg_id->idx_d->time->first_fence_end[vi][bi] = PIDX_get_time();
+  agg_id->idx_d->time->first_fence_end[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
 #endif
 #endif
 
@@ -1475,14 +1475,14 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
 #if !SIMULATE_IO
 #if PIDX_HAVE_MPI
 #ifdef PIDX_ACTIVE_TARGET
-  agg_id->idx_d->time->second_fence_start[vi][bi] = PIDX_get_time();
+  agg_id->idx_d->time->second_fence_start[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
   ret = MPI_Win_fence(0, agg_id->win);
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
-  agg_id->idx_d->time->second_fence_end[vi][bi] = PIDX_get_time();
+  agg_id->idx_d->time->second_fence_end[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
 #endif
 #endif
 #endif
@@ -1495,7 +1495,7 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
     fprintf(stderr, " [%s] [%d] Window create error.\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
-  agg_id->idx_d->time->fence_free[vi][bi] = PIDX_get_time();
+  agg_id->idx_d->time->fence_free[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
 
 
   //bits = (agg_id->idx->variable[agg_buffer->var_number]->bits_per_value / 8)

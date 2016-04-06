@@ -1,7 +1,7 @@
 #include "../PIDX_io.h"
 
 #if PIDX_HAVE_MPI
-int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
+static int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, int start_layout, int end_layout);
@@ -1360,12 +1360,14 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
   MPI_Comm_split(file->global_comm, file->idx_d->color, rank, &(file->comm));
   free(colors);
 
+  /*
   char file_name_skeleton[1024];
   strncpy(file_name_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
 
   if (file->idx_d->idx_count[0] != 1 || file->idx_d->idx_count[1] != 1 || file->idx_d->idx_count[2] != 1)
     sprintf(file->idx->filename, "%s_%d.idx", file_name_skeleton, file->idx_d->color);
+  */
 
   //printf("File name = %s\n", file->idx->filename);
   free(local_proc_patch);
@@ -1930,7 +1932,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
       //for (j = 0 ; j < agg_io_level; j++)
       {
-        time->agg_buf_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        time->agg_buf_start[i][j] = PIDX_get_time();
 
         /* Creating the buffers required for Aggregation */
         ret = PIDX_agg_buf_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, i, j);
@@ -1939,7 +1941,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
           fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
-        time->agg_buf_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        time->agg_buf_end[i][j] = PIDX_get_time();
       }
       //static_var_counter++;
     }
@@ -1961,7 +1963,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
         //for(j = 0 ; j < agg_io_level; j++)
         for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
         {
-           time->agg_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+           time->agg_start[i][j] = PIDX_get_time();
 
            ret = PIDX_agg(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], j - file->idx_d->start_layout_index, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE, i, j - file->idx_d->start_layout_index);
 
@@ -1971,7 +1973,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
              return PIDX_err_rst;
            }
 
-           time->agg_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+           time->agg_end[i][j] = PIDX_get_time();
         }
         //static_var_counter++;
       }
@@ -2025,7 +2027,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
           for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
           //for(j = 0 ; j < agg_io_level; j++)
           {
-            time->io_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+            time->io_start[i][j] = PIDX_get_time();
 
             ret = PIDX_aggregated_io(file->tio_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE);
             if (ret != PIDX_success)
@@ -2034,7 +2036,7 @@ static PIDX_return_code PIDX_partitioned_write_io(PIDX_partitioned_idx_io file, 
               return PIDX_err_io;
             }
 
-            time->io_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+            time->io_end[i][j] = PIDX_get_time();
           }
         //static_var_counter++;
       }
@@ -2766,7 +2768,7 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
 
   int d = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-  {
+      {
     file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
     if (file->idx->bounds[d] % regular_bounds[d] != 0)
       file->idx_d->idx_count[d]++;
@@ -2785,6 +2787,10 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
   ret = initialize_once_per_idx(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
     return PIDX_err_file;
+
+
+  if (file->idx_d->maxh == 0 || remainder_level == 0)
+      return PIDX_success;
 
   time->populate_idx_start_time = PIDX_get_time();
 
@@ -2808,7 +2814,7 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
     return PIDX_err_file;
   }
 
-  printf("From to to: %d %d\n", file->idx_d->maxh - remainder_level, file->idx_d->maxh);
+  //printf("From to to: %d %d RL %d\n", file->idx_d->maxh - remainder_level, file->idx_d->maxh, remainder_level);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
   ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index);

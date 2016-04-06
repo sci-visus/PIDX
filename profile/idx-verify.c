@@ -63,8 +63,8 @@ static int compression_block_size[PIDX_MAX_DIMENSIONS] = {1, 1, 1, 1, 1};
 static int compression_bit_rate = 0;
 static int compression_type = 0;
 
-static void revstr(char* str);
-static void GuessBitmaskPattern(char* _bits, PointND dims);
+//static void revstr(char* str);
+//static void GuessBitmaskPattern(char* _bits, PointND dims);
 static int generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template);
 static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen);
 static int is_block_present(int block_number, block_layout layout);
@@ -1007,6 +1007,7 @@ static int generate_file_name_template(int maxh, int bits_per_block, char* filen
   return 0;
 }
 
+/*
 static void revstr(char* str)
 {
   int64_t i;
@@ -1017,6 +1018,7 @@ static void revstr(char* str)
   cpstr[i] = '\0';
   strcpy(str, cpstr);
 }
+
 
 static void GuessBitmaskPattern(char* _bits, PointND dims)
 {
@@ -1082,6 +1084,7 @@ static void GuessBitmaskPattern(char* _bits, PointND dims)
   revstr(_bits+1);
   //strrev(_bits+1)
 }
+*/
 
 static int is_block_present(int block_number, block_layout layout)
 {

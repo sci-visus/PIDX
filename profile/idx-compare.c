@@ -93,14 +93,14 @@ int main(int argc, char **argv)
   rc = read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
   if (rc != (sizeof(*binheader1) * binheader_count))
   {
-    printf("Error reading header %d %d\n", rc, (sizeof(*binheader1) * binheader_count));
+    //printf("Error reading header %d %d\n", rc, (sizeof(*binheader1) * binheader_count));
     exit(0);
   }
 
   rc = read(fd2, binheader2, (sizeof(*binheader2) * binheader_count));
   if (rc != (sizeof(*binheader2) * binheader_count))
   {
-    printf("Error reading header %d %d\n", rc, (sizeof(*binheader2) * binheader_count));
+    //printf("Error reading header %d %d\n", rc, (sizeof(*binheader2) * binheader_count));
     exit(0);
   }
   
@@ -151,7 +151,7 @@ int main(int argc, char **argv)
           else
           {
             non_zero_unequal_count[var]++;
-            printf("[W] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+            //printf("[W] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
           }
         }
       }

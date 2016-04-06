@@ -359,7 +359,7 @@ void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, i
 
   if (max_time == total_time)
   {
-    fprintf(stdout, "[P %d] Time Taken: %f Seconds\n", rank, max_time);
+    fprintf(stdout, "[P %d %d] Time Taken: %f Seconds\n", rank, nprocs, max_time);
     fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
     printf("Partition time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
     fprintf(stdout, "File Create Time: %f Seconds\n", (time->file_create_time - time->sim_start));
@@ -372,7 +372,7 @@ void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, i
     }
     double total_time_ai = 0, total_time_bc = 0, total_time_a = 0, total_time_i = 0, total_time_pi = 0;
     int p = 0;
-    for (var = 0; var <  var_count * 2; var++)
+    for (var = 0; var <  var_count; var++)
     {
       for (p = 0; p < layout_count; p++)
       {
@@ -407,7 +407,7 @@ void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, i
 
 
     double total_time_rch = 0;
-    for (var = 0; var < var_count * 2; var++)
+    for (var = 0; var < var_count; var++)
     {
       fprintf(stdout, "[%d] STARTUP + HZ + FINALIZE = %f + %f + %f = %f\n", var, (time->startup_end[var] - time->startup_start[var]), (time->hz_end[var] - time->hz_start[var]), (time->finalize_end[var] - time->finalize_start[var]), (time->startup_end[var] - time->startup_start[var]) + (time->hz_end[var] - time->hz_start[var]));
       total_time_rch = total_time_rch + (time->startup_end[var] - time->startup_start[var]) + (time->finalize_end[var] - time->finalize_start[var]) + (time->hz_end[var] - time->hz_start[var]);
