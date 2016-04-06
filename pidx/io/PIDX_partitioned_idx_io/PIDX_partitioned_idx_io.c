@@ -2768,7 +2768,7 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
 
   int d = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-      {
+   {
     file->idx_d->idx_count[d] = file->idx->bounds[d] / file->idx_d->idx_size[d];
     if (file->idx->bounds[d] % file->idx_d->idx_size[d] != 0)
       file->idx_d->idx_count[d]++;

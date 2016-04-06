@@ -817,7 +817,10 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
   file->idx_d->idx_size[0] = count_x;
   file->idx_d->idx_size[1] = count_y;
   file->idx_d->idx_size[2] = count_z;
+  file->idx_d->idx_size[3] = 1;
+  file->idx_d->idx_size[4] = 1;
 
+  //printf("{S %d %d %d\n", file->idx_d->idx_size[0], file->idx_d->idx_size[1], file->idx_d->idx_size[2]);
   return PIDX_validate(file);
 }
 

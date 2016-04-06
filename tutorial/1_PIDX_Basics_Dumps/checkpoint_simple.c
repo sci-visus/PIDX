@@ -190,7 +190,7 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('p'): // local dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &partition_size[0], &partition_size[1], &partition_size[2]) == EOF) ||(partition_size[0] < 1 || partition_size[1] < 1 || partition_size[2] < 1))
+      if ((sscanf(optarg, "%dx%dx%d", &partition_size[0], &partition_size[1], &partition_size[2]) == EOF) ||(partition_size[0] < 1 || partition_size[1] < 1 || partition_size[2] < 1))
         terminate_with_error_msg("Invalid partition dimension\n%s", usage);
       break;
 
