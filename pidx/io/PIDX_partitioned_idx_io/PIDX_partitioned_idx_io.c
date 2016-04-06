@@ -1,6 +1,7 @@
 #include "../PIDX_io.h"
 
 #if PIDX_HAVE_MPI
+int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, int start_layout, int end_layout);
@@ -1190,13 +1191,6 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
   int index_i = 0, index_j = 0, index_k = 0;
   int i = 0, j = 0, k = 0, d = 0;
   //PIDX_return_code ret;
-  int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-  {
-    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
-    if (file->idx->bounds[d] % regular_bounds[d] != 0)
-      file->idx_d->idx_count[d]++;
-  }
 
   int rank = 0;
   MPI_Comm_rank(file->global_comm, &rank);
@@ -2762,12 +2756,28 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
 
   PIDX_time time = file->idx_d->time;
 
+
   ret = populate_idx_file_structure(file);
   if (ret != PIDX_success)
   {
     fprintf(stderr, "[%s] [%d ]Error in populate_idx_file_structure\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+  int d = 0;
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  {
+    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
+    if (file->idx->bounds[d] % regular_bounds[d] != 0)
+      file->idx_d->idx_count[d]++;
+
+    file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));
+    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], regular_bounds[d]);
+  }
+  int partion_level = (int) log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
+  int total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
+  int remainder_level = file->idx_d->maxh - total_partiton_level;
+
   file->idx_d->perm_layout_count = (file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
   if (file->idx_d->perm_layout_count <= 0)
     file->idx_d->perm_layout_count = 1;
@@ -2798,8 +2808,9 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
     return PIDX_err_file;
   }
 
+  printf("From to to: %d %d\n", file->idx_d->maxh - remainder_level, file->idx_d->maxh);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
-  ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh - 1);
+  ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
     return PIDX_err_file;

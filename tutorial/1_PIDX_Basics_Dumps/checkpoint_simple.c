@@ -272,7 +272,7 @@ int main(int argc, char **argv)
     switch (io_type)
     {
       case PIDX_IDX_IO:
-        PIDX_set_block_count(file, 128);
+        PIDX_set_block_count(file, 64);
         break;
 
       case PIDX_PARTITION_MERGE_IDX_IO:
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
         break;
 
       case PIDX_PARTITIONED_IDX_IO:
-        PIDX_set_block_count(file, 128);
+        PIDX_set_block_count(file, 64);
         PIDX_enable_partitioned_io(file);
         break;
 

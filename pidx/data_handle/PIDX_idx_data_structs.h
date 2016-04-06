@@ -95,6 +95,7 @@ struct PIDX_variable_struct
   Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
 
   // Block level layout
+  PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
 

@@ -1401,6 +1401,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], regular_bounds[d]);
   }
 
+  int partion_level = (int) log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
+  int total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
   ret = populate_idx_file_structure(file, 0);
   if (ret != PIDX_success)
   {
@@ -1413,7 +1415,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   file->idx_d->color = 0;
 
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
-  ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh - 1);
+  ret = populate_idx_dataset(file, start_var_index, end_var_index, total_partiton_level, file->idx_d->maxh);
   if (ret != PIDX_success)
     return PIDX_err_file;
 
@@ -1655,11 +1657,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
         file->idx_d->agg_buffer[i][j]->aggregator_interval = 0;
         file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;
       }
-
-      /*
-      for (j = 1 ; j < agg_io_level; j++)
-        file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;//(int)pow(2, (agg_io_level - j));
-      */
+      //for (j = 0 ; j < agg_io_level; j++)
+      //  file->idx_d->agg_buffer[i][j]->aggregation_factor = 2;//(int)pow(2, (agg_io_level - j));
     }
     /*------------------------------------Create ALL the IDs [end]-------------------------------------------*/
 

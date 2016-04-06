@@ -1498,6 +1498,9 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   agg_id->idx_d->time->fence_free[vi][bi] = PIDX_get_time();
 
 
+  //bits = (agg_id->idx->variable[agg_buffer->var_number]->bits_per_value / 8)
+  //scan(agg_buffer->buffer);
+
 #endif
 #endif
 
