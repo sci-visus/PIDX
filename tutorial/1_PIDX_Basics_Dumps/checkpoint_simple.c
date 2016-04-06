@@ -283,7 +283,7 @@ int main(int argc, char **argv)
         break;
 
       case PIDX_PARTITIONED_IDX_IO:
-        PIDX_set_block_count(file, 64);
+        //PIDX_set_block_count(file, 64);
         PIDX_enable_partitioned_io(file);
         break;
 
@@ -295,8 +295,8 @@ int main(int argc, char **argv)
         break;
     }
 
-    //ret = PIDX_debug_disable_io(file);
-    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
+    ret = PIDX_debug_disable_io(file);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
     ret = PIDX_debug_output(file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");

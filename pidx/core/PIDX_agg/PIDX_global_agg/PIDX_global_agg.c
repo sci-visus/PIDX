@@ -982,6 +982,10 @@ PIDX_return_code PIDX_global_agg_buf_create(PIDX_global_agg_id agg_id, Agg_buffe
             agg_buffer->var_number = i;
             agg_buffer->sample_number = j;
 
+            int adjusted_file_index = 0;
+            int l = pow(2, ((int)log2(agg_buffer->file_number * agg_id->idx->blocks_per_file)));
+            adjusted_file_index = (l * (agg_id->idx_d->idx_count[0] * agg_id->idx_d->idx_count[1] * agg_id->idx_d->idx_count[2]) + ((agg_buffer->file_number * agg_id->idx->blocks_per_file) - l) + (agg_id->idx_d->color * l)) / agg_id->idx->blocks_per_file;
+
             uint64_t sample_count = global_block_layout->block_count_per_file[agg_buffer->file_number] * agg_id->idx_d->samples_per_block / agg_buffer->aggregation_factor;
 
             int total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
@@ -989,7 +993,7 @@ PIDX_return_code PIDX_global_agg_buf_create(PIDX_global_agg_id agg_id, Agg_buffe
             int bytes_per_datatype = (total_chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / ( agg_id->idx->compression_factor);
 
             agg_buffer->buffer_size = sample_count * bytes_per_datatype;
-            printf("(GLOBAL) [%d %d] [%d %d %d] buffer_size = %d (%d %d) Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, i1, j1, agg_buffer->aggregator_interval);
+            printf("(GLOBAL) [L %d G %d] [L %d G %d %d %d] buffer_size = %d (%d %d) Agg interval %d\n", rank, grank, agg_buffer->file_number, adjusted_file_index, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, i1, j1, agg_buffer->aggregator_interval);
 
 #if !SIMULATE_IO
             agg_buffer->buffer = malloc(agg_buffer->buffer_size);
