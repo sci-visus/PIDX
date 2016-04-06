@@ -2816,7 +2816,8 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
 
   //printf("From to to: %d %d RL %d\n", file->idx_d->maxh - remainder_level, file->idx_d->maxh, remainder_level);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
-  ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);
+  //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - remainder_level, file->idx_d->maxh);
+  ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh - remainder_level);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
     return PIDX_err_file;
