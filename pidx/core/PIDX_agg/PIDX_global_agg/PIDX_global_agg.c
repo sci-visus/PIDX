@@ -1501,10 +1501,77 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   }
   agg_id->idx_d->time->fence_free[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
 
-
-  //bits = (agg_id->idx->variable[agg_buffer->var_number]->bits_per_value / 8)
-  //scan(agg_buffer->buffer);
-
+  /* Scan and "pack" the aggregation buffer to get rid of the metadata */  
+  uint64_t start_block = 0;  
+  uint64_t compressed_size = 0;
+  int sample_size = agg_id->idx->variable[agg_buffer->var_number]->bits_per_value / 8;
+  uint32_t modified_sample_size = sample_size + 2*sizeof(uint32_t) + sizeof(uint8_t);
+  uint32_t total_sample_counts = 0;
+  while (start_block < agg_buffer->buffer_size) {
+    // read the number of samples in the block and the size of the block
+    unsigned char* num_samples_ptr = agg_buffer->buffer + start_block;    
+    uint32_t num_samples = *((uint32_t*)num_samples_ptr);
+    uint32_t block_meta_data_size = 2*sizeof(uint32_t) + sizeof(uint8_t)*num_samples;
+    unsigned char* block_size_ptr = num_samples_ptr + sizeof(uint32_t);
+    uint32_t block_size = *((uint32_t*)block_size_ptr);
+    
+    compressed_size += block_size - block_meta_data_size;        
+    total_sample_counts += num_samples;
+    
+    // jump
+    start_block += num_samples * modified_sample_size;
+  }
+  
+  // how many IDX blocks do I have?
+  uint32_t samples_per_block = 0; // TODO
+  uint32_t num_idx_blocks = total_sample_counts / samples_per_block;
+  agg_buffer->compressed_block_size = malloc(sizeof(uint64_t) * num_idx_blocks);    
+  
+  // allocate a new buffer to copy the data over
+  unsigned char* compressed_buffer = malloc(compressed_size);
+  
+  uint64_t bytes_copied = 0;
+  start_block = 0;
+  uint32_t compressed_block_size = 0;
+  uint32_t current_sample = 0;
+  uint32_t current_block = 0;  
+  // scan and copy
+  while (start_block < agg_buffer->buffer_size) {    
+    unsigned char* num_samples_ptr = agg_buffer->buffer + start_block;    
+    uint32_t num_samples = *((uint32_t*)num_samples_ptr);    
+    
+    // copy one sample at a time
+    uint32_t sample_index = 0;
+    unsigned char* sample_ptr = num_samples_ptr + 2*sizeof(uint32_t);    
+    for (sample_index = 0; sample_index < num_samples; ++sample_index) {
+      unsigned char temp = *sample_ptr;
+      uint32_t compressed_sample_size = (uint32_t)temp + 1;
+      
+      // copy the sample
+      sample_ptr += 1;      
+      memcpy(compressed_buffer+bytes_copied, sample_ptr, compressed_sample_size);
+      bytes_copied += compressed_sample_size;
+      sample_ptr += compressed_sample_size;
+      
+      // deal with idx blocks
+      ++current_sample;
+      compressed_block_size += compressed_sample_size;
+      if (current_sample % samples_per_block == 0) { // we finish one block
+        agg_buffer->compressed_block_size[current_block] = compressed_block_size;
+        ++current_block;
+        compressed_block_size = 0;
+      }
+    }
+    
+    // jump
+    start_block += num_samples * modified_sample_size;
+  }
+  
+  // delete the old data and set the pointer to the new data
+  free(agg_buffer->buffer);  
+  agg_buffer->buffer = compressed_buffer;
+  agg_buffer->buffer_size = compressed_size;
+    
 #endif
 #endif
 
