@@ -168,6 +168,7 @@ struct idx_dataset_derived_metadata_struct
 
   int color;
   int idx_count[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
+  int idx_size[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
 
   int var_pipe_length;
   int parallel_mode;

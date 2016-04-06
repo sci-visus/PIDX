@@ -1,7 +1,7 @@
 #include "../PIDX_io.h"
 
 #if PIDX_HAVE_MPI
-static int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 256, 1, 1};
+//static int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 256, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, int start_layout, int end_layout);
@@ -1243,33 +1243,33 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
     int z_order = 0;
     int number_levels = maxH - 1;
 
-    if ((regular_bounds[0]) > file->idx->bounds[0])
-      regular_bounds[0] = file->idx->bounds[0];
-    if ((regular_bounds[1]) > file->idx->bounds[1])
-      regular_bounds[1] = file->idx->bounds[1];
-    if ((regular_bounds[2]) > file->idx->bounds[2])
-      regular_bounds[2] = file->idx->bounds[2];
+    if ((file->idx_d->idx_size[0]) > file->idx->bounds[0])
+      file->idx_d->idx_size[0] = file->idx->bounds[0];
+    if ((file->idx_d->idx_size[1]) > file->idx->bounds[1])
+      file->idx_d->idx_size[1] = file->idx->bounds[1];
+    if ((file->idx_d->idx_size[2]) > file->idx->bounds[2])
+      file->idx_d->idx_size[2] = file->idx->bounds[2];
 
-    for (i = 0, index_i = 0; i < file->idx->bounds[0]; i = i + regular_bounds[0], index_i++)
+    for (i = 0, index_i = 0; i < file->idx->bounds[0]; i = i + file->idx_d->idx_size[0], index_i++)
     {
-      for (j = 0, index_j = 0; j < file->idx->bounds[1]; j = j + regular_bounds[1], index_j++)
+      for (j = 0, index_j = 0; j < file->idx->bounds[1]; j = j + file->idx_d->idx_size[1], index_j++)
       {
-        for (k = 0, index_k = 0; k < file->idx->bounds[2]; k = k + regular_bounds[2], index_k++)
+        for (k = 0, index_k = 0; k < file->idx->bounds[2]; k = k + file->idx_d->idx_size[2], index_k++)
         {
           reg_patch->offset[0] = i;
           reg_patch->offset[1] = j;
           reg_patch->offset[2] = k;
-          reg_patch->size[0] = regular_bounds[0];
-          reg_patch->size[1] = regular_bounds[1];
-          reg_patch->size[2] = regular_bounds[2];
+          reg_patch->size[0] = file->idx_d->idx_size[0];
+          reg_patch->size[1] = file->idx_d->idx_size[1];
+          reg_patch->size[2] = file->idx_d->idx_size[2];
 
           //Edge regular patches
           /*
-          if ((i + regular_bounds[0]) > file->idx->bounds[0])
+          if ((i + file->idx_d->idx_size[0]) > file->idx->bounds[0])
             reg_patch->size[0] = file->idx->bounds[0] - i;
-          if ((j + regular_bounds[1]) > file->idx->bounds[1])
+          if ((j + file->idx_d->idx_size[1]) > file->idx->bounds[1])
             reg_patch->size[1] = file->idx->bounds[1] - j;
-          if ((k + regular_bounds[2]) > file->idx->bounds[2])
+          if ((k + file->idx_d->idx_size[2]) > file->idx->bounds[2])
             reg_patch->size[2] = file->idx->bounds[2] - k;
           */
 
@@ -1302,9 +1302,9 @@ static PIDX_return_code partition(PIDX_partitioned_idx_io file, int start_var_in
             file->idx_d->color = colors[z_order];
             //printf("[%d] ---> %d\n", rank, file->idx_d->color);
 
-            distance_x = index_i * regular_bounds[0];
-            distance_y = index_j * regular_bounds[1];
-            distance_z = index_k * regular_bounds[2];
+            distance_x = index_i * file->idx_d->idx_size[0];
+            distance_y = index_j * file->idx_d->idx_size[1];
+            distance_z = index_k * file->idx_d->idx_size[2];
 
             var->rst_patch_group[0]->reg_patch->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0] - distance_x;
             var->rst_patch_group[0]->reg_patch->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1] - distance_y;
@@ -2769,12 +2769,12 @@ PIDX_return_code PIDX_partitioned_idx_write(PIDX_partitioned_idx_io file, int st
   int d = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
-    if (file->idx->bounds[d] % regular_bounds[d] != 0)
+    file->idx_d->idx_count[d] = file->idx->bounds[d] / file->idx_d->idx_size[d];
+    if (file->idx->bounds[d] % file->idx_d->idx_size[d] != 0)
       file->idx_d->idx_count[d]++;
 
     file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));
-    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], regular_bounds[d]);
+    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], file->idx_d->idx_size[d]);
   }
   int partion_level = (int) log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
   int total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;

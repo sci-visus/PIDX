@@ -795,19 +795,28 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
 {
   if(dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
     return PIDX_err_box;
+
+  if(file == NULL)
+    return PIDX_err_file;
+
+  memcpy(file->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z)
+{
+  if(count_x < 0 || count_y < 0 || count_z < 0)
+    return PIDX_err_box;
   
   if(file == NULL)
     return PIDX_err_file;
   
-  memcpy(file->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-  
-  //file->idx->bounds[0] = file->idx->bounds[0] / file->idx_d->idx_count[0];
-  //file->idx->bounds[1] = file->idx->bounds[1] / file->idx_d->idx_count[1];
-  //file->idx->bounds[2] = file->idx->bounds[2] / file->idx_d->idx_count[2];
-
-  //file->idx->bounds[0] = file->idx->bounds[0];
-  //file->idx->bounds[1] = file->idx->bounds[1];
-  //file->idx->bounds[2] = file->idx->bounds[2];
+  file->idx_d->idx_size[0] = count_x;
+  file->idx_d->idx_size[1] = count_y;
+  file->idx_d->idx_size[2] = count_z;
 
   return PIDX_validate(file);
 }

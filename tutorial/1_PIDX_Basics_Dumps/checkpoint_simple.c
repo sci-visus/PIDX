@@ -45,6 +45,7 @@ static int process_count = 1, rank = 0;
 static unsigned long long global_box_size[3] = {162, 162, 42};
 static unsigned long long local_box_offset[3];
 static unsigned long long local_box_size[3] = {20, 20, 20};
+int partition_size[3] = {1, 1, 1};
 int sub_div[NUM_DIMS] = {1,1,1};
 static int time_step_count = 1;
 static int variable_count = 1;
@@ -170,7 +171,7 @@ static void destroy_synthetic_simulation_data()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:";
+  char flags[] = "g:l:p:f:t:v:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -186,6 +187,11 @@ static void parse_args(int argc, char **argv)
     case('l'): // local dimension
       if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||(local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
+      break;
+
+    case('p'): // local dimension
+      if ((sscanf(optarg, "%lldx%lldx%lld", &partition_size[0], &partition_size[1], &partition_size[2]) == EOF) ||(partition_size[0] < 1 || partition_size[1] < 1 || partition_size[2] < 1))
+        terminate_with_error_msg("Invalid partition dimension\n%s", usage);
       break;
 
     case('f'): // output file name
@@ -265,6 +271,9 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
+
+    ret = PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
 
     int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;

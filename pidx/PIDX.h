@@ -499,6 +499,11 @@ PIDX_return_code PIDX_time_step_caching_OFF();
 PIDX_return_code PIDX_debug_output(PIDX_file file);
 
 
+
+///
+PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z);
+
+
 #ifdef __cplusplus
 }
 #endif
