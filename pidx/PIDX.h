@@ -504,6 +504,11 @@ PIDX_return_code PIDX_debug_output(PIDX_file file);
 PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z);
 
 
+
+///
+PIDX_return_code PIDX_set_aggregator_multiplier(PIDX_file file, int count_aggregator_multiplier);
+
+
 #ifdef __cplusplus
 }
 #endif

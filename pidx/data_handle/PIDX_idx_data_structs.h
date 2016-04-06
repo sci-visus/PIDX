@@ -189,6 +189,7 @@ struct idx_dataset_derived_metadata_struct
 
   PIDX_time time;
 
+  int aggregator_multiplier;
   int data_core_count;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;

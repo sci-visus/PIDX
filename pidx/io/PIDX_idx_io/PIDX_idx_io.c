@@ -1,6 +1,6 @@
 #include "../PIDX_io.h"
 
-static int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
+//static int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_var_index, int end_var_index);
 static PIDX_return_code populate_idx_dataset(PIDX_idx_io file, int start_var_index, int end_var_index, int start_layout_index, int end_layout_index);
@@ -183,11 +183,11 @@ static PIDX_return_code populate_idx_file_structure(PIDX_idx_io file, int partit
 
 
     PointND idx_l_point;
-    idx_l_point.x = (int) regular_bounds[0];
-    idx_l_point.y = (int) regular_bounds[1];
-    idx_l_point.z = (int) regular_bounds[2];
-    idx_l_point.u = (int) regular_bounds[3];
-    idx_l_point.v = (int) regular_bounds[4];
+    idx_l_point.x = (int) file->idx_d->idx_size[0];
+    idx_l_point.y = (int) file->idx_d->idx_size[1];
+    idx_l_point.z = (int) file->idx_d->idx_size[2];
+    idx_l_point.u = (int) file->idx_d->idx_size[3];
+    idx_l_point.v = (int) file->idx_d->idx_size[4];
     GuessBitmaskPattern(file->idx->idx_cl_bitSequence, idx_l_point);
     //printf("Local %s\n", file->idx->idx_cl_bitSequence);
 
@@ -1335,12 +1335,14 @@ static PIDX_return_code partition_setup(PIDX_idx_io file, int start_var_index, i
    }
 
 
+  /*
   char file_name_skeleton[1024];
   strncpy(file_name_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
 
   if (file->idx_d->idx_count[0] != 1 || file->idx_d->idx_count[1] != 1 || file->idx_d->idx_count[2] != 1)
     sprintf(file->idx->filename, "%s_%d.idx", file_name_skeleton, file->idx_d->color);
+  */
 
   free(local_proc_patch);
 #endif
@@ -1392,17 +1394,15 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   int d = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
-    if (file->idx->bounds[d] % regular_bounds[d] != 0)
+    file->idx_d->idx_count[d] = file->idx->bounds[d] / file->idx_d->idx_size[d];
+    if (file->idx->bounds[d] % file->idx_d->idx_size[d] != 0)
       file->idx_d->idx_count[d]++;
 
 
     file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));
-    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], regular_bounds[d]);
+    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], file->idx_d->idx_size[d]);
   }
 
-  int partion_level = (int) log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
-  int total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
   ret = populate_idx_file_structure(file, 0);
   if (ret != PIDX_success)
   {
@@ -1410,12 +1410,53 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     return PIDX_err_file;
   }
 
+  int partion_level = (int) log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
+  int total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
+  int remainder_level = file->idx_d->maxh - total_partiton_level;
+
+  file->idx_d->perm_layout_count = (file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
+  if (file->idx_d->perm_layout_count <= 0)
+    file->idx_d->perm_layout_count = 1;
+
+
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     file->idx_d->idx_count[d] = 1;
   file->idx_d->color = 0;
 
+  /// Initialization ONLY ONCE per IDX file
+  if (file->one_time_initializations == 0)
+  {
+    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
+    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
+
+    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
+
+    total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
+    file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
+    if (total_header_size % file->idx_d->fs_block_size)
+      file->idx_d->start_fs_block++;
+
+    /*
+    ret = PIDX_parameter_validate(file, start_var_index, end_var_index);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
+    */
+
+    file->one_time_initializations = 1;
+  }
+
+  if (file->idx_d->maxh == 0 || remainder_level == 0)
+  {
+    time->populate_idx_end_time = PIDX_get_time();
+    return PIDX_success;
+  }
+
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
-  ret = populate_idx_dataset(file, start_var_index, end_var_index, total_partiton_level, file->idx_d->maxh);
+  //printf("LEVELS = %d %d\n", total_partiton_level, file->idx_d->maxh);
+  //ret = populate_idx_dataset(file, start_var_index, end_var_index, total_partiton_level, file->idx_d->maxh);
+  ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
   if (ret != PIDX_success)
     return PIDX_err_file;
 
@@ -1431,27 +1472,6 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     printf("Finished Populating IDX dataset (File Count %d maxh = %d)\n", file->idx_d->max_file_count, file->idx_d->maxh);
 #endif
 
-  /// Initialization ONLY ONCE per IDX file
-  if (file->one_time_initializations == 0)
-  {
-    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
-    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->layout_count);
-
-    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
-    if (ret != PIDX_success)
-      return PIDX_err_file;
-    
-    total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
-    file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
-    if (total_header_size % file->idx_d->fs_block_size)
-      file->idx_d->start_fs_block++;
-    
-    ret = PIDX_parameter_validate(file, start_var_index, end_var_index);
-    if (ret != PIDX_success)
-      return PIDX_err_file;
-
-    file->one_time_initializations = 1;
-  }
 
   file->idx_d->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
   memset(file->idx_d->rank_r_offset, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
@@ -1657,8 +1677,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
         file->idx_d->agg_buffer[i][j]->aggregator_interval = 0;
         file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;
       }
-      //for (j = 0 ; j < agg_io_level; j++)
-      //  file->idx_d->agg_buffer[i][j]->aggregation_factor = 2;//(int)pow(2, (agg_io_level - j));
+      for (j = 0 ; j < agg_io_level; j++)
+        file->idx_d->agg_buffer[i][j]->aggregation_factor = file->idx_d->aggregator_multiplier;//(int)pow(2, (agg_io_level - j));
     }
     /*------------------------------------Create ALL the IDs [end]-------------------------------------------*/
 

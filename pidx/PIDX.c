@@ -825,6 +825,17 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
 }
 
 
+PIDX_return_code PIDX_set_aggregator_multiplier(PIDX_file file, int count_aggregator_multiplier)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->idx_d->aggregator_multiplier = count_aggregator_multiplier;
+
+  return PIDX_success;
+}
+
+
 
 PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims)
 {
