@@ -2,7 +2,8 @@
 
 //static int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
-static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_var_index, int end_var_index);
+//static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_var_index, int end_var_index);
+static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_index, int end_index, int start_hz_level, int end_hz_level);
 static PIDX_return_code populate_idx_dataset(PIDX_idx_io file, int start_var_index, int end_var_index, int start_layout_index, int end_layout_index);
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_idx_io file, char* file_name, int current_time_step);
 static PIDX_return_code PIDX_parameter_validate(PIDX_idx_io file, int start_var_index, int end_var_index);
@@ -495,7 +496,7 @@ static PIDX_return_code populate_idx_layout(PIDX_idx_io file, int start_var_inde
   return PIDX_success;
 }
 
-
+#if 0
 static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_index, int end_index)
 {
   int lvi = start_index;//file->local_variable_index;
@@ -516,6 +517,36 @@ static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_index, in
     free(var->block_layout_by_level[i]);
     var->block_layout_by_level[i] = 0;
   }
+  free(var->block_layout_by_level);
+  var->block_layout_by_level = 0;
+
+  return PIDX_success;
+}
+#endif
+
+static PIDX_return_code delete_idx_dataset(PIDX_idx_io file, int start_index, int end_index, int start_hz_level, int end_hz_level)
+{
+  int lvi = start_index;//file->local_variable_index;
+  PIDX_variable var = file->idx->variable[lvi];
+
+  PIDX_blocks_free_layout(file->idx->variable[lvi]->global_block_layout);
+  PIDX_free_layout(file->idx->variable[lvi]->global_block_layout);
+
+  free(file->idx->variable[lvi]->global_block_layout);
+  file->idx->variable[lvi]->global_block_layout = 0;
+
+  int i = 0;
+
+  for (i = file->idx_d->start_layout_index; i < file->idx_d->end_layout_index ; i++)
+  {
+    PIDX_blocks_free_layout(var->block_layout_by_level[i - file->idx_d->start_layout_index]);
+    PIDX_free_layout(var->block_layout_by_level[i - file->idx_d->start_layout_index]);
+
+    free(var->block_layout_by_level[i - file->idx_d->start_layout_index]);
+    var->block_layout_by_level[i - file->idx_d->start_layout_index] = 0;
+  }
+
+
   free(var->block_layout_by_level);
   var->block_layout_by_level = 0;
 
@@ -716,6 +747,7 @@ static PIDX_return_code populate_idx_dataset(PIDX_idx_io file, int start_index, 
       ctr = ctr * 2;
     }
 
+    //printf("file->idx_d->layout_count = %d\n", file->idx_d->layout_count);
     for (i = 1; i < file->idx_d->layout_count; i++)
     {
       lower_level_higher_layout = file->idx->bits_per_block + log2(file->idx->blocks_per_file) + 1 + (i - 1);
@@ -1412,7 +1444,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
 
   int partion_level = (int) log2(file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2]);
   int total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
-  int remainder_level = file->idx_d->maxh - total_partiton_level;
+  //int remainder_level = file->idx_d->maxh - total_partiton_level;
 
   file->idx_d->perm_layout_count = (file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
   if (file->idx_d->perm_layout_count <= 0)
@@ -1447,14 +1479,19 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     file->one_time_initializations = 1;
   }
 
+  //printf("LEVELS = (0 %d) : %d\n", total_partiton_level, file->idx_d->maxh);
+  /*
   if (file->idx_d->maxh == 0 || remainder_level == 0)
   {
     time->populate_idx_end_time = PIDX_get_time();
     return PIDX_success;
   }
+  */
 
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, file->idx_d->maxh - 1, file->idx_d->maxh);
-  //printf("LEVELS = %d %d\n", total_partiton_level, file->idx_d->maxh);
+
+  if (total_partiton_level >= file->idx_d->maxh)
+    total_partiton_level = file->idx_d->maxh;
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, total_partiton_level, file->idx_d->maxh);
   ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
   if (ret != PIDX_success)
@@ -2202,7 +2239,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     //start_index++;
   }
 
-  delete_idx_dataset(file, start_var_index, end_var_index);
+  delete_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
 
 
 #if PIDX_DEBUG_OUTPUT
@@ -2891,7 +2928,7 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
     /*-----------------------------------------finalize [end]--------------------------------------------------*/
   }
 
-  delete_idx_dataset(file, start_var_index, end_var_index);
+  delete_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh);
 
 #if PIDX_DEBUG_OUTPUT
   l_pidx = 1;
