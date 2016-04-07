@@ -435,6 +435,9 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       MPI_Allgather(&agg_buf->var_number, 1, MPI_INT, aggregator_process_var_number, 1, MPI_INT, new_comm);
       MPI_Allgather(&agg_buf->sample_number, 1, MPI_INT, aggregator_process_sample_number, 1, MPI_INT, new_comm);
 
+      //MPI_Gather(agg_buf->compressed_block_size, agg_buf->num_idx_blocks, MPI_UNSIGNED_LONG, void *recvbuf, agg_buf->num_idx_blocks, MPI_UNSIGNED_LONG, 0, new_comm);
+      //global_block_layout->block_count_per_file[agg_buffer->file_number];
+
       if (MODE == PIDX_WRITE)
       {
         mpi_ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
@@ -469,7 +472,6 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       free(aggregator_process_var_number);
       free(aggregator_process_sample_number);
       MPI_Comm_free(&new_comm);
-
     }
   }
 

@@ -1501,6 +1501,9 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   }
   agg_id->idx_d->time->fence_free[vi][bi + agg_id->idx_d->start_layout_index] = PIDX_get_time();
 
+  int use_fixed_accuracy_compression = 0;
+  if (use_fixed_accuracy_compression == 1)
+  {
   /* Scan and "pack" the aggregation buffer to get rid of the metadata */  
   uint64_t start_block = 0;  
   uint64_t compressed_size = 0;
@@ -1523,8 +1526,9 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   }
   
   // how many IDX blocks do I have?
-  uint32_t samples_per_block = 0; // TODO
+  uint32_t samples_per_block = agg_id->idx_d->samples_per_block; // TODO
   uint32_t num_idx_blocks = total_sample_counts / samples_per_block;
+  agg_buffer->num_idx_blocks = num_idx_blocks;
   agg_buffer->compressed_block_size = malloc(sizeof(uint64_t) * num_idx_blocks);    
   
   // allocate a new buffer to copy the data over
@@ -1571,6 +1575,7 @@ PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffe
   free(agg_buffer->buffer);  
   agg_buffer->buffer = compressed_buffer;
   agg_buffer->buffer_size = compressed_size;
+  }
     
 #endif
 #endif

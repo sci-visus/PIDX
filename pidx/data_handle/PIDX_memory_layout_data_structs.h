@@ -90,6 +90,7 @@ struct PIDX_HZ_Agg_buffer_struct
   int aggregation_factor;
   int aggregator_interval;
 
+  int num_idx_blocks;
   uint64_t buffer_size;                                 ///< Aggregator buffer size
   uint64_t compressed_buffer_size;                      ///< Aggregator buffer size after compression
   uint64_t *compressed_block_size;                      ///< Compressed size of each block in the aggregator
