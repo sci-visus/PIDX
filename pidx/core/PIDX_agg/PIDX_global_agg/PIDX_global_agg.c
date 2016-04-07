@@ -245,6 +245,8 @@ static PIDX_return_code one_sided_data_com(PIDX_global_agg_id agg_id, Agg_buffer
 
 #if !SIMULATE_IO
 
+            //ret = compress(agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], count);
+
             ret = aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], 0, agg_buffer, block_layout, agg_id->idx->variable[agg_id->init_index]->global_block_layout, mode);
 #else
             ret = aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, agg_id->idx->variable[agg_id->init_index]->global_block_layout, mode);
@@ -798,6 +800,7 @@ static PIDX_return_code aggregate_write_read(PIDX_global_agg_id agg_id, int vari
 #if !SIMULATE_IO
 
         //printf("Count %d target rank %d target disp %d\n", hz_count, target_rank, target_disp);
+        // DUONG TODO
         ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
@@ -834,6 +837,7 @@ static PIDX_return_code aggregate_write_read(PIDX_global_agg_id agg_id, int vari
 #endif
 #if !SIMULATE_IO
         //printf("disp %d count %d\n", target_disp, hz_count);
+        // DUONG TODO
         memcpy( agg_buffer->buffer + target_disp * bytes_per_datatype, hz_buffer, hz_count * values_per_sample * bytes_per_datatype);
 #endif
       }
@@ -996,6 +1000,7 @@ PIDX_return_code PIDX_global_agg_buf_create(PIDX_global_agg_id agg_id, Agg_buffe
             printf("(GLOBAL) [L %d G %d] [L %d G %d %d %d] buffer_size = %d (%d %d) Agg interval %d\n", rank, grank, agg_buffer->file_number, adjusted_file_index, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, i1, j1, agg_buffer->aggregator_interval);
 
 #if !SIMULATE_IO
+            //TODO DUONG
             agg_buffer->buffer = malloc(agg_buffer->buffer_size);
             memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
             if (agg_buffer->buffer == NULL)

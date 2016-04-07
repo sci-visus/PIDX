@@ -4,7 +4,7 @@
 
 #if PIDX_HAVE_MPI
 
-static int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 256, 1, 1};
+//static int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 256, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 static PIDX_return_code delete_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int hz_level_from, int hz_level_to);
 static PIDX_return_code populate_idx_dataset(PIDX_partition_merge_idx_io file, int start_var_index, int end_var_index, int hz_level_from, int hz_level_to);
@@ -166,11 +166,11 @@ static PIDX_return_code populate_idx_file_structure(PIDX_partition_merge_idx_io 
 
 
     PointND idx_l_point;
-    idx_l_point.x = (int) regular_bounds[0];
-    idx_l_point.y = (int) regular_bounds[1];
-    idx_l_point.z = (int) regular_bounds[2];
-    idx_l_point.u = (int) regular_bounds[3];
-    idx_l_point.v = (int) regular_bounds[4];
+    idx_l_point.x = (int) file->idx_d->idx_size[0];
+    idx_l_point.y = (int) file->idx_d->idx_size[1];
+    idx_l_point.z = (int) file->idx_d->idx_size[2];
+    idx_l_point.u = (int) file->idx_d->idx_size[3];
+    idx_l_point.v = (int) file->idx_d->idx_size[4];
     GuessBitmaskPattern(file->idx->idx_cl_bitSequence, idx_l_point);
     //printf("Local %s\n", file->idx->idx_cl_bitSequence);
 
@@ -969,33 +969,33 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
     int z_order = 0;
     int number_levels = maxH - 1;
 
-    if ((regular_bounds[0]) > file->idx->bounds[0])
-      regular_bounds[0] = file->idx->bounds[0];
-    if ((regular_bounds[1]) > file->idx->bounds[1])
-      regular_bounds[1] = file->idx->bounds[1];
-    if ((regular_bounds[2]) > file->idx->bounds[2])
-      regular_bounds[2] = file->idx->bounds[2];
+    if ((file->idx_d->idx_size[0]) > file->idx->bounds[0])
+      file->idx_d->idx_size[0] = file->idx->bounds[0];
+    if ((file->idx_d->idx_size[1]) > file->idx->bounds[1])
+      file->idx_d->idx_size[1] = file->idx->bounds[1];
+    if ((file->idx_d->idx_size[2]) > file->idx->bounds[2])
+      file->idx_d->idx_size[2] = file->idx->bounds[2];
 
-    for (i = 0, index_i = 0; i < file->idx->bounds[0]; i = i + regular_bounds[0], index_i++)
+    for (i = 0, index_i = 0; i < file->idx->bounds[0]; i = i + file->idx_d->idx_size[0], index_i++)
     {
-      for (j = 0, index_j = 0; j < file->idx->bounds[1]; j = j + regular_bounds[1], index_j++)
+      for (j = 0, index_j = 0; j < file->idx->bounds[1]; j = j + file->idx_d->idx_size[1], index_j++)
       {
-        for (k = 0, index_k = 0; k < file->idx->bounds[2]; k = k + regular_bounds[2], index_k++)
+        for (k = 0, index_k = 0; k < file->idx->bounds[2]; k = k + file->idx_d->idx_size[2], index_k++)
         {
           reg_patch->offset[0] = i;
           reg_patch->offset[1] = j;
           reg_patch->offset[2] = k;
-          reg_patch->size[0] = regular_bounds[0];
-          reg_patch->size[1] = regular_bounds[1];
-          reg_patch->size[2] = regular_bounds[2];
+          reg_patch->size[0] = file->idx_d->idx_size[0];
+          reg_patch->size[1] = file->idx_d->idx_size[1];
+          reg_patch->size[2] = file->idx_d->idx_size[2];
 
           //Edge regular patches
           /*
-          if ((i + regular_bounds[0]) > file->idx->bounds[0])
+          if ((i + file->idx_d->idx_size[0]) > file->idx->bounds[0])
             reg_patch->size[0] = file->idx->bounds[0] - i;
-          if ((j + regular_bounds[1]) > file->idx->bounds[1])
+          if ((j + file->idx_d->idx_size[1]) > file->idx->bounds[1])
             reg_patch->size[1] = file->idx->bounds[1] - j;
-          if ((k + regular_bounds[2]) > file->idx->bounds[2])
+          if ((k + file->idx_d->idx_size[2]) > file->idx->bounds[2])
             reg_patch->size[2] = file->idx->bounds[2] - k;
           */
 
@@ -1032,9 +1032,9 @@ static PIDX_return_code partition(PIDX_partition_merge_idx_io file, int start_va
             //file->idx_d->color = colors[clr];
             file->idx_d->color = colors[z_order];
 
-            distance_x = index_i * regular_bounds[0];
-            distance_y = index_j * regular_bounds[1];
-            distance_z = index_k * regular_bounds[2];
+            distance_x = index_i * file->idx_d->idx_size[0];
+            distance_y = index_j * file->idx_d->idx_size[1];
+            distance_z = index_k * file->idx_d->idx_size[2];
 
             int start_index = 0;
             //printf("start_var_index = %d end_var_index = %d pipe %d\n", start_var_index, end_var_index, file->idx_d->var_pipe_length);
@@ -2031,11 +2031,11 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
 
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
-    if (file->idx->bounds[d] % regular_bounds[d] != 0)
+    file->idx_d->idx_count[d] = file->idx->bounds[d] / file->idx_d->idx_size[d];
+    if (file->idx->bounds[d] % file->idx_d->idx_size[d] != 0)
       file->idx_d->idx_count[d]++;
 
-    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], regular_bounds[d]);
+    //printf("DD %d ----> %d (%d / %d)\n", d, file->idx_d->idx_count[d], file->idx->bounds[d], file->idx_d->idx_size[d]);
     file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));
   }
 
@@ -2118,8 +2118,8 @@ PIDX_return_code PIDX_partition_merge_idx_write(PIDX_partition_merge_idx_io file
   time->partition_start_time = PIDX_get_time();
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-    file->idx_d->idx_count[d] = file->idx->bounds[d] / regular_bounds[d];
-    if (file->idx->bounds[d] % regular_bounds[d] != 0)
+    file->idx_d->idx_count[d] = file->idx->bounds[d] / file->idx_d->idx_size[d];
+    if (file->idx->bounds[d] % file->idx_d->idx_size[d] != 0)
       file->idx_d->idx_count[d]++;
 
     file->idx_d->idx_count[d] = pow(2, (int)ceil(log2(file->idx_d->idx_count[d])));

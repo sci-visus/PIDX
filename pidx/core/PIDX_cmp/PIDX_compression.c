@@ -284,6 +284,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 #endif
   }
 
+
   return PIDX_success;
 }
 
