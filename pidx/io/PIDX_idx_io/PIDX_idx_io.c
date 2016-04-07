@@ -1451,9 +1451,9 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     file->idx_d->perm_layout_count = 1;
 
 
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-    file->idx_d->idx_count[d] = 1;
-  file->idx_d->color = 0;
+  //for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  //  file->idx_d->idx_count[d] = 1;
+  //file->idx_d->color = 0;
 
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)
@@ -2952,8 +2952,8 @@ PIDX_return_code PIDX_idx_read(PIDX_idx_io file, int start_var_index, int end_va
 PIDX_return_code PIDX_idx_io_finalize(PIDX_idx_io file)
 {
 #if PIDX_HAVE_MPI
-  if (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2] != 1)
-    MPI_Comm_free(&(file->comm));
+  //if (file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2] != 1)
+  //  MPI_Comm_free(&(file->comm));
 #endif
 
   free(file);
