@@ -172,6 +172,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
 
 PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout,  int PIDX_MODE, int vi, int bi)
 {
+  //printf("layout id = %d\n", layout_id);
   PIDX_return_code ret = PIDX_success;
 
   if (agg_id->idx_d->agg_type == 0)

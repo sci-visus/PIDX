@@ -291,7 +291,7 @@ int main(int argc, char **argv)
     switch (io_type)
     {
       case PIDX_IDX_IO:
-        PIDX_optimize_for_file_zero(file);
+        //PIDX_optimize_for_file_zero(file);
         //PIDX_set_block_count(file,2);
         //PIDX_set_block_size(file, 5);
         break;
