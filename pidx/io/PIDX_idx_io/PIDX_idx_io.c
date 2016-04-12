@@ -1621,7 +1621,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   if (total_partiton_level >= file->idx_d->maxh)
     total_partiton_level = file->idx_d->maxh;
 
-  int file_zero_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1;
+  int file_zero_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + 1;
   if (file_zero_level >= file->idx_d->maxh)
     file_zero_level = file->idx_d->maxh;
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, total_partiton_level, file->idx_d->maxh);
