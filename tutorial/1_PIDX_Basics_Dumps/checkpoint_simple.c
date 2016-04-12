@@ -285,12 +285,15 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
 
     //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
-    int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
+    //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_PARTITION_MERGE_IDX_IO;
+    int io_type = PIDX_IDX_IO;
     switch (io_type)
     {
       case PIDX_IDX_IO:
-        //PIDX_set_block_count(file, 64);
+        PIDX_optimize_for_file_zero(file);
+        //PIDX_set_block_count(file,2);
+        //PIDX_set_block_size(file, 5);
         break;
 
       case PIDX_PARTITION_MERGE_IDX_IO:
@@ -308,7 +311,7 @@ int main(int argc, char **argv)
       case PIDX_RAW_IO:
         PIDX_enable_raw_io(file);
         PIDX_point reg_patch_size;
-        PIDX_set_point_5D(reg_patch_size, 32, 32, 32, 1, 1);
+        PIDX_set_point_5D(reg_patch_size, 44, 144, 216, 1, 1);
         PIDX_set_restructuring_box(file, reg_patch_size);
         break;
     }

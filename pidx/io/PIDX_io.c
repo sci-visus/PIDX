@@ -279,7 +279,7 @@ void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
 #endif
   if (max_time == total_time)
   {
-    fprintf(stdout, "Time Taken: %f Seconds\n", max_time);
+    fprintf(stdout, "[P %d %d] Time Taken: %f Seconds\n", rank, nprocs, max_time);
     fprintf(stdout, "----------------------------------------------------------------------------------------------------------\n");
     printf("Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
     fprintf(stdout, "File Create Time: %f Seconds\n", (time->file_create_time - time->sim_start));

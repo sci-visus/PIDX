@@ -310,28 +310,28 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   sprintf(size_path, "%s_SIZE", idx_directory_path);
   free(idx_directory_path);
 
-  uint8_t number_cores = 0;
+  uint32_t number_cores = 0;
   int fp = open(size_path, O_RDONLY);
-  ssize_t write_count = pread(fp, &number_cores, sizeof(uint8_t), 0);
-  if (write_count != sizeof(uint8_t))
+  ssize_t write_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
+  if (write_count != sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
 
-  uint8_t max_patch_count = 0;
-  write_count = pread(fp, &max_patch_count, sizeof(uint8_t), sizeof(uint8_t));
-  if (write_count != sizeof(uint8_t))
+  uint32_t max_patch_count = 0;
+  write_count = pread(fp, &max_patch_count, sizeof(uint32_t), sizeof(uint32_t));
+  if (write_count != sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
 
-  uint8_t *size_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t));
-  memset(size_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t));
+  uint32_t *size_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+  memset(size_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
 
-  write_count = pread(fp, size_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t), 2 * sizeof(uint8_t));
-  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t))
+  write_count = pread(fp, size_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
+  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -340,12 +340,12 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   close(fp);
 
 
-  uint8_t *offset_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t));
-  memset(offset_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t));
+  uint32_t *offset_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+  memset(offset_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
 
   int fp1 = open(offset_path, O_RDONLY);
-  write_count = pread(fp1, offset_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t), 2 * sizeof(uint8_t));
-  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint8_t))
+  write_count = pread(fp1, offset_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
+  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -404,10 +404,11 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   memset(patch_grp, 0, sizeof(*(patch_grp)));
 
   int *source_patch_id = malloc(sizeof(int) * maximum_neighbor_count);
-  patch_grp->source_patch_rank = (int*)malloc(sizeof(int) * maximum_neighbor_count);
+  memset(source_patch_id, 0, sizeof(int) * maximum_neighbor_count);
+
+  patch_grp->source_patch_rank = malloc(sizeof(int) * maximum_neighbor_count);
   patch_grp->patch = malloc(sizeof(*patch_grp->patch) * maximum_neighbor_count);
   patch_grp->reg_patch = malloc(sizeof(*patch_grp->reg_patch));
-  memset(source_patch_id, 0, sizeof(int) * maximum_neighbor_count);
   memset(patch_grp->source_patch_rank, 0, sizeof(int) * maximum_neighbor_count);
   memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * maximum_neighbor_count);
   memset(patch_grp->reg_patch, 0, sizeof(*patch_grp->reg_patch));
@@ -456,8 +457,41 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
         }
         patch_grp->source_patch_rank[patch_count] = n;
         source_patch_id[patch_count] = m;
+        //printf("patch_count %d -> %d %d %d\n", patch_count, patch_grp->patch[patch_count]->size[0], patch_grp->patch[patch_count]->size[1], patch_grp->patch[patch_count]->size[2]);
 
         patch_count++;
+        if (patch_count >= maximum_neighbor_count)
+        {
+          maximum_neighbor_count = maximum_neighbor_count * 2;
+          //printf("patch_count = %d maximum_neighbor_count = %d\n", patch_count, maximum_neighbor_count);
+
+          int *temp_buffer1 = realloc(source_patch_id, sizeof(int) * maximum_neighbor_count);
+          if (temp_buffer1 == NULL)
+          {
+            fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+            return PIDX_err_rst;
+          }
+          else
+            source_patch_id = temp_buffer1;
+
+          int *temp_buffer2 = realloc(patch_grp->source_patch_rank, maximum_neighbor_count * sizeof(int));
+          if (temp_buffer2 == NULL)
+          {
+            fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+            return PIDX_err_rst;
+          }
+          else
+            patch_grp->source_patch_rank = temp_buffer2;
+
+          Ndim_patch *temp_buffer3 = realloc(patch_grp->patch, maximum_neighbor_count * sizeof(*patch_grp->patch));
+          if (temp_buffer3 == NULL)
+          {
+            fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+            return PIDX_err_rst;
+          }
+          else
+            patch_grp->patch = temp_buffer3;
+        }
       }
       p_counter++;
     }
@@ -479,12 +513,14 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   //printf("start_var_index = %d end_var_index %d\n", start_var_index, end_var_index);
   for (i = 0; i < (end_var_index - start_var_index); i++)
   {
+    //printf("[%d] ----> %d\n", i, patch_count);
     PIDX_variable var = file->idx->variable[i + start_var_index];
     temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
     memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
     for (j = 0; j < patch_count; j++)
     {
+      //printf("[%d] --> %d %d %d [%d]\n", j, patch_grp->patch[j]->size[0], patch_grp->patch[j]->size[1], patch_grp->patch[j]->size[2], (patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2]));
       temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
       memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
     }

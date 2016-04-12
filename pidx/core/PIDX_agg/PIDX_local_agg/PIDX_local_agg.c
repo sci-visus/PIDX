@@ -923,7 +923,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
   MPI_Comm_rank(agg_id->global_comm, &grank);
 
   int rank_counter = 0, i = 0, j = 0, k = 0;
-  rank_counter = agg_offset;
+  rank_counter = 0;//agg_offset;
   for (k = 0; k < local_block_layout->existing_file_count; k++)
   {
     for (i = agg_id->first_index; i <= agg_id->last_index; i++)
@@ -932,9 +932,70 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
       {
         agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_counter;
         rank_counter = rank_counter + agg_buffer->aggregator_interval;
+#if 0
+        int *first;
+        uint64_t file_index = 0;
+        first = malloc(sizeof(*first) * PIDX_MAX_DIMENSIONS);
+        memset(first, 0, sizeof(*first) * PIDX_MAX_DIMENSIONS);
+
+        int file_count = 1;
+        int a = 0;
+        int negative_file_index = 0;
+        //if (agg_offset == 0)
+        //for (a = 0; a < agg_offset; a++)
+        //  negative_file_index = negative_file_index + pow (2, a);
+
+        if (agg_offset == 0 || agg_offset == 1)
+        {
+          file_count = 1;
+          file_index = 0;
+        }
+        else
+        {
+          file_count = (int)pow(2, agg_offset - 1);
+          negative_file_index = (int)pow(2, agg_offset - 1);
+          file_index = (local_block_layout->existing_file_index[k] - negative_file_index) * agg_id->idx_d->aggregator_multiplier + j;
+        }
+
+        //if (rank == 0)
+        //  printf("A [%d]: [(%d - %d) * %d + %d] File Index = %d FC %d log FC %d\n", agg_offset, local_block_layout->existing_file_index[k], negative_file_index, agg_id->idx_d->aggregator_multiplier, j, file_index, file_count, (int)log2(file_count));
+        int bits = (agg_id->idx_d->maxh - 1 - (int)log2(file_count * agg_id->idx_d->aggregator_multiplier) /*- (agg_offset - 1)*/);
+        file_index = file_index << bits;
+        //if (rank == 0)
+        //  printf("B: File Index = %d FC %d mh %d bits %d\n", file_index, file_count, (agg_id->idx_d->maxh - 1), bits);
+
+        Deinterleave(agg_id->idx->bitPattern, agg_id->idx_d->maxh - 1, file_index, first);
+
+        //if (rank == 0)
+        //  printf("[1 %s]: %d %d %d %d %d\n", agg_id->idx->bitSequence, first[0], first[1], first[2], first[3], first[4]);
+
+        int calculated_rank = 0;
+
+        //TODO: Generalize
+        //{
+          //int rank_x = first[0] / ;
+          //int rank_y = first[1] / (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
+          //int rank_z = first[2] / (agg_id->idx->bounds[2] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[2]);
+
+          int sub_div[3];
+          sub_div[0] = (agg_id->idx->bounds[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
+          sub_div[1] = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
+          sub_div[2] = (agg_id->idx->bounds[2] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[2]);
+          int rank_z = rank / (sub_div[0] * sub_div[1]);
+          int rank_slice = rank % (sub_div[0] * sub_div[1]);
+          int rank_y = (rank_slice / sub_div[0]);
+          int rank_x = (rank_slice % sub_div[0]);
+
+          int nrank_x = (agg_id->idx->bounds[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
+          int nrank_y = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
+          calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
+        //}
+        free(first);
+#endif
 
         if(rank == agg_id->rank_holder2[k][i - agg_id->first_index][j])
         {
+          //printf("[%d (%d) %d %d] -> O%d N%d (%d %d %d) (%d %d %d)\n", k, local_block_layout->existing_file_index[k], i, j, rank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z);
           agg_buffer->file_number = local_block_layout->existing_file_index[k];
           agg_buffer->var_number = i;
           agg_buffer->sample_number = j;
@@ -947,7 +1008,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           bytes_per_datatype = (chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->compression_factor);
 
           agg_buffer->buffer_size = sample_count * bytes_per_datatype;
-          printf("(LOCAL) [L %d G %d] [%d %d %d] buffer_size = %d Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, agg_buffer->aggregator_interval);
+          //printf("(LOCAL) [L %d G %d] [%d %d %d] buffer_size = %d Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, agg_buffer->aggregator_interval);
 
 #if !SIMULATE_IO
           //printf("Buffer size = %d x %d / %d x %d\n", local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, agg_buffer->aggregation_factor, bytes_per_datatype);
@@ -1337,7 +1398,7 @@ static PIDX_return_code destroy_file_zero_buffer(PIDX_local_agg_id agg_id)
 PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE)
 {
 #if PIDX_HAVE_MPI
-  int file_zero = 0;
+  //int file_zero = 1;
   int ret;
 
   ret = create_window(agg_id, agg_buffer, agg_id->comm);
@@ -1354,7 +1415,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
     return PIDX_err_agg;
   }
 
-  if (file_zero == 1)
+  if (agg_id->idx_d->file_zero_optimization == 1)
   {
     if (layout_id == 0)
     {
@@ -1380,7 +1441,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
 
   if (MODE == PIDX_WRITE)
   {
-    if (file_zero == 1)
+    if (agg_id->idx_d->file_zero_optimization == 1)
     {
       if (layout_id == 0)
       {
@@ -1445,7 +1506,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
 #endif
 #endif
 
-  if (file_zero == 1)
+  if (agg_id->idx_d->file_zero_optimization == 1)
   {
     if (layout_id == 0)
     {

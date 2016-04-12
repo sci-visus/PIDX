@@ -62,8 +62,8 @@ struct PIDX_rst_struct
 
 #if PIDX_HAVE_MPI
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
-static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs);
-static int getPowerOftwo(int x);
+//static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs);
+//static int getPowerOftwo(int x);
 #endif
 
 
@@ -78,7 +78,7 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
   return !(check_bit);
 }
 
-
+/*
 /// Function to find the power of 2 of an integer value (example 5->8)
 static int getPowerOftwo(int x)
 {
@@ -89,6 +89,7 @@ static int getPowerOftwo(int x)
 }
 
 
+
 /// Function to find the dimension of the imposing regular patch
 static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs)
 {
@@ -96,7 +97,7 @@ static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, 
   int64_t average_count = 0;
   int check_bit = 0;
   int64_t max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
-  int equal_partiton = 1;
+  int equal_partiton = 0;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
   {
@@ -136,16 +137,21 @@ static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, 
   } 
   else 
   {
-    rst_id->reg_patch_size[0] = getPowerOftwo(process_bounds[0]) * 1;
-    rst_id->reg_patch_size[1] = getPowerOftwo(process_bounds[1]) * 1;
-    rst_id->reg_patch_size[2] = getPowerOftwo(process_bounds[2]) * 1;
-    rst_id->reg_patch_size[3] = getPowerOftwo(process_bounds[3]) * 1;
-    rst_id->reg_patch_size[4] = getPowerOftwo(process_bounds[4]) * 1;
+    rst_id->reg_patch_size[0] = getPowerOftwo(max_dim_length[0]) * 1;
+    rst_id->reg_patch_size[1] = getPowerOftwo(max_dim_length[1]) * 1;
+    rst_id->reg_patch_size[2] = getPowerOftwo(max_dim_length[2]) * 1;
+    //printf("Box size = %d %d %d\n", rst_id->reg_patch_size[0], rst_id->reg_patch_size[1], rst_id->reg_patch_size[2]);
+    //rst_id->reg_patch_size[0] = getPowerOftwo(process_bounds[0]) * 1;
+    //rst_id->reg_patch_size[1] = getPowerOftwo(process_bounds[1]) * 1;
+    //rst_id->reg_patch_size[2] = getPowerOftwo(process_bounds[2]) * 1;
+    rst_id->reg_patch_size[3] = 1;//getPowerOftwo(process_bounds[3]) * 1;
+    rst_id->reg_patch_size[4] = 1;//getPowerOftwo(process_bounds[4]) * 1;
   }
 
   memcpy(rst_id->idx->reg_patch_size, rst_id->reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
   //reg_patch_size = reg_patch_size * 4;
 }
+*/
 #endif
 
 
@@ -186,48 +192,48 @@ PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id)
   MPI_Comm_rank(rst_id->comm, &rank);
   MPI_Comm_size(rst_id->comm, &nprocs);
 
-  uint8_t *global_patch_offset;
-  uint8_t *global_patch_size;
+  uint32_t *global_patch_offset;
+  uint32_t *global_patch_size;
   PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
   int max_patch_count;
   int patch_count =var0->patch_group_count;
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->comm);
 
-  uint8_t *local_patch_offset = malloc(sizeof(uint8_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
-  memset(local_patch_offset, 0, sizeof(uint8_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
+  uint32_t *local_patch_offset = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
+  memset(local_patch_offset, 0, sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
 
-  uint8_t *local_patch_size = malloc(sizeof(uint8_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
-  memset(local_patch_size, 0, sizeof(uint8_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
+  uint32_t *local_patch_size = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
+  memset(local_patch_size, 0, sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
 
   int pcounter = 0;
   int i = 0, d = 0;
-  local_patch_offset[0] = (uint8_t)patch_count;
-  local_patch_size[0] = (uint8_t)patch_count;
+  local_patch_offset[0] = (uint32_t)patch_count;
+  local_patch_size[0] = (uint32_t)patch_count;
   for (i = 0; i < patch_count; i++)
   {
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_patch_offset[i * PIDX_MAX_DIMENSIONS + d + 1] = (uint8_t)var0->rst_patch_group[i]->reg_patch->offset[d];
-      local_patch_size[i * PIDX_MAX_DIMENSIONS + d + 1] = (uint8_t)var0->rst_patch_group[i]->reg_patch->size[d];
+      local_patch_offset[i * PIDX_MAX_DIMENSIONS + d + 1] = (uint32_t)var0->rst_patch_group[i]->reg_patch->offset[d];
+      local_patch_size[i * PIDX_MAX_DIMENSIONS + d + 1] = (uint32_t)var0->rst_patch_group[i]->reg_patch->size[d];
     }
     pcounter++;
   }
 
-  global_patch_offset = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t));
-  memset(global_patch_offset, 0,(nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t));
+  global_patch_offset = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  memset(global_patch_offset, 0,(nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
 
-  global_patch_size = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t));
-  memset(global_patch_size, 0, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t));
+  global_patch_size = malloc((nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  memset(global_patch_size, 0, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
 
   if (rst_id->idx_derived->parallel_mode == 1)
   {
-     MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_UNSIGNED_CHAR, global_patch_offset + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_UNSIGNED_CHAR, rst_id->comm);
-     MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_UNSIGNED_CHAR, global_patch_size + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_UNSIGNED_CHAR, rst_id->comm);
+     MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, global_patch_offset + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, rst_id->comm);
+     MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, global_patch_size + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, rst_id->comm);
   }
   else
   {
-    memcpy(global_patch_offset, local_patch_offset, sizeof(uint8_t) * (PIDX_MAX_DIMENSIONS * max_patch_count + 1));
-    memcpy(global_patch_size, local_patch_size, sizeof(uint8_t) * (PIDX_MAX_DIMENSIONS * max_patch_count + 1));
+    memcpy(global_patch_offset, local_patch_offset, sizeof(uint32_t) * (PIDX_MAX_DIMENSIONS * max_patch_count + 1));
+    memcpy(global_patch_size, local_patch_size, sizeof(uint32_t) * (PIDX_MAX_DIMENSIONS * max_patch_count + 1));
      rst_id->idx->enable_rst = 0;
   }
   global_patch_size[0] = nprocs;
@@ -249,8 +255,8 @@ PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id)
   if (rank == 1)
   {
     int fp = open(offset_path, O_CREAT | O_WRONLY, 0664);
-    ssize_t write_count = pwrite(fp, global_patch_offset, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t), 0);
-    if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t))
+    ssize_t write_count = pwrite(fp, global_patch_offset, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
+    if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -258,8 +264,8 @@ PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id)
     close(fp);
 
     fp = open(size_path, O_CREAT | O_WRONLY, 0664);
-    write_count = pwrite(fp, global_patch_size, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t), 0);
-    if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint8_t))
+    write_count = pwrite(fp, global_patch_size, (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
+    if (write_count != (nprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -301,10 +307,12 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
     var0->patch_group_count = 0;
 
     /// STEP 1 : Compute the dimension of the regular patch
-    if (rst_id->idx->reg_patch_size[0] == 0)
-      set_default_patch_size(rst_id, rst_id->idx_derived->rank_r_count, nprocs);
-    else
-      memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+    //if (rst_id->idx->reg_patch_size[0] == 0)
+    //  set_default_patch_size(rst_id, rst_id->idx_derived->rank_r_count, nprocs);
+    //else
+    //  memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+
+    memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
 
     /// extents for the local process(rank)
     Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
@@ -508,6 +516,26 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
                     if (patch_count >= maximum_neighbor_count)
                     {
+                      maximum_neighbor_count = maximum_neighbor_count * 2;
+
+                      int *temp_buffer2 = realloc(patch_grp->source_patch_rank, maximum_neighbor_count * sizeof(int));
+                      if (temp_buffer2 == NULL)
+                      {
+                        fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+                        return PIDX_err_rst;
+                      }
+                      else
+                        patch_grp->source_patch_rank = temp_buffer2;
+
+                      Ndim_patch *temp_buffer3 = realloc(patch_grp->patch, maximum_neighbor_count * sizeof(*patch_grp->patch));
+                      if (temp_buffer3 == NULL)
+                      {
+                        fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+                        return PIDX_err_rst;
+                      }
+                      else
+                        patch_grp->patch = temp_buffer3;
+
                       if (rank == 0)
                         printf("[ERROR] maximum_neighbor_count needs to be increased\n");
                       return PIDX_err_rst;

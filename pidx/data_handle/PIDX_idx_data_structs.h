@@ -95,7 +95,7 @@ struct PIDX_variable_struct
   Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
 
   // Block level layout
-  PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
+  //PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
 
@@ -127,6 +127,10 @@ struct idx_file_struct
 
   char idx_cl_bitSequence[512];
   char idx_cl_bitPattern[512];
+  char idx_cl1_bitSequence[512];
+  char idx_cl1_bitPattern[512];
+  char idx_cl2_bitSequence[512];
+  char idx_cl2_bitPattern[512];
 
   char filename_template[1024];                                         ///< Depends on the time step
   
@@ -188,6 +192,8 @@ struct idx_dataset_derived_metadata_struct
   int reduced_res_to;
 
   PIDX_time time;
+
+  int file_zero_optimization;
 
   int aggregator_multiplier;
   int data_core_count;

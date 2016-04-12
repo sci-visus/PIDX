@@ -189,6 +189,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->reduced_res_to = 0;
 
   (*file)->idx_d->parallel_mode = access_type->parallel;
+  (*file)->idx_d->file_zero_optimization = 0;
 
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
@@ -251,7 +252,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
-  (*file)->idx_d->agg_type = 0;
+  (*file)->idx_d->agg_type = 1;
   (*file)->idx_d->layout_count = 0;
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
@@ -337,6 +338,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
+
+  (*file)->idx_d->file_zero_optimization = 0;
 
   (*file)->small_agg_comm = 0;
   (*file)->debug_output = 0;
@@ -1495,6 +1498,20 @@ PIDX_return_code PIDX_enable_raw_io(PIDX_file file)
 
 
 
+
+PIDX_return_code PIDX_optimize_for_file_zero(PIDX_file file)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->idx_d->file_zero_optimization = 1;
+
+  return PIDX_success;
+}
+
+
+
+
 PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file)
 {
   if(file == NULL)
@@ -1590,6 +1607,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
       fprintf(stdout, "Aggregation Type = %d\n", file->idx_d->agg_type);
+      fprintf(stdout, "File zero optimization = %d\n", file->idx_d->file_zero_optimization);
     }
 
     if (file->io_type == PIDX_IDX_IO)
