@@ -1604,7 +1604,9 @@ PIDX_return_code PIDX_close(PIDX_file file)
   time->sim_end = PIDX_get_time();
 
   int rank;
+  int nprocs;
   MPI_Comm_rank(file->comm, &rank);
+  MPI_Comm_size(file->comm, &nprocs);
 
 #if 1
   if (file->debug_output == 1)
@@ -1637,6 +1639,45 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
     if (rank == 0)
       fprintf(stdout, "==========================================================================================================\n");
+  }
+  else
+  {
+    if (file->io_type == PIDX_RAW_IO)
+    {
+      double total_time = time->sim_end - time->sim_start;
+      double max_time = total_time;
+      int var = 0;
+
+#if PIDX_HAVE_MPI
+      MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
+#else
+      total_time = max_time;
+#endif
+
+      if (max_time == total_time)
+      {
+        double header_io_time = 0;
+        for (var = 0; var < time->header_counter; var++)
+          header_io_time = header_io_time + (time->write_init_end[var] - time->write_init_start[var]);
+
+        //double total_time_rch = 0;
+        double total_meta_time = 0;
+        double total_rst_time = 0;
+        double total_rst_io_time = 0;
+        double total_rst_finalize_time = 0;
+        for (var = 0; var < time->variable_counter; var++)
+        {
+          total_meta_time = total_meta_time + (time->rst_meta_data_end_io[var] - time->rst_meta_data_start_io[var]);
+          total_rst_time = total_rst_time + (time->rst_end[var] - time->rst_start[var]);
+          total_rst_io_time = total_rst_io_time + (time->rst_io_end[var] - time->rst_io_start[var]);
+          total_rst_finalize_time = total_rst_finalize_time + (time->finalize_end[var] - time->finalize_start[var]);
+
+          //total_time_rch = total_time_rch + (total_meta_time + total_rst_time  + total_rst_io_time + total_rst_finalize_time);
+        }
+
+        fprintf(stdout, "PIDX [%d %d %d (%d %d %d) P %d] = %f [I %f + M %f + R %f I %f + F %f + H %f] [%f]\n", nprocs, file->idx->current_time_step, file->idx->variable_count, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], file->idx_d->raw_io_pipe_length, (time->populate_idx_end_time - time->populate_idx_start_time) + total_meta_time + total_rst_time + total_rst_io_time + total_rst_finalize_time + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), total_meta_time, total_rst_time, total_rst_io_time, total_rst_finalize_time, header_io_time, max_time);
+      }
+    }
   }
 
   PIDX_delete_timming_buffers1(file->idx_d->time);

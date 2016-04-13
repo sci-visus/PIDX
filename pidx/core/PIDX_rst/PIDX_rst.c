@@ -1609,7 +1609,7 @@ PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id)
     for (v_start = start_var_index; v_start < end_var_index; v_start = v_start + (rst_id->idx_derived->raw_io_pipe_length + 1))
     {
       v_end = ((v_start + rst_id->idx_derived->raw_io_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (v_start + rst_id->idx_derived->raw_io_pipe_length);
-      printf("Start - End = %d - %d\n", v_start, v_end);
+      //printf("Start - End = %d - %d\n", v_start, v_end);
 
       // copy the size and offset to output
       PIDX_variable var_start = rst_id->idx->variable[v_start];
