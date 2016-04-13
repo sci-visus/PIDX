@@ -190,6 +190,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx_d->parallel_mode = access_type->parallel;
   (*file)->idx_d->file_zero_optimization = 0;
+  (*file)->idx_d->raw_io_pipe_length = 0;
 
 #if PIDX_HAVE_MPI
   if (access_type->parallel)
@@ -340,6 +341,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->reduced_res_to = 0;
 
   (*file)->idx_d->file_zero_optimization = 0;
+  (*file)->idx_d->raw_io_pipe_length = 0;
 
   (*file)->small_agg_comm = 0;
   (*file)->debug_output = 0;
@@ -1496,6 +1498,17 @@ PIDX_return_code PIDX_enable_raw_io(PIDX_file file)
   return PIDX_success;
 }
 
+
+
+PIDX_return_code PIDX_raw_io_pipe_length(PIDX_file file, int pipe_length)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->idx_d->raw_io_pipe_length = pipe_length;
+
+  return PIDX_success;
+}
 
 
 

@@ -316,6 +316,7 @@ int main(int argc, char **argv)
 
       case PIDX_RAW_IO:
         PIDX_enable_raw_io(file);
+        PIDX_raw_io_pipe_length(file, 3);
         PIDX_point reg_patch_size;
         PIDX_set_point_5D(reg_patch_size, 81, 81, 81, 1, 1);
         PIDX_set_restructuring_box(file, reg_patch_size);

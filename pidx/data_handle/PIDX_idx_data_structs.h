@@ -194,6 +194,7 @@ struct idx_dataset_derived_metadata_struct
   PIDX_time time;
 
   int file_zero_optimization;
+  int raw_io_pipe_length;
 
   int aggregator_multiplier;
   int data_core_count;
