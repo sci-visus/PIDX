@@ -155,7 +155,7 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
   else if (agg_id->idx_d->agg_type == 1)
   {
     if (local_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
-      ret = PIDX_local_agg_buf_create(agg_id->local_id, agg_buffer, local_block_layout, j1 - agg_id->idx_d->start_layout_index);
+      ret = PIDX_local_agg_buf_create(agg_id->local_id, agg_buffer, local_block_layout, j1 /*- agg_id->idx_d->start_layout_index*/);
     else
       ret = PIDX_local_agg_buf_create(agg_id->local_id, agg_buffer, local_block_layout, 0);
   }

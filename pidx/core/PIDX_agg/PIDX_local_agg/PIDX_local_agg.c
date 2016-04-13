@@ -990,9 +990,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           int nrank_y = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
           calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
         //}
-        free(first);
+        //free(first);
 #endif
-
         if(rank == agg_id->rank_holder2[k][i - agg_id->first_index][j])
         {
           //printf("[%d (%d) %d %d] -> O%d N%d (%d %d %d) (%d %d %d)\n", k, local_block_layout->existing_file_index[k], i, j, rank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z);

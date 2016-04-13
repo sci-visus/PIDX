@@ -1628,8 +1628,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file_zero_level);
-  //printf("From : To -- %d : %d\n", file_zero_level, total_partiton_level);
-  ret = populate_idx_dataset(file, start_var_index, end_var_index, file_zero_level, total_partiton_level);
+  //printf("From : To -- %d : %d\n", file_zero_level, total_partiton_level + 1);
+  ret = populate_idx_dataset(file, start_var_index, end_var_index, file_zero_level, total_partiton_level + 1);
   if (ret != PIDX_success)
     return PIDX_err_file;
 
@@ -1833,8 +1833,9 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
         file->idx_d->agg_buffer[i][j]->aggregator_interval = 0;
         file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;
       }
-      //for (j = 2 ; j < agg_io_level; j++)
-      //  file->idx_d->agg_buffer[i][j]->aggregation_factor = file->idx_d->aggregator_multiplier;//(int)pow(2, (agg_io_level - j));
+      //file->idx_d->aggregator_multiplier = 1;
+      for (j = 1 ; j < agg_io_level; j++)
+        file->idx_d->agg_buffer[i][j]->aggregation_factor = file->idx_d->aggregator_multiplier;//(int)pow(2, (agg_io_level - j));
     }
     /*------------------------------------Create ALL the IDs [end]-------------------------------------------*/
 

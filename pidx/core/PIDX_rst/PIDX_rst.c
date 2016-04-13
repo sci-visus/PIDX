@@ -62,8 +62,8 @@ struct PIDX_rst_struct
 
 #if PIDX_HAVE_MPI
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
-//static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs);
-//static int getPowerOftwo(int x);
+static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs);
+static int getPowerOftwo(int x);
 #endif
 
 
@@ -78,7 +78,7 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
   return !(check_bit);
 }
 
-/*
+
 /// Function to find the power of 2 of an integer value (example 5->8)
 static int getPowerOftwo(int x)
 {
@@ -151,7 +151,6 @@ static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, 
   memcpy(rst_id->idx->reg_patch_size, rst_id->reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
   //reg_patch_size = reg_patch_size * 4;
 }
-*/
 #endif
 
 
@@ -307,10 +306,10 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
     var0->patch_group_count = 0;
 
     /// STEP 1 : Compute the dimension of the regular patch
-    //if (rst_id->idx->reg_patch_size[0] == 0)
-    //  set_default_patch_size(rst_id, rst_id->idx_derived->rank_r_count, nprocs);
-    //else
-    //  memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+    if (rst_id->idx->reg_patch_size[0] == 0)
+      set_default_patch_size(rst_id, rst_id->idx_derived->rank_r_count, nprocs);
+    else
+      memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
 
     memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
 

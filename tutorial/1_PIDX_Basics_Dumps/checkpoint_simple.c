@@ -54,6 +54,7 @@ static double **data;
 static char output_file_name[512] = "test.idx";
 static int aggregator_multiplier = 1;
 static int *values_per_sample;
+static int blocks_per_file = 256;
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./checkpoint -g 32x32x32 -l 16x16x16 -f output_idx_file_name -v 3 -t 16\n"
                      "  -g: global dimensions\n"
@@ -172,7 +173,7 @@ static void destroy_synthetic_simulation_data()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:p:f:t:v:a:";
+  char flags[] = "g:l:p:f:t:v:a:b:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -213,6 +214,11 @@ static void parse_args(int argc, char **argv)
 
     case('a'): // number of variables
       if (sscanf(optarg, "%d", &aggregator_multiplier) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('b'): // number of variables
+      if (sscanf(optarg, "%d", &blocks_per_file) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -287,13 +293,13 @@ int main(int argc, char **argv)
     //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_PARTITION_MERGE_IDX_IO;
-    int io_type = PIDX_IDX_IO;
+    int io_type = PIDX_RAW_IO;
     switch (io_type)
     {
       case PIDX_IDX_IO:
         //PIDX_optimize_for_file_zero(file);
-        //PIDX_set_block_count(file,2);
-        //PIDX_set_block_size(file, 5);
+        PIDX_set_block_count(file,blocks_per_file);
+        PIDX_set_block_size(file, 5);
         break;
 
       case PIDX_PARTITION_MERGE_IDX_IO:
@@ -311,13 +317,13 @@ int main(int argc, char **argv)
       case PIDX_RAW_IO:
         PIDX_enable_raw_io(file);
         PIDX_point reg_patch_size;
-        PIDX_set_point_5D(reg_patch_size, 44, 144, 216, 1, 1);
+        PIDX_set_point_5D(reg_patch_size, 81, 81, 81, 1, 1);
         PIDX_set_restructuring_box(file, reg_patch_size);
         break;
     }
 
-    ret = PIDX_debug_disable_io(file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
+    //ret = PIDX_debug_disable_io(file);
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
     ret = PIDX_debug_output(file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
