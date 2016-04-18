@@ -258,10 +258,23 @@ int main(int argc, char **argv)
   variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
 
-  PIDX_point global_size, local_offset, local_size;
+  PIDX_point global_size;
   PIDX_set_point_5D(global_size, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
-  PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
-  PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
+
+  PIDX_point *local_offset, *local_size;
+
+  local_offset = malloc(sizeof(*local_offset) * variable_count);
+  memset(local_offset, 0, sizeof(*local_offset) * variable_count);
+
+  local_size = malloc(sizeof(*local_size) * variable_count);
+  memset(local_size, 0, sizeof(*local_size) * variable_count);
+
+  int v = 0;
+  for (v = 0; v < variable_count; v++)
+  {
+    PIDX_set_point_5D(local_offset[v], local_box_offset[0] / (variable_count - v), local_box_offset[1] / (variable_count - v), local_box_offset[2] / (variable_count - v), 0, 0);
+    PIDX_set_point_5D(local_size[v], local_box_size[0] / (variable_count - v), local_box_size[1] / (variable_count - v), local_box_size[2] / (variable_count - v), 1, 1);
+  }
 
   //  Creating access
   PIDX_access access;
@@ -293,13 +306,13 @@ int main(int argc, char **argv)
     //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_PARTITION_MERGE_IDX_IO;
-    int io_type = PIDX_IDX_IO;
+    int io_type = PIDX_RAW_IO;
     switch (io_type)
     {
       case PIDX_IDX_IO:
         //PIDX_optimize_for_file_zero(file);
         PIDX_set_block_count(file,blocks_per_file);
-        //PIDX_set_block_size(file, 5);
+        PIDX_set_block_size(file, 5);
         break;
 
       case PIDX_PARTITION_MERGE_IDX_IO:
@@ -326,11 +339,8 @@ int main(int argc, char **argv)
     //ret = PIDX_debug_disable_io(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
-    //ret = PIDX_debug_disable_hz(file);
+    //ret = PIDX_debug_output(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
-
-    ret = PIDX_debug_output(file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
     char var_name[512];
     for (var = 0; var < variable_count; var++)
@@ -344,7 +354,7 @@ int main(int argc, char **argv)
       if (ret != PIDX_success)   for (ts = 0; ts < time_step_count; ts++)
  terminate_with_error_msg("PIDX_variable_create");
 
-      ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+      ret = PIDX_variable_write_data_layout(variable[var], local_offset[var], local_size[var], data[var], PIDX_row_major);
       if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_data_layout");
 
       ret = PIDX_append_and_write_variable(file, variable[var]);

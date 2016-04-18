@@ -1615,7 +1615,9 @@ PIDX_return_code PIDX_close(PIDX_file file)
     {
       fprintf(stdout, "\n==========================================================================================================\n");
       fprintf(stdout, "Time step %d File name %s\n", file->idx->current_time_step, file->idx->filename);
+      fprintf(stdout, "Bitstring %s\n", file->idx->bitSequence);
       fprintf(stdout, "Global Data %lld %lld %lld Variables %d\n", (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count);
+
       fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2], file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2]);
       fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
