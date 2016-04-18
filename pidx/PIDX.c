@@ -1613,7 +1613,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   {
     if (rank == 0)
     {
-      fprintf(stdout, "\n==========================================================================================================\n");
+      fprintf(stdout, "\n==========================================================================================================================\n");
       fprintf(stdout, "Time step %d File name %s\n", file->idx->current_time_step, file->idx->filename);
       fprintf(stdout, "Bitstring %s\n", file->idx->bitSequence);
       fprintf(stdout, "Global Data %lld %lld %lld Variables %d\n", (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count);
@@ -1640,7 +1640,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       PIDX_print_partition_merge_timing(file->comm, time, file->idx->variable_count, file->idx_d->perm_layout_count);
 
     if (rank == 0)
-      fprintf(stdout, "==========================================================================================================\n");
+      fprintf(stdout, "==========================================================================================================================\n");
   }
   else
   {

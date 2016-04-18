@@ -1624,7 +1624,12 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   int file_zero_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1;
   if (file_zero_level >= file->idx_d->maxh)
     file_zero_level = file->idx_d->maxh;
-  ret = populate_idx_dataset(file, start_var_index, end_var_index, total_partiton_level, file->idx_d->maxh);
+
+  int hz_from = 0;//total_partiton_level;
+  int hz_to = file->idx_d->maxh;
+
+  //printf("From to to: %d %d\n", hz_from, hz_to);
+  ret = populate_idx_dataset(file, start_var_index, end_var_index, hz_from, hz_to);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file_zero_level);
@@ -1633,13 +1638,11 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   if (ret != PIDX_success)
     return PIDX_err_file;
 
-  /*
-  if (file_zero_level == total_partiton_level)
+  if (hz_from == hz_to)
   {
     time->populate_idx_end_time = PIDX_get_time();
     return PIDX_success;
   }
-  */
 
 #if PIDX_DEBUG_OUTPUT
   l_populate = 1;
@@ -1822,22 +1825,22 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     {
       file->idx_d->agg_buffer[i] = malloc(sizeof(*(file->idx_d->agg_buffer[i])) * agg_io_level);
       memset(file->idx_d->agg_buffer[i], 0, sizeof(*(file->idx_d->agg_buffer[i])) * agg_io_level);
-      for(j = 0 ; j < agg_io_level; j++)
+      for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
       {
-        file->idx_d->agg_buffer[i][j] = malloc(sizeof(*(file->idx_d->agg_buffer[i][j])) );
-        memset(file->idx_d->agg_buffer[i][j], 0, sizeof(*(file->idx_d->agg_buffer[i][j])) );
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index] = malloc(sizeof(*(file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index])) );
+        memset(file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], 0, sizeof(*(file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index])) );
 
-        file->idx_d->agg_buffer[i][j]->file_number = -1;
-        file->idx_d->agg_buffer[i][j]->var_number = -1;
-        file->idx_d->agg_buffer[i][j]->sample_number = -1;
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->file_number = -1;
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->var_number = -1;
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->sample_number = -1;
 
-        file->idx_d->agg_buffer[i][j]->no_of_aggregators = 0;
-        file->idx_d->agg_buffer[i][j]->aggregator_interval = 0;
-        file->idx_d->agg_buffer[i][j]->aggregation_factor = 1;
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->no_of_aggregators = 0;
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->aggregator_interval = 0;
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->aggregation_factor = 1;
       }
       //file->idx_d->aggregator_multiplier = 1;
-      for (j = 0 ; j < agg_io_level; j++)
-        file->idx_d->agg_buffer[i][j]->aggregation_factor = file->idx_d->aggregator_multiplier;//(int)pow(2, (agg_io_level - j));
+      for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]->aggregation_factor = file->idx_d->aggregator_multiplier;//(int)pow(2, (agg_io_level - j));
     }
     /*------------------------------------Create ALL the IDs [end]-------------------------------------------*/
 
@@ -1915,19 +1918,6 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     //if (file->small_agg_comm == 1)
     //  PIDX_create_local_aggregation_comm(file->agg_id);
 
-    for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
-    {
-      for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
-      {
-        ret = PIDX_agg_meta_data_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index]);
-
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_rst;
-        }
-      }
-    }
     time->startup_end[start_index] = PIDX_get_time();
 
 #if PIDX_DEBUG_OUTPUT
@@ -2092,18 +2082,21 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
 
     /*----------------------------------------------Agg [staart]-----------------------------------------------*/
 
-
+#if 0
     /* Creating the buffers required for Aggregation */
-    //static_var_counter = 0;
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
-      //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
-      //for (j = 0 ; j < agg_io_level; j++)
       {
         time->agg_buf_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
-
         /* Creating the buffers required for Aggregation */
+        ret = PIDX_agg_meta_data_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index]);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_rst;
+        }
+
         ret = PIDX_agg_buf_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, i, j);
         if (ret != PIDX_success)
         {
@@ -2192,32 +2185,9 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     /*--------------------------------------------IO [start]--------------------------------------------------*/
 
 
-    /* Initialization ONLY ONCE for all TIME STEPS (caching across time) */
-    /*
-    if (file->idx->enable_agg == 2)
-    {
-      if (caching_state == 1 && file->idx_d->agg_buffer->var_number == 0 && file->idx_d->agg_buffer->sample_number == 0)
-      {
-        if (file->flush_used == 0)
-        {
-          PIDX_cache_headers(file);
-          caching_state = 0;
-        }
-      }
-    }
-    */
 
     if (file->idx_dbg->debug_do_io == 1)
     {
-      /*
-      if (time_step_caching == 1)
-      {
-        if (file->flush_used == 0)
-          PIDX_file_io_cached_data(cached_header_copy);
-      }
-      */
-
-      //static_var_counter = 0;
       for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
       {
         //for(j = agg_io_level - 1 ; j < agg_io_level; j++)
@@ -2263,17 +2233,15 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
       }
       //static_var_counter++;
     }
-
-
     /*----------------------------------------------IO [end]--------------------------------------------------*/
 
 
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
-      for(j = 0 ; j < agg_io_level; j++)
+      for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
       {
-        free(file->idx_d->agg_buffer[i][j]);
-        file->idx_d->agg_buffer[i][j] = 0;
+        free(file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]);
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index] = 0;
       }
       free(file->idx_d->agg_buffer[i]);
       file->idx_d->agg_buffer[i] = 0;
@@ -2296,6 +2264,125 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
         }
       }
     }
+#else
+    /* Creating the buffers required for Aggregation */
+    for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
+    {
+      for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
+      {
+        time->agg_buf_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        /* Creating the buffers required for Aggregation */
+        ret = PIDX_agg_meta_data_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index]);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_rst;
+        }
+
+        ret = PIDX_agg_buf_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, i, j);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_rst;
+        }
+        time->agg_buf_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+
+#if PIDX_DEBUG_OUTPUT
+    l_agg_buf = 1;
+    MPI_Allreduce(&l_agg_buf, &g_agg_buf, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_agg_buf == nprocs)
+      printf("[A] Aggregation Buffer Created\n");
+#endif
+
+        if (file->idx_dbg->debug_do_agg == 1)
+        {
+          time->agg_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+          ret = PIDX_agg(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], j, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE, i, j - file->idx_d->start_layout_index);
+
+          if (ret != PIDX_success)
+          {
+            fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+            return PIDX_err_rst;
+          }
+          time->agg_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        }
+
+#if PIDX_DEBUG_OUTPUT
+    l_agg = 1;
+    MPI_Allreduce(&l_agg, &g_agg, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_agg == nprocs)
+      printf("[A] Aggregation Completed\n");
+#endif
+
+        if (file->idx_dbg->debug_do_io == 1)
+        {
+          time->io_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+          ret = PIDX_aggregated_io(file->tio_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE);
+          if (ret != PIDX_success)
+          {
+            fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+            return PIDX_err_io;
+          }
+          time->io_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        }
+
+#if PIDX_DEBUG_OUTPUT
+    l_io = 1;
+    MPI_Allreduce(&l_io, &g_io, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->comm);
+    if (rank == 0 && g_io == nprocs)
+      printf("[I] Agg I/O completed\n");
+#endif
+
+        ret = PIDX_agg_buf_destroy(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_agg;
+        }
+
+        free(file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index]);
+        file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index] = 0;
+
+        ret = PIDX_agg_meta_data_destroy(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_rst;
+        }
+      }
+      free(file->idx_d->agg_buffer[i]);
+      file->idx_d->agg_buffer[i] = 0;
+    }
+    free(file->idx_d->agg_buffer);\
+    file->idx_d->agg_buffer = 0;
+
+    if (file->idx_dbg->debug_do_io == 1)
+    {
+      for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
+      {
+        for(j = agg_io_level ; j < file->idx_d->end_layout_index; j++)
+        {
+          time->io_per_process_start[i][j - agg_io_level] = PIDX_get_time();
+          ret = PIDX_file_io_per_process(file->tio_id[i][j - agg_io_level], file->idx->variable[start_var_index]->block_layout_by_level[j - agg_io_level], PIDX_WRITE);
+          if (ret != PIDX_success)
+          {
+            fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+            return PIDX_err_io;
+          }
+          time->io_per_process_end[i][j - agg_io_level] = PIDX_get_time();
+        }
+      }
+    }
+
+    /* Destroy buffers allocated during HZ encoding phase */
+    ret = PIDX_hz_encode_buf_destroy(file->hz_id);
+    if (ret != PIDX_success)
+      return PIDX_err_hz;
+
+    /*--------------------------------------------Agg [end]--------------------------------------------------*/
+#endif
+
+
 #if 1
     ret = PIDX_hz_encode_meta_data_destroy(file->hz_id);
     if (ret != PIDX_success)
@@ -2363,7 +2450,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
 
   //delete_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh);
   //delete_idx_dataset(file, start_var_index, end_var_index, file_zero_level, total_partiton_level);
-  delete_idx_dataset(file, start_var_index, end_var_index, total_partiton_level, file->idx_d->maxh);
+  delete_idx_dataset(file, start_var_index, end_var_index, hz_from, hz_to);
 
 
 
