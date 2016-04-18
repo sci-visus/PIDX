@@ -959,13 +959,9 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
         //agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_counter;
         //agg_id->rank_holder2[k][i - agg_id->first_index][j] = (file_index * agg_buffer->aggregator_interval);
         if (agg_offset == 0)
-        {
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = file_index * agg_buffer->aggregator_interval;
-        }
         else if (agg_offset == 1)
-        {
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = (file_index + 1) * agg_buffer->aggregator_interval - 1;
-        }
         else
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = (file_index * agg_buffer->aggregator_interval) + (agg_buffer->aggregator_interval / 2);
 
@@ -1013,7 +1009,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 #endif
         if(rank == agg_id->rank_holder2[k][i - agg_id->first_index][j])
         {
-          printf("[F [%d %d] V %d  S %d] -> RO %d RN %d\n", k, local_block_layout->existing_file_index[k], i, j, rank, calculated_rank);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+          if (i == 0)
+            printf("[%d] [F [%d %d] V %d  S %d] -> RO %d RN %d\n", agg_offset, k, local_block_layout->existing_file_index[k], i, j, rank, calculated_rank);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
           agg_buffer->file_number = local_block_layout->existing_file_index[k];
           agg_buffer->var_number = i;
           agg_buffer->sample_number = j;
