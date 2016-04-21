@@ -216,6 +216,59 @@ void GuessBitmaskPattern(char* _bits, PointND dims)
   //strrev(_bits+1)
 }
 
+/** Find the first power of, say, 2 that is greater than or equal to the given number. */
+int pow_greater_equal(int base, int num)
+{
+  assert(base > 1);
+  assert(num > 0);
+
+  int result = 1;
+  while (result < num)
+    result *= base;
+
+  return result;
+}
+
+/** Guess a bit string given the dimensions. Z has the highest priority, then Y, then X. */
+void guess_bit_string(char* bit_string, const Point3D dims)
+{
+  Point3D power_2_dims;
+  power_2_dims.x = pow_greater_equal(2, dims.x);
+  power_2_dims.y = pow_greater_equal(2, dims.y);
+  power_2_dims.z = pow_greater_equal(2, dims.z);
+  size_t size = 0;
+  char buffer[65];
+  while (power_2_dims.x > 1 || power_2_dims.y > 1 || power_2_dims.z > 1)
+  {
+    int max = Max2ab(power_2_dims.z, Max2ab(power_2_dims.x, power_2_dims.y));
+    if (max == power_2_dims.z)
+    {
+      power_2_dims.z /= 2;
+      buffer[size++] = '2';
+    }
+    else if (max == power_2_dims.y)
+    {
+      power_2_dims.y /= 2;
+      buffer[size++] = '1';
+    }
+    else
+    {
+      power_2_dims.x /= 2;
+      buffer[size++] = '0';
+    }
+  }
+
+  //bit_string.size = size;
+  assert(size > 0);
+  size_t i = 0;
+  bit_string[0] = 'V';
+  for ( i = 1; i < size + 1; ++i)
+  {
+    bit_string[i] = buffer[i - 1];
+  }
+  bit_string[size + 1] = '\0';
+}
+
 static void freeBox(int** box)
 {
   free(box[0]);

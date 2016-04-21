@@ -125,9 +125,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   int **allign_count;
   int j = 0, p = 0, d = 0, v = 0;
 
-  //int rank, nprocs;
-  //MPI_Comm_rank(id->global_comm, &rank);
-  //MPI_Comm_size(id->global_comm, &nprocs);
+  int rank, nprocs;
+  MPI_Comm_rank(id->global_comm, &rank);
+  MPI_Comm_size(id->global_comm, &nprocs);
 
 
   int maxH = id->idx_d->maxh;
@@ -236,7 +236,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
         //if (rank == 2)
-        //  printf("XX%d [%d (%d): %d %d %d %d %d - %d %d %d %d %d] [%s] SE %d %d T %d %d %d\n", v, j, maxH, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[0][3], tpatch[0][4], tpatch[1][0], tpatch[1][1], tpatch[1][2], tpatch[1][3], tpatch[1][4], id->idx->bitSequence, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
+        //  printf("XX%d [%d (%d): %d %d %d %d %d - %d %d %d %d %d] [%s] [%s] SE %d %d T %d %d %d\n", v, j, maxH, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[0][3], tpatch[0][4], tpatch[1][0], tpatch[1][1], tpatch[1][2], tpatch[1][3], tpatch[1][4], id->idx->bitSequence, id->idx->bitPattern, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
       }
 
 

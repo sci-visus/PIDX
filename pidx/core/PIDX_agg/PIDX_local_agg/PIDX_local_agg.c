@@ -54,7 +54,7 @@ static FILE* agg_dump_fp;
 //static PIDX_return_code one_sided_data_com(PIDX_local_agg_id agg_id, int mode);
 
 #if PIDX_HAVE_MPI
-static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm);
+static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm, int layout_id);
 
 static PIDX_return_code create_open_log_file (PIDX_local_agg_id agg_id);
 
@@ -147,7 +147,7 @@ static PIDX_return_code layout_zero(PIDX_local_agg_id agg_id, PIDX_block_layout 
 
 
 #if PIDX_HAVE_MPI
-static PIDX_return_code local_one_sided_data_com(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int mode)
+static PIDX_return_code local_one_sided_data_com(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int mode)
 {
   int i, p, v, ret = 0;
   int64_t index = 0, count = 0;
@@ -194,9 +194,9 @@ static PIDX_return_code local_one_sided_data_com(PIDX_local_agg_id agg_id, Agg_b
 
 #if !SIMULATE_IO
 
-            ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], 0, agg_buffer, block_layout, mode, agg_id->comm);
+            ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], 0, agg_buffer, block_layout, mode, agg_id->comm, layout_id);
 #else
-            ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode, agg_id->comm);
+            ret = local_aggregate_write_read(agg_id, v, hz_buf->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode, agg_id->comm, layout_id);
 #endif
             if (ret != PIDX_success)
             {
@@ -237,14 +237,14 @@ static PIDX_return_code local_one_sided_data_com(PIDX_local_agg_id agg_id, Agg_b
               count = (agg_id->idx->variable[v]->hz_buffer[p]->end_hz_index[i] - agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
 
 #if !SIMULATE_IO
-              ret = local_aggregate_write_read(agg_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, agg_buffer, block_layout, mode, agg_id->comm);
+              ret = local_aggregate_write_read(agg_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, agg_buffer, block_layout, mode, agg_id->comm, layout_id);
               if (ret != PIDX_success)
               {
                 fprintf(stderr, " Error in local_aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
                 return PIDX_err_agg;
               }
 #else
-              ret = local_aggregate_write_read(agg_id, v, var0->hz_buffer[p]->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode, agg_id->comm);
+              ret = local_aggregate_write_read(agg_id, v, var0->hz_buffer[p]->start_hz_index[i], count, NULL, 0, agg_buffer, block_layout, mode, agg_id->comm, layout_id);
               if (ret != PIDX_success)
               {
                 fprintf(stderr, " Error in local_aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
@@ -277,14 +277,14 @@ static PIDX_return_code local_one_sided_data_com(PIDX_local_agg_id agg_id, Agg_b
                   }
 
 #if !SIMULATE_IO
-                  ret = local_aggregate_write_read(agg_id, v, index + agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, agg_buffer, block_layout, mode, agg_id->comm);
+                  ret = local_aggregate_write_read(agg_id, v, index + agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, agg_id->idx->variable[v]->hz_buffer[p]->buffer[i], send_index, agg_buffer, block_layout, mode, agg_id->comm, layout_id);
                   if (ret != PIDX_success)
                   {
                     fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
                     return PIDX_err_agg;
                   }
 #else
-                  ret = local_aggregate_write_read(agg_id, v, index + agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, NULL, send_index, agg_buffer, block_layout, mode, agg_id->comm);
+                  ret = local_aggregate_write_read(agg_id, v, index + agg_id->idx->variable[v]->hz_buffer[p]->start_hz_index[i], count, NULL, send_index, agg_buffer, block_layout, mode, agg_id->comm, layout_id);
                   if (ret != PIDX_success)
                   {
                     fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
@@ -309,7 +309,7 @@ static PIDX_return_code local_one_sided_data_com(PIDX_local_agg_id agg_id, Agg_b
 
 
 #if PIDX_HAVE_MPI
-static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm)
+static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer agg_buffer, PIDX_block_layout block_layout, int MODE, MPI_Comm comm, int layout_id)
 {
   int rank = 0, itr;// nrank = 0;
   int bytes_per_datatype;
@@ -368,6 +368,37 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
   target_disp = target_disp % (samples_in_file / agg_buffer->aggregation_factor);
 
   target_rank = agg_id->rank_holder2[block_layout->inverse_existing_file_index[file_no]][variable_index - agg_id->first_index][sample_index];
+
+
+  //printf("[%d] L %d ----> %d\n", rank, layout_id, target_rank);
+
+
+  if (layout_id != 0)
+  {
+    MPI_Comm agg_comm;
+    int max_rank = 0;
+    int min_rank = 0;
+    //if (layout_id == 3)
+    //printf("rank %d target rank %d target file %d %d\n", rank, target_rank, block_layout->inverse_existing_file_index[file_no], file_no);
+    MPI_Comm_split(agg_id->comm, target_rank, rank, &agg_comm);
+    MPI_Allreduce(&rank, &max_rank, 1, MPI_INT, MPI_MAX, agg_comm);
+    MPI_Allreduce(&rank, &min_rank, 1, MPI_INT, MPI_MIN, agg_comm);
+    MPI_Comm_free(&agg_comm);
+    //if (rank == 0)
+    //printf("[%d] %d -> min max = %d %d\n",  layout_id, rank, min_rank, max_rank);
+
+    //agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][0] = min_rank;
+    //agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][1] = max_rank;
+
+    if (target_rank < min_rank || target_rank > max_rank || rank < min_rank || rank > max_rank)
+      printf("[TR %d] [%d] V %d P %d A %d = %d %d\n", target_rank, rank, variable_index, layout_id, block_layout->inverse_existing_file_index[file_no], agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][0], agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][1]);
+
+    assert(target_rank >= min_rank);
+    assert(target_rank <= max_rank);
+    assert(rank >= min_rank);
+    assert(rank <= max_rank);
+  }
+
 
   target_count = hz_count * values_per_sample;
 
@@ -914,7 +945,7 @@ PIDX_return_code PIDX_local_agg_meta_data_destroy(PIDX_local_agg_id agg_id, PIDX
 
 
 
-PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset)
+PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset, int var_offset)
 {
 #if PIDX_HAVE_MPI
   int rank = 0, nprocs = 1, grank = 0;
@@ -924,6 +955,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
   int /*rank_counter = 0,*/ i = 0, j = 0, k = 0;
   //rank_counter = 0;//agg_offset;
+  //double s_time = MPI_Wtime();
   for (k = 0; k < local_block_layout->existing_file_count; k++)
   {
     for (i = agg_id->first_index; i <= agg_id->last_index; i++)
@@ -932,30 +964,25 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
       {
         //agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_counter;
 
-#if 1
-        int *first;
         uint64_t file_index = 0;
-        first = malloc(sizeof(*first) * PIDX_MAX_DIMENSIONS);
-        memset(first, 0, sizeof(*first) * PIDX_MAX_DIMENSIONS);
+        //int *first;
+        //first = malloc(sizeof(*first) * PIDX_MAX_DIMENSIONS);
+        //memset(first, 0, sizeof(*first) * PIDX_MAX_DIMENSIONS);
+        //int file_count = 1;
 
-        int file_count = 1;
-        int a = 0;
         int negative_file_index = 0;
-        //if (agg_offset == 0)
-        //for (a = 0; a < agg_offset; a++)
-        //  negative_file_index = negative_file_index + pow (2, a);
-
         if (agg_offset == 0 || agg_offset == 1)
         {
-          file_count = 1;
+          //file_count = 1;
           file_index = 0 * agg_id->idx_d->aggregator_multiplier + j;
         }
         else
         {
-          file_count = (int)pow(2, agg_offset - 1);
+          //file_count = (int)pow(2, agg_offset - 1);
           negative_file_index = (int)pow(2, agg_offset - 1);
           file_index = (local_block_layout->existing_file_index[k] - negative_file_index) * agg_id->idx_d->aggregator_multiplier + j;
         }
+
         //agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_counter;
         //agg_id->rank_holder2[k][i - agg_id->first_index][j] = (file_index * agg_buffer->aggregator_interval);
         if (agg_offset == 0)
@@ -965,7 +992,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
         else
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = (file_index * agg_buffer->aggregator_interval) + (agg_buffer->aggregator_interval / 2);
 
-
+#if 0
         //if (rank == 0)
         //  printf("[%d (%d %d)] RC = %d NRC = %d %d Interval = %d\n", file_index, k, j, rank_counter, (file_index * agg_buffer->aggregator_interval), (file_index * agg_buffer->aggregator_interval) + (agg_buffer->aggregator_interval / 2), agg_buffer->aggregator_interval);
 
@@ -976,14 +1003,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
         //  printf("A [%d]: [(%d - %d) * %d + %d] File Index = %d FC %d log FC %d\n", agg_offset, local_block_layout->existing_file_index[k], negative_file_index, agg_id->idx_d->aggregator_multiplier, j, file_index, file_count, (int)log2(file_count));
         int bits = (agg_id->idx_d->maxh - 1 - (int)log2(file_count * agg_id->idx_d->aggregator_multiplier) /*- (agg_offset - 1)*/);
         file_index = file_index << bits;
-        //if (rank == 0)
-        //  printf("B: File Index = %d FC %d mh %d bits %d\n", file_index, file_count, (agg_id->idx_d->maxh - 1), bits);
 
         Deinterleave(agg_id->idx->bitPattern, agg_id->idx_d->maxh - 1, file_index, first);
-
-        //if (rank == 0)
-        //  printf("[1 %s]: %d %d %d %d %d\n", agg_id->idx->bitSequence, first[0], first[1], first[2], first[3], first[4]);
-
         int calculated_rank = 0;
 
         //TODO: Generalize
@@ -1009,8 +1030,6 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 #endif
         if(rank == agg_id->rank_holder2[k][i - agg_id->first_index][j])
         {
-          if (i == 0)
-            printf("[%d] [F [%d %d] V %d  S %d] -> RO %d RN %d\n", agg_offset, k, local_block_layout->existing_file_index[k], i, j, rank, calculated_rank);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
           agg_buffer->file_number = local_block_layout->existing_file_index[k];
           agg_buffer->var_number = i;
           agg_buffer->sample_number = j;
@@ -1023,10 +1042,13 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           bytes_per_datatype = (chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->compression_factor);
 
           agg_buffer->buffer_size = sample_count * bytes_per_datatype;
-          //printf("(LOCAL) [L %d G %d] [%d %d %d] buffer_size = %d Agg interval %d\n", rank, grank, agg_buffer->file_number, agg_buffer->var_number, agg_buffer->sample_number, (int)agg_buffer->buffer_size, agg_buffer->aggregator_interval);
+
+          //assert(rank == calculated_rank);
+          if (i == 0)
+            printf("[%d] [F [%d %d] V %d  S %d] -> RO %d Size %d\n", agg_offset, k, local_block_layout->existing_file_index[k], i, j, rank, (int)agg_buffer->buffer_size);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
 
 #if !SIMULATE_IO
-          //printf("Buffer size = %d x %d / %d x %d\n", local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, agg_buffer->aggregation_factor, bytes_per_datatype);
+          //double bs_time = MPI_Wtime();
           agg_buffer->buffer = malloc(agg_buffer->buffer_size);
           memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
           if (agg_buffer->buffer == NULL)
@@ -1034,11 +1056,17 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_buffer->buffer_size, __LINE__, __FILE__);
             return PIDX_err_agg;
           }
+          //double be_time = MPI_Wtime();
+          //if (rank == 0)
+          //  printf("[XX] %d time at %d = %f\n", var_offset, agg_offset - agg_id->idx_d->start_layout_index, be_time - bs_time);
 #endif
         }
       }
     }
   }
+  //double e_time = MPI_Wtime();
+  //if (rank == 0)
+  //  printf("[YY] %d time at %d = %f\n", var_offset, agg_offset - agg_id->idx_d->start_layout_index, e_time - s_time);
 
 #if 0
   if (rank == 0)
@@ -1469,7 +1497,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
       }
       else
       {
-        ret = local_one_sided_data_com(agg_id, agg_buffer, block_layout, PIDX_WRITE);
+        ret = local_one_sided_data_com(agg_id, agg_buffer, layout_id, block_layout, PIDX_WRITE);
         if (ret != PIDX_success)
         {
           fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
@@ -1479,7 +1507,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
     }
     else
     {
-      ret = local_one_sided_data_com(agg_id, agg_buffer, block_layout, PIDX_WRITE);
+      ret = local_one_sided_data_com(agg_id, agg_buffer, layout_id, block_layout, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
@@ -1489,7 +1517,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
   }
   else
   {
-    ret = local_one_sided_data_com(agg_id, agg_buffer, block_layout, PIDX_READ);
+    ret = local_one_sided_data_com(agg_id, agg_buffer, layout_id, block_layout, PIDX_READ);
     if (ret != PIDX_success)
     {
       fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);

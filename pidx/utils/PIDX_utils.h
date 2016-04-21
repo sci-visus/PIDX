@@ -28,6 +28,8 @@
 
 typedef struct {int x,y,z,u,v;} PointND;
 
+typedef struct {int x,y,z;} Point3D;
+
 unsigned int getNumBits ( unsigned int v );
 
 uint64_t getPowerOf2(int x);
@@ -65,5 +67,9 @@ int64_t xyz_to_HZ(const char* bitmask, int maxh, PointND xyz);
 void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz);
 
 int VisusSplitFilename(const char* filename,char* dirname,char* basename);
+
+void guess_bit_string(char* bit_string, const Point3D dims);
+
+int pow_greater_equal(int base, int num);
 
 #endif

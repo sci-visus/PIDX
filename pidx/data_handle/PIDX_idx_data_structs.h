@@ -58,6 +58,7 @@ struct PIDX_timming_struct
    double *compression_start, *compression_end;
    double **agg_start, **agg_end;
    double **agg_buf_start, **agg_buf_end;
+   double **agg_meta_start, **agg_meta_end;
 
    double **windows_start, **windows_end;
    double **first_fence_start, **first_fence_end;
@@ -198,6 +199,8 @@ struct idx_dataset_derived_metadata_struct
 
   int aggregator_multiplier;
   int data_core_count;
+
+  int ****layout_agg_range;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

@@ -61,7 +61,7 @@ PIDX_return_code PIDX_local_agg_meta_data_destroy(PIDX_local_agg_id agg_id, PIDX
 
 
 ///
-PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset);
+PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset, int var_offset);
 
 
 ///

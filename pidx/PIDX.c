@@ -1628,7 +1628,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     }
 
     if (file->io_type == PIDX_IDX_IO)
-      PIDX_print_idx_io_timing(file->comm, time, file->idx->variable_count, file->idx_d->layout_count);
+      PIDX_print_idx_io_timing(file->comm, time, file->idx->variable_count, file->idx_d->layout_count, file->idx_d->start_layout_index, file->idx_d->end_layout_index, file->idx_d->layout_agg_range);
 
     else if (file->io_type == PIDX_RAW_IO)
       PIDX_print_raw_io_timing(file->comm, time, time->variable_counter, file->idx_d->perm_layout_count);
@@ -1684,6 +1684,27 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   PIDX_delete_timming_buffers1(file->idx_d->time);
   PIDX_delete_timming_buffers2(file->idx_d->time, file->idx->variable_count);
+
+  /*
+  int h, j, agg_count = 0;
+  for (h = 0; h < file->idx->variable_count; h++)
+  {
+    for (i = 0; i < file->idx_d->perm_layout_count; i++)
+    {
+      if (i == 0 || i == 1)
+        agg_count = 1;
+      else
+        agg_count = (int)pow(2, i - 1);
+
+      for (j = 0; j < agg_count; j++)
+        free(file->idx_d->layout_agg_range[h][i][j]);
+
+      free(file->idx_d->layout_agg_range[h][i]);
+    }
+    free(file->idx_d->layout_agg_range[h]);
+  }
+  free(file->idx_d->layout_agg_range);
+  */
 #endif
 
   for (i = 0; i < file->idx->variable_count; i++)

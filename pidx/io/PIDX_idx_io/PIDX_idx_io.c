@@ -168,6 +168,8 @@ static PIDX_return_code populate_idx_file_structure(PIDX_idx_io file, int partit
     else
       file->idx->chunked_bounds[d] = (int) (file->idx->bounds[d] / file->idx->chunk_size[d]) + 1;
   }
+  //int rank;
+  //MPI_Comm_rank(file->comm, &rank);
 
   int64_t* cb = file->idx->chunked_bounds;
   bounds_point.x = (int) cb[0];
@@ -182,16 +184,16 @@ static PIDX_return_code populate_idx_file_structure(PIDX_idx_io file, int partit
 
   if (partition_level == 0)
   {
-    PointND idx_g_point;
+    Point3D idx_g_point;
     idx_g_point.x = (int) file->idx_d->idx_count[0];
     idx_g_point.y = (int) file->idx_d->idx_count[1];
     idx_g_point.z = (int) file->idx_d->idx_count[2];
-    idx_g_point.u = (int) file->idx_d->idx_count[3];
-    idx_g_point.v = (int) file->idx_d->idx_count[4];
-    GuessBitmaskPattern(file->idx->idx_cg_bitSequence, idx_g_point);
-    //printf("Global %s\n", file->idx->idx_cg_bitSequence);
+    //GuessBitmaskPattern(file->idx->idx_cg_bitSequence, idx_g_point);
+    guess_bit_string(file->idx->idx_cg_bitSequence, idx_g_point);
+    //if (rank == 0)
+    //  printf("PARTITION %s\n", file->idx->idx_cg_bitSequence);
 
-#if 1
+#if 0
     PointND idx_l_point;
     idx_l_point.x = (int) file->idx_d->idx_size[0];
     idx_l_point.y = (int) file->idx_d->idx_size[1];
@@ -206,23 +208,23 @@ static PIDX_return_code populate_idx_file_structure(PIDX_idx_io file, int partit
     strcat(file->idx->bitSequence, file->idx->idx_cl_bitSequence + 1);
     //printf("Final %s %d\n", file->idx->bitSequence, strlen(file->idx->bitSequence));
 #else
-    PointND idx_l1_point;
+    Point3D idx_l1_point;
     idx_l1_point.x = (int) file->idx_d->idx_size[0] / file->idx->reg_patch_size[0];
     idx_l1_point.y = (int) file->idx_d->idx_size[1] / file->idx->reg_patch_size[1];
     idx_l1_point.z = (int) file->idx_d->idx_size[2] / file->idx->reg_patch_size[2];
-    idx_l1_point.u = (int) file->idx_d->idx_size[3] / file->idx->reg_patch_size[3];
-    idx_l1_point.v = (int) file->idx_d->idx_size[4] / file->idx->reg_patch_size[4];
-    GuessBitmaskPattern(file->idx->idx_cl1_bitSequence, idx_l1_point);
-    //printf("PC %d %d %d %d %d: %s\n", idx_l1_point.x, idx_l1_point.y, idx_l1_point.z, idx_l1_point.u, idx_l1_point.v, file->idx->idx_cl1_bitSequence);
+    //GuessBitmaskPattern(file->idx->idx_cl1_bitSequence, idx_l1_point);
+    guess_bit_string(file->idx->idx_cl1_bitSequence, idx_l1_point);
+    //if (rank == 0)
+    //  printf("PC %d %d %d: %s\n", idx_l1_point.x, idx_l1_point.y, idx_l1_point.z, file->idx->idx_cl1_bitSequence);
 
-    PointND idx_l2_point;
+    Point3D idx_l2_point;
     idx_l2_point.x = (int) file->idx->reg_patch_size[0];
     idx_l2_point.y = (int) file->idx->reg_patch_size[1];
     idx_l2_point.z = (int) file->idx->reg_patch_size[2];
-    idx_l2_point.u = (int) file->idx->reg_patch_size[3];
-    idx_l2_point.v = (int) file->idx->reg_patch_size[4];
-    GuessBitmaskPattern(file->idx->idx_cl2_bitSequence, idx_l2_point);
-    //printf("CC %d %d %d %d %d: %s\n", idx_l2_point.x, idx_l2_point.y, idx_l2_point.z, idx_l2_point.u, idx_l2_point.v, file->idx->idx_cl2_bitSequence);
+    //GuessBitmaskPattern(file->idx->idx_cl2_bitSequence, idx_l2_point);
+    guess_bit_string(file->idx->idx_cl2_bitSequence, idx_l2_point);
+    //if (rank == 0)
+    //  printf("CC %d %d %d: %s\n", idx_l2_point.x, idx_l2_point.y, idx_l2_point.z, file->idx->idx_cl2_bitSequence);
 
     strcpy(file->idx->idx_cl_bitSequence, file->idx->idx_cl1_bitSequence);
     strcat(file->idx->idx_cl_bitSequence, file->idx->idx_cl2_bitSequence + 1);
@@ -242,6 +244,18 @@ static PIDX_return_code populate_idx_file_structure(PIDX_idx_io file, int partit
     //printf("Initial %s %d\n", file->idx->bitSequence, strlen(file->idx->bitSequence));
   }
 
+
+  //Point3D p;
+  //p.x = file->idx->reg_patch_size[0];
+  //p.y = file->idx->reg_patch_size[1];
+  //p.z = file->idx->reg_patch_size[2];
+  //printf("XYZ %d %d %d ----> \n", p.x, p.y, p.z);
+  //guess_bit_string(p, file->idx->bitSequence);
+  //printf("XYZ %d %d %d ----> %s\n", p.x, p.y, p.z, file->idx->bitSequence);
+  //if (rank == 0)
+  //  printf("BS = %s\n", file->idx->bitSequence);
+
+  //strcpy(file->idx->bitSequence, "V210012012012012012012");
   file->idx_d->maxh = strlen(file->idx->bitSequence);
 
   for (i = 0; i <= file->idx_d->maxh; i++)
@@ -1627,9 +1641,40 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
 
   int hz_from = total_partiton_level;
   int hz_to = file->idx_d->maxh;
+  int i = 0;
 
   //printf("From to to: %d %d\n", hz_from, hz_to);
   ret = populate_idx_dataset(file, start_var_index, end_var_index, hz_from, hz_to);
+
+
+  /*
+  int agg_count = 0, h = 0;
+  file->idx_d->layout_agg_range = malloc(sizeof(*(file->idx_d->layout_agg_range)) * file->idx->variable_count);
+  memset(file->idx_d->layout_agg_range, 0, sizeof(*(file->idx_d->layout_agg_range)) * file->idx->variable_count);
+  for (h = 0; h < file->idx->variable_count; h++)
+  {
+    file->idx_d->layout_agg_range[h] = malloc(sizeof(*(file->idx_d->layout_agg_range[h])) * file->idx_d->perm_layout_count);
+    memset(file->idx_d->layout_agg_range[h], 0, sizeof(*(file->idx_d->layout_agg_range[h])) * file->idx_d->perm_layout_count);
+    for (i = 0; i < file->idx_d->perm_layout_count; i++)
+    {
+      if (i == 0 || i == 1)
+        agg_count = 1;
+      else
+        agg_count = (int)pow(2, i - 1);
+
+      file->idx_d->layout_agg_range[h][i] = malloc(sizeof(*(file->idx_d->layout_agg_range[h][i])) * agg_count);
+      memset(file->idx_d->layout_agg_range[h][i], 0, sizeof(*(file->idx_d->layout_agg_range[h][i])) * agg_count);
+      for (j = 0; j < agg_count; j++)
+      {
+        file->idx_d->layout_agg_range[h][i][j] = malloc(sizeof(*(file->idx_d->layout_agg_range[h][i][j])) * 2);
+        memset(file->idx_d->layout_agg_range[h][i][j], 0, sizeof(*(file->idx_d->layout_agg_range[h][i][j])) * 2);
+      }
+    }
+  }
+  */
+
+
+
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, total_partiton_level);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh);
   //ret = populate_idx_dataset(file, start_var_index, end_var_index, 0, file_zero_level);
@@ -1743,7 +1788,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
 
 
   int start_index = 0, end_index = 0;
-  int i = 0;
+
 
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->idx_d->var_pipe_length + 1))
   {
@@ -1866,6 +1911,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
         return PIDX_err_compress;
 
       /* Attaching the communicator to the HZ encodig phase phase */
+      PIDX_hz_encode_set_global_communicator(file->hz_id, file->comm);
       ret = PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
       if (ret != PIDX_success)
         return PIDX_err_hz;
@@ -2270,7 +2316,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     {
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
       {
-        time->agg_buf_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+
+        time->agg_meta_start[i][j] = PIDX_get_time();
         /* Creating the buffers required for Aggregation */
         ret = PIDX_agg_meta_data_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index]);
         if (ret != PIDX_success)
@@ -2278,14 +2325,16 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
           fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
+        time->agg_meta_end[i][j] = PIDX_get_time();
 
+        time->agg_buf_start[i][j] = PIDX_get_time();
         ret = PIDX_agg_buf_create(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->global_block_layout, i, j);
         if (ret != PIDX_success)
         {
           fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
-        time->agg_buf_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+        time->agg_buf_end[i][j] = PIDX_get_time();
 
 #if PIDX_DEBUG_OUTPUT
     l_agg_buf = 1;
@@ -2296,7 +2345,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
 
         if (file->idx_dbg->debug_do_agg == 1)
         {
-          time->agg_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+          time->agg_start[i][j] = PIDX_get_time();
           ret = PIDX_agg(file->tagg_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], j, file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE, i, j - file->idx_d->start_layout_index);
 
           if (ret != PIDX_success)
@@ -2304,7 +2353,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
             fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
             return PIDX_err_rst;
           }
-          time->agg_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+          time->agg_end[i][j] = PIDX_get_time();
         }
 
 #if PIDX_DEBUG_OUTPUT
@@ -2316,14 +2365,14 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
 
         if (file->idx_dbg->debug_do_io == 1)
         {
-          time->io_start[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+          time->io_start[i][j] = PIDX_get_time();
           ret = PIDX_aggregated_io(file->tio_id[i][j - file->idx_d->start_layout_index], file->idx_d->agg_buffer[i][j - file->idx_d->start_layout_index], file->idx->variable[start_var_index]->block_layout_by_level[j - file->idx_d->start_layout_index], PIDX_WRITE);
           if (ret != PIDX_success)
           {
             fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
             return PIDX_err_io;
           }
-          time->io_end[i][j - file->idx_d->start_layout_index] = PIDX_get_time();
+          time->io_end[i][j] = PIDX_get_time();
         }
 
 #if PIDX_DEBUG_OUTPUT
@@ -2362,14 +2411,14 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
       {
         for(j = agg_io_level ; j < file->idx_d->end_layout_index; j++)
         {
-          time->io_per_process_start[i][j - agg_io_level] = PIDX_get_time();
+          time->io_per_process_start[i][j] = PIDX_get_time();
           ret = PIDX_file_io_per_process(file->tio_id[i][j - agg_io_level], file->idx->variable[start_var_index]->block_layout_by_level[j - agg_io_level], PIDX_WRITE);
           if (ret != PIDX_success)
           {
             fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
             return PIDX_err_io;
           }
-          time->io_per_process_end[i][j - agg_io_level] = PIDX_get_time();
+          time->io_per_process_end[i][j] = PIDX_get_time();
         }
       }
     }
@@ -2451,7 +2500,6 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   //delete_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh);
   //delete_idx_dataset(file, start_var_index, end_var_index, file_zero_level, total_partiton_level);
   delete_idx_dataset(file, start_var_index, end_var_index, hz_from, hz_to);
-
 
 
 #if PIDX_DEBUG_OUTPUT
