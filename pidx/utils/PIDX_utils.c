@@ -259,7 +259,7 @@ void guess_bit_string(char* bit_string, const Point3D dims)
   }
 
   //bit_string.size = size;
-  assert(size > 0);
+  assert(size >= 0);
   size_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
