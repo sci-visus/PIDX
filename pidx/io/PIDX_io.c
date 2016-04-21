@@ -375,22 +375,6 @@ void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
 
                   (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]) + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
 #endif
-        /*
-        int agg_count = 0;
-        if (p == 0 || p == 1)
-          agg_count = 1;
-        else
-          agg_count = (int)pow(2, p - 1);
-        int a = 0;
-        for (a = 0; a < agg_count; a++)
-        {
-//        if (lab[var][p][a][0] != 0)
-//          MPI_Bcast(lab[var][p][a], 2, MPI_INT, rank, comm);
-
-          printf("[%d %d %d: %d %d]", var, p, a, lab[var][p][a][0], lab[var][p][a][1]);
-        }
-        printf("\n");
-        */
 
         total_time_bc = total_time_bc + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]);
         total_time_m = total_time_m + (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]);
@@ -402,9 +386,6 @@ void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
     total_time_ai = total_time_m + total_time_bc + total_time_a + total_time_i + total_time_pi;
     fprintf(stdout, "\n[%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", var_count, layout_count, total_time_m, total_time_bc, total_time_a, total_time_i, total_time_pi, total_time_ai);
 
-
-
-    //printf("static_var_counter = %d\n", static_var_counter);
     double total_time_rch = 0;
     for (var = 0; var < /*var_count*/1; var++)
     {

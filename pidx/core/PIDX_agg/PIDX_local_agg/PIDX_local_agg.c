@@ -370,25 +370,16 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
   target_rank = agg_id->rank_holder2[block_layout->inverse_existing_file_index[file_no]][variable_index - agg_id->first_index][sample_index];
 
 
-  //printf("[%d] L %d ----> %d\n", rank, layout_id, target_rank);
-
-
-  if (layout_id != 0)
+  if (layout_id != 0 && agg_id->idx->current_time_step == 0)
   {
     MPI_Comm agg_comm;
     int max_rank = 0;
     int min_rank = 0;
-    //if (layout_id == 3)
-    //printf("rank %d target rank %d target file %d %d\n", rank, target_rank, block_layout->inverse_existing_file_index[file_no], file_no);
+
     MPI_Comm_split(agg_id->comm, target_rank, rank, &agg_comm);
     MPI_Allreduce(&rank, &max_rank, 1, MPI_INT, MPI_MAX, agg_comm);
     MPI_Allreduce(&rank, &min_rank, 1, MPI_INT, MPI_MIN, agg_comm);
     MPI_Comm_free(&agg_comm);
-    //if (rank == 0)
-    //printf("[%d] %d -> min max = %d %d\n",  layout_id, rank, min_rank, max_rank);
-
-    //agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][0] = min_rank;
-    //agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][1] = max_rank;
 
     if (target_rank < min_rank || target_rank > max_rank || rank < min_rank || rank > max_rank)
       printf("[TR %d] [%d] V %d P %d A %d = %d %d\n", target_rank, rank, variable_index, layout_id, block_layout->inverse_existing_file_index[file_no], agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][0], agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][1]);
