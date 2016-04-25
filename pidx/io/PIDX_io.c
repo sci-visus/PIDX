@@ -384,7 +384,7 @@ void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
       }
     }
     total_time_ai = total_time_m + total_time_bc + total_time_a + total_time_i + total_time_pi;
-    fprintf(stdout, "\n[%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", var_count, layout_count, total_time_m, total_time_bc, total_time_a, total_time_i, total_time_pi, total_time_ai);
+    fprintf(stdout, "[%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", var_count, layout_count, total_time_m, total_time_bc, total_time_a, total_time_i, total_time_pi, total_time_ai);
 
     double total_time_rch = 0;
     for (var = 0; var < /*var_count*/1; var++)

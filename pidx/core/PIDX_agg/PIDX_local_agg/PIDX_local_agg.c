@@ -1146,7 +1146,7 @@ static PIDX_return_code close_log_file (PIDX_local_agg_id agg_id)
 }
 
 #if PIDX_HAVE_MPI
-static PIDX_return_code create_file_zero_buffer(PIDX_local_agg_id agg_id, PIDX_block_layout block_layout)
+static PIDX_return_code create_file_zero_buffer(PIDX_local_agg_id agg_id, PIDX_block_layout block_layout, int start_index, int end_index)
 {
   int rank = 0;
 #if PIDX_HAVE_MPI
@@ -1173,7 +1173,7 @@ static PIDX_return_code create_file_zero_buffer(PIDX_local_agg_id agg_id, PIDX_b
         buffer_count = 0;
         hz_buf->lower_hz_buffer_size = 0;
 
-        for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
+        for (i = /*block_layout->resolution_from*/start_index; i < /*block_layout->resolution_to*/end_index; i++)
         {
           if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
           {
@@ -1236,7 +1236,8 @@ static PIDX_return_code create_file_zero_buffer(PIDX_local_agg_id agg_id, PIDX_b
         buffer_count = 0;
         int target_offset = 0;
         send_index = 0;
-        for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
+        for (i = /*block_layout->resolution_from*/start_index; i < /*block_layout->resolution_to*/end_index; i++)
+        //for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
         {
           if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
           {
@@ -1341,7 +1342,8 @@ static PIDX_return_code create_file_zero_buffer(PIDX_local_agg_id agg_id, PIDX_b
         buffer_count = 0;
         hz_buf->lower_hz_buffer_size = 0;
 
-        for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
+        for (i = /*block_layout->resolution_from*/start_index; i < /*block_layout->resolution_to*/end_index; i++)
+        //for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
         {
           if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
           {
@@ -1363,7 +1365,8 @@ static PIDX_return_code create_file_zero_buffer(PIDX_local_agg_id agg_id, PIDX_b
         int prev_count = 0;
         int block_no = 0;
         int negative_block_offset = 0;
-        for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
+        for (i = /*block_layout->resolution_from*/start_index; i < /*block_layout->resolution_to*/end_index; i++)
+        //for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
         {
           if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
           {
@@ -1453,7 +1456,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
   {
     if (layout_id == 0)
     {
-      ret = create_file_zero_buffer(agg_id, block_layout);
+      ret = create_file_zero_buffer(agg_id, block_layout, block_layout->resolution_from, block_layout->resolution_to);
       if (ret != PIDX_success)
       {
         fprintf(stderr, " [%s] [%d] PIDX error (create_file_zero_buffer).\n", __FILE__, __LINE__);
