@@ -213,7 +213,7 @@ static PIDX_return_code populate_idx_file_structure(PIDX_idx_io file, int partit
     idx_l1_point.y = (int) file->idx_d->idx_size[1] / file->idx->reg_patch_size[1];
     idx_l1_point.z = (int) file->idx_d->idx_size[2] / file->idx->reg_patch_size[2];
     //GuessBitmaskPattern(file->idx->idx_cl1_bitSequence, idx_l1_point);
-    guess_bit_string(file->idx->idx_cl1_bitSequence, idx_l1_point);
+    guess_bit_string2(file->idx->idx_cl1_bitSequence, idx_l1_point);
     //if (rank == 0)
     //  printf("PC %d %d %d: %s\n", idx_l1_point.x, idx_l1_point.y, idx_l1_point.z, file->idx->idx_cl1_bitSequence);
 

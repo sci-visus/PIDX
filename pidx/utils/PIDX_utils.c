@@ -269,6 +269,46 @@ void guess_bit_string(char* bit_string, const Point3D dims)
   bit_string[size + 1] = '\0';
 }
 
+
+
+void guess_bit_string2(char* bit_string, const Point3D dims)
+{
+  Point3D power_2_dims;
+  power_2_dims.x = pow_greater_equal(2, dims.x);
+  power_2_dims.y = pow_greater_equal(2, dims.y);
+  power_2_dims.z = pow_greater_equal(2, dims.z);
+  size_t size = 0;
+  char buffer[65];
+  while (power_2_dims.z > 1)
+  {
+    power_2_dims.z /= 2;
+    buffer[size++] = '2';
+  }
+
+  while (power_2_dims.y > 1)
+  {
+    power_2_dims.y /= 2;
+    buffer[size++] = '1';
+  }
+
+  while (power_2_dims.x > 1)
+  {
+    power_2_dims.x /= 2;
+    buffer[size++] = '0';
+  }
+
+  //bit_string.size = size;
+  assert(size >= 0);
+  size_t i = 0;
+  bit_string[0] = 'V';
+  for ( i = 1; i < size + 1; ++i)
+  {
+    bit_string[i] = buffer[i - 1];
+  }
+  bit_string[size + 1] = '\0';
+}
+
+
 static void freeBox(int** box)
 {
   free(box[0]);

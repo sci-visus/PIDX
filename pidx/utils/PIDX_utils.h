@@ -70,6 +70,8 @@ int VisusSplitFilename(const char* filename,char* dirname,char* basename);
 
 void guess_bit_string(char* bit_string, const Point3D dims);
 
+void guess_bit_string2(char* bit_string, const Point3D dims);
+
 int pow_greater_equal(int base, int num);
 
 #endif
