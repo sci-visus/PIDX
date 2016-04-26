@@ -298,6 +298,7 @@ int main(int argc, char **argv)
     {
       case PIDX_IDX_IO:
         //PIDX_optimize_for_file_zero(file);
+        //PIDX_set_block_size(file, 9);
         PIDX_set_block_count(file,blocks_per_file);
         //PIDX_set_block_size(file, 5);
         break;
