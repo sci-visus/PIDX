@@ -1639,8 +1639,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   if (file_zero_level >= file->idx_d->maxh)
     file_zero_level = file->idx_d->maxh;
 
-  int hz_from = file_zero_level;//total_partiton_level;
-  int hz_to =  file_zero_level + 1;//total_partiton_level;//file->idx_d->maxh;
+  int hz_from = 0;//file_zero_level;//total_partiton_level;
+  int hz_to =  file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
   int i = 0;
 
   //printf("From to to: %d %d\n", hz_from, hz_to);

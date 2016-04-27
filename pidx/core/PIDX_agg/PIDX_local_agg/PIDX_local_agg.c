@@ -368,12 +368,8 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
   target_disp = target_disp % (samples_in_file / agg_buffer->aggregation_factor);
 
   target_rank = agg_id->rank_holder2[block_layout->inverse_existing_file_index[file_no]][variable_index - agg_id->first_index][sample_index];
-  //printf("target rank = %d\n", target_rank);
 
-  int tsize;
-  MPI_Comm_size(agg_id->local_comm, &tsize);
-  MPI_Comm_rank(agg_id->local_comm, &rank);
-
+  MPI_Comm_rank(agg_id->comm, &rank);
   //
   if (layout_id != 0 && agg_id->idx->current_time_step == 0)
   {
@@ -381,13 +377,14 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
     int max_rank = 0;
     int min_rank = 0;
 
-    MPI_Comm_split(agg_id->local_comm, target_rank, rank, &agg_comm);
+    MPI_Comm_split(agg_id->comm, target_rank, rank, &agg_comm);
     int nrank = 0;
     MPI_Comm_rank(agg_comm, &nrank);
 
     MPI_Allreduce(&rank, &max_rank, 1, MPI_INT, MPI_MAX, agg_comm);
     MPI_Allreduce(&rank, &min_rank, 1, MPI_INT, MPI_MIN, agg_comm);
-    if (nrank == 0 /*&& variable_index == 0*/)
+
+    if (nrank == 0 && variable_index == 0)
       printf("[%d] [%d %d]: %d [%d - %d]\n", layout_id, block_layout->inverse_existing_file_index[file_no], sample_index, target_rank, min_rank, max_rank);
     MPI_Comm_free(&agg_comm);
 
@@ -400,7 +397,6 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
     assert(rank <= max_rank);
   }
   //
-
 
   target_count = hz_count * values_per_sample;
 
@@ -955,6 +951,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
   MPI_Comm_rank(agg_id->comm, &rank);
   MPI_Comm_rank(agg_id->global_comm, &grank);
 
+  /*
   PIDX_variable var = agg_id->idx->variable[agg_id->first_index];
   HZ_buffer hz_buf = var->hz_buffer[0];
   int64_t samples_per_file = (int64_t) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
@@ -979,6 +976,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
 
   MPI_Comm_rank(agg_id->local_comm, &rank);
+  */
 
   int /*rank_counter = 0,*/ i = 0, j = 0, k = 0;
   //rank_counter = 0;//agg_offset;
@@ -987,8 +985,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
   {
     for (i = agg_id->first_index; i <= agg_id->last_index; i++)
     {
-      j = sample_index;
-      //for (j = 0; j < agg_id->idx->variable[i]->values_per_sample * agg_buffer->aggregation_factor; j++)
+      //j = sample_index;
+      for (j = 0; j < agg_id->idx->variable[i]->values_per_sample * agg_buffer->aggregation_factor; j++)
       {
         //agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_counter;
 
@@ -1055,8 +1053,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           int nrank_x = (agg_id->idx->bounds[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
           int nrank_y = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
           calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
-          if (calculated_rank == 16 / 2)
-            calculated_rank = 0;
+          //if (calculated_rank == 16 / 2)
+          //  calculated_rank = 0;
 
 
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_id->idx_d->aggregator_multiplier * 2));
@@ -1131,7 +1129,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
 PIDX_return_code PIDX_local_agg_buf_destroy(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer)
 {
-  MPI_Comm_free(&(agg_id->local_comm));
+  //MPI_Comm_free(&(agg_id->local_comm));
 #if !SIMULATE_IO
   if (agg_buffer->buffer_size != 0)
   {
@@ -1487,7 +1485,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
   //int file_zero = 1;
   int ret;
 
-  ret = create_window(agg_id, agg_buffer, agg_id->local_comm);
+  ret = create_window(agg_id, agg_buffer, agg_id->comm);
   if (ret != PIDX_success)
   {
     fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
