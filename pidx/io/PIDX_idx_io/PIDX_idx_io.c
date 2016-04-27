@@ -2314,7 +2314,7 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
     /* Creating the buffers required for Aggregation */
     for(i = start_index ; i < (end_index + 1) ; i = i + (agg_var_pipe + 1))
     {
-#if 0
+#if 1
       for(j = file->idx_d->start_layout_index ; j < agg_io_level; j++)
       {
         time->agg_meta_start[i][j] = PIDX_get_time();

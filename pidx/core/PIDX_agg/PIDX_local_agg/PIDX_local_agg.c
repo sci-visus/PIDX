@@ -387,7 +387,7 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
 
     MPI_Allreduce(&rank, &max_rank, 1, MPI_INT, MPI_MAX, agg_comm);
     MPI_Allreduce(&rank, &min_rank, 1, MPI_INT, MPI_MIN, agg_comm);
-    if (nrank == 0 && variable_index == 0)
+    if (nrank == 0 /*&& variable_index == 0*/)
       printf("[%d] [%d %d]: %d [%d - %d]\n", layout_id, block_layout->inverse_existing_file_index[file_no], sample_index, target_rank, min_rank, max_rank);
     MPI_Comm_free(&agg_comm);
 
@@ -782,7 +782,7 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
 #endif
 
 #if !SIMULATE_IO
-        //printf("[%d] XX Count %d Offset %d\n", rank, hz_count * values_per_sample * bytes_per_datatype, target_disp);
+        //printf("[%d %d] XX Count %d Offset %d\n", rank, target_rank, hz_count * values_per_sample * bytes_per_datatype, target_disp);
         ret = MPI_Put(hz_buffer, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, target_rank, target_disp, hz_count * values_per_sample * bytes_per_datatype, MPI_BYTE, agg_id->win);
         if(ret != MPI_SUCCESS)
         {
@@ -987,7 +987,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
   {
     for (i = agg_id->first_index; i <= agg_id->last_index; i++)
     {
-      for (j = 0; j < agg_id->idx->variable[i]->values_per_sample * agg_buffer->aggregation_factor; j++)
+      j = sample_index;
+      //for (j = 0; j < agg_id->idx->variable[i]->values_per_sample * agg_buffer->aggregation_factor; j++)
       {
         //agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_counter;
 
@@ -1130,6 +1131,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
 PIDX_return_code PIDX_local_agg_buf_destroy(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer)
 {
+  MPI_Comm_free(&(agg_id->local_comm));
 #if !SIMULATE_IO
   if (agg_buffer->buffer_size != 0)
   {
