@@ -323,7 +323,7 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
 
 #if PIDX_HAVE_MPI
   int ret;
-  MPI_Comm_rank(comm, &rank);
+
   //MPI_Comm_rank(agg_id->global_comm, &nrank);
 #endif
 
@@ -368,18 +368,27 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
   target_disp = target_disp % (samples_in_file / agg_buffer->aggregation_factor);
 
   target_rank = agg_id->rank_holder2[block_layout->inverse_existing_file_index[file_no]][variable_index - agg_id->first_index][sample_index];
+  //printf("target rank = %d\n", target_rank);
 
+  int tsize;
+  MPI_Comm_size(agg_id->local_comm, &tsize);
+  MPI_Comm_rank(agg_id->local_comm, &rank);
 
-  /*
+  //
   if (layout_id != 0 && agg_id->idx->current_time_step == 0)
   {
     MPI_Comm agg_comm;
     int max_rank = 0;
     int min_rank = 0;
 
-    MPI_Comm_split(agg_id->comm, target_rank, rank, &agg_comm);
+    MPI_Comm_split(agg_id->local_comm, target_rank, rank, &agg_comm);
+    int nrank = 0;
+    MPI_Comm_rank(agg_comm, &nrank);
+
     MPI_Allreduce(&rank, &max_rank, 1, MPI_INT, MPI_MAX, agg_comm);
     MPI_Allreduce(&rank, &min_rank, 1, MPI_INT, MPI_MIN, agg_comm);
+    if (nrank == 0 && variable_index == 0)
+      printf("[%d] [%d %d]: %d [%d - %d]\n", layout_id, block_layout->inverse_existing_file_index[file_no], sample_index, target_rank, min_rank, max_rank);
     MPI_Comm_free(&agg_comm);
 
     if (target_rank < min_rank || target_rank > max_rank || rank < min_rank || rank > max_rank)
@@ -390,7 +399,7 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
     assert(rank >= min_rank);
     assert(rank <= max_rank);
   }
-  */
+  //
 
 
   target_count = hz_count * values_per_sample;
@@ -946,6 +955,31 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
   MPI_Comm_rank(agg_id->comm, &rank);
   MPI_Comm_rank(agg_id->global_comm, &grank);
 
+  PIDX_variable var = agg_id->idx->variable[agg_id->first_index];
+  HZ_buffer hz_buf = var->hz_buffer[0];
+  int64_t samples_per_file = (int64_t) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
+  int values_per_sample = agg_id->idx->variable[0]->values_per_sample;
+  int hz_start = hz_buf->start_hz_index[local_block_layout->resolution_from];
+  int file_no = hz_start / samples_per_file;
+  int block_no = hz_start / agg_id->idx_d->samples_per_block;
+  int negative_block_offset = PIDX_blocks_find_negative_offset(agg_id->idx->blocks_per_file, block_no, local_block_layout);
+  int samples_in_file = local_block_layout->block_count_per_file[file_no] * agg_id->idx_d->samples_per_block;
+  int target_disp = ((hz_start - ((samples_per_file * file_no) + (negative_block_offset * agg_id->idx_d->samples_per_block))) * values_per_sample)
+    %
+    (samples_in_file * values_per_sample);
+
+  int sample_index = target_disp / (samples_in_file / agg_buffer->aggregation_factor);
+  int target_rank = sample_index;//agg_id->rank_holder2[local_block_layout->inverse_existing_file_index[file_no]][0][sample_index];
+  //printf("[%d] [%d %d] Target Rank = %d\n", rank, (local_block_layout->inverse_existing_file_index[file_no]), sample_index, target_rank);
+  MPI_Comm_split(agg_id->comm, target_rank, rank, &(agg_id->local_comm));
+
+  //int tsize;
+  //MPI_Comm_size(agg_id->local_comm, &tsize);
+  //printf("SSSSSSSSSSS222 = %d\n", tsize);
+
+
+  MPI_Comm_rank(agg_id->local_comm, &rank);
+
   int /*rank_counter = 0,*/ i = 0, j = 0, k = 0;
   //rank_counter = 0;//agg_offset;
   //double s_time = MPI_Wtime();
@@ -1017,26 +1051,17 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           int rank_z = first[2] / (agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[2]);
           //printf("[%d %d %d] [XYZ] %d %d %d\n", first[0], first[1], first[2], rank_x, rank_y, rank_z);
 
-          /*
-          int sub_div[3];
-          sub_div[0] = (agg_id->idx->bounds[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
-          sub_div[1] = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
-          sub_div[2] = (agg_id->idx->bounds[2] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[2]);
-          int rank_z = rank / (sub_div[0] * sub_div[1]);
-          int rank_slice = rank % (sub_div[0] * sub_div[1]);
-          int rank_y = (rank_slice / sub_div[0]);
-          int rank_x = (rank_slice % sub_div[0]);
-
-
-          */
           int nrank_x = (agg_id->idx->bounds[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
           int nrank_y = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
           calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
+          if (calculated_rank == 16 / 2)
+            calculated_rank = 0;
+
 
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_id->idx_d->aggregator_multiplier * 2));
           //printf("[%d] XXXXXXXX %d %d\n", agg_offset, calculated_rank, (nprocs/(local_block_layout->existing_file_count * agg_id->idx_d->aggregator_multiplier * 2)));
         //}
-        //free(first);
+        free(first);
 #endif
         if(rank == agg_id->rank_holder2[k][i - agg_id->first_index][j])
         {
@@ -1055,7 +1080,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
           //assert(rank == calculated_rank);
           if (i == 0)
-            printf("[%d] [F [%d %d] V %d  S %d] -> UR %d CR %d OR %d Size %d\n", agg_offset, k, local_block_layout->existing_file_index[k], i, j, rank, calculated_rank, old_rank, (int)agg_buffer->buffer_size);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+            printf("[%d] [%d] [F [%d %d] V %d  S %d] -> UR %d CR %d OR %d Size %d\n", grank, agg_offset, k, local_block_layout->existing_file_index[k], i, j, rank, calculated_rank, old_rank, (int)agg_buffer->buffer_size);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
 
 #if !SIMULATE_IO
           //double bs_time = MPI_Wtime();
@@ -1074,6 +1099,9 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
       }
     }
   }
+
+
+
   //double e_time = MPI_Wtime();
   //if (rank == 0)
   //  printf("[YY] %d time at %d = %f\n", var_offset, agg_offset - agg_id->idx_d->start_layout_index, e_time - s_time);
@@ -1457,7 +1485,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
   //int file_zero = 1;
   int ret;
 
-  ret = create_window(agg_id, agg_buffer, agg_id->comm);
+  ret = create_window(agg_id, agg_buffer, agg_id->local_comm);
   if (ret != PIDX_success)
   {
     fprintf(stderr, " [%s] [%d] Fence error.\n", __FILE__, __LINE__);
