@@ -43,6 +43,7 @@ struct PIDX_timming_struct
    double partition_end_time;
    double populate_idx_start_time;
    double populate_idx_end_time;
+   double hz_s_time, hz_e_time;
    double sim_start, sim_end;
    double *write_init_start, *write_init_end;
    double *startup_start, *startup_end;
@@ -50,6 +51,7 @@ struct PIDX_timming_struct
    double *rst_start, *rst_end;
    double *rst_io_start, *rst_io_end;
    double *rst_meta_data_start_io, *rst_meta_data_end_io;
+
    double *hz_start, *hz_end;
    double *cleanup_start, *cleanup_end;
    double *finalize_start, *finalize_end;
@@ -99,6 +101,9 @@ struct PIDX_variable_struct
   //PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
+
+  PIDX_block_layout* global_block_layout_files;                               ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout** block_layout_by_level_files;                            ///< Block layout, specifically when variables might have different extents in the domain
 
   //Compression related
   int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
@@ -185,8 +190,20 @@ struct idx_dataset_derived_metadata_struct
   
   //int staged_aggregation;
   int agg_type;
+
   int start_layout_index;
   int end_layout_index;
+
+  int start_layout_index_shared;
+  int end_layout_index_shared;
+  int layout_count_shared;
+
+  MPI_File *fp;
+  MPI_Request *request;
+  int start_layout_index_non_shared;
+  int end_layout_index_non_shared;
+  int layout_count_non_shared;
+
   int perm_layout_count;
   int layout_count;
   int reduced_res_from;

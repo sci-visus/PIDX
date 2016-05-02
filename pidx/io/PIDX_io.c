@@ -8,6 +8,7 @@ struct PIDX_io_descriptor
   MPI_Comm comm;                               ///< MPI sub-communicator (including all processes per IDX file)
 #endif
 
+  PIDX_global_idx_io global_idx_io;
   PIDX_partition_merge_idx_io partition_merge_idx_io;
   PIDX_partitioned_idx_io partitioned_idx_io;
   PIDX_idx_io idx_io;
@@ -703,6 +704,28 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int start_var_i
         return PIDX_err_flush;
 
       ret = PIDX_partition_merge_idx_io_finalize(file->partition_merge_idx_io);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
+
+    else if (io_type == PIDX_GLOBAL_IDX_IO)
+    {
+      if (start_var_index == file->idx->variable_count)
+        return PIDX_success;
+
+      file->global_idx_io = PIDX_global_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
+      if (file->global_idx_io == NULL)
+        return PIDX_err_flush;
+
+      ret = PIDX_global_idx_io_set_communicator(file->global_idx_io, file->comm);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      ret = PIDX_global_idx_write(file->global_idx_io, start_var_index, end_var_index);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      ret = PIDX_global_idx_io_finalize(file->global_idx_io);
       if (ret != PIDX_success)
         return PIDX_err_flush;
     }

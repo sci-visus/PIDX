@@ -67,6 +67,9 @@ int PIDX_file_io_file_create(PIDX_file_io_id io_id, int time_step, char* data_se
 int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE);
 
 
+///
+int PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* req, MPI_File *fp);
+
 
 ///
 int PIDX_file_io_aggregated_read(PIDX_file_io_id io_id, Agg_buffer agg_buffer);

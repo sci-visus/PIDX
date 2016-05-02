@@ -293,9 +293,15 @@ int main(int argc, char **argv)
     //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_PARTITION_MERGE_IDX_IO;
-    int io_type = PIDX_IDX_IO;
+    int io_type = PIDX_GLOBAL_IDX_IO;
     switch (io_type)
     {
+
+      case PIDX_GLOBAL_IDX_IO:
+        PIDX_enable_global_io(file);
+        PIDX_set_block_count(file,blocks_per_file);
+        break;
+
       case PIDX_IDX_IO:
         //PIDX_optimize_for_file_zero(file);
         //PIDX_set_block_size(file, 9);

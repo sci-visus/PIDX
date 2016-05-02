@@ -312,13 +312,15 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
           adjusted_file_index = l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + (i - l) + (header_io_id->idx_d->color * l);
         }
         */
+        /*
         int adjusted_file_index = 0;
         int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
         adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+        */
         //if (nprocs == 2)
 
 
-        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, adjusted_file_index, bin_file, PATH_MAX);
+        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, /*adjusted_file_index*/ i, bin_file, PATH_MAX);
         if (ret == 1)
         {
           fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
@@ -417,11 +419,13 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
       if (rank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
+        /*
         int adjusted_file_index = 0;
         int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
         adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+        */
 
-        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, adjusted_file_index/*i*/, bin_file, PATH_MAX);
+        ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, /*adjusted_file_index*/i, bin_file, PATH_MAX);
         if (ret == 1)
         {
           fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
@@ -533,12 +537,12 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   for (i = 0; i < header_io_id->idx->blocks_per_file; i++)
   {
     //if (nprocs == 1)
-    //  printf("[B] [%d %d] : %d\n", header_io_id->idx->variable[header_io_id->first_index]->global_block_layout->resolution_from, header_io_id->idx->variable[header_io_id->first_index]->global_block_layout->resolution_to, i);
-    if (PIDX_blocks_is_block_present((i + (header_io_id->idx->blocks_per_file * file_number)), header_io_id->idx->variable[header_io_id->first_index]->global_block_layout))
+    //  printf("[B] [%d %d] : %d\n", block_layout->resolution_from, block_layout->resolution_to, i);
+    if (PIDX_blocks_is_block_present((i + (header_io_id->idx->blocks_per_file * file_number)), block_layout))
     {
         //if (nprocs == 1)
         //  printf("[A] %d\n", i);
-      block_negative_offset = PIDX_blocks_find_negative_offset(header_io_id->idx->blocks_per_file, (i + (header_io_id->idx->blocks_per_file * file_number)), header_io_id->idx->variable[header_io_id->first_index]->global_block_layout);
+      block_negative_offset = PIDX_blocks_find_negative_offset(header_io_id->idx->blocks_per_file, (i + (header_io_id->idx->blocks_per_file * file_number)), block_layout);
 
 
       for (j = header_io_id->first_index; j < header_io_id->last_index; j++)

@@ -63,7 +63,7 @@ PIDX_return_code PIDX_global_agg_buf_create(PIDX_global_agg_id agg_id, Agg_buffe
 
 
 ///
-PIDX_return_code PIDX_global_agg_buf_destroy(PIDX_global_agg_id agg_id, Agg_buffer agg_buffer);
+PIDX_return_code PIDX_global_agg_buf_destroy(Agg_buffer agg_buffer);
 
 
 

@@ -196,10 +196,10 @@ PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
   PIDX_return_code ret = PIDX_success;
 
   if (agg_id->idx_d->agg_type == 0)
-    ret = PIDX_global_agg_buf_destroy(agg_id->global_id, agg_buffer);
+    ret = PIDX_global_agg_buf_destroy(agg_buffer);
 
   if (agg_id->idx_d->agg_type == 1)
-    ret = PIDX_local_agg_buf_destroy(agg_id->local_id, agg_buffer);
+    ret = PIDX_local_agg_buf_destroy(agg_buffer);
 
   if (ret != PIDX_success)
   {

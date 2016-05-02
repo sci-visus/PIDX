@@ -484,6 +484,10 @@ PIDX_return_code PIDX_optimize_for_file_zero(PIDX_file file);
 PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file);
 
 
+
+PIDX_return_code PIDX_enable_global_io(PIDX_file file);
+
+
 ///
 /// \brief PIDX_enable_partition_merge_io
 /// \param file

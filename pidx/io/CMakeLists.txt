@@ -20,6 +20,7 @@
 # ////////////////////////////////////////
 
 ADD_SUBDIRECTORY(PIDX_idx_io)
+ADD_SUBDIRECTORY(PIDX_global_idx_io)
 ADD_SUBDIRECTORY(PIDX_raw_io)
 ADD_SUBDIRECTORY(PIDX_partitioned_idx_io)
 ADD_SUBDIRECTORY(PIDX_partition_merge_idx_io)
@@ -49,5 +50,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_io "${PIDX_IO_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_io m pidx_idx_io pidx_multi_patch_idx_io pidx_raw_io pidx_partitioned_idx_io pidx_partition_merge_idx_io ${PIDX_IO_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_io m pidx_global_idx_io pidx_idx_io pidx_multi_patch_idx_io pidx_raw_io pidx_partitioned_idx_io pidx_partition_merge_idx_io ${PIDX_IO_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_io PROPERTIES LINKER_LANGUAGE CXX)
