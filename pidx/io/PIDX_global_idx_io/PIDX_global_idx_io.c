@@ -3029,13 +3029,21 @@ PIDX_return_code PIDX_global_idx_write(PIDX_global_idx_io file, int start_var_in
     return PIDX_err_file;
   }
 
+  int grank = 0, gnprocs = 1;
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
   {
     MPI_Comm_size(file->comm,  &nprocs);
     MPI_Comm_rank(file->comm,  &rank);
+
+    MPI_Comm_rank(file->global_comm, &grank);
+    MPI_Comm_size(file->global_comm, &gnprocs);
   }
 #endif
+
+  file->idx_d->rank_buffer = malloc(gnprocs * sizeof(*file->idx_d->rank_buffer));
+  memset(file->idx_d->rank_buffer, 0, gnprocs * sizeof(*file->idx_d->rank_buffer));
+  MPI_Allgather(&rank, 1, MPI_INT, file->idx_d->rank_buffer, 1, MPI_INT, file->global_comm);
 
   ret = populate_idx_file_structure(file, 0);
   if (ret != PIDX_success)
@@ -3261,6 +3269,7 @@ PIDX_return_code PIDX_global_idx_write(PIDX_global_idx_io file, int start_var_in
   delete_idx_dataset_non_shared(file, start_var_index, end_var_index, hz_from_non_shared, hz_to_non_shared);
 #endif
 
+  free(file->idx_d->rank_buffer);
   ret = destroy_hz_buffers(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
   {

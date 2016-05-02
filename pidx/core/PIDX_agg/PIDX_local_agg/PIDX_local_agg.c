@@ -963,10 +963,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
   MPI_Comm_rank(agg_id->global_comm, &grank);
   MPI_Comm_size(agg_id->global_comm, &gnprocs);
   //MPI_Allreduce(&rank, global_rank, 1, MPI_INT, )
-  int *rank_buffer = malloc(gnprocs * sizeof(*rank_buffer));
-  memset(rank_buffer, 0, gnprocs * sizeof(*rank_buffer));
 
-  MPI_Allgather(&rank, 1, MPI_INT, rank_buffer, 1, MPI_INT, agg_id->global_comm);
+
 
   /*
   PIDX_variable var = agg_id->idx->variable[agg_id->first_index];
@@ -1062,14 +1060,18 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
 
-
-
-
         if (agg_offset == 0)
-          agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_buffer[calculated_rank];
+          agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank];
         else
-          agg_id->rank_holder2[k][i - agg_id->first_index][j] = rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_id->idx_d->aggregator_multiplier * 2))];
+          agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_id->idx_d->aggregator_multiplier * 2))];
 
+        /*
+        if (file_status == 1)
+        {
+          int trank = ((agg_id->rank_holder2[k][i - agg_id->first_index][j] / 16) + 1) * 16;
+          if (trank)
+        }
+        */
         //printf("XX [%d] [%d %d %d] [%d %d] -- (%d %d)\n", file_index, rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank, agg_id->rank_holder2[k][i - agg_id->first_index][j]);
 
         //printf("XX [%d] [%d %d %d] [%d %d] -- (%d %d) --> %d\n", file_index, rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank, agg_id->rank_holder2[k][i - agg_id->first_index][j], rank_buffer[agg_id->rank_holder2[k][i - agg_id->first_index][j]]);
@@ -1112,8 +1114,6 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
       }
     }
   }
-  free(rank_buffer);
-
 
 
   //double e_time = MPI_Wtime();

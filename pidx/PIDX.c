@@ -1660,18 +1660,20 @@ PIDX_return_code PIDX_close(PIDX_file file)
       MPI_Comm_rank(file->comm, &rank);
       MPI_Comm_size(file->comm, &nprocs);
 
+
+      /*
       double *all_timing = malloc(nprocs * sizeof(*all_timing));
       memset(all_timing, 0, nprocs * sizeof(*all_timing));
       MPI_Allgather(&total_time, 1, MPI_DOUBLE, all_timing, 1, MPI_DOUBLE, file->comm);
       qsort( all_timing, nprocs, sizeof(double), compare );
-      /*
+      //
       if (rank == 0)
       {
         int i = 0;
         for (i = 0; i < nprocs; i++)
           printf("[%d] --> %f\n", i, all_timing[i]);
       }
-      */
+      //
       double median_time = all_timing[nprocs / 2];
       assert(max_time == all_timing[nprocs - 1]);
 
@@ -1682,14 +1684,15 @@ PIDX_return_code PIDX_close(PIDX_file file)
       mean_time = mean_time / nprocs;
 
       free(all_timing);
+      */
 
 #else
       total_time = max_time;
 #endif
       //if (max_time == total_time)
-      if (median_time == total_time)
+      if (max_time == total_time)
       {
-        fprintf(stdout, "[P %d %d] Time Taken: Median %f Mean %f Max %f Seconds\n", rank, nprocs, median_time, mean_time, max_time);
+        fprintf(stdout, "[P %d %d] Time Taken: %f Seconds\n", rank, nprocs, max_time);
         fprintf(stdout, "--------------------------------------------------------------------------------------------------------------------------\n");
         fprintf(stdout, "Init Time: %f Seconds\n", (time->file_create_time - time->sim_start));
         fprintf(stdout, "Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
@@ -1755,7 +1758,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
                 header_io_time,
                 stotal_time_ai,
                 ntotal_time_ai,
-                median_time);
+                max_time);
         fprintf(stdout, "==========================================================================================================================\n");
       }
     }

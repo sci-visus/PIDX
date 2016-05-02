@@ -185,6 +185,7 @@ struct idx_dataset_derived_metadata_struct
 
   //extents of meta-data
 
+  int *rank_buffer;
   int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
   int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
   
