@@ -65,6 +65,10 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
 
 ///
+PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset, int var_offset, int file_status);
+
+
+///
 PIDX_return_code PIDX_local_agg_buf_destroy(Agg_buffer agg_buffer);
 
 

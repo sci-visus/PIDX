@@ -55,6 +55,7 @@ static char output_file_name[512] = "test.idx";
 static int aggregator_multiplier = 1;
 static int *values_per_sample;
 static int blocks_per_file = 256;
+static int async = 0;
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./checkpoint -g 32x32x32 -l 16x16x16 -f output_idx_file_name -v 3 -t 16\n"
                      "  -g: global dimensions\n"
@@ -173,7 +174,7 @@ static void destroy_synthetic_simulation_data()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:p:f:t:v:a:b:";
+  char flags[] = "g:l:p:f:t:v:a:b:s:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -219,6 +220,11 @@ static void parse_args(int argc, char **argv)
 
     case('b'): // number of variables
       if (sscanf(optarg, "%d", &blocks_per_file) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('s'): // number of variables
+      if (sscanf(optarg, "%d", &async) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -299,6 +305,8 @@ int main(int argc, char **argv)
 
       case PIDX_GLOBAL_IDX_IO:
         PIDX_enable_global_io(file);
+        if (async == 1)
+          PIDX_enable_async_io(file);
         PIDX_set_block_count(file,blocks_per_file);
         break;
 

@@ -48,6 +48,7 @@ struct PIDX_file_descriptor
 {
   int flags;
 
+
   int io_type;
   PIDX_io io;
   PIDX_partitioned_idx_io partitioned_idx_io;
@@ -155,6 +156,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));
 
   (*file)->flags = flags;
+  (*file)->idx_d->async_io = 0;
 
   (*file)->access = access_type;
 
@@ -317,6 +319,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->time->sim_start = PIDX_get_time();
 
 
+  (*file)->idx_d->async_io = 0;
   (*file)->access = access_type;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
@@ -1560,6 +1563,18 @@ PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file)
 
 
 
+PIDX_return_code PIDX_enable_async_io(PIDX_file file)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->idx_d->async_io = 1;
+
+  return PIDX_success;
+}
+
+
+
 
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
@@ -1646,6 +1661,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
       fprintf(stdout, "Aggregation Type = %d\n", file->idx_d->agg_type);
       fprintf(stdout, "File zero optimization = %d\n", file->idx_d->file_zero_optimization);
+      fprintf(stdout, "Async IO = %d\n", file->idx_d->async_io);
     }
 
 

@@ -170,6 +170,43 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
 }
 
 
+
+PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1, int file_status)
+{
+  PIDX_return_code ret = PIDX_success;
+  int nprocs = 1;
+#if PIDX_HAVE_MPI
+  if (agg_id->idx_d->parallel_mode == 1)
+    MPI_Comm_size(agg_id->comm,  &nprocs);
+#endif
+
+  if (agg_id->idx_d->agg_type == 0)
+  {
+    if (global_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
+      ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, i1, j1 - agg_id->idx_d->start_layout_index);
+    else
+      ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, 0, j1 - agg_id->idx_d->start_layout_index);
+  }
+
+  else if (agg_id->idx_d->agg_type == 1)
+  {
+    //if (local_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
+    ret = PIDX_local_agg_buf_create_multiple_level(agg_id->local_id, agg_buffer, local_block_layout, j1 /*- agg_id->idx_d->start_layout_index*/, i1, file_status);
+    //else
+    //  ret = PIDX_local_agg_buf_create(agg_id->local_id, agg_buffer, local_block_layout, 0);
+  }
+
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout,  int PIDX_MODE, int vi, int bi)
 {
   //printf("layout id = %d\n", layout_id);

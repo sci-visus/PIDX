@@ -161,6 +161,7 @@ typedef struct idx_file_struct* idx_dataset;
 /// idx_dataset_derived_metadata
 struct idx_dataset_derived_metadata_struct
 {
+  int async_io;
   int dimension;
   int samples_per_block;
   int maxh;

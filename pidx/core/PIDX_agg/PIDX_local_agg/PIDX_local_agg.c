@@ -954,6 +954,189 @@ PIDX_return_code PIDX_local_agg_meta_data_destroy(PIDX_local_agg_id agg_id, PIDX
 
 
 
+PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset, int var_offset, int file_status)
+{
+#if PIDX_HAVE_MPI
+  int rank = 0, nprocs = 1, grank = 0, gnprocs = 1;
+  MPI_Comm_size(agg_id->comm, &nprocs);
+  MPI_Comm_rank(agg_id->comm, &rank);
+  MPI_Comm_rank(agg_id->global_comm, &grank);
+  MPI_Comm_size(agg_id->global_comm, &gnprocs);
+  //MPI_Allreduce(&rank, global_rank, 1, MPI_INT, )
+
+
+
+  /*
+  PIDX_variable var = agg_id->idx->variable[agg_id->first_index];
+  HZ_buffer hz_buf = var->hz_buffer[0];
+  int64_t samples_per_file = (int64_t) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
+  int values_per_sample = agg_id->idx->variable[0]->values_per_sample;
+  int hz_start = hz_buf->start_hz_index[local_block_layout->resolution_from];
+  int file_no = hz_start / samples_per_file;
+  int block_no = hz_start / agg_id->idx_d->samples_per_block;
+  int negative_block_offset = PIDX_blocks_find_negative_offset(agg_id->idx->blocks_per_file, block_no, local_block_layout);
+  int samples_in_file = local_block_layout->block_count_per_file[file_no] * agg_id->idx_d->samples_per_block;
+  int target_disp = ((hz_start - ((samples_per_file * file_no) + (negative_block_offset * agg_id->idx_d->samples_per_block))) * values_per_sample)
+    %
+    (samples_in_file * values_per_sample);
+
+  int sample_index = target_disp / (samples_in_file / agg_buffer->aggregation_factor);
+  int target_rank = sample_index;//agg_id->rank_holder2[local_block_layout->inverse_existing_file_index[file_no]][0][sample_index];
+  //printf("[%d] [%d %d] Target Rank = %d\n", rank, (local_block_layout->inverse_existing_file_index[file_no]), sample_index, target_rank);
+  MPI_Comm_split(agg_id->comm, target_rank, rank, &(agg_id->local_comm));
+
+  //int tsize;
+  //MPI_Comm_size(agg_id->local_comm, &tsize);
+  //printf("SSSSSSSSSSS222 = %d\n", tsize);
+
+
+  MPI_Comm_rank(agg_id->local_comm, &rank);
+  */
+
+  int i = 0, j = 0, k = 0;
+  for (k = 0; k < local_block_layout->existing_file_count; k++)
+  {
+    for (i = agg_id->first_index; i <= agg_id->last_index; i++)
+    {
+      for (j = 0; j < agg_id->idx->variable[i]->values_per_sample * agg_buffer->aggregation_factor; j++)
+      {
+        uint64_t file_index = 0;
+
+        int *first;
+        first = malloc(sizeof(*first) * PIDX_MAX_DIMENSIONS);
+        memset(first, 0, sizeof(*first) * PIDX_MAX_DIMENSIONS);
+
+        int file_count = 1;
+
+        int negative_file_index = 0;
+        if (agg_offset == 0 || agg_offset == 1)
+        {
+          file_count = 1;
+          file_index = 0 * agg_buffer->aggregation_factor + j;
+        }
+        else
+        {
+          file_count = (int)pow(2, agg_offset - 1);
+          negative_file_index = (int)pow(2, agg_offset - 1);
+          file_index = (local_block_layout->existing_file_index[k] - negative_file_index) * agg_buffer->aggregation_factor + j;
+        }
+
+        int old_rank = 0;
+        if (agg_offset == 0)
+          old_rank = file_index * agg_buffer->aggregator_interval;
+        else if (agg_offset == 1)
+          old_rank = (file_index + 1) * agg_buffer->aggregator_interval - 1;
+        else
+          old_rank = (file_index * agg_buffer->aggregator_interval) + (agg_buffer->aggregator_interval / 2);
+
+#if 1
+        int bits = (agg_id->idx_d->maxh - 1 - (int)log2(file_count * agg_buffer->aggregation_factor));
+
+        //if (rank == 0)
+        //  printf("[B %d] [%d] [%d - %d (%d) %d %d] [%s] -- %d %d\n", grank, agg_offset, k, local_block_layout->existing_file_index[k], local_block_layout->existing_file_count, i, j, agg_id->idx->idx_cl_bitSequence, agg_id->idx_d->maxh, file_index);
+
+        file_index = file_index << bits;
+
+        //if (rank == 0)
+        //  printf("[A %d] [%d] [%d - %d (%d) %d %d] [%s] -- %d %d PB %d\n", grank, agg_offset, k, local_block_layout->existing_file_index[k], local_block_layout->existing_file_count, i, j, agg_id->idx->bitSequence, agg_id->idx_d->maxh, file_index, partition_bits);
+
+        Deinterleave(agg_id->idx->bitPattern, (agg_id->idx_d->maxh - 1), file_index, first);
+
+        int calculated_rank = 0;
+        int rank_x = first[0] / (agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
+        int rank_y = first[1] / (agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
+        int rank_z = first[2] / (agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[2]);
+
+        int nrank_x = (agg_id->idx->bounds[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
+        int nrank_y = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
+
+        calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
+
+        int trank = 0;
+        if (file_status == 0)
+        {
+          if (agg_offset == 0)
+            trank = agg_id->idx_d->rank_buffer[calculated_rank];
+          else
+            trank = agg_id->idx_d->rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2))];
+          agg_id->rank_holder2[k][i - agg_id->first_index][j] = ((trank / 16) + 1) * 16;
+        }
+        else
+        {
+          if (agg_offset == 0)
+            agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank];
+          else
+            agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2))];
+
+          trank = agg_id->rank_holder2[k][i - agg_id->first_index][j];
+        }
+        //
+
+        free(first);
+#endif
+        if(rank == agg_id->rank_holder2[k][i - agg_id->first_index][j])
+        {
+          agg_buffer->file_number = local_block_layout->existing_file_index[k];
+          agg_buffer->var_number = i;
+          agg_buffer->sample_number = j;
+
+          uint64_t sample_count = local_block_layout->block_count_per_file[agg_buffer->file_number] * agg_id->idx_d->samples_per_block / agg_buffer->aggregation_factor;
+
+          int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+
+          int bytes_per_datatype = 0;
+          bytes_per_datatype = (chunk_size * agg_id->idx->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->compression_factor);
+
+          agg_buffer->buffer_size = sample_count * bytes_per_datatype;
+
+          if (i == 0)
+            printf("[G %d] [%d] [%d] [F [%d %d] V %d  S %d] -> UR %d TR %d CR %d OR %d Size %d [%d (%d x %d / %d) x %d]\n", grank, agg_offset, agg_offset, k, local_block_layout->existing_file_index[k], i, j, rank, trank, calculated_rank, old_rank, (int)agg_buffer->buffer_size, agg_buffer->file_number, local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, agg_buffer->aggregation_factor, bytes_per_datatype);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+
+#if !SIMULATE_IO
+          //double bs_time = MPI_Wtime();
+          agg_buffer->buffer = malloc(agg_buffer->buffer_size);
+          memset(agg_buffer->buffer, 0, agg_buffer->buffer_size);
+          if (agg_buffer->buffer == NULL)
+          {
+            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_buffer->buffer_size, __LINE__, __FILE__);
+            return PIDX_err_agg;
+          }
+          //double be_time = MPI_Wtime();
+          //if (rank == 0)
+          //  printf("[XX] %d time at %d = %f\n", var_offset, agg_offset - agg_id->idx_d->start_layout_index, be_time - bs_time);
+#endif
+        }
+      }
+    }
+  }
+
+
+  //double e_time = MPI_Wtime();
+  //if (rank == 0)
+  //  printf("[YY] %d time at %d = %f\n", var_offset, agg_offset - agg_id->idx_d->start_layout_index, e_time - s_time);
+
+#if 0
+  if (rank == 0)
+  {
+    for (i = 0; i < local_block_layout->existing_file_count; i++)
+    {
+      for (j = agg_id->first_index; j <= agg_id->last_index; j++)
+      {
+        for (k = 0; k < agg_id->idx->variable[j]->values_per_sample * agg_buffer->aggregation_factor; k++)
+        {
+          printf("[%d %d %d] -> %d\n", k, i, j, agg_id->rank_holder2[i][j-agg_id->first_index][k]);
+        }
+      }
+    }
+  }
+#endif
+#endif
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int agg_offset, int var_offset)
 {
 #if PIDX_HAVE_MPI
@@ -1012,13 +1195,13 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
         if (agg_offset == 0 || agg_offset == 1)
         {
           file_count = 1;
-          file_index = 0 * agg_id->idx_d->aggregator_multiplier + j;
+          file_index = 0 * agg_buffer->aggregation_factor + j;
         }
         else
         {
           file_count = (int)pow(2, agg_offset - 1);
           negative_file_index = (int)pow(2, agg_offset - 1);
-          file_index = (local_block_layout->existing_file_index[k] - negative_file_index) * agg_id->idx_d->aggregator_multiplier + j;
+          file_index = (local_block_layout->existing_file_index[k] - negative_file_index) * agg_buffer->aggregation_factor + j;
         }
 
         int old_rank = 0;
@@ -1030,10 +1213,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
           old_rank = (file_index * agg_buffer->aggregator_interval) + (agg_buffer->aggregator_interval / 2);
 
 #if 1
-        //printf("[%d %d %d] XXXXXXXX %d\n", agg_id->idx_d->idx_count[0], agg_id->idx_d->idx_count[1], agg_id->idx_d->idx_count[2], log2(agg_id->idx_d->idx_count[0] * agg_id->idx_d->idx_count[1] * agg_id->idx_d->idx_count[2]));
-
-        //int partition_bits = 1;//log2(agg_id->idx_d->idx_count[0] * agg_id->idx_d->idx_count[1] * agg_id->idx_d->idx_count[2]);
-        int bits = (agg_id->idx_d->maxh - 1 - (int)log2(file_count * agg_id->idx_d->aggregator_multiplier)) /*- partition_bits*/;
+        int bits = (agg_id->idx_d->maxh - 1 - (int)log2(file_count * agg_buffer->aggregation_factor));
 
         //if (rank == 0)
         //  printf("[B %d] [%d] [%d - %d (%d) %d %d] [%s] -- %d %d\n", grank, agg_offset, k, local_block_layout->existing_file_index[k], local_block_layout->existing_file_count, i, j, agg_id->idx->idx_cl_bitSequence, agg_id->idx_d->maxh, file_index);
@@ -1044,10 +1224,8 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
         //  printf("[A %d] [%d] [%d - %d (%d) %d %d] [%s] -- %d %d PB %d\n", grank, agg_offset, k, local_block_layout->existing_file_index[k], local_block_layout->existing_file_count, i, j, agg_id->idx->bitSequence, agg_id->idx_d->maxh, file_index, partition_bits);
 
         Deinterleave(agg_id->idx->bitPattern, (agg_id->idx_d->maxh - 1), file_index, first);
-        //Deinterleave(agg_id->idx->idx_cl_bitPattern, (agg_id->idx_d->maxh - 1 - partition_bits), file_index, first);
 
         int calculated_rank = 0;
-
         int rank_x = first[0] / (agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
         int rank_y = first[1] / (agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
         int rank_z = first[2] / (agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[2]);
@@ -1055,27 +1233,12 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
         int nrank_x = (agg_id->idx->bounds[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
         int nrank_y = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
 
-        //int nrank_x = (agg_id->idx_d->idx_size[0] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[0]);
-        //int nrank_y = (agg_id->idx_d->idx_size[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
-
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
 
         if (agg_offset == 0)
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank];
         else
-          agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_id->idx_d->aggregator_multiplier * 2))];
-
-        /*
-        if (file_status == 1)
-        {
-          int trank = ((agg_id->rank_holder2[k][i - agg_id->first_index][j] / 16) + 1) * 16;
-          if (trank)
-        }
-        */
-        //printf("XX [%d] [%d %d %d] [%d %d] -- (%d %d)\n", file_index, rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank, agg_id->rank_holder2[k][i - agg_id->first_index][j]);
-
-        //printf("XX [%d] [%d %d %d] [%d %d] -- (%d %d) --> %d\n", file_index, rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank, agg_id->rank_holder2[k][i - agg_id->first_index][j], rank_buffer[agg_id->rank_holder2[k][i - agg_id->first_index][j]]);
-
+          agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2))];
 
         free(first);
 #endif

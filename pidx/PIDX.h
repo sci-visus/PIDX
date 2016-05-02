@@ -520,6 +520,9 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
 PIDX_return_code PIDX_set_aggregator_multiplier(PIDX_file file, int count_aggregator_multiplier);
 
 
+
+///
+PIDX_return_code PIDX_enable_async_io(PIDX_file file);
 #ifdef __cplusplus
 }
 #endif
