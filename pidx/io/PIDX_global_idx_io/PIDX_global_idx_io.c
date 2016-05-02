@@ -3190,9 +3190,8 @@ PIDX_return_code PIDX_global_idx_write(PIDX_global_idx_io file, int start_var_in
     status = malloc(sizeof(*status) * (agg_io_level_non_shared - file->idx_d->start_layout_index_non_shared));
     memset(status, 0, sizeof(*status) * (agg_io_level_non_shared - file->idx_d->start_layout_index_non_shared));
 
-    ret = PIDX_global_async_io(file, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared);
-
-    //ret = PIDX_global_io(file, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared);
+    //ret = PIDX_global_async_io(file, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared);
+    ret = PIDX_global_io(file, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -3230,7 +3229,7 @@ PIDX_return_code PIDX_global_idx_write(PIDX_global_idx_io file, int start_var_in
       return PIDX_err_file;
     }
 
-
+#if 0
     for (i = file->idx_d->start_layout_index_non_shared; i < (agg_io_level_non_shared); i++)
     {
       if (file->idx_d->request[i - file->idx_d->start_layout_index_non_shared] != 0)
@@ -3258,6 +3257,7 @@ PIDX_return_code PIDX_global_idx_write(PIDX_global_idx_io file, int start_var_in
     }
     for(i = file->idx_d->start_layout_index_non_shared ; i < file->idx_d->end_layout_index_non_shared; i++)
       PIDX_file_io_finalize(file->tio_id[start_index][i]);
+#endif
 
 
     free(status);
