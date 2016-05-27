@@ -392,8 +392,8 @@ int main(int argc, char **argv)
 
     //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
-    //int io_type = PIDX_RAW_IO;
-    int io_type = PIDX_HYBRID_IDX_IO;
+    int io_type = PIDX_RAW_IO;
+    //int io_type = PIDX_HYBRID_IDX_IO;
     switch (io_type)
     {
       case PIDX_HYBRID_IDX_IO:
@@ -434,7 +434,7 @@ int main(int argc, char **argv)
         PIDX_enable_raw_io(file);
         PIDX_raw_io_pipe_length(file, 2);
         PIDX_point reg_patch_size;
-        PIDX_set_point_5D(reg_patch_size, 128, 128, 128, 1, 1);
+        PIDX_set_point_5D(reg_patch_size, 64, 64, 64, 1, 1);
         PIDX_set_restructuring_box(file, reg_patch_size);
         break;
     }
