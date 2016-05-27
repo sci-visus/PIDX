@@ -734,6 +734,12 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
 {
+  int rank = 0;
+
+#if PIDX_HAVE_MPI
+  MPI_Comm_rank(rst_id->comm,  &rank);
+#endif
+
   if (rst_id->idx->enable_rst != 1)
   {
     int v = 0, j = 0, p = 0;
@@ -750,25 +756,29 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     return PIDX_success;
   }
 
+  if (rank == 0)
+    printf("Reached Line %d: %d %d %d %d %d\n", __LINE__, rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[0], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[1], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[2], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[3], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[4]);
+
 #if PIDX_HAVE_MPI
   unsigned long long a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
   unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
   unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
-  int rank = 0, ret = 0;
+  int ret = 0;
 
   MPI_Request *req;
   MPI_Status *status;
   MPI_Datatype *chunk_data_type;
 
-  //rank and nprocs
-  MPI_Comm_rank(rst_id->comm, &rank);
   
   //printf("rst_id->reg_patch_grp_count = %d\n", rst_id->reg_patch_grp_count);
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
     for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       req_count++;
-    
+
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, req_count);
+
   //creating ample requests and statuses
   req = (MPI_Request*) malloc(sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
   if (!req)
@@ -786,6 +796,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
   }
   memset(status, 0, sizeof (*status) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
 
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, req_count);
 
   chunk_data_type =  malloc(sizeof (*chunk_data_type) * req_count  * (rst_id->last_index - rst_id->first_index + 1));
   if (!chunk_data_type)
@@ -794,6 +806,9 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     return (-1);
   }
   memset(chunk_data_type, 0, sizeof (*chunk_data_type) * req_count  * (rst_id->last_index - rst_id->first_index + 1));
+
+  if (rank == 0)
+    printf("Reached Line %d: %d [%d %d %d] -- %d\n", __LINE__, sizeof (*chunk_data_type) * req_count  * (rst_id->last_index - rst_id->first_index + 1), sizeof (*chunk_data_type), req_count, (rst_id->last_index - rst_id->first_index + 1), rst_id->reg_patch_grp_count);
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
@@ -917,7 +932,6 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
 
             //MPI_Datatype chunk_data_type;
             MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type[chunk_counter]);
-            //printf("[%d] (%d %d) -> O%d C%d\n", count1, var->values_per_sample, var->bits_per_value/8, send_offset, send_count);
             MPI_Type_commit(&chunk_data_type[chunk_counter]);
 
 #if !SIMULATE_IO
@@ -934,6 +948,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
 
             req_counter++;
             chunk_counter++;
+            if (rank == 0)
+              printf("CC %d\n", chunk_counter);
 
             free(send_offset);
             free(send_count);
@@ -943,6 +959,9 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
       }
     }
   }
+
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, req_counter);
 
 #if !SIMULATE_IO
   //
@@ -959,6 +978,9 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     MPI_Type_free(&chunk_data_type[i]);
   free(chunk_data_type);
   chunk_data_type = 0;
+
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, chunk_counter);
 
   free(req);
   req = 0;
