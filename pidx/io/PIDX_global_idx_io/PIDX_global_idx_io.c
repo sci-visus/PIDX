@@ -8,7 +8,7 @@ static PIDX_return_code populate_idx_layout(PIDX_global_idx_io file, int start_v
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_global_idx_io file, char* file_name, int current_time_step);
 static PIDX_return_code partition_setup(PIDX_global_idx_io file, int start_var_index, int end_var_index, int pipe_length);
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
-static void set_default_patch_size(PIDX_global_idx_io file, int64_t* process_bounds, int nprocs);
+static void set_default_patch_size(PIDX_global_idx_io file, unsigned long long* process_bounds, int nprocs);
 static int getPowerOftwo(int x);
 
 struct PIDX_global_idx_io_descriptor
@@ -72,7 +72,7 @@ static PIDX_return_code populate_idx_file_structure(PIDX_global_idx_io file, int
   //int rank;
   //MPI_Comm_rank(file->comm, &rank);
 
-  int64_t* cb = file->idx->chunked_bounds;
+  unsigned long long* cb = file->idx->chunked_bounds;
   bounds_point.x = (int) cb[0];
   bounds_point.y = (int) cb[1];
   bounds_point.z = (int) cb[2];
@@ -156,14 +156,14 @@ static PIDX_return_code populate_idx_file_structure(PIDX_global_idx_io file, int
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
-  int64_t total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]) * getPowerOf2(cb[3]) * getPowerOf2(cb[4]));
+  unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]) * getPowerOf2(cb[3]) * getPowerOf2(cb[4]));
   if (total_reg_sample_count <= 0)
   {
     fprintf(stderr, "[%s] [%d ]File dimensions are wrong\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  int64_t max_sample_per_file = (uint64_t) file->idx_d->samples_per_block * file->idx->blocks_per_file;
+  unsigned long long max_sample_per_file = (unsigned long long) file->idx_d->samples_per_block * file->idx->blocks_per_file;
   if (max_sample_per_file <= 0)
   {
     fprintf(stderr, "[%s] [%d ]IDX dimensions are wrong %d %d\n", __FILE__, __LINE__, file->idx_d->samples_per_block, file->idx->blocks_per_file);
@@ -1534,11 +1534,11 @@ static PIDX_return_code partition_setup(PIDX_global_idx_io file, int start_var_i
     MPI_Comm_size(file->comm,  &nprocs);
 #endif
 
-  file->idx_d->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(file->idx_d->rank_r_offset, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+  file->idx_d->rank_r_offset = malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_offset, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
-  file->idx_d->rank_r_count =  malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(file->idx_d->rank_r_count, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+  file->idx_d->rank_r_count =  malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_count, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
@@ -1549,8 +1549,8 @@ static PIDX_return_code partition_setup(PIDX_global_idx_io file, int start_var_i
   }
   else
   {
-    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   }
 #endif
 
@@ -1695,7 +1695,7 @@ static PIDX_return_code partition(PIDX_global_idx_io file, int start_var_index, 
             for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
             {
               int bit = bitPattern[number_levels];
-              z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+              z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
               PGET(xyzuv_Index, bit) >>= 1;
             }
 
@@ -1779,12 +1779,12 @@ static PIDX_return_code partition(PIDX_global_idx_io file, int start_var_index, 
 }
 
 
-static void set_default_patch_size(PIDX_global_idx_io file, int64_t* process_bounds, int nprocs)
+static void set_default_patch_size(PIDX_global_idx_io file, unsigned long long* process_bounds, int nprocs)
 {
   int i = 0, j = 0;
-  int64_t average_count = 0;
+  unsigned long long average_count = 0;
   int check_bit = 0;
-  int64_t max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
+  unsigned long long max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
   int equal_partiton = 0;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
@@ -1814,7 +1814,7 @@ static void set_default_patch_size(PIDX_global_idx_io file, int64_t* process_bou
     for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
       check_bit = check_bit || ((double) file->idx->bounds[i] / average_count > (double) file->idx->bounds[i] / max_dim_length[i]);
   }
-  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
+  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   //reg_patch_size =  average_count;
   if (equal_partiton == 1)
   {
@@ -1837,7 +1837,7 @@ static void set_default_patch_size(PIDX_global_idx_io file, int64_t* process_bou
     reg_patch_size[4] = 1;//getPowerOftwo(process_bounds[4]) * 1;
   }
 
-  memcpy(file->idx->reg_patch_size, reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
+  memcpy(file->idx->reg_patch_size, reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   //reg_patch_size = reg_patch_size * 4;
 }
 

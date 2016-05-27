@@ -78,23 +78,23 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
 #endif
 
 
-  file->idx_d->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(file->idx_d->rank_r_offset, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+  file->idx_d->rank_r_offset = malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_offset, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
-  file->idx_d->rank_r_count =  malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(file->idx_d->rank_r_count, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+  file->idx_d->rank_r_count =  malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_count, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
   {
-    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
 
-    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
   }
   else
   {
-    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
     file->idx->enable_rst = 0;
   }
@@ -422,8 +422,8 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
     {
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-        n_proc_patch->offset[d] = (int64_t)offset_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
-        n_proc_patch->size[d] = (int64_t)size_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
+        n_proc_patch->offset[d] = (unsigned long long)offset_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
+        n_proc_patch->size[d] = (unsigned long long)size_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
       }
 
       if (intersectNDChunk(local_proc_patch, n_proc_patch))
@@ -502,10 +502,10 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   free(n_proc_patch);
   n_proc_patch = 0;
 
-  uint64_t k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
+  unsigned long long k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
   int count1 = 0, send_o = 0, send_c = 0, index = 0;
-  int64_t sim_patch_offsetx[5];
-  int64_t sim_patch_countx[5];
+  unsigned long long sim_patch_offsetx[5];
+  unsigned long long sim_patch_countx[5];
 
   unsigned char ***temp_patch_buffer;
   temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (end_var_index - start_var_index));
@@ -535,8 +535,8 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
     pc_index = patch_grp->source_patch_rank[i] * (max_patch_count * PIDX_MAX_DIMENSIONS + 1);
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      sim_patch_offsetx[d] = (int64_t)offset_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
-      sim_patch_countx[d] = (int64_t)size_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
+      sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
+      sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
     }
 
     count1 = 0;
@@ -547,8 +547,8 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
       {
         for (i1 = patch_grp->patch[i]->offset[0]; i1 < patch_grp->patch[i]->offset[0] + patch_grp->patch[i]->size[0]; i1 = i1 + patch_grp->patch[i]->size[0])
         {
-          int64_t *sim_patch_offset = sim_patch_offsetx;// file->idx->variable[start_var_index]->sim_patch[0]->offset;
-          int64_t *sim_patch_count = sim_patch_countx;// file->idx->variable[start_var_index]->sim_patch[0]->size;
+          unsigned long long *sim_patch_offset = sim_patch_offsetx;// file->idx->variable[start_var_index]->sim_patch[0]->offset;
+          unsigned long long *sim_patch_count = sim_patch_countx;// file->idx->variable[start_var_index]->sim_patch[0]->size;
 
           index = (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
                   (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
@@ -663,23 +663,23 @@ PIDX_return_code PIDX_raw_read(PIDX_raw_io file, int start_var_index, int end_va
     MPI_Comm_size(file->comm,  &nprocs);
 #endif
 
-  file->idx_d->rank_r_offset = malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(file->idx_d->rank_r_offset, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+  file->idx_d->rank_r_offset = malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_offset, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
-  file->idx_d->rank_r_count =  malloc(sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(file->idx_d->rank_r_count, 0, (sizeof (int64_t) * nprocs * PIDX_MAX_DIMENSIONS));
+  file->idx_d->rank_r_count =  malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_count, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
 
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
   {
-    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
 
-    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
   }
   else
   {
-    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   }
 #endif
 

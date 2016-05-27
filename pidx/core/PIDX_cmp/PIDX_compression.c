@@ -56,7 +56,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int
 {
   int total_size = 0;
   int i = 0;
-  int64_t total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
+  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
@@ -113,7 +113,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int
 int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int bytes_per_sample, int bit_rate)
 {
   int i = 0;
-  int64_t total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
+  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
@@ -156,7 +156,7 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, i
 /*
 int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
 {
-  int64_t compression_block_num_elems = comp_id->idx->chunk_size[0] *
+  unsigned long long compression_block_num_elems = comp_id->idx->chunk_size[0] *
                                         comp_id->idx->chunk_size[1] *
                                         comp_id->idx->chunk_size[2];
   unsigned int type_size = sizeof(double); // DUONG_HARDCODE

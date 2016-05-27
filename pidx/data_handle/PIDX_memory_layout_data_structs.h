@@ -36,8 +36,8 @@
 /// Struct to store the row/column major chunk of data given by application
 struct PIDX_Ndim_patch_struct
 {
-  int64_t offset[PIDX_MAX_DIMENSIONS];                  ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
-  int64_t size[PIDX_MAX_DIMENSIONS];                    ///< size (extents) in each of the dimensions for the data chunk
+  unsigned long long offset[PIDX_MAX_DIMENSIONS];                  ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  unsigned long long size[PIDX_MAX_DIMENSIONS];                    ///< size (extents) in each of the dimensions for the data chunk
   unsigned char* buffer;                                ///< the data buffer
 };
 typedef struct PIDX_Ndim_patch_struct* Ndim_patch;
@@ -62,10 +62,10 @@ struct PIDX_HZ_buffer_struct
 {
   int type;                                             ///< decide the type of the group
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
-  int64_t *samples_per_level;                           ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
-  int64_t *start_hz_index;                              ///< Starting HZ index at of the data at all the HZ levels
-  int64_t *end_hz_index;                                ///< Ending HZ index at of the data at all the HZ levels
-  int64_t *buffer_index;                                ///< HZ indices of the data (used only when no restructuring phsae is used)
+  unsigned long long *samples_per_level;                           ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
+  unsigned long long *start_hz_index;                              ///< Starting HZ index at of the data at all the HZ levels
+  unsigned long long *end_hz_index;                                ///< Ending HZ index at of the data at all the HZ levels
+  unsigned long long *buffer_index;                                ///< HZ indices of the data (used only when no restructuring phsae is used)
   unsigned char** buffer;                               ///< data buffer at all the HZ levels
 
   int* lower_hz_disp;
@@ -91,9 +91,9 @@ struct PIDX_HZ_Agg_buffer_struct
   int aggregator_interval;
 
   int num_idx_blocks;
-  uint64_t buffer_size;                                 ///< Aggregator buffer size
+  unsigned long long buffer_size;                                 ///< Aggregator buffer size
   unsigned long long compressed_buffer_size;                      ///< Aggregator buffer size after compression
-  uint64_t *compressed_block_size;                      ///< Compressed size of each block in the aggregator
+  unsigned long long *compressed_block_size;                      ///< Compressed size of each block in the aggregator
   unsigned char* buffer;                                ///< The actual aggregator buffer
 };
 typedef struct PIDX_HZ_Agg_buffer_struct* Agg_buffer;

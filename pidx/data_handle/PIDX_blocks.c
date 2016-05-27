@@ -111,8 +111,8 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from
 int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bitPattern, PIDX_block_layout layout, int res_from, int res_to)
 {
   int m = 0, n_blocks = 1, t = 0, block_number = 1;
-  int64_t hz_from = 0, hz_to = 0;
-  int64_t *ZYX_from, *ZYX_to;
+  unsigned long long hz_from = 0, hz_to = 0;
+  unsigned long long *ZYX_from, *ZYX_to;
 
   int adjusted_res_to = layout->resolution_to;
   if (layout->resolution_to > maxH - res_to)
@@ -123,8 +123,8 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
   //else
   //  printf("N adjusted %d [%d %d] maxh (%d %d) res_to %d\n", layout->resolution_to, layout->resolution_from, adjusted_res_to, layout->maxh, maxH, res_to);
 
-  ZYX_to = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-  ZYX_from = (int64_t*) malloc(sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+  ZYX_to = (unsigned long long*) malloc(sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  ZYX_from = (unsigned long long*) malloc(sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
   //printf("res from to to : %d %d\n", layout->resolution_from, layout->resolution_to);
   if (layout->resolution_from <= layout->bits_per_block)
@@ -138,12 +138,12 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
       }
       else
       {
-        hz_from = (int64_t)pow(2, m-1);
-        hz_to = (int64_t)pow(2, m) - 1;
+        hz_from = (unsigned long long)pow(2, m-1);
+        hz_to = (unsigned long long)pow(2, m) - 1;
       }
 
-      memset(ZYX_to, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-      memset(ZYX_from, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+      memset(ZYX_to, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+      memset(ZYX_from, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
       Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
       Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
@@ -157,11 +157,11 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
       n_blocks = pow(2, (m - (layout->bits_per_block + 1)));
       for (t = 0 ; t < n_blocks ; t++)
       {
-        hz_from = (int64_t)(block_number) * pow(2, layout->bits_per_block);
-        hz_to = (int64_t)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
+        hz_from = (unsigned long long)(block_number) * pow(2, layout->bits_per_block);
+        hz_to = (unsigned long long)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
       
-        memset(ZYX_to, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-        memset(ZYX_from, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+        memset(ZYX_to, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+        memset(ZYX_from, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
       
         Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
         Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
@@ -183,11 +183,11 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
       {
         for (t = 0 ; t < n_blocks ; t++)
         {
-          hz_from = (int64_t)(block_number) * pow(2, layout->bits_per_block);
-          hz_to = (int64_t)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
+          hz_from = (unsigned long long)(block_number) * pow(2, layout->bits_per_block);
+          hz_to = (unsigned long long)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
 
-          memset(ZYX_to, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-          memset(ZYX_from, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+          memset(ZYX_to, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+          memset(ZYX_from, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
           Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
           Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);

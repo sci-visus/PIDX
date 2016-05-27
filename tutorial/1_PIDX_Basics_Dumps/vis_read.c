@@ -244,7 +244,7 @@ int main(int argc, char **argv)
     for (j = 0; j < local_box_size[1]; j++)
       for (i = 0; i < local_box_size[0]; i++)
       {
-        int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+        unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
         for (vps = 0; vps < v_per_sample; vps++)
         {
           if (data[index * v_per_sample + vps] != variable_index + vps + ((global_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))

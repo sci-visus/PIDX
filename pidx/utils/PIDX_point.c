@@ -19,7 +19,7 @@
 #include "../PIDX_inc.h"
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_set_point_5D(PIDX_point point, int64_t  x, int64_t  y, int64_t  z, int64_t  u, int64_t  v)
+PIDX_return_code PIDX_set_point_5D(PIDX_point point, unsigned long long  x, unsigned long long  y, unsigned long long  z, unsigned long long  u, unsigned long long  v)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -34,7 +34,7 @@ PIDX_return_code PIDX_set_point_5D(PIDX_point point, int64_t  x, int64_t  y, int
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_get_point_5D(int64_t* x, int64_t* y, int64_t* z, int64_t* u, int64_t* v, PIDX_point point)
+PIDX_return_code PIDX_get_point_5D(unsigned long long* x, unsigned long long* y, unsigned long long* z, unsigned long long* u, unsigned long long* v, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -49,7 +49,7 @@ PIDX_return_code PIDX_get_point_5D(int64_t* x, int64_t* y, int64_t* z, int64_t* 
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_inner_product(int64_t *inner_product, PIDX_point point)
+PIDX_return_code PIDX_inner_product(unsigned long long *inner_product, PIDX_point point)
 {
   *inner_product = point[0] * point[1] * point[2] * point[3] * point[4];
   //safe_add, result=a+b overflow happens when (a+b)>MAX ---> b>MAX-a

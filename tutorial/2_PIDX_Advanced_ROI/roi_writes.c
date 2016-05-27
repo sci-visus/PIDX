@@ -721,7 +721,7 @@ int main(int argc, char **argv)
     //ret = PIDX_set_ROI_writes(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
 
-    //int64_t restructured_box_size[5] = {128, 128, 128, 1, 1};
+    //unsigned long long restructured_box_size[5] = {128, 128, 128, 1, 1};
     //ret = PIDX_set_restructuring_box(file, restructured_box_size);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_restructuring_box");
 

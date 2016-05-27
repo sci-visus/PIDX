@@ -138,18 +138,20 @@ static void calculate_per_process_offsets()
 static void create_synthetic_simulation_data()
 {
   int var = 0;
-  unsigned long long i, j, k, vps = 0;
-
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
   // Synthetic simulation data
 
-  int sample_count = 1;
+
   for(var = 0; var < variable_count; var++)
   {
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * (bits_per_value[var]/8));
     //data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+
+    /*
+    int sample_count = 1;
+    unsigned long long i, j, k, vps = 0;
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -165,6 +167,7 @@ static void create_synthetic_simulation_data()
           //for (vps = 0; vps < sample_count; vps++)
           //  data[var][index * sample_count + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
+    */
   }
 }
 

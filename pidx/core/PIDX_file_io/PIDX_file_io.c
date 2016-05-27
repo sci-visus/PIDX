@@ -49,7 +49,7 @@ struct PIDX_file_io_struct
   int last_index;
 };
 
-static int write_read_samples(PIDX_file_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, PIDX_block_layout layout, int MODE);
+static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout, int MODE);
 
 
 PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
@@ -93,7 +93,7 @@ int PIDX_file_io_cached_data(uint32_t* cached_header)
 
 int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE)
 {
-  int64_t data_offset = 0;
+  unsigned long long data_offset = 0;
   char file_name[PATH_MAX];
   int i = 0, k = 0;
   uint32_t *headers;
@@ -161,7 +161,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     t3 = PIDX_get_time();
 #endif
 
-    uint64_t header_size = (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size);
+    unsigned long long header_size = (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size);
 
 #if !SIMULATE_IO
     unsigned char* temp_buffer = (unsigned char*)realloc(agg_buf->buffer, agg_buf->buffer_size  + header_size);
@@ -290,13 +290,13 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
         {
           PIDX_variable vark = io_id->idx->variable[k];
           int bytes_per_datatype =  ((vark->bits_per_value/8) * total_chunk_size) / (io_id->idx->compression_factor);
-          int64_t prev_var_sample = (int64_t) block_layout->block_count_per_file[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * io_id->idx->variable[k]->values_per_sample;
+          unsigned long long prev_var_sample = (unsigned long long) block_layout->block_count_per_file[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * io_id->idx->variable[k]->values_per_sample;
 
-          data_offset = (int64_t) data_offset + prev_var_sample;
+          data_offset = (unsigned long long) data_offset + prev_var_sample;
         }
 
         for (i = 0; i < agg_buf->sample_number; i++)
-          data_offset = (int64_t) data_offset + agg_buf->buffer_size;
+          data_offset = (unsigned long long) data_offset + agg_buf->buffer_size;
       }
       else
       {
@@ -491,7 +491,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
 PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* request, MPI_File* fh, char* filename_template)
 {
-  int64_t data_offset = 0;  
+  unsigned long long data_offset = 0;
   char file_name[PATH_MAX];
   int i = 0, k = 0;
   uint32_t *headers;
@@ -566,13 +566,13 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
         {
           PIDX_variable vark = io_id->idx->variable[k];
           int bytes_per_datatype =  ((vark->bits_per_value/8) * total_chunk_size) / (io_id->idx->compression_factor);
-          int64_t prev_var_sample = (int64_t) block_layout->block_count_per_file[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * io_id->idx->variable[k]->values_per_sample;
+          unsigned long long prev_var_sample = (unsigned long long) block_layout->block_count_per_file[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * io_id->idx->variable[k]->values_per_sample;
 
-          data_offset = (int64_t) data_offset + prev_var_sample;
+          data_offset = (unsigned long long) data_offset + prev_var_sample;
         }
 
         for (i = 0; i < agg_buf->sample_number; i++)
-          data_offset = (int64_t) data_offset + agg_buf->buffer_size;
+          data_offset = (unsigned long long) data_offset + agg_buf->buffer_size;
       }
       else
       {
@@ -725,7 +725,7 @@ int PIDX_file_io_per_process(PIDX_file_io_id io_id, PIDX_block_layout block_layo
   int i = 0, p = 0, v = 0, ret, e1 = 0;
   int send_index = 0;
   int hz_index = 0;
-  int64_t index = 0, count = 0;
+  unsigned long long index = 0, count = 0;
   int rank = 0;
 
 #if PIDX_HAVE_MPI
@@ -985,7 +985,7 @@ int PIDX_file_io_finalize(PIDX_file_io_id io_id)
 }
 
 
-static int write_read_samples(PIDX_file_io_id io_id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int64_t buffer_offset, PIDX_block_layout layout, int MODE)
+static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout, int MODE)
 {
   int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
   int bytes_per_sample, bytes_per_datatype;
@@ -1008,7 +1008,7 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, uint64_
     file_index = hz_start_index % samples_per_file;
     file_count = samples_per_file - file_index;
     
-    if ((int64_t)file_count > hz_count)
+    if ((unsigned long long)file_count > hz_count)
       file_count = hz_count;
 
     // build file name

@@ -23,7 +23,7 @@ unsigned int getNumBits ( unsigned int v )
   return (unsigned int)floor((log2(v))) + 1;
 }
 
-uint64_t getPowerOf2(int x)
+unsigned long long getPowerOf2(int x)
 {
   /*  find the power of 2 of an integer value (example 5->8) */
   int n = 1;
@@ -31,7 +31,7 @@ uint64_t getPowerOf2(int x)
   return n;
 }
 
-unsigned int getLevelFromBlock (int64_t block, int bits_per_block)
+unsigned int getLevelFromBlock (unsigned long long block, int bits_per_block)
 {
   if (block == 0)
     return 0;
@@ -41,7 +41,7 @@ unsigned int getLevelFromBlock (int64_t block, int bits_per_block)
   return 0;
 }
 
-unsigned int getLeveL (uint64_t index)
+unsigned int getLeveL (unsigned long long index)
 {
   if (index)
     return (unsigned int)floor((log2(index))) + 1;
@@ -61,7 +61,7 @@ int isValidBox(int** box)
   return 1;
 }
 
-void Deinterleave(const char* bitmask, int maxh, uint64_t zaddress, int* point)
+void Deinterleave(const char* bitmask, int maxh, unsigned long long zaddress, int* point)
 {
   //Z deinterleave (see papers!)  
   int n = 0, bit;    
@@ -78,20 +78,20 @@ void Deinterleave(const char* bitmask, int maxh, uint64_t zaddress, int* point)
   cnt_point = 0;
 }
 
-uint64_t ZBitmask(const char* bitmask,int maxh)
+unsigned long long ZBitmask(const char* bitmask,int maxh)
 {
-  return ((uint64_t)1)<<maxh;
+  return ((unsigned long long)1)<<maxh;
 }
 
-uint64_t ZStart(const char* bitmask,int maxh,int BlockingH)
+unsigned long long ZStart(const char* bitmask,int maxh,int BlockingH)
 {
   if (!BlockingH) 
     return 0;
   assert(BlockingH>=1 && BlockingH<=maxh);
-  return ((uint64_t)1)<<(maxh-BlockingH);
+  return ((unsigned long long)1)<<(maxh-BlockingH);
 }
 
-uint64_t ZEnd(const char* bitmask,int maxh,int BlockingH)
+unsigned long long ZEnd(const char* bitmask,int maxh,int BlockingH)
 {
   if (!BlockingH) 
     return 0;
@@ -142,7 +142,7 @@ int** AlignEx(int** box, int* p0, int* delta)
 
 void revstr(char* str)
 {
-  int64_t i;
+  unsigned long long i;
   char cpstr[strlen(str)+1];
   for(i=0; i < (int)strlen(str); i++)
     cpstr[i] = str[strlen(str)-i-1];
@@ -425,9 +425,9 @@ int RegExBitmaskBit(const char* bitmask_pattern,int N)
   return bitmask_pattern[N]-'0';
 }
 
-void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz)
+void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, unsigned long long* xyz)
 {
-  int64_t lastbitmask=((int64_t)1)<<maxh;
+  unsigned long long lastbitmask=((unsigned long long)1)<<maxh;
   
   hzaddress <<= 1;
   hzaddress  |= 1;
@@ -454,9 +454,9 @@ void Hz_to_xyz(const char* bitmask,  int maxh, int64_t hzaddress, int64_t* xyz)
   xyz[4] = p.v;
 }
 
-int64_t xyz_to_HZ(const char* bitmask, int maxh, PointND xyz)
+unsigned long long xyz_to_HZ(const char* bitmask, int maxh, PointND xyz)
 {
-  int64_t zaddress=0;
+  unsigned long long zaddress=0;
   int cnt   = 0;
   PointND zero;
   int temp_maxh = maxh;
@@ -465,11 +465,11 @@ int64_t xyz_to_HZ(const char* bitmask, int maxh, PointND xyz)
   for (cnt=0 ; memcmp(&xyz, &zero, sizeof(PointND)) ; cnt++, maxh--)
   {
     int bit= bitmask[maxh];
-    zaddress |= ((int64_t)PGET(xyz,bit) & 1) << cnt;
+    zaddress |= ((unsigned long long)PGET(xyz,bit) & 1) << cnt;
     PGET(xyz,bit) >>= 1;
   }
   
-  int64_t lastbitmask=((int64_t)1)<<temp_maxh;
+  unsigned long long lastbitmask=((unsigned long long)1)<<temp_maxh;
   zaddress |= lastbitmask;
   while (!(1 & zaddress)) zaddress >>= 1;
     zaddress >>= 1;

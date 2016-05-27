@@ -249,7 +249,7 @@ static void create_synthetic_simulation_data()
   int i = 0, j = 0, k = 0;
   const double pi = acos(-1.0);
 
-  data = malloc(sizeof (uint64_t) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
+  data = malloc(sizeof (unsigned long long) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
   for (k = 0; k < local_box_size[2]; k++)
     for (j = 0; j < local_box_size[1]; j++)
       for (i = 0; i < local_box_size[0]; i++)

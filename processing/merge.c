@@ -488,14 +488,14 @@ static PIDX_return_code IDX_file_open(const char* filename)
   }
 
 
-  int64_t total_reg_sample_count = (getPowerOf2(chunked_bounds[0]) * getPowerOf2(chunked_bounds[1]) * getPowerOf2(chunked_bounds[2]) * getPowerOf2(chunked_bounds[3]) * getPowerOf2(chunked_bounds[4]));
+  unsigned long long total_reg_sample_count = (getPowerOf2(chunked_bounds[0]) * getPowerOf2(chunked_bounds[1]) * getPowerOf2(chunked_bounds[2]) * getPowerOf2(chunked_bounds[3]) * getPowerOf2(chunked_bounds[4]));
   if (total_reg_sample_count <= 0)
   {
     fprintf(stderr, "[%s] [%d ]File dimensions are wrong\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  int64_t max_sample_per_file = (uint64_t) samples_per_block * blocks_per_file;
+  unsigned long long max_sample_per_file = (unsigned long long) samples_per_block * blocks_per_file;
   if (max_sample_per_file <= 0)
   {
     fprintf(stderr, "[%s] [%d ]IDX dimensions are wrong %d %d\n", __FILE__, __LINE__, samples_per_block, blocks_per_file);

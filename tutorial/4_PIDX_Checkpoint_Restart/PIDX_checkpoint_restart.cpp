@@ -103,7 +103,7 @@ int create_data(T** data, unsigned variable_count, int* values_per_sample, int t
             {
                 for (int i = 0; i < local_box_size[0]; i++)
                 {
-                    int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+                    unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
                     for (int vps = 0; vps < values_per_sample[var]; vps++){
                         double xc = (i + local_box_offset[0])*fratiox - fsize/2;
                         double yc = (j + local_box_offset[1])*fratioy - fsize/2;

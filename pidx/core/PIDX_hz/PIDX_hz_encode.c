@@ -78,8 +78,8 @@ PIDX_return_code PIDX_hz_encode_set_global_communicator(PIDX_hz_encode_id hz_id,
 
 static int compare( const void* a, const void* b)
 {
-  int64_t int_a = ((const hz_tupple*)a)->index;
-  int64_t int_b = ((const hz_tupple*)b)->index;
+  unsigned long long int_a = ((const hz_tupple*)a)->index;
+  unsigned long long int_b = ((const hz_tupple*)b)->index;
 
   if ( int_a == int_b ) return 0;
   else if ( int_a < int_b ) return -1;
@@ -155,20 +155,20 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       HZ_buffer hz_buf = var->hz_buffer[p];
       if (var->chunk_patch_group[p]->type == 0)
       {
-        uint64_t buffer_size = 1;
+        unsigned long long buffer_size = 1;
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
           buffer_size = buffer_size * (var->chunk_patch_group[p]->patch[0]->size[d]/id->idx->chunk_size[d]);
 
-        hz_buf->buffer_index = malloc(buffer_size * sizeof (int64_t));
-        memset(hz_buf->buffer_index, 0, buffer_size * sizeof (int64_t));
+        hz_buf->buffer_index = malloc(buffer_size * sizeof (unsigned long long));
+        memset(hz_buf->buffer_index, 0, buffer_size * sizeof (unsigned long long));
       }
 
       hz_buf->type = var->chunk_patch_group[p]->type;
 
-      hz_buf->start_hz_index = malloc(sizeof (int64_t) * maxH);
-      hz_buf->end_hz_index = malloc(sizeof (int64_t) * maxH);
-      memset(hz_buf->start_hz_index, 0, sizeof (int64_t) * maxH);
-      memset(hz_buf->end_hz_index, 0, sizeof (int64_t) * maxH);
+      hz_buf->start_hz_index = malloc(sizeof (unsigned long long) * maxH);
+      hz_buf->end_hz_index = malloc(sizeof (unsigned long long) * maxH);
+      memset(hz_buf->start_hz_index, 0, sizeof (unsigned long long) * maxH);
+      memset(hz_buf->end_hz_index, 0, sizeof (unsigned long long) * maxH);
 
       hz_buf->nsamples_per_level = malloc(sizeof (int*) * maxH);
       if (hz_buf->nsamples_per_level == NULL)
@@ -176,8 +176,8 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
       if (var->chunk_patch_group[p]->type == 0)
       {
-        hz_buf->samples_per_level = malloc( maxH * sizeof (int64_t));
-        memset(hz_buf->samples_per_level, 0, maxH * sizeof (int64_t));
+        hz_buf->samples_per_level = malloc( maxH * sizeof (unsigned long long));
+        memset(hz_buf->samples_per_level, 0, maxH * sizeof (unsigned long long));
       }
 
       allign_offset = malloc(sizeof (int*) * maxH);
@@ -280,7 +280,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
         //for (c = 0 ; c < maxH ; c++)
         for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
         {
-          int64_t samples_per_level = (var->hz_buffer[p]->end_hz_index[c] - var->hz_buffer[p]->start_hz_index[c] + 1);
+          unsigned long long samples_per_level = (var->hz_buffer[p]->end_hz_index[c] - var->hz_buffer[p]->start_hz_index[c] + 1);
 
 #if !SIMULATE_IO
           var->hz_buffer[p]->buffer[c] = malloc(bytes_for_datatype * samples_per_level);
@@ -298,14 +298,14 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 
 PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 {
-  uint64_t z_order = 0, hz_order = 0, index = 0;
+  unsigned long long z_order = 0, hz_order = 0, index = 0;
   int b = 0, level = 0, cnt = 0, c = 0, s = 0, y = 0, m = 0, number_levels = 0;
-  uint64_t i = 0, j = 0, k = 0, u = 0, v = 0, l = 0, d = 0;
+  unsigned long long i = 0, j = 0, k = 0, u = 0, v = 0, l = 0, d = 0;
   int v1 = 0;
   int index_count = 0;
   int bytes_for_datatype;
-  uint64_t hz_index;
-  uint64_t total_chunked_patch_size = 1;
+  unsigned long long hz_index;
+  unsigned long long total_chunked_patch_size = 1;
   int maxH = id->idx_d->maxh;
   int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
   PIDX_variable var0 = id->idx->variable[id->first_index];
@@ -374,12 +374,12 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -451,12 +451,12 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -635,12 +635,12 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--) 
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -718,12 +718,12 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--) 
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -830,13 +830,13 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
 PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz_index, int end_hz_index)
 {
-  uint64_t index = 0;
+  unsigned long long index = 0;
   int b = 0, y = 0, m = 0;
-  uint64_t j = 0, l = 0;
+  unsigned long long j = 0, l = 0;
   int v1 = 0;
   int bytes_for_datatype;
-  uint64_t hz_index;
-  uint64_t total_chunked_patch_size = 1;
+  unsigned long long hz_index;
+  unsigned long long total_chunked_patch_size = 1;
   int maxH = id->idx_d->maxh;
   int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
   PIDX_variable var0 = id->idx->variable[id->first_index];
@@ -874,7 +874,7 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
 
       if(var0->data_layout == PIDX_row_major)
       {
-        uint64_t hz_mins = 0, hz_maxes = 0, mindex = 0;
+        unsigned long long hz_mins = 0, hz_maxes = 0, mindex = 0;
         //for (j = 0; j < id->idx_d->maxh - id->resolution_to; j++)
         for (j = start_hz_index; j < end_hz_index; j++)
         {
@@ -893,7 +893,7 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
             {
               mindex = m;
               maxH = id->idx_d->maxh - 1;
-              int64_t lastbitmask=((int64_t)1)<<maxH;
+              unsigned long long lastbitmask=((unsigned long long)1)<<maxH;
 
               mindex <<= 1;
               mindex  |= 1;
@@ -1142,14 +1142,14 @@ int PIDX_hz_encode_read(PIDX_hz_encode_id id, PIDX_Ndim_buffer** in_buf, PIDX_HZ
 
 PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
 {
-  int64_t z_order = 0, hz_order = 0, index = 0;
+  unsigned long long z_order = 0, hz_order = 0, index = 0;
   //int n = 0, m = 0, d = 0, c = 0;
   //int index_count = 0;
   int b = 0, level = 0, cnt = 0, s = 0, y = 0, number_levels = 0;
-  int64_t i = 0, j = 0, k = 0, u = 0, v = 0, l = 0;
+  unsigned long long i = 0, j = 0, k = 0, u = 0, v = 0, l = 0;
   int bytes_for_datatype;
-  int64_t hz_index;
-  int64_t total_chunked_patch_size = 1;
+  unsigned long long hz_index;
+  unsigned long long total_chunked_patch_size = 1;
 
   int maxH = id->idx_d->maxh;
   int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
@@ -1259,12 +1259,12 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -1330,12 +1330,12 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -1459,12 +1459,12 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -1531,12 +1531,12 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                     for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
                     {
                       int bit = id->idx->bitPattern[number_levels];
-                      z_order |= ((int64_t) PGET(xyzuv_Index, bit) & 1) << cnt;
+                      z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                       PGET(xyzuv_Index, bit) >>= 1;
                     }
 
                     number_levels = maxH - 1;
-                    int64_t lastbitmask = ((int64_t) 1) << number_levels;
+                    unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                     z_order |= lastbitmask;
                     while (!(1 & z_order)) z_order >>= 1;
                     z_order >>= 1;
@@ -1654,12 +1654,12 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 {
 #if !SIMULATE_IO
   int i = 0, k = 0, b = 0, v = 0;
-  int64_t global_hz, element_count = 0, lost_element_count = 0;
-  int64_t ZYX[PIDX_MAX_DIMENSIONS];
+  unsigned long long global_hz, element_count = 0, lost_element_count = 0;
+  unsigned long long ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
   double dvalue_1, dvalue_2;
   float fvalue_1, fvalue_2;
-  uint64_t uvalue_1, uvalue_2;
+  unsigned long long uvalue_1, uvalue_2;
 
 #if PIDX_HAVE_MPI
   int rank = 0;
@@ -1749,15 +1749,15 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   }
  
 #if PIDX_HAVE_MPI
-  int64_t global_volume = 0;
+  unsigned long long global_volume = 0;
   if (id->idx_d->parallel_mode == 1)
     MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, id->comm);
   else
     global_volume = element_count;
   
-  //printf("[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (int64_t)(id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * id->idx->bounds[3] * id->idx->bounds[4] * (id->last_index - id->first_index + 1)));
+  //printf("[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (unsigned long long)(id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * id->idx->bounds[3] * id->idx->bounds[4] * (id->last_index - id->first_index + 1)));
   
-  if (global_volume != (int64_t) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1))
+  if (global_volume != (unsigned long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1))
   {
     if (rank == 0)
       fprintf(stderr, "[HZ Debug FAILED!!!!] [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));

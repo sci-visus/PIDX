@@ -130,7 +130,7 @@ struct idx_file_struct
 
   int bits_per_block;
   int blocks_per_file;
-  int64_t bounds[PIDX_MAX_DIMENSIONS];
+  unsigned long long bounds[PIDX_MAX_DIMENSIONS];
   double transform[16];
   char bitSequence[512];
   char bitPattern[512];
@@ -150,7 +150,7 @@ struct idx_file_struct
   char filename_template[1024];                                         ///< Depends on the time step
   char filename_template_file_zero[1024];                                         ///< Depends on the time step
   
-  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
+  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   
   int compression_type;                                               ///< counter to enable/disable (1/0) compression
   int enable_rst;                                               ///< counter to enable/disable (1/0) compression
@@ -161,9 +161,9 @@ struct idx_file_struct
 
   int compression_factor;
   int compression_bit_rate;
-  int64_t chunk_size[PIDX_MAX_DIMENSIONS];                              ///< size of the block at which compression is applied eg. (4x4x4)
+  unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];                              ///< size of the block at which compression is applied eg. (4x4x4)
                                                                         ///< the current compression schemes only work in three dimensions
-  int64_t chunked_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents
+  unsigned long long chunked_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents
 };
 typedef struct idx_file_struct* idx_dataset;
 
@@ -198,8 +198,8 @@ struct idx_dataset_derived_metadata_struct
   //extents of meta-data
 
   int *rank_buffer;
-  int64_t *rank_r_offset;                                                   ///< Offset of variables in each dimension
-  int64_t *rank_r_count;                                                    ///< Count of variables in each dimension
+  unsigned long long *rank_r_offset;                                                   ///< Offset of variables in each dimension
+  unsigned long long *rank_r_count;                                                    ///< Count of variables in each dimension
   
   //int staged_aggregation;
   int agg_type;

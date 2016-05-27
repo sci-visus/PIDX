@@ -55,14 +55,14 @@ struct PIDX_rst_struct
   //int if_perform_rst;
 
   //dimension of the power-two volume imposed patch
-  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
+  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   int reg_patch_grp_count;
   Ndim_patch_group* reg_patch_grp;
 };
 
 #if PIDX_HAVE_MPI
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
-static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs);
+static void set_default_patch_size(PIDX_rst_id rst_id, unsigned long long* process_bounds, int nprocs);
 static int getPowerOftwo(int x);
 #endif
 
@@ -91,12 +91,12 @@ static int getPowerOftwo(int x)
 
 
 /// Function to find the dimension of the imposing regular patch
-static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, int nprocs)
+static void set_default_patch_size(PIDX_rst_id rst_id, unsigned long long* process_bounds, int nprocs)
 {
   int i = 0, j = 0;
-  int64_t average_count = 0;
+  unsigned long long average_count = 0;
   int check_bit = 0;
-  int64_t max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
+  unsigned long long max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
   int equal_partiton = 0;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++) 
@@ -148,7 +148,7 @@ static void set_default_patch_size(PIDX_rst_id rst_id, int64_t* process_bounds, 
     rst_id->reg_patch_size[4] = 1;//getPowerOftwo(process_bounds[4]) * 1;
   }
 
-  memcpy(rst_id->idx->reg_patch_size, rst_id->reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
+  memcpy(rst_id->idx->reg_patch_size, rst_id->reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   //reg_patch_size = reg_patch_size * 4;
 }
 #endif
@@ -191,17 +191,17 @@ PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id)
   MPI_Comm_rank(rst_id->comm, &rank);
   MPI_Comm_size(rst_id->comm, &nprocs);
 
-  uint32_t *global_patch_offset;
-  uint32_t *global_patch_size;
+  int *global_patch_offset;
+  int *global_patch_size;
   PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
   int max_patch_count;
   int patch_count =var0->patch_group_count;
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->comm);
 
-  uint32_t *local_patch_offset = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
+  int *local_patch_offset = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
   memset(local_patch_offset, 0, sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
 
-  uint32_t *local_patch_size = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
+  int *local_patch_size = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
   memset(local_patch_size, 0, sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
 
   int pcounter = 0;
@@ -293,7 +293,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
 #if PIDX_HAVE_MPI
   int r, d, c, nprocs, rank;
-  int64_t i, k, l, m, max_vol, patch_count;
+  unsigned long long i, k, l, m, max_vol, patch_count;
   int reg_patch_count, edge_case = 0;
 
   if (rst_id->idx->enable_rst == 0)
@@ -309,9 +309,9 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
     if (rst_id->idx->reg_patch_size[0] == 0)
       set_default_patch_size(rst_id, rst_id->idx_derived->rank_r_count, nprocs);
     else
-      memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+      memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
-    memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
+    memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
     /// extents for the local process(rank)
     Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
@@ -322,7 +322,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
       local_proc_patch->size[d] = rst_id->idx_derived->rank_r_count[PIDX_MAX_DIMENSIONS * rank + d];
     }
 
-    int64_t adjusted_bounds[PIDX_MAX_DIMENSIONS];
+    unsigned long long adjusted_bounds[PIDX_MAX_DIMENSIONS];
     memcpy(adjusted_bounds, rst_id->idx->bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -549,7 +549,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
                 max_vol = 1;
                 for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
                   max_vol = max_vol * patch_grp->patch[0]->size[d];
-                int64_t c_vol = 1;
+                unsigned long long c_vol = 1;
                 for(c = 1; c < patch_grp->count ; c++)
                 {
                   c_vol = 1;
@@ -627,11 +627,11 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
             patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
             memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
 
-            memcpy(patch_group->patch[j]->offset, rst_id->reg_patch_grp[i]->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-            memcpy(patch_group->patch[j]->size, rst_id->reg_patch_grp[i]->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+            memcpy(patch_group->patch[j]->offset, rst_id->reg_patch_grp[i]->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+            memcpy(patch_group->patch[j]->size, rst_id->reg_patch_grp[i]->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
           }
-          memcpy(patch_group->reg_patch->offset, rst_id->reg_patch_grp[i]->reg_patch->offset, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
-          memcpy(patch_group->reg_patch->size, rst_id->reg_patch_grp[i]->reg_patch->size, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+          memcpy(patch_group->reg_patch->offset, rst_id->reg_patch_grp[i]->reg_patch->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+          memcpy(patch_group->reg_patch->size, rst_id->reg_patch_grp[i]->reg_patch->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
           cnt++;
         }
       }
@@ -661,11 +661,11 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
           memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
 
-          memcpy(patch_group->patch[j]->offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-          memcpy(patch_group->patch[j]->size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+          memcpy(patch_group->patch[j]->offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+          memcpy(patch_group->patch[j]->size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
         }
-        memcpy(patch_group->reg_patch->offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-        memcpy(patch_group->reg_patch->size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+        memcpy(patch_group->reg_patch->offset, var->sim_patch[p]->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+        memcpy(patch_group->reg_patch->size, var->sim_patch[p]->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
       }
     }
   }
@@ -751,10 +751,10 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
   }
 
 #if PIDX_HAVE_MPI
-  uint64_t a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
-  uint64_t i, j, v, index, count1 = 0, req_count = 0;
+  unsigned long long a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
+  unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
-  uint64_t send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
+  unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
   int rank = 0, ret = 0;
 
   MPI_Request *req;
@@ -801,8 +801,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     {
       for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       {
-        int64_t *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
-        int64_t *reg_patch_count  = rst_id->reg_patch_grp[i]->patch[j]->size;
+        unsigned long long *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
+        unsigned long long *reg_patch_count  = rst_id->reg_patch_grp[i]->patch[j]->size;
         
         if(rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
         {
@@ -813,8 +813,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
                 for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
                   for (i1 = reg_patch_offset[0]; i1 < reg_patch_offset[0] + reg_patch_count[0]; i1 = i1 + reg_patch_count[0])
                   {
-                    int64_t *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
-                    int64_t *sim_patch_count = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
+                    unsigned long long *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
+                    unsigned long long *sim_patch_count = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
                     
                     index = (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * sim_patch_count[3] * (a1 - sim_patch_offset[4])) +
                             (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * (b1 - sim_patch_offset[3])) +
@@ -873,8 +873,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
           {
             PIDX_variable var = rst_id->idx->variable[v];
 
-            int64_t *reg_patch_count = rst_id->reg_patch_grp[i]->patch[j]->size;
-            int64_t *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
+            unsigned long long *reg_patch_count = rst_id->reg_patch_grp[i]->patch[j]->size;
+            unsigned long long *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
             
 
             send_offset = malloc(sizeof (int) * (reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]));
@@ -900,8 +900,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
                   for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
                     for (i1 = reg_patch_offset[0]; i1 < reg_patch_offset[0] + reg_patch_count[0]; i1 = i1 + reg_patch_count[0])
                     {
-                      int64_t *sim_patch_count  = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
-                      int64_t *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
+                      unsigned long long *sim_patch_count  = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
+                      unsigned long long *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
                       
                       index = (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * sim_patch_count[3] * (a1 - sim_patch_offset[4])) +
                               (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * (b1 - sim_patch_offset[3])) +
@@ -995,10 +995,10 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
   }
 
 #if PIDX_HAVE_MPI
-  uint64_t a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
-  uint64_t i, j, v, index, count1 = 0, req_count = 0;
+  unsigned long long a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
+  unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
-  uint64_t send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
+  unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
   int rank = 0, ret = 0;
 
   MPI_Request *req;
@@ -1044,8 +1044,8 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     {
       for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       {
-        int64_t *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
-        int64_t *reg_patch_count  = rst_id->reg_patch_grp[i]->patch[j]->size;
+        unsigned long long *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
+        unsigned long long *reg_patch_count  = rst_id->reg_patch_grp[i]->patch[j]->size;
 
         if(rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
         {
@@ -1056,8 +1056,8 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
                 for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
                   for (i1 = reg_patch_offset[0]; i1 < reg_patch_offset[0] + reg_patch_count[0]; i1 = i1 + reg_patch_count[0])
                   {
-                    int64_t *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
-                    int64_t *sim_patch_count = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
+                    unsigned long long *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
+                    unsigned long long *sim_patch_count = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
 
                     index = (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * sim_patch_count[3] * (a1 - sim_patch_offset[4])) +
                             (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * (b1 - sim_patch_offset[3])) +
@@ -1116,8 +1116,8 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
           {
             PIDX_variable var = rst_id->idx->variable[v];
 
-            int64_t *reg_patch_count = rst_id->reg_patch_grp[i]->patch[j]->size;
-            int64_t *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
+            unsigned long long *reg_patch_count = rst_id->reg_patch_grp[i]->patch[j]->size;
+            unsigned long long *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
 
 
             send_offset = malloc(sizeof (int) * (reg_patch_count[1] * reg_patch_count[2] * reg_patch_count[3] * reg_patch_count[4]));
@@ -1143,8 +1143,8 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
                   for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
                     for (i1 = reg_patch_offset[0]; i1 < reg_patch_offset[0] + reg_patch_count[0]; i1 = i1 + reg_patch_count[0])
                     {
-                      int64_t *sim_patch_count  = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
-                      int64_t *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
+                      unsigned long long *sim_patch_count  = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->size;
+                      unsigned long long *sim_patch_offset = rst_id->idx->variable[rst_id->first_index]->sim_patch[0]->offset;
 
                       index = (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * sim_patch_count[3] * (a1 - sim_patch_offset[4])) +
                               (sim_patch_count[0] * sim_patch_count[1] * sim_patch_count[2] * (b1 - sim_patch_offset[3])) +
@@ -1813,8 +1813,8 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
 {
 #if !SIMULATE_IO
   int i, j, k, rank = 0, v = 0, u = 0, s = 0, a, m, n, bytes_for_datatype;
-  int64_t element_count = 0;
-  int64_t lost_element_count = 0;
+  unsigned long long element_count = 0;
+  unsigned long long lost_element_count = 0;
   
 #if PIDX_HAVE_MPI
   if (rst_id->idx_derived->parallel_mode == 1)
@@ -1823,11 +1823,11 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
 
   float fvalue_1, fvalue_2;
   double dvalue_1, dvalue_2;
-  uint64_t uvalue_1, uvalue_2;
+  unsigned long long uvalue_1, uvalue_2;
   int vol = 0;
   //int p_vol = 0;
 
-  int64_t *bounds = rst_id->idx->bounds;
+  unsigned long long *bounds = rst_id->idx->bounds;
 
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
@@ -1844,8 +1844,8 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
         //printf("%d + ", var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
       for(n = 0; n < var->rst_patch_group[m]->count; n++)
       {
-        int64_t *count_ptr = var->rst_patch_group[m]->patch[n]->size;
-        int64_t *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
+        unsigned long long *count_ptr = var->rst_patch_group[m]->patch[n]->size;
+        unsigned long long *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
         //if (rank == 0)
         {
           //printf("[%d %d] %d %d %d :: %d %d %d\n", m, n, offset_ptr[0], offset_ptr[1], offset_ptr[2], count_ptr[0], count_ptr[1], count_ptr[2]);
@@ -1858,7 +1858,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
               for (j = 0; j < count_ptr[1]; j++) 
                 for (i = 0; i < count_ptr[0]; i++) 
                 {
-                  int64_t index = (count_ptr[0] * count_ptr[1] * count_ptr[2] * count_ptr[3] * a) + (count_ptr[0] * count_ptr[1] * count_ptr[2] * u) + (count_ptr[0] * count_ptr[1] * k) + (count_ptr[0] * j) + i;
+                  unsigned long long index = (count_ptr[0] * count_ptr[1] * count_ptr[2] * count_ptr[3] * a) + (count_ptr[0] * count_ptr[1] * count_ptr[2] * u) + (count_ptr[0] * count_ptr[1] * k) + (count_ptr[0] * j) + i;
 
                   int check_bit = 1;
                   for (s = 0; s < var->values_per_sample; s++)
@@ -1919,17 +1919,17 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
     }
   }
 
-  int64_t global_volume;
+  unsigned long long global_volume;
 #if PIDX_HAVE_MPI
   if (rst_id->idx_derived->parallel_mode == 1)
-    MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, rst_id->comm);
+    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->comm);
   else
     global_volume = element_count;
 #else
   global_volume = element_count;
 #endif
     
-  if (global_volume != (int64_t) bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4] * (rst_id->last_index - rst_id->first_index + 1))
+  if (global_volume != (unsigned long long) bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4] * (rst_id->last_index - rst_id->first_index + 1))
   {
     if (rank == 0)
       fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));

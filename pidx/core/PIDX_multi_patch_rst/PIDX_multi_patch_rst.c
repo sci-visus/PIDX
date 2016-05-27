@@ -52,7 +52,7 @@ struct PIDX_multi_patch_rst_struct
   //int if_perform_rst;
 
   //dimension of the power-two volume imposed patch
-  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
+  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   int reg_patch_grp_count;
   Ndim_patch_group* reg_patch_grp;
 };

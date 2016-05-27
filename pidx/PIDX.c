@@ -127,7 +127,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
       return PIDX_err_file_exists;
   }
   
-  uint64_t i = 0;
+  unsigned long long i = 0;
   int ret;
   char file_name_skeleton[1024];
   int rank = 0;
@@ -236,7 +236,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
-  memset((*file)->idx->reg_patch_size, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+  memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
   (*file)->idx->compression_factor = 1;
   (*file)->idx->compression_bit_rate = 64;
@@ -365,7 +365,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Comm_rank(access_type->comm, &rank);
     if (access_type->idx_count[0] != 1 || access_type->idx_count[1] != 1 || access_type->idx_count[2] != 1 )
     {
-      uint64_t i = 0, j = 0, k = 0;
+      unsigned long long i = 0, j = 0, k = 0;
       memcpy ((*file)->idx_d->idx_count, access_type->idx_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
 
       colors = malloc(sizeof(*colors) * (*file)->idx_d->idx_count[0] * (*file)->idx_d->idx_count[1] * (*file)->idx_d->idx_count[2]);
@@ -444,7 +444,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
-  memset((*file)->idx->reg_patch_size, 0, sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
+  memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
   (*file)->idx->compression_bit_rate = 64;
   (*file)->idx->compression_factor = 1;
@@ -751,8 +751,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 /// validate dims/blocksize
 static PIDX_return_code PIDX_validate(PIDX_file file)
 {
-  int64_t dims;
-  int64_t adjusted_bounds[PIDX_MAX_DIMENSIONS];
+  unsigned long long dims;
+  unsigned long long adjusted_bounds[PIDX_MAX_DIMENSIONS];
   adjusted_bounds[0] = file->idx->bounds[0] / file->idx->chunk_size[0];
   adjusted_bounds[1] = file->idx->bounds[1] / file->idx->chunk_size[1];
   adjusted_bounds[2] = file->idx->bounds[2] / file->idx->chunk_size[2];
@@ -792,7 +792,7 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
   if (file == NULL)
     return PIDX_err_file;
   
-  memcpy(file->idx->reg_patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  memcpy(file->idx->reg_patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
   
   return PIDX_success;
 }
@@ -807,7 +807,7 @@ PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
   if(file == NULL)
     return PIDX_err_file;
 
-  memcpy(file->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  memcpy(file->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;
 }
@@ -850,7 +850,7 @@ PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims)
   if(!file)
     return PIDX_err_file;
   
-  memcpy(dims, file->idx->bounds, (sizeof(int64_t) * PIDX_MAX_DIMENSIONS));
+  memcpy(dims, file->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
   
   return PIDX_success;
 }
@@ -1026,10 +1026,10 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
     if(chunk_size[0] < 0 || chunk_size[1] < 0 || chunk_size[2] < 0 || chunk_size[3] < 0 || chunk_size[4] < 0)
       return PIDX_err_box;
 
-    memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+    memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
     int reduce_by_sample = 1;
-    uint64_t total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2] * file->idx->chunk_size[3] * file->idx->chunk_size[4];
+    unsigned long long total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2] * file->idx->chunk_size[3] * file->idx->chunk_size[4];
     if (reduce_by_sample == 1)
     {
       file->idx->bits_per_block = file->idx->bits_per_block - (int)log2(total_chunk_size);
@@ -1293,8 +1293,8 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
   memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
 
-  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   temp_buffer = read_from_this_buffer;
   variable->sim_patch[variable->sim_patch_count]->buffer = (unsigned char*)temp_buffer;
@@ -1322,8 +1322,8 @@ PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_poi
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
   memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
 
-  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   //write_to_this_buffer = temp_buffer;
   variable->sim_patch[variable->sim_patch_count]->buffer = write_to_this_buffer;
@@ -2063,8 +2063,8 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
   memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
 
-  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
-  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(int64_t));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   temp_buffer = read_from_this_buffer;
   variable->sim_patch[variable->sim_patch_count]->buffer = (unsigned char*)temp_buffer;
