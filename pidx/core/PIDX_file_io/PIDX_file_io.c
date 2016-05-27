@@ -429,7 +429,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       MPI_Comm_rank(new_comm, &new_rank);
       MPI_Comm_size(new_comm, &new_count);
 
-      uint64_t *aggregator_process_offset;
+      unsigned long long *aggregator_process_offset;
       int *aggregator_process_var_number;
       int *aggregator_process_sample_number;
 
@@ -595,7 +595,7 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
       if (MODE == PIDX_WRITE)
       {
 
-        MPI_Status status;
+        //MPI_Status status;
 
         /*
         int rank;

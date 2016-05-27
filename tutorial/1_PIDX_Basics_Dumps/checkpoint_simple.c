@@ -181,7 +181,7 @@ static void destroy_synthetic_simulation_data()
 }
 
 
-static void parse_var_list()
+static int parse_var_list()
 {
   FILE *fp = fopen(var_list, "r");
   if (fp == NULL)
@@ -190,8 +190,8 @@ static void parse_var_list()
     return PIDX_err_file;
   }
 
-  int var = 0, variable_counter = 0, count = 0, len = 0;
-  char *pch, *pch1;
+  int variable_counter = 0, count = 0, len = 0;
+  char *pch1;
   char line [ 512 ];
 
   while (fgets(line, sizeof (line), fp) != NULL)
@@ -257,7 +257,9 @@ static void parse_var_list()
   for(v = 0; v < variable_count; v++)
     printf("[%d] -> %s %d %d\n", v, var_name[v], bits_per_value[v], values_per_sample[v]);
   }
-  }
+
+  return PIDX_success;
+}
 
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
