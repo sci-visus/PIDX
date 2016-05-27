@@ -1751,7 +1751,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 #if PIDX_HAVE_MPI
   unsigned long long global_volume = 0;
   if (id->idx_d->parallel_mode == 1)
-    MPI_Allreduce(&element_count, &global_volume, 1, MPI_LONG_LONG, MPI_SUM, id->comm);
+    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, id->comm);
   else
     global_volume = element_count;
   

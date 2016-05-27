@@ -669,9 +669,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 #if PIDX_HAVE_MPI
   if ((*file)->idx_d->parallel_mode == 1)
   {
-    MPI_Bcast((*file)->idx->bounds, 5, MPI_LONG_LONG, 0, (*file)->comm);
-    MPI_Bcast((*file)->idx->reg_patch_size, 5, MPI_LONG_LONG, 0, (*file)->comm);
-    MPI_Bcast((*file)->idx->chunk_size, 5, MPI_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->bounds, 5, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->reg_patch_size, 5, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->chunk_size, 5, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->comm);

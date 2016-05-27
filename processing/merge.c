@@ -436,10 +436,10 @@ static PIDX_return_code IDX_file_open(const char* filename)
 
 #if PIDX_HAVE_MPI
 
-  MPI_Bcast(bounds, 5, MPI_LONG_LONG, 0, comm);
-  MPI_Bcast(idx_count, 5, MPI_LONG_LONG, 0, comm);
-  MPI_Bcast(idx_size, 5, MPI_LONG_LONG, 0, comm);
-  MPI_Bcast(chunk_size, 5, MPI_LONG_LONG, 0, comm);
+  MPI_Bcast(bounds, 5, MPI_UNSIGNED_LONG_LONG, 0, comm);
+  MPI_Bcast(idx_count, 5, MPI_UNSIGNED_LONG_LONG, 0, comm);
+  MPI_Bcast(idx_size, 5, MPI_UNSIGNED_LONG_LONG, 0, comm);
+  MPI_Bcast(chunk_size, 5, MPI_UNSIGNED_LONG_LONG, 0, comm);
   MPI_Bcast(&(blocks_per_file), 1, MPI_INT, 0, comm);
   MPI_Bcast(&(bits_per_block), 1, MPI_INT, 0, comm);
   MPI_Bcast(&(variable_count), 1, MPI_INT, 0, comm);

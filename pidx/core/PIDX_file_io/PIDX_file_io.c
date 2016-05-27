@@ -440,7 +440,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       aggregator_process_sample_number = malloc(sizeof(*aggregator_process_sample_number) * new_count);
       memset(aggregator_process_sample_number, 0, sizeof(*aggregator_process_sample_number) * new_count);
 
-      MPI_Allgather(&agg_buf->compressed_buffer_size, 1, MPI_LONG_LONG, aggregator_process_offset, 1, MPI_LONG_LONG, new_comm);
+      MPI_Allgather(&agg_buf->compressed_buffer_size, 1, MPI_UNSIGNED_LONG_LONG, aggregator_process_offset, 1, MPI_UNSIGNED_LONG_LONG, new_comm);
       MPI_Allgather(&agg_buf->var_number, 1, MPI_INT, aggregator_process_var_number, 1, MPI_INT, new_comm);
       MPI_Allgather(&agg_buf->sample_number, 1, MPI_INT, aggregator_process_sample_number, 1, MPI_INT, new_comm);
 
