@@ -102,6 +102,9 @@ struct PIDX_variable_struct
   PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
 
+  PIDX_block_layout* global_block_layout_file_zero;                               ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout** block_layout_by_level_file_zero;                            ///< Block layout, specifically when variables might have different extents in the domain
+
   PIDX_block_layout* global_block_layout_files;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout** block_layout_by_level_files;                            ///< Block layout, specifically when variables might have different extents in the domain
 
@@ -120,7 +123,11 @@ struct idx_file_struct
   int variable_index_tracker;
   PIDX_variable variable[1024];
   
+  char filename_global[1024];
+  char filename_partition[1024];
+  char filename_file_zero[1024];
   char filename[1024];
+
   int bits_per_block;
   int blocks_per_file;
   int64_t bounds[PIDX_MAX_DIMENSIONS];
@@ -138,7 +145,10 @@ struct idx_file_struct
   char idx_cl2_bitSequence[512];
   char idx_cl2_bitPattern[512];
 
+  char filename_template_global[1024];                                         ///< Depends on the time step
+  char filename_template_partition[1024];                                         ///< Depends on the time step
   char filename_template[1024];                                         ///< Depends on the time step
+  char filename_template_file_zero[1024];                                         ///< Depends on the time step
   
   int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
   
@@ -171,6 +181,7 @@ struct idx_dataset_derived_metadata_struct
   off_t start_fs_block;
 
   Agg_buffer **agg_buffer;
+  Agg_buffer **fagg_buffer;
 
   int dump_agg_info;
   char agg_dump_dir_name[512];
@@ -196,15 +207,34 @@ struct idx_dataset_derived_metadata_struct
   int start_layout_index;
   int end_layout_index;
 
+  int start_layout_index_file_zero;
+  int end_layout_index_file_zero;
+  int layout_count_file_zero;
+
   int start_layout_index_shared;
   int end_layout_index_shared;
   int layout_count_shared;
 
-  MPI_File *fp;
-  MPI_Request *request;
   int start_layout_index_non_shared;
   int end_layout_index_non_shared;
   int layout_count_non_shared;
+
+
+  MPI_Status *status_non_shared;
+  MPI_File *fp_non_shared;
+  MPI_Request *request_non_shared;
+
+  MPI_Status *status_shared;
+  MPI_File *fp_shared;
+  MPI_Request *request_shared;
+
+
+  MPI_Status *status_file_zero;
+  MPI_File *fp_file_zero;
+  MPI_Request *request_file_zero;
+
+  MPI_File *fp;
+  MPI_Request *request;
 
   int perm_layout_count;
   int layout_count;
@@ -219,7 +249,9 @@ struct idx_dataset_derived_metadata_struct
   int aggregator_multiplier;
   int data_core_count;
 
-  int ****layout_agg_range;
+  int shared_block_level;
+  int total_partiton_level;
+  //int ****layout_agg_range;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

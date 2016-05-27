@@ -42,6 +42,17 @@ PIDX_return_code PIDX_header_io_enable_raw_dump(PIDX_header_io_id header_io);
 PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step);
 
 
+///
+PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, char* data_set_path, char* filename_template, int current_time_step);
+
+
+///
+int PIDX_header_io_filename_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, char* filename_template);
+
+
+///
+PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, char* file_name, char* file_name_template, int mode);
+
 
 ///
 int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout);

@@ -177,6 +177,7 @@ static PIDX_return_code local_one_sided_data_com(PIDX_local_agg_id agg_id, Agg_b
         }
 #endif
 
+        //printf("From to To :: %d %d\n", block_layout->resolution_from, block_layout->resolution_to);
         for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
         {
           if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
@@ -393,7 +394,7 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
 
     if (target_rank < min_rank || target_rank > max_rank || rank < min_rank || rank > max_rank)
     {
-      printf("[TR %d] [%d] V %d P %d A %d [%d %d]\n", target_rank, rank, variable_index, layout_id, block_layout->inverse_existing_file_index[file_no], min_rank, max_rank);
+      printf("[TR %d] [%d] V %d P %d A %d FN %d [%d %d]\n", target_rank, rank, variable_index, layout_id, block_layout->inverse_existing_file_index[file_no], file_no, min_rank, max_rank);
 
       //printf("[TR %d] [%d] V %d P %d A %d = %d %d\n", target_rank, rank, variable_index, layout_id, block_layout->inverse_existing_file_index[file_no], agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][0], agg_id->idx_d->layout_agg_range[variable_index][layout_id][block_layout->inverse_existing_file_index[file_no]][1]);
     }
@@ -902,6 +903,7 @@ PIDX_return_code PIDX_local_agg_meta_data_create(PIDX_local_agg_id agg_id, Agg_b
   MPI_Comm_size(agg_id->comm, &nprocs);
   MPI_Comm_rank(agg_id->comm, &rank);
 
+  //printf("local_block_layout->existing_file_count * agg_buffer->aggregation_factor = %d x %d\n", local_block_layout->existing_file_count, agg_buffer->aggregation_factor);
   agg_buffer->aggregator_interval = nprocs / ((agg_id->last_index - agg_id->first_index + 1) * local_block_layout->existing_file_count * agg_buffer->aggregation_factor);
   //assert(agg_buffer->aggregator_interval != 0);
 
@@ -1059,7 +1061,7 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
             trank = agg_id->idx_d->rank_buffer[calculated_rank];
           else
             trank = agg_id->idx_d->rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2))];
-          agg_id->rank_holder2[k][i - agg_id->first_index][j] = ((trank / 16) + 1) * 16;
+          agg_id->rank_holder2[k][i - agg_id->first_index][j] = trank;//((trank / 2) + 1) * 2;
         }
         else
         {
@@ -1071,9 +1073,12 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
           trank = agg_id->rank_holder2[k][i - agg_id->first_index][j];
         }
         //
+        //printf("%d -> %d : %d -> %d + %d\n", grank, trank, calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2)), calculated_rank, (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2)) );
 
         free(first);
 #endif
+        //if (grank == 0)
+        //  printf("%d -> %d : %d -> %d + %d\n", grank, trank, calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2)), calculated_rank, (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2)) );
         if(rank == agg_id->rank_holder2[k][i - agg_id->first_index][j])
         {
           agg_buffer->file_number = local_block_layout->existing_file_index[k];
@@ -1101,19 +1106,11 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) agg_buffer->buffer_size, __LINE__, __FILE__);
             return PIDX_err_agg;
           }
-          //double be_time = MPI_Wtime();
-          //if (rank == 0)
-          //  printf("[XX] %d time at %d = %f\n", var_offset, agg_offset - agg_id->idx_d->start_layout_index, be_time - bs_time);
 #endif
         }
       }
     }
   }
-
-
-  //double e_time = MPI_Wtime();
-  //if (rank == 0)
-  //  printf("[YY] %d time at %d = %f\n", var_offset, agg_offset - agg_id->idx_d->start_layout_index, e_time - s_time);
 
 #if 0
   if (rank == 0)
@@ -1124,7 +1121,7 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
       {
         for (k = 0; k < agg_id->idx->variable[j]->values_per_sample * agg_buffer->aggregation_factor; k++)
         {
-          printf("[%d %d %d] -> %d\n", k, i, j, agg_id->rank_holder2[i][j-agg_id->first_index][k]);
+          printf("[%d] [%d %d %d] -> %d\n", agg_offset, k, i, j, agg_id->rank_holder2[i][j-agg_id->first_index][k]);
         }
       }
     }
@@ -1134,6 +1131,7 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
 
   return PIDX_success;
 }
+
 
 
 

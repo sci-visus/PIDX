@@ -236,6 +236,13 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+
+    if (header_io->enable_raw_dump != 1)
+    {
+      fprintf(idx_file_p, "(partition count)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->idx_count[0]), (long long)(header_io->idx_d->idx_count[1]), (long long)(header_io->idx_d->idx_count[2]));
+
+      fprintf(idx_file_p, "(partition size)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->idx_size[0]), (long long)(header_io->idx_d->idx_size[1]), (long long)(header_io->idx_d->idx_size[2]));
+    }
     
     if (header_io->enable_raw_dump == 1)
     {
@@ -275,6 +282,185 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
   
   return 0;
 }
+
+
+
+PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, char* data_set_path, char* filename_template, int current_time_step)
+{
+  int l = 0, rank = 0, N, ncores = 1;
+  FILE* idx_file_p;
+  char dirname[1024], basename[1024];
+
+#if PIDX_HAVE_MPI
+  if (header_io->idx_d->parallel_mode == 1)
+  {
+    MPI_Comm_rank(header_io->comm, &rank);
+    MPI_Comm_size(header_io->comm, &ncores);
+  }
+#endif
+
+  int nbits_blocknumber = (header_io->idx_d->maxh - header_io->idx->bits_per_block - 1);
+  VisusSplitFilename(data_set_path, dirname, basename);
+
+  //remove suffix
+  for (N = strlen(basename) - 1; N >= 0; N--)
+  {
+    int ch = basename[N];
+    basename[N] = 0;
+    if (ch == '.') break;
+  }
+
+#if 0
+  //if i put . as the first character, if I move files VisusOpen can do path remapping
+  sprintf(pidx->filename_template, "./%s", basename);
+#endif
+  //pidx does not do path remapping
+  strcpy(filename_template, data_set_path);
+  for (N = strlen(filename_template) - 1; N >= 0; N--)
+  {
+    int ch = filename_template[N];
+    filename_template[N] = 0;
+    if (ch == '.') break;
+  }
+
+  //can happen if I have only only one block
+  if (nbits_blocknumber == 0)
+    strcat(filename_template, "/%01x.bin");
+
+  else
+  {
+    //approximate to 4 bits
+    if (nbits_blocknumber % 4)
+    {
+      nbits_blocknumber += (4 - (nbits_blocknumber % 4));
+      //assert(!(nbits_blocknumber % 4));
+    }
+    if (nbits_blocknumber <= 8)
+      strcat(filename_template, "/%02x.bin"); //no directories, 256 files
+    else if (nbits_blocknumber <= 12)
+      strcat(filename_template, "/%03x.bin"); //no directories, 4096 files
+    else if (nbits_blocknumber <= 16)
+      strcat(filename_template, "/%04x.bin"); //no directories, 65536  files
+    else
+    {
+      while (nbits_blocknumber > 16)
+      {
+        strcat(filename_template, "/%02x"); //256 subdirectories
+        nbits_blocknumber -= 8;
+      }
+      strcat(filename_template, "/%04x.bin"); //max 65536  files
+      nbits_blocknumber -= 16;
+      //assert(nbits_blocknumber <= 0);
+    }
+  }
+
+  if (strncmp(".idx", &data_set_path[strlen(data_set_path) - 4], 4) != 0)
+  {
+    fprintf(stderr, "[%s] [%d] Bad file name extension.\n", __FILE__, __LINE__);
+    return 1;
+  }
+
+  if (rank == 0)
+  {
+    //fprintf(stderr, "writing IDX file...\n", __FILE__, __LINE__);
+
+    if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
+    {
+      char visus_data_path[PATH_MAX];
+      char filename_skeleton[PATH_MAX];
+      strncpy(filename_skeleton, data_set_path, strlen(data_set_path) - 4);
+      filename_skeleton[strlen(filename_skeleton) - 4] = '\0';
+      sprintf(visus_data_path, "%s_visus.idx", filename_skeleton);
+
+      idx_file_p = fopen(visus_data_path, "w");
+      if (!idx_file_p)
+      {
+        fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
+        return -1;
+      }
+
+      fprintf(idx_file_p, "(version)\n6\n");
+      fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
+
+
+      if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
+      {
+        fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
+        fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->chunked_bounds[0] - 1), (long long)(header_io->idx->chunked_bounds[1] - 1), (long long)(header_io->idx->chunked_bounds[2] - 1), (long long)(header_io->idx->chunked_bounds[3] - 1), (long long)(header_io->idx->chunked_bounds[4] - 1));
+
+        fprintf(idx_file_p, "(original box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+
+        fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
+
+        fprintf(idx_file_p, "(fields)\n");
+        for (l = 0; l < header_io->last_index; l++)
+        {
+          fprintf(idx_file_p, "%s %d*float64", header_io->idx->variable[l]->var_name, header_io->idx->compression_bit_rate);
+          if (l != header_io->last_index - 1)
+            fprintf(idx_file_p, " + \n");
+        }
+      }
+
+      fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
+      fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
+      fprintf(idx_file_p, "(filename_template)\n./%s\n", filename_template);
+
+      fprintf(idx_file_p, "(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
+      fclose(idx_file_p);
+    }
+
+    idx_file_p = fopen(data_set_path, "w");
+    if (!idx_file_p)
+    {
+      fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
+      return -1;
+    }
+
+    fprintf(idx_file_p, "(version)\n6\n");
+    fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
+
+    fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+
+    if (header_io->enable_raw_dump == 1)
+    {
+      fprintf(idx_file_p, "(raw_dump)\n%lld %lld %lld\n", (long long)header_io->idx->reg_patch_size[0], (long long)header_io->idx->reg_patch_size[1], (long long)header_io->idx->reg_patch_size[2]);
+      fprintf(idx_file_p, "(cores)\n%d\n", ncores);
+    }
+
+    if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
+    {
+      fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
+      fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld %lld %lld\n", (long long)(header_io->idx->chunk_size[0]), (long long)(header_io->idx->chunk_size[1]), (long long)(header_io->idx->chunk_size[2]), (long long)(header_io->idx->chunk_size[3]), (long long)(header_io->idx->chunk_size[4]));
+      fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
+    }
+    fprintf(idx_file_p, "(fields)\n");
+
+    for (l = 0; l < header_io->last_index; l++)
+    {
+      fprintf(idx_file_p, "%s %s", header_io->idx->variable[l]->var_name, header_io->idx->variable[l]->type_name);
+      if (l != header_io->last_index - 1)
+        fprintf(idx_file_p, " + \n");
+    }
+
+    if (header_io->enable_raw_dump != 1)
+    {
+      fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
+      fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
+
+      //if (header_io->idx_d->res_to != 0)
+      //  fprintf(idx_file_p, "(resolution)\n%d\n", header_io->idx_d->res_to);
+
+      fprintf(idx_file_p, "(filename_template)\n./%s\n", filename_template);
+    }
+
+    fprintf(idx_file_p, "\n(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
+    fclose(idx_file_p);
+  }
+
+  return 0;
+}
+
+
 
 ///
 int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout)
@@ -395,6 +581,106 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
   return PIDX_success;
 }
 
+
+
+int PIDX_header_io_filename_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, char* filename_template)
+{
+  int i = 0, rank = 0, j, ret;
+  char bin_file[PATH_MAX];
+  char last_path[PATH_MAX] = {0};
+  char this_path[PATH_MAX] = {0};
+  char tmp_path[PATH_MAX] = {0};
+  char* pos;
+
+#if PIDX_HAVE_MPI
+  int nprocs = 1;
+  if (header_io_id->idx_d->parallel_mode == 1)
+  {
+    MPI_Comm_rank(header_io_id->comm, &rank);
+    MPI_Comm_size(header_io_id->comm, &nprocs);
+  }
+#endif
+
+
+  for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
+  {
+#if PIDX_HAVE_MPI
+    if (i % nprocs == rank && block_layout->file_bitmap[i] == 1)
+#else
+      if (rank == 0 && block_layout->file_bitmap[i] == 1)
+#endif
+      {
+        ret = generate_file_name(header_io_id->idx->blocks_per_file, filename_template, /*adjusted_file_index*/ i, bin_file, PATH_MAX);
+        if (ret == 1)
+        {
+          fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
+          return 1;
+        }
+
+
+        // see if we need to make parent directory
+        strcpy(this_path, bin_file);
+        if ((pos = strrchr(this_path, '/')))
+        //if ((pos = rindex(this_path, '/')))
+        {
+          pos[1] = '\0';
+          if (!strcmp(this_path, last_path) == 0)
+          {
+            //this file is in a previous directory than the last
+            //one; we need to make sure that it exists and create
+            //it if not.
+            strcpy(last_path, this_path);
+            memset(tmp_path, 0, PATH_MAX * sizeof (char));
+            //walk up path and mkdir each segment
+            for (j = 0; j < (int)strlen(this_path); j++)
+            {
+              if (j > 0 && this_path[j] == '/')
+              {
+                //printf("path = %s %s [T %s]\n", tmp_path, bin_file, header_io_id->idx->filename_template);
+                ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
+                if (ret != 0 && errno != EEXIST)
+                {
+                  perror("mkdir");
+                  fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
+                  return 1;
+                }
+              }
+              tmp_path[j] = this_path[j];
+            }
+          }
+        }
+
+#if PIDX_HAVE_MPI
+        if (header_io_id->idx_d->parallel_mode == 1)
+        {
+          MPI_File fh = 0;
+          MPI_File_open(MPI_COMM_SELF, bin_file, MPI_MODE_WRONLY | MPI_MODE_CREATE, MPI_INFO_NULL, &fh);
+          MPI_File_close(&fh);
+        }
+        else
+        {
+          int fp = 0;
+          fp = open(bin_file, O_CREAT, 0664);
+          close(fp);
+        }
+#else
+        int fp = 0;
+        fp = open(bin_file, O_CREAT, 0664);
+        close(fp);
+#endif
+      }
+  }
+
+#if PIDX_HAVE_MPI
+  if (header_io_id->idx_d->parallel_mode == 1)
+    MPI_Barrier(header_io_id->comm);
+#endif
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int mode)
 {
   int i = 0, rank = 0, ret;
@@ -507,6 +793,124 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
   return PIDX_success;
 }
 
+
+
+
+PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, char* file_name, char* filename_template, int mode)
+{
+  int i = 0, rank = 0, ret;
+  char bin_file[PATH_MAX];
+
+#if PIDX_HAVE_MPI
+  int nprocs = 1;
+  if (header_io_id->idx_d->parallel_mode == 1)
+  {
+    MPI_Comm_rank(header_io_id->comm, &rank);
+    MPI_Comm_size(header_io_id->comm, &nprocs);
+  }
+#endif
+
+  if (header_io_id->enable_raw_dump == 0)
+  {
+    for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
+    {
+#if PIDX_HAVE_MPI
+      if (i % nprocs == rank && block_layout->file_bitmap[i] == 1)
+#else
+      if (rank == 0 && block_layout->file_bitmap[i] == 1)
+#endif
+      {
+        /*
+        int adjusted_file_index = 0;
+        int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
+        adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+        */
+
+
+        ret = generate_file_name(header_io_id->idx->blocks_per_file, filename_template, /*adjusted_file_index*/i, bin_file, PATH_MAX);
+        if (ret == 1)
+        {
+          fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
+          return 1;
+        }
+
+        ret = populate_meta_data(header_io_id, block_layout, i, bin_file, mode);
+        if (ret != PIDX_success) return PIDX_err_header;
+      }
+    }
+  }
+  else
+  {
+    char last_path[PATH_MAX] = {0};
+    char this_path[PATH_MAX] = {0};
+    char tmp_path[PATH_MAX] = {0};
+    char* pos;
+
+    char *directory_path;
+    char *data_set_path;
+
+    directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+    memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+
+    data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
+    memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
+
+    strncpy(directory_path, file_name, strlen(file_name) - 4);
+    sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
+    free(directory_path);
+
+    if (rank == 0)
+    {
+      //TODO: the logic for creating the subdirectory hierarchy could
+      //be made to be more efficient than this. This implementation
+      //walks up the tree attempting to mkdir() each segment every
+      //time we switch to a new directory when creating binary files.
+
+      // see if we need to make parent directory
+      int j = 0;
+      strcpy(this_path, data_set_path);
+      if ((pos = strrchr(this_path, '/')))
+      //if ((pos = rindex(this_path, '/')))
+      {
+        pos[1] = '\0';
+        if (!strcmp(this_path, last_path) == 0)
+        {
+          //this file is in a previous directory than the last
+          //one; we need to make sure that it exists and create
+          //it if not.
+          strcpy(last_path, this_path);
+          memset(tmp_path, 0, PATH_MAX * sizeof (char));
+          //walk up path and mkdir each segment
+          for (j = 0; j < (int)strlen(this_path); j++)
+          {
+            if (j > 0 && this_path[j] == '/')
+            {
+              ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
+              if (ret != 0 && errno != EEXIST)
+              {
+                perror("mkdir");
+                fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
+                return 1;
+              }
+            }
+            tmp_path[j] = this_path[j];
+          }
+        }
+      }
+    }
+#if PIDX_HAVE_MPI
+    if (header_io_id->idx_d->parallel_mode == 1)
+      MPI_Barrier(header_io_id->comm);
+#endif
+
+    free(data_set_path);
+  }
+
+  return PIDX_success;
+}
+
+
+
 static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode)
 {
   int block_negative_offset = 0;
@@ -527,6 +931,8 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
     }
   }
   */
+  //int rank;
+  //MPI_Comm_rank(header_io_id->comm, &rank);
 
   int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
   //memset(headers, 0, total_header_size);
@@ -540,7 +946,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
     //  printf("[B] [%d %d] : %d\n", block_layout->resolution_from, block_layout->resolution_to, i);
     if (PIDX_blocks_is_block_present((i + (header_io_id->idx->blocks_per_file * file_number)), block_layout))
     {
-        //if (nprocs == 1)
+        //if (rank == 0)
         //  printf("[A] %d\n", i);
       block_negative_offset = PIDX_blocks_find_negative_offset(header_io_id->idx->blocks_per_file, (i + (header_io_id->idx->blocks_per_file * file_number)), block_layout);
 

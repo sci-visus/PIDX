@@ -87,6 +87,9 @@ MESSAGE("PIDX_BUILD_CONVERT ${PIDX_BUILD_CONVERT}")
 OPTION(PIDX_BUILD_PROFILE "pidx profile tools" FALSE)
 MESSAGE("PIDX_BUILD_PROFILE ${PIDX_BUILD_PROFILE}")
 
+OPTION(PIDX_BUILD_PROCESSING "Build processing" TRUE)
+MESSAGE("PIDX_BUILD_PROCESSING ${PIDX_BUILD_PROCESSING}")
+
 # ///////////////////////////////////////////////
 # PIDX_OPTION_XXXX
 # ///////////////////////////////////////////////
@@ -150,6 +153,7 @@ ADD_SUBDIRECTORY(external)
 ADD_SUBDIRECTORY(pidx)
 ADD_SUBDIRECTORY(tutorial)
 ADD_SUBDIRECTORY(profile)
+ADD_SUBDIRECTORY(processing)
 # ADD_SUBDIRECTORY(examples)
 
 # ///////////////////////////////////////////////

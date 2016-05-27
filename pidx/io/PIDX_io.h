@@ -9,6 +9,7 @@ extern "C" {
 
 #include "./PIDX_idx_io/PIDX_idx_io.h"
 #include "./PIDX_global_idx_io/PIDX_global_idx_io.h"
+#include "./PIDX_hybrid_idx_io/PIDX_hybrid_idx_io.h"
 #include "./PIDX_multi_patch_idx_io/PIDX_multi_patch_idx_io.h"
 #include "./PIDX_raw_io/PIDX_raw_io.h"
 #include "./PIDX_partitioned_idx_io/PIDX_partitioned_idx_io.h"
@@ -20,6 +21,7 @@ extern "C" {
 #define PIDX_PARTITION_MERGE_IDX_IO              4
 #define PIDX_MULTI_PATCH_IDX_IO                  5
 #define PIDX_GLOBAL_IDX_IO                       6
+#define PIDX_HYBRID_IDX_IO                       7
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256

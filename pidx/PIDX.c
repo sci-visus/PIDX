@@ -828,7 +828,7 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
   file->idx_d->idx_size[3] = 1;
   file->idx_d->idx_size[4] = 1;
 
-  //printf("{S %d %d %d\n", file->idx_d->idx_size[0], file->idx_d->idx_size[1], file->idx_d->idx_size[2]);
+  //printf("B %d %d %d\n", file->idx_d->idx_size[0], file->idx_d->idx_size[1], file->idx_d->idx_size[2]);
   return PIDX_validate(file);
 }
 
@@ -1538,6 +1538,18 @@ PIDX_return_code PIDX_enable_global_io(PIDX_file file)
 
 
 
+PIDX_return_code PIDX_enable_hybrid_io(PIDX_file file)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->io_type = PIDX_HYBRID_IDX_IO;
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file)
 {
   if(file == NULL)
@@ -1662,10 +1674,11 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Aggregation Type = %d\n", file->idx_d->agg_type);
       fprintf(stdout, "File zero optimization = %d\n", file->idx_d->file_zero_optimization);
       fprintf(stdout, "Async IO = %d\n", file->idx_d->async_io);
+      fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
     }
 
 
-    if (file->io_type == PIDX_GLOBAL_IDX_IO)
+    if (file->io_type == PIDX_GLOBAL_IDX_IO || file->io_type == PIDX_HYBRID_IDX_IO)
     {
       double total_time = time->sim_end - time->sim_start;
       double max_time = total_time;

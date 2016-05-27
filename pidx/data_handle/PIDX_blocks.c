@@ -290,10 +290,13 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
 int PIDX_blocks_is_block_present(int block_number, PIDX_block_layout layout)
 {
   int res_level = 0, res_index = 0;
-  
+
   if (block_number == 0)
   {
-    return 1;
+    if (layout->resolution_from <= layout->bits_per_block)
+      return 1;
+
+    return 0;
     //res_level = layout->bits_per_block;
   }
   else

@@ -489,7 +489,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
 
 
-PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* request, MPI_File* fh)
+PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* request, MPI_File* fh, char* filename_template)
 {
   int64_t data_offset = 0;  
   char file_name[PATH_MAX];
@@ -521,7 +521,7 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
     adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
     */
 
-    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) /*adjusted_file_index*/agg_buf->file_number, file_name, PATH_MAX);
+    generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) /*adjusted_file_index*/agg_buf->file_number, file_name, PATH_MAX);
 
     int use_compression = 0;
     if (use_compression == 0)
@@ -534,7 +534,7 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
         if (mpi_ret != MPI_SUCCESS)
         {
           fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
-          //return PIDX_err_io;
+          return PIDX_err_io;
         }
       }
       else
@@ -543,7 +543,7 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
         if (mpi_ret != MPI_SUCCESS)
         {
           fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
-          //return PIDX_err_io;
+          return PIDX_err_io;
         }
       }
 #else

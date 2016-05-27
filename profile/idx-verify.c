@@ -536,7 +536,7 @@ int main(int argc, char **argv)
         fd = open(bin_file, O_RDONLY);
         if (fd < 0)
         {
-          fprintf(stderr, "[File : %s] [Line : %d] open\n", __FILE__, __LINE__);
+          fprintf(stderr, "[File : %s] [Line : %d] open %s\n", __FILE__, __LINE__, bin_file);
           continue;
           return 0;
 

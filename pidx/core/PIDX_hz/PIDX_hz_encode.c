@@ -125,11 +125,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   int **allign_count;
   int j = 0, p = 0, d = 0, v = 0;
 
-  int rank, nprocs;
-  MPI_Comm_rank(id->global_comm, &rank);
-  MPI_Comm_size(id->global_comm, &nprocs);
-
-
   int maxH = id->idx_d->maxh;
 
   tpatch = (int**) malloc(2 * sizeof (int*));
@@ -235,8 +230,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         endXYZ.v = allign_count[j][4];
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
-        //if (rank == 2)
-        //  printf("XX%d [%d (%d): %d %d %d %d %d - %d %d %d %d %d] [%s] [%s] SE %d %d T %d %d %d\n", v, j, maxH, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[0][3], tpatch[0][4], tpatch[1][0], tpatch[1][1], tpatch[1][2], tpatch[1][3], tpatch[1][4], id->idx->bitSequence, id->idx->bitPattern, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
       }
 
 
@@ -269,9 +262,6 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 
   int maxH = id->idx_d->maxh;
   int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
-
-  //int rank = 0;
-  //MPI_Comm_rank(id->global_comm, &rank);
 
   // Allocate actual HZ buffer for the variables
   for (v = id->first_index; v <= id->last_index; v++)
@@ -320,9 +310,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2] * id->idx->chunk_size[3] * id->idx->chunk_size[4];
   PIDX_variable var0 = id->idx->variable[id->first_index];
   
-  //int rank = 0;
-  //MPI_Comm_rank(id->global_comm, &rank);
-
   int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
   int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
 
@@ -843,7 +830,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
 PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz_index, int end_hz_index)
 {
-  int rank, nprocs;
   uint64_t index = 0;
   int b = 0, y = 0, m = 0;
   uint64_t j = 0, l = 0;
@@ -857,9 +843,6 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int start_hz
 
   int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
   int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
-
-  MPI_Comm_rank(id->global_comm, &rank);
-  MPI_Comm_size(id->global_comm, &nprocs);
 
   if (var0->sim_patch_count < 0)
   {

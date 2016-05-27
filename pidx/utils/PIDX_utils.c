@@ -236,6 +236,7 @@ void guess_bit_string(char* bit_string, const Point3D dims)
   power_2_dims.x = pow_greater_equal(2, dims.x);
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
+
   size_t size = 0;
   char buffer[65];
   while (power_2_dims.x > 1 || power_2_dims.y > 1 || power_2_dims.z > 1)
@@ -277,6 +278,7 @@ void guess_bit_string2(char* bit_string, const Point3D dims)
   power_2_dims.x = pow_greater_equal(2, dims.x);
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
+
   size_t size = 0;
   char buffer[65];
   while (power_2_dims.z > 1)
