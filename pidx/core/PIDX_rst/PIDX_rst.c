@@ -756,8 +756,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     return PIDX_success;
   }
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d %d %d %d %d\n", __LINE__, rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[0], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[1], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[2], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[3], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[4]);
+  if (rank == 0)
+    printf("Reached Line %d: %d %d %d %d %d\n", __LINE__, rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[0], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[1], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[2], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[3], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[4]);
 
 #if PIDX_HAVE_MPI
   unsigned long long a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
@@ -776,8 +776,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       req_count++;
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d\n", __LINE__, req_count);
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, req_count);
 
   //creating ample requests and statuses
   req = (MPI_Request*) malloc(sizeof (*req) * req_count * 2 * (rst_id->last_index - rst_id->first_index + 1));
@@ -807,8 +807,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
   }
   memset(chunk_data_type, 0, sizeof (*chunk_data_type) * req_count  * (rst_id->last_index - rst_id->first_index + 1));
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d [%d %d %d] -- %d\n", __LINE__, sizeof (*chunk_data_type) * req_count  * (rst_id->last_index - rst_id->first_index + 1), sizeof (*chunk_data_type), req_count, (rst_id->last_index - rst_id->first_index + 1), rst_id->reg_patch_grp_count);
+  if (rank == 0)
+    printf("Reached Line %d: %d [%d %d %d] -- %d\n", __LINE__, sizeof (*chunk_data_type) * req_count  * (rst_id->last_index - rst_id->first_index + 1), sizeof (*chunk_data_type), req_count, (rst_id->last_index - rst_id->first_index + 1), rst_id->reg_patch_grp_count);
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
@@ -960,8 +960,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
     }
   }
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d\n", __LINE__, req_counter);
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, req_counter);
 
 #if !SIMULATE_IO
   //
@@ -979,8 +979,8 @@ PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id)
   free(chunk_data_type);
   chunk_data_type = 0;
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d\n", __LINE__, chunk_counter);
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, chunk_counter);
 
   free(req);
   req = 0;
@@ -1022,8 +1022,8 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
     return PIDX_success;
   }
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d %d %d %d %d\n", __LINE__, rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[0], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[1], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[2], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[3], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[4]);
+  if (rank == 0)
+    printf("Reached Line %d: %d %d %d %d %d\n", __LINE__, rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[0], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[1], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[2], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[3], rst_id->idx->variable[0]->rst_patch_group[0]->patch[0]->size[4]);
 
 #if PIDX_HAVE_MPI
   unsigned long long a1 = 0, b1 = 0, k1 = 0, i1 = 0, j1 = 0;
@@ -1031,7 +1031,7 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
   int *send_count, *send_offset;
   unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
   int ret = 0;
-  int pipe_length = 100;
+  int pipe_length = 50;
 
   MPI_Request *req;
   MPI_Status *status;
@@ -1043,8 +1043,8 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
     for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       req_count++;
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d\n", __LINE__, req_count);
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, req_count);
 
   //creating ample requests and statuses
 
@@ -1073,8 +1073,8 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
     }
     memset(status, 0, sizeof (*status) * req_count * 2 * (end_index - start_index + 1));
 
-    //if (rank == 0)
-    //  printf("Reached Line %d: %d\n", __LINE__, req_count);
+    if (rank == 0)
+      printf("Reached Line %d: %d\n", __LINE__, req_count);
 
     chunk_data_type =  malloc(sizeof (*chunk_data_type) * req_count  * (end_index - start_index + 1));
     if (!chunk_data_type)
@@ -1084,8 +1084,8 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
     }
     memset(chunk_data_type, 0, sizeof (*chunk_data_type) * req_count  * (end_index - start_index + 1));
 
-    //if (rank == 0)
-    //  printf("Reached Line %d: %d [%d %d %d] -- %d\n", __LINE__, sizeof (*chunk_data_type) * req_count  * (end_index - start_index + 1), sizeof (*chunk_data_type), req_count, (end_index - start_index + 1), rst_id->reg_patch_grp_count);
+    if (rank == 0)
+      printf("Reached Line %d: %d [%d %d %d] -- %d\n", __LINE__, sizeof (*chunk_data_type) * req_count  * (end_index - start_index + 1), sizeof (*chunk_data_type), req_count, (end_index - start_index + 1), rst_id->reg_patch_grp_count);
 
     for (i = 0; i < rst_id->reg_patch_grp_count; i++)
     {
@@ -1236,8 +1236,8 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
       }
     }
 
-    //if (rank == 0)
-    //  printf("Reached Line %d: %d\n", __LINE__, req_counter);
+    if (rank == 0)
+      printf("Reached Line %d: %d\n", __LINE__, req_counter);
 
 #if !SIMULATE_IO
     //
@@ -1263,8 +1263,8 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
 
   }
 
-  //if (rank == 0)
-  //  printf("Reached Line %d: %d\n", __LINE__, chunk_counter);
+  if (rank == 0)
+    printf("Reached Line %d: %d\n", __LINE__, chunk_counter);
 
 
 
