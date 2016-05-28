@@ -100,6 +100,10 @@ PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id);
 PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id);
 
 
+
+PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id);
+
+
 ///
 /// \brief PIDX_rst_read
 /// \param rst_id

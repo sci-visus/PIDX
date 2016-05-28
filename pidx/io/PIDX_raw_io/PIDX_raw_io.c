@@ -81,8 +81,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
   }
 #endif
 
-  if (rank == 0)
-    printf("Reached Line %d\n", __LINE__);
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
 
   file->idx_d->rank_r_offset = malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
   memset(file->idx_d->rank_r_offset, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
@@ -106,8 +106,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
   }
 #endif
 
-  if (rank == 0)
-    printf("Reached Line %d\n", __LINE__);
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
 
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)
@@ -125,8 +125,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
   }
   time->populate_idx_end_time = PIDX_get_time();
 
-  if (rank == 0)
-    printf("Reached Line %d\n", __LINE__);
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
 
   time->write_init_start[time->header_counter] = PIDX_get_time();
 
@@ -171,8 +171,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
   }
 #endif
 
-  if (rank == 0)
-    printf("Reached Line %d\n", __LINE__);
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
 
   time->write_init_end[time->header_counter] = PIDX_get_time();
   time->header_counter++;
@@ -204,8 +204,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     /*------------------------------------Adding communicator [end]------------------------------------------*/
 
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
 
     /*--------------------------------------------RST [start]------------------------------------------------*/
@@ -215,15 +215,15 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     ret = PIDX_rst_meta_data_write(file->rst_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     /* Creating the buffers required for restructurig */
     ret = PIDX_rst_buf_create(file->rst_id);
@@ -231,21 +231,22 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
       return PIDX_err_rst;
     time->rst_meta_data_end_io[time->variable_counter] = PIDX_get_time();
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     time->rst_start[time->variable_counter] = PIDX_get_time();
     /* Perform data restructuring */
     if (file->idx_dbg->debug_do_rst == 1)
     {
-      ret = PIDX_rst_write(file->rst_id);
+      ret = PIDX_rst_staged_write(file->rst_id);
+      //ret = PIDX_rst_write(file->rst_id);
       if (ret != PIDX_success)
         return PIDX_err_rst;
     }
     time->rst_end[time->variable_counter] = PIDX_get_time();
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     time->rst_io_start[time->variable_counter] = PIDX_get_time();
     if (file->idx_dbg->debug_do_io == 1)
@@ -255,8 +256,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
         return PIDX_err_rst;
     }
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     /* Verifying the correctness of the restructuring phase */
     if (file->idx_dbg->debug_rst == 1)
@@ -270,8 +271,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     time->rst_io_end[time->variable_counter] = PIDX_get_time();
 
@@ -286,14 +287,14 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     /* Deleting the restructuring ID */
     PIDX_rst_finalize(file->rst_id);
 
-    if (rank == 0)
-      printf("Reached Line %d\n", __LINE__);
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
 
     time->finalize_end[time->variable_counter] = PIDX_get_time();
     /*-----------------------------------------finalize [end]--------------------------------------------------*/
@@ -307,8 +308,8 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
   free(file->idx_d->rank_r_count);
   file->idx_d->rank_r_count = 0;
 
-  if (rank == 0)
-    printf("Reached Line %d\n", __LINE__);
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
 
   return PIDX_success;
 }

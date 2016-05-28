@@ -288,6 +288,7 @@ int main(int argc, char **argv)
   int read_error_count = 0, read_count = 0;
   int int_val = 0;
   double double_val = 0;
+  float float_val = 0;
 
 
   for(var = 0; var < variable_count; var++)
@@ -329,6 +330,26 @@ int main(int argc, char **argv)
                 read_error_count++;
                 //if (rank == 0)
                 //  printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, double_val, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              }
+              else
+              {
+                read_count++;
+                //if (rank == 0)
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              }
+            }
+          }
+
+          else if (strcmp(type_name[var], FLOAT32) == 0)
+          {
+            for (vps = 0; vps < v_per_sample[var]; vps++)
+            {
+              memcpy(&float_val, data[var] + (index * v_per_sample[var] + vps) * bits_per_sample[var], bits_per_sample[var]);
+              if (float_val != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              {
+                read_error_count++;
+                //if (rank == 0)
+                //  printf("W[%d %d %d] [%d] Read error %d %lld\n", i,j ,k, vps, int_val, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
               else
               {

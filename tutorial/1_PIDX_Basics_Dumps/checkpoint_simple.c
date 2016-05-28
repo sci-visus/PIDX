@@ -159,6 +159,8 @@ static void create_synthetic_simulation_data()
 
     //printf("sample_count = %d\n", sample_count);
 
+    float fvalue = 0;
+    double dvalue = 0;
     for (k = 0; k < local_box_size[2]; k++)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
@@ -166,7 +168,19 @@ static void create_synthetic_simulation_data()
           unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
 
           for (vps = 0; vps < sample_count; vps++)
-            data[var][index * sample_count + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          {
+            if ((bits_per_value[var]) == 32)
+            {
+              fvalue = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+              memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
+            }
+            else if ((bits_per_value[var]) == 192)
+            {
+              dvalue = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+              memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
+            }
+            //data[var][index * sample_count + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+          }
         }
   }
 }
