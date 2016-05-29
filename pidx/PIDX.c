@@ -661,6 +661,22 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       {
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
+        
+        line[strcspn(line, "\r\n")] = 0;
+        
+        pch = strtok(line, " ");
+        
+        if(pch != NULL)
+          (*file)->idx->first_tstep = atoi(pch);
+        else
+          return PIDX_err_file;
+        
+        pch = strtok(NULL, " ");
+        
+        if(pch != NULL)
+          (*file)->idx->last_tstep = atoi(pch);
+        else
+          return PIDX_err_file;
       }
     }
     fclose(fp);
@@ -999,7 +1015,25 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  *tstep = file->idx->first_tstep;
+  
+  return PIDX_success;
+}
 
+PIDX_return_code PIDX_get_last_tstep(PIDX_file file, int* tstep)
+{
+  if(!file)
+    return PIDX_err_file;
+  
+  *tstep = file->idx->last_tstep;
+  
+  return PIDX_success;
+}
 
 PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
 {
