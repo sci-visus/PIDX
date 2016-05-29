@@ -358,8 +358,8 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
   target_disp = ((hz_start - ((samples_per_file * file_no) + (negative_block_offset * agg_id->idx_d->samples_per_block))) * values_per_sample)
     %
     (samples_in_file * values_per_sample);
-  if (target_disp < 0)
-    return PIDX_err_agg;
+  //if (target_disp < 0)
+  //  return PIDX_err_agg;
 
 
   sample_index = target_disp / (samples_in_file / agg_buffer->aggregation_factor);

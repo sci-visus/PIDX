@@ -630,8 +630,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           pch = strtok(NULL, " ");
         }
 
-        if((*file)->idx->chunk_size[0] < 0 || (*file)->idx->chunk_size[1] < 0 || (*file)->idx->chunk_size[2] < 0 || (*file)->idx->chunk_size[3] < 0 || (*file)->idx->chunk_size[4] < 0)
-          return PIDX_err_box;
+        //if((*file)->idx->chunk_size[0] < 0 || (*file)->idx->chunk_size[1] < 0 || (*file)->idx->chunk_size[2] < 0 || (*file)->idx->chunk_size[3] < 0 || (*file)->idx->chunk_size[4] < 0)
+        //  return PIDX_err_box;
       }
 
       if (strcmp(line, "(compression bit rate)") == 0)
@@ -786,8 +786,8 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
 
 PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch_size)
 {
-  if(reg_patch_size[0] < 0 || reg_patch_size[1] < 0 || reg_patch_size[2] < 0 || reg_patch_size[3] < 0 || reg_patch_size[4] < 0)
-    return PIDX_err_box;
+  //if(reg_patch_size[0] < 0 || reg_patch_size[1] < 0 || reg_patch_size[2] < 0 || reg_patch_size[3] < 0 || reg_patch_size[4] < 0)
+  //  return PIDX_err_box;
   
   if (file == NULL)
     return PIDX_err_file;
@@ -801,8 +801,8 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
 
 PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
 {
-  if(dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
-    return PIDX_err_box;
+  //if(dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
+  //  return PIDX_err_box;
 
   if(file == NULL)
     return PIDX_err_file;
@@ -1023,8 +1023,8 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
     chunk_size[3] = 1;
     chunk_size[4] = 1;
 
-    if(chunk_size[0] < 0 || chunk_size[1] < 0 || chunk_size[2] < 0 || chunk_size[3] < 0 || chunk_size[4] < 0)
-      return PIDX_err_box;
+    //if(chunk_size[0] < 0 || chunk_size[1] < 0 || chunk_size[2] < 0 || chunk_size[3] < 0 || chunk_size[4] < 0)
+    //  return PIDX_err_box;
 
     memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
@@ -1278,11 +1278,11 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
   if(!variable)
     return PIDX_err_variable;
 
-  if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
-    return PIDX_err_offset;
+  //if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
+  //  return PIDX_err_offset;
 
-  if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
-    return PIDX_err_count;
+  //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
+  //  return PIDX_err_count;
 
 #if !SIMULATE_IO
 //  if (read_from_this_buffer == NULL)
@@ -1312,11 +1312,11 @@ PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_poi
   if(!variable)
     return PIDX_err_variable;
 
-  if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
-    return PIDX_err_offset;
+  //if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
+  //  return PIDX_err_offset;
 
-  if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
-    return PIDX_err_count;
+  //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
+  //  return PIDX_err_count;
 
   //const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
@@ -2058,11 +2058,11 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
   if(!variable)
     return PIDX_err_variable;
 
-  if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
-    return PIDX_err_offset;
+  //if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
+  //  return PIDX_err_offset;
 
-  if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
-    return PIDX_err_count;
+  //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
+  //  return PIDX_err_count;
 
   if (file->idx->variable_index_tracker >= file->idx->variable_count)
     return PIDX_err_variable;
