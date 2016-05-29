@@ -1,6 +1,3 @@
-//field9@llnl.gov
-//marathe1@llnl.gov - Annirudha
-// Precision as input
 /*****************************************************
  **  PIDX Parallel I/O Library                      **
  **  Copyright (c) 2010-2014 University of Utah     **
@@ -174,7 +171,7 @@ static void create_synthetic_simulation_data()
               fvalue = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
-            else if ((bits_per_value[var]) == 192)
+            else if ((bits_per_value[var]) == 192 || (bits_per_value[var]) == 64)
             {
               dvalue = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
@@ -270,9 +267,9 @@ static int parse_var_list()
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank == 0)
   {
-  int v = 0;
-  for(v = 0; v < variable_count; v++)
-    printf("[%d] -> %s %d %d\n", v, var_name[v], bits_per_value[v], values_per_sample[v]);
+    int v = 0;
+    for(v = 0; v < variable_count; v++)
+      printf("[%d] -> %s %d %d\n", v, var_name[v], bits_per_value[v], values_per_sample[v]);
   }
 
   return PIDX_success;
@@ -406,8 +403,8 @@ int main(int argc, char **argv)
 
     //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
-    int io_type = PIDX_RAW_IO;
-    //int io_type = PIDX_HYBRID_IDX_IO;
+    //int io_type = PIDX_RAW_IO;
+    int io_type = PIDX_HYBRID_IDX_IO;
     switch (io_type)
     {
       case PIDX_HYBRID_IDX_IO:
@@ -456,8 +453,8 @@ int main(int argc, char **argv)
     //ret = PIDX_debug_disable_agg(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
-    //ret = PIDX_debug_disable_io(file);
-    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
+    ret = PIDX_debug_disable_io(file);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
     //ret = PIDX_debug_disable_hz(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");

@@ -90,6 +90,7 @@ static PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
   idx_g_point.z = (int) file->idx_d->idx_count[2];
   //GuessBitmaskPattern(file->idx->idx_cg_bitSequence, idx_g_point);
   guess_bit_string(file->idx->idx_cg_bitSequence, idx_g_point);
+  //printf("BS1: %s\n", file->idx->idx_cg_bitSequence);
 
 #if 0
   PointND idx_l_point;
@@ -109,8 +110,17 @@ static PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
   idx_l1_point.x = (int) file->idx_d->idx_size[0] / file->idx->reg_patch_size[0];
   idx_l1_point.y = (int) file->idx_d->idx_size[1] / file->idx->reg_patch_size[1];
   idx_l1_point.z = (int) file->idx_d->idx_size[2] / file->idx->reg_patch_size[2];
+  if (idx_l1_point.x == 0)
+    idx_l1_point.x = 1;
+  if (idx_l1_point.y == 0)
+    idx_l1_point.y = 1;
+  if (idx_l1_point.z == 0)
+    idx_l1_point.z = 1;
   //GuessBitmaskPattern(file->idx->idx_cl1_bitSequence, idx_l1_point);
-  guess_bit_string2(file->idx->idx_cl1_bitSequence, idx_l1_point);
+  //guess_bit_string2(file->idx->idx_cl1_bitSequence, idx_l1_point);
+  guess_bit_string_Z(file->idx->idx_cl1_bitSequence, idx_l1_point);
+  //printf("BS2: %d (%d / %d) %d (%d / %d) %d (%d / %d)\n", idx_l1_point.x, file->idx_d->idx_size[0], file->idx->reg_patch_size[0], idx_l1_point.y, file->idx_d->idx_size[1], file->idx->reg_patch_size[1], idx_l1_point.z, file->idx_d->idx_size[2], file->idx->reg_patch_size[2]);
+
 
 
   Point3D idx_l2_point;
@@ -119,6 +129,7 @@ static PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
   idx_l2_point.z = (int) file->idx->reg_patch_size[2];
   //GuessBitmaskPattern(file->idx->idx_cl2_bitSequence, idx_l2_point);
   guess_bit_string(file->idx->idx_cl2_bitSequence, idx_l2_point);
+  //printf("BS3: %s\n", file->idx->idx_cl2_bitSequence);
 
   strcpy(file->idx->idx_cl_bitSequence, file->idx->idx_cl1_bitSequence);
   strcat(file->idx->idx_cl_bitSequence, file->idx->idx_cl2_bitSequence + 1);
@@ -3039,6 +3050,9 @@ static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_hybrid_idx_io fil
 
 PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_index, int end_var_index)
 {
+  PIDX_time time = file->idx_d->time;
+  time->SX = PIDX_get_time();
+
   file->idx_d->var_pipe_length = file->idx->variable_count - 1;
   if (file->idx_d->var_pipe_length == 0)
     file->idx_d->var_pipe_length = 1;
@@ -3048,8 +3062,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   int start_index = 0;
   int i = 0;
 
-  PIDX_time time = file->idx_d->time;
-  time->populate_idx_start_time = PIDX_get_time();
+  time->partition_start_time = PIDX_get_time();
 #if 1
 
 #if PIDX_HAVE_MPI
@@ -3076,8 +3089,6 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
-  time->populate_idx_end_time = PIDX_get_time();
 
   int grank = 0, gnprocs = 1;
   MPI_Comm_rank(file->global_comm, &grank);
@@ -3106,6 +3117,8 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     return PIDX_err_file;
   }
 
+  time->partition_end_time = PIDX_get_time();
+
   time->hz_s_time = PIDX_get_time();
   ret = create_hz_buffers(file, start_var_index, end_var_index);
   if (ret != PIDX_success)
@@ -3120,7 +3133,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   if (file->idx_d->shared_block_level >= file->idx_d->maxh)
     file->idx_d->shared_block_level = file->idx_d->maxh;
 
-#if 1
+#if 0
   int hz_from_file_zero = 0;
   int hz_to_file_zero =  file->idx_d->shared_block_level;
   if (hz_from_file_zero == hz_to_file_zero)
@@ -3194,12 +3207,15 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   finalize_file_zero_agg_io(file, start_var_index);
 #endif
 
+  /*
   ret = partition_communicator(file);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  */
+  file->comm = file->global_comm;
 
 
 #if PIDX_HAVE_MPI
@@ -3209,6 +3225,8 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     MPI_Comm_rank(file->comm,  &rank);
   }
 #endif
+
+  time->populate_idx_start_time_s = PIDX_get_time();
 
   memset(file->idx_d->rank_buffer, 0, gnprocs * sizeof(*file->idx_d->rank_buffer));
   MPI_Allgather(&rank, 1, MPI_INT, file->idx_d->rank_buffer, 1, MPI_INT, file->global_comm);
@@ -3230,12 +3248,9 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     return PIDX_err_file;
   }
 
-
-  //printf("SBL : TPL : ML :: %d %d %d\n", shared_block_level, total_partiton_level, file->idx_d->maxh);
 #if 1
-
-  int hz_from_shared = file->idx_d->shared_block_level;//file_zero_level;//total_partiton_level;
-  int hz_to_shared =  file->idx_d->total_partiton_level;//file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
+  int hz_from_shared = 0;//file->idx_d->shared_block_level;//file_zero_level;//total_partiton_level;
+  int hz_to_shared =  0;//file->idx_d->total_partiton_level;//file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
   if (hz_from_shared == hz_to_shared)
   {
     file->idx_d->start_layout_index_shared = 0;
@@ -3248,7 +3263,10 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  time->populate_idx_end_time_s = PIDX_get_time();
 
+
+  time->populate_idx_start_time_ns = PIDX_get_time();
   int hz_from_non_shared = file->idx_d->total_partiton_level;//file_zero_level;//total_partiton_level;
   int hz_to_non_shared =  file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
   if (hz_from_non_shared == hz_to_non_shared)
@@ -3263,6 +3281,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  time->populate_idx_end_time_ns = PIDX_get_time();
 
   ret = write_headers(file, start_var_index, end_var_index, 0);
   if (ret != PIDX_success)
@@ -3318,31 +3337,33 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
       }
 
 #if 1
-      create_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
-      create_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
-
-      ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_non_shared, file->idx_d->request_non_shared, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 0);
-      if (ret != PIDX_success)
+      if (file->idx_dbg->debug_do_io == 1)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
+        create_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
+        create_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
+
+        ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_non_shared, file->idx_d->request_non_shared, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 0);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_file;
+        }
+
+        ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_shared, file->idx_d->request_shared, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, 0);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_file;
+        }
+
+        wait_and_destroy_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
+        wait_and_destroy_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
+
+        destroy_non_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, agg_io_level_non_shared);
+
+        destroy_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, agg_io_level_shared);
       }
-
-      ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_shared, file->idx_d->request_shared, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, 0);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      wait_and_destroy_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
-      wait_and_destroy_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
-
-      destroy_non_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, agg_io_level_non_shared);
-
-      destroy_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, agg_io_level_shared);
 #endif
-
     }
     else
     {
@@ -3410,9 +3431,10 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   }
 #endif
 
+
+  time->buffer_cleanup_start = PIDX_get_time();
   //delete_idx_dataset_shared(file, start_var_index, end_var_index, hz_from_shared, hz_to_shared);
   delete_idx_dataset_non_shared(file, start_var_index, end_var_index, hz_from_non_shared, hz_to_non_shared);
-
 
   free(file->idx_d->rank_buffer);
   ret = destroy_hz_buffers(file, start_var_index, end_var_index);
@@ -3435,11 +3457,13 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  time->buffer_cleanup_end = PIDX_get_time();
 
 #endif
 #endif
 
 #endif
+  time->EX = PIDX_get_time();
   return PIDX_success;
 }
 

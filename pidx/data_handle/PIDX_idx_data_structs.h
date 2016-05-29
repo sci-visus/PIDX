@@ -38,13 +38,22 @@ struct PIDX_timming_struct
 {
    int header_counter;
    int variable_counter;
+   double SX;
+   double EX;
    double file_create_time;
    double partition_start_time;
    double partition_end_time;
    double populate_idx_start_time;
    double populate_idx_end_time;
+   double populate_idx_start_time_f0;
+   double populate_idx_end_time_f0;
+   double populate_idx_start_time_ns;
+   double populate_idx_end_time_ns;
+   double populate_idx_start_time_s;
+   double populate_idx_end_time_s;
    double hz_s_time, hz_e_time;
    double sim_start, sim_end;
+   double buffer_cleanup_start, buffer_cleanup_end;
    double *write_init_start, *write_init_end;
    double *startup_start, *startup_end;
    double *init_start, *init_end;

@@ -1721,10 +1721,13 @@ PIDX_return_code PIDX_close(PIDX_file file)
       //if (max_time == total_time)
       if (max_time == total_time)
       {
-        fprintf(stdout, "[P %d %d] Time Taken: %f Seconds\n", rank, nprocs, max_time);
+        fprintf(stdout, "[P %d %d] Time Taken: %f Seconds [%f]\n", rank, nprocs, max_time, time->EX - time->SX);
         fprintf(stdout, "--------------------------------------------------------------------------------------------------------------------------\n");
         fprintf(stdout, "Init Time: %f Seconds\n", (time->file_create_time - time->sim_start));
-        fprintf(stdout, "Block layout creation time %f\n", time->populate_idx_end_time - time->populate_idx_start_time);
+        fprintf(stdout, "Partition time %f\n", time->partition_end_time - time->partition_start_time);
+        fprintf(stdout, "[F Zero] Block layout creation time %f\n", time->populate_idx_end_time_f0 - time->populate_idx_start_time_f0);
+        fprintf(stdout, "[Shared] Block layout creation time %f\n", time->populate_idx_end_time_s - time->populate_idx_start_time_s);
+        fprintf(stdout, "[Non-Shared] Block layout creation time %f\n", time->populate_idx_end_time_ns - time->populate_idx_start_time_ns);
 
         double header_io_time = 0;
         for (var = 0; var < time->header_counter; var++)
@@ -1779,14 +1782,19 @@ PIDX_return_code PIDX_close(PIDX_file file)
         fprintf(stdout, "[NT] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", file->idx->variable_count, (file->idx_d->end_layout_index_non_shared - file->idx_d->start_layout_index_non_shared), ntotal_time_m, ntotal_time_bc, ntotal_time_a, ntotal_time_i, ntotal_time_pi, ntotal_time_ai);
 
         fprintf(stdout, "HZ Time = %f\n", (time->hz_e_time - time->hz_s_time));
+        fprintf(stdout, "Cleanup Time = %f\n", (time->buffer_cleanup_end - time->buffer_cleanup_start));
 
-        fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f + %f + %f] [%f]\n", (time->file_create_time - time->sim_start) + (time->populate_idx_end_time - time->populate_idx_start_time) + (time->hz_e_time - time->hz_s_time) + header_io_time + stotal_time_ai + ntotal_time_ai,
+        fprintf(stdout, "PIDX Total Time = %f [%f + %f + (%f + %f + %f) + %f + %f + %f + %f + %f] [%f]\n", (time->file_create_time - time->sim_start) + (time->partition_end_time - time->partition_start_time) + (time->populate_idx_end_time_f0 - time->populate_idx_start_time_f0) + (time->populate_idx_end_time_s - time->populate_idx_start_time_s) + (time->populate_idx_end_time_ns - time->populate_idx_start_time_ns) + (time->hz_e_time - time->hz_s_time) + header_io_time + stotal_time_ai + ntotal_time_ai + (time->buffer_cleanup_end - time->buffer_cleanup_start),
                 (time->file_create_time - time->sim_start),
-                (time->populate_idx_end_time - time->populate_idx_start_time),
+                (time->partition_end_time - time->partition_start_time),
+                (time->populate_idx_end_time_f0 - time->populate_idx_start_time_f0),
+                (time->populate_idx_end_time_s - time->populate_idx_start_time_s),
+                (time->populate_idx_end_time_ns - time->populate_idx_start_time_ns),
                 (time->hz_e_time - time->hz_s_time),
                 header_io_time,
                 stotal_time_ai,
                 ntotal_time_ai,
+                (time->buffer_cleanup_end - time->buffer_cleanup_start),
                 max_time);
         fprintf(stdout, "==========================================================================================================================\n");
       }
