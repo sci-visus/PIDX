@@ -3337,32 +3337,32 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
       }
 
 #if 1
-      if (file->idx_dbg->debug_do_io == 1)
+      //if (file->idx_dbg->debug_do_io == 1)
+      //{
+      create_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
+      create_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
+
+      ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_non_shared, file->idx_d->request_non_shared, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 0);
+      if (ret != PIDX_success)
       {
-        create_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
-        create_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
-
-        ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_non_shared, file->idx_d->request_non_shared, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 0);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-
-        ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_shared, file->idx_d->request_shared, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, 0);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-
-        wait_and_destroy_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
-        wait_and_destroy_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
-
-        destroy_non_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, agg_io_level_non_shared);
-
-        destroy_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, agg_io_level_shared);
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
+
+      ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_shared, file->idx_d->request_shared, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, 0);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      wait_and_destroy_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
+      wait_and_destroy_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
+
+      destroy_non_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, agg_io_level_non_shared);
+
+      destroy_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, agg_io_level_shared);
+      //}
 #endif
     }
     else
