@@ -3207,15 +3207,13 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   finalize_file_zero_agg_io(file, start_var_index);
 #endif
 
-  /*
   ret = partition_communicator(file);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  */
-  file->comm = file->global_comm;
+  //file->comm = file->global_comm;
 
 
 #if PIDX_HAVE_MPI
