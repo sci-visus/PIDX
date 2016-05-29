@@ -1031,7 +1031,7 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
   int *send_count, *send_offset;
   unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
   int ret = 0;
-  int pipe_length = 50;
+  int pipe_length = 0;
 
   MPI_Request *req;
   MPI_Status *status;
