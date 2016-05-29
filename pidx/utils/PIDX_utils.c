@@ -272,6 +272,7 @@ void guess_bit_string(char* bit_string, const Point3D dims)
 
 
 
+
 void guess_bit_string_Z(char* bit_string, const Point3D dims)
 {
   Point3D power_2_dims;

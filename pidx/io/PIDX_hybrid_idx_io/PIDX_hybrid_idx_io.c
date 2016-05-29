@@ -3250,7 +3250,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
 
 #if 1
   int hz_from_shared = 0;//file->idx_d->shared_block_level;//file_zero_level;//total_partiton_level;
-  int hz_to_shared =  0;//file->idx_d->total_partiton_level;//file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
+  int hz_to_shared =  file->idx_d->total_partiton_level;//file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
   if (hz_from_shared == hz_to_shared)
   {
     file->idx_d->start_layout_index_shared = 0;
