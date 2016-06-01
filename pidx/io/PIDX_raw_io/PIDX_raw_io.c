@@ -396,10 +396,12 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
     return PIDX_err_io;
   }
 
+#if INVERT_ENDIANESS 
   uint32_t temp_max_patch_count = 0;
   int32_Reverse_Endian(max_patch_count, &temp_max_patch_count);
   max_patch_count = temp_max_patch_count;
-
+#endif
+  
   uint32_t *size_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
   memset(size_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
 
@@ -414,7 +416,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
 
 #if INVERT_ENDIANESS
   int buff_i;
-  for(buff_i = 0; buff_i<  (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)); buff_i++){
+  for(buff_i = 0; buff_i < (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)); buff_i++){
     uint32_t temp_value;
     int32_Reverse_Endian(size_buffer[buff_i], &temp_value);
     size_buffer[buff_i] = temp_value;
