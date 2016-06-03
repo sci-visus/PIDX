@@ -297,7 +297,15 @@ PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count);
 /// \return The number of variables.
 PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count);
 
+/// Gets the index of the first timestep in the IDX file.
+/// \param file The IDX file handler.
+/// \return The first timestep index.
+PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep);
 
+/// Gets the index of the last timestep in the IDX file.
+/// \param file The IDX file handler.
+/// \return The last timestep index.
+PIDX_return_code PIDX_get_last_tstep(PIDX_file file, int* tstep);
 
 /// Sets the index of the variable at which location it needs to be written at or read from in an IDX file.
 /// \param file The IDX file handler.
