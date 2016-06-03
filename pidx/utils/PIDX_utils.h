@@ -76,6 +76,13 @@ void guess_bit_string_Y(char* bit_string, const Point3D dims);
 
 void guess_bit_string_Z(char* bit_string, const Point3D dims);
 
+
+void guess_bit_string_ZYX(char* bit_string, const Point3D dims);
+
+void guess_bit_string_YZX(char* bit_string, const Point3D dims);
+
+void guess_bit_string_XYZ(char* bit_string, const Point3D dims);
+
 int pow_greater_equal(int base, int num);
 
 #endif

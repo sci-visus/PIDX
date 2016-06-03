@@ -118,7 +118,21 @@ static PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
     idx_l1_point.z = 1;
   //GuessBitmaskPattern(file->idx->idx_cl1_bitSequence, idx_l1_point);
   //guess_bit_string2(file->idx->idx_cl1_bitSequence, idx_l1_point);
-  guess_bit_string_Z(file->idx->idx_cl1_bitSequence, idx_l1_point);
+
+  if (file->idx_d->bit_string_axis == 1)
+    guess_bit_string_X(file->idx->idx_cl1_bitSequence, idx_l1_point);
+  else if (file->idx_d->bit_string_axis == 2)
+    guess_bit_string_Y(file->idx->idx_cl1_bitSequence, idx_l1_point);
+  else if (file->idx_d->bit_string_axis == 3)
+    guess_bit_string_Z(file->idx->idx_cl1_bitSequence, idx_l1_point);
+
+  else if (file->idx_d->bit_string_axis == 4)
+    guess_bit_string_XYZ(file->idx->idx_cl1_bitSequence, idx_l1_point);
+  else if (file->idx_d->bit_string_axis == 5)
+    guess_bit_string_YZX(file->idx->idx_cl1_bitSequence, idx_l1_point);
+  else
+    guess_bit_string_ZYX(file->idx->idx_cl1_bitSequence, idx_l1_point);
+
   //printf("BS2: %d (%d / %d) %d (%d / %d) %d (%d / %d)\n", idx_l1_point.x, file->idx_d->idx_size[0], file->idx->reg_patch_size[0], idx_l1_point.y, file->idx_d->idx_size[1], file->idx->reg_patch_size[1], idx_l1_point.z, file->idx_d->idx_size[2], file->idx->reg_patch_size[2]);
 
 
@@ -3207,13 +3221,15 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   finalize_file_zero_agg_io(file, start_var_index);
 #endif
 
+  /*
   ret = partition_communicator(file);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  //file->comm = file->global_comm;
+  */
+  file->comm = file->global_comm;
 
 
 #if PIDX_HAVE_MPI

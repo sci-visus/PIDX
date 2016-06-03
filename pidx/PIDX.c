@@ -1587,6 +1587,17 @@ PIDX_return_code PIDX_enable_async_io(PIDX_file file)
 
 
 
+PIDX_return_code PIDX_set_bitstring_scheme(PIDX_file file, int bit_string_axis)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->idx_d->bit_string_axis = bit_string_axis;
+
+  return PIDX_success;
+}
+
+
 
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
