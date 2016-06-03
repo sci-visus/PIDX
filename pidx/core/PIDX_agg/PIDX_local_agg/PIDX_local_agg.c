@@ -1061,7 +1061,12 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
             trank = agg_id->idx_d->rank_buffer[calculated_rank];
           else
             trank = agg_id->idx_d->rank_buffer[calculated_rank + (nprocs/ (local_block_layout->existing_file_count * agg_buffer->aggregation_factor * 2))];
-          agg_id->rank_holder2[k][i - agg_id->first_index][j] = trank;//((trank / 2) + 1) * 2;
+
+          //agg_id->rank_holder2[k][i - agg_id->first_index][j] = trank;//((trank / 2) + 1) * 2;
+          if (agg_offset != 0)
+            agg_id->rank_holder2[k][i - agg_id->first_index][j] = ((trank / 1) + (agg_offset - 1)) * 1;
+          else
+            agg_id->rank_holder2[k][i - agg_id->first_index][j] = trank;
         }
         else
         {
