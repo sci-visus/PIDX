@@ -3055,7 +3055,7 @@ static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_hybrid_idx_io fil
   return PIDX_success;
 }
 
-#if 1
+#if 0
 PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_index, int end_var_index)
 {
   PIDX_time time = file->idx_d->time;
@@ -3472,7 +3472,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
 }
 #endif
 
-#if 0
+#if 1
 PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_index, int end_var_index)
 {
   PIDX_time time = file->idx_d->time;
@@ -3632,14 +3632,13 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   finalize_file_zero_agg_io(file, start_var_index);
 #endif
 
-  /*
+
   ret = partition_communicator(file);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  */
   //file->comm = file->global_comm;
 
 
@@ -3762,6 +3761,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
       }
     }
   }
+
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (/*file->idx_d->var_pipe_length + */1))
   {
     //if (file->idx_dbg->debug_do_io == 1)

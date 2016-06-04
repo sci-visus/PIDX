@@ -328,7 +328,7 @@ PIDX_return_code PIDX_raw_write(PIDX_raw_io file, int start_var_index, int end_v
 
 #if INVERT_ENDIANESS 
 
-inline int
+static int
 int32_Reverse_Endian(int val, unsigned char *outbuf)
 {
     unsigned char *data = ((unsigned char *)&val) + 3;
