@@ -489,7 +489,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
 
 
-PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* request, MPI_File* fh, char* filename_template)
+PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* request, MPI_File* fh, char* filename_template, int async_status)
 {
   unsigned long long data_offset = 0;
   char file_name[PATH_MAX];
@@ -606,31 +606,38 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
         printf("W [%d] [%d %d %d] size = %d and offset = %d [%f %f]\n", rank, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, agg_buf->buffer_size, data_offset, x1, x2);
         */
 
-        mpi_ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, request);
-        if (mpi_ret != MPI_SUCCESS)
+        if (async_status == 1)
         {
-          fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
-          //return PIDX_err_io;
+          mpi_ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, request);
+          if (mpi_ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+            return PIDX_err_io;
+          }
         }
-
-        //printf("[I] %d %p\n", request, request);
-        //MPI_Wait((request), &status);
-        //MPI_Wait(&(io_id->idx_d->request), &status);
-        //if (ret != MPI_SUCCESS)
-        //{
-        //  fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        //  return PIDX_err_file;
-        //}
-
-        /*
-        int write_count = 0;
-        MPI_Get_count(&status, MPI_BYTE, &write_count);
-        if (write_count != agg_buf->buffer_size)
+        else
         {
-          fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-          return PIDX_err_io;
+          mpi_ret = MPI_File_write_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
+          if (mpi_ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+            return PIDX_err_io;
+          }
+          int write_count = 0;
+          MPI_Get_count(&status, MPI_BYTE, &write_count);
+          if (write_count != agg_buf->buffer_size)
+          {
+            fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
+            return PIDX_err_io;
+          }
+
+          mpi_ret = MPI_File_close(fh);
+          if (mpi_ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+            return PIDX_err_io;
+          }
         }
-        */
       }
       else
       {

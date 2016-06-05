@@ -2238,7 +2238,7 @@ static PIDX_return_code PIDX_global_io(PIDX_hybrid_idx_io file, int init_index, 
 
 
 
-static PIDX_return_code PIDX_global_async_io(PIDX_hybrid_idx_io file, PIDX_file_io_id **io_id, Agg_buffer **agg_buffer, PIDX_block_layout** block_layout_by_level,  MPI_File *fp, MPI_Request *request,  int init_index, int var_index, int index, int layout_start, int layout_end, int layout_count, int agg_io_level, int file_zero)
+static PIDX_return_code PIDX_global_async_io(PIDX_hybrid_idx_io file, PIDX_file_io_id **io_id, Agg_buffer **agg_buffer, PIDX_block_layout** block_layout_by_level,  MPI_File *fp, MPI_Request *request,  int init_index, int var_index, int index, int layout_start, int layout_end, int layout_count, int agg_io_level, int file_zero, int async_status)
 {
   int j;
   int rank = 0, nprocs = 1;
@@ -2282,14 +2282,14 @@ static PIDX_return_code PIDX_global_async_io(PIDX_hybrid_idx_io file, PIDX_file_
       time->io_start[var_index][j] = PIDX_get_time();
       if (file_zero == 1)
       {
-        ret = PIDX_async_aggregated_io(io_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(request[j_1]), &(fp[j_1]), file->idx->filename_template_file_zero);
+        ret = PIDX_async_aggregated_io(io_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(request[j_1]), &(fp[j_1]), file->idx->filename_template_file_zero, async_status);
       }
       else
       {
         if (index == 0)
-          ret = PIDX_async_aggregated_io(io_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(request[j_1]), &(fp[j_1]), file->idx->filename_template_partition);
+          ret = PIDX_async_aggregated_io(io_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(request[j_1]), &(fp[j_1]), file->idx->filename_template_partition, async_status);
         else
-          ret = PIDX_async_aggregated_io(io_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(request[j_1]), &(fp[j_1]), file->idx->filename_template_global);
+          ret = PIDX_async_aggregated_io(io_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(request[j_1]), &(fp[j_1]), file->idx->filename_template_global, async_status);
       }
 
       if (ret != PIDX_success)
@@ -2924,10 +2924,6 @@ static PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_hybrid_id
     }
   }
 
-  free(file->idx_d->status_non_shared);
-  free(file->idx_d->request_non_shared);
-  free(file->idx_d->fp_non_shared);
-
   return PIDX_success;
 }
 
@@ -2949,10 +2945,6 @@ static PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_hybrid_idx_io
       MPI_File_close(&(file->idx_d->fp_shared[i - start_layout_index_shared]));
     }
   }
-
-  free(file->idx_d->status_shared);
-  free(file->idx_d->request_shared);
-  free(file->idx_d->fp_shared);
 
   return PIDX_success;
 }
@@ -3558,80 +3550,6 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   if (file->idx_d->shared_block_level >= file->idx_d->maxh)
     file->idx_d->shared_block_level = file->idx_d->maxh;
 
-#if 0
-  int hz_from_file_zero = 0;
-  int hz_to_file_zero =  file->idx_d->shared_block_level;
-  if (hz_from_file_zero == hz_to_file_zero)
-  {
-    file->idx_d->start_layout_index_file_zero = 0;
-    file->idx_d->end_layout_index_file_zero = 0;
-  }
-
-  ret = file_zero_init_agg_io(file, start_var_index);
-  if (ret != PIDX_success)
-  {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  ret = populate_idx_dataset_file_zero(file, start_var_index, end_var_index, hz_from_file_zero, hz_to_file_zero);
-  if (ret != PIDX_success)
-  {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  ret = write_file_zero_headers(file, start_var_index, end_var_index, 0);
-  if (ret != PIDX_success)
-  {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (/*file->idx_d->var_pipe_length + */1))
-  {
-    if (file->idx_d->async_io == 1)
-    {
-      int agg_io_level_file_zero = 0, no_of_aggregators = 0;
-      if (file->idx_d->agg_type == 1)
-      {
-        for (i = file->idx_d->start_layout_index_file_zero; i < file->idx_d->end_layout_index_file_zero ; i++)
-        {
-          no_of_aggregators = file->idx->variable[start_var_index]->block_layout_by_level_file_zero[0][i - file->idx_d->start_layout_index_file_zero]->existing_file_count;
-          if (no_of_aggregators <= nprocs)
-            agg_io_level_file_zero = i + 1;
-        }
-      }
-      if (file->idx->enable_agg == 0)
-        agg_io_level_file_zero = file->idx_d->start_layout_index_file_zero;//0;
-
-      ret = PIDX_global_aggregate(file, file->fagg_id, file->idx_d->fagg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_file_zero, file->idx->variable[start_var_index]->global_block_layout_file_zero, file->global_comm,  start_var_index, start_index, 0, file->idx_d->start_layout_index_file_zero, file->idx_d->end_layout_index_file_zero, file->idx_d->layout_count_file_zero, agg_io_level_file_zero, 1, 1);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      create_file_zero_async_buffers(file, file->idx_d->start_layout_index_file_zero, agg_io_level_file_zero);
-
-      ret = PIDX_global_async_io(file, file->fio_id, file->idx_d->fagg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_file_zero, file->idx_d->fp_file_zero, file->idx_d->request_file_zero, start_var_index, start_index, 0, file->idx_d->start_layout_index_file_zero, file->idx_d->end_layout_index_file_zero, file->idx_d->layout_count_file_zero, agg_io_level_file_zero, 1);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      wait_and_destroy_file_zero_async_buffers(file, file->idx_d->start_layout_index_file_zero, agg_io_level_file_zero);
-
-      destroy_file_zero_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_file_zero, file->idx_d->end_layout_index_file_zero, agg_io_level_file_zero);
-
-    }
-  }
-
-  delete_idx_dataset_file_zero(file, start_var_index, end_var_index, hz_from_file_zero, hz_to_file_zero);
-  finalize_file_zero_agg_io(file, start_var_index);
-#endif
-
 
   ret = partition_communicator(file);
   if (ret != PIDX_success)
@@ -3719,81 +3637,85 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   int agg_io_level_shared = 0;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (/*file->idx_d->var_pipe_length + */1))
   {
-    if (file->idx_d->async_io == 1)
+    if (file->idx_d->agg_type == 1)
     {
-      if (file->idx_d->agg_type == 1)
+      for (i = file->idx_d->start_layout_index_non_shared; i < file->idx_d->end_layout_index_non_shared ; i++)
       {
-        for (i = file->idx_d->start_layout_index_non_shared; i < file->idx_d->end_layout_index_non_shared ; i++)
-        {
-          no_of_aggregators = file->idx->variable[start_var_index]->block_layout_by_level_files[1][i - file->idx_d->start_layout_index_non_shared]->existing_file_count;
-          if (no_of_aggregators <= nprocs)
-            agg_io_level_non_shared = i + 1;
-        }
+        no_of_aggregators = file->idx->variable[start_var_index]->block_layout_by_level_files[1][i - file->idx_d->start_layout_index_non_shared]->existing_file_count;
+        if (no_of_aggregators <= nprocs)
+          agg_io_level_non_shared = i + 1;
       }
+    }
 
-      if (file->idx->enable_agg == 0)
-        agg_io_level_non_shared = file->idx_d->start_layout_index_non_shared;//0;
+    if (file->idx->enable_agg == 0)
+      agg_io_level_non_shared = file->idx_d->start_layout_index_non_shared;//0;
 
-      ret = PIDX_global_aggregate(file, file->tagg_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx->variable[start_var_index]->global_block_layout_files, file->comm, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 1, 1);
-      if (ret != PIDX_success)
+    ret = PIDX_global_aggregate(file, file->tagg_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx->variable[start_var_index]->global_block_layout_files, file->comm, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 1, 1);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    if (file->idx_d->agg_type == 1)
+    {
+      for (i = file->idx_d->start_layout_index_shared; i < file->idx_d->end_layout_index_shared ; i++)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
+        no_of_aggregators = file->idx->variable[start_var_index]->block_layout_by_level_files[0][i - file->idx_d->start_layout_index_shared]->existing_file_count;
+        if (no_of_aggregators <= nprocs)
+          agg_io_level_shared = i + 1;
       }
+    }
+    if (file->idx->enable_agg == 0)
+      agg_io_level_shared = file->idx_d->start_layout_index_shared;
 
-      if (file->idx_d->agg_type == 1)
-      {
-        for (i = file->idx_d->start_layout_index_shared; i < file->idx_d->end_layout_index_shared ; i++)
-        {
-          no_of_aggregators = file->idx->variable[start_var_index]->block_layout_by_level_files[0][i - file->idx_d->start_layout_index_shared]->existing_file_count;
-          if (no_of_aggregators <= nprocs)
-            agg_io_level_shared = i + 1;
-        }
-      }
-      if (file->idx->enable_agg == 0)
-        agg_io_level_shared = file->idx_d->start_layout_index_shared;
-
-      ret = PIDX_global_aggregate(file, file->tagg_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx->variable[start_var_index]->global_block_layout_files, file->comm, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, file->idx_d->aggregator_multiplier, 0);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
+    ret = PIDX_global_aggregate(file, file->tagg_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx->variable[start_var_index]->global_block_layout_files, file->comm, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, file->idx_d->aggregator_multiplier, 0);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
     }
   }
 
+
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (/*file->idx_d->var_pipe_length + */1))
   {
-    //if (file->idx_dbg->debug_do_io == 1)
-    //{
+
     create_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
     create_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
 
-    ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_non_shared, file->idx_d->request_non_shared, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 0);
 
+    ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_non_shared, file->idx_d->request_non_shared, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 0, file->idx_d->async_io);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
-    ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_shared, file->idx_d->request_shared, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, 0);
+    ret = PIDX_global_async_io(file, file->tio_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx_d->fp_shared, file->idx_d->request_shared, start_var_index, start_index, 0, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, file->idx_d->layout_count_shared, agg_io_level_shared, 0, file->idx_d->async_io);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
-    wait_and_destroy_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
-    wait_and_destroy_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
+    if (file->idx_d->async_io == 1)
+    {
+      wait_and_destroy_non_shared_async_buffers(file, file->idx_d->start_layout_index_non_shared, agg_io_level_non_shared);
+      wait_and_destroy_shared_async_buffers(file, file->idx_d->start_layout_index_shared, agg_io_level_shared);
+    }
+
+    free(file->idx_d->status_shared);
+    free(file->idx_d->request_shared);
+    free(file->idx_d->fp_shared);
+    free(file->idx_d->status_non_shared);
+    free(file->idx_d->request_non_shared);
+    free(file->idx_d->fp_non_shared);
 
     destroy_non_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, agg_io_level_non_shared);
 
     destroy_shared_ids_and_buffers(file, start_index, file->idx_d->start_layout_index_shared, file->idx_d->end_layout_index_shared, agg_io_level_shared);
-
   }
-
-
 
   time->buffer_cleanup_start = PIDX_get_time();
   //delete_idx_dataset_shared(file, start_var_index, end_var_index, hz_from_shared, hz_to_shared);

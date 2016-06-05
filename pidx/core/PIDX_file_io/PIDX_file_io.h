@@ -68,7 +68,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
 
 ///
-int PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* req, MPI_File *fp, char* filename_template);
+int PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* req, MPI_File *fp, char* filename_template, int async_status);
 
 
 ///

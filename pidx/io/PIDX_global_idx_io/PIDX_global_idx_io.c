@@ -2450,7 +2450,7 @@ static PIDX_return_code PIDX_global_async_io(PIDX_global_idx_io file, int init_i
     if (file->idx_dbg->debug_do_io == 1)
     {
       time->io_start[var_index][j] = PIDX_get_time();
-      ret = PIDX_async_aggregated_io(file->tio_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(file->idx_d->request[j_1]), &(file->idx_d->fp[j_1]), file->idx->filename_template);
+      ret = PIDX_async_aggregated_io(file->tio_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE, /*&(req[j_1])*/&(file->idx_d->request[j_1]), &(file->idx_d->fp[j_1]), file->idx->filename_template, 1);
       //ret = PIDX_aggregated_io(file->tio_id[var_index][j], temp_agg, temp_layout, PIDX_WRITE);
       //if (ret != PIDX_success)
       //{

@@ -1937,7 +1937,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_dbg);              file->idx_dbg = 0;
 
   free(file);
-  
+
   return PIDX_success;
 }
 
