@@ -1098,13 +1098,15 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
           trank = agg_id->idx_d->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
         else
         {
+          /*
           if (agg_offset == 0)
           {
             trank = agg_id->idx_d->rank_buffer[calculated_rank + var_offset * interval];
             trank = ((trank / cores_per_node) + 1) * cores_per_node;
           }
           else
-            trank = agg_id->idx_d->rank_buffer[calculated_rank + var_offset * interval];
+          */
+          trank = agg_id->idx_d->rank_buffer[calculated_rank + var_offset * interval];
         }
         agg_id->rank_holder2[k][i - agg_id->first_index][j] = trank;
 #endif

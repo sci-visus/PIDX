@@ -3650,7 +3650,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     if (file->idx->enable_agg == 0)
       agg_io_level_non_shared = file->idx_d->start_layout_index_non_shared;//0;
 
-    ret = PIDX_global_aggregate(file, file->tagg_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx->variable[start_var_index]->global_block_layout_files, file->comm, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, 1, 1);
+    ret = PIDX_global_aggregate(file, file->tagg_id, file->idx_d->agg_buffer, file->idx->variable[start_var_index]->block_layout_by_level_files, file->idx->variable[start_var_index]->global_block_layout_files, file->comm, start_var_index, start_index, 1, file->idx_d->start_layout_index_non_shared, file->idx_d->end_layout_index_non_shared, file->idx_d->layout_count_non_shared, agg_io_level_non_shared, file->idx_d->aggregator_multiplier, 1);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
