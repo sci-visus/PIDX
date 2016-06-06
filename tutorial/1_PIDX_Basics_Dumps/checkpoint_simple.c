@@ -169,12 +169,12 @@ static void create_synthetic_simulation_data()
           {
             if ((bits_per_value[var]) == 32)
             {
-              fvalue = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+              fvalue = 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
             else if ((bits_per_value[var]) == 192 || (bits_per_value[var]) == 64)
             {
-              dvalue = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+              dvalue = 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
             }
             //data[var][index * sample_count + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
@@ -418,7 +418,7 @@ int main(int argc, char **argv)
         if (async == 1)
           PIDX_enable_async_io(file);
         PIDX_set_block_count(file,blocks_per_file);
-        PIDX_set_block_size(file, 15);
+        PIDX_set_block_size(file, 13);
         PIDX_set_bitstring_scheme(file, partition_type);
         break;
 

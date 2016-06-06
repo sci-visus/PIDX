@@ -516,7 +516,7 @@ int main(int argc, char **argv)
   for (t = start_time_step; t <= end_time_step; t++)
   {
     unsigned long long lost_element_count = 0, element_count = 0, element_count1 = 0, lost_element_count1= 0;
-    for (i = 0; i < max_files; i++)
+    for (i = 0; i < 1; i++)
     //for (i = 3; i < 4; i++)
     {
       if (existing_file_index[i] == 1)
@@ -683,7 +683,7 @@ int main(int argc, char **argv)
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
 
-                          drhs =  var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          drhs =  100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 0 || compression_type == 1)
                             dlhs = double_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                           else
@@ -698,12 +698,12 @@ int main(int argc, char **argv)
                             //printf("[C] Expected %f Found %f\n", drhs, dlhs);
                             element_count1++;
                           }
-                          //else
-                          //  printf("[W] Expected %f Found %f\n", drhs, dlhs);
+                          else
+                            printf("[W] Expected %f Found %f\n", drhs, dlhs);
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {
-                          lrhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          lrhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           llhs = ulong_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
 
                           check_bit = check_bit && (llhs == lrhs);
@@ -713,7 +713,7 @@ int main(int argc, char **argv)
                         }
                         else if (strcmp(variable_type[var], "int32") == 0)
                         {
-                          iirhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          iirhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           iilhs = iint_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s];
                           check_bit = check_bit && (iilhs == iirhs);
 
@@ -723,7 +723,7 @@ int main(int argc, char **argv)
                         }
                         else if (strcmp(variable_type[var], "float32") == 0)
                         {
-                          frhs = var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
+                          frhs = 100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x) + (idx_data_offset * global_bounds[0] * global_bounds[1] * global_bounds[2]);
                           if (compression_type == 2)
                             flhs = ((decompressed_float_buffer[((hz_val * total_compression_block_size) + index) * values_per_sample[var] + s]));
                           else

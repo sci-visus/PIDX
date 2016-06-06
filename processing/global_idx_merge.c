@@ -51,6 +51,7 @@ static int idx_count[PIDX_MAX_DIMENSIONS];
 static int current_time_step = 0;
 static int compression_type = PIDX_NO_COMPRESSION;
 static int bits_per_block = PIDX_default_bits_per_block;
+static int samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
 static int blocks_per_file = PIDX_default_blocks_per_file;
 static int bounds[PIDX_MAX_DIMENSIONS];
 static int chunked_bounds[PIDX_MAX_DIMENSIONS];
@@ -61,7 +62,6 @@ static char bitSequence[512];
 static int compression_bit_rate = 64;
 static int compression_factor = 1;
 static int chunk_size[PIDX_MAX_DIMENSIONS];
-static int samples_per_block;
 static int data_core_count;
 static char var_name[128][512];
 static char type_name[128][512];
@@ -71,19 +71,9 @@ static int variable_count = 0;
 static int fs_block_size = 0;
 static int maxh = 0;
 static int max_file_count = 0;
-static int start_layout_index_shared = 0;
-static int end_layout_index_shared = 0;
-static int layout_count_shared = 0;
-static int start_layout_index_file_zero = 0;
-static int end_layout_index_file_zero = 0;
-static int layout_count_file_zero = 0;
 static int start_time_step = 0;
 static int end_time_step = 0;
 static MPI_Comm comm;
-static PIDX_block_layout global_block_layout_shared_files;
-static PIDX_block_layout* local_block_layout_shared_files;
-static PIDX_block_layout global_block_layout_file_zero;
-static PIDX_block_layout* local_block_layout_file_zero;
 
 
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
@@ -622,25 +612,28 @@ int main(int argc, char **argv)
 
   maxh = strlen(bitSequence);
 
-  printf("Partition size and count: %d %d %d :: %d %d %d maxh = %d\n", idx_count[0], idx_count[1], idx_count[2], idx_size[0], idx_size[1], idx_size[2], maxh);
+  printf("Partition size :: and count %d %d %d :: %d %d %d\n", idx_count[0], idx_count[1], idx_count[2], idx_size[0], idx_size[1], idx_size[2]);
+  printf("bitstring %s maxh = %d\n", bitSequence, maxh);
 
+  // shared_block_level is the level upto which the idx blocks are shared
   int shared_block_level = (int)log2(idx_count[0] * idx_count[1] * idx_count[2]) + bits_per_block + 1;
   if (shared_block_level >= maxh)
     shared_block_level = maxh;
 
-  int partion_level = (int) log2(idx_count[0] * idx_count[1] * idx_count[2]);
-  int total_partiton_level = bits_per_block + (int)log2(blocks_per_file) + 1 + partion_level;
-  if (total_partiton_level >= maxh)
-    total_partiton_level = maxh;
+  int shared_block_count = pow(2, shared_block_level - 1) / samples_per_block;
+  printf("Shared block level = %d Shared block count = %d\n", shared_block_level, shared_block_count);
 
   int level = 0;
   int ts = 0;
+
+  // Iteration through all the timesteps
   for (ts = start_time_step; ts <= end_time_step; ts++)
   {
-    for (level = shared_block_level; level < total_partiton_level; level = level + 1)
+    // Iteration through all the shared blocks
+    //for (level = 0; level < shared_block_level; level = level + 1)
     {
       int hz_index = (int)pow(2, level - 1);
-      int file_no = hz_index / (blocks_per_file * (int)pow(2, bits_per_block));
+      int file_no = hz_index / (blocks_per_file * samples_per_block);
       int file_count;
       char existing_file_name[1024];
       char new_file_name[1024];
@@ -650,36 +643,48 @@ int main(int argc, char **argv)
       else
         file_count = (int)pow(2, level - (bits_per_block + log2(blocks_per_file) + 1));
 
-      printf("File Index and Count at %d = %d %d\n", level, file_no, file_count);
+      // file_no is the index of the file that needs to be opened to read from all the partitions
+      // they contain the shared blocks
+      printf("Opening file %d\n", file_no);
 
+#if 1
+      // iterate throuh all the files that contains the shared blocks
+      // most likely this will be only the first file of all the partitions
+      // so fc = 1
       int fc = 0;
       for (fc = file_no; fc < file_no + file_count; fc++)
       {
+        // malloc for the header for the outpur blocks, i.e. the merged blocks
         uint32_t* write_binheader;
         int write_binheader_count;
         write_binheader_count = 10 + 10 * blocks_per_file * variable_count;
-        write_binheader = (uint32_t*) malloc(sizeof (*write_binheader)*(write_binheader_count));
+        int write_binheader_length = write_binheader_count * sizeof (*write_binheader);
+        write_binheader = malloc(write_binheader_length);
+        memset(write_binheader, 0, write_binheader_length);
 
+        //iterate through all the variables/fields
         int var = 0;
         for (var = 0; var < variable_count; var++)
         {
-          unsigned char *write_data_buffer = malloc((int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
-          memset(write_data_buffer, 0, (int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
+          unsigned char *write_data_buffer = malloc(samples_per_block * shared_block_count * bits_per_value[var]/8);
+          memset(write_data_buffer, 0, samples_per_block * shared_block_count * bits_per_value[var]/8);
+          //printf("Write bufer size = %d [%d x %d x %d]\n", samples_per_block * shared_block_count * bits_per_value[var]/8, (int)pow(2, bits_per_block), shared_block_count, bits_per_value[var]/8);
 
-          int write_block_counter = 0;
+          // shared block data
+          // doube pointer (number o fpartitions x number of shared blocks)
+          unsigned char **read_data_buffer = malloc(idx_count[0] * idx_count[1] * idx_count[2] * sizeof(*read_data_buffer));
+          memset(read_data_buffer, 0, idx_count[0] * idx_count[1] * idx_count[2] * sizeof(*read_data_buffer));
+
+          // shared block header info
+
+          uint32_t** read_binheader = malloc(idx_count[0] * idx_count[1] * idx_count[2] * sizeof(*read_binheader));
+          memset(read_binheader, 0, idx_count[0] * idx_count[1] * idx_count[2] * sizeof(*read_binheader));
 
           file_initialize_time_step(ts, output_file_name, output_file_template);
           generate_file_name(blocks_per_file, output_file_template, fc, new_file_name, PATH_MAX);
+          //printf("Merged blocks to be written in %s\n", new_file_name);
 
-          int* block_header_offset = malloc(idx_count[0] * idx_count[1] * idx_count[2] * sizeof(int));
-          memset(block_header_offset, 0, idx_count[0] * idx_count[1] * idx_count[2] * sizeof(int));
-
-
-          int** block_header_block_offset = malloc(idx_count[0] * idx_count[1] * idx_count[2] * sizeof(int*));
-          memset(block_header_block_offset, 0, idx_count[0] * idx_count[1] * idx_count[2] * sizeof(int*));
-
-          size_t totl_data_size = 0;
-          off_t totl_data_offset = 0;
+          // iterate through all the parttions
           for (ic = 0; ic < idx_count[0] * idx_count[1] * idx_count[2]; ic++)
           {
             char file_name_skeleton[1024];
@@ -694,24 +699,18 @@ int main(int argc, char **argv)
             file_initialize_time_step(ts, partition_file_name, partition_file_template);
             generate_file_name(blocks_per_file, partition_file_template, fc, existing_file_name, PATH_MAX);
 
-            printf("[%d] OLD File name %s NEW File name %s\n", ic, existing_file_name, new_file_name);
+            int read_binheader_count;
+            read_binheader_count = 10 + 10 * blocks_per_file * variable_count;
+            read_binheader[ic] = (uint32_t*) malloc(sizeof (*read_binheader[ic])*(read_binheader_count));
+            memset(read_binheader[ic], 0, sizeof (*(read_binheader[ic]))*(read_binheader_count));
 
+            printf("[%d] Partition File name %s\n", ic, existing_file_name);
+            // file exists
             if ( access( partition_file_name, F_OK ) != -1 )
             {
-              // file exists
-              uint32_t* read_binheader;
-              uint32_t adjusted_offset;
-              int read_binheader_count;
-
-              block_header_block_offset[ic] = malloc(blocks_per_file * sizeof(int));
-              memset(block_header_block_offset[ic], 0, blocks_per_file * sizeof(int));
-
-              read_binheader_count = 10 + 10 * blocks_per_file * variable_count;
-              read_binheader = (uint32_t*) malloc(sizeof (*read_binheader)*(read_binheader_count));
-              memset(read_binheader, 0, sizeof (*read_binheader)*(read_binheader_count));
-
-              unsigned char *read_data_buffer = malloc((int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
-              memset(read_data_buffer, 0, (int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
+              // contins data from the shared blocks
+              read_data_buffer[ic] = malloc(samples_per_block * shared_block_count * bits_per_value[var]/8);
+              memset(read_data_buffer[ic], 0, samples_per_block * shared_block_count * bits_per_value[var]/8);
 
               int fd;
               fd = open(existing_file_name, O_RDONLY);
@@ -722,64 +721,63 @@ int main(int argc, char **argv)
                 return 0;
               }
 
-              ret = read(fd, read_binheader, (sizeof (*read_binheader) * read_binheader_count));
+              // reads the header infor from binary file of the partitions
+              ret = read(fd, read_binheader[ic], (sizeof (*(read_binheader[ic])) * read_binheader_count));
               if (ret < 0)
               {
                 fprintf(stderr, "[File : %s] [Line : %d] read\n", __FILE__, __LINE__);
                 return 0;
               }
-              assert(ret == (sizeof (*read_binheader) * read_binheader_count));
+              assert(ret == (sizeof (*(read_binheader[ic])) * read_binheader_count));
 
-              memcpy(write_binheader, read_binheader, 10 * sizeof (*write_binheader));
+              // copy the header from the partition file to the merged output file
+              // do it only for first partition (this gets all info other than block offset nd count)
+              if (ic == 0)
+                memcpy(write_binheader, read_binheader[ic], 10 * sizeof (*write_binheader));
 
               int bpf = 0;
               size_t data_size = 0;
               off_t data_offset = 0;
-              int read_block_counter = 0;
-
-              int prev_ic = 0;
-              int previous_block_offset = 0;
-              for (prev_ic = 0; prev_ic < ic; prev_ic++)
-                previous_block_offset = previous_block_offset + block_header_offset[prev_ic];
-
-              for (bpf = 0; bpf < blocks_per_file; bpf++)
+              for (bpf = 0; bpf < shared_block_count; bpf++)
               {
-                data_offset = ntohl(read_binheader[(bpf + var * blocks_per_file)*10 + 12]);
-                data_size = ntohl(read_binheader[(bpf + var * blocks_per_file)*10 + 14]);
-                printf("[%s] [%d %d %d] --> %d %d\n", partition_file_name, bpf, var, blocks_per_file, (int)data_offset, (int)data_size);
+                data_offset = ntohl(read_binheader[ic][(bpf + var * blocks_per_file)*10 + 12]);
+                data_size = ntohl(read_binheader[ic][(bpf + var * blocks_per_file)*10 + 14]);
+                printf("[%s] [Partition %d Block %d Variable %d] --> Offset %d Count %d\n", partition_file_name, ic, bpf, var, (int)data_offset, (int)data_size);
 
                 if (data_offset != 0 && data_size != 0)
                 {
-                  //printf("[%d] --> %d %d\n", bpf, (int)data_offset, (int)data_size);
-                  pread(fd, read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), data_size, data_offset);
+                  pread(fd, read_data_buffer[ic] + (bpf * samples_per_block * (bits_per_value[var] / 8)), data_size, data_offset);
 
-                  adjusted_offset = data_offset + previous_block_offset;
-
-                  write_binheader[((bpf + var * blocks_per_file)*10 + 12)] = htonl(adjusted_offset);
+                  write_binheader[((bpf + var * blocks_per_file)*10 + 12)] = htonl(write_binheader_length + (bpf * data_size));
                   write_binheader[((bpf + var * blocks_per_file)*10 + 14)] = htonl(data_size);
 
-                  printf("IC %d RBC %d WBC %d RO %d WO %d AO %d [%d + %d]\n", ic, read_block_counter, write_block_counter, (read_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), (write_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), adjusted_offset, (int)data_offset, previous_block_offset);
-                  memcpy(write_data_buffer + (write_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), (int)pow(2, bits_per_block) * (bits_per_value[var] / 8));
-
-                  read_block_counter++;
-                  write_block_counter++;
-
-                  totl_data_size = totl_data_size + data_size;
-
-                  block_header_offset[ic] = block_header_offset[ic] + data_size;
-                  block_header_block_offset[ic][bpf] = adjusted_offset;
+                  // Merge happening while the shared block is being read
+                  // Hardcoded stupid merge
+                  // checks if value is not zero then copies to the write block
+                  int m = 0;
+                  for (m = 0; m < data_size / (bits_per_value[var] / 8) ; m++)
+                  {
+                    double temp;
+                    memcpy(&temp, read_data_buffer[ic] + (bpf * samples_per_block + m) * sizeof(double), sizeof(double));
+                    if (temp != 0)
+                      memcpy(write_data_buffer + ((bpf * samples_per_block) + m) * sizeof(double), &temp, sizeof(double));
+                  }
                 }
               }
 
               close(fd);
-
-              free(read_binheader);
             }
             else
               continue;
           }
 
-          printf("Write Filename %s\n", new_file_name);
+          //Merge after all the reads
+          for (ic = 0; ic < idx_count[0] * idx_count[1] * idx_count[2]; ic++)
+          {
+            //input is read_data_buffer**
+            //output is write_data_buffer*
+          }
+
           if ( access( new_file_name, F_OK ) != -1 )
           {
             // file exists
@@ -791,37 +789,29 @@ int main(int argc, char **argv)
           }
           else
           {
-            off_t first_offset = 0;
-            int break_counter = 0;
-            for (ic = 0; ic < idx_count[0] * idx_count[1] * idx_count[2]; ic++)
-            {
-              int bpf = 0;
-              for (bpf = 0; bpf < blocks_per_file; bpf++)
-              {
-                if (block_header_block_offset[ic][bpf] != 0)
-                {
-                  first_offset = block_header_block_offset[ic][bpf];
-                  break_counter = 1;
-                  break;
-                }
-              }
-              if (break_counter == 1)
-                break;
-            }
-
             // file doesn't exist
+            /*
+            int r;
+            for (r = 0; r < (shared_block_count * samples_per_block * bits_per_value[var]/8) / sizeof(double); r++)
+            {
+              double dval;
+              memcpy(&dval, write_data_buffer + r * sizeof(double), sizeof(double));
+              printf("value at %d = %f\n", r, dval);
+            }
+            */
+
             int fd;
             fd = open(new_file_name, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
-            printf("Write File %s Offset %d Count %d\n", new_file_name, (int)first_offset, (int)totl_data_size);
-
             pwrite(fd, write_binheader, sizeof (*write_binheader)*(write_binheader_count), 0);
-            pwrite(fd, write_data_buffer, totl_data_size, first_offset);
+            pwrite(fd, write_data_buffer, shared_block_count * samples_per_block * bits_per_value[var]/8, sizeof (*write_binheader)*(write_binheader_count));
             close(fd);
           }
         }
       }
+      #endif
     }
   }
+
 
   shutdown_mpi();
   return 0;
