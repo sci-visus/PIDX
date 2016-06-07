@@ -90,6 +90,7 @@ static int end_time_step = 0;
 static int get_default_bits_per_datatype(char* type, int* bits);
 static unsigned long long getPowerOf2(int x);
 static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) ;
+static double get_time();
 
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./checkpoint -g 32x32x32 -l 16x16x16 -f output_idx_file_name -v 3 -t 16\n"
@@ -640,6 +641,8 @@ int file_initialize_time_step(int current_time_step, char* file_name, char* file
 
 int main(int argc, char **argv)
 {
+  double start_time, end_time;
+  start_time = get_time();
   int ret = 0;
   init_mpi(argc, argv);
   parse_args(argc, argv);
@@ -707,7 +710,8 @@ int main(int argc, char **argv)
 
         //iterate through all the variables/fields
         int var = 0;
-        for (var = 0; var < variable_count; var++)
+        off_t var_offset = 0;
+        for (var = 0; var < 1; var++)
         {
           unsigned char *write_data_buffer = malloc(samples_per_block * shared_block_count * bits_per_value[var]/8);
           memset(write_data_buffer, 0, samples_per_block * shared_block_count * bits_per_value[var]/8);
@@ -791,7 +795,7 @@ int main(int argc, char **argv)
                 {
                   pread(fd, read_data_buffer[ic] + (bpf * samples_per_block * (bits_per_value[var] / 8)), data_size, data_offset);
 
-                  write_binheader[((bpf + var * blocks_per_file)*10 + 12)] = htonl(write_binheader_length + (bpf * data_size));
+                  write_binheader[((bpf + var * blocks_per_file)*10 + 12)] = htonl(write_binheader_length + (bpf * data_size) + var * shared_block_count);
                   write_binheader[((bpf + var * blocks_per_file)*10 + 14)] = htonl(data_size);
 
                   // Merge happening while the shared block is being read
@@ -857,6 +861,10 @@ int main(int argc, char **argv)
 
 
   shutdown_mpi();
+
+  end_time = get_time();
+  printf("Total time taken = %f\n", (end_time - start_time));
+
   return 0;
 }
 
@@ -991,4 +999,15 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
     return 1;
   }
   return 0;
+}
+
+static double get_time()
+{
+#if PIDX_HAVE_MPI
+  return MPI_Wtime();
+#else
+  struct timeval temp;
+  gettimeofday(&temp, NULL);
+  return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
+#endif
 }
