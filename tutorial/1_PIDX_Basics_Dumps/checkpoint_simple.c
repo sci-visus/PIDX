@@ -418,7 +418,7 @@ int main(int argc, char **argv)
         if (async == 1)
           PIDX_enable_async_io(file);
         PIDX_set_block_count(file,blocks_per_file);
-        PIDX_set_block_size(file, 13);
+        PIDX_set_block_size(file, 15);
         PIDX_set_bitstring_scheme(file, partition_type);
         break;
 

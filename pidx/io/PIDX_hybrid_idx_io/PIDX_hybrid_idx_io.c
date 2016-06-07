@@ -1642,15 +1642,32 @@ static PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int start_var_i
 static PIDX_return_code partition_communicator(PIDX_hybrid_idx_io file)
 {
   int rank = 0;
+  int nprocs = 1;
   int ret;
   MPI_Comm_rank(file->global_comm, &rank);
+  MPI_Comm_size(file->global_comm, &nprocs);
 
+  //printf("[%d] color for rank %d = %d\n", nprocs, rank, file->idx_d->color);
   ret = MPI_Comm_split(file->global_comm, file->idx_d->color, rank, &(file->comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  return PIDX_success;
+}
+
+
+static PIDX_return_code partition_communicator_destroy(PIDX_hybrid_idx_io file)
+{
+  int ret;
+  ret = MPI_Comm_free(&(file->comm));
+  if (ret != MPI_SUCCESS)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  return PIDX_success;
 }
 
 
@@ -3742,6 +3759,14 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+  ret = partition_communicator_destroy(file);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
   time->buffer_cleanup_end = PIDX_get_time();
 
 

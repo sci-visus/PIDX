@@ -516,7 +516,7 @@ int main(int argc, char **argv)
   for (t = start_time_step; t <= end_time_step; t++)
   {
     unsigned long long lost_element_count = 0, element_count = 0, element_count1 = 0, lost_element_count1= 0;
-    for (i = 0; i < 1; i++)
+    for (i = 0; i < max_files; i++)
     //for (i = 3; i < 4; i++)
     {
       if (existing_file_index[i] == 1)
@@ -698,8 +698,8 @@ int main(int argc, char **argv)
                             //printf("[C] Expected %f Found %f\n", drhs, dlhs);
                             element_count1++;
                           }
-                          else
-                            printf("[W] Expected %f Found %f\n", drhs, dlhs);
+                          //else
+                          //  printf("[W] Expected %f Found %f\n", drhs, dlhs);
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {

@@ -32,36 +32,49 @@
         *---------*---------*
 */
 
-#include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
-#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 #include <errno.h>
-#include <PIDX.h>
+#include <limits.h>
+#include <arpa/inet.h>
+#include <stdio.h>
+#include <math.h>
+#include <assert.h>
+#include <fcntl.h>
+#include <unistd.h>
+
+#define MAX_DIMENSIONS 5
+#define MAX_TEMPLATE_DEPTH 6
+
+//#include <PIDX.h>
 
 enum { X, Y, Z, NUM_DIMS };
-static int process_count = 1, rank = 0;
-static int cores = 1;
+//static int process_count = 1, rank = 0;
+//static int cores = 1;
+static int rank = 0;
 static char output_file_template[512] = "test";
 static char output_file_name[512] = "test.idx";
 static char partition_file_name[512];
 static char partition_file_template[512] = "test";
-static int idx_count[PIDX_MAX_DIMENSIONS];
+static int idx_count[MAX_DIMENSIONS];
 
 static int current_time_step = 0;
-static int compression_type = PIDX_NO_COMPRESSION;
-static int bits_per_block = PIDX_default_bits_per_block;
-static int samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
-static int blocks_per_file = PIDX_default_blocks_per_file;
-static int bounds[PIDX_MAX_DIMENSIONS];
-static int chunked_bounds[PIDX_MAX_DIMENSIONS];
-static int idx_size[PIDX_MAX_DIMENSIONS];
-static int idx_count[PIDX_MAX_DIMENSIONS];
+static int compression_type;
+static int bits_per_block = 0;
+static int samples_per_block;
+static int blocks_per_file = 0;
+static int bounds[MAX_DIMENSIONS];
+static int chunked_bounds[MAX_DIMENSIONS];
+static int idx_size[MAX_DIMENSIONS];
+static int idx_count[MAX_DIMENSIONS];
 static char bitPattern[512];
 static char bitSequence[512];
 static int compression_bit_rate = 64;
 static int compression_factor = 1;
-static int chunk_size[PIDX_MAX_DIMENSIONS];
+static int chunk_size[MAX_DIMENSIONS];
 static int data_core_count;
 static char var_name[128][512];
 static char type_name[128][512];
@@ -73,8 +86,10 @@ static int maxh = 0;
 static int max_file_count = 0;
 static int start_time_step = 0;
 static int end_time_step = 0;
-static MPI_Comm comm;
 
+static int get_default_bits_per_datatype(char* type, int* bits);
+static unsigned long long getPowerOf2(int x);
+static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) ;
 
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./checkpoint -g 32x32x32 -l 16x16x16 -f output_idx_file_name -v 3 -t 16\n"
@@ -88,7 +103,7 @@ static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t
 //----------------------------------------------------------------
 static void terminate()
 {
-#if PIDX_HAVE_MPI
+#if 0
   MPI_Abort(MPI_COMM_WORLD, -1);
 #else
   exit(-1);
@@ -118,7 +133,7 @@ static void rank_0_print(const char *format, ...)
 //----------------------------------------------------------------
 static void init_mpi(int argc, char **argv)
 {
-#if PIDX_HAVE_MPI
+#if 0
   if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Init error\n");
   if (MPI_Comm_size(MPI_COMM_WORLD, &process_count) != MPI_SUCCESS)
@@ -131,7 +146,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void shutdown_mpi()
 {
-#if PIDX_HAVE_MPI
+#if 0
   MPI_Finalize();
 #endif
 }
@@ -143,7 +158,7 @@ static void shutdown_mpi()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "f:c:";
+  char flags[] = "f:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -157,10 +172,10 @@ static void parse_args(int argc, char **argv)
       sprintf(output_file_name, "%s", output_file_template);
       break;
 
-    case('c'): // number of timesteps
-      if (sscanf(optarg, "%d", &cores) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
+    //case('c'): // number of timesteps
+    //  if (sscanf(optarg, "%d", &cores) < 0)
+    //    terminate_with_error_msg("Invalid variable file\n%s", usage);
+    //  break;
 
     default:
       terminate_with_error_msg("Wrong arguments\n%s", usage);
@@ -168,25 +183,25 @@ static void parse_args(int argc, char **argv)
   }
 }
 
-static PIDX_return_code IDX_file_open(const char* filename)
+static int IDX_file_open(const char* filename)
 {
   int i;
   //int ret;
   int rank = 0;
 
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
-    return PIDX_err_name;
+    return (-1);
 
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  for (i = 0; i < MAX_DIMENSIONS; i++)
     idx_count[i] = 1;
 
   current_time_step = 0;
-  compression_type = PIDX_NO_COMPRESSION;
+  compression_type = 0;
 
-  bits_per_block = PIDX_default_bits_per_block;
-  blocks_per_file = PIDX_default_blocks_per_file;
+  bits_per_block = 0;
+  blocks_per_file = 0;
 
-  for (i=0;i<PIDX_MAX_DIMENSIONS;i++)
+  for (i=0;i<MAX_DIMENSIONS;i++)
     bounds[i]=65535;
 
   memset(bitPattern, 0, 512);
@@ -194,10 +209,10 @@ static PIDX_return_code IDX_file_open(const char* filename)
 
   compression_bit_rate = 64;
   compression_factor = 1;
-  for (i=0;i<PIDX_MAX_DIMENSIONS;i++)
+  for (i=0;i<MAX_DIMENSIONS;i++)
     chunk_size[i] = 1;
 
-  samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
+  samples_per_block = (int)pow(2, 0);
 
   int var = 0, variable_counter = 0, count = 0, len = 0;
   char *pch, *pch1;
@@ -209,7 +224,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
     if (fp == NULL)
     {
       fprintf(stdout, "Error Opening %s\n", filename);
-      return PIDX_err_file;
+      return (-1);
     }
 
     while (fgets(line, sizeof (line), fp) != NULL)
@@ -220,7 +235,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(box)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
 
         pch = strtok(line, " ");
@@ -237,7 +252,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(partition size)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
 
         pch = strtok(line, " ");
@@ -254,7 +269,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(partition count)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
 
         pch = strtok(line, " ");
@@ -272,7 +287,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(cores)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
         data_core_count = atoi(line);
       }
@@ -280,7 +295,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(fields)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
         count = 0;
         variable_counter = 0;
@@ -306,8 +321,8 @@ static PIDX_return_code IDX_file_open(const char* filename)
               strcpy(type_name[variable_counter], pch1);
               int ret;
               int bits_per_sample = 0;
-              ret = PIDX_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
-              if (ret != PIDX_success)  return PIDX_err_file;
+              ret = get_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
+              if (ret != 0)  return (-1);
 
               bits_per_value[variable_counter] = bits_per_sample;
               values_per_sample[variable_counter] = 1;
@@ -318,7 +333,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
           count = 0;
 
           if( fgets(line, sizeof line, fp) == NULL)
-            return PIDX_err_file;
+            return (-1);
           line[strcspn(line, "\r\n")] = 0;
           variable_counter++;
         }
@@ -328,7 +343,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(bits)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
         strcpy(bitSequence, line);
       }
@@ -336,7 +351,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(bitsperblock)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
         bits_per_block = atoi(line);
         samples_per_block = (int)pow(2, bits_per_block);
@@ -345,13 +360,13 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(compression type)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
         compression_type = atoi(line);
-        if (compression_type != PIDX_NO_COMPRESSION)
+        if (compression_type != 0)
         {
           int i1 = 0;
-          for (i1 = 0; i1 < PIDX_MAX_DIMENSIONS; i1++)
+          for (i1 = 0; i1 < MAX_DIMENSIONS; i1++)
             chunk_size[i1] = 4;
         }
       }
@@ -359,7 +374,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(compressed box)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
 
         pch = strtok(line, " ");
@@ -372,13 +387,13 @@ static PIDX_return_code IDX_file_open(const char* filename)
         }
 
         if(chunk_size[0] < 0 || chunk_size[1] < 0 || chunk_size[2] < 0)
-          return PIDX_err_box;
+          return (-1);
       }
 
       if (strcmp(line, "(compression bit rate)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
         compression_bit_rate = atoi(line);
       }
@@ -386,7 +401,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(blocksperfile)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
         blocks_per_file= atoi(line);
       }
@@ -394,14 +409,14 @@ static PIDX_return_code IDX_file_open(const char* filename)
       if (strcmp(line, "(filename_template)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
       }
 
       if (strcmp(line, "(time)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
+          return (-1);
         line[strcspn(line, "\r\n")] = 0;
 
         pch = strtok(line, " ");
@@ -424,7 +439,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
 
   printf("Start time step %d End time step %d\n", start_time_step, end_time_step);
 
-#if PIDX_HAVE_MPI
+#if 0
 
   MPI_Bcast(bounds, 5, MPI_UNSIGNED_LONG_LONG, 0, comm);
   MPI_Bcast(idx_count, 5, MPI_UNSIGNED_LONG_LONG, 0, comm);
@@ -455,7 +470,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
   }
 
   int d = 0;
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  for (d = 0; d < MAX_DIMENSIONS; d++)
   {
     if (bounds[d] % chunk_size[d] == 0)
       chunked_bounds[d] = (int) bounds[d] / chunk_size[d];
@@ -469,7 +484,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
 
   for (var = 0; var < variable_count; var++)
   {
-#if PIDX_HAVE_MPI
+#if 0
     MPI_Bcast(&(bits_per_value[var]), 1, MPI_INT, 0, comm);
     MPI_Bcast(&(values_per_sample[var]), 1, MPI_INT, 0, comm);
     MPI_Bcast(var_name[var], 512, MPI_CHAR, 0, comm);
@@ -482,14 +497,14 @@ static PIDX_return_code IDX_file_open(const char* filename)
   if (total_reg_sample_count <= 0)
   {
     fprintf(stderr, "[%s] [%d ]File dimensions are wrong\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    return (-1);
   }
 
   unsigned long long max_sample_per_file = (unsigned long long) samples_per_block * blocks_per_file;
   if (max_sample_per_file <= 0)
   {
     fprintf(stderr, "[%s] [%d ]IDX dimensions are wrong %d %d\n", __FILE__, __LINE__, samples_per_block, blocks_per_file);
-    return PIDX_err_file;
+    return (-1);
   }
 
   max_file_count = total_reg_sample_count / max_sample_per_file;
@@ -506,21 +521,46 @@ static PIDX_return_code IDX_file_open(const char* filename)
     if (ret != 0)
     {
       fprintf(stderr, "[%s] [%d] Unable to identify File-System block size\n", __FILE__, __LINE__);
-      return PIDX_err_file;
+      return (-1);
     }
     fs_block_size = stat_buf.st_blksize;
   }
 
-#if PIDX_HAVE_MPI
+#if 0
   MPI_Bcast(&(fs_block_size), 1, MPI_INT, 0, comm);
 #endif
 
-  return PIDX_success;
+  return 0;
 }
 
 
+int SplitFilename(const char* filename,char* dirname,char* basename)
+{
+  int i;
+  int N=strlen(filename);
 
-PIDX_return_code file_initialize_time_step(int current_time_step, char* file_name, char* file_template)
+  if (!N)
+    return 0;
+
+  //find the last separator
+  for (i=N-1;i>=0;i--)
+  {
+    if (filename[i]=='/' || filename[i]=='\\')
+    {
+      strncpy(dirname,filename,i);
+      dirname[i]=0;
+      strcpy(basename,filename+i+1);
+      return 1;
+    }
+  }
+  //assume is all filename (without directory name)
+  dirname [0]=0;
+  strcpy(basename,filename);
+  return 1;
+}
+
+
+int file_initialize_time_step(int current_time_step, char* file_name, char* file_template)
 {
   int N;
   char dirname[1024], basename[1024];
@@ -539,7 +579,7 @@ PIDX_return_code file_initialize_time_step(int current_time_step, char* file_nam
   free(directory_path);
 
   nbits_blocknumber = (maxh - bits_per_block - 1);
-  VisusSplitFilename(data_set_path, dirname, basename);
+  SplitFilename(data_set_path, dirname, basename);
 
   //remove suffix
   for (N = strlen(basename) - 1; N >= 0; N--)
@@ -594,7 +634,7 @@ PIDX_return_code file_initialize_time_step(int current_time_step, char* file_nam
   }
 
   free(data_set_path);
-  return PIDX_success;
+  return 0;
 }
 
 
@@ -606,9 +646,12 @@ int main(int argc, char **argv)
 
   rank_0_print("Merge Program\n");
 
+#if 0
   comm = MPI_COMM_WORLD;
+#endif
+
   ret = IDX_file_open(output_file_name);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
+  if (ret != 0)  terminate_with_error_msg("PIDX_file_create");
 
   maxh = strlen(bitSequence);
 
@@ -728,7 +771,7 @@ int main(int argc, char **argv)
                 fprintf(stderr, "[File : %s] [Line : %d] read\n", __FILE__, __LINE__);
                 return 0;
               }
-              assert(ret == (sizeof (*(read_binheader[ic])) * read_binheader_count));
+              //assert(ret == (sizeof (*(read_binheader[ic])) * read_binheader_count));
 
               // copy the header from the partition file to the merged output file
               // do it only for first partition (this gets all info other than block offset nd count)
@@ -814,5 +857,138 @@ int main(int argc, char **argv)
 
 
   shutdown_mpi();
+  return 0;
+}
+
+static int get_default_bits_per_datatype(char* type, int* bits)
+{
+  if (strcmp(type, "1*float64") == 0)
+    *bits = 64;
+  else if (strcmp(type, "2*float64") == 0)
+    *bits = 128;
+  else if (strcmp(type, "3*float64") == 0)
+    *bits = 192;
+  else if (strcmp(type, "4*float64") == 0)
+    *bits = 256;
+  else
+    *bits = 0;
+
+  return 0;
+}
+
+static unsigned long long getPowerOf2(int x)
+{
+  /*  find the power of 2 of an integer value (example 5->8) */
+  int n = 1;
+  while (n < x) n <<= 1;
+  return n;
+}
+
+
+static int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen)
+{
+  unsigned long long address = 0;
+  unsigned int segs[MAX_TEMPLATE_DEPTH] = {0};
+  int seg_count = 0;
+  char* pos;
+  int ret;
+
+  //printf("[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
+  // determine the first HZ address for the file in question
+  address = file_number * blocks_per_file;
+
+  // walk backwards through the file name template to find places where we need to substitute strings
+  for (pos = &filename_template[strlen(filename_template) - 1];
+          pos != filename_template;
+          pos--)
+  {
+    // be careful not to lo0 past the end of the array
+    if (pos - filename_template > (strlen(filename_template) - 3))
+      continue;
+
+    if (pos[0] == '%' && pos[1] == '0' && pos[3] == 'x')
+    {
+      // TODO: for now we have a hard coded max depth
+      if (seg_count >= MAX_TEMPLATE_DEPTH)
+      {
+        fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
+        return 1;
+      }
+
+      // found an occurance of %0 in the template; check the next character to see how many bits to use here
+
+      switch (pos[2])
+      {
+        case '1':
+            segs[seg_count] += address & 0xf;
+            address = address >> 4;
+            break;
+        case '2':
+            segs[seg_count] += address & 0xff;
+            address = address >> 8;
+            break;
+        case '3':
+            segs[seg_count] += address & 0xfff;
+            address = address >> 12;
+            break;
+        case '4':
+            segs[seg_count] += address & 0xffff;
+            address = address >> 16;
+            break;
+        case '5':
+            segs[seg_count] += address & 0xfffff;
+            address = address >> 20;
+            break;
+        default:
+            // TODO: generalize this to work for any value
+            fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
+            return 1;
+      }
+      seg_count++;
+    }
+  }
+  switch (seg_count)
+  {
+    case 0:
+        ret = strlen(filename_template);
+        if (ret < maxlen) {
+            strcpy(filename, filename_template);
+        }
+        break;
+    case 1:
+        ret = snprintf(filename, maxlen, filename_template, segs[0]);
+        break;
+    case 2:
+        ret = snprintf(filename, maxlen, filename_template,
+                segs[1], segs[0]);
+        break;
+    case 3:
+        ret = snprintf(filename, maxlen, filename_template,
+                segs[2], segs[1], segs[0]);
+        break;
+    case 4:
+        ret = snprintf(filename, maxlen, filename_template,
+                segs[3], segs[2], segs[1], segs[0]);
+        break;
+    case 5:
+        ret = snprintf(filename, maxlen, filename_template,
+                segs[4], segs[3], segs[2], segs[1], segs[0]);
+        break;
+    case 6:
+        ret = snprintf(filename, maxlen, filename_template,
+                segs[5], segs[4], segs[3], segs[2], segs[1], segs[0]);
+        break;
+    default:
+        // TODO: generalize this
+        fprintf(stderr, "Error: generate_filename() function can't handle this template yet: %s\n", filename_template);
+        return 1;
+        break;
+  }
+  // make sure that the resulting string fit into the buffer ok
+  if (ret >= maxlen - 1)
+  {
+    fprintf(stderr, "Error: filename too short in generate_filename()\n");
+    return 1;
+  }
   return 0;
 }
