@@ -935,6 +935,21 @@ PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* current_time_st
 
 
 
+PIDX_return_code PIDX_set_file_zero_async_io(PIDX_file file, int file_zero)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  if(file_zero <= 0)
+    return PIDX_err_block;
+
+  file->idx_d->file_zero = file_zero;
+
+  return PIDX_validate(file);
+}
+
+
+
 PIDX_return_code PIDX_set_block_size(PIDX_file file, const int bits_per_block)
 {
   if(!file)
@@ -1716,7 +1731,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
       fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
-      fprintf(stdout, "Aggregation Type = %d\n", file->idx_d->agg_type);
+      fprintf(stdout, "Aggregation factor = %d\n", file->idx_d->aggregator_multiplier);
       fprintf(stdout, "File zero optimization = %d\n", file->idx_d->file_zero_optimization);
       fprintf(stdout, "Async IO = %d\n", file->idx_d->async_io);
       fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);

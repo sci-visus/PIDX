@@ -187,6 +187,8 @@ struct idx_dataset_derived_metadata_struct
 {
   int bit_string_axis;
 
+  int file_zero;
+
   int async_io;
   int dimension;
   int samples_per_block;

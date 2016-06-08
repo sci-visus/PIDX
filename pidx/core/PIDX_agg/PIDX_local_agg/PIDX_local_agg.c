@@ -1094,9 +1094,9 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
 
         agg_id->rank_holder2[k][i - agg_id->first_index][j] = trank;
 #else
-        if (file_status != 0)
+        if (file_status == 1)
           trank = agg_id->idx_d->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
-        else
+        else if (file_status == 0)
         {
           /*
           if (agg_offset == 0)
@@ -1107,6 +1107,10 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
           else
           */
           trank = agg_id->idx_d->rank_buffer[calculated_rank + var_offset * interval];
+        }
+        else if (file_status == 2)
+        {
+          trank = gnprocs - 1;
         }
         agg_id->rank_holder2[k][i - agg_id->first_index][j] = trank;
 #endif
@@ -1131,8 +1135,7 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
           agg_buffer->buffer_size = sample_count * bytes_per_datatype;
 
           if (i == 0 || i == agg_id->idx->variable_count - 1)
-            printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [S/N %d] -> [AGG %d] [Buffer %lld (%d x %d x %d)]\n", grank, rank, agg_offset, i, k, local_block_layout->existing_file_index[k], j, file_status, trank, agg_buffer->buffer_size, local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, bytes_per_datatype);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
-            //printf("[G %d] [%d] [V %d] [%d] [F [%d %d] V %d  S %d] -> UR %d TR %d CR %d OR %d Size %d [%d (%d x %d / %d) x %d]\n", grank, agg_offset, i, agg_offset, k, local_block_layout->existing_file_index[k], i, j, rank, trank, calculated_rank, old_rank, (int)agg_buffer->buffer_size, agg_buffer->file_number, local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, agg_buffer->aggregation_factor, bytes_per_datatype);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+            printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] -> [AGG %d] [Buffer %lld (%d x %d x %d)]\n", grank, rank, agg_offset, i, k, local_block_layout->existing_file_index[k], j, file_status, trank, agg_buffer->buffer_size, local_block_layout->block_count_per_file[agg_buffer->file_number], agg_id->idx_d->samples_per_block, bytes_per_datatype);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
 
 #if !SIMULATE_IO
           //double bs_time = MPI_Wtime();

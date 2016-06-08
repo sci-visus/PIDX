@@ -56,6 +56,7 @@ static int aggregator_multiplier = 1;
 static int blocks_per_file = 256;
 static int async = 0;
 static int partition_type = 3;
+static int file_zero = 0;
 
 static char var_name[MAX_VAR_COUNT][512];
 static char type_name[MAX_VAR_COUNT][512];
@@ -279,7 +280,7 @@ static int parse_var_list()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:p:f:t:v:a:b:s:x:";
+  char flags[] = "g:l:p:f:t:v:a:b:s:x:z:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -336,6 +337,11 @@ static void parse_args(int argc, char **argv)
 
     case('x'): // number of variables
       if (sscanf(optarg, "%d", &partition_type) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('z'): // number of variables
+      if (sscanf(optarg, "%d", &file_zero) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -418,8 +424,9 @@ int main(int argc, char **argv)
         if (async == 1)
           PIDX_enable_async_io(file);
         PIDX_set_block_count(file,blocks_per_file);
-        PIDX_set_block_size(file, 15);
+        PIDX_set_block_size(file, 13);
         PIDX_set_bitstring_scheme(file, partition_type);
+        PIDX_set_file_zero_async_io(file, file_zero);
         break;
 
       case PIDX_GLOBAL_IDX_IO:

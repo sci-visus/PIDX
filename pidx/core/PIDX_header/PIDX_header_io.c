@@ -935,7 +935,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   //MPI_Comm_rank(header_io_id->comm, &rank);
 
   int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
-  //memset(headers, 0, total_header_size);
+  memset(headers, 0, total_header_size);
 
   //int nprocs;
   //MPI_Comm_size(header_io_id->comm, &nprocs);

@@ -146,7 +146,7 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  int i, j, k, t, var, ret, counter = 0;
+  int j, k, t, var, ret, counter = 0;
   char *pch, *pch1;
   char line [ 512 ];
   int count = 0, len = 0;
@@ -441,10 +441,11 @@ int main(int argc, char **argv)
     {0, 0, 0, 0, 0}
   };
 
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  int i1 = 0;
+  for (i1 = 0; i1 < PIDX_MAX_DIMENSIONS; i1++)
   {
-    bounding_box[0][i] = 0;
-    bounding_box[1][i] = compressed_global_bounds[i];
+    bounding_box[0][i1] = 0;
+    bounding_box[1][i1] = compressed_global_bounds[i1];
   }
 
 
@@ -461,8 +462,8 @@ int main(int argc, char **argv)
   maxh = strlen(bitSequence);
 
   printf("bitsequence = %s [%d]\n", bitSequence, maxh);
-  for (i = 0; i <= maxh; i++)
-    bitPattern[i] = RegExBitmaskBit(bitSequence, i);
+  for (i1 = 0; i1 <= maxh; i1++)
+    bitPattern[i1] = RegExBitmaskBit(bitSequence, i1);
 
   block_layout global_block_layout =  (block_layout)malloc(sizeof (*global_block_layout));
   memset(global_block_layout, 0, sizeof (*global_block_layout));
@@ -470,14 +471,14 @@ int main(int argc, char **argv)
   createBlockBitmap(bounding_box, blocks_per_file, bits_per_block, maxh, resolution, bitPattern, global_block_layout);
 
   k = 1;
-  for (i = 1; i < (global_block_layout->levels); i++)
+  for (i1 = 1; i1 < (global_block_layout->levels); i1++)
   {
     counter = 0;
     for(j = 0 ; j < k ; j++)
     {
-      if(global_block_layout->hz_block_number_array[i][j] != 0)
+      if(global_block_layout->hz_block_number_array[i1][j] != 0)
       {
-        global_block_layout->hz_block_number_array[i][counter] = global_block_layout->hz_block_number_array[i][j];
+        global_block_layout->hz_block_number_array[i1][counter] = global_block_layout->hz_block_number_array[i1][j];
         counter++;
       }
     }
@@ -496,11 +497,11 @@ int main(int argc, char **argv)
   memset(existing_file_index, 0, max_files * sizeof (int));
   existing_file_index[0] = 1;
 
-  for (i = 1; i < global_block_layout->levels; i++)
+  for (i1 = 1; i1 < global_block_layout->levels; i1++)
   {
-    for (j = 0; j < global_block_layout->hz_block_count_array[i]; j++)
+    for (j = 0; j < global_block_layout->hz_block_count_array[i1]; j++)
     {
-      file_no = global_block_layout->hz_block_number_array[i][j] / blocks_per_file;
+      file_no = global_block_layout->hz_block_number_array[i1][j] / blocks_per_file;
       existing_file_index[file_no] = 1;
     }
   }
@@ -516,15 +517,16 @@ int main(int argc, char **argv)
   for (t = start_time_step; t <= end_time_step; t++)
   {
     unsigned long long lost_element_count = 0, element_count = 0, element_count1 = 0, lost_element_count1= 0;
-    for (i = 0; i < max_files; i++)
+    int fi = 0;
+    for (fi = 0; fi < max_files; fi++)
     //for (i = 3; i < 4; i++)
     {
-      if (existing_file_index[i] == 1)
+      if (existing_file_index[fi] == 1)
       {
         generate_file_name_template(maxh, bits_per_block, argv[1], t, filename_template);
 
         char bin_file[PATH_MAX];
-        ret = generate_file_name(blocks_per_file, filename_template, i, bin_file, PATH_MAX);
+        ret = generate_file_name(blocks_per_file, filename_template, fi, bin_file, PATH_MAX);
         if (ret == -1)
         {
           fprintf(stderr, "[File : %s] [Line : %d] generate_file_name\n", __FILE__, __LINE__);
@@ -573,12 +575,12 @@ int main(int argc, char **argv)
         {
           for (bpf = 0; bpf < blocks_per_file; bpf++)
           {
-            if (is_block_present((bpf + (blocks_per_file * i)), global_block_layout))
+            if (is_block_present((bpf + (blocks_per_file * fi)), global_block_layout))
             {
               data_offset = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 12]);
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
-              printf("[F %d] [V %d] [B %d] Offset %lld Count %ld\n", i, var, bpf, (long long)data_offset, (long)data_size);
+              printf("[F %d %s] [V %d] [B %d] Offset %lld Count %ld\n", fi, bin_file, var, bpf, (long long)data_offset, (long)data_size);
 
               int sample_size = 0;
               if (strcmp(variable_type[var], "float64") == 0)
@@ -642,7 +644,7 @@ int main(int argc, char **argv)
               //printf("Block %d - %d\n", bpf, data_size/(sample_size * values_per_sample[var] * total_compression_block_size));
               for (hz_val = 0; hz_val < data_size/(sample_size * values_per_sample[var] * total_compression_block_size); hz_val++)
               {
-                hz_index = (blocks_per_file * i * samples_per_block) + (bpf * samples_per_block) + hz_val;
+                hz_index = (blocks_per_file * fi * samples_per_block) + (bpf * samples_per_block) + hz_val;
                 Hz_to_xyz(bitPattern, maxh - 1, hz_index, ZYX);
 
                 if (ZYX[2] >= compressed_global_bounds[2] || ZYX[1] >= compressed_global_bounds[1] || ZYX[0] >= compressed_global_bounds[0])
@@ -699,7 +701,7 @@ int main(int argc, char **argv)
                             element_count1++;
                           }
                           //else
-                          //  printf("[W] Expected %f Found %f\n", drhs, dlhs);
+                          //  printf("[W] [F %d %s] [B %d] Expected %f Found %f\n", fi, bin_file, bpf, drhs, dlhs);
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {
