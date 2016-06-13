@@ -92,6 +92,10 @@ PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_
 
 
 ///
+PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout,  int PIDX_MODE, int vi, int bi);
+
+
+///
 PIDX_return_code PIDX_agg_finalize(PIDX_agg_id agg_id);
 
 #endif //__PIDX_AGG_H

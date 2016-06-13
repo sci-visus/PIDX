@@ -68,7 +68,7 @@ PIDX_return_code PIDX_global_agg_buf_destroy(Agg_buffer agg_buffer);
 
 
 ///
-PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int PIDX_MODE, int vi, int bi);
+PIDX_return_code PIDX_global_agg(PIDX_global_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, PIDX_block_layout global_block_layout, int PIDX_MODE, int vi, int bi);
 
 
 ///

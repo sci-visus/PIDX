@@ -1477,8 +1477,8 @@ static PIDX_return_code populate_idx_dataset_non_shared(PIDX_hybrid_idx_io file,
   {
     if (block_layout->file_index[i] == 1)
     {
-      //if (rank == 0)
-      //  printf("[%d %d] BPF %d = %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->block_count_per_file[i]);
+      if (rank == 0)
+        printf("[%d %d] BPF %d = %d inverse %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->block_count_per_file[i], count);
       block_layout->existing_file_index[count] = i;
       block_layout->inverse_existing_file_index[i] = count;
       count++;
@@ -2438,7 +2438,8 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_
     if (file->idx_dbg->debug_do_agg == 1)
     {
       time->agg_start[var_index][j] = PIDX_get_time();
-      ret = PIDX_agg(temp_id, temp_agg, j, temp_layout, PIDX_WRITE, var_index, j_1);
+      //ret = PIDX_agg(temp_id, temp_agg, j, temp_layout, PIDX_WRITE, var_index, j_1);
+      ret = PIDX_agg_global_and_local(temp_id, temp_agg, j, temp_layout, temp_global_layout, PIDX_WRITE, var_index, j_1);
 
       if (ret != PIDX_success)
       {
@@ -3657,7 +3658,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   else
     hz_from_shared = file->idx_d->shared_block_level;//file_zero_level;//total_partiton_level;
 
-  int hz_to_shared =  file->idx_d->total_partiton_level;//file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
+  int hz_to_shared =  0;//file->idx_d->total_partiton_level;//file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
   if (hz_from_shared == hz_to_shared)
   {
     file->idx_d->start_layout_index_shared = 0;
@@ -3674,7 +3675,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
 
 
   time->populate_idx_start_time_ns = PIDX_get_time();
-  int hz_from_non_shared = file->idx_d->total_partiton_level;//file_zero_level;//total_partiton_level;
+  int hz_from_non_shared = 0;// file->idx_d->total_partiton_level;//file_zero_level;//total_partiton_level;
   int hz_to_non_shared =  file->idx_d->maxh;//file_zero_level;// + 1;//total_partiton_level;//file->idx_d->maxh;
   if (hz_from_non_shared == hz_to_non_shared)
   {
@@ -3702,7 +3703,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
   int agg_io_level_shared = 0;
   for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (/*file->idx_d->var_pipe_length + */1))
   {
-    if (file->idx_d->agg_type == 1)
+    //if (file->idx_d->agg_type == 1)
     {
       for (i = file->idx_d->start_layout_index_non_shared; i < file->idx_d->end_layout_index_non_shared ; i++)
       {
@@ -3722,7 +3723,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
       return PIDX_err_file;
     }
 
-    if (file->idx_d->agg_type == 1)
+    //if (file->idx_d->agg_type == 1)
     {
       for (i = file->idx_d->start_layout_index_shared; i < file->idx_d->end_layout_index_shared ; i++)
       {
@@ -3767,7 +3768,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int start_var_in
     if (file->idx_d->file_zero == 1)
     {
       int agg_io_level_file_zero = 0, no_of_aggregators = 0;
-      if (file->idx_d->agg_type == 1)
+      //if (file->idx_d->agg_type == 1)
       {
         for (i = file->idx_d->start_layout_index_file_zero; i < file->idx_d->end_layout_index_file_zero ; i++)
         {
