@@ -415,8 +415,8 @@ int main(int argc, char **argv)
 
     //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
     //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
-    //int io_type = PIDX_RAW_IO;
-    int io_type = PIDX_HYBRID_IDX_IO;
+    int io_type = PIDX_RAW_IO;
+    //int io_type = PIDX_HYBRID_IDX_IO;
     switch (io_type)
     {
       case PIDX_HYBRID_IDX_IO:
@@ -424,7 +424,7 @@ int main(int argc, char **argv)
         if (async == 1)
           PIDX_enable_async_io(file);
         PIDX_set_block_count(file,blocks_per_file);
-        PIDX_set_block_size(file, 15);
+        PIDX_set_block_size(file, 13);
         PIDX_set_bitstring_scheme(file, partition_type);
         PIDX_set_file_zero_async_io(file, file_zero);
         break;

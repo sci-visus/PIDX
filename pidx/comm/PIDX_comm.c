@@ -44,10 +44,13 @@ PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm)
   
   access->parallel = 1;
 
+  /*
   int ret;
   ret = MPI_Comm_dup(comm, &(access->comm));
   if (ret != MPI_SUCCESS)
     return PIDX_err_access;
+  */
+  access->comm = comm;
   
   return PIDX_success;
 }
@@ -109,6 +112,7 @@ PIDX_return_code PIDX_close_access(PIDX_access access)
     return PIDX_err_access;
   
 #if PIDX_HAVE_MPI
+  /*
   if (access->comm != MPI_COMM_NULL)
   {
     if (access->parallel == 1)
@@ -116,6 +120,7 @@ PIDX_return_code PIDX_close_access(PIDX_access access)
     else
       fprintf(stderr, "PIDX ERROR: Trying to free a NULL communicator. Application must specify MPI communicator using PIDX_set_mpi_access.\n");
   }
+  */
 
 #endif  
   
