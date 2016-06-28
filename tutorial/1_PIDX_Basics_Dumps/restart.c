@@ -220,6 +220,7 @@ int main(int argc, char **argv)
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
   ret = PIDX_set_current_time_step(file, time_step_count);
+  if (ret == PIDX_err_file_exists)  terminate_with_error_msg("PIDX_file_open: file does not exist");
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
 
   PIDX_debug_output(file);
@@ -345,7 +346,7 @@ int main(int argc, char **argv)
             for (vps = 0; vps < v_per_sample[var]; vps++)
             {
               memcpy(&float_val, data[var] + (index * v_per_sample[var] + vps) * bits_per_sample[var], bits_per_sample[var]);
-              if (float_val != var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              if (float_val != var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
               {
                 read_error_count++;
                 //if (rank == 0)

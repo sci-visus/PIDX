@@ -300,6 +300,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   *file = malloc(sizeof (*(*file)) );
   memset(*file, 0, sizeof (*(*file)) );
 
+
   //(*file)->time = malloc(sizeof((*file)->time));
   //memset((*file)->time, 0, sizeof((*file)->time));
 
@@ -430,6 +431,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   else
     sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
 
+
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
@@ -467,6 +469,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   int var = 0, variable_counter = 0, count = 0, len = 0;
   char *pch, *pch1;
   char line [ 512 ];
+
+
 
   if (rank == 0)
   {
@@ -681,6 +685,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     }
     fclose(fp);
   }
+
 
 #if PIDX_HAVE_MPI
   if ((*file)->idx_d->parallel_mode == 1)
@@ -915,8 +920,68 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
   
   if(current_time_step < 0)
     return PIDX_err_time;
-   
+
+  //if (current_time_step < file->idx->first_tstep || current_time_step > file->idx->last_tstep)
+  //  return PIDX_err_file_exists;
+
   file->idx->current_time_step = current_time_step;
+
+  char bin_file[PATH_MAX];
+  char last_path[PATH_MAX] = {0};
+  char this_path[PATH_MAX] = {0};
+  char tmp_path[PATH_MAX] = {0};
+  char* pos;
+  int j;
+
+  char *directory_path;
+  char *data_set_path;
+
+  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+
+  data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
+  memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
+
+  strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
+  sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
+  free(directory_path);
+
+  strcpy(this_path, data_set_path);
+  if ((pos = strrchr(this_path, '/')))
+  {
+    pos[1] = '\0';
+    if (!strcmp(this_path, last_path) == 0)
+    {
+      strcpy(last_path, this_path);
+      memset(tmp_path, 0, PATH_MAX * sizeof (char));
+      for (j = 0; j < (int)strlen(this_path); j++)
+      {
+        if (j > 0 && this_path[j] == '/')
+        {
+
+          if (0 != access(tmp_path, F_OK))
+          {
+            if (ENOENT == errno)
+            {
+              return PIDX_err_file_exists;
+            }
+          }
+
+          //printf("tmp_path = %s\n", tmp_path);
+          //ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
+          //if (ret != 0 && errno != EEXIST)
+          //{
+          //  perror("mkdir");
+          //  fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
+          //  return 1;
+          //}
+        }
+        tmp_path[j] = this_path[j];
+      }
+    }
+  }
+  free(data_set_path);
+
   
   return PIDX_success;
 }
