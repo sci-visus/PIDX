@@ -255,7 +255,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
-  (*file)->idx_d->agg_type = 0;
+  (*file)->idx_d->agg_type = 1;
   (*file)->idx_d->layout_count = 0;
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
@@ -926,6 +926,7 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
 
   file->idx->current_time_step = current_time_step;
 
+  /*
   char bin_file[PATH_MAX];
   char last_path[PATH_MAX] = {0};
   char this_path[PATH_MAX] = {0};
@@ -981,6 +982,7 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
     }
   }
   free(data_set_path);
+  */
 
   
   return PIDX_success;
@@ -1782,7 +1784,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   MPI_Comm_size(file->comm, &nprocs);
 
 #if 1
-  if (file->debug_output == 1 && (file->io_type == PIDX_GLOBAL_IDX_IO || file->io_type == PIDX_HYBRID_IDX_IO))
+  if (file->debug_output == 1 && (file->io_type == PIDX_GLOBAL_IDX_IO || file->io_type == PIDX_HYBRID_IDX_IO || file->io_type == PIDX_IDX_IO))
   {
     if (rank == 0)
     {

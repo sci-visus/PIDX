@@ -1004,7 +1004,7 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
 static double get_time()
 {
 #if PIDX_HAVE_MPI
-  return MPI_Wtime();
+  //return MPI_Wtime();
 #else
   struct timeval temp;
   gettimeofday(&temp, NULL);

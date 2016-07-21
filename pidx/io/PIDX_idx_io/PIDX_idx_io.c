@@ -1543,6 +1543,10 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   }
 #endif
 
+  file->idx_d->rank_buffer = malloc(nprocs * sizeof(*file->idx_d->rank_buffer));
+  memset(file->idx_d->rank_buffer, 0, nprocs * sizeof(*file->idx_d->rank_buffer));
+  MPI_Allgather(&rank, 1, MPI_INT, file->idx_d->rank_buffer, 1, MPI_INT, file->global_comm);
+
 
   int d = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -2590,6 +2594,8 @@ PIDX_return_code PIDX_idx_write(PIDX_idx_io file, int start_var_index, int end_v
   //delete_idx_dataset(file, start_var_index, end_var_index, 0, file->idx_d->maxh);
   //delete_idx_dataset(file, start_var_index, end_var_index, file_zero_level, total_partiton_level);
   delete_idx_dataset(file, start_var_index, end_var_index, hz_from, hz_to);
+
+  free(file->idx_d->rank_buffer);
 
 
 #if PIDX_DEBUG_OUTPUT

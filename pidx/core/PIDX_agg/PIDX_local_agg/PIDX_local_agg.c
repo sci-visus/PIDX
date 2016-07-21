@@ -1272,6 +1272,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
         int nrank_y = (agg_id->idx->bounds[1] / agg_id->idx->variable[agg_id->first_index]->sim_patch[0]->size[1]);
 
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
+        //printf("[%d %d %d] calculated_rank = %d\n",k, i - agg_id->first_index, j, calculated_rank);
 
         if (agg_offset == 0)
           agg_id->rank_holder2[k][i - agg_id->first_index][j] = agg_id->idx_d->rank_buffer[calculated_rank];
