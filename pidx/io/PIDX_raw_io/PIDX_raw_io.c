@@ -1,6 +1,6 @@
 #include "../PIDX_io.h"
 
-#define INVERT_ENDIANESS 0
+#define INVERT_ENDIANESS 1
 
 static int maximum_neighbor_count = 256;
 
@@ -342,6 +342,36 @@ int32_Reverse_Endian(int val, unsigned char *outbuf)
     return 4;
 }
 
+float32_Reverse_Endian(float val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)&val) + 3;
+    unsigned char *out = outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return 4;
+}
+
+float64_Reverse_Endian(double val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)&val) + 7;
+    unsigned char *out = outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return 8;
+}
+
 #endif
 
 PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int end_var_index)
@@ -373,7 +403,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   free(idx_directory_path);
 
   uint32_t number_cores = 0;
-  printf("opening %s\n", size_path);
+  printf("opening YY %s\n", size_path);
   int fp = open(size_path, O_RDONLY);
   ssize_t write_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
   if (write_count != sizeof(uint32_t))
@@ -703,6 +733,39 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
 #if !SIMULATE_IO
             //memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), patch_grp->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
             memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), temp_patch_buffer[start_index - start_var_index][r] + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+
+#if INVERT_ENDIANESS
+            if (var->bits_per_value/8 == 4)
+            {
+              int y = 0;
+              float temp;
+              float temp2;
+
+              for (y = 0; y < send_c * var->values_per_sample * (var->bits_per_value/8) / sizeof(float); y++)
+              {
+                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(float)), sizeof(float));
+                float32_Reverse_Endian(temp, &temp2);
+                //number_cores = temp_number_cores;
+                //printf("%f\n", temp2);
+                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(float)), &temp2, sizeof(float));
+              }
+            }
+            else if (var->bits_per_value/8 == 24)
+            {
+              int y = 0;
+              double temp;
+              double temp2;
+
+              for (y = 0; y < send_c * var->values_per_sample * (var->bits_per_value/8) / sizeof(double); y++)
+              {
+                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(double)), sizeof(double));
+                float64_Reverse_Endian(temp, &temp2);
+                //number_cores = temp_number_cores;
+                //printf("%f\n", temp2);
+                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(double)), &temp2, sizeof(double));
+              }
+            }
+#endif
           }
 #endif
         }

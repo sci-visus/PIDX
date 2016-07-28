@@ -281,7 +281,7 @@ int main(int argc, char **argv)
               {
                 read_error_count++;
                 if (rank == 0)
-                  printf("W[%d %d %d] [%d] Read error %d %lld\n", i,j ,k, vps, int_val, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                  printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
               else
               {
@@ -294,21 +294,22 @@ int main(int argc, char **argv)
 
           else if (strcmp(type_name, FLOAT64) == 0 || strcmp(type_name, FLOAT64_RGB) == 0)
           {
+
             for (vps = 0; vps < v_per_sample; vps++)
             {
               memcpy(&double_val, data + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
 
-              if (double_val != var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              if (double_val != var /*+ vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/)
               {
                 read_error_count++;
-                if (rank == 0)
-                  printf("W[%d %d %d] [%d] Read error %f %lld\n", i,j ,k, vps, double_val, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //if (rank == 0)
+                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val, var/* + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
               }
               else
               {
                 read_count++;
                 //if (rank == 0)
-                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val, var /*+ vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
               }
             }
           }
@@ -318,11 +319,11 @@ int main(int argc, char **argv)
             for (vps = 0; vps < v_per_sample; vps++)
             {
               memcpy(&float_val, data + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
-              if (float_val != var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              if (float_val != var /*+ vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/)
               {
                 read_error_count++;
                 if (rank == 0)
-                  printf("W[%d %d %d] [%d] Read error %d %lld\n", i,j ,k, vps, int_val, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                  printf("W[%d %d %d] [%d] Read error %d %f\n", i,j ,k, vps, var, float_val /*+ vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
               }
               else
               {

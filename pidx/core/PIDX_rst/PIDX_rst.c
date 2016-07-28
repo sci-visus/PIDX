@@ -28,7 +28,7 @@
  */
 
 #include "../../PIDX_inc.h"
-
+#define INVERT_ENDIANESS 1
 
 static int maximum_neighbor_count = 256;
 
@@ -1538,6 +1538,25 @@ PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id)
 }
 
 
+#if INVERT_ENDIANESS
+
+static int
+float32_Reverse_Endian(float val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)&val) + 3;
+    unsigned char *out = outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return 4;
+}
+
+#endif
+
+
 PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
 {
   int rank = 0;
@@ -1621,6 +1640,19 @@ PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id)
         fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
         return PIDX_err_rst;
       }
+      /*
+      int y = 0;
+      float temp;
+      float temp2;
+      for (y = 0; y < buffer_size/sizeof(float); y++)
+      {
+          memcpy(&temp, out_patch->buffer + (y * sizeof(float)), sizeof(float));
+          float32_Reverse_Endian(temp, &temp2);
+          //number_cores = temp_number_cores;
+          printf("%f\n", temp2);
+          memcpy(out_patch->buffer + (y * sizeof(float)), &temp2, sizeof(float));
+      }
+      */
 
       ret = MPI_File_close(&fh);
       if (ret != MPI_SUCCESS)
