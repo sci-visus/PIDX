@@ -1,5 +1,5 @@
 #include "../PIDX_io.h"
-
+#if 0
 //static int regular_bounds[PIDX_MAX_DIMENSIONS] = {256, 256, 128, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_global_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 //static PIDX_return_code delete_idx_dataset(PIDX_global_idx_io file, int start_var_index, int end_var_index);
@@ -3366,3 +3366,4 @@ PIDX_return_code PIDX_global_idx_io_finalize(PIDX_global_idx_io file)
 
   return PIDX_success;
 }
+#endif

@@ -1,5 +1,5 @@
 #include "../PIDX_io.h"
-
+#if 0
 #define INVERT_ENDIANESS 1
 
 static int maximum_neighbor_count = 256;
@@ -976,3 +976,4 @@ PIDX_return_code PIDX_raw_io_finalize(PIDX_raw_io file)
 
   return PIDX_success;
 }
+#endif

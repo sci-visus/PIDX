@@ -1081,6 +1081,7 @@ PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
     return PIDX_err_count;
    
   file->idx->variable_count = variable_count;
+  file->idx_d->var_pipe_length = file->idx->variable_count - 1 > 1 ? file->idx->variable_count - 1 : 1;
   
   return PIDX_success;
 }

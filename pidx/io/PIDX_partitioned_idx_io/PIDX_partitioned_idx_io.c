@@ -1,5 +1,5 @@
 #include "../PIDX_io.h"
-
+#if 0
 #if PIDX_HAVE_MPI
 //static int regular_bounds[PIDX_MAX_DIMENSIONS] = {512, 512, 256, 1, 1};
 static PIDX_return_code populate_idx_layout(PIDX_partitioned_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
@@ -2900,4 +2900,5 @@ PIDX_return_code PIDX_partitioned_idx_io_finalize(PIDX_partitioned_idx_io file)
 
   return PIDX_success;
 }
+#endif
 #endif

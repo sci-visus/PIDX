@@ -106,6 +106,33 @@ struct PIDX_variable_struct
   Ndim_patch_group* rst_patch_group;                                    ///< Pointer to the patch groups
   Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
 
+  /*
+  // Block level layout
+  //PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
+
+  PIDX_block_layout* global_block_layout_file_zero;                               ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout** block_layout_by_level_file_zero;                            ///< Block layout, specifically when variables might have different extents in the domain
+
+  PIDX_block_layout* global_block_layout_files;                               ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout** block_layout_by_level_files;                            ///< Block layout, specifically when variables might have different extents in the domain
+  */
+
+  //Compression related
+  int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
+};
+typedef struct PIDX_variable_struct* PIDX_variable;
+
+
+
+
+struct PIDX_variable_group_struct
+{
+
+  int variable_count;
+  PIDX_variable variable[128];
+
   // Block level layout
   //PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
   PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
@@ -120,7 +147,8 @@ struct PIDX_variable_struct
   //Compression related
   int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
 };
-typedef struct PIDX_variable_struct* PIDX_variable;
+typedef struct PIDX_variable_group_struct* PIDX_variable_group;
+
 
 
 /// idx_file
@@ -128,9 +156,10 @@ struct idx_file_struct
 {
   int current_time_step;                                                ///< Time step tracker
   
-  int variable_count;
   int variable_index_tracker;
-  PIDX_variable variable[1024];
+
+  int variable_group_count;
+  PIDX_variable_group variable_grp[16];
   
 
   char filename_global[1024];

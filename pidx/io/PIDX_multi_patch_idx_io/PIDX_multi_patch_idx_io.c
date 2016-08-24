@@ -1,5 +1,5 @@
 #include "../PIDX_io.h"
-
+#if 0
 #define PIDX_HACK_MULTI_PATCH 1
 
 static PIDX_return_code populate_idx_layout(PIDX_multi_patch_idx_io file, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
@@ -2474,3 +2474,4 @@ PIDX_return_code PIDX_multi_patch_idx_io_finalize(PIDX_multi_patch_idx_io file)
 
   return PIDX_success;
 }
+#endif

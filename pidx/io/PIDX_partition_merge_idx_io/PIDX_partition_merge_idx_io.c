@@ -1,5 +1,5 @@
 #include "../PIDX_io.h"
-
+#if 0
 //#define PIDX_DEBUG_OUTPUT 1
 
 #if PIDX_HAVE_MPI
@@ -2263,4 +2263,5 @@ PIDX_return_code PIDX_partition_merge_idx_io_finalize(PIDX_partition_merge_idx_i
 
   return PIDX_success;
 }
+#endif
 #endif
