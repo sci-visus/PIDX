@@ -267,7 +267,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
               
               if (intersectNDChunk(reg_patch, local_proc_patch)){// && intersected == 0){
                 //intersected = 1;
-                rst_id->reg_multi_patch_grp_count = 1; //++; /// <<< ---- 1 group CHECK!!
+                rst_id->reg_multi_patch_grp_count++; /// <<< ---- 1 group CHECK!!
               }
               
               free(reg_patch);
@@ -352,7 +352,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
               /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
               if (intersectNDChunk(reg_patch, local_proc_patch) && intersected == 0)
               {
-                intersected = 1; /// <<---- one intersection CHECK!!
+                //intersected = 1; /// <<---- one intersection CHECK!!
 
                 //if (rank == 52 && reg_patch->offset[0] == 0 && reg_patch->offset[1] == 768 && reg_patch->offset[2] == 128)
                 // printf("[g] reg box %d %d %d : %d %d %d local box %d %d %d : %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], local_proc_patch->offset[0], local_proc_patch->offset[1], local_proc_patch->offset[2], local_proc_patch->size[0], local_proc_patch->size[1], local_proc_patch->size[2]);

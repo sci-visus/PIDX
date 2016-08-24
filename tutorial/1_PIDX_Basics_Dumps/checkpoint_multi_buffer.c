@@ -130,7 +130,7 @@ static void calculate_per_process_offsets()
         var_offset[var][0][d] = local_box_offset[d];
       }
     }
-#if 1
+#if 0
     // two patches for this variable
     else if (patch_count == 2)
     {
@@ -490,10 +490,10 @@ int main(int argc, char **argv)
 //   PIDX_enable_raw_io(file);
     //PIDX_debug_hz(file, 1);
     //PIDX_disable_agg(file);
-    PIDX_disable_rst(file);
+   // PIDX_disable_rst(file);
 
     PIDX_point rst_box;
-    PIDX_set_point_5D(rst_box, 32,32,32,1,1);
+    PIDX_set_point_5D(rst_box, 64,64,32,1,1);
     PIDX_set_restructuring_box(file, rst_box);
 
     for (var = 0; var < variable_count; var++)
