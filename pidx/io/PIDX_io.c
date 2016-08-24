@@ -15,6 +15,7 @@ struct PIDX_io_descriptor
   PIDX_idx_io idx_io;
   PIDX_raw_io raw_io;
   PIDX_multi_patch_idx_io multi_patch_idx_io;
+  PIDX_multi_patch_raw_io multi_patch_raw_io;
 
 
   idx_dataset idx;                             ///< Contains all relevant IDX file info
@@ -768,6 +769,25 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int start_var_i
         return PIDX_err_flush;
 
       ret = PIDX_multi_patch_idx_io_finalize(file->multi_patch_idx_io);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
+
+    else  if (io_type == PIDX_MULTI_PATCH_RAW_IO)
+    {
+      file->multi_patch_raw_io = PIDX_multi_patch_raw_io_init(file->idx, file->idx_d, file->idx_dbg);
+      if (file->multi_patch_raw_io == NULL)
+        return PIDX_err_flush;
+
+      ret = PIDX_multi_patch_raw_io_set_communicator(file->multi_patch_raw_io, file->comm);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      ret = PIDX_multi_patch_raw_write(file->multi_patch_raw_io, start_var_index, end_var_index);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      ret = PIDX_multi_patch_raw_io_finalize(file->multi_patch_raw_io);
       if (ret != PIDX_success)
         return PIDX_err_flush;
     }

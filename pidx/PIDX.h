@@ -508,6 +508,20 @@ PIDX_return_code PIDX_enable_hybrid_io(PIDX_file file);
 ///
 PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file);
 
+///
+/// \brief PIDX_enable_multi_patch_idx_io
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_enable_multi_patch_idx_io(PIDX_file file);
+
+///
+/// \brief PIDX_enable_multi_patch_raw_io
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_enable_multi_patch_raw_io(PIDX_file file);
+
 
 ///
 PIDX_return_code PIDX_time_step_caching_ON();

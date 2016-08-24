@@ -483,7 +483,7 @@ int main(int argc, char **argv)
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_variable_count(file, variable_count);
-    PIDX_enable_multi_patch_io(file);
+    PIDX_enable_multi_patch_raw_io(file);
 
  //   PIDX_debug_rst(file, 1);
     PIDX_debug_output(file);
