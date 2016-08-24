@@ -130,7 +130,7 @@ static void calculate_per_process_offsets()
         var_offset[var][0][d] = local_box_offset[d];
       }
     }
-
+#if 0
     // two patches for this variable
     else if (patch_count == 2)
     {
@@ -150,6 +150,38 @@ static void calculate_per_process_offsets()
 
       var_offset[var][1][0] = local_box_offset[0] + local_box_size[0]/2;
     }
+    
+#else
+    else if (patch_count == 2)
+    {
+      
+      for(d = 0; d < 3; d++)
+      {
+        var_count[var][0][d] = local_box_size[d];
+        var_offset[var][0][d] = local_box_offset[d];
+        var_count[var][1][d] = local_box_size[d];
+        var_offset[var][1][d] = local_box_offset[d];
+      }
+      
+      var_count[var][0][0] = local_box_size[0]/2;
+      
+      if(local_box_size[0] % 2 == 0)
+        var_count[var][1][0] = local_box_size[0]/2;
+      else
+        var_count[var][1][0] = local_box_size[0]/2 + 1;
+      
+      var_offset[var][1][0] = local_box_offset[0] + local_box_size[0]/2;
+      
+      if(var_offset[var][0][0] == 0){
+     //   printf("moving a from %d to %lld\n", var_offset[var][0][0], var_offset[var][0][0]+ local_box_size[0]);
+        var_offset[var][0][0] = local_box_offset[0] + local_box_size[0];
+      }
+      else if(var_offset[var][0][0] == local_box_size[0]){
+      //  printf("moving b from %d to %lld\n", var_offset[var][0][0], var_offset[var][0][0] - local_box_size[0]);
+        var_offset[var][0][0] = local_box_offset[0] - local_box_size[0];
+      }
+    }
+#endif
 
     // four patches for this variable
     else if (patch_count == 4)
@@ -197,7 +229,6 @@ static void calculate_per_process_offsets()
         var_offset[var][3][1] = var_offset[var][0][1] + local_box_size[1]/2;
       }
     }
-
     // eight patches for this variable
     else if (patch_count == 8)
     {
@@ -309,6 +340,7 @@ static void create_synthetic_simulation_data()
 {
   int var = 0, p = 0;
   unsigned long long i, j, k;
+  printf("creating data for rank %d\n", rank);
 
   double_data = malloc(sizeof(double**) * variable_count);
   for (var = 0; var < variable_count; var++)
@@ -321,8 +353,8 @@ static void create_synthetic_simulation_data()
         for (j = 0; j < var_count[var][p][1]; j++)
           for (i = 0; i < var_count[var][p][0]; i++)
           {
-            unsigned long long index = (unsigned long long) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
-            double_data[var][p][index] = var + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
+            int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
+            double_data[var][p][index] = rank + 10;//var + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
           }
     }
   }
@@ -425,8 +457,8 @@ int main(int argc, char **argv)
     local_box_count_point[var] = malloc(sizeof(PIDX_point) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
-      PIDX_set_point_5D(local_offset_point[var][p], (unsigned long long)var_offset[var][p][0], (unsigned long long)var_offset[var][p][1], (unsigned long long)var_offset[var][p][2], 0, 0);
-      PIDX_set_point_5D(local_box_count_point[var][p], (unsigned long long)var_count[var][p][0], (unsigned long long)var_count[var][p][1], (unsigned long long)var_count[var][p][2], 1, 1);
+      PIDX_set_point_5D(local_offset_point[var][p], (int64_t)var_offset[var][p][0], (int64_t)var_offset[var][p][1], (int64_t)var_offset[var][p][2], 0, 0);
+      PIDX_set_point_5D(local_box_count_point[var][p], (int64_t)var_count[var][p][0], (int64_t)var_count[var][p][1], (int64_t)var_count[var][p][2], 1, 1);
     }
   }
   PIDX_file file;            // IDX file descriptor
@@ -435,7 +467,7 @@ int main(int argc, char **argv)
   variable = malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
 
-  PIDX_set_point_5D(global_bounding_box, (unsigned long long)global_box_size[0], (unsigned long long)global_box_size[1], (unsigned long long)global_box_size[2], 1, 1);
+  PIDX_set_point_5D(global_bounding_box, (int64_t)global_box_size[0], (int64_t)global_box_size[1], (int64_t)global_box_size[2], 1, 1);
 
   PIDX_access access;
   PIDX_create_access(&access);
@@ -443,7 +475,7 @@ int main(int argc, char **argv)
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
-
+  
   int ts;
   for (ts = 0; ts < time_step_count; ts++)
   {
@@ -451,9 +483,18 @@ int main(int argc, char **argv)
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_variable_count(file, variable_count);
+    PIDX_enable_multi_patch_io(file);
 
-    //PIDX_debug_rst(file, 1);
+ //   PIDX_debug_rst(file, 1);
+    PIDX_debug_output(file);
+  //  PIDX_enable_raw_io(file);
     //PIDX_debug_hz(file, 1);
+    //PIDX_disable_agg(file);
+    //PIDX_disable_rst(file);
+
+    PIDX_point rst_box;
+    PIDX_set_point_5D(rst_box, 64,64,32,1,1);
+    PIDX_set_restructuring_box(file, rst_box);
 
     for (var = 0; var < variable_count; var++)
     {
@@ -461,6 +502,7 @@ int main(int argc, char **argv)
       sprintf(variable_name, "variable_%d", var);
       PIDX_variable_create(variable_name, sizeof(double) * 8, FLOAT64, &variable[var]);
 
+     // printf("rank %d var %d\n",rank,var);
       for (p = 0 ; p < patch_count ; p++)
         PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
 
