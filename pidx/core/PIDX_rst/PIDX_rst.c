@@ -28,7 +28,7 @@
  */
 
 #include "../../PIDX_inc.h"
-#define INVERT_ENDIANESS 1
+#define INVERT_ENDIANESS 0
 
 static int maximum_neighbor_count = 256;
 

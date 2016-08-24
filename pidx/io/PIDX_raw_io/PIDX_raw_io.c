@@ -1,6 +1,6 @@
 #include "../PIDX_io.h"
 
-#define INVERT_ENDIANESS 1
+#define INVERT_ENDIANESS 0
 
 static int maximum_neighbor_count = 256;
 
@@ -403,7 +403,7 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   free(idx_directory_path);
 
   uint32_t number_cores = 0;
-  printf("opening YY %s\n", size_path);
+  //printf("opening YY %s\n", size_path);
   int fp = open(size_path, O_RDONLY);
   ssize_t write_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
   if (write_count != sizeof(uint32_t))
