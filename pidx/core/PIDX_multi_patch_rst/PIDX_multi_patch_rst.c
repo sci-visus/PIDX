@@ -133,7 +133,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
     
     int start_var_index = rst_id->first_index;
     
-    MPI_Allreduce(&rst_id->idx->variable[start_var_index]->sim_patch_count, &rst_id->sim_max_patch_group_count, 1, MPI_INT32_T, MPI_MAX, rst_id->comm);
+    MPI_Allreduce(&rst_id->idx->variable[start_var_index]->sim_patch_count, &rst_id->sim_max_patch_group_count, 1, MPI_INT, MPI_MAX, rst_id->comm);
    
     if (rank == 0)
       printf("loc %d max_patch_group_count %lld\n", rst_id->idx->variable[start_var_index]->sim_patch_count, rst_id->sim_max_patch_group_count);

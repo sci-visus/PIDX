@@ -1,6 +1,6 @@
 #include "../PIDX_io.h"
 
-#define INVERT_ENDIANESS 1
+#define INVERT_ENDIANESS 0
 
 static int maximum_neighbor_count = 256;
 
@@ -630,17 +630,17 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
   unsigned char ***temp_patch_buffer;
   temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (end_var_index - start_var_index));
   memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (end_var_index - start_var_index));
-  //printf("start_var_index = %d end_var_index %d\n", start_var_index, end_var_index);
+  printf("start_var_index = %d end_var_index %d\n", start_var_index, end_var_index);
   for (i = 0; i < (end_var_index - start_var_index); i++)
   {
-    //printf("[%d] ----> %d\n", i, patch_count);
+    printf("[%d] ----> %d\n", i, patch_count);
     PIDX_variable var = file->idx->variable[i + start_var_index];
     temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
     memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
     for (j = 0; j < patch_count; j++)
     {
-      //printf("[%d] --> %d %d %d [%d]\n", j, patch_grp->patch[j]->size[0], patch_grp->patch[j]->size[1], patch_grp->patch[j]->size[2], (patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2]));
+      printf("[%d] --> %d %d %d [%d]\n", j, patch_grp->patch[j]->size[0], patch_grp->patch[j]->size[1], patch_grp->patch[j]->size[2], (patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2]));
       temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
       memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
     }
@@ -682,16 +682,16 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
             {
               PIDX_variable var1 = file->idx->variable[v1];
               other_offset = other_offset + ((var1->bits_per_value/8) * var1->values_per_sample * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
-              //printf("[%d] ----> %d [%d %d %d]\n", start_index, other_offset, sim_patch_countx[0], sim_patch_countx[1], sim_patch_countx[2]);
+              printf("[%d] ----> %d [%d %d %d]\n", start_index, other_offset, sim_patch_countx[0], sim_patch_countx[1], sim_patch_countx[2]);
             }
 
             PIDX_variable var = file->idx->variable[start_index];
             send_o = index * var->values_per_sample;
             send_c = patch_grp->patch[i]->size[0] * var->values_per_sample;
+            printf("start_index %d\n", start_index);
+            size_t preadc = pread(fp, patch_grp->patch[i]->buffer + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, send_o * var->bits_per_value/8);
 
-            //size_t preadc = pread(fp, patch_grp->patch[i]->buffer + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, send_o * var->bits_per_value/8);
-
-            size_t preadc = pread(fp, temp_patch_buffer[start_index - start_var_index][i] + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, other_offset + (send_o * var->bits_per_value/8));
+            //size_t preadc = pread(fp, temp_patch_buffer[start_index - start_var_index][i] + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, other_offset + (send_o * var->bits_per_value/8));
 
             if (preadc != send_c * var->bits_per_value/8)
             {
