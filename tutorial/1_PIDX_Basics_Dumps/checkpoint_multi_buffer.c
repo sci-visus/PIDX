@@ -490,7 +490,7 @@ int main(int argc, char **argv)
 //   PIDX_enable_raw_io(file);
     //PIDX_debug_hz(file, 1);
     //PIDX_disable_agg(file);
-   // PIDX_disable_rst(file);
+    PIDX_disable_rst(file);
 
     PIDX_point rst_box;
     PIDX_set_point_5D(rst_box, 32,32,32,1,1);
