@@ -63,15 +63,15 @@ static void terminate_with_error_msg(const char *format, ...)
   terminate();
 }
 
-//----------------------------------------------------------------
-static void rank_0_print(const char *format, ...)
-{
-  if (rank != 0) return;
-  va_list arg_ptr;
-  va_start(arg_ptr, format);
-  vfprintf(stderr, format, arg_ptr);
-  va_end(arg_ptr);
-}
+// //----------------------------------------------------------------
+// static void rank_0_print(const char *format, ...)
+// {
+//   if (rank != 0) return;
+//   va_list arg_ptr;
+//   va_start(arg_ptr, format);
+//   vfprintf(stderr, format, arg_ptr);
+//   va_end(arg_ptr);
+// }
 
 //----------------------------------------------------------------
 static void init_mpi(int argc, char **argv)
@@ -354,7 +354,7 @@ static void create_synthetic_simulation_data()
           for (i = 0; i < var_count[var][p][0]; i++)
           {
             int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
-            double_data[var][p][index] = rank + 10;//var + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
+            double_data[var][p][index] = var + 100 + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
           }
     }
   }
@@ -490,7 +490,7 @@ int main(int argc, char **argv)
 //   PIDX_enable_raw_io(file);
     //PIDX_debug_hz(file, 1);
     //PIDX_disable_agg(file);
-   // PIDX_disable_rst(file);
+    //PIDX_disable_rst(file);
 
     PIDX_point rst_box;
     PIDX_set_point_5D(rst_box, 64,64,32,1,1);

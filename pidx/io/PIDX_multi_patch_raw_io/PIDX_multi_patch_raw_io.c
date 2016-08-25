@@ -437,7 +437,7 @@ float64_Reverse_Endian(double val, unsigned char *outbuf)
 
 #endif
 
-PIDX_return_code PIDX_forced_multi_patch_raw_read(PIDX_multi_patch_raw_io file, int start_var_index, int end_var_index)
+PIDX_return_code PIDX_multi_patch_forced_raw_read(PIDX_multi_patch_raw_io file, int start_var_index, int end_var_index)
 {
   file->idx_d->var_pipe_length = file->idx->variable_count - 1;
   if (file->idx_d->var_pipe_length == 0)
