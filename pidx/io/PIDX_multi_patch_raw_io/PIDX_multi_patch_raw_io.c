@@ -38,126 +38,6 @@ struct PIDX_multi_patch_raw_io_descriptor
   //PIDX_time time;
 };
 
-#ifndef min
-#define min(a,b) \
-({ __typeof__ (a) _a = (a); \
-__typeof__ (b) _b = (b); \
-_a < _b ? _a : _b; })
-#endif
-
-#ifndef max
-#define max(a,b) \
-({ __typeof__ (a) _a = (a); \
-__typeof__ (b) _b = (b); \
-_a > _b ? _a : _b; })
-#endif
-
-static int getPowerOftwo(int x)
-{
-  int n = 1;
-  while (n < x)
-    n <<= 1;
-  return n;
-}
-
-static PIDX_return_code union_patches(const uint64_t* pa_offset, const uint64_t* pa_size,
-      const uint64_t* pb_offset, const uint64_t* pb_size, uint64_t* pc_offset, uint64_t* pc_size){
-  int d = 0;
-  for(d=0; d < PIDX_MAX_DIMENSIONS; d++){
-    uint64_t temp_min_off = min(pa_offset[d],pb_offset[d]);
-    pc_offset[d] = min(temp_min_off,pc_offset[d]);
-    uint64_t temp_max_size = max(pa_offset[d]+pa_size[d],pb_offset[d]+pb_size[d]);
-    pc_size[d] = max(temp_max_size,pc_offset[d]+pc_size[d]) - pc_offset[d];
-    
-  }
-  return PIDX_success;
-}
-
-static void set_default_patch_size(PIDX_multi_patch_raw_io file, int64_t* process_bounds, int nprocs)
-{
-  int i = 0, j = 0;
-  int64_t average_count = 0;
-  int check_bit = 0;
-  int64_t max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0, 0, 0};
-  int equal_partiton = 0;
-  
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-  {
-    max_dim_length[i] = process_bounds[PIDX_MAX_DIMENSIONS * 0 + i];
-    for (j = 0; j < nprocs; j++)
-    {
-      if (max_dim_length[i] <= process_bounds[PIDX_MAX_DIMENSIONS * j + i])
-        max_dim_length[i] = process_bounds[PIDX_MAX_DIMENSIONS * j + i];
-    }
-  }
-  
-  printf("max dim length %lld %lld %lld\n", max_dim_length[0],max_dim_length[1],max_dim_length[2]);
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-  {
-    average_count = average_count + max_dim_length[i];
-  }
-  average_count = average_count / PIDX_MAX_DIMENSIONS;
-  average_count = getPowerOftwo(average_count);
-  
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    check_bit = check_bit || ((double) file->idx->bounds[i] / average_count > (double) file->idx->bounds[i] / max_dim_length[i]);
-  
-  while (check_bit)
-  {
-    average_count = average_count * 2;
-    check_bit = 0;
-    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-      check_bit = check_bit || ((double) file->idx->bounds[i] / average_count > (double) file->idx->bounds[i] / max_dim_length[i]);
-  }
-  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
-
-  int sum_pows = 0;
-  //reg_patch_size =  average_count;
-  if (equal_partiton == 1)
-  {
-    reg_patch_size[0] = average_count / 1;
-    reg_patch_size[1] = average_count / 1;
-    reg_patch_size[2] = average_count / 1;
-    reg_patch_size[3] = 1;
-    reg_patch_size[4] = 1;
-  }
-  else
-  {
-    reg_patch_size[0] = getPowerOftwo(max_dim_length[0]) * 1;
-    reg_patch_size[1] = getPowerOftwo(max_dim_length[1]) * 1;
-    reg_patch_size[2] = getPowerOftwo(max_dim_length[2]) * 1;
-    reg_patch_size[3] = getPowerOftwo(process_bounds[3]) * 1;
-    reg_patch_size[4] = getPowerOftwo(process_bounds[4]) * 1;
-  }
-
-  printf("pows %d %d %d\n", (int)log2((unsigned int)reg_patch_size[0]), (int)log2((unsigned int)reg_patch_size[1]), 
-                            (int)log2((unsigned int)reg_patch_size[2]));
-  sum_pows = (int)log2((unsigned int)reg_patch_size[0]*reg_patch_size[1]*reg_patch_size[2]);
-
-  if(sum_pows % 2 == 0)
-  {
-    int64_t min_len = 1024*1024*1024;
-    int index_extended = -1;
-
-    for (i = 0; i < 3; i++)
-    {
-      if(reg_patch_size[i] < min_len)
-      {
-        min_len = reg_patch_size[i];
-        index_extended = i;
-      }
-    }
-
-    if(index_extended != -1)
-      reg_patch_size[index_extended] *= 2;
-    else
-      fprintf(stderr,"The current restructuring box might be wrong!!!!!!!\n\n");
-   
-  }
-
-  memcpy(file->idx->reg_patch_size, reg_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-  //reg_patch_size = reg_patch_size * 4;
-}
 
 PIDX_multi_patch_raw_io PIDX_multi_patch_raw_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg)
 {
@@ -221,59 +101,8 @@ PIDX_return_code PIDX_multi_patch_raw_write(PIDX_multi_patch_raw_io file, int st
   if (file->idx_d->parallel_mode == 1)
   {
 
-#if !PIDX_HACK_MULTI_PATCH
-    int rank = 0;
-    MPI_Comm_rank(file->comm, &rank);
-
-    uint64_t* union_patch_offset = malloc(sizeof (uint64_t) * PIDX_MAX_DIMENSIONS);
-    memcpy(union_patch_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, (sizeof (uint64_t) * PIDX_MAX_DIMENSIONS));
-
-    uint64_t* union_patch_size = malloc(sizeof (uint64_t) * PIDX_MAX_DIMENSIONS);
-    memcpy(union_patch_size, file->idx->variable[start_var_index]->sim_patch[0]->size, (sizeof (uint64_t) * PIDX_MAX_DIMENSIONS));
-    uint64_t pc=0;
-
-    for(pc=0; pc < file->idx->variable[start_var_index]->sim_patch_count; pc++){
-      
-      uint64_t* curr_patch_offset = file->idx->variable[start_var_index]->sim_patch[pc]->offset;
-      uint64_t* curr_patch_size = file->idx->variable[start_var_index]->sim_patch[pc]->size;
-       printf("%d:%lld off %lld %lld %lld size %lld %lld %lld\n", rank, pc, curr_patch_offset[0],curr_patch_offset[1],curr_patch_offset[2],curr_patch_size[0], curr_patch_size[1],curr_patch_size[2]);
-
-      uint64_t* temp_union_patch_offset = malloc(sizeof (uint64_t) * PIDX_MAX_DIMENSIONS);
-      memcpy(temp_union_patch_offset, union_patch_offset, (sizeof (uint64_t) * PIDX_MAX_DIMENSIONS));
-
-      uint64_t* temp_union_patch_size = malloc(sizeof (uint64_t) * PIDX_MAX_DIMENSIONS);
-      memcpy(temp_union_patch_size, union_patch_size, (sizeof (uint64_t) * PIDX_MAX_DIMENSIONS));
-
-      union_patches(curr_patch_offset, curr_patch_size, temp_union_patch_offset, temp_union_patch_size, union_patch_offset, union_patch_size);
-     
-      free(temp_union_patch_offset);
-      free(temp_union_patch_size);
-    }
-    
-    printf("union_patch_offset %lld %lld %lld %lld %lld union_patch_size %lld %lld %lld %lld %lld\n",union_patch_offset[0],union_patch_offset[1],union_patch_offset[2],union_patch_offset[3],union_patch_offset[4], union_patch_size[0], union_patch_size[1], union_patch_size[2],union_patch_size[3],union_patch_size[4]); 
-
-    MPI_Allgather(union_patch_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
-    MPI_Allgather(union_patch_size, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_LONG_LONG, file->comm);
-    
-    memcpy(file->idx_d->rank_r_offset, union_patch_offset, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-    memcpy(file->idx_d->rank_r_count, union_patch_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-
-    free(union_patch_offset);
-    free(union_patch_size);
-    
-    // max union patch size
-   // uint64_t* max_union_patch_size = malloc(sizeof (uint64_t) * PIDX_MAX_DIMENSIONS);
-   // memset(max_union_patch_size, 0, (sizeof (uint64_t) * PIDX_MAX_DIMENSIONS));
-    
-   //  MPI_Allreduce(union_patch_size, max_union_patch_size, PIDX_MAX_DIMENSIONS, MPI_UINT64_T, MPI_MAX, file->comm);
-   
-   // printf("max union size %lld %lld %lld %lld %lld\n", max_union_patch_size[0],max_union_patch_size[1],max_union_patch_size[2],max_union_patch_size[3],max_union_patch_size[4] );
-    
-#else
     MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
-
     MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
-#endif
 
   }
   else
@@ -283,8 +112,6 @@ PIDX_return_code PIDX_multi_patch_raw_write(PIDX_multi_patch_raw_io file, int st
 
     file->idx->enable_rst = 0;
   }
-
-  printf("set_default_patch_size reg patch size %lld %lld %lld\n", file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
   
 #endif
 

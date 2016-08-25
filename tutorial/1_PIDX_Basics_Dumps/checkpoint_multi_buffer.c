@@ -340,7 +340,7 @@ static void create_synthetic_simulation_data()
 {
   int var = 0, p = 0;
   unsigned long long i, j, k;
-  printf("creating data for rank %d\n", rank);
+  //printf("creating data for rank %d\n", rank);
 
   double_data = malloc(sizeof(double**) * variable_count);
   for (var = 0; var < variable_count; var++)
