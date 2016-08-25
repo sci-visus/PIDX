@@ -128,4 +128,6 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate(PIDX_multi_patch_rst_id mult
 
 PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_destroy(PIDX_multi_patch_rst_id multi_patch_rst_id);
 
+PIDX_return_code HELPER_multi_patch_rst(PIDX_multi_patch_rst_id rst_id);
+
 #endif // __PIDX_multi_patch_rst_NEW_H

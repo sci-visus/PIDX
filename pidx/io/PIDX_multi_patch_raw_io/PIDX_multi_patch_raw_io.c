@@ -310,8 +310,7 @@ PIDX_return_code PIDX_multi_patch_raw_write(PIDX_multi_patch_raw_io file, int st
 #if PIDX_HACK_MULTI_PATCH
       ret = HELPER_rst(file->rst_id);
 #else
-      // TODO NOT IMPLEMENTED
-      //ret = HELPER_rst(file->multi_patch_rst_id); 
+      ret = HELPER_multi_patch_rst(file->multi_patch_rst_id); 
 #endif
       if (ret != PIDX_success)
         return PIDX_err_rst;
@@ -1006,8 +1005,7 @@ PIDX_return_code PIDX_multi_patch_raw_read(PIDX_multi_patch_raw_io file, int sta
 #if PIDX_HACK_MULTI_PATCH
       ret = HELPER_rst(file->rst_id);
 #else
-      // TODO NOT IMPLEMENTED
-      //ret = HELPER_rst(file->multi_patch_rst_id); 
+      ret = HELPER_multi_patch_rst(file->multi_patch_rst_id); 
 #endif
       if (ret != PIDX_success)
       {

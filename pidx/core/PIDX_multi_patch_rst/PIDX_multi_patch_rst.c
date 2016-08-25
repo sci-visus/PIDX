@@ -219,9 +219,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
 
     int64_t pc0 = 0, d0 = 0;
 
-    char intersected = 0;
-
-    for(pc0 = 0; pc0 < rst_id->idx->variable[start_var_index]->sim_patch_count; pc0++)
+   for(pc0 = 0; pc0 < rst_id->idx->variable[start_var_index]->sim_patch_count; pc0++)
     {
         Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
         memset(local_proc_patch, 0, sizeof (*local_proc_patch));
@@ -230,8 +228,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
           local_proc_patch->offset[d0] = rst_id->idx->variable[start_var_index]->sim_patch[pc0]->offset[d0];
           local_proc_patch->size[d0] = rst_id->idx->variable[start_var_index]->sim_patch[pc0]->size[d0];
         }
-        //intersected = 0;
-
+   
     for (i = 0; i < adjusted_bounds[0]; i = i + rst_id->reg_patch_size[0])
       for (j = 0; j < adjusted_bounds[1]; j = j + rst_id->reg_patch_size[1])
         for (k = 0; k < adjusted_bounds[2]; k = k + rst_id->reg_patch_size[2])
@@ -265,9 +262,8 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
               if ((m + rst_id->reg_patch_size[4]) > adjusted_bounds[4])
                 reg_patch->size[4] = adjusted_bounds[4] - m;
               
-              if (intersectNDChunk(reg_patch, local_proc_patch)){// && intersected == 0){
-                //intersected = 1;
-                rst_id->reg_multi_patch_grp_count++; /// <<< ---- 1 group CHECK!!
+              if (intersectNDChunk(reg_patch, local_proc_patch)){
+                rst_id->reg_multi_patch_grp_count++;
               }
               
               free(reg_patch);
@@ -278,15 +274,10 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
 
     //printf("%d FOUND reg_patch_grp_count %d\n", rank, rst_id->reg_multi_patch_grp_count);
     
-    // char* intersected_r = malloc(nprocs*sizeof(char));
-    // memset(intersected_r, 0, nprocs*sizeof(char));
-
     rst_id->reg_multi_patch_grp = (Ndim_multi_patch_group*)malloc(sizeof(*rst_id->reg_multi_patch_grp) * rst_id->reg_multi_patch_grp_count);
     memset(rst_id->reg_multi_patch_grp, 0, sizeof(*rst_id->reg_multi_patch_grp) * rst_id->reg_multi_patch_grp_count);
     
     reg_patch_count = 0;
-
-    intersected = 0;
 
     /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
     
@@ -350,12 +341,9 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                   }
 
               /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
-              if (intersectNDChunk(reg_patch, local_proc_patch) && intersected == 0)
+              if (intersectNDChunk(reg_patch, local_proc_patch))
               {
-                //intersected = 1; /// <<---- one intersection CHECK!!
-
-                //if (rank == 52 && reg_patch->offset[0] == 0 && reg_patch->offset[1] == 768 && reg_patch->offset[2] == 128)
-                // printf("[g] reg box %d %d %d : %d %d %d local box %d %d %d : %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], local_proc_patch->offset[0], local_proc_patch->offset[1], local_proc_patch->offset[2], local_proc_patch->size[0], local_proc_patch->size[1], local_proc_patch->size[2]);
+                 // printf("[g] reg box %d %d %d : %d %d %d local box %d %d %d : %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], local_proc_patch->offset[0], local_proc_patch->offset[1], local_proc_patch->offset[2], local_proc_patch->size[0], local_proc_patch->size[1], local_proc_patch->size[2]);
                 
                 rst_id->reg_multi_patch_grp[reg_patch_count] = malloc(sizeof(*(rst_id->reg_multi_patch_grp[reg_patch_count])));
                 memset(rst_id->reg_multi_patch_grp[reg_patch_count], 0, sizeof(*(rst_id->reg_multi_patch_grp[reg_patch_count])));
@@ -1663,5 +1651,144 @@ PIDX_return_code PIDX_multi_patch_rst_finalize(PIDX_multi_patch_rst_id rst_id)
   free(rst_id);
   rst_id = 0;
   
+  return PIDX_success;
+}
+
+
+PIDX_return_code HELPER_multi_patch_rst(PIDX_multi_patch_rst_id rst_id)
+{
+#if !SIMULATE_IO
+  int i, j, k, rank = 0, v = 0, u = 0, s = 0, a, m, n, bytes_for_datatype;
+  unsigned long long element_count = 0;
+  unsigned long long lost_element_count = 0;
+  
+#if PIDX_HAVE_MPI
+  if (rst_id->idx_derived->parallel_mode == 1)
+    MPI_Comm_rank(rst_id->comm, &rank);
+#endif
+
+  float fvalue_1, fvalue_2;
+  double dvalue_1, dvalue_2;
+  unsigned long long uvalue_1, uvalue_2;
+  int vol = 0;
+  //int p_vol = 0;
+
+  unsigned long long *bounds = rst_id->idx->bounds;
+
+  for(v = rst_id->first_index; v <= rst_id->last_index; v++)
+  {
+    PIDX_variable var = rst_id->idx->variable[v];
+    bytes_for_datatype = var->bits_per_value / 8;
+
+    //if (rank == 0)
+    //  printf("patch_group_count = %d [%d %d %d]\n", var->patch_group_count);
+    for (m = 0; m < var->patch_group_count; m++)
+    {
+      //if (rank == 0)
+        //printf("var->rst_patch_group[%d]->count = %d [%d %d %d :: %d %d %d] = %d\n",m, var->rst_patch_group[m]->count, var->rst_patch_group[m]->reg_patch_offset[0], var->rst_patch_group[m]->reg_patch_offset[1], var->rst_patch_group[m]->reg_patch_offset[2], var->rst_patch_group[m]->reg_patch_size[0], var->rst_patch_group[m]->reg_patch_size[1], var->rst_patch_group[m]->reg_patch_size[2], var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
+
+        //printf("%d + ", var->rst_patch_group[m]->reg_patch_size[0] * var->rst_patch_group[m]->reg_patch_size[1] * var->rst_patch_group[m]->reg_patch_size[2]);
+      for(n = 0; n < var->rst_patch_group[m]->count; n++)
+      {
+        unsigned long long *count_ptr = var->rst_patch_group[m]->patch[n]->size;
+        unsigned long long *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
+        //if (rank == 0)
+        {
+          //printf("[%d %d] %d %d %d :: %d %d %d\n", m, n, offset_ptr[0], offset_ptr[1], offset_ptr[2], count_ptr[0], count_ptr[1], count_ptr[2]);
+          vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
+        }
+        
+        for (a = 0; a < count_ptr[4]; a++)
+          for (u = 0; u < count_ptr[3]; u++)
+            for (k = 0; k < count_ptr[2]; k++) 
+              for (j = 0; j < count_ptr[1]; j++) 
+                for (i = 0; i < count_ptr[0]; i++) 
+                {
+                  unsigned long long index = (count_ptr[0] * count_ptr[1] * count_ptr[2] * count_ptr[3] * a) + (count_ptr[0] * count_ptr[1] * count_ptr[2] * u) + (count_ptr[0] * count_ptr[1] * k) + (count_ptr[0] * j) + i;
+
+                  int check_bit = 1;
+                  for (s = 0; s < var->values_per_sample; s++)
+                  {
+                    if (strcmp(var->type_name, FLOAT32) == 0)
+                    {
+                      fvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                      memcpy(&fvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+\
+                      check_bit = check_bit && (fvalue_1 == fvalue_2);
+                    }
+                    else if (strcmp(var->type_name, FLOAT64) == 0)
+                    {
+                      dvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                      memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+
+                      check_bit = check_bit && (dvalue_1 == dvalue_2);
+                    }
+                    else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
+                    {
+                      for (s = 0; s < 3; s++)
+                      {
+                        dvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+
+                        memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * 3) + s) * sizeof(double), sizeof(double));
+                        //memcpy(&dvalue_2, var->hz_buffer[b]->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
+                        //printf("%f -- %f\n", dvalue_1, dvalue_2);
+                        check_bit = check_bit && (dvalue_1  == dvalue_2);
+                      }
+                    }
+                    else if (strcmp(var->type_name, UINT64) == 0)
+                    {
+                      uvalue_1 = v + s + (bounds[0] * bounds[1] * bounds[2] * bounds[3] * (offset_ptr[4] + a)) + (bounds[0] * bounds[1] * bounds[2] * (offset_ptr[3] + u)) + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+
+                      memcpy(&uvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->values_per_sample) + s) * bytes_for_datatype, bytes_for_datatype);
+
+                      //printf("%lld %lld\n", (unsigned long long)uvalue_1, (unsigned long long)uvalue_2);
+                      check_bit = check_bit && (uvalue_1 == uvalue_2);
+                    }
+                  }
+
+                  if (check_bit == 0)
+                  {
+                    lost_element_count++;
+                    //if (rank == 61)
+                    //  if (strcmp(var->type_name, FLOAT32) == 0)
+                    //    printf("[%d] [RST] [FLOATs] LOST Element : %f %f\n", rank, fvalue_1, fvalue_2);
+                    //else if (strcmp(var->type_name, UINT64) == 0)
+                    //  printf("[%d] [RST] [LONGs] LOST Element : %lld %lld\n", rank, (unsigned long long)uvalue_1, (unsigned long long)uvalue_2);
+                  } 
+                  else 
+                  {
+                    //printf("[RST] %d %f %f\n", rank, dvalue_1, dvalue_2);
+                    element_count++;
+                  }
+                }
+      }
+    }
+  }
+
+  unsigned long long global_volume;
+#if PIDX_HAVE_MPI
+  if (rst_id->idx_derived->parallel_mode == 1)
+    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->comm);
+  else
+    global_volume = element_count;
+#else
+  global_volume = element_count;
+#endif
+    
+  if (global_volume != (unsigned long long) bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4] * (rst_id->last_index - rst_id->first_index + 1))
+  {
+    if (rank == 0)
+      fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
+    
+  if (rank == 0)
+    printf("[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rank,  rst_id->idx_derived->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2] * bounds[3] * bounds[4]) * (rst_id->last_index - rst_id->first_index + 1), vol);
+   //   printf("%d + ", vol);
+      
+    return PIDX_err_rst;
+  }
+  else
+    if (rank == 0)
+      fprintf(stderr, "[RST Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
+#endif
   return PIDX_success;
 }
