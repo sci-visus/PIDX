@@ -565,7 +565,7 @@ PIDX_return_code PIDX_multi_patch_forced_raw_read(PIDX_multi_patch_raw_io file, 
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
 
-
+  printf("patches max_patch_count %d\n", max_patch_count);
   int n = 0, m = 0, d = 0;
   Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
   memset(local_proc_patch, 0, sizeof (*local_proc_patch));
