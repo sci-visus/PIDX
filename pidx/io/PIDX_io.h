@@ -10,6 +10,7 @@ extern "C" {
 #include "./PIDX_idx_io/PIDX_idx_io.h"
 #include "./PIDX_global_idx_io/PIDX_global_idx_io.h"
 #include "./PIDX_hybrid_idx_io/PIDX_hybrid_idx_io.h"
+//#include "./PIDX_hybrid_idx_io/partition.h"
 #include "./PIDX_multi_patch_idx_io/PIDX_multi_patch_idx_io.h"
 #include "./PIDX_raw_io/PIDX_raw_io.h"
 #include "./PIDX_partitioned_idx_io/PIDX_partitioned_idx_io.h"
@@ -109,7 +110,7 @@ PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata id
 /// \param mode
 /// \return
 ///
-PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int start_var_index, int end_var_index);
+PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index, int start_var_index, int end_var_index);
 
 
 

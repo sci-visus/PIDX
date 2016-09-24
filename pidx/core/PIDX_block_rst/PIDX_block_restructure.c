@@ -28,7 +28,7 @@
  */
 
 #include "../../PIDX_inc.h"
-
+#if 1
 ///Struct for restructuring ID
 struct PIDX_chunk_id_struct
 {
@@ -47,6 +47,8 @@ struct PIDX_chunk_id_struct
   idx_dataset_derived_metadata idx_derived;
 
   //int if_perform_chunk;
+
+  int group_index;
 
   int init_index;
   int first_index;
@@ -127,9 +129,11 @@ int PIDX_chunk_set_global_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm)
 PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
 {
   int v = 0, p = 0, j = 0;
+  PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
+
   for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
   {
-    PIDX_variable var = chunk_id->idx->variable[v];
+    PIDX_variable var = var_grp->variable[v];
 
     var->chunk_patch_group = malloc(sizeof(*var->chunk_patch_group) * var->patch_group_count);
     memset(var->chunk_patch_group, 0, sizeof(*var->chunk_patch_group) * var->patch_group_count);
@@ -187,10 +191,11 @@ PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
 PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 {
 #if !SIMULATE_IO
+  PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
   int v = 0, p = 0, j = 0;
   for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
   {
-    PIDX_variable var = chunk_id->idx->variable[v];
+    PIDX_variable var = var_grp->variable[v];
     int bytes_per_value = var->bits_per_value / 8;
 
     for (p = 0; p < var->patch_group_count; p++)
@@ -259,11 +264,12 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
 {
   unsigned long long v,p,j;
+  PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
   if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
   {
     for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
     {
-      PIDX_variable var = chunk_id->idx->variable[v];
+      PIDX_variable var = var_grp->variable[v];
       int bytes_per_value = var->bits_per_value / 8;
 
       for (p = 0; p < var->patch_group_count; p++)
@@ -321,7 +327,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
 
   for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
   {
-    PIDX_variable var = chunk_id->idx->variable[v];
+    PIDX_variable var = var_grp->variable[v];
     //int bytes_per_value = var->bits_per_value / 8;
 
     // loop through all groups
@@ -483,28 +489,29 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
 PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
 {
   int j, p, var;
+  PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
 
   for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
   {
-    for (p = 0; p < chunk_id->idx->variable[var]->patch_group_count; p++)
+    for (p = 0; p < var_grp->variable[var]->patch_group_count; p++)
     {
-      for(j = 0; j < chunk_id->idx->variable[var]->chunk_patch_group[p]->count; j++)
+      for(j = 0; j < var_grp->variable[var]->chunk_patch_group[p]->count; j++)
       {
-        free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j]);
-        chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j] = 0;
+        free(var_grp->variable[var]->chunk_patch_group[p]->patch[j]);
+        var_grp->variable[var]->chunk_patch_group[p]->patch[j] = 0;
       }
 
-      free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch);
-      chunk_id->idx->variable[var]->chunk_patch_group[p]->patch = 0;
+      free(var_grp->variable[var]->chunk_patch_group[p]->patch);
+      var_grp->variable[var]->chunk_patch_group[p]->patch = 0;
 
-      free(chunk_id->idx->variable[var]->chunk_patch_group[p]->reg_patch);
-      chunk_id->idx->variable[var]->chunk_patch_group[p]->reg_patch = 0;
+      free(var_grp->variable[var]->chunk_patch_group[p]->reg_patch);
+      var_grp->variable[var]->chunk_patch_group[p]->reg_patch = 0;
 
-      free(chunk_id->idx->variable[var]->chunk_patch_group[p]);
-      chunk_id->idx->variable[var]->chunk_patch_group[p] = 0;
+      free(var_grp->variable[var]->chunk_patch_group[p]);
+      var_grp->variable[var]->chunk_patch_group[p] = 0;
     }
-    free(chunk_id->idx->variable[var]->chunk_patch_group);
-    chunk_id->idx->variable[var]->chunk_patch_group = 0;
+    free(var_grp->variable[var]->chunk_patch_group);
+    var_grp->variable[var]->chunk_patch_group = 0;
   }
 
   return PIDX_success;
@@ -513,15 +520,16 @@ PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
 PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
 {
 #if !SIMULATE_IO
+  PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
   int j = 0, p = 0, var = 0;
   for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
   {
-    for (p = 0; p < chunk_id->idx->variable[var]->patch_group_count; p++)
+    for (p = 0; p < var_grp->variable[var]->patch_group_count; p++)
     {
-      for(j = 0; j < chunk_id->idx->variable[var]->chunk_patch_group[p]->count; j++)
+      for(j = 0; j < var_grp->variable[var]->chunk_patch_group[p]->count; j++)
       {
-        free(chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j]->buffer);
-        chunk_id->idx->variable[var]->chunk_patch_group[p]->patch[j]->buffer = 0;
+        free(var_grp->variable[var]->chunk_patch_group[p]->patch[j]->buffer);
+        var_grp->variable[var]->chunk_patch_group[p]->patch[j]->buffer = 0;
       }
     }
   }
@@ -544,3 +552,4 @@ int HELPER_chunking(PIDX_chunk_id id)
 {
   return PIDX_success;
 }
+#endif

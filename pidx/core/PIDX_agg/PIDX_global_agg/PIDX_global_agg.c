@@ -17,7 +17,7 @@
  *****************************************************/
 
 #include "../PIDX_agg.h"
-
+#if 0
 #define PIDX_ACTIVE_TARGET
 #define PIDX_DUMP_AGG
 
@@ -1639,3 +1639,4 @@ PIDX_return_code PIDX_global_agg_finalize(PIDX_global_agg_id agg_id)
   free(agg_id);
   return PIDX_success;
 }
+#endif

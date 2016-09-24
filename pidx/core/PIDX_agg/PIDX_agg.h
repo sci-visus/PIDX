@@ -33,7 +33,7 @@
 #include "../../PIDX_inc.h"
 
 #include "./PIDX_local_agg/PIDX_local_agg.h"
-#include "./PIDX_global_agg/PIDX_global_agg.h"
+//#include "./PIDX_global_agg/PIDX_global_agg.h"
 
 struct PIDX_agg_struct;
 typedef struct PIDX_agg_struct* PIDX_agg_id;

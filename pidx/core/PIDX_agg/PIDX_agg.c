@@ -1,5 +1,5 @@
 #include "PIDX_agg.h"
-
+#if 1
 
 struct PIDX_agg_struct
 {
@@ -19,7 +19,9 @@ struct PIDX_agg_struct
   idx_dataset_derived_metadata idx_d;
 
   PIDX_local_agg_id local_id;
-  PIDX_global_agg_id global_id;
+  //PIDX_global_agg_id global_id;
+
+  int group_index;
 
   int init_index;
   int first_index;
@@ -39,7 +41,7 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   agg_id->idx_d = idx_d;
 
   agg_id->local_id = PIDX_local_agg_init(idx_meta_data, idx_d, init_index, first_index, last_index);
-  agg_id->global_id = PIDX_global_agg_init(idx_meta_data, idx_d, init_index, first_index, last_index);
+  //agg_id->global_id = PIDX_global_agg_init(idx_meta_data, idx_d, init_index, first_index, last_index);
 
   agg_id->init_index = init_index;
   agg_id->first_index = first_index;
@@ -58,7 +60,7 @@ PIDX_return_code PIDX_agg_set_communicator(PIDX_agg_id agg_id, MPI_Comm comm)
   agg_id->comm = comm;
 
   PIDX_local_agg_set_communicator(agg_id->local_id, comm);
-  PIDX_global_agg_set_communicator(agg_id->global_id, comm);
+  //PIDX_global_agg_set_communicator(agg_id->global_id, comm);
 
   return PIDX_success;
 }
@@ -78,7 +80,8 @@ PIDX_return_code PIDX_create_local_aggregation_comm(PIDX_agg_id agg_id)
   MPI_Comm_size(agg_id->comm, &nprocs);
   //printf("[Before] Agg size = %d\n", nprocs);
 
-  PIDX_variable var0 = agg_id->idx->variable[agg_id->first_index];
+  PIDX_variable_group var_grp = agg_id->idx->variable_grp[agg_id->group_index];
+  PIDX_variable var0 = var_grp->variable[agg_id->first_index];
   if (var0->patch_group_count == 0)
     color = 0;
   else
@@ -107,7 +110,7 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm c
     return PIDX_err_id;
 
   agg_id->global_comm = comm;
-  PIDX_global_agg_set_global_communicator(agg_id->global_id, comm);
+  //PIDX_global_agg_set_global_communicator(agg_id->global_id, comm);
   PIDX_local_agg_set_global_communicator(agg_id->local_id, comm);
 
   return PIDX_success;
@@ -118,10 +121,10 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm c
 PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout global_block_layout, PIDX_block_layout local_block_layout)
 {
   PIDX_return_code ret = PIDX_success;
-  if (agg_id->idx_d->agg_type == 0)
-    ret = PIDX_global_agg_meta_data_create(agg_id->global_id, agg_buffer, global_block_layout);
+  //if (agg_id->idx_d->agg_type == 0)
+  //  ret = PIDX_global_agg_meta_data_create(agg_id->global_id, agg_buffer, global_block_layout);
 
-  else if (agg_id->idx_d->agg_type == 1)
+  //else if (agg_id->idx_d->agg_type == 1)
     ret = PIDX_local_agg_meta_data_create(agg_id->local_id, agg_buffer, local_block_layout);
 
   if (ret != PIDX_success)
@@ -144,15 +147,15 @@ PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, 
     MPI_Comm_size(agg_id->comm,  &nprocs);
 #endif
 
-  if (agg_id->idx_d->agg_type == 0)
-  {
-    if (global_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
-      ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, i1, j1 - agg_id->idx_d->start_layout_index);
-    else
-      ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, 0, j1 - agg_id->idx_d->start_layout_index);
-  }
+  //if (agg_id->idx_d->agg_type == 0)
+  //{
+    //if (global_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
+    //  ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, i1, j1 - agg_id->idx_d->start_layout_index);
+    //else
+      //ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, 0, j1 - agg_id->idx_d->start_layout_index);
+  //}
 
-  else if (agg_id->idx_d->agg_type == 1)
+  //else if (agg_id->idx_d->agg_type == 1)
   {
     //if (local_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
     ret = PIDX_local_agg_buf_create(agg_id->local_id, agg_buffer, local_block_layout, j1 /*- agg_id->idx_d->start_layout_index*/, i1);
@@ -180,15 +183,15 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id agg_id, Agg_buff
     MPI_Comm_size(agg_id->comm,  &nprocs);
 #endif
 
-  if (agg_id->idx_d->agg_type == 0)
-  {
-    if (global_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
-      ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, i1, j1 - agg_id->idx_d->start_layout_index);
-    else
-      ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, 0, j1 - agg_id->idx_d->start_layout_index);
-  }
+  //if (agg_id->idx_d->agg_type == 0)
+  //{
+    //if (global_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
+    //  ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, i1, j1 - agg_id->idx_d->start_layout_index);
+    //else
+    //  ret = PIDX_global_agg_buf_create(agg_id->global_id, agg_buffer, local_block_layout, global_block_layout, 0, j1 - agg_id->idx_d->start_layout_index);
+  //}
 
-  else if (agg_id->idx_d->agg_type == 1)
+  //else if (agg_id->idx_d->agg_type == 1)
   {
     //if (local_block_layout->existing_file_count * agg_id->idx->variable_count <= nprocs)
     ret = PIDX_local_agg_buf_create_multiple_level(agg_id->local_id, agg_buffer, local_block_layout, j1 /*- agg_id->idx_d->start_layout_index*/, i1, file_status);
@@ -212,10 +215,10 @@ PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_
   //printf("layout id = %d\n", layout_id);
   PIDX_return_code ret = PIDX_success;
 
-  if (agg_id->idx_d->agg_type == 0)
-    ret = PIDX_global_agg(agg_id->global_id, agg_buffer, layout_id, local_block_layout, NULL, PIDX_MODE, vi, bi);
+  //if (agg_id->idx_d->agg_type == 0)
+  //  ret = PIDX_global_agg(agg_id->global_id, agg_buffer, layout_id, local_block_layout, NULL, PIDX_MODE, vi, bi);
 
-  else if (agg_id->idx_d->agg_type == 1)
+  //else if (agg_id->idx_d->agg_type == 1)
     ret = PIDX_local_agg(agg_id->local_id, agg_buffer, layout_id, local_block_layout, PIDX_MODE);
 
   if (ret != PIDX_success)
@@ -233,10 +236,10 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id agg_id, Agg_buffer agg_bu
   //printf("layout id = %d\n", layout_id);
   PIDX_return_code ret = PIDX_success;
 
-  if (agg_id->idx_d->agg_type == 0)
-    ret = PIDX_global_agg(agg_id->global_id, agg_buffer, layout_id, local_block_layout, global_block_layout, PIDX_MODE, vi, bi);
+  //if (agg_id->idx_d->agg_type == 0)
+  //  ret = PIDX_global_agg(agg_id->global_id, agg_buffer, layout_id, local_block_layout, global_block_layout, PIDX_MODE, vi, bi);
 
-  else if (agg_id->idx_d->agg_type == 1)
+  //else if (agg_id->idx_d->agg_type == 1)
     ret = PIDX_local_agg(agg_id->local_id, agg_buffer, layout_id, local_block_layout, PIDX_MODE);
 
   if (ret != PIDX_success)
@@ -253,8 +256,8 @@ PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer)
 {
   PIDX_return_code ret = PIDX_success;
 
-  if (agg_id->idx_d->agg_type == 0)
-    ret = PIDX_global_agg_buf_destroy(agg_buffer);
+  //if (agg_id->idx_d->agg_type == 0)
+  //  ret = PIDX_global_agg_buf_destroy(agg_buffer);
 
   if (agg_id->idx_d->agg_type == 1)
     ret = PIDX_local_agg_buf_destroy(agg_buffer);
@@ -274,10 +277,10 @@ PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layou
 {
   PIDX_return_code ret = PIDX_success;
 
-  if (agg_id->idx_d->agg_type == 0)
-    ret = PIDX_global_agg_meta_data_destroy(agg_id->global_id, global_block_layout);
+  //if (agg_id->idx_d->agg_type == 0)
+  //  ret = PIDX_global_agg_meta_data_destroy(agg_id->global_id, global_block_layout);
 
-  else if (agg_id->idx_d->agg_type == 1)
+  //else if (agg_id->idx_d->agg_type == 1)
     ret = PIDX_local_agg_meta_data_destroy(agg_id->local_id, local_block_layout);
 
   if (ret != PIDX_success)
@@ -293,7 +296,7 @@ PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layou
 PIDX_return_code PIDX_agg_finalize(PIDX_agg_id agg_id)
 {
 
-  PIDX_global_agg_finalize(agg_id->global_id);
+  //PIDX_global_agg_finalize(agg_id->global_id);
   PIDX_local_agg_finalize(agg_id->local_id);
 
   free(agg_id);
@@ -301,3 +304,4 @@ PIDX_return_code PIDX_agg_finalize(PIDX_agg_id agg_id)
 
   return PIDX_success;
 }
+#endif

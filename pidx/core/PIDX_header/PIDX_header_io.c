@@ -18,7 +18,7 @@
 
 #include "../../PIDX_inc.h"
 #define MAX_TEMPLATE_DEPTH 6
-
+#if 1
 static uint32_t* headers;
 static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode);
 
@@ -38,6 +38,7 @@ struct PIDX_header_io_struct
 
   int enable_raw_dump;
 
+  int group_index;
   int first_index;
   int last_index;
   char filename_template[1024];
@@ -103,6 +104,9 @@ PIDX_return_code PIDX_header_io_enable_raw_dump(PIDX_header_io_id header_io)
 
 PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step)
 {
+
+  PIDX_variable_group var_grp = header_io->idx->variable_grp[header_io->group_index];
+
   int l = 0, rank = 0, N, ncores = 1;
   FILE* idx_file_p;
   char dirname[1024], basename[1024];
@@ -211,7 +215,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
         fprintf(idx_file_p, "(fields)\n");
         for (l = 0; l < header_io->last_index; l++)
         {
-          fprintf(idx_file_p, "%s %d*float64", header_io->idx->variable[l]->var_name, header_io->idx->compression_bit_rate);
+          fprintf(idx_file_p, "%s %d*float64", var_grp->variable[l]->var_name, header_io->idx->compression_bit_rate);
           if (l != header_io->last_index - 1)
             fprintf(idx_file_p, " + \n");
         }
@@ -260,7 +264,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 
     for (l = 0; l < header_io->last_index; l++)
     {
-      fprintf(idx_file_p, "%s %s", header_io->idx->variable[l]->var_name, header_io->idx->variable[l]->type_name);
+      fprintf(idx_file_p, "%s %s", var_grp->variable[l]->var_name, var_grp->variable[l]->type_name);
       if (l != header_io->last_index - 1)
         fprintf(idx_file_p, " + \n");
     }
@@ -287,6 +291,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 
 PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, char* data_set_path, char* filename_template, int current_time_step)
 {
+  PIDX_variable_group var_grp = header_io->idx->variable_grp[header_io->group_index];
   int l = 0, rank = 0, N, ncores = 1;
   FILE* idx_file_p;
   char dirname[1024], basename[1024];
@@ -395,7 +400,7 @@ PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, c
         fprintf(idx_file_p, "(fields)\n");
         for (l = 0; l < header_io->last_index; l++)
         {
-          fprintf(idx_file_p, "%s %d*float64", header_io->idx->variable[l]->var_name, header_io->idx->compression_bit_rate);
+          fprintf(idx_file_p, "%s %d*float64", var_grp->variable[l]->var_name, header_io->idx->compression_bit_rate);
           if (l != header_io->last_index - 1)
             fprintf(idx_file_p, " + \n");
         }
@@ -437,7 +442,7 @@ PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, c
 
     for (l = 0; l < header_io->last_index; l++)
     {
-      fprintf(idx_file_p, "%s %s", header_io->idx->variable[l]->var_name, header_io->idx->variable[l]->type_name);
+      fprintf(idx_file_p, "%s %s", var_grp->variable[l]->var_name, var_grp->variable[l]->type_name);
       if (l != header_io->last_index - 1)
         fprintf(idx_file_p, " + \n");
     }
@@ -913,6 +918,7 @@ PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, P
 
 static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode)
 {
+  PIDX_variable_group var_grp = header_io_id->idx->variable_grp[header_io_id->group_index];
   int block_negative_offset = 0;
   int i = 0, j = 0, k = 0, all_scalars = 0;
   off_t data_offset = 0, base_offset = 0;
@@ -958,14 +964,14 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         if (all_scalars == 0)
         {
           for (k = 0; k < j; k++)
-            base_offset = base_offset + ((block_layout->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample) / (header_io_id->idx->compression_factor);
+            base_offset = base_offset + ((block_layout->block_count_per_file[file_number]) * (var_grp->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * var_grp->variable[k]->values_per_sample) / (header_io_id->idx->compression_factor);
             //base_offset = base_offset + ((header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample) / (header_io_id->idx->variable[k]->bits_per_value / header_io_id->idx->compression_bit_rate);
         }
         else
-          base_offset =  j * (block_layout->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->compression_factor);
+          base_offset =  j * (block_layout->block_count_per_file[file_number]) * (var_grp->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * var_grp->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->compression_factor);
           //base_offset =  j * (header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
 
-        data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample  / (header_io_id->idx->compression_factor);
+        data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (var_grp->variable[j]->bits_per_value / 8) * total_chunk_size * var_grp->variable[j]->values_per_sample  / (header_io_id->idx->compression_factor);
 
         //printf("BLOCK %d = %d + %d + %d (%d %d)\n", i, (int)base_offset, (int)data_offset, (int)(header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size), header_io_id->idx_d->start_fs_block, header_io_id->idx_d->fs_block_size);
         data_offset = base_offset + data_offset + header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size;
@@ -976,7 +982,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         //if (nprocs == 1)
         //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample));
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
-        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor));
+        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bits_per_value / 8) * total_chunk_size * var_grp->variable[j]->values_per_sample / (header_io_id->idx->compression_factor));
 
         //total_file_size = data_offset + header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor);
       }
@@ -1070,3 +1076,4 @@ PIDX_return_code PIDX_header_io_finalize(PIDX_header_io_id header_io_id)
 
   return PIDX_success;
 }
+#endif

@@ -84,10 +84,7 @@ typedef struct PIDX_timming_struct* PIDX_time;
 ///
 struct PIDX_variable_struct
 {
-  // Metadata
-  int dump_meta_data_ON;                                                ///< Counter set if meta data dumping activated
-  
-  int io_state;
+  //int io_state;
 
   // General Info
   char var_name[1024];                                                  ///< Variable name
@@ -96,31 +93,31 @@ struct PIDX_variable_struct
   PIDX_data_type type_name;                                                 ///< Name of the type uint8, bob
   PIDX_data_layout data_layout;                                         ///< Row major or column major
 
-  // Memory layout (before, after HZ encoding phase)
+  // buffer (before, after HZ encoding phase)
   int sim_patch_count;                                                  ///< The actual number of patches (application layout), most probably more than 1 in uintah
   Ndim_patch sim_patch[1024];                                           ///< Pointer to the patches
   HZ_buffer* hz_buffer;                                                 ///< HZ encoded buffer of the patches
 
-  // Memory layout before aggregation 
+  // buffer before aggregation
   int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase
   Ndim_patch_group* rst_patch_group;                                    ///< Pointer to the patch groups
   Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
 
   /*
   // Block level layout
-  //PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
+  //PIDX_block_layout partitioned_block_layout;
+  PIDX_block_layout global_block_layout;
+  PIDX_block_layout* block_layout_by_level;
 
-  PIDX_block_layout* global_block_layout_file_zero;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout** block_layout_by_level_file_zero;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout* global_block_layout_file_zero;
+  PIDX_block_layout** block_layout_by_level_file_zero;
 
-  PIDX_block_layout* global_block_layout_files;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout** block_layout_by_level_files;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout* global_block_layout_files;
+  PIDX_block_layout** block_layout_by_level_files;
   */
 
   //Compression related
-  int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
+  //int lossy_compressed_block_size;           ///< The expected size of the compressed buffer
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -129,23 +126,45 @@ typedef struct PIDX_variable_struct* PIDX_variable;
 
 struct PIDX_variable_group_struct
 {
-
+  int variable_index_tracker;
   int variable_count;
   PIDX_variable variable[128];
 
+  int local_variable_index;
+  int local_variable_count;
+
+  int f0_start_layout_index;
+  int f0_end_layout_index;
+  int f0_layout_count;
+
+  int shared_start_layout_index;
+  int shared_end_layout_index;
+  int shared_layout_count;
+
+  int nshared_start_layout_index;
+  int nshared_end_layout_index;
+  int nshared_layout_count;
+
+  //extents of meta-data
+  int *rank_buffer;
+  unsigned long long *rank_r_offset;
+  unsigned long long *rank_r_count;
+
   // Block level layout
-  //PIDX_block_layout partitioned_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout global_block_layout;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout* block_layout_by_level;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout f0_block_layout;
+  PIDX_block_layout* f0_block_layout_by_level;
 
-  PIDX_block_layout* global_block_layout_file_zero;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout** block_layout_by_level_file_zero;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout shared_block_layout;
+  PIDX_block_layout* shared_block_layout_by_level;
 
-  PIDX_block_layout* global_block_layout_files;                               ///< Block layout, specifically when variables might have different extents in the domain
-  PIDX_block_layout** block_layout_by_level_files;                            ///< Block layout, specifically when variables might have different extents in the domain
+  PIDX_block_layout nshared_block_layout;
+  PIDX_block_layout* nshared_block_layout_by_level;
 
   //Compression related
-  int lossy_compressed_block_size;                                      ///< The expected size of the compressed buffer
+  //int lossy_compressed_block_size;           ///< The expected size of the compressed buffer
+
+  // Metadata
+  //int dump_meta_data_ON;                     ///< Counter set if meta data dumping activated
 };
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
@@ -154,11 +173,14 @@ typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 /// idx_file
 struct idx_file_struct
 {
+
   int current_time_step;                                                ///< Time step tracker
   
-  int variable_index_tracker;
 
+
+  int variable_count;
   int variable_group_count;
+  int group_index_tracker;
   PIDX_variable_group variable_grp[16];
   
 
@@ -227,8 +249,9 @@ struct idx_dataset_derived_metadata_struct
   int fs_block_size;
   off_t start_fs_block;
 
-  Agg_buffer **agg_buffer;
-  Agg_buffer **fagg_buffer;
+  Agg_buffer **f0_agg_buffer;
+  Agg_buffer **shared_agg_buffer;
+  Agg_buffer **nshared_agg_buffer;
 
   int dump_agg_info;
   char agg_dump_dir_name[512];
@@ -240,31 +263,13 @@ struct idx_dataset_derived_metadata_struct
   int idx_size[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
 
   int var_pipe_length;
-  int parallel_mode;
-
-  //extents of meta-data
-
-  int *rank_buffer;
-  unsigned long long *rank_r_offset;                                                   ///< Offset of variables in each dimension
-  unsigned long long *rank_r_count;                                                    ///< Count of variables in each dimension
+  int parallel_mode;  
   
   //int staged_aggregation;
   int agg_type;
 
   int start_layout_index;
   int end_layout_index;
-
-  int start_layout_index_file_zero;
-  int end_layout_index_file_zero;
-  int layout_count_file_zero;
-
-  int start_layout_index_shared;
-  int end_layout_index_shared;
-  int layout_count_shared;
-
-  int start_layout_index_non_shared;
-  int end_layout_index_non_shared;
-  int layout_count_non_shared;
 
 
   MPI_Status *status_non_shared;

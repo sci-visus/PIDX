@@ -63,8 +63,11 @@ struct PIDX_file_descriptor
   PIDX_access access;                          ///< serial or parallel access
 
 
-  int local_variable_index;                    ///<
-  int local_variable_count;                    ///<
+  int local_group_index;                    ///<
+  int local_group_count;                    ///<
+
+  //int local_variable_index;                    ///<
+  //int local_variable_count;                    ///<
 
   int flush_used;
   int write_on_close;                          ///< HPC Writes
@@ -174,8 +177,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
-  (*file)->local_variable_index = 0;
-  (*file)->local_variable_count = 0;
+  //(*file)->local_variable_index = 0;
+  //(*file)->local_variable_count = 0;
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
@@ -214,7 +217,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;
-  (*file)->idx->variable_index_tracker = 0;
+  (*file)->idx->group_index_tracker = 0;
 
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
 
@@ -289,6 +292,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// Function to get file descriptor when opening an existing IDX file
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
 {
+#if 0
   int i;
   //int ret;
   char file_name_skeleton[1024];
@@ -765,6 +769,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 #endif
   
   (*file)->idx_d->time->file_create_time = PIDX_get_time();
+#endif
   return PIDX_success;
 }
 
@@ -1312,7 +1317,7 @@ PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per
   strcpy((*variable)->var_name, variable_name);
 
   (*variable)->sim_patch_count = 0;
-  (*variable)->dump_meta_data_ON = 0;
+  //(*variable)->dump_meta_data_ON = 0;
 
   return PIDX_success;
 }
@@ -1324,7 +1329,8 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
   if(!file)
     return PIDX_err_file;
 
-  *variable = file->idx->variable[file->idx->variable_index_tracker];
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+  *variable = var_grp->variable[var_grp->variable_index_tracker];
 
   return PIDX_success;
 }
@@ -1336,15 +1342,15 @@ PIDX_return_code PIDX_reset_variable_counter(PIDX_file file)
   if (!file)
     return PIDX_err_file;
 
-  file->idx->variable_index_tracker = 0;
-  file->local_variable_count = 0;
+  file->idx->variable_grp[0]->variable_index_tracker = 0;
+  file->idx->variable_grp[0]->local_variable_count = 0;
 
   return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable/*, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout*/)
+PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable)
 {
 
   if (!file)
@@ -1353,15 +1359,17 @@ PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable va
   if(!variable)
     return PIDX_err_variable;
 
-  if (file->idx->variable_index_tracker >= file->idx->variable_count)
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+
+  if (var_grp->variable_index_tracker >= file->idx->variable_count)
     return PIDX_err_variable;
 
-  variable->io_state = 1;
+  //variable->io_state = 1;
 
-  file->idx->variable[file->idx->variable_index_tracker] = variable;
+  var_grp->variable[var_grp->variable_index_tracker] = variable;
 
-  file->idx->variable_index_tracker++;
-  file->local_variable_count++;
+  var_grp->variable_index_tracker++;
+  var_grp->local_variable_count++;
 
   return PIDX_success;
 }
@@ -1376,15 +1384,17 @@ PIDX_return_code PIDX_read_next_variable(PIDX_file file, PIDX_variable variable)
   if(!variable)
     return PIDX_err_variable;
 
-  if (file->idx->variable_index_tracker >= file->idx->variable_count)
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+
+  if (var_grp->variable_index_tracker >= file->idx->variable_count)
     return PIDX_err_variable;
 
-  variable->io_state = 0;
+  //variable->io_state = 0;
 
-  variable = file->idx->variable[file->idx->variable_index_tracker];
+  variable = var_grp->variable[var_grp->variable_index_tracker];
 
-  file->idx->variable_index_tracker++;
-  file->local_variable_count++;
+  var_grp->variable_index_tracker++;
+  var_grp->local_variable_count++;
 
   return PIDX_success;
 }
@@ -1394,17 +1404,6 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
 {
   if(!variable)
     return PIDX_err_variable;
-
-  //if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
-  //  return PIDX_err_offset;
-
-  //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
-  //  return PIDX_err_count;
-
-#if !SIMULATE_IO
-//  if (read_from_this_buffer == NULL)
-//    return PIDX_err_block;
-#endif
 
   const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
@@ -1429,13 +1428,6 @@ PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_poi
   if(!variable)
     return PIDX_err_variable;
 
-  //if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
-  //  return PIDX_err_offset;
-
-  //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
-  //  return PIDX_err_count;
-
-  //const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
   memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
 
@@ -1718,7 +1710,7 @@ PIDX_return_code PIDX_set_bitstring_scheme(PIDX_file file, int bit_string_axis)
 
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
-  int i, p;
+  int i, j, p;
   int ret;
   if (file->idx->variable_count <= 0)
     return PIDX_err_variable;
@@ -1731,25 +1723,38 @@ PIDX_return_code PIDX_flush(PIDX_file file)
   if (ret != PIDX_success)
     return PIDX_err_io;
 
-  ret = PIDX_io_io(file->io, file->flags, file->io_type, file->local_variable_index, (file->local_variable_index + file->local_variable_count));
-  if (ret != PIDX_success)
-    return PIDX_err_io;
+  for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
+  {
+    PIDX_variable_group var_grp = file->idx->variable_grp[i];
+    ret = PIDX_io_io(file->io, file->flags, file->io_type, i, var_grp->local_variable_index, (var_grp->local_variable_index + var_grp->local_variable_count));
+    if (ret != PIDX_success)
+      return PIDX_err_io;
+  }
 
   ret = PIDX_io_finalize(file->io);
   if (ret != PIDX_success)
     return PIDX_err_io;
 
-  for (i = file->local_variable_index; i < file->local_variable_index + file->local_variable_count; i++)
+
+  for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
-    for(p = 0; p < file->idx->variable[i]->sim_patch_count; p++)
+    PIDX_variable_group var_grp = file->idx->variable_grp[i];
+
+    for (j = var_grp->local_variable_index; j < var_grp->local_variable_index + var_grp->local_variable_count; j++)
     {
-      free(file->idx->variable[i]->sim_patch[p]);
-      file->idx->variable[i]->sim_patch[p] = 0;
+      for(p = 0; p < var_grp->variable[j]->sim_patch_count; p++)
+      {
+        free(var_grp->variable[j]->sim_patch[p]);
+        var_grp->variable[j]->sim_patch[p] = 0;
+      }
     }
+
+    var_grp->local_variable_index = var_grp->variable_index_tracker;
+    var_grp->local_variable_count = 0;
+
   }
 
-  file->local_variable_index = file->idx->variable_index_tracker;
-  file->local_variable_count = 0;
+
 
   return PIDX_success;
 }
@@ -1784,7 +1789,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   MPI_Comm_rank(file->comm, &rank);
   MPI_Comm_size(file->comm, &nprocs);
 
-#if 1
+#if 0
   if (file->debug_output == 1 && (file->io_type == PIDX_GLOBAL_IDX_IO || file->io_type == PIDX_HYBRID_IDX_IO || file->io_type == PIDX_IDX_IO))
   {
     if (rank == 0)
@@ -2009,8 +2014,16 @@ PIDX_return_code PIDX_close(PIDX_file file)
   */
 #endif
 
-  for (i = 0; i < file->idx->variable_count; i++)
-    free(file->idx->variable[i]);
+  int j = 0;
+  for (i = 0; i < file->idx->variable_group_count; i++)
+  {
+    PIDX_variable_group var_grp = file->idx->variable_grp[i];
+    for (j = 0; j < var_grp->variable_count; j++)
+    {
+      free(var_grp->variable[j]);
+      var_grp->variable[j] = 0;
+    }
+  }
 
   file->idx->variable_count = 0;
 
@@ -2024,7 +2037,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   return PIDX_success;
 }
 
-
+/*
 PIDX_return_code PIDX_variable_set_box_metadata_on (PIDX_variable variable)
 {
   if(!variable)
@@ -2051,6 +2064,7 @@ PIDX_return_code PIDX_variable_get_box_metadata(PIDX_variable variable, int* on_
 {
   return PIDX_err_not_implemented;
 }
+*/
 
 
 PIDX_return_code PIDX_get_bits_per_sample(PIDX_data_type type_name, unsigned int bits_per_sample)
@@ -2103,12 +2117,13 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
   if(variable_index < 0)
     return PIDX_err_size;
   
-  if(file->idx->variable_index_tracker >= file->idx->variable_count)
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+  if(var_grp->variable_index_tracker >= file->idx->variable_count)
     return PIDX_err_count;
   
-  file->idx->variable_index_tracker = variable_index;
-  file->local_variable_count = 1;
-  file->local_variable_index = variable_index;
+  var_grp->variable_index_tracker = variable_index;
+  var_grp->local_variable_count = 1;
+  var_grp->local_variable_index = variable_index;
 
   return PIDX_success;
 }
@@ -2134,10 +2149,12 @@ PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variab
   if(!file)
     return PIDX_err_file;
   
-  if(file->idx->variable_index_tracker >= file->idx->variable_count)
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+
+  if(var_grp->variable_index_tracker >= file->idx->variable_count)
     return PIDX_err_count;
   
-  (*variable) = file->idx->variable[file->idx->variable_index_tracker];
+  (*variable) = var_grp->variable[var_grp->variable_index_tracker];
   
   return PIDX_success;
 }
@@ -2149,10 +2166,12 @@ PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variabl
   if(!file)
     return PIDX_err_file;
 
-  if(file->idx->variable_index_tracker >= file->idx->variable_count)
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+
+  if(var_grp->variable_index_tracker >= var_grp->variable_count)
     return PIDX_err_count;
 
-  file->idx->variable[file->idx->variable_index_tracker] = variable;
+  var_grp->variable[var_grp->variable_index_tracker] = variable;
 
   return PIDX_success;
 }
@@ -2192,8 +2211,8 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
   //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
   //  return PIDX_err_count;
 
-  if (file->idx->variable_index_tracker >= file->idx->variable_count)
-    return PIDX_err_variable;
+  //if (file->idx->variable_index_tracker >= file->idx->variable_count)
+  //  return PIDX_err_variable;
 
   const void *temp_buffer;
   variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
@@ -2207,12 +2226,14 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
 
   variable->data_layout = data_layout;
   variable->sim_patch_count = variable->sim_patch_count + 1;
-  variable->io_state = 1;
+  //variable->io_state = 1;
 
-  file->idx->variable[file->idx->variable_index_tracker] = variable;
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
 
-  file->idx->variable_index_tracker++;
-  file->local_variable_count++;
+  var_grp->variable[var_grp->variable_index_tracker] = variable;
+
+  var_grp->variable_index_tracker++;
+  var_grp->local_variable_count++;
 
   return PIDX_success;
 }
