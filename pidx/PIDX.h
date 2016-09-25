@@ -481,8 +481,6 @@ PIDX_return_code PIDX_raw_io_pipe_length(PIDX_file file, int pipe_length);
 
 
 
-PIDX_return_code PIDX_optimize_for_file_zero(PIDX_file file);
-
 
 ///
 /// \brief PIDX_enable_partitioned_io
@@ -532,20 +530,6 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
 ///
 PIDX_return_code PIDX_set_aggregator_multiplier(PIDX_file file, int count_aggregator_multiplier);
 
-
-
-///
-PIDX_return_code PIDX_set_bitstring_scheme(PIDX_file file, int bit_string_axis);
-
-
-
-///
-PIDX_return_code PIDX_enable_async_io(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_set_file_zero_async_io(PIDX_file file, int file_zero);
 
 
 #ifdef __cplusplus

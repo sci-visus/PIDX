@@ -1,8 +1,8 @@
 #include "../PIDX_io.h"
 
-static PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
+static PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 
-PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
+PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file)
 {
   int d = 0, i = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -33,6 +33,7 @@ PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
   if (idx_l1_point.z == 0)
     idx_l1_point.z = 1;
 
+#if 0
   if (file->idx_d->bit_string_axis == 1)
     guess_bit_string_X(file->idx->idx_cl1_bitSequence, idx_l1_point);
   else if (file->idx_d->bit_string_axis == 2)
@@ -46,7 +47,9 @@ PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
     guess_bit_string_YZX(file->idx->idx_cl1_bitSequence, idx_l1_point);
   else
     guess_bit_string_ZYX(file->idx->idx_cl1_bitSequence, idx_l1_point);
+#endif
 
+  guess_bit_string_Z(file->idx->idx_cl1_bitSequence, idx_l1_point);
 
   Point3D idx_l2_point;
   idx_l2_point.x = (int) file->idx->reg_patch_size[0];
@@ -63,7 +66,6 @@ PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
 
   strcpy(file->idx->bitSequence, file->idx->idx_cg_bitSequence);
   strcat(file->idx->bitSequence, file->idx->idx_cl_bitSequence + 1);
-
 
   file->idx_d->maxh = strlen(file->idx->bitSequence);
 
@@ -102,7 +104,7 @@ PIDX_return_code populate_idx_file_structure(PIDX_hybrid_idx_io file)
 }
 
 
-PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level)
+PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level)
 {
   int i, j;
   int p = 0, ctr = 1;
@@ -129,7 +131,7 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int group_index, i
       return PIDX_err_file;
     }
 
-    PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
+    PIDX_variable_group var_grp = file->idx->variable_grp[gi];
     PIDX_variable var = var_grp->variable[lvi];
 
     for (p = 0 ; p < var->sim_patch_count ; p++)
@@ -388,7 +390,7 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int group_index, i
 
 
 
-PIDX_return_code populate_idx_dataset(PIDX_hybrid_idx_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int* start_layout_index, int* end_layout_index, int* layout_count, int group_index, int start_index, int end_index, int hz_level_from, int hz_level_to)
+PIDX_return_code populate_idx_dataset(PIDX_hybrid_idx_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int* start_layout_index, int* end_layout_index, int* layout_count, int gi, int si, int ei, int hz_level_from, int hz_level_to)
 {
   int rank = 0;
   int nprocs = 1;
@@ -403,10 +405,10 @@ PIDX_return_code populate_idx_dataset(PIDX_hybrid_idx_io file, PIDX_block_layout
     MPI_Comm_size(file->comm, &nprocs);
   }
 
-  int lvi = start_index;
+  int lvi = si;
   int lower_hz_level = 0, higher_hz_level = 0;
 
-  //PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
+  //PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   //PIDX_variable var = var_grp->variable[lvi];
 
   int lower_level_low_layout = 0, higher_level_low_layout = 0;
@@ -466,7 +468,7 @@ PIDX_return_code populate_idx_dataset(PIDX_hybrid_idx_io file, PIDX_block_layout
       return PIDX_err_file;
     }
 
-    ret_code = populate_idx_layout(file, group_index, start_index, end_index, layout_by_level[0], lower_level_low_layout, higher_level_low_layout);
+    ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[0], lower_level_low_layout, higher_level_low_layout);
     if (ret_code != PIDX_success)
     {
       fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);
@@ -498,7 +500,7 @@ PIDX_return_code populate_idx_dataset(PIDX_hybrid_idx_io file, PIDX_block_layout
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      ret_code = populate_idx_layout(file, group_index, start_index, end_index, layout_by_level[i], lower_level_higher_layout, higher_level_higher_layout);
+      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i], lower_level_higher_layout, higher_level_higher_layout);
       if (ret_code != PIDX_success)
       {
         fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);
@@ -532,7 +534,7 @@ PIDX_return_code populate_idx_dataset(PIDX_hybrid_idx_io file, PIDX_block_layout
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      ret_code = populate_idx_layout(file, group_index, start_index, end_index, layout_by_level[i - *start_layout_index], lower_level_higher_layout, higher_level_higher_layout);
+      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i - *start_layout_index], lower_level_higher_layout, higher_level_higher_layout);
       if (ret_code != PIDX_success)
       {
         fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);

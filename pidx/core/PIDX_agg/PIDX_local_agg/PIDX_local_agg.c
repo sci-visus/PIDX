@@ -1735,7 +1735,8 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
     return PIDX_err_agg;
   }
 
-  if (agg_id->idx_d->file_zero_optimization == 1)
+  int f0_opt = 0;
+  if (f0_opt == 1)
   {
     if (layout_id == 0)
     {
@@ -1761,7 +1762,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
 
   if (MODE == PIDX_WRITE)
   {
-    if (agg_id->idx_d->file_zero_optimization == 1)
+    if (f0_opt == 1)
     {
       if (layout_id == 0)
       {
@@ -1826,7 +1827,7 @@ PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer,
 #endif
 #endif
 
-  if (agg_id->idx_d->file_zero_optimization == 1)
+  if (f0_opt == 1)
   {
     if (layout_id == 0)
     {

@@ -159,7 +159,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));
 
   (*file)->flags = flags;
-  (*file)->idx_d->async_io = 0;
 
   (*file)->access = access_type;
 
@@ -194,7 +193,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->reduced_res_to = 0;
 
   (*file)->idx_d->parallel_mode = access_type->parallel;
-  (*file)->idx_d->file_zero_optimization = 0;
   (*file)->idx_d->raw_io_pipe_length = 0;
 
 #if PIDX_HAVE_MPI
@@ -348,7 +346,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
 
-  (*file)->idx_d->file_zero_optimization = 0;
   (*file)->idx_d->raw_io_pipe_length = 0;
 
   (*file)->small_agg_comm = 0;
@@ -1007,20 +1004,6 @@ PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* current_time_st
 
 
 
-PIDX_return_code PIDX_set_file_zero_async_io(PIDX_file file, int file_zero)
-{
-  if (!file)
-    return PIDX_err_file;
-
-  if(file_zero <= 0)
-    return PIDX_err_block;
-
-  file->idx_d->file_zero = file_zero;
-
-  return PIDX_validate(file);
-}
-
-
 
 PIDX_return_code PIDX_set_block_size(PIDX_file file, const int bits_per_block)
 {
@@ -1624,17 +1607,6 @@ PIDX_return_code PIDX_raw_io_pipe_length(PIDX_file file, int pipe_length)
 
 
 
-PIDX_return_code PIDX_optimize_for_file_zero(PIDX_file file)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  file->idx_d->file_zero_optimization = 1;
-
-  return PIDX_success;
-}
-
-
 PIDX_return_code PIDX_enable_global_io(PIDX_file file)
 {
   if(file == NULL)
@@ -1678,30 +1650,6 @@ PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file)
     return PIDX_err_file;
 
   file->io_type = PIDX_PARTITION_MERGE_IDX_IO;
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_enable_async_io(PIDX_file file)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  file->idx_d->async_io = 1;
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_set_bitstring_scheme(PIDX_file file, int bit_string_axis)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  file->idx_d->bit_string_axis = bit_string_axis;
 
   return PIDX_success;
 }
@@ -1805,7 +1753,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
       fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
       fprintf(stdout, "Aggregation factor = %d\n", file->idx_d->aggregator_multiplier);
-      fprintf(stdout, "File zero optimization = %d\n", file->idx_d->file_zero_optimization);
       fprintf(stdout, "Async IO = %d\n", file->idx_d->async_io);
       fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
     }

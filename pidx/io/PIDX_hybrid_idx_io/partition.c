@@ -1,23 +1,71 @@
 #include "../PIDX_io.h"
 
-static PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
+///
+/// \brief restructure
+/// \param file
+/// \param gi
+/// \param svi
+/// \param evi
+/// \return
+///
+static PIDX_return_code restructure(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
 
+
+///
+/// \brief rst_init
+/// \param file
+/// \param gi
+/// \param svi
+/// \param evi
+/// \return
+///
 static PIDX_return_code rst_init(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
 
-static PIDX_return_code partition(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
 
+///
+/// \brief partition_setup
+/// \param file
+/// \param gi
+/// \param svi
+/// \param evi
+/// \return
+///
+static PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
+
+
+///
+/// \brief getPowerOftwo
+/// \param x
+/// \return
+///
 static int getPowerOftwo(int x);
 
+
+///
+/// \brief set_default_patch_size
+/// \param file
+/// \param process_bounds
+/// \param nprocs
+///
 static void set_default_patch_size(PIDX_hybrid_idx_io file, unsigned long long* process_bounds, int nprocs);
 
+
+///
+/// \brief intersectNDChunk
+/// \param A
+/// \param B
+/// \return
+///
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 
-PIDX_return_code partition_domain(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
+
+
+PIDX_return_code partition(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
 {
 
   int ret = 0;
   // Restructuring into power two domain
-  ret = partition_setup(file, gi, svi, evi);
+  ret = restructure(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -36,18 +84,26 @@ PIDX_return_code partition_domain(PIDX_hybrid_idx_io file, int gi, int svi, int 
   }
 
   // perform partitioning, make sub-communicators
-  ret = partition(file, gi, svi, evi);
+  ret = partition_setup(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
+  int grank = 0, gnprocs = 1;
+  MPI_Comm_rank(file->global_comm, &grank);
+  MPI_Comm_size(file->global_comm, &gnprocs);
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  var_grp->rank_buffer = malloc(gnprocs * sizeof(*var_grp->rank_buffer));
+  memset(var_grp->rank_buffer, 0, gnprocs * sizeof(*var_grp->rank_buffer));
+  MPI_Allgather(&grank, 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->global_comm);
+
   return PIDX_success;
 }
 
 
-static PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
+static PIDX_return_code restructure(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
 {
   int ret = 0;
   int start_index = 0, end_index = 0;
@@ -139,7 +195,7 @@ static PIDX_return_code rst_init(PIDX_hybrid_idx_io file, int gi, int svi, int e
 }
 
 
-static PIDX_return_code partition(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
+static PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
 {
   int *colors;
   int index_i = 0, index_j = 0, index_k = 0;
@@ -305,7 +361,7 @@ static PIDX_return_code partition(PIDX_hybrid_idx_io file, int gi, int svi, int 
 }
 
 
-PIDX_return_code partition_communicator(PIDX_hybrid_idx_io file)
+PIDX_return_code create_local_comm(PIDX_hybrid_idx_io file)
 {
   int rank = 0;
   int nprocs = 1;
@@ -323,7 +379,7 @@ PIDX_return_code partition_communicator(PIDX_hybrid_idx_io file)
 }
 
 
-PIDX_return_code partition_communicator_destroy(PIDX_hybrid_idx_io file)
+PIDX_return_code destroy_local_comm(PIDX_hybrid_idx_io file)
 {
   int ret;
   ret = MPI_Comm_free(&(file->comm));
@@ -336,7 +392,7 @@ PIDX_return_code partition_communicator_destroy(PIDX_hybrid_idx_io file)
 }
 
 
-PIDX_return_code partition_destroy(PIDX_hybrid_idx_io file, int gi)
+PIDX_return_code partition_cleanup(PIDX_hybrid_idx_io file, int gi)
 {
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];

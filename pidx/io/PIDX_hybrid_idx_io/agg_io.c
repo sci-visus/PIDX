@@ -1,12 +1,13 @@
 #include "../PIDX_io.h"
 
 
-PIDX_return_code PIDX_global_async_io(PIDX_hybrid_idx_io file, PIDX_file_io_id **io_id, Agg_buffer **agg_buffer, PIDX_block_layout* block_layout_by_level,  MPI_File *fp, MPI_Request *request,  int init_index, int var_index, int index, int layout_start, int layout_end, int layout_count, int agg_io_level, int file_zero, int async_status)
+PIDX_return_code PIDX_global_async_io(PIDX_hybrid_idx_io file, PIDX_file_io_id **io_id, Agg_buffer **agg_buffer, PIDX_block_layout* block_layout_by_level,  MPI_File *fp, MPI_Request *request,  int init_index, int var_index, int index, int layout_start, int layout_end, int layout_count, int agg_io_level, int file_zero)
 {
   int j;
   int rank = 0, nprocs = 1;
   int ret = 0;
   int j_1 = 0;
+  int async_status = 1;
 
 #if PIDX_HAVE_MPI
   if (file->idx_d->parallel_mode == 1)
