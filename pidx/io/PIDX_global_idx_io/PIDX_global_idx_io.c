@@ -76,8 +76,6 @@ static PIDX_return_code populate_idx_file_structure(PIDX_global_idx_io file, int
   bounds_point.x = (int) cb[0];
   bounds_point.y = (int) cb[1];
   bounds_point.z = (int) cb[2];
-  bounds_point.u = (int) cb[3];
-  bounds_point.v = (int) cb[4];
   /*
   GuessBitmaskPattern(file->idx->bitSequence, bounds_point);
   printf("Initial %s %d\n", file->idx->bitSequence, strlen(file->idx->bitSequence));
@@ -99,8 +97,6 @@ static PIDX_return_code populate_idx_file_structure(PIDX_global_idx_io file, int
     idx_l_point.x = (int) file->idx_d->idx_size[0];
     idx_l_point.y = (int) file->idx_d->idx_size[1];
     idx_l_point.z = (int) file->idx_d->idx_size[2];
-    idx_l_point.u = (int) file->idx_d->idx_size[3];
-    idx_l_point.v = (int) file->idx_d->idx_size[4];
     GuessBitmaskPattern(file->idx->idx_cl_bitSequence, idx_l_point);
     //printf("Local %s\n", file->idx->idx_cl_bitSequence);
 
@@ -156,7 +152,7 @@ static PIDX_return_code populate_idx_file_structure(PIDX_global_idx_io file, int
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
-  unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]) * getPowerOf2(cb[3]) * getPowerOf2(cb[4]));
+  unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
   if (total_reg_sample_count <= 0)
   {
     fprintf(stderr, "[%s] [%d ]File dimensions are wrong\n", __FILE__, __LINE__);
@@ -1715,14 +1711,11 @@ static PIDX_return_code partition(PIDX_global_idx_io file, int start_var_index, 
             var->sim_patch[0]->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
             var->sim_patch[0]->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1];
             var->sim_patch[0]->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2];
-            var->sim_patch[0]->offset[3] = 0;
-            var->sim_patch[0]->offset[4] = 0;
 
             var->sim_patch[0]->size[0] = var->rst_patch_group[0]->reg_patch->size[0];
             var->sim_patch[0]->size[1] = var->rst_patch_group[0]->reg_patch->size[1];
             var->sim_patch[0]->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
-            var->sim_patch[0]->size[3] = 1;
-            var->sim_patch[0]->size[4] = 1;
+
 
             file->idx->bounds[0] = reg_patch->size[0];
             file->idx->bounds[1] = reg_patch->size[1];
@@ -1749,14 +1742,12 @@ static PIDX_return_code partition(PIDX_global_idx_io file, int start_var_index, 
     var->sim_patch[0]->offset[0] = 0;
     var->sim_patch[0]->offset[1] = 0;
     var->sim_patch[0]->offset[2] = 0;
-    var->sim_patch[0]->offset[3] = 0;
-    var->sim_patch[0]->offset[4] = 0;
+
 
     var->sim_patch[0]->size[0] = 0;//-1;
     var->sim_patch[0]->size[1] = 0;//-1;
     var->sim_patch[0]->size[2] = 0;//-1;
-    var->sim_patch[0]->size[3] = 0;//-1;
-    var->sim_patch[0]->size[4] = 0;//-1;
+
   }
 
   MPI_Comm_split(file->global_comm, file->idx_d->color, rank, &(file->comm));
@@ -1821,8 +1812,6 @@ static void set_default_patch_size(PIDX_global_idx_io file, unsigned long long* 
     reg_patch_size[0] = average_count / 1;
     reg_patch_size[1] = average_count / 1;
     reg_patch_size[2] = average_count / 1;
-    reg_patch_size[3] = 1;
-    reg_patch_size[4] = 1;
   }
   else
   {
@@ -1833,8 +1822,6 @@ static void set_default_patch_size(PIDX_global_idx_io file, unsigned long long* 
     //reg_patch_size[0] = getPowerOftwo(process_bounds[0]) * 1;
     //reg_patch_size[1] = getPowerOftwo(process_bounds[1]) * 1;
     //reg_patch_size[2] = getPowerOftwo(process_bounds[2]) * 1;
-    reg_patch_size[3] = 1;//getPowerOftwo(process_bounds[3]) * 1;
-    reg_patch_size[4] = 1;//getPowerOftwo(process_bounds[4]) * 1;
   }
 
   memcpy(file->idx->reg_patch_size, reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);

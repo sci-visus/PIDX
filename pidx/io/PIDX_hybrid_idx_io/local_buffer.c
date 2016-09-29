@@ -65,6 +65,10 @@ PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_hybrid_idx_io fi
     }
   }
 
+  free(file->idx_d->status_non_shared);
+  free(file->idx_d->request_non_shared);
+  free(file->idx_d->fp_non_shared);
+
   return PIDX_success;
 }
 
@@ -86,6 +90,10 @@ PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_hybrid_idx_io file, 
       MPI_File_close(&(file->idx_d->fp_shared[i - start_layout_index_shared]));
     }
   }
+
+  free(file->idx_d->status_shared);
+  free(file->idx_d->request_shared);
+  free(file->idx_d->fp_shared);
 
   return PIDX_success;
 }
@@ -187,27 +195,24 @@ PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_hybrid_idx_io file, int 
   return PIDX_success;
 }
 
-PIDX_return_code init_agg_io_buffer(PIDX_hybrid_idx_io file, int group_index)
+
+PIDX_return_code create_agg_io_buffer(PIDX_hybrid_idx_io file, int group_index)
 {
   int vc = file->idx->variable_count;
+  if (vc <= 0)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  int lc = file->idx_d->perm_layout_count;
+  if (lc <= 0)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
   idx_dataset_derived_metadata idx = file->idx_d;
-  int lc = idx->perm_layout_count;
-  PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
-
-  var_grp->f0_block_layout = malloc(sizeof (*var_grp->f0_block_layout));
-  var_grp->f0_block_layout_by_level = malloc(sizeof (*var_grp->f0_block_layout_by_level));
-  memset(var_grp->f0_block_layout, 0, sizeof (*var_grp->f0_block_layout));
-  memset(var_grp->f0_block_layout_by_level, 0, sizeof (*var_grp->f0_block_layout_by_level));
-
-  var_grp->shared_block_layout = malloc(sizeof (*var_grp->shared_block_layout));
-  var_grp->shared_block_layout_by_level = malloc(sizeof (*var_grp->shared_block_layout_by_level));
-  memset(var_grp->shared_block_layout, 0, sizeof (*var_grp->shared_block_layout));
-  memset(var_grp->shared_block_layout_by_level, 0, sizeof (*var_grp->shared_block_layout_by_level));
-
-  var_grp->nshared_block_layout = malloc(sizeof (*var_grp->nshared_block_layout));
-  var_grp->nshared_block_layout_by_level = malloc(sizeof (*var_grp->nshared_block_layout_by_level));
-  memset(var_grp->nshared_block_layout, 0, sizeof (*var_grp->nshared_block_layout));
-  memset(var_grp->nshared_block_layout_by_level, 0, sizeof (*var_grp->nshared_block_layout_by_level));
 
   file->f0_agg_id = malloc(sizeof(*(file->f0_agg_id)) * vc);
   file->f0_io_id = malloc(sizeof(*(file->f0_io_id)) * vc);
@@ -238,26 +243,26 @@ PIDX_return_code init_agg_io_buffer(PIDX_hybrid_idx_io file, int group_index)
   {
     file->f0_agg_id[v] = malloc(sizeof(*(file->f0_agg_id[v])) * lc);
     file->f0_io_id[v] = malloc(sizeof(*(file->f0_io_id[v])) * lc);
-    idx->f0_agg_buffer[v] = malloc(sizeof(*(idx->f0_agg_buffer[v])) * lc);
+    memset(file->f0_agg_id[v], 0, sizeof(*(file->f0_agg_id[v])) * lc);
+    memset(file->f0_io_id[v], 0, sizeof(*(file->f0_io_id[v])) * lc);
 
     file->shared_agg_id[v] = malloc(sizeof(*(file->shared_agg_id[v])) * lc);
     file->shared_io_id[v] = malloc(sizeof(*(file->shared_io_id[v])) * lc);
-    idx->shared_agg_buffer[v] = malloc(sizeof(*(idx->shared_agg_buffer[v])) * lc);
+    memset(file->shared_agg_id[v], 0, sizeof(*(file->shared_agg_id[v])) * lc);
+    memset(file->shared_io_id[v], 0, sizeof(*(file->shared_io_id[v])) * lc);
 
     file->nshared_agg_id[v] = malloc(sizeof(*(file->nshared_agg_id[v])) * lc);
     file->nshared_io_id[v] = malloc(sizeof(*(file->nshared_io_id[v])) * lc);
-    idx->nshared_agg_buffer[v] = malloc(sizeof(*(idx->nshared_agg_buffer[v])) * lc);
-
-    memset(file->f0_agg_id[v], 0, sizeof(*(file->f0_agg_id[v])) * lc);
-    memset(file->f0_io_id[v], 0, sizeof(*(file->f0_io_id[v])) * lc);
-    memset(idx->f0_agg_buffer[v], 0, sizeof(*(idx->f0_agg_buffer[v])) * lc);
-
-    memset(file->shared_agg_id[v], 0, sizeof(*(file->shared_agg_id[v])) * lc);
-    memset(file->shared_io_id[v], 0, sizeof(*(file->shared_io_id[v])) * lc);
-    memset(idx->shared_agg_buffer[v], 0, sizeof(*(idx->shared_agg_buffer[v])) * lc);
-
     memset(file->nshared_agg_id[v], 0, sizeof(*(file->nshared_agg_id[v])) * lc);
     memset(file->nshared_io_id[v], 0, sizeof(*(file->nshared_io_id[v])) * lc);
+
+    idx->f0_agg_buffer[v] = malloc(sizeof(*(idx->f0_agg_buffer[v])) * lc);
+    memset(idx->f0_agg_buffer[v], 0, sizeof(*(idx->f0_agg_buffer[v])) * lc);
+
+    idx->shared_agg_buffer[v] = malloc(sizeof(*(idx->shared_agg_buffer[v])) * lc);
+    memset(idx->shared_agg_buffer[v], 0, sizeof(*(idx->shared_agg_buffer[v])) * lc);
+
+    idx->nshared_agg_buffer[v] = malloc(sizeof(*(idx->nshared_agg_buffer[v])) * lc);
     memset(idx->nshared_agg_buffer[v], 0, sizeof(*(idx->nshared_agg_buffer[v])) * lc);
   }
 
@@ -271,17 +276,6 @@ PIDX_return_code destroy_agg_io_buffer(PIDX_hybrid_idx_io file, int group_index)
   idx_dataset_derived_metadata idx = file->idx_d;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
-  PIDX_blocks_free_layout(var_grp->f0_block_layout);
-  free(var_grp->f0_block_layout);
-  free(var_grp->f0_block_layout_by_level);
-
-  PIDX_blocks_free_layout(var_grp->shared_block_layout);
-  free(var_grp->shared_block_layout);
-  free(var_grp->shared_block_layout_by_level);
-
-  PIDX_blocks_free_layout(var_grp->nshared_block_layout);
-  free(var_grp->nshared_block_layout);
-  free(var_grp->nshared_block_layout_by_level);
 
   int v = 0;
   for (v = 0; v < vc; v++)
@@ -298,6 +292,7 @@ PIDX_return_code destroy_agg_io_buffer(PIDX_hybrid_idx_io file, int group_index)
     free(file->nshared_io_id[v]);
     free(idx->nshared_agg_buffer[v]);
   }
+
   free(file->f0_agg_id);
   free(file->f0_io_id);
 

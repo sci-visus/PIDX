@@ -163,9 +163,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->access = access_type;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    (*file)->idx_d->idx_count[i] = 1;//access_type->idx_count[i];
+    (*file)->idx_d->partition_count[i] = 1;//access_type->partition_count[i];
 
-  //memcpy ((*file)->idx_d->idx_count, access_type->idx_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
+  //memcpy ((*file)->idx_d->partition_count, access_type->partition_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
 
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;
@@ -326,7 +326,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->access = access_type;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    (*file)->idx_d->idx_count[i] = 1;
+    (*file)->idx_d->partition_count[i] = 1;
 
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;
@@ -365,46 +365,46 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   if (access_type->parallel)
   {
     MPI_Comm_rank(access_type->comm, &rank);
-    if (access_type->idx_count[0] != 1 || access_type->idx_count[1] != 1 || access_type->idx_count[2] != 1 )
+    if (access_type->partition_count[0] != 1 || access_type->partition_count[1] != 1 || access_type->partition_count[2] != 1 )
     {
       unsigned long long i = 0, j = 0, k = 0;
-      memcpy ((*file)->idx_d->idx_count, access_type->idx_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
+      memcpy ((*file)->idx_d->partition_count, access_type->partition_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
 
-      colors = malloc(sizeof(*colors) * (*file)->idx_d->idx_count[0] * (*file)->idx_d->idx_count[1] * (*file)->idx_d->idx_count[2]);
-      memset(colors, 0, sizeof(*colors) * (*file)->idx_d->idx_count[0] * (*file)->idx_d->idx_count[1] * (*file)->idx_d->idx_count[2]);
+      colors = malloc(sizeof(*colors) * (*file)->idx_d->partition_count[0] * (*file)->idx_d->partition_count[1] * (*file)->idx_d->partition_count[2]);
+      memset(colors, 0, sizeof(*colors) * (*file)->idx_d->partition_count[0] * (*file)->idx_d->partition_count[1] * (*file)->idx_d->partition_count[2]);
 
-      for (k = 0; k < (*file)->idx_d->idx_count[2]; k++)
-        for (j = 0; j < (*file)->idx_d->idx_count[1]; j++)
-          for (i = 0; i < (*file)->idx_d->idx_count[0]; i++)
-            colors[((*file)->idx_d->idx_count[0] * (*file)->idx_d->idx_count[1] * k) + ((*file)->idx_d->idx_count[0] * j) + i] = ((*file)->idx_d->idx_count[0] * (*file)->idx_d->idx_count[1] * k) + ((*file)->idx_d->idx_count[0] * j) + i;
+      for (k = 0; k < (*file)->idx_d->partition_count[2]; k++)
+        for (j = 0; j < (*file)->idx_d->partition_count[1]; j++)
+          for (i = 0; i < (*file)->idx_d->partition_count[0]; i++)
+            colors[((*file)->idx_d->partition_count[0] * (*file)->idx_d->partition_count[1] * k) + ((*file)->idx_d->partition_count[0] * j) + i] = ((*file)->idx_d->partition_count[0] * (*file)->idx_d->partition_count[1] * k) + ((*file)->idx_d->partition_count[0] * j) + i;
 
       int index_x = 0, index_y = 0, index_z = 0;
-      for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_d->idx_count[0]))
+      for (i = 0; i < access_type->sub_div[0]; i = i + (access_type->sub_div[0] / (*file)->idx_d->partition_count[0]))
       {
-        if (access_type->rank_component[0] >= i && access_type->rank_component[0] < i + (access_type->sub_div[0] / (*file)->idx_d->idx_count[0]))
+        if (access_type->rank_component[0] >= i && access_type->rank_component[0] < i + (access_type->sub_div[0] / (*file)->idx_d->partition_count[0]))
         {
           index_x = i;
           break;
         }
       }
-      for (i = 0; i < access_type->sub_div[1]; i = i + (access_type->sub_div[1] / (*file)->idx_d->idx_count[1]))
+      for (i = 0; i < access_type->sub_div[1]; i = i + (access_type->sub_div[1] / (*file)->idx_d->partition_count[1]))
       {
-        if (access_type->rank_component[1] >= i && access_type->rank_component[1] < i + (access_type->sub_div[1] / (*file)->idx_d->idx_count[1]))
+        if (access_type->rank_component[1] >= i && access_type->rank_component[1] < i + (access_type->sub_div[1] / (*file)->idx_d->partition_count[1]))
         {
           index_y = i;
           break;
         }
       }
-      for (i = 0; i < access_type->sub_div[2]; i = i + (access_type->sub_div[2] / (*file)->idx_d->idx_count[2]))
+      for (i = 0; i < access_type->sub_div[2]; i = i + (access_type->sub_div[2] / (*file)->idx_d->partition_count[2]))
       {
-        if (access_type->rank_component[2] >= i && access_type->rank_component[2] < i + (access_type->sub_div[2] / (*file)->idx_d->idx_count[2]))
+        if (access_type->rank_component[2] >= i && access_type->rank_component[2] < i + (access_type->sub_div[2] / (*file)->idx_d->partition_count[2]))
         {
           index_z = i;
           break;
         }
       }
 
-      (*file)->idx_d->color = colors[((*file)->idx_d->idx_count[0] * (*file)->idx_d->idx_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_d->idx_count[2]))) + ((*file)->idx_d->idx_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_d->idx_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_d->idx_count[0]))];
+      (*file)->idx_d->color = colors[((*file)->idx_d->partition_count[0] * (*file)->idx_d->partition_count[1] * (index_z/(access_type->sub_div[2] / (*file)->idx_d->partition_count[2]))) + ((*file)->idx_d->partition_count[0] * (index_y/ (access_type->sub_div[1] / (*file)->idx_d->partition_count[1]))) + (index_x / (access_type->sub_div[0] / (*file)->idx_d->partition_count[0]))];
 
       free(colors);
       MPI_Comm_split(access_type->comm, (*file)->idx_d->color, rank, &((*file)->comm));
@@ -427,7 +427,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
   file_name_skeleton[strlen(filename) - 4] = '\0';
 
-  if ((*file)->idx_d->idx_count[0] == 1 && (*file)->idx_d->idx_count[1] == 1 && (*file)->idx_d->idx_count[2] == 1)
+  if ((*file)->idx_d->partition_count[0] == 1 && (*file)->idx_d->partition_count[1] == 1 && (*file)->idx_d->partition_count[2] == 1)
     sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   else
     sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
@@ -519,8 +519,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           count++;
           pch = strtok(NULL, " ");
         }
-        (*file)->idx->reg_patch_size[3] = 1;
-        (*file)->idx->reg_patch_size[4] = 1;
       }
       if (strcmp(line, "(cores)") == 0)
       {
@@ -635,7 +633,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           pch = strtok(NULL, " ");
         }
 
-        //if((*file)->idx->chunk_size[0] < 0 || (*file)->idx->chunk_size[1] < 0 || (*file)->idx->chunk_size[2] < 0 || (*file)->idx->chunk_size[3] < 0 || (*file)->idx->chunk_size[4] < 0)
+        //if((*file)->idx->chunk_size[0] < 0 || (*file)->idx->chunk_size[1] < 0 || (*file)->idx->chunk_size[2] < 0)
         //  return PIDX_err_box;
       }
 
@@ -745,7 +743,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx->variable[var]->sim_patch_count = 0;
   }
 
-  //printf("%d %d %d %d %d\n", (*file)->idx->chunk_size[0], (*file)->idx->chunk_size[1], (*file)->idx->chunk_size[2], (*file)->idx->chunk_size[3], (*file)->idx->chunk_size[4]);
+  //printf("%d %d %d\n", (*file)->idx->chunk_size[0], (*file)->idx->chunk_size[1], (*file)->idx->chunk_size[2]);
 
   if (rank == 0)
   {
@@ -779,9 +777,7 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
   adjusted_bounds[0] = file->idx->bounds[0] / file->idx->chunk_size[0];
   adjusted_bounds[1] = file->idx->bounds[1] / file->idx->chunk_size[1];
   adjusted_bounds[2] = file->idx->bounds[2] / file->idx->chunk_size[2];
-  adjusted_bounds[3] = file->idx->bounds[3] / file->idx->chunk_size[3];
-  adjusted_bounds[4] = file->idx->bounds[4] / file->idx->chunk_size[4];
-  
+
   //if (PIDX_inner_product(&dims, file->idx->bounds))
   if (PIDX_inner_product(&dims, adjusted_bounds))
     return PIDX_err_size;
@@ -809,7 +805,7 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
 
 PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch_size)
 {
-  //if(reg_patch_size[0] < 0 || reg_patch_size[1] < 0 || reg_patch_size[2] < 0 || reg_patch_size[3] < 0 || reg_patch_size[4] < 0)
+  //if(reg_patch_size[0] < 0 || reg_patch_size[1] < 0 || reg_patch_size[2] < 0)
   //  return PIDX_err_box;
   
   if (file == NULL)
@@ -824,7 +820,7 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
 
 PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
 {
-  //if(dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
+  //if(dims[0] < 0 || dims[1] < 0 || dims[2] < 0)
   //  return PIDX_err_box;
 
   if(file == NULL)
@@ -845,13 +841,11 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
   if(file == NULL)
     return PIDX_err_file;
   
-  file->idx_d->idx_size[0] = count_x;
-  file->idx_d->idx_size[1] = count_y;
-  file->idx_d->idx_size[2] = count_z;
-  file->idx_d->idx_size[3] = 1;
-  file->idx_d->idx_size[4] = 1;
+  file->idx_d->partition_size[0] = count_x;
+  file->idx_d->partition_size[1] = count_y;
+  file->idx_d->partition_size[2] = count_z;
 
-  //printf("B %d %d %d\n", file->idx_d->idx_size[0], file->idx_d->idx_size[1], file->idx_d->idx_size[2]);
+  //printf("B %d %d %d\n", file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
   return PIDX_validate(file);
 }
 
@@ -1125,16 +1119,11 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
     chunk_size[0] = 4;
     chunk_size[1] = 4;
     chunk_size[2] = 4;
-    chunk_size[3] = 1;
-    chunk_size[4] = 1;
-
-    //if(chunk_size[0] < 0 || chunk_size[1] < 0 || chunk_size[2] < 0 || chunk_size[3] < 0 || chunk_size[4] < 0)
-    //  return PIDX_err_box;
 
     memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
     int reduce_by_sample = 1;
-    unsigned long long total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2] * file->idx->chunk_size[3] * file->idx->chunk_size[4];
+    unsigned long long total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
     if (reduce_by_sample == 1)
     {
       file->idx->bits_per_block = file->idx->bits_per_block - (int)log2(total_chunk_size);
@@ -1747,11 +1736,11 @@ PIDX_return_code PIDX_close(PIDX_file file)
       fprintf(stdout, "Bitstring %s\n", file->idx->bitSequence);
       fprintf(stdout, "Global Data %lld %lld %lld Variables %d\n", (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count);
 
-      fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->idx_count[0] * file->idx_d->idx_count[1] * file->idx_d->idx_count[2], file->idx_d->idx_count[0], file->idx_d->idx_count[1], file->idx_d->idx_count[2]);
+      fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2]);
       fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
       fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
-      fprintf(stdout, "Chunk Size %d %d %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2], (int)file->idx->chunk_size[3], (int)file->idx->chunk_size[4]);
-      fprintf(stdout, "Restructuring Box Size %d %d %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], (int)file->idx->reg_patch_size[3], (int)file->idx->reg_patch_size[4]);
+      fprintf(stdout, "Chunk Size %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2]);
+      fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
       fprintf(stdout, "Aggregation factor = %d\n", file->idx_d->aggregator_multiplier);
       fprintf(stdout, "Async IO = %d\n", file->idx_d->async_io);
       fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
@@ -2152,10 +2141,10 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
   if(!variable)
     return PIDX_err_variable;
 
-  //if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0 || offset[3] < 0 || offset[4] < 0)
+  //if(!offset || offset[0] < 0 || offset[1] < 0 || offset[2] < 0)
   //  return PIDX_err_offset;
 
-  //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0 || dims[3] < 0 || dims[4] < 0)
+  //if(!dims || dims[0] < 0 || dims[1] < 0 || dims[2] < 0)
   //  return PIDX_err_count;
 
   //if (file->idx->variable_index_tracker >= file->idx->variable_count)

@@ -3,14 +3,27 @@
 
 
 ///
-/// \brief partition
+/// \brief restructure
 /// \param file
-/// \param group_index
-/// \param start_var_index
-/// \param end_var_index
+/// \param gi
+/// \param svi
+/// \param evi
 /// \return
 ///
-PIDX_return_code partition(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index);
+PIDX_return_code restructure(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
+
+
+
+///
+/// \brief partition_setup
+/// \param file
+/// \param gi
+/// \param svi
+/// \param evi
+/// \return
+///
+PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi);
+
 
 
 ///
@@ -18,7 +31,7 @@ PIDX_return_code partition(PIDX_hybrid_idx_io file, int group_index, int start_v
 /// \param file
 /// \return
 ///
-PIDX_return_code create_local_comm(PIDX_hybrid_idx_io file);
+PIDX_return_code create_local_comm(PIDX_hybrid_idx_io file, int gi);
 
 
 ///
@@ -29,11 +42,11 @@ PIDX_return_code create_local_comm(PIDX_hybrid_idx_io file);
 PIDX_return_code destroy_local_comm(PIDX_hybrid_idx_io file);
 
 ///
-/// \brief partition_cleanup
+/// \brief restructure_cleanup
 /// \param file
 /// \param group_index
 /// \return
 ///
-PIDX_return_code partition_cleanup(PIDX_hybrid_idx_io file, int group_index);
+PIDX_return_code restructure_cleanup(PIDX_hybrid_idx_io file, int group_index);
 
 #endif

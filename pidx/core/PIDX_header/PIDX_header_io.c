@@ -206,9 +206,9 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
       if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
       {
         fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
-        fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->chunked_bounds[0] - 1), (long long)(header_io->idx->chunked_bounds[1] - 1), (long long)(header_io->idx->chunked_bounds[2] - 1), (long long)(header_io->idx->chunked_bounds[3] - 1), (long long)(header_io->idx->chunked_bounds[4] - 1));
+        fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->chunked_bounds[0] - 1), (long long)(header_io->idx->chunked_bounds[1] - 1), (long long)(header_io->idx->chunked_bounds[2] - 1));
 
-        fprintf(idx_file_p, "(original box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+        fprintf(idx_file_p, "(original box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
 
         fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
 
@@ -239,13 +239,13 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     fprintf(idx_file_p, "(version)\n6\n");
     fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
 
-    fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+    fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
 
     if (header_io->enable_raw_dump != 1)
     {
-      fprintf(idx_file_p, "(partition count)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->idx_count[0]), (long long)(header_io->idx_d->idx_count[1]), (long long)(header_io->idx_d->idx_count[2]));
+      fprintf(idx_file_p, "(partition count)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->partition_count[0]), (long long)(header_io->idx_d->partition_count[1]), (long long)(header_io->idx_d->partition_count[2]));
 
-      fprintf(idx_file_p, "(partition size)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->idx_size[0]), (long long)(header_io->idx_d->idx_size[1]), (long long)(header_io->idx_d->idx_size[2]));
+      fprintf(idx_file_p, "(partition size)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->partition_size[0]), (long long)(header_io->idx_d->partition_size[1]), (long long)(header_io->idx_d->partition_size[2]));
     }
     
     if (header_io->enable_raw_dump == 1)
@@ -257,7 +257,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
     {
       fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
-      fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld %lld %lld\n", (long long)(header_io->idx->chunk_size[0]), (long long)(header_io->idx->chunk_size[1]), (long long)(header_io->idx->chunk_size[2]), (long long)(header_io->idx->chunk_size[3]), (long long)(header_io->idx->chunk_size[4]));
+      fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld\n", (long long)(header_io->idx->chunk_size[0]), (long long)(header_io->idx->chunk_size[1]), (long long)(header_io->idx->chunk_size[2]));
       fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
     }
     fprintf(idx_file_p, "(fields)\n");
@@ -391,9 +391,9 @@ PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, c
       if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
       {
         fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
-        fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->chunked_bounds[0] - 1), (long long)(header_io->idx->chunked_bounds[1] - 1), (long long)(header_io->idx->chunked_bounds[2] - 1), (long long)(header_io->idx->chunked_bounds[3] - 1), (long long)(header_io->idx->chunked_bounds[4] - 1));
+        fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->chunked_bounds[0] - 1), (long long)(header_io->idx->chunked_bounds[1] - 1), (long long)(header_io->idx->chunked_bounds[2] - 1));
 
-        fprintf(idx_file_p, "(original box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+        fprintf(idx_file_p, "(original box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
 
         fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
 
@@ -424,7 +424,7 @@ PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, c
     fprintf(idx_file_p, "(version)\n6\n");
     fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
 
-    fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 %lld 0 %lld\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1), (long long)(header_io->idx->bounds[3] - 1), (long long)(header_io->idx->bounds[4] - 1));
+    fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
 
     if (header_io->enable_raw_dump == 1)
     {
@@ -435,7 +435,7 @@ PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, c
     if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
     {
       fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
-      fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld %lld %lld\n", (long long)(header_io->idx->chunk_size[0]), (long long)(header_io->idx->chunk_size[1]), (long long)(header_io->idx->chunk_size[2]), (long long)(header_io->idx->chunk_size[3]), (long long)(header_io->idx->chunk_size[4]));
+      fprintf(idx_file_p, "(compressed box)\n%lld %lld %lld\n", (long long)(header_io->idx->chunk_size[0]), (long long)(header_io->idx->chunk_size[1]), (long long)(header_io->idx->chunk_size[2]));
       fprintf(idx_file_p, "(compression bit rate)\n%d\n", header_io->idx->compression_bit_rate);
     }
     fprintf(idx_file_p, "(fields)\n");
@@ -500,13 +500,13 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
         if (layout_type != 0)
         {
           int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
-          adjusted_file_index = l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + (i - l) + (header_io_id->idx_d->color * l);
+          adjusted_file_index = l * (header_io_id->idx_d->partition_count[0] * header_io_id->idx_d->partition_count[1] * header_io_id->idx_d->partition_count[2]) + (i - l) + (header_io_id->idx_d->color * l);
         }
         */
         /*
         int adjusted_file_index = 0;
         int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
-        adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+        adjusted_file_index = (l * (header_io_id->idx_d->partition_count[0] * header_io_id->idx_d->partition_count[1] * header_io_id->idx_d->partition_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
         */
         //if (nprocs == 2)
 
@@ -518,7 +518,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
           return 1;
         }
 
-        //printf("[COLOR %d] %d -> MAP [%d %d %d] L %d -> %d [%s (%s)]\n", header_io_id->idx_d->color, i, header_io_id->idx_d->idx_count[0], header_io_id->idx_d->idx_count[1], header_io_id->idx_d->idx_count[2], l, adjusted_file_index, bin_file, header_io_id->idx->filename_template);
+        //printf("[COLOR %d] %d -> MAP [%d %d %d] L %d -> %d [%s (%s)]\n", header_io_id->idx_d->color, i, header_io_id->idx_d->partition_count[0], header_io_id->idx_d->partition_count[1], header_io_id->idx_d->partition_count[2], l, adjusted_file_index, bin_file, header_io_id->idx->filename_template);
 
         //TODO: the logic for creating the subdirectory hierarchy could
         //be made to be more efficient than this. This implementation
@@ -713,7 +713,7 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
         /*
         int adjusted_file_index = 0;
         int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
-        adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+        adjusted_file_index = (l * (header_io_id->idx_d->partition_count[0] * header_io_id->idx_d->partition_count[1] * header_io_id->idx_d->partition_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
         */
 
         ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, /*adjusted_file_index*/i, bin_file, PATH_MAX);
@@ -828,7 +828,7 @@ PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, P
         /*
         int adjusted_file_index = 0;
         int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
-        adjusted_file_index = (l * (header_io_id->idx_d->idx_count[0] * header_io_id->idx_d->idx_count[1] * header_io_id->idx_d->idx_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
+        adjusted_file_index = (l * (header_io_id->idx_d->partition_count[0] * header_io_id->idx_d->partition_count[1] * header_io_id->idx_d->partition_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
         */
 
 
@@ -924,7 +924,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   off_t data_offset = 0, base_offset = 0;
   //int total_file_size = 0;
 
-  unsigned long long total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2] * header_io_id->idx->chunk_size[3] * header_io_id->idx->chunk_size[4]);// / (64 / header_io_id->idx->compression_bit_rate);
+  unsigned long long total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2]);// / (64 / header_io_id->idx->compression_bit_rate);
 
 
   /*

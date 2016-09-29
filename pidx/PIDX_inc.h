@@ -1,7 +1,7 @@
 #ifndef __PIDX_INC_H
 #define __PIDX_INC_H
 
-#define PIDX_MAX_DIMENSIONS 5
+#define PIDX_MAX_DIMENSIONS 3
 
 #define PIDX_HAVE_MPI 1
 #define PIDX_HAVE_ZFP 0

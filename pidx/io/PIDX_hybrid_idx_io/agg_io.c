@@ -86,7 +86,7 @@ PIDX_return_code PIDX_global_async_io(PIDX_hybrid_idx_io file, PIDX_file_io_id *
 }
 
 
-PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, PIDX_block_layout global_block_layout_files, MPI_Comm comm, int init_index, int var_index, int index, int layout_start, int layout_end, int layout_count, int agg_io_level, int agg_factor, int file_status)
+PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, PIDX_block_layout global_block_layout_files, MPI_Comm comm, int init_index, int var_index, int layout_start, int agg_io_level, int agg_factor, int file_status)
 {
   int j;
   int rank = 0, nprocs = 1;

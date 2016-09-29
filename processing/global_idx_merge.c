@@ -494,7 +494,7 @@ static int IDX_file_open(const char* filename)
   }
 
 
-  unsigned long long total_reg_sample_count = (getPowerOf2(chunked_bounds[0]) * getPowerOf2(chunked_bounds[1]) * getPowerOf2(chunked_bounds[2]) * getPowerOf2(chunked_bounds[3]) * getPowerOf2(chunked_bounds[4]));
+  unsigned long long total_reg_sample_count = (getPowerOf2(chunked_bounds[0]) * getPowerOf2(chunked_bounds[1]) * getPowerOf2(chunked_bounds[2]));
   if (total_reg_sample_count <= 0)
   {
     fprintf(stderr, "[%s] [%d ]File dimensions are wrong\n", __FILE__, __LINE__);
@@ -512,7 +512,7 @@ static int IDX_file_open(const char* filename)
   if (total_reg_sample_count % max_sample_per_file)
     max_file_count++;
 
-  //printf("%d %d %d %d %d\n", chunk_size[0], chunk_size[1], chunk_size[2], chunk_size[3], chunk_size[4]);
+  //printf("%d %d %d\n", chunk_size[0], chunk_size[1], chunk_size[2]);
 
   if (rank == 0)
   {

@@ -224,16 +224,10 @@ PIDX_return_code one_time_initialize(PIDX_hybrid_idx_io file)
     PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
     PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
 
-    ret = PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
-    ret = PIDX_file_initialize_time_step(file, file->idx->filename_partition, file->idx->filename_template_partition, file->idx->current_time_step);
-    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
-    ret = PIDX_file_initialize_time_step(file, file->idx->filename_file_zero, file->idx->filename_template_file_zero, file->idx->current_time_step);
-
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
+    PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
+    PIDX_file_initialize_time_step(file, file->idx->filename_partition, file->idx->filename_template_partition, file->idx->current_time_step);
+    PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
+    PIDX_file_initialize_time_step(file, file->idx->filename_file_zero, file->idx->filename_template_file_zero, file->idx->current_time_step);
 
     total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
     file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
@@ -312,8 +306,8 @@ static PIDX_return_code PIDX_file_initialize_time_step(PIDX_hybrid_idx_io file, 
     {
       while (nbits_blocknumber > 16)
       {
-    strcat(filename_template, "/%02x"); //256 subdirectories
-    nbits_blocknumber -= 8;
+        strcat(filename_template, "/%02x"); //256 subdirectories
+        nbits_blocknumber -= 8;
       }
       strcat(filename_template, "/%04x.bin"); //max 65536  files
       nbits_blocknumber -= 16;

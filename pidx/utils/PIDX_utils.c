@@ -552,8 +552,8 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
   
   if(!H)
   {
-    h_box[0][0] = h_box[0][1] = h_box[0][2] = h_box[0][3] = h_box[0][4] = 0;
-    h_box[1][0] = h_box[1][1] = h_box[1][2] = h_box[1][3] = h_box[1][4] = 0;
+    h_box[0][0] = h_box[0][1] = h_box[0][2] = 0;
+    h_box[1][0] = h_box[1][1] = h_box[1][2] = 0;
   }
   else
   {
@@ -652,8 +652,6 @@ void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, uns
   xyz[0] = p.x;
   xyz[1] = p.y;
   xyz[2] = p.z;
-  xyz[3] = p.u;
-  xyz[4] = p.v;
 }
 
 unsigned long long xyz_to_HZ(const char* bitmask, int maxh, PointND xyz)

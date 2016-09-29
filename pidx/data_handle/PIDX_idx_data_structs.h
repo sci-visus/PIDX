@@ -200,15 +200,10 @@ struct idx_file_struct
   char bitSequence[512];
   char bitPattern[512];
 
-  char idx_cg_bitSequence[512];
-  char idx_cg_bitPattern[512];
+  char reg_patch_bs[512];
+  char process_bs[512];
+  char partition_bs[512];
 
-  char idx_cl_bitSequence[512];
-  char idx_cl_bitPattern[512];
-  char idx_cl1_bitSequence[512];
-  char idx_cl1_bitPattern[512];
-  char idx_cl2_bitSequence[512];
-  char idx_cl2_bitPattern[512];
 
   char filename_template_global[1024];                                         ///< Depends on the time step
   char filename_template_partition[1024];                                         ///< Depends on the time step
@@ -236,6 +231,8 @@ typedef struct idx_file_struct* idx_dataset;
 /// idx_dataset_derived_metadata
 struct idx_dataset_derived_metadata_struct
 {
+  int io_mode;
+
   int dimension;
   int samples_per_block;
   int maxh;
@@ -254,8 +251,8 @@ struct idx_dataset_derived_metadata_struct
   char io_dump_dir_name[512];
 
   int color;
-  int idx_count[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
-  int idx_size[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
+  int partition_count[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
+  int partition_size[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
 
   int var_pipe_length;
   int parallel_mode;  
@@ -297,7 +294,6 @@ struct idx_dataset_derived_metadata_struct
 
   int shared_block_level;
   int total_partiton_level;
-  //int ****layout_agg_range;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

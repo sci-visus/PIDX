@@ -27,8 +27,6 @@ PIDX_return_code PIDX_set_point_5D(PIDX_point point, unsigned long long  x, unsi
   point[0] = x;
   point[1] = y;
   point[2] = z;
-  point[3] = u;
-  point[4] = v;
   
   return PIDX_success;
 }
@@ -42,8 +40,6 @@ PIDX_return_code PIDX_get_point_5D(unsigned long long* x, unsigned long long* y,
   *x = point[0];
   *y = point[1];
   *z = point[2];
-  *u = point[3];
-  *v = point[4];
   
   return PIDX_success;
 }
@@ -51,7 +47,7 @@ PIDX_return_code PIDX_get_point_5D(unsigned long long* x, unsigned long long* y,
 /////////////////////////////////////////////////
 PIDX_return_code PIDX_inner_product(unsigned long long *inner_product, PIDX_point point)
 {
-  *inner_product = point[0] * point[1] * point[2] * point[3] * point[4];
+  *inner_product = point[0] * point[1] * point[2];
   //safe_add, result=a+b overflow happens when (a+b)>MAX ---> b>MAX-a
   //if ((b>0?+b:-b)>(NumericLimits<T>::highest()-(a>0?+a:-a))) return false;
   //TODO: ensure there was no overflow

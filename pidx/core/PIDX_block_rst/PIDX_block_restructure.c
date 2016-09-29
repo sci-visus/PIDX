@@ -227,8 +227,8 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
         }
         else if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
         {
-          out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
-          memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
+          out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
+          memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
         }
       }
 
@@ -283,19 +283,19 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           {
 #if !SIMULATE_IO
             if (MODE == PIDX_WRITE)
-              memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
+              memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
             else
-              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
+              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
 #endif
           }
           else
           {
 
-            //printf("CB Size = %d\n", out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * out_patch->reg_patch->size[3] * out_patch->reg_patch->size[4]);
+            //printf("CB Size = %d\n", out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]);
             //int rank;
             //MPI_Comm_rank(chunk_id->global_comm, &rank);
             //int sc = 0;
-            //for (sc = 0; sc < (out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * out_patch->reg_patch->size[3] * out_patch->reg_patch->size[4]); sc++)
+            //for (sc = 0; sc < (out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]); sc++)
             //{
             //  double xx;
             //  memcpy(&xx, in_patch->reg_patch->buffer + sc * sizeof(double), sizeof(double));
@@ -304,9 +304,9 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
               //  printf("Value at %d = %f\n", sc,  xx);
             //}
             if (MODE == PIDX_WRITE)
-              memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * out_patch->reg_patch->size[3] * out_patch->reg_patch->size[4] * bytes_per_value * var->values_per_sample);
+              memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->values_per_sample);
             else
-              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * out_patch->patch[j]->size[3] * out_patch->patch[j]->size[4] * bytes_per_value * var->values_per_sample);
+              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
           }
         }
       }

@@ -148,7 +148,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
       Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
       Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
 
-      if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] && ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] && ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
+      if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2])
         layout->hz_block_number_array[m][0] = 0;
     }
 
@@ -167,7 +167,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
       
         //printf("m = %d\n", m);
-        if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] && ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] && ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
+        if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2])
           layout->hz_block_number_array[m][t] = block_number;
       
         block_number++;
@@ -192,7 +192,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
           Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
           Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
 
-          if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2] && ZYX_to[3] >= bounding_box[0][3] && ZYX_from[3] < bounding_box[1][3] && ZYX_to[4] >= bounding_box[0][4] && ZYX_from[4] < bounding_box[1][4])
+          if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2])
             layout->hz_block_number_array[m][t] = block_number;
 
           block_number++;

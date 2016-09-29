@@ -76,7 +76,7 @@ static PIDX_return_code create_window(PIDX_local_agg_id agg_id, Agg_buffer agg_b
 
   if (agg_buffer->buffer_size != 0)
   {
-    int total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+    int total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2];
     int bytes_per_datatype = total_chunk_size * (var->bits_per_value/8) / (agg_id->idx->compression_factor);
 
 #if !SIMULATE_IO
@@ -121,7 +121,7 @@ static PIDX_return_code layout_zero(PIDX_local_agg_id agg_id, PIDX_block_layout 
   {
     PIDX_variable var = var_grp->variable[v];
     int values_per_sample = var->values_per_sample;
-    unsigned long long total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+    unsigned long long total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2];
     int bytes_per_datatype = ((var->bits_per_value / 8) * total_chunk_size) / (agg_id->idx->compression_factor);
     int target_rank = agg_id->rank_holder2[block_layout->inverse_existing_file_index[0]][v - agg_id->first_index][0];
 
@@ -327,7 +327,7 @@ static PIDX_return_code local_aggregate_write_read(PIDX_local_agg_id agg_id, int
   unsigned long long samples_per_file = (unsigned long long) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
   //MPI_Aint target_disp_address;
 
-  unsigned long long total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+  unsigned long long total_chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2];
 
 #if PIDX_HAVE_MPI
   int ret;
@@ -1142,7 +1142,7 @@ PIDX_return_code PIDX_local_agg_buf_create_multiple_level(PIDX_local_agg_id agg_
 
           unsigned long long sample_count = local_block_layout->block_count_per_file[agg_buffer->file_number] * agg_id->idx_d->samples_per_block / agg_buffer->aggregation_factor;
 
-          int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+          int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2];
 
           int bytes_per_datatype = 0;
           bytes_per_datatype = (chunk_size * var_grp->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->compression_factor);
@@ -1305,7 +1305,7 @@ PIDX_return_code PIDX_local_agg_buf_create(PIDX_local_agg_id agg_id, Agg_buffer 
 
           unsigned long long sample_count = local_block_layout->block_count_per_file[agg_buffer->file_number] * agg_id->idx_d->samples_per_block / agg_buffer->aggregation_factor;
 
-          int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+          int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2];
 
           int bytes_per_datatype = 0;
           bytes_per_datatype = (chunk_size * var_grp->variable[agg_buffer->var_number]->bits_per_value/8) / (agg_id->idx->compression_factor);
@@ -1437,7 +1437,7 @@ static PIDX_return_code create_file_zero_buffer(PIDX_local_agg_id agg_id, PIDX_b
   int p = 0, i = 0, bytes_for_datatype = 0, v = 0;
   //unsigned long long samples_per_file = (unsigned long long) agg_id->idx_d->samples_per_block * agg_id->idx->blocks_per_file;
   int count = 0;
-  int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2] * agg_id->idx->chunk_size[3] * agg_id->idx->chunk_size[4];
+  int chunk_size = agg_id->idx->chunk_size[0] * agg_id->idx->chunk_size[1] * agg_id->idx->chunk_size[2];
   int buffer_count = 0;
 
   PIDX_variable_group var_grp = agg_id->idx->variable_grp[agg_id->group_index];

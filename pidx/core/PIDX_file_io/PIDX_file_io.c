@@ -112,7 +112,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
   int fh;
 #endif
 
-  int total_chunk_size = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]);
+  int total_chunk_size = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
 
   if (enable_caching == 1 && agg_buf->var_number == io_id->init_index && agg_buf->sample_number == 0)
   {
@@ -123,7 +123,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     /*
     int adjusted_file_index = 0;
     int l = pow(2, ((int)log2((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file)));
-    adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
+    adjusted_file_index = (l * (io_id->idx_d->partition_count[0] * io_id->idx_d->partition_count[1] * io_id->idx_d->partition_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
     */
 
     generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number /*adjusted_file_index*/, file_name, PATH_MAX);
@@ -244,7 +244,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     /*
     int adjusted_file_index = 0;
     int l = pow(2, ((int)log2((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file)));
-    adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
+    adjusted_file_index = (l * (io_id->idx_d->partition_count[0] * io_id->idx_d->partition_count[1] * io_id->idx_d->partition_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
     */
 
     generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) /*adjusted_file_index*/agg_buf->file_number, file_name, PATH_MAX);
@@ -510,7 +510,7 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
   int fh;
 #endif
 
-  int total_chunk_size = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]);
+  int total_chunk_size = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
 
   if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
   {
@@ -521,7 +521,7 @@ PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_
     /*
     int adjusted_file_index = 0;
     int l = pow(2, ((int)log2((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file)));
-    adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
+    adjusted_file_index = (l * (io_id->idx_d->partition_count[0] * io_id->idx_d->partition_count[1] * io_id->idx_d->partition_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
     */
 
     generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) /*adjusted_file_index*/agg_buf->file_number, file_name, PATH_MAX);
@@ -1008,7 +1008,7 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigne
   PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
   samples_per_file = io_id->idx_d->samples_per_block * io_id->idx->blocks_per_file;
 
-  bytes_per_datatype = (var_grp->variable[variable_index]->bits_per_value / 8) * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2] * io_id->idx->chunk_size[3] * io_id->idx->chunk_size[4]) / (io_id->idx->compression_factor);
+  bytes_per_datatype = (var_grp->variable[variable_index]->bits_per_value / 8) * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]) / (io_id->idx->compression_factor);
   
 #if !SIMULATE_IO
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * var_grp->variable[variable_index]->values_per_sample;
@@ -1027,7 +1027,7 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigne
     // build file name
     int adjusted_file_index = 0;
     int l = pow(2, ((int)log2((unsigned int) file_number * io_id->idx->blocks_per_file)));
-    adjusted_file_index = (l * (io_id->idx_d->idx_count[0] * io_id->idx_d->idx_count[1] * io_id->idx_d->idx_count[2]) + (((unsigned int) file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
+    adjusted_file_index = (l * (io_id->idx_d->partition_count[0] * io_id->idx_d->partition_count[1] * io_id->idx_d->partition_count[2]) + (((unsigned int) file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
 
     ret = generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, /*file_number*/adjusted_file_index, file_name, PATH_MAX);
     if (ret == 1)

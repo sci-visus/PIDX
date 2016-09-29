@@ -56,7 +56,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int
 {
   int total_size = 0;
   int i = 0;
-  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
+  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2];
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
@@ -113,7 +113,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int
 int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int bytes_per_sample, int bit_rate)
 {
   int i = 0;
-  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2] * comp_id->idx->chunk_size[3] * comp_id->idx->chunk_size[4];
+  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2];
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
@@ -256,7 +256,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
         {
           Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
           unsigned char* buffer = patch->buffer;
-          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4] * var->values_per_sample;
+          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->values_per_sample;
 
           //if (rank == 0)
           //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bits_per_value/8, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
@@ -308,7 +308,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
         {
           Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
           unsigned char* buffer = patch->buffer;
-          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * patch->size[3] * patch->size[4] * var->values_per_sample;
+          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->values_per_sample;
 
           //if (rank == 0)
           //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bits_per_value/8, var->bits_per_value/8, comp_id->idx->compression_bit_rate);

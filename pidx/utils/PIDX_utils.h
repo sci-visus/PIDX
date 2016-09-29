@@ -26,7 +26,7 @@
 #define For(_D_) for ((_D_)=0;(_D_)<PIDX_MAX_DIMENSIONS;(_D_)++)
 #define PGET(_Point_,_Coordinate_) ((&((_Point_).x))[(_Coordinate_)])
 
-typedef struct {int x,y,z,u,v;} PointND;
+typedef struct {int x,y,z;} PointND;
 
 typedef struct {int x,y,z;} Point3D;
 
