@@ -30,10 +30,7 @@
 #ifndef __PIDX_AGG_H
 #define __PIDX_AGG_H 
 
-#include "../../PIDX_inc.h"
-
-#include "./PIDX_local_agg/PIDX_local_agg.h"
-//#include "./PIDX_global_agg/PIDX_global_agg.h"
+//#include "./PIDX_local_agg/PIDX_local_agg.h"
 
 struct PIDX_agg_struct;
 typedef struct PIDX_agg_struct* PIDX_agg_id;
@@ -61,38 +58,25 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm c
 #endif
 
 
-PIDX_return_code PIDX_create_local_aggregation_comm(PIDX_agg_id agg_id);
 PIDX_return_code PIDX_destroy_local_aggregation_comm(PIDX_agg_id agg_id);
 
 
 ///
-PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout global_block_layout, PIDX_block_layout local_block_layout);
-
-
-
-///
-PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout);
+PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
 
 
 ///
-PIDX_return_code PIDX_agg_buf_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1);
+PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int i1, int j1, int file_status);
+
+
+PIDX_return_code PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
+
+///
+PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout, int PIDX_MODE);
 
 
 ///
-PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout, int i1, int j1, int file_status);
-
-
-///
-PIDX_return_code PIDX_agg_buf_destroy(PIDX_agg_id agg_id, Agg_buffer agg_buffer);
-
-
-
-///
-PIDX_return_code PIDX_agg(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout, int PIDX_MODE, int v1, int bi);
-
-
-///
-PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout, PIDX_block_layout global_block_layout,  int PIDX_MODE, int vi, int bi);
+PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
 
 
 ///

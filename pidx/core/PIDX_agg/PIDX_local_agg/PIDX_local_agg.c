@@ -1718,7 +1718,6 @@ static PIDX_return_code destroy_file_zero_buffer(PIDX_local_agg_id agg_id)
 PIDX_return_code PIDX_local_agg(PIDX_local_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout block_layout, int MODE)
 {
 #if PIDX_HAVE_MPI
-  //int file_zero = 1;
   int ret;
 
   ret = create_window(agg_id, agg_buffer, agg_id->comm);

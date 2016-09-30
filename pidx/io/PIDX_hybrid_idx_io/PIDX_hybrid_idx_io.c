@@ -70,10 +70,10 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int gi, int svi,
 
   // Calculate bounds with compression and
   // populate rank buffer
-  time->idx_rst_start = MPI_Wtime();
+  time->idx_init_start = MPI_Wtime();
   ret = init(file, gi);
   if (ret != PIDX_success) report_error(PIDX_err_file, __FILE__, __LINE__);
-  time->idx_rst_end = MPI_Wtime();
+  time->idx_init_end = MPI_Wtime();
 
 
   // Restructuring the grid into power two blocks
@@ -148,7 +148,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int gi, int svi,
   time->agg_buffer_start = PIDX_get_time();
   ret = create_agg_io_buffer(file, gi);
   if (ret != PIDX_success)  report_error(PIDX_err_file, __FILE__, __LINE__);
-  time->agg_buffer_start = PIDX_get_time();
+  time->agg_buffer_end = PIDX_get_time();
 
 
   // Performs data aggregation
@@ -178,7 +178,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int gi, int svi,
 
   // Cleanup all buffers nd ids
   time->buffer_cleanup_start = PIDX_get_time();
-  ret = destroy_agg_io_buffer(file, gi);
+  ret = destroy_agg_io_buffer(file);
   if (ret != PIDX_success)  report_error(PIDX_err_file, __FILE__, __LINE__);
 
   ret = delete_block_layout(file, gi);

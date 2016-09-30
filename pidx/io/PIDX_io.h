@@ -87,12 +87,6 @@ void PIDX_delete_timming_buffers1(PIDX_time time);
 void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count);
 
 
-
-void PIDX_print_partition_merge_timing(MPI_Comm file, PIDX_time time, int var_count, int layout_count);
-
-
-void PIDX_print_raw_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count);
-void PIDX_print_partition_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count);
 void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count, int start_layout, int end_layout, int ****lab);
 
 ///

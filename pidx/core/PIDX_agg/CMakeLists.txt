@@ -19,8 +19,8 @@
 # sources
 # ////////////////////////////////////////
 
-ADD_SUBDIRECTORY(PIDX_global_agg)
-ADD_SUBDIRECTORY(PIDX_local_agg)
+#ADD_SUBDIRECTORY(PIDX_global_agg)
+#ADD_SUBDIRECTORY(PIDX_local_agg)
 
 FILE(GLOB PIDX_AGG_SOURCES *.h *.c)
 
@@ -46,5 +46,6 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_agg "${PIDX_AGG_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_agg m pidx_global_agg pidx_local_agg ${PIDX_AGG_LINK_LIBS})
+#TARGET_LINK_LIBRARIES(pidx_agg m pidx_global_agg pidx_local_agg ${PIDX_AGG_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_agg m ${PIDX_AGG_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_agg PROPERTIES LINKER_LANGUAGE CXX)

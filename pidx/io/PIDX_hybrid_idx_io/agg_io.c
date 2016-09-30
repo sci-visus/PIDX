@@ -103,10 +103,7 @@ PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** ag
   PIDX_time time = file->idx_d->time;
 
   /*------------------------------------Create ALL the IDs [start]---------------------------------------*/
-  /* Create the aggregation ID */
-  /* Create the I/O ID */
   int j_1 = 0;
-
   for(j = layout_start ; j < agg_io_level; j++)
   {
     j_1 = j - layout_start;
@@ -123,7 +120,6 @@ PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** ag
     agg_buffer[var_index][j]->no_of_aggregators = 0;
     agg_buffer[var_index][j]->aggregator_interval = 0;
     agg_buffer[var_index][j]->aggregation_factor = 1;
-    //agg_buffer[var_index][j]->aggregation_factor = agg_factor;//(int)pow(2, (agg_io_level - j));
 
     ret = PIDX_agg_set_global_communicator(agg_id[var_index][j], file->global_comm);
     if (ret != PIDX_success)
@@ -142,10 +138,10 @@ PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** ag
     PIDX_agg_id temp_id = agg_id[var_index][j];
     Agg_buffer temp_agg = agg_buffer[var_index][j];
     PIDX_block_layout temp_layout = block_layout_by_level[j_1];
-    PIDX_block_layout temp_global_layout = global_block_layout_files;
+    //PIDX_block_layout temp_global_layout = global_block_layout_files;
 
     time->agg_meta_start[var_index][j] = PIDX_get_time();
-    ret = PIDX_agg_meta_data_create(temp_id, temp_agg, temp_global_layout, temp_layout);
+    ret = PIDX_agg_meta_data_create(temp_id, temp_agg, temp_layout);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -153,8 +149,7 @@ PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** ag
     }
     time->agg_meta_end[var_index][j] = PIDX_get_time();
     time->agg_buf_start[var_index][j] = PIDX_get_time();
-    ret = PIDX_agg_buf_create_multiple_level(temp_id, temp_agg, temp_layout, temp_global_layout, var_index, j, file_status);
-    //ret = PIDX_agg_buf_create(temp_id, temp_agg, temp_layout, temp_global_layout, var_index, j);
+    ret = PIDX_agg_buf_create_multiple_level(temp_id, temp_agg, temp_layout, var_index, j, file_status);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -166,7 +161,7 @@ PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** ag
     if (file->idx_dbg->debug_do_agg == 1)
     {
       time->agg_start[var_index][j] = PIDX_get_time();
-      ret = PIDX_agg_global_and_local(temp_id, temp_agg, j, temp_layout, temp_global_layout, PIDX_WRITE, var_index, j_1);
+      ret = PIDX_agg_global_and_local(temp_id, temp_agg, j, temp_layout, PIDX_WRITE);
 
       if (ret != PIDX_success)
       {
@@ -176,13 +171,12 @@ PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_id** ag
       time->agg_end[var_index][j] = PIDX_get_time();
     }
 
-    ret = PIDX_agg_meta_data_destroy(temp_id, temp_layout, temp_global_layout);
+    ret = PIDX_agg_meta_data_destroy(temp_id, temp_layout);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
-
   }
 
   return PIDX_success;
