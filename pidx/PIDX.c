@@ -51,7 +51,7 @@ struct PIDX_file_descriptor
 
   int io_type;
   PIDX_io io;
-  PIDX_partitioned_idx_io partitioned_idx_io;
+  PIDX_hybrid_idx_io hybrid_idx_io;
   PIDX_idx_io idx_io;
   PIDX_raw_io raw_io;
 
@@ -176,8 +176,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
-  //(*file)->local_variable_index = 0;
-  //(*file)->local_variable_count = 0;
+  (*file)->local_group_index = 0;
+  (*file)->local_group_count = 1;
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
   (*file)->one_time_initializations = 0;
@@ -235,6 +235,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx->transform[10] = 1.0;
   (*file)->idx->transform[15] = 1.0;
 
+  (*file)->idx->variable_group_count = 1;
+
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
   memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
@@ -260,6 +262,12 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->layout_count = 0;
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
+
+  for (i = 0; i < 16; i++)
+  {
+    (*file)->idx->variable_grp[i] = malloc(sizeof(*((*file)->idx->variable_grp[i])));
+    memset((*file)->idx->variable_grp[i], 0, sizeof(*((*file)->idx->variable_grp[i])));
+  }
 
   if (rank == 0)
   {
@@ -1691,7 +1699,8 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
   }
 
-
+  file->local_group_index = file->idx->group_index_tracker;
+  file->local_group_count = 0;
 
   return PIDX_success;
 }
@@ -1726,27 +1735,123 @@ PIDX_return_code PIDX_close(PIDX_file file)
   MPI_Comm_rank(file->comm, &rank);
   MPI_Comm_size(file->comm, &nprocs);
 
+  if (rank == 0)
+  {
+    fprintf(stdout, "\n==========================================================================================================================\n");
+    fprintf(stdout, "Time step %d File name %s\n", file->idx->current_time_step, file->idx->filename);
+    fprintf(stdout, "Bitstring %s\n", file->idx->bitSequence);
+    fprintf(stdout, "Global Data %lld %lld %lld Variables %d\n", (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count);
+
+    fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2]);
+    fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
+    fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
+    fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+    fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
+  }
+
+  if (file->io_type == PIDX_HYBRID_IDX_IO)
+  {
+    double total_time = time->sim_end - time->sim_start;
+    double max_time = total_time;
+    int var = 0, rank = 0, nprocs = 1;
+
+    MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
+    MPI_Comm_rank(file->comm, &rank);
+    MPI_Comm_size(file->comm, &nprocs);
+
+    if (max_time == total_time)
+    {
+      fprintf(stdout, "[P %d %d] Time Taken: %f Seconds [%f]\n", rank, nprocs, max_time, time->EX - time->SX);
+      fprintf(stdout, "--------------------------------------------------------------------------------------------------------------------------\n");
+      fprintf(stdout, "Init Time: %f Seconds\n", (time->file_create_time - time->sim_start));
+      fprintf(stdout, "Partition time %f\n", time->partition_end_time - time->partition_start_time);
+      fprintf(stdout, "[F Zero] Block layout creation time %f\n", time->populate_idx_end_time_f0 - time->populate_idx_start_time_f0);
+      fprintf(stdout, "[Shared] Block layout creation time %f\n", time->populate_idx_end_time_s - time->populate_idx_start_time_s);
+      fprintf(stdout, "[Non-Shared] Block layout creation time %f\n", time->populate_idx_end_time_ns - time->populate_idx_start_time_ns);
+
+      double header_io_time = 0;
+      for (var = 0; var < time->header_counter; var++)
+      {
+        header_io_time = header_io_time + (time->write_init_end[var] - time->write_init_start[var]);
+        fprintf(stdout, "File Create time (+ header IO) %f\n", (time->write_init_end[var] - time->write_init_start[var]));
+      }
+      double stotal_time_ai = 0, stotal_time_bc = 0, stotal_time_a = 0, stotal_time_i = 0, stotal_time_pi = 0, stotal_time_m = 0;
+      double ntotal_time_ai = 0, ntotal_time_bc = 0, ntotal_time_a = 0, ntotal_time_i = 0, ntotal_time_pi = 0, ntotal_time_m = 0;
+
+      int p = 0;
+      int g = 0;
+      for (g = 0; g < file->idx->variable_group_count; g++)
+      {
+        PIDX_variable_group var_grp = file->idx->variable_grp[g];
+        for (var = 0; var < file->idx->variable_count; var++)
+        {
+          PIDX_variable var1 = var_grp->variable[var];
+          for (p = var_grp->shared_start_layout_index; p < var_grp->shared_end_layout_index; p++)
+          {
+            fprintf(stdout, "[S] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", var, p,
+                   (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]),
+                   (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]),
+                   (time->agg_end[var][p] - time->agg_start[var][p]),
+                   (time->io_end[var][p] - time->io_start[var][p]),
+                   (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]),
+                   (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]) + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
+
+            stotal_time_bc = stotal_time_bc + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]);
+            stotal_time_m = stotal_time_m + (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]);
+            stotal_time_a = stotal_time_a + (time->agg_end[var][p] - time->agg_start[var][p]);
+            stotal_time_i = stotal_time_i + (time->io_end[var][p] - time->io_start[var][p]);
+            stotal_time_pi = stotal_time_pi + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]);
+          }
+
+          for (p = var_grp->nshared_start_layout_index; p < var_grp->nshared_end_layout_index; p++)
+          {
+            fprintf(stdout, "[N] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", var, p,
+                   (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]),
+                   (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]),
+                   (time->agg_end[var][p] - time->agg_start[var][p]),
+                   (time->io_end[var][p] - time->io_start[var][p]),
+                   (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]),
+                   (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]) + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]) + (time->agg_end[var][p] - time->agg_start[var][p]) + (time->io_end[var][p] - time->io_start[var][p]) + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]));
+
+            ntotal_time_bc = ntotal_time_bc + (time->agg_buf_end[var][p] - time->agg_buf_start[var][p]);
+            ntotal_time_m = ntotal_time_m + (time->agg_meta_end[var][p] - time->agg_meta_start[var][p]);
+            ntotal_time_a = ntotal_time_a + (time->agg_end[var][p] - time->agg_start[var][p]);
+            ntotal_time_i = ntotal_time_i + (time->io_end[var][p] - time->io_start[var][p]);
+            ntotal_time_pi = ntotal_time_pi + (time->io_per_process_end[var][p] - time->io_per_process_start[var][p]);
+          }
+        }
+
+        ntotal_time_ai = ntotal_time_m + ntotal_time_bc + ntotal_time_a + ntotal_time_i + ntotal_time_pi;
+        stotal_time_ai = stotal_time_m + stotal_time_bc + stotal_time_a + stotal_time_i + stotal_time_pi;
+
+        fprintf(stdout, "[ST] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", file->idx->variable_count, (var_grp->shared_end_layout_index - var_grp->shared_start_layout_index), stotal_time_m, stotal_time_bc, stotal_time_a, stotal_time_i, stotal_time_pi, stotal_time_ai);
+
+        fprintf(stdout, "[NT] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", file->idx->variable_count, (var_grp->nshared_end_layout_index - var_grp->nshared_start_layout_index), ntotal_time_m, ntotal_time_bc, ntotal_time_a, ntotal_time_i, ntotal_time_pi, ntotal_time_ai);
+
+        fprintf(stdout, "HZ Time = %f\n", (time->hz_e_time - time->hz_s_time));
+        fprintf(stdout, "Cleanup Time = %f\n", (time->buffer_cleanup_end - time->buffer_cleanup_start));
+
+        fprintf(stdout, "PIDX Total Time = %f [%f + %f + (%f + %f + %f) + %f + %f + %f + %f + %f] [%f]\n", (time->file_create_time - time->sim_start) + (time->partition_end_time - time->partition_start_time) + (time->populate_idx_end_time_f0 - time->populate_idx_start_time_f0) + (time->populate_idx_end_time_s - time->populate_idx_start_time_s) + (time->populate_idx_end_time_ns - time->populate_idx_start_time_ns) + (time->hz_e_time - time->hz_s_time) + header_io_time + stotal_time_ai + ntotal_time_ai + (time->buffer_cleanup_end - time->buffer_cleanup_start),
+                (time->file_create_time - time->sim_start),
+                (time->partition_end_time - time->partition_start_time),
+                (time->populate_idx_end_time_f0 - time->populate_idx_start_time_f0),
+                (time->populate_idx_end_time_s - time->populate_idx_start_time_s),
+                (time->populate_idx_end_time_ns - time->populate_idx_start_time_ns),
+                (time->hz_e_time - time->hz_s_time),
+                header_io_time,
+                stotal_time_ai,
+                ntotal_time_ai,
+                (time->buffer_cleanup_end - time->buffer_cleanup_start),
+                max_time);
+        fprintf(stdout, "==========================================================================================================================\n");
+
+      }
+    }
+  }
+
 #if 0
   if (file->debug_output == 1 && (file->io_type == PIDX_GLOBAL_IDX_IO || file->io_type == PIDX_HYBRID_IDX_IO || file->io_type == PIDX_IDX_IO))
   {
-    if (rank == 0)
-    {
-      fprintf(stdout, "\n==========================================================================================================================\n");
-      fprintf(stdout, "Time step %d File name %s\n", file->idx->current_time_step, file->idx->filename);
-      fprintf(stdout, "Bitstring %s\n", file->idx->bitSequence);
-      fprintf(stdout, "Global Data %lld %lld %lld Variables %d\n", (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count);
-
-      fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2]);
-      fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
-      fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
-      fprintf(stdout, "Chunk Size %d %d %d\n", (int)file->idx->chunk_size[0], (int)file->idx->chunk_size[1], (int)file->idx->chunk_size[2]);
-      fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-      fprintf(stdout, "Aggregation factor = %d\n", file->idx_d->aggregator_multiplier);
-      fprintf(stdout, "Async IO = %d\n", file->idx_d->async_io);
-      fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
-    }
-
-
     if (file->io_type == PIDX_GLOBAL_IDX_IO || file->io_type == PIDX_HYBRID_IDX_IO)
     {
       double total_time = time->sim_end - time->sim_start;
@@ -1962,6 +2067,12 @@ PIDX_return_code PIDX_close(PIDX_file file)
   }
 
   file->idx->variable_count = 0;
+
+  for (i = 0; i < 16; i++)
+  {
+    free(file->idx->variable_grp[i]);
+    file->idx->variable_grp[i] = 0;
+  }
 
   free(file->idx);                  file->idx = 0;
   free(file->idx_d->time);          file->idx_d->time = 0;

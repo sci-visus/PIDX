@@ -52,11 +52,7 @@ static char output_file_template[512] = "test";
 static char var_list[512] = "var_list";
 static unsigned char **data;
 static char output_file_name[512] = "test.idx";
-static int aggregator_multiplier = 1;
 static int blocks_per_file = 256;
-static int async = 0;
-static int partition_type = 3;
-static int file_zero = 0;
 
 static char var_name[MAX_VAR_COUNT][512];
 static char type_name[MAX_VAR_COUNT][512];
@@ -280,7 +276,7 @@ static int parse_var_list()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:p:f:t:v:a:b:s:x:z:";
+  char flags[] = "g:l:p:f:t:v:b:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -320,28 +316,8 @@ static void parse_args(int argc, char **argv)
       parse_var_list();
       break;
 
-    case('a'): // number of variables
-      if (sscanf(optarg, "%d", &aggregator_multiplier) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
-
-    case('b'): // number of variables
+    case('b'): // blocks per file
       if (sscanf(optarg, "%d", &blocks_per_file) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
-
-    case('s'): // number of variables
-      if (sscanf(optarg, "%d", &async) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
-
-    case('x'): // number of variables
-      if (sscanf(optarg, "%d", &partition_type) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
-
-    case('z'): // number of variables
-      if (sscanf(optarg, "%d", &file_zero) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -410,13 +386,10 @@ int main(int argc, char **argv)
     ret = PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
 
-    ret = PIDX_set_aggregator_multiplier(file, aggregator_multiplier);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
+    //ret = PIDX_set_aggregator_multiplier(file, aggregator_multiplier);
+    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
 
-    //int io_type = PIDX_PARTITIONED_IDX_IO;//PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
-    //int io_type = PIDX_IDX_IO;// PIDX_PARTITION_MERGE_IDX_IO;
-    int io_type = PIDX_RAW_IO;
-    //int io_type = PIDX_HYBRID_IDX_IO;
+    int io_type = PIDX_HYBRID_IDX_IO;
     switch (io_type)
     {
       case PIDX_HYBRID_IDX_IO:
@@ -425,28 +398,8 @@ int main(int argc, char **argv)
         PIDX_set_block_size(file, 13);
         break;
 
-      case PIDX_GLOBAL_IDX_IO:
-        PIDX_enable_global_io(file);
-        PIDX_set_block_count(file,blocks_per_file);
-        break;
-
       case PIDX_IDX_IO:
-        //PIDX_optimize_for_file_zero(file);
-        //PIDX_set_block_size(file, 9);
         PIDX_set_block_count(file,blocks_per_file);
-        //PIDX_set_block_size(file, 5);
-        break;
-
-      case PIDX_PARTITION_MERGE_IDX_IO:
-        //PIDX_set_block_count(file,1);
-        //PIDX_set_block_size(file, 3);
-        PIDX_set_block_count(file, 128);
-        PIDX_enable_partition_merge_io(file);
-        break;
-
-      case PIDX_PARTITIONED_IDX_IO:
-        PIDX_set_block_count(file, 64);
-        PIDX_enable_partitioned_io(file);
         break;
 
       case PIDX_RAW_IO:
@@ -472,10 +425,6 @@ int main(int argc, char **argv)
 
     for (var = 0; var < variable_count; var++)
     {
-
-      //if (var == 3 || var == 5)
-      //  ret = PIDX_variable_create(var_name,  values_per_sample[var] * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
-      //else
       if (bits_per_value[var] == 32)
       {
         ret = PIDX_variable_create(var_name[var],  bits_per_value[var], FLOAT32 , &variable[var]);

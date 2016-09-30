@@ -15,6 +15,10 @@ PIDX_return_code write_headers(PIDX_hybrid_idx_io file, int group_index, int sta
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
   time->write_init_start[time->header_counter] = PIDX_get_time();
+  //printf("F: %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
+  //printf("S: %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
+  //printf("N: %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);
+
   if (var_grp->shared_start_layout_index != var_grp->shared_end_layout_index)
   {
     ret = write_headers_shared(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, 0);
@@ -216,7 +220,6 @@ static PIDX_return_code write_headers_non_shared(PIDX_hybrid_idx_io file, int gr
 
 PIDX_return_code one_time_initialize(PIDX_hybrid_idx_io file)
 {
-  int ret = 0;
   int total_header_size;
   /// Initialization ONLY ONCE per IDX file
   if (file->one_time_initializations == 0)

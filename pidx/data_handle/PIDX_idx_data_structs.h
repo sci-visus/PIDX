@@ -41,6 +41,22 @@ struct PIDX_timming_struct
    double SX;
    double EX;
    double file_create_time;
+
+
+   double idx_init_start, idx_init_end;
+   double idx_rst_start, idx_rst_end;
+   double idx_partition_start, idx_partition_end;
+   double idx_bit_string_start, idx_bit_string_end;
+   double idx_hz_start, idx_hz_end;
+   double idx_comm_create_start, idx_comm_create_end;
+   double idx_layout_start, idx_layout_end;
+   double header_write_start, header_write_end;
+   double agg_buffer_start, agg_buffer_end;
+   double buffer_cleanup_start, buffer_cleanup_end;
+   double idx_agg_start, idx_agg_end;
+   double idx_io_start, idx_io_end;
+
+
    double partition_start_time;
    double partition_end_time;
    double populate_idx_start_time;
@@ -53,10 +69,10 @@ struct PIDX_timming_struct
    double populate_idx_end_time_s;
    double hz_s_time, hz_e_time;
    double sim_start, sim_end;
-   double buffer_cleanup_start, buffer_cleanup_end;
    double *write_init_start, *write_init_end;
    double *startup_start, *startup_end;
    double *init_start, *init_end;
+
    double *rst_start, *rst_end;
    double *rst_io_start, *rst_io_end;
    double *rst_meta_data_start_io, *rst_meta_data_end_io;
@@ -102,22 +118,6 @@ struct PIDX_variable_struct
   int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase
   Ndim_patch_group* rst_patch_group;                                    ///< Pointer to the patch groups
   Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
-
-  /*
-  // Block level layout
-  //PIDX_block_layout partitioned_block_layout;
-  PIDX_block_layout global_block_layout;
-  PIDX_block_layout* block_layout_by_level;
-
-  PIDX_block_layout* global_block_layout_file_zero;
-  PIDX_block_layout** block_layout_by_level_file_zero;
-
-  PIDX_block_layout* global_block_layout_files;
-  PIDX_block_layout** block_layout_by_level_files;
-  */
-
-  //Compression related
-  //int lossy_compressed_block_size;           ///< The expected size of the compressed buffer
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -169,29 +169,27 @@ struct PIDX_variable_group_struct
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
 
-
 /// idx_file
 struct idx_file_struct
 {
-
   int current_time_step;                                                ///< Time step tracker
-  
-
 
   int variable_count;
   int variable_group_count;
   int group_index_tracker;
   PIDX_variable_group variable_grp[16];
   
-
+  char filename[1024];
   char filename_global[1024];
   char filename_partition[1024];
   char filename_file_zero[1024];
+  char filename_template_global[1024];
+  char filename_template_partition[1024];
+  char filename_template[1024];
+  char filename_template_file_zero[1024];
 
   int first_tstep;                                                     ///< The first timestep index in the IDX file
   int last_tstep;                                                      ///< The last timestep index in the IDX file
-
-  char filename[1024];
 
   int bits_per_block;
   int blocks_per_file;
@@ -203,17 +201,12 @@ struct idx_file_struct
   char reg_patch_bs[512];
   char process_bs[512];
   char partition_bs[512];
-
-
-  char filename_template_global[1024];                                         ///< Depends on the time step
-  char filename_template_partition[1024];                                         ///< Depends on the time step
-  char filename_template[1024];                                         ///< Depends on the time step
-  char filename_template_file_zero[1024];                                         ///< Depends on the time step
   
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   
   int compression_type;                                               ///< counter to enable/disable (1/0) compression
   int enable_rst;                                               ///< counter to enable/disable (1/0) compression
+
   /// 0 No aggregation
   /// 1 Hybrid aggregation
   /// 2 Only aggregation

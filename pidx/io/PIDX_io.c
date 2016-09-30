@@ -9,13 +9,13 @@ struct PIDX_io_descriptor
 #endif
 
   PIDX_hybrid_idx_io hybrid_idx_io;
-  PIDX_global_idx_io global_idx_io;
-  PIDX_partition_merge_idx_io partition_merge_idx_io;
-  PIDX_partitioned_idx_io partitioned_idx_io;
   PIDX_idx_io idx_io;
   PIDX_raw_io raw_io;
-  PIDX_multi_patch_idx_io multi_patch_idx_io;
 
+  //PIDX_multi_patch_idx_io multi_patch_idx_io;
+  //PIDX_global_idx_io global_idx_io;
+  //PIDX_partition_merge_idx_io partition_merge_idx_io;
+  //PIDX_partitioned_idx_io partitioned_idx_io;
 
   idx_dataset idx;                             ///< Contains all relevant IDX file info
                                                ///< Blocks per file, samples per block, bitmask, box, file name template
@@ -120,7 +120,6 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
 
     time->first_fence_end[i] = malloc (sizeof(double) * layout_count);   memset(time->first_fence_end[i], 0, sizeof(double) * layout_count);
     time->first_fence_start[i] = malloc (sizeof(double) * layout_count); memset(time->first_fence_start[i], 0, sizeof(double) * layout_count);
-
 
     time->windows_end[i] = malloc (sizeof(double) * layout_count);   memset(time->windows_end[i], 0, sizeof(double) * layout_count);
     time->windows_start[i] = malloc (sizeof(double) * layout_count); memset(time->windows_start[i], 0, sizeof(double) * layout_count);
@@ -388,12 +387,14 @@ void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int 
     total_time_ai = total_time_m + total_time_bc + total_time_a + total_time_i + total_time_pi;
     fprintf(stdout, "[%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + %f = %f\n", var_count, layout_count, total_time_m, total_time_bc, total_time_a, total_time_i, total_time_pi, total_time_ai);
 
+#if 1
     double total_time_rch = 0;
     for (var = 0; var < /*var_count*/1; var++)
     {
       fprintf(stdout, "[%d] STARTUP + RST + BRST + HZ = %f + %f + %f + %f = %f\n", var, (time->startup_end[var] - time->startup_start[var]), (time->rst_end[var] - time->rst_start[var]), (time->chunk_end[var] - time->chunk_start[var]), (time->hz_end[var] - time->hz_start[var]), (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]));
       total_time_rch = total_time_rch + (time->startup_end[var] - time->startup_start[var]) + (time->rst_end[var] - time->rst_start[var]) + (time->chunk_end[var] - time->chunk_start[var]) + (time->hz_end[var] - time->hz_start[var]);
     }
+#endif
 
     fprintf(stdout, "PIDX Total Time = %f [%f + %f + %f + %f + %f] [%f]\n", total_time_ai + total_time_rch + (time->file_create_time - time->sim_start) + (time->populate_idx_end_time - time->populate_idx_start_time) + header_io_time, (time->populate_idx_end_time - time->populate_idx_start_time), (time->file_create_time - time->sim_start), header_io_time, total_time_rch, total_time_ai, median_time);
 
@@ -629,26 +630,7 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
   if (mode == PIDX_MODE_CREATE)
   {
     /*
-    if (io_type == PIDX_PARTITIONED_IDX_IO)
-    {
-      file->partitioned_idx_io = PIDX_partitioned_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->partitioned_idx_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_partitioned_idx_io_set_communicator(file->partitioned_idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_partitioned_idx_write(file->partitioned_idx_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_partitioned_idx_io_finalize(file->partitioned_idx_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-
-    else if (io_type == PIDX_IDX_IO)
+    if (io_type == PIDX_IDX_IO)
     {
       //if (start_var_index == file->idx->variable_count)
       //  return PIDX_success;
@@ -688,46 +670,6 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
         return PIDX_err_flush;
 
       ret = PIDX_raw_io_finalize(file->raw_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-    else  if (io_type == PIDX_PARTITION_MERGE_IDX_IO)
-    {
-      file->partition_merge_idx_io = PIDX_partition_merge_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->partition_merge_idx_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_partition_merge_idx_io_set_communicator(file->partition_merge_idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_partition_merge_idx_write(file->partition_merge_idx_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_partition_merge_idx_io_finalize(file->partition_merge_idx_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-
-    else if (io_type == PIDX_GLOBAL_IDX_IO)
-    {
-      //if (start_var_index == file->idx->variable_count)
-      //  return PIDX_success;
-
-      file->global_idx_io = PIDX_global_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->global_idx_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_global_idx_io_set_communicator(file->global_idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_global_idx_write(file->global_idx_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_global_idx_io_finalize(file->global_idx_io);
       if (ret != PIDX_success)
         return PIDX_err_flush;
     }
@@ -774,7 +716,6 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
         return PIDX_err_flush;
     }
     */
-
   }
 
   else if (mode == PIDX_MODE_RDONLY)

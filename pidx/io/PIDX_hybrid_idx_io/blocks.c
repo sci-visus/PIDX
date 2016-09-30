@@ -2,10 +2,6 @@
 
 static PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 
-static PIDX_return_code destroy_file_zero_block_layout(PIDX_hybrid_idx_io file, int gi);
-static PIDX_return_code destroy_shared_block_layout(PIDX_hybrid_idx_io file, int gi);
-static PIDX_return_code destroy_non_shared_block_layout(PIDX_hybrid_idx_io file, int gi);
-
 PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file)
 {
   int i = 0;
@@ -684,45 +680,6 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
       count++;
     }
   }
-
-  return PIDX_success;
-}
-
-PIDX_return_code delete_block_layout(PIDX_hybrid_idx_io file, int gi)
-{
-  int i, i_1;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  PIDX_free_layout(var_grp->f0_block_layout);
-  PIDX_blocks_free_layout(var_grp->f0_block_layout);
-
-  PIDX_free_layout(var_grp->shared_block_layout);
-  PIDX_blocks_free_layout(var_grp->shared_block_layout);
-
-  PIDX_free_layout(var_grp->nshared_block_layout);
-  PIDX_blocks_free_layout(var_grp->nshared_block_layout);
-
-  for (i = var_grp->f0_start_layout_index; i < var_grp->f0_end_layout_index ; i++)
-  {
-    i_1 = i - var_grp->f0_start_layout_index;
-    PIDX_blocks_free_layout(var_grp->f0_block_layout_by_level[i_1]);
-  }
-
-  for (i = var_grp->shared_start_layout_index; i < var_grp->shared_end_layout_index ; i++)
-  {
-    i_1 = i - var_grp->shared_start_layout_index;
-    PIDX_blocks_free_layout(var_grp->shared_block_layout_by_level[i_1]);
-  }
-
-  for (i = var_grp->nshared_start_layout_index; i < var_grp->nshared_end_layout_index ; i++)
-  {
-    i_1 = i - var_grp->nshared_start_layout_index;
-    PIDX_blocks_free_layout(var_grp->nshared_block_layout_by_level[i_1]);
-  }
-
-  destroy_file_zero_block_layout(file, gi);
-  destroy_shared_block_layout(file, gi);
-  destroy_non_shared_block_layout(file, gi);
 
   return PIDX_success;
 }
