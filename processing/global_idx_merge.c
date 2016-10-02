@@ -78,8 +78,8 @@ static int chunk_size[MAX_DIMENSIONS];
 static int data_core_count;
 static char var_name[128][512];
 static char type_name[128][512];
-static int bits_per_value[128];
-static int values_per_sample[128];
+static int bpv[128];
+static int vps[128];
 static int variable_count = 0;
 static int fs_block_size = 0;
 static int maxh = 0;
@@ -325,8 +325,8 @@ static int IDX_file_open(const char* filename)
               ret = get_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
               if (ret != 0)  return (-1);
 
-              bits_per_value[variable_counter] = bits_per_sample;
-              values_per_sample[variable_counter] = 1;
+              bpv[variable_counter] = bits_per_sample;
+              vps[variable_counter] = 1;
             }
             count++;
             pch1 = strtok(NULL, " +");
@@ -486,8 +486,8 @@ static int IDX_file_open(const char* filename)
   for (var = 0; var < variable_count; var++)
   {
 #if 0
-    MPI_Bcast(&(bits_per_value[var]), 1, MPI_INT, 0, comm);
-    MPI_Bcast(&(values_per_sample[var]), 1, MPI_INT, 0, comm);
+    MPI_Bcast(&(bpv[var]), 1, MPI_INT, 0, comm);
+    MPI_Bcast(&(vps[var]), 1, MPI_INT, 0, comm);
     MPI_Bcast(var_name[var], 512, MPI_CHAR, 0, comm);
     MPI_Bcast(type_name[var], 512, MPI_CHAR, 0, comm);
 #endif
@@ -713,9 +713,9 @@ int main(int argc, char **argv)
         off_t var_offset = 0;
         for (var = 0; var < 1; var++)
         {
-          unsigned char *write_data_buffer = malloc(samples_per_block * shared_block_count * bits_per_value[var]/8);
-          memset(write_data_buffer, 0, samples_per_block * shared_block_count * bits_per_value[var]/8);
-          //printf("Write bufer size = %d [%d x %d x %d]\n", samples_per_block * shared_block_count * bits_per_value[var]/8, (int)pow(2, bits_per_block), shared_block_count, bits_per_value[var]/8);
+          unsigned char *write_data_buffer = malloc(samples_per_block * shared_block_count * bpv[var]/8);
+          memset(write_data_buffer, 0, samples_per_block * shared_block_count * bpv[var]/8);
+          //printf("Write bufer size = %d [%d x %d x %d]\n", samples_per_block * shared_block_count * bpv[var]/8, (int)pow(2, bits_per_block), shared_block_count, bpv[var]/8);
 
           // shared block data
           // doube pointer (number o fpartitions x number of shared blocks)
@@ -756,8 +756,8 @@ int main(int argc, char **argv)
             if ( access( partition_file_name, F_OK ) != -1 )
             {
               // contins data from the shared blocks
-              read_data_buffer[ic] = malloc(samples_per_block * shared_block_count * bits_per_value[var]/8);
-              memset(read_data_buffer[ic], 0, samples_per_block * shared_block_count * bits_per_value[var]/8);
+              read_data_buffer[ic] = malloc(samples_per_block * shared_block_count * bpv[var]/8);
+              memset(read_data_buffer[ic], 0, samples_per_block * shared_block_count * bpv[var]/8);
 
               int fd;
               fd = open(existing_file_name, O_RDONLY);
@@ -793,7 +793,7 @@ int main(int argc, char **argv)
 
                 if (data_offset != 0 && data_size != 0)
                 {
-                  pread(fd, read_data_buffer[ic] + (bpf * samples_per_block * (bits_per_value[var] / 8)), data_size, data_offset);
+                  pread(fd, read_data_buffer[ic] + (bpf * samples_per_block * (bpv[var] / 8)), data_size, data_offset);
 
                   write_binheader[((bpf + var * blocks_per_file)*10 + 12)] = htonl(write_binheader_length + (bpf * data_size) + var * shared_block_count);
                   write_binheader[((bpf + var * blocks_per_file)*10 + 14)] = htonl(data_size);
@@ -802,7 +802,7 @@ int main(int argc, char **argv)
                   // Hardcoded stupid merge
                   // checks if value is not zero then copies to the write block
                   int m = 0;
-                  for (m = 0; m < data_size / (bits_per_value[var] / 8) ; m++)
+                  for (m = 0; m < data_size / (bpv[var] / 8) ; m++)
                   {
                     double temp;
                     memcpy(&temp, read_data_buffer[ic] + (bpf * samples_per_block + m) * sizeof(double), sizeof(double));
@@ -839,7 +839,7 @@ int main(int argc, char **argv)
             // file doesn't exist
             /*
             int r;
-            for (r = 0; r < (shared_block_count * samples_per_block * bits_per_value[var]/8) / sizeof(double); r++)
+            for (r = 0; r < (shared_block_count * samples_per_block * bpv[var]/8) / sizeof(double); r++)
             {
               double dval;
               memcpy(&dval, write_data_buffer + r * sizeof(double), sizeof(double));
@@ -850,7 +850,7 @@ int main(int argc, char **argv)
             int fd;
             fd = open(new_file_name, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
             pwrite(fd, write_binheader, sizeof (*write_binheader)*(write_binheader_count), 0);
-            pwrite(fd, write_data_buffer, shared_block_count * samples_per_block * bits_per_value[var]/8, sizeof (*write_binheader)*(write_binheader_count));
+            pwrite(fd, write_data_buffer, shared_block_count * samples_per_block * bpv[var]/8, sizeof (*write_binheader)*(write_binheader_count));
             close(fd);
           }
         }

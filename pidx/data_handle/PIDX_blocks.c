@@ -356,8 +356,8 @@ void PIDX_free_layout(PIDX_block_layout layout)
   free(layout->file_bitmap);
   layout->file_bitmap = 0;
 
-  free(layout->block_count_per_file);
-  layout->block_count_per_file = 0;
+  free(layout->bcpf);
+  layout->bcpf = 0;
 
   free(layout->existing_file_index);
   layout->existing_file_index = 0;

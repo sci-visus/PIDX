@@ -1,7 +1,18 @@
 #include "../PIDX_io.h"
 
+static PIDX_return_code create_non_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_non_shared, int agg_io_level_non_shared);
+static PIDX_return_code create_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_shared, int agg_io_level_shared);
+static PIDX_return_code create_file_zero_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_file_zero, int agg_io_level_file_zero);
 
-PIDX_return_code create_non_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_non_shared, int agg_io_level_non_shared)
+static PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_non_shared, int agg_io_level_non_shared);
+static PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_shared, int agg_io_level_shared);
+static PIDX_return_code wait_and_destroy_file_zero_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_file_zero, int agg_io_level_file_zero);
+
+static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_non_shared, int end_layout_index_non_shared, int agg_io_level_non_shared);
+static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_shared, int end_layout_index_shared, int agg_io_level_shared);
+static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_file_zero, int end_layout_index_file_zero, int agg_io_level_file_zero);
+
+static PIDX_return_code create_non_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_non_shared, int agg_io_level_non_shared)
 {
   file->idx_d->status_non_shared = malloc(sizeof(*(file->idx_d->status_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
   memset(file->idx_d->status_non_shared, 0, sizeof(*(file->idx_d->status_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
@@ -16,7 +27,7 @@ PIDX_return_code create_non_shared_async_buffers(PIDX_hybrid_idx_io file, int st
 }
 
 
-PIDX_return_code create_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_shared, int agg_io_level_shared)
+static PIDX_return_code create_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_shared, int agg_io_level_shared)
 {
   file->idx_d->status_shared = malloc(sizeof(*(file->idx_d->status_shared)) * (agg_io_level_shared - start_layout_index_shared));
   memset(file->idx_d->status_shared, 0, sizeof(*(file->idx_d->status_shared)) * (agg_io_level_shared - start_layout_index_shared));
@@ -31,7 +42,7 @@ PIDX_return_code create_shared_async_buffers(PIDX_hybrid_idx_io file, int start_
 }
 
 
-PIDX_return_code create_file_zero_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_file_zero, int agg_io_level_file_zero)
+static PIDX_return_code create_file_zero_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_file_zero, int agg_io_level_file_zero)
 {
   file->idx_d->status_file_zero = malloc(sizeof(*(file->idx_d->status_shared)) * (agg_io_level_file_zero - start_layout_index_file_zero));
   memset(file->idx_d->status_file_zero, 0, sizeof(*(file->idx_d->status_shared)) * (agg_io_level_file_zero - start_layout_index_file_zero));
@@ -46,7 +57,7 @@ PIDX_return_code create_file_zero_async_buffers(PIDX_hybrid_idx_io file, int sta
 }
 
 
-PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_non_shared, int agg_io_level_non_shared)
+static PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_non_shared, int agg_io_level_non_shared)
 {
   int i = 0;
   int ret;
@@ -73,7 +84,7 @@ PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_hybrid_idx_io fi
 }
 
 
-PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_shared, int agg_io_level_shared)
+static PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_shared, int agg_io_level_shared)
 {
   int i = 0;
   int ret;
@@ -99,7 +110,7 @@ PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_hybrid_idx_io file, 
 }
 
 
-PIDX_return_code wait_and_destroy_file_zero_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_file_zero, int agg_io_level_file_zero)
+static PIDX_return_code wait_and_destroy_file_zero_async_buffers(PIDX_hybrid_idx_io file, int start_layout_index_file_zero, int agg_io_level_file_zero)
 {
   int i = 0;
   int ret;
@@ -124,7 +135,7 @@ PIDX_return_code wait_and_destroy_file_zero_async_buffers(PIDX_hybrid_idx_io fil
   return PIDX_success;
 }
 
-PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_non_shared, int end_layout_index_non_shared, int agg_io_level_non_shared)
+static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_non_shared, int end_layout_index_non_shared, int agg_io_level_non_shared)
 {
   int ret;
   int i = 0;
@@ -148,7 +159,7 @@ PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int
 }
 
 
-PIDX_return_code destroy_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_shared, int end_layout_index_shared, int agg_io_level_shared)
+static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_shared, int end_layout_index_shared, int agg_io_level_shared)
 {
   int i = 0;
   int ret;
@@ -172,7 +183,7 @@ PIDX_return_code destroy_shared_ids_and_buffers(PIDX_hybrid_idx_io file, int sta
 }
 
 
-PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_file_zero, int end_layout_index_file_zero, int agg_io_level_file_zero)
+static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_hybrid_idx_io file, int start_index, int start_layout_index_file_zero, int end_layout_index_file_zero, int agg_io_level_file_zero)
 {
   int i = 0;
   int ret;
@@ -303,6 +314,46 @@ PIDX_return_code destroy_agg_io_buffer(PIDX_hybrid_idx_io file)
   free(idx->f0_agg_buffer);
   free(idx->shared_agg_buffer);
   free(idx->nshared_agg_buffer);
+
+  return PIDX_success;
+}
+
+
+PIDX_return_code create_async_buffers(PIDX_hybrid_idx_io file, int gi, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared)
+{
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  create_file_zero_async_buffers(file, var_grp->f0_start_layout_index, agg_io_level_file_zero);
+  create_shared_async_buffers(file, var_grp->shared_start_layout_index, agg_io_level_shared);
+  create_non_shared_async_buffers(file, var_grp->nshared_start_layout_index, agg_io_level_non_shared);
+
+  return PIDX_success;
+}
+
+
+
+
+PIDX_return_code wait_and_destroy_async_buffers(PIDX_hybrid_idx_io file, int gi, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared)
+{
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  wait_and_destroy_file_zero_async_buffers(file, var_grp->f0_start_layout_index, agg_io_level_file_zero);
+  wait_and_destroy_non_shared_async_buffers(file, var_grp->nshared_start_layout_index, agg_io_level_non_shared);
+  wait_and_destroy_shared_async_buffers(file, var_grp->shared_start_layout_index, agg_io_level_shared);
+
+  return PIDX_success;
+}
+
+
+PIDX_return_code finalize_aggregation(PIDX_hybrid_idx_io file, int start_index, int gi, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared)
+{
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  destroy_file_zero_ids_and_buffers(file, start_index, var_grp->f0_start_layout_index, var_grp->f0_end_layout_index, agg_io_level_file_zero);
+
+  destroy_non_shared_ids_and_buffers(file, start_index, var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index, agg_io_level_non_shared);
+
+  destroy_shared_ids_and_buffers(file, start_index, var_grp->shared_start_layout_index, var_grp->shared_end_layout_index, agg_io_level_shared);
 
   return PIDX_success;
 }

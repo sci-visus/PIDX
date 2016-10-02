@@ -104,8 +104,8 @@ struct PIDX_variable_struct
 
   // General Info
   char var_name[1024];                                                  ///< Variable name
-  int values_per_sample;                                                ///< Vector(3), scalar(1), or n
-  int bits_per_value;                                                   ///< Number of bits each need
+  int vps;                                                              ///< values per sample, Vector(3), scalar(1), or n
+  int bpv;                                                   ///< Number of bits each need
   PIDX_data_type type_name;                                                 ///< Name of the type uint8, bob
   PIDX_data_layout data_layout;                                         ///< Row major or column major
 
@@ -197,10 +197,6 @@ struct idx_file_struct
   double transform[16];
   char bitSequence[512];
   char bitPattern[512];
-
-  char reg_patch_bs[512];
-  char process_bs[512];
-  char partition_bs[512];
   
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   

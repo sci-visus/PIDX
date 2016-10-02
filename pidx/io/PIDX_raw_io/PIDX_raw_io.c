@@ -641,8 +641,8 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
     for (j = 0; j < patch_count; j++)
     {
       //printf("[%d] --> %d %d %d [%d]\n", j, patch_grp->patch[j]->size[0], patch_grp->patch[j]->size[1], patch_grp->patch[j]->size[2], (patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2]));
-      temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
-      memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
+      temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
+      memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
     }
   }
 
@@ -681,21 +681,21 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
             for (v1 = 0; v1 < start_index; v1++)
             {
               PIDX_variable var1 = file->idx->variable[v1];
-              other_offset = other_offset + ((var1->bits_per_value/8) * var1->values_per_sample * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
+              other_offset = other_offset + ((var1->bpv/8) * var1->vps * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
               //printf("[%d] ----> %d [%d %d %d]\n", start_index, other_offset, sim_patch_countx[0], sim_patch_countx[1], sim_patch_countx[2]);
             }
 
             PIDX_variable var = file->idx->variable[start_index];
-            send_o = index * var->values_per_sample;
-            send_c = patch_grp->patch[i]->size[0] * var->values_per_sample;
+            send_o = index * var->vps;
+            send_c = patch_grp->patch[i]->size[0] * var->vps;
 
-            //size_t preadc = pread(fp, patch_grp->patch[i]->buffer + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, send_o * var->bits_per_value/8);
+            //size_t preadc = pread(fp, patch_grp->patch[i]->buffer + (count1 * send_c * var->bpv/8), send_c * var->bpv/8, send_o * var->bpv/8);
 
-            size_t preadc = pread(fp, temp_patch_buffer[start_index - start_var_index][i] + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, other_offset + (send_o * var->bits_per_value/8));
+            size_t preadc = pread(fp, temp_patch_buffer[start_index - start_var_index][i] + (count1 * send_c * var->bpv/8), send_c * var->bpv/8, other_offset + (send_o * var->bpv/8));
 
-            if (preadc != send_c * var->bits_per_value/8)
+            if (preadc != send_c * var->bpv/8)
             {
-              fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bits_per_value/8);
+              fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bpv/8);
               return PIDX_err_rst;
             }
           }
@@ -726,43 +726,43 @@ PIDX_return_code PIDX_forced_raw_read(PIDX_raw_io file, int start_var_index, int
           {
             PIDX_variable var = file->idx->variable[start_index];
 
-            send_o = index * var->values_per_sample * (var->bits_per_value/8);
+            send_o = index * var->vps * (var->bpv/8);
             send_c = (patch_grp->patch[r]->size[0]);
             recv_o = (file->idx->variable[start_index]->sim_patch[0]->size[0] * file->idx->variable[start_index]->sim_patch[0]->size[1] * (k1 - file->idx->variable[start_index]->sim_patch[0]->offset[2])) + (file->idx->variable[start_index]->sim_patch[0]->size[0] * (j1 - file->idx->variable[start_index]->sim_patch[0]->offset[1])) + (i1 - file->idx->variable[start_index]->sim_patch[0]->offset[0]);
 
 #if !SIMULATE_IO
-            //memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), patch_grp->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
-            memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), temp_patch_buffer[start_index - start_var_index][r] + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+            //memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->vps * (var->bpv/8)), patch_grp->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
+            memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->vps * (var->bpv/8)), temp_patch_buffer[start_index - start_var_index][r] + send_o, send_c * var->vps * (var->bpv/8));
 
 #if INVERT_ENDIANESS
-            if (var->bits_per_value/8 == 4)
+            if (var->bpv/8 == 4)
             {
               int y = 0;
               float temp;
               float temp2;
 
-              for (y = 0; y < send_c * var->values_per_sample * (var->bits_per_value/8) / sizeof(float); y++)
+              for (y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(float); y++)
               {
-                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(float)), sizeof(float));
+                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), sizeof(float));
                 float32_Reverse_Endian(temp, &temp2);
                 //number_cores = temp_number_cores;
                 //printf("%f\n", temp2);
-                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(float)), &temp2, sizeof(float));
+                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), &temp2, sizeof(float));
               }
             }
-            else if (var->bits_per_value/8 == 24)
+            else if (var->bpv/8 == 24)
             {
               int y = 0;
               double temp;
               double temp2;
 
-              for (y = 0; y < send_c * var->values_per_sample * (var->bits_per_value/8) / sizeof(double); y++)
+              for (y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(double); y++)
               {
-                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(double)), sizeof(double));
+                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), sizeof(double));
                 float64_Reverse_Endian(temp, &temp2);
                 //number_cores = temp_number_cores;
                 //printf("%f\n", temp2);
-                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(double)), &temp2, sizeof(double));
+                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), &temp2, sizeof(double));
               }
             }
 #endif

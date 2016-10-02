@@ -65,8 +65,8 @@ static int samples_per_block;
 static int data_core_count;
 static char var_name[128][512];
 static char type_name[128][512];
-static int bits_per_value[128];
-static int values_per_sample[128];
+static int bpv[128];
+static int vps[128];
 static int variable_count = 0;
 static int fs_block_size = 0;
 static int maxh = 0;
@@ -319,8 +319,8 @@ static PIDX_return_code IDX_file_open(const char* filename)
               ret = PIDX_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
               if (ret != PIDX_success)  return PIDX_err_file;
 
-              bits_per_value[variable_counter] = bits_per_sample;
-              values_per_sample[variable_counter] = 1;
+              bpv[variable_counter] = bits_per_sample;
+              vps[variable_counter] = 1;
             }
             count++;
             pch1 = strtok(NULL, " +");
@@ -480,8 +480,8 @@ static PIDX_return_code IDX_file_open(const char* filename)
   for (var = 0; var < variable_count; var++)
   {
 #if PIDX_HAVE_MPI
-    MPI_Bcast(&(bits_per_value[var]), 1, MPI_INT, 0, comm);
-    MPI_Bcast(&(values_per_sample[var]), 1, MPI_INT, 0, comm);
+    MPI_Bcast(&(bpv[var]), 1, MPI_INT, 0, comm);
+    MPI_Bcast(&(vps[var]), 1, MPI_INT, 0, comm);
     MPI_Bcast(var_name[var], 512, MPI_CHAR, 0, comm);
     MPI_Bcast(type_name[var], 512, MPI_CHAR, 0, comm);
 #endif
@@ -663,8 +663,8 @@ int main(int argc, char **argv)
         int var = 0;
         for (var = 0; var < variable_count; var++)
         {
-          unsigned char *write_data_buffer = malloc((int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
-          memset(write_data_buffer, 0, (int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
+          unsigned char *write_data_buffer = malloc((int)pow(2, bits_per_block) * blocks_per_file * bpv[var]);
+          memset(write_data_buffer, 0, (int)pow(2, bits_per_block) * blocks_per_file * bpv[var]);
 
           int write_block_counter = 0;
 
@@ -710,8 +710,8 @@ int main(int argc, char **argv)
               read_binheader = (uint32_t*) malloc(sizeof (*read_binheader)*(read_binheader_count));
               memset(read_binheader, 0, sizeof (*read_binheader)*(read_binheader_count));
 
-              unsigned char *read_data_buffer = malloc((int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
-              memset(read_data_buffer, 0, (int)pow(2, bits_per_block) * blocks_per_file * bits_per_value[var]);
+              unsigned char *read_data_buffer = malloc((int)pow(2, bits_per_block) * blocks_per_file * bpv[var]);
+              memset(read_data_buffer, 0, (int)pow(2, bits_per_block) * blocks_per_file * bpv[var]);
 
               int fd;
               fd = open(existing_file_name, O_RDONLY);
@@ -751,15 +751,15 @@ int main(int argc, char **argv)
                 if (data_offset != 0 && data_size != 0)
                 {
                   //printf("[%d] --> %d %d\n", bpf, (int)data_offset, (int)data_size);
-                  pread(fd, read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), data_size, data_offset);
+                  pread(fd, read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), data_size, data_offset);
 
                   adjusted_offset = data_offset + previous_block_offset;
 
                   write_binheader[((bpf + var * blocks_per_file)*10 + 12)] = htonl(adjusted_offset);
                   write_binheader[((bpf + var * blocks_per_file)*10 + 14)] = htonl(data_size);
 
-                  printf("IC %d RBC %d WBC %d RO %d WO %d AO %d [%d + %d]\n", ic, read_block_counter, write_block_counter, (read_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), (write_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), adjusted_offset, (int)data_offset, previous_block_offset);
-                  memcpy(write_data_buffer + (write_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bits_per_value[var] / 8)), (int)pow(2, bits_per_block) * (bits_per_value[var] / 8));
+                  printf("IC %d RBC %d WBC %d RO %d WO %d AO %d [%d + %d]\n", ic, read_block_counter, write_block_counter, (read_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), (write_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), adjusted_offset, (int)data_offset, previous_block_offset);
+                  memcpy(write_data_buffer + (write_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), (int)pow(2, bits_per_block) * (bpv[var] / 8));
 
                   read_block_counter++;
                   write_block_counter++;

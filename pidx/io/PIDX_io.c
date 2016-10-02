@@ -284,10 +284,11 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
         return PIDX_err_flush;
     }
 
-    else if (io_type == PIDX_RAW_IO)
+
+    if (io_type == PIDX_RAW_IO)
     {
-      //if (start_var_index == file->idx->variable_count)
-      //  return PIDX_success;
+      if (start_var_index == file->idx->variable_count)
+        return PIDX_success;
 
       file->raw_io = PIDX_raw_io_init(file->idx, file->idx_d, file->idx_dbg);
       if (file->raw_io == NULL)
@@ -307,10 +308,11 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
     }
     */
 
+
     if (io_type == PIDX_HYBRID_IDX_IO)
     {
-      //if (start_var_index == file->idx->variable_count)
-      //  return PIDX_success;
+      if (start_var_index == file->idx->variable_count)
+        return PIDX_success;
 
       file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
       if (file->hybrid_idx_io == NULL)
@@ -374,10 +376,11 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
       if (ret != PIDX_success)
         return PIDX_err_flush;
     }
-    else
+
+    if (io_type == PIDX_RAW_IO)
     {
-      //if (start_var_index == file->idx->variable_count)
-      //  return PIDX_success;
+      if (start_var_index == file->idx->variable_count)
+        return PIDX_success;
 
       file->raw_io = PIDX_raw_io_init(file->idx, file->idx_d, file->idx_dbg);
       if (file->raw_io == NULL)

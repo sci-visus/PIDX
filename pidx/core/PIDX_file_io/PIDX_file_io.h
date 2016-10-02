@@ -29,7 +29,27 @@
  * 
  */
 
-struct PIDX_file_io_struct;
+struct PIDX_file_io_struct
+{
+#if PIDX_HAVE_MPI
+  MPI_Comm comm;
+  MPI_Win win;
+#endif
+
+  //Contains all relevant IDX file info
+  //Blocks per file, samples per block, bitmask, box, file name template and more
+  idx_dataset idx;
+
+  //Contains all derieved IDX file info
+  //number of files, files that are ging to be populated
+  idx_dataset_derived_metadata idx_d;
+
+  int group_index;
+
+  int init_index;
+  int first_index;
+  int last_index;
+};
 typedef struct PIDX_file_io_struct* PIDX_file_io_id;
 
 
@@ -52,12 +72,6 @@ int PIDX_file_io_set_communicator(PIDX_file_io_id io_id, MPI_Comm comm);
 #endif
 
 
-
-///
-int PIDX_file_io_cached_data(uint32_t* cached_header);
-
-
-
 ///
 int PIDX_file_io_file_create(PIDX_file_io_id io_id, int time_step, char* data_set_path, int MODE);
 
@@ -68,7 +82,11 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
 
 ///
-int PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE, MPI_Request* req, MPI_File *fp, char* filename_template, int async_status);
+int PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, MPI_Request* req, MPI_File *fp, char* filename_template);
+
+
+
+int PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, MPI_Request* req, MPI_File *fp, char* filename_template);
 
 
 ///

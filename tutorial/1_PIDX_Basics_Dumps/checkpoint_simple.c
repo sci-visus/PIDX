@@ -56,8 +56,8 @@ static int blocks_per_file = 256;
 
 static char var_name[MAX_VAR_COUNT][512];
 static char type_name[MAX_VAR_COUNT][512];
-static int bits_per_value[MAX_VAR_COUNT];
-static int values_per_sample[MAX_VAR_COUNT];
+static int bpv[MAX_VAR_COUNT];
+static int vps[MAX_VAR_COUNT];
 
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./checkpoint -g 32x32x32 -l 16x16x16 -f output_idx_file_name -v 3 -t 16\n"
@@ -142,15 +142,15 @@ static void create_synthetic_simulation_data()
 
     int sample_count = 1;
     unsigned long long i, j, k, vps = 0;
-    if ((bits_per_value[var]) == 32)
+    if ((bpv[var]) == 32)
       sample_count = 1;
-    else if ((bits_per_value[var]) == 192)
+    else if ((bpv[var]) == 192)
       sample_count = 3;
-    else if ((bits_per_value[var]) == 64)
+    else if ((bpv[var]) == 64)
       sample_count = 1;
 
     //data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * sample_count);
-    data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * (bits_per_value[var]/8));
+    data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * (bpv[var]/8));
 
     //printf("sample_count = %d\n", sample_count);
 
@@ -164,12 +164,12 @@ static void create_synthetic_simulation_data()
 
           for (vps = 0; vps < sample_count; vps++)
           {
-            if ((bits_per_value[var]) == 32)
+            if ((bpv[var]) == 32)
             {
               fvalue = 100;// + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
-            else if ((bits_per_value[var]) == 192 || (bits_per_value[var]) == 64)
+            else if ((bpv[var]) == 192 || (bpv[var]) == 64)
             {
               dvalue = 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
@@ -243,8 +243,8 @@ static int parse_var_list()
             ret = PIDX_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
             if (ret != PIDX_success)  return PIDX_err_file;
 
-            bits_per_value[variable_counter] = bits_per_sample;
-            values_per_sample[variable_counter] = 1;
+            bpv[variable_counter] = bits_per_sample;
+            vps[variable_counter] = 1;
           }
           count++;
           pch1 = strtok(NULL, " +");
@@ -267,7 +267,7 @@ static int parse_var_list()
   {
     int v = 0;
     for(v = 0; v < variable_count; v++)
-      printf("[%d] -> %s %d %d\n", v, var_name[v], bits_per_value[v], values_per_sample[v]);
+      printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
 
   return PIDX_success;
@@ -425,19 +425,19 @@ int main(int argc, char **argv)
 
     for (var = 0; var < variable_count; var++)
     {
-      if (bits_per_value[var] == 32)
+      if (bpv[var] == 32)
       {
-        ret = PIDX_variable_create(var_name[var],  bits_per_value[var], FLOAT32 , &variable[var]);
+        ret = PIDX_variable_create(var_name[var],  bpv[var], FLOAT32 , &variable[var]);
         if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
       }
-      else if (bits_per_value[var] == 192)
+      else if (bpv[var] == 192)
       {
-        ret = PIDX_variable_create(var_name[var],  bits_per_value[var], FLOAT64_RGB , &variable[var]);
+        ret = PIDX_variable_create(var_name[var],  bpv[var], FLOAT64_RGB , &variable[var]);
         if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
       }
-      else if (bits_per_value[var] == 64)
+      else if (bpv[var] == 64)
       {
-        ret = PIDX_variable_create(var_name[var],  bits_per_value[var], FLOAT64 , &variable[var]);
+        ret = PIDX_variable_create(var_name[var],  bpv[var], FLOAT64 , &variable[var]);
         if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
       }
 

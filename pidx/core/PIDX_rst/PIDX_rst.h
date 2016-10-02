@@ -127,6 +127,7 @@ PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id);
 ///
 PIDX_return_code PIDX_rst_finalize(PIDX_rst_id id);
 
+PIDX_return_code PIDX_rst_aggregate_buf_create(PIDX_rst_id rst_id);
 
 PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id, int MODE);
 

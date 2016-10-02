@@ -85,7 +85,7 @@ int init(int argc, char **argv){
 
 // Create a 3D sin function as example of synthetic simulation data (change phase over time)
 template<typename T>
-int create_data(T** data, unsigned variable_count, int* values_per_sample, int ts){
+int create_data(T** data, unsigned variable_count, int* vps1, int ts){
     double fsize = 16.0;
     double fratiox = (fsize)/global_box_size[0];
     double fratioy = (fsize)/global_box_size[1];
@@ -95,7 +95,7 @@ int create_data(T** data, unsigned variable_count, int* values_per_sample, int t
     {
         fsize = fsize * (var+1); // change freq for different variables
 
-        data[var] = (double*)malloc(sizeof (T) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample[var]);
+        data[var] = (double*)malloc(sizeof (T) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * vps1[var]);
 
         for (int k = 0; k < local_box_size[2]; k++)
         {
@@ -104,16 +104,16 @@ int create_data(T** data, unsigned variable_count, int* values_per_sample, int t
                 for (int i = 0; i < local_box_size[0]; i++)
                 {
                     unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-                    for (int vps = 0; vps < values_per_sample[var]; vps++){
+                    for (int vps = 0; vps < vps1[var]; vps++){
                         double xc = (i + local_box_offset[0])*fratiox - fsize/2;
                         double yc = (j + local_box_offset[1])*fratioy - fsize/2;
                         double zc = (k + local_box_offset[2])*fratioz;
                         double zv = sin((xc*xc + yc*yc + ts%180)*3.14159265359/180)* fsize/2 + fsize/2;
 
                         if(zc > zv-0.7 && zc < zv+0.7)
-                            data[var][index * values_per_sample[var] + vps] = zv*global_box_size[2];
+                            data[var][index * vps1[var] + vps] = zv*global_box_size[2];
                         else
-                            data[var][index * values_per_sample[var] + vps] = 0;
+                            data[var][index * vps1[var] + vps] = 0;
                     }
                 }
             }
@@ -154,8 +154,8 @@ int check_last_state(std::string file_name, int ts){
     variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
     memset(variable, 0, sizeof(*variable) * variable_count);
 
-    int* values_per_sample = (int*)malloc(sizeof(*values_per_sample) * variable_count);
-    memset(values_per_sample, 0, sizeof(*values_per_sample) * variable_count);
+    int* vps = (int*)malloc(sizeof(*vps) * variable_count);
+    memset(vps, 0, sizeof(*vps) * variable_count);
 
     double** data = (double**)malloc(sizeof(*data) * variable_count);
     memset(data, 0, sizeof(*data) * variable_count);
@@ -165,18 +165,18 @@ int check_last_state(std::string file_name, int ts){
         ret = PIDX_get_next_variable(file, &variable[var]);
         if (ret != PIDX_success) report_error("PIDX_get_next_variable", __FILE__, __LINE__);
 
-        values_per_sample[var] = variable[var]->values_per_sample;
+        vps[var] = variable[var]->vps;
 
         int bits_per_sample = 0;
         ret = PIDX_default_bits_per_datatype(variable[var]->type_name, &bits_per_sample);
         if (ret != PIDX_success)  report_error("PIDX_default_bytes_per_datatype", __FILE__, __LINE__);
 
         if(rank == 0){
-            printf("\t variable %d values per sample %d bits per sample %d \n", var, values_per_sample[var], bits_per_sample);
+            printf("\t variable %d values per sample %d bits per sample %d \n", var, vps[var], bits_per_sample);
         }
 
-        data[var] = (double*)malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
-        memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2] * variable[var]->values_per_sample);
+        data[var] = (double*)malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->vps);
+        memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2] * variable[var]->vps);
     }
 
     ret = PIDX_reset_variable_counter(file);
@@ -239,7 +239,7 @@ int open_file(PIDX_file& file, PIDX_access& access, std::string output_filename)
 
 // Dump the data with PIDX
 template<typename T>
-int write_data(T** data, PIDX_file& file, PIDX_access& access, int ts, int variable_count, int* values_per_sample, std::string output_file_name, std::string var_prefix, PIDX_data_type data_type){
+int write_data(T** data, PIDX_file& file, PIDX_access& access, int ts, int variable_count, int* vps, std::string output_file_name, std::string var_prefix, PIDX_data_type data_type){
 
     int ret = 0;
 
@@ -259,7 +259,7 @@ int write_data(T** data, PIDX_file& file, PIDX_access& access, int ts, int varia
     {
         sprintf(var_name, var_prefix.c_str(), var);
 
-        ret = PIDX_variable_create(var_name, values_per_sample[var] * sizeof(T) * 8, data_type, &variable[var]);
+        ret = PIDX_variable_create(var_name, vps[var] * sizeof(T) * 8, data_type, &variable[var]);
         if (ret != PIDX_success)  report_error("PIDX_variable_create", __FILE__, __LINE__);
         ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
         if (ret != PIDX_success)  report_error("PIDX_variable_data_layout", __FILE__, __LINE__);
@@ -343,10 +343,10 @@ int main(int argc, char** argv){
 
         // Generate data for Checkpoint dump
         int checkpoint_variable_count = 3;                           //< How many variables
-        int checkpoint_values_per_sample[checkpoint_variable_count];      //< How many values per sample
-        checkpoint_values_per_sample[0] = 1;
-        checkpoint_values_per_sample[1] = 1;
-        checkpoint_values_per_sample[2] = 1;
+        int checkpoint_vps[checkpoint_variable_count];      //< How many values per sample
+        checkpoint_vps[0] = 1;
+        checkpoint_vps[1] = 1;
+        checkpoint_vps[2] = 1;
 
         double** checkpoint_data = (double**)malloc(sizeof(*checkpoint_data) * checkpoint_variable_count);
         memset(checkpoint_data, 0, sizeof(*checkpoint_data) * checkpoint_variable_count);
@@ -354,22 +354,22 @@ int main(int argc, char** argv){
         // Create syntethic data for the checkpoint
         double t1, t2;
         t1 = MPI_Wtime();
-        create_data<double>(checkpoint_data, checkpoint_variable_count, checkpoint_values_per_sample, t);
+        create_data<double>(checkpoint_data, checkpoint_variable_count, checkpoint_vps, t);
         t2 = MPI_Wtime();
 
         if(rank == 0)
             printf( "Generating state data time is %f\n", t2 - t1 );
 
         if(t % checkpoint_t_period == 0){
-            write_data(checkpoint_data, checkpoint_file, checkpoint_access, t/checkpoint_t_period, checkpoint_variable_count, checkpoint_values_per_sample, checkpoint_filename, "state_var_%d", FLOAT64);
+            write_data(checkpoint_data, checkpoint_file, checkpoint_access, t/checkpoint_t_period, checkpoint_variable_count, checkpoint_vps, checkpoint_filename, "state_var_%d", FLOAT64);
         }
 
 #ifdef VIS_DUMP
         // Vis DUMP with downcasting
 
         int vis_variable_count = 1;                             //< How many variables
-        int vis_values_per_sample[vis_variable_count];          //< How many values per sample
-        vis_values_per_sample[0] = 1;
+        int vis_vps[vis_variable_count];          //< How many values per sample
+        vis_vps[0] = 1;
 
         float** vis_data = (float**)malloc(sizeof(*vis_data) * vis_variable_count);
         memset(vis_data, 0, sizeof(*vis_data) * vis_variable_count);
@@ -379,7 +379,7 @@ int main(int argc, char** argv){
 
         // dump visualization data
         if(t % vis_t_period == 0){
-            write_data(vis_data, vis_file, vis_access, t/vis_t_period, vis_variable_count, vis_values_per_sample, vis_filename, "data_var_%d", FLOAT32);
+            write_data(vis_data, vis_file, vis_access, t/vis_t_period, vis_variable_count, vis_vps, vis_filename, "data_var_%d", FLOAT32);
         }
 
         delete [] vis_data[0];

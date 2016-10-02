@@ -31,11 +31,10 @@ struct PIDX_block_layout_struct
   int resolution_to;
   int bits_per_block;
 
-  int existing_file_count;
-  //int agg_existing_file_count;
+  int efc;  ///existing file count
 
   int *file_bitmap;
-  int *block_count_per_file;
+  int *bcpf;        /// block count per file
   int *existing_file_index;
   int *inverse_existing_file_index;
   int *file_index;

@@ -930,7 +930,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   /*
   for (i = 0; i < header_io_id->idx->variable_count; i++)
   {
-    if (header_io_id->idx->variable[i]->values_per_sample != 1)
+    if (header_io_id->idx->variable[i]->vps != 1)
     {
       all_scalars = 0;
       break;
@@ -964,27 +964,27 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         if (all_scalars == 0)
         {
           for (k = 0; k < j; k++)
-            base_offset = base_offset + ((block_layout->block_count_per_file[file_number]) * (var_grp->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * var_grp->variable[k]->values_per_sample) / (header_io_id->idx->compression_factor);
-            //base_offset = base_offset + ((header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[k]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->values_per_sample) / (header_io_id->idx->variable[k]->bits_per_value / header_io_id->idx->compression_bit_rate);
+            base_offset = base_offset + ((block_layout->bcpf[file_number]) * (var_grp->variable[k]->bpv / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * var_grp->variable[k]->vps) / (header_io_id->idx->compression_factor);
+            //base_offset = base_offset + ((header_io_id->idx->variable[header_io_id->first_index]->bcpf[file_number]) * (header_io_id->idx->variable[k]->bpv / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[k]->vps) / (header_io_id->idx->variable[k]->bpv / header_io_id->idx->compression_bit_rate);
         }
         else
-          base_offset =  j * (block_layout->block_count_per_file[file_number]) * (var_grp->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * var_grp->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->compression_factor);
-          //base_offset =  j * (header_io_id->idx->variable[header_io_id->first_index]->block_count_per_file[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bits_per_value / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->values_per_sample / (header_io_id->idx->variable[j]->bits_per_value / header_io_id->idx->compression_bit_rate);
+          base_offset =  j * (block_layout->bcpf[file_number]) * (var_grp->variable[header_io_id->first_index]->bpv / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * var_grp->variable[header_io_id->first_index]->vps / (header_io_id->idx->compression_factor);
+          //base_offset =  j * (header_io_id->idx->variable[header_io_id->first_index]->bcpf[file_number]) * (header_io_id->idx->variable[header_io_id->first_index]->bpv / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * header_io_id->idx->variable[header_io_id->first_index]->vps / (header_io_id->idx->variable[j]->bpv / header_io_id->idx->compression_bit_rate);
 
-        data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (var_grp->variable[j]->bits_per_value / 8) * total_chunk_size * var_grp->variable[j]->values_per_sample  / (header_io_id->idx->compression_factor);
+        data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps  / (header_io_id->idx->compression_factor);
 
         //printf("BLOCK %d = %d + %d + %d (%d %d)\n", i, (int)base_offset, (int)data_offset, (int)(header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size), header_io_id->idx_d->start_fs_block, header_io_id->idx_d->fs_block_size);
         data_offset = base_offset + data_offset + header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size;
 
         //TODO
-        //printf("%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bits_per_value / 8), total_chunk_size, header_io_id->idx->variable[j]->values_per_sample);
+        //printf("%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bpv / 8), total_chunk_size, header_io_id->idx->variable[j]->vps);
         //if (file_number == 2)
         //if (nprocs == 1)
-        //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample));
+        //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps));
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
-        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bits_per_value / 8) * total_chunk_size * var_grp->variable[j]->values_per_sample / (header_io_id->idx->compression_factor));
+        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps / (header_io_id->idx->compression_factor));
 
-        //total_file_size = data_offset + header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bits_per_value / 8) * total_chunk_size * header_io_id->idx->variable[j]->values_per_sample / (header_io_id->idx->compression_factor);
+        //total_file_size = data_offset + header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps / (header_io_id->idx->compression_factor);
       }
     }
   }

@@ -256,13 +256,13 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
         {
           Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
           unsigned char* buffer = patch->buffer;
-          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->values_per_sample;
+          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->vps;
 
           //if (rank == 0)
-          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bits_per_value/8, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bpv/8, var->bpv/8, comp_id->idx->compression_bit_rate);
 
           int compressed_element_count = 0;
-          compressed_element_count = compress_buffer(comp_id, buffer, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+          compressed_element_count = compress_buffer(comp_id, buffer, element_count, var->bpv/8, comp_id->idx->compression_bit_rate);
 
           //if (rank == 0)
           //printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);
@@ -308,12 +308,12 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
         {
           Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
           unsigned char* buffer = patch->buffer;
-          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->values_per_sample;
+          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->vps;
 
           //if (rank == 0)
-          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bits_per_value/8, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bpv/8, var->bpv/8, comp_id->idx->compression_bit_rate);
 
-          ret = decompress_buffer(comp_id, buffer, element_count, var->bits_per_value/8, comp_id->idx->compression_bit_rate);
+          ret = decompress_buffer(comp_id, buffer, element_count, var->bpv/8, comp_id->idx->compression_bit_rate);
           if (ret == -1)
             return PIDX_err_compress;
 

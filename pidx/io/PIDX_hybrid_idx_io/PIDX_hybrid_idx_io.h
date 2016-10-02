@@ -1,7 +1,9 @@
 #ifndef __PIDX_HYBRID_IDX_IO_H
 #define __PIDX_HYBRID_IDX_IO_H
 
-
+///
+/// \brief The PIDX_hybrid_idx_io_descriptor struct
+///
 struct PIDX_hybrid_idx_io_descriptor
 {
 
@@ -50,13 +52,32 @@ PIDX_return_code PIDX_hybrid_idx_io_set_communicator(PIDX_hybrid_idx_io id, MPI_
 
 
 ///
+/// \brief PIDX_hybrid_idx_write
+/// \param file
+/// \param group_index
+/// \param start_var_index
+/// \param end_var_index
+/// \return
+///
 PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index);
 
 
 ///
-//PIDX_return_code PIDX_idx_read(PIDX_hybrid_idx_io file, int start_var_index, int end_var_index);
+/// \brief PIDX_hybrid_idx_read
+/// \param file
+/// \param gi
+/// \param svi
+/// \param evi
+/// \return
+///
+PIDX_return_code PIDX_hybrid_idx_read(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
 
 
+
+///
+/// \brief PIDX_hybrid_idx_io_finalize
+/// \param file
+/// \return
 ///
 PIDX_return_code PIDX_hybrid_idx_io_finalize(PIDX_hybrid_idx_io file);
 

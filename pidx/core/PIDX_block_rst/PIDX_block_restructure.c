@@ -196,7 +196,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
   for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    int bytes_per_value = var->bits_per_value / 8;
+    int bytes_per_value = var->bpv / 8;
 
     for (p = 0; p < var->patch_group_count; p++)
     {
@@ -227,8 +227,8 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
         }
         else if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
         {
-          out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
-          memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
+          out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
+          memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
         }
       }
 
@@ -246,8 +246,8 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
           fprintf(fp, "[%d] [%d] Offset Count %d %d %d :: %d %d %d\n", p, j, (int)in_patch->patch[j]->offset[0], (int)in_patch->patch[j]->offset[1], (int)in_patch->patch[j]->offset[2], (int)in_patch->patch[j]->size[0], (int)in_patch->patch[j]->size[1], (int)in_patch->patch[j]->size[2]);
           for (i = 0; i < in_patch->patch[j]->size[0] * in_patch->patch[j]->size[1] * in_patch->patch[j]->size[2]; i++)
           {
-            //printf("R%d [%d] %d %d : %d\n", rank, i, p, j, var->bits_per_value/8);
-            memcpy(&dv, in_patch->patch[j]->buffer + (i*var->bits_per_value / 8), var->bits_per_value/8);
+            //printf("R%d [%d] %d %d : %d\n", rank, i, p, j, var->bpv/8);
+            memcpy(&dv, in_patch->patch[j]->buffer + (i*var->bpv / 8), var->bpv/8);
             fprintf(fp, "%f\n", dv);
           }
           fclose(fp);
@@ -270,7 +270,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
     for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
     {
       PIDX_variable var = var_grp->variable[v];
-      int bytes_per_value = var->bits_per_value / 8;
+      int bytes_per_value = var->bpv / 8;
 
       for (p = 0; p < var->patch_group_count; p++)
       {
@@ -283,9 +283,9 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           {
 #if !SIMULATE_IO
             if (MODE == PIDX_WRITE)
-              memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
+              memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
             else
-              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
+              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
 #endif
           }
           else
@@ -304,9 +304,9 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
               //  printf("Value at %d = %f\n", sc,  xx);
             //}
             if (MODE == PIDX_WRITE)
-              memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->values_per_sample);
+              memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->vps);
             else
-              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->values_per_sample);
+              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
           }
         }
       }
@@ -328,7 +328,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
   for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
   {
     PIDX_variable var = var_grp->variable[v];
-    //int bytes_per_value = var->bits_per_value / 8;
+    //int bytes_per_value = var->bpv / 8;
 
     // loop through all groups
     int g = 0;
@@ -350,7 +350,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       if (out_patch->patch[0]->size[2] % chunk_id->idx->chunk_size[2] != 0)
         nz = ((out_patch->patch[0]->size[2] / chunk_id->idx->chunk_size[2]) + 1) * chunk_id->idx->chunk_size[2];
 
-      unsigned char* temp_buffer = malloc(nx * ny * nz * var->bits_per_value/8 * var->values_per_sample);
+      unsigned char* temp_buffer = malloc(nx * ny * nz * var->bpv/8 * var->vps);
       if (temp_buffer == NULL)
         return PIDX_err_chunk;
 
@@ -365,12 +365,12 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
             for (i1 = patch_group->patch[r]->offset[0]; i1 < patch_group->patch[r]->offset[0] + patch_group->patch[r]->size[0]; i1 = i1 + patch_group->patch[r]->size[0])
             {
               index = ((patch_group->patch[r]->size[0])* (patch_group->patch[r]->size[1]) * (k1 - patch_group->patch[r]->offset[2])) + ((patch_group->patch[r]->size[0]) * (j1 - patch_group->patch[r]->offset[1])) + (i1 - patch_group->patch[r]->offset[0]);
-              send_o = index * var->values_per_sample * (var->bits_per_value/8);
+              send_o = index * var->vps * (var->bpv/8);
               send_c = (patch_group->patch[r]->size[0]);
               recv_o = ((nx) * (ny) * (k1 - out_patch->patch[0]->offset[2])) + ((nx)* (j1 - out_patch->patch[0]->offset[1])) + (i1 - out_patch->patch[0]->offset[0]);
 #if !SIMULATE_IO
               if (MODE == PIDX_WRITE)
-                memcpy(temp_buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+                memcpy(temp_buffer + (recv_o * var->vps * (var->bpv/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
 #endif
             }
           }
@@ -385,19 +385,19 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       int s1 = 0;
       int z, y, x;
       int zz, yy, xx;      
-      for (s1 = 0; s1 < var->values_per_sample; s1++)
+      for (s1 = 0; s1 < var->vps; s1++)
       {
         for (z=0;z<nz;z+=4)
         {
 #if !SIMULATE_IO
-          double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bits_per_value/8)*cbz) + nx*ny*nz*s1;
+          double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bpv/8)*cbz) + nx*ny*nz*s1;
 #endif
           for (y=0;y<ny;y+=4)
           {
             for (x=0;x<nx;x+=4)
             {
               unsigned long long diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
-              double* q=p+var->values_per_sample*diff+s1;
+              double* q=p+var->vps*diff+s1;
 
               for (zz = 0; zz < 4; ++zz)
               {
@@ -410,11 +410,11 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
                     //printf("%d %d %f\n", i, j, s[i]);
 #if !SIMULATE_IO
                     if (MODE == PIDX_WRITE)
-                      s[nx*ny*nz*s1 + i*var->values_per_sample+s1] = q[j*var->values_per_sample + s1];
+                      s[nx*ny*nz*s1 + i*var->vps+s1] = q[j*var->vps + s1];
                     else
                     {
-                      //printf("VAL %f\n", s[nx*ny*nz*s1 + i*var->values_per_sample+s1]);
-                      q[j*var->values_per_sample + s1] = s[nx*ny*nz*s1 + i*var->values_per_sample+s1];
+                      //printf("VAL %f\n", s[nx*ny*nz*s1 + i*var->vps+s1]);
+                      q[j*var->vps + s1] = s[nx*ny*nz*s1 + i*var->vps+s1];
                     }
 #endif
                   }
@@ -437,12 +437,12 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
             for (i1 = patch_group->patch[r]->offset[0]; i1 < patch_group->patch[r]->offset[0] + patch_group->patch[r]->size[0]; i1 = i1 + patch_group->patch[r]->size[0])
             {
               index = ((patch_group->patch[r]->size[0])* (patch_group->patch[r]->size[1]) * (k1 - patch_group->patch[r]->offset[2])) + ((patch_group->patch[r]->size[0]) * (j1 - patch_group->patch[r]->offset[1])) + (i1 - patch_group->patch[r]->offset[0]);
-              send_o = index * var->values_per_sample * (var->bits_per_value/8);
+              send_o = index * var->vps * (var->bpv/8);
               send_c = (patch_group->patch[r]->size[0]);
               recv_o = ((nx) * (ny) * (k1 - out_patch->patch[0]->offset[2])) + ((nx)* (j1 - out_patch->patch[0]->offset[1])) + (i1 - out_patch->patch[0]->offset[0]);
 #if !SIMULATE_IO
               if (MODE == PIDX_READ)
-                memcpy(var->rst_patch_group[g]->patch[r]->buffer + send_o, temp_buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), send_c * var->values_per_sample * (var->bits_per_value/8));
+                memcpy(var->rst_patch_group[g]->patch[r]->buffer + send_o, temp_buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
 #endif
             }
           }
@@ -473,7 +473,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       fprintf(fp, "Offset Count %d %d %d :: %d %d %d\n", (int)out_patch->reg_patch_offset[0], (int)out_patch->reg_patch_offset[1], (int)out_patch->reg_patch_offset[2], (int)out_patch->reg_patch_size[0], (int)out_patch->reg_patch_size[1], (int)out_patch->reg_patch_size[2]);
       for (i = 0; i < out_patch->reg_patch_size[0] * out_patch->reg_patch_size[1] * out_patch->reg_patch_size[2]; i++)
       {
-        memcpy(&dv, out_patch->patch[0]->buffer + (i*var->bits_per_value/8), var->bits_per_value/8);
+        memcpy(&dv, out_patch->patch[0]->buffer + (i*var->bpv/8), var->bpv/8);
         fprintf(fp, "%f\n", dv);
       }
       fclose(fp);

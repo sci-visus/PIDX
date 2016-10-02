@@ -51,7 +51,7 @@ static char output_file_template[512] = "test";
 static double **data;
 static int *int_data;
 static char output_file_name[512] = "test.idx";
-static int values_per_sample = 1;
+static int vps = 1;
 static char *usage = "Serial Usage: ./checkpoint -g 32x32x32 -l 32x32x32 -v 3 -t 16 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./checkpoint -g 32x32x32 -l 16x16x16 -f output_idx_file_name -v 3 -t 16\n"
                      "  -g: global dimensions\n"
@@ -136,33 +136,33 @@ static void create_synthetic_simulation_data()
   {
     if (var == 0)
     {
-      values_per_sample = 1;
+      vps = 1;
       int_data = malloc(sizeof (*(int_data)) * local_box_size[0] * local_box_size[1] * local_box_size[2]);
       for (k = 0; k < local_box_size[2]; k++)
         for (j = 0; j < local_box_size[1]; j++)
           for (i = 0; i < local_box_size[0]; i++)
           {
             unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-            for (vps = 0; vps < values_per_sample; vps++)
-              int_data[index * values_per_sample + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+            for (vps = 0; vps < vps; vps++)
+              int_data[index * vps + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
           }
     }
 
     else
     {
       if (var == 2)
-        values_per_sample = 3;
+        vps = 3;
       else
-        values_per_sample = 1;
+        vps = 1;
 
-      data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * values_per_sample);
+      data[var] = malloc(sizeof (*(data[var])) * local_box_size[0] * local_box_size[1] * local_box_size[2] * vps);
       for (k = 0; k < local_box_size[2]; k++)
         for (j = 0; j < local_box_size[1]; j++)
           for (i = 0; i < local_box_size[0]; i++)
           {
             unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
-            for (vps = 0; vps < values_per_sample; vps++)
-              data[var][index * values_per_sample + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+            for (vps = 0; vps < vps; vps++)
+              data[var][index * vps + vps] = var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
           }
     }
   }
@@ -299,8 +299,8 @@ int main(int argc, char **argv)
 
       if (var == 0)
       {
-        values_per_sample = 1;
-        ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(int) * 8, INT32 , &variable[var]);
+        vps = 1;
+        ret = PIDX_variable_create(var_name,  vps * sizeof(int) * 8, INT32 , &variable[var]);
         if (ret != PIDX_success)  terminate_with_error_msg("A PIDX_variable_create");
 
         ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, int_data, PIDX_row_major);
@@ -310,14 +310,14 @@ int main(int argc, char **argv)
       {
         if (var == 2)
         {
-          values_per_sample = 3;
-          ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
+          vps = 3;
+          ret = PIDX_variable_create(var_name,  vps * sizeof(double) * 8, FLOAT64_RGB , &variable[var]);
           if (ret != PIDX_success)  terminate_with_error_msg("B[%d] [%d] PIDX_variable_create", var, ret);
         }
         else
         {
-          values_per_sample = 1;
-          ret = PIDX_variable_create(var_name,  values_per_sample * sizeof(double) * 8, FLOAT64 , &variable[var]);
+          vps = 1;
+          ret = PIDX_variable_create(var_name,  vps * sizeof(double) * 8, FLOAT64 , &variable[var]);
           if (ret != PIDX_success)  terminate_with_error_msg("B[%d] [%d] PIDX_variable_create", var, ret);
         }
 

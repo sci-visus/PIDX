@@ -1,44 +1,62 @@
 #include "../PIDX_io.h"
 
+
+static PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int group_index, int start_index, int end_index, int hz_level_from, int hz_level_to);
+
 static PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
 
-PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file)
+static PIDX_return_code create_file_zero_block_layout(PIDX_hybrid_idx_io file, int gi, int hz_level_from, int hz_level_to);
+static PIDX_return_code create_shared_block_layout(PIDX_hybrid_idx_io file, int gi, int hz_level_from, int hz_level_to);
+static PIDX_return_code create_non_shared_block_layout(PIDX_hybrid_idx_io file, int gi, int hz_level_from, int hz_level_to);
+
+static PIDX_return_code destroy_file_zero_block_layout(PIDX_hybrid_idx_io file, int gi);
+static PIDX_return_code destroy_shared_block_layout(PIDX_hybrid_idx_io file, int gi);
+static PIDX_return_code destroy_non_shared_block_layout(PIDX_hybrid_idx_io file, int gi);
+
+PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file, int mode)
 {
   int i = 0;
-  char temp_bs[512];
   unsigned long long* cb = file->idx->chunked_bounds;
 
-  // First part of the bitstring
-  Point3D rpp;
-  rpp.x = (int) file->idx->reg_patch_size[0];
-  rpp.y = (int) file->idx->reg_patch_size[1];
-  rpp.z = (int) file->idx->reg_patch_size[2];
-  guess_bit_string(file->idx->reg_patch_bs, rpp);
+  if (mode == 0)
+  {
+    char temp_bs[512];
+    char reg_patch_bs[512];
+    char process_bs[512];
+    char partition_bs[512];
+
+    // First part of the bitstring
+    Point3D rpp;
+    rpp.x = (int) file->idx->reg_patch_size[0];
+    rpp.y = (int) file->idx->reg_patch_size[1];
+    rpp.z = (int) file->idx->reg_patch_size[2];
+    guess_bit_string(reg_patch_bs, rpp);
 
 
-  // Middle part of the bitstring
-  Point3D prcp;
-  prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
-  prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
-  prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
-  if (prcp.x == 0)  prcp.x = 1;
-  if (prcp.y == 0)  prcp.y = 1;
-  if (prcp.z == 0)  prcp.z = 1;
-  guess_bit_string_Z(file->idx->process_bs, prcp);
+    // Middle part of the bitstring
+    Point3D prcp;
+    prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
+    prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
+    prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
+    if (prcp.x == 0)  prcp.x = 1;
+    if (prcp.y == 0)  prcp.y = 1;
+    if (prcp.z == 0)  prcp.z = 1;
+    guess_bit_string_Z(process_bs, prcp);
 
 
-  // Last part of the bitstring
-  Point3D pcp;
-  pcp.x = (int) file->idx_d->partition_count[0];
-  pcp.y = (int) file->idx_d->partition_count[1];
-  pcp.z = (int) file->idx_d->partition_count[2];
-  guess_bit_string(file->idx->partition_bs, pcp);
+    // Last part of the bitstring
+    Point3D pcp;
+    pcp.x = (int) file->idx_d->partition_count[0];
+    pcp.y = (int) file->idx_d->partition_count[1];
+    pcp.z = (int) file->idx_d->partition_count[2];
+    guess_bit_string(partition_bs, pcp);
 
-  // Concatenating the three components to get the final bit string
-  strcpy(temp_bs, file->idx->process_bs);
-  strcat(temp_bs, file->idx->reg_patch_bs + 1);
-  strcpy(file->idx->bitSequence, file->idx->partition_bs);
-  strcat(file->idx->bitSequence, temp_bs + 1);
+    // Concatenating the three components to get the final bit string
+    strcpy(temp_bs, process_bs);
+    strcat(temp_bs, reg_patch_bs + 1);
+    strcpy(file->idx->bitSequence, partition_bs);
+    strcat(file->idx->bitSequence, temp_bs + 1);
+  }
 
   // maxh calculation
   file->idx_d->maxh = strlen(file->idx->bitSequence);
@@ -74,6 +92,83 @@ PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file)
   }
 
   return PIDX_success;
+}
+
+
+PIDX_return_code populate_block_layouts(PIDX_hybrid_idx_io file, int gi, int svi, int evi, int hz_from_file_zero, int hz_to_file_zero, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared)
+{
+  int ret;
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  if (hz_from_file_zero == hz_to_file_zero)
+  {
+    var_grp->f0_start_layout_index = 0;
+    var_grp->f0_end_layout_index = 0;
+    var_grp->f0_layout_count = 0;
+  }
+  else
+  {
+    create_file_zero_block_layout(file, gi, hz_from_file_zero, hz_to_file_zero);
+    ret = populate_idx_block_layout(file,
+                               var_grp->f0_block_layout,
+                               var_grp->f0_block_layout_by_level,
+                               var_grp->f0_start_layout_index,
+                               var_grp->f0_end_layout_index,
+                               var_grp->f0_layout_count,
+                               gi,
+                               svi, evi,
+                               hz_from_file_zero, hz_to_file_zero);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+
+  if (hz_from_shared == hz_to_shared)
+  {
+    var_grp->shared_start_layout_index = 0;
+    var_grp->shared_end_layout_index = 0;
+    var_grp->shared_layout_count = 0;
+  }
+  else
+  {
+    create_shared_block_layout(file, gi, hz_from_shared, hz_to_shared);
+    ret = populate_idx_block_layout(file,
+                               var_grp->shared_block_layout, var_grp->shared_block_layout_by_level,
+                               var_grp->shared_start_layout_index, var_grp->shared_end_layout_index,
+                               var_grp->shared_layout_count,
+                               gi,  svi, evi,
+                               hz_from_shared, hz_to_shared);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+
+
+  if (hz_from_non_shared == hz_to_non_shared)
+  {
+    var_grp->nshared_start_layout_index = 0;
+    var_grp->nshared_end_layout_index = 0;
+    var_grp->nshared_layout_count = 0;
+  }
+  else
+  {
+    create_non_shared_block_layout(file, gi, hz_from_non_shared, hz_to_non_shared);
+    ret = populate_idx_block_layout(file,
+                               var_grp->nshared_block_layout, var_grp->nshared_block_layout_by_level,
+                               var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index,
+                               var_grp->nshared_layout_count,
+                               gi,  svi, evi,
+                               hz_from_non_shared, hz_to_non_shared);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
 }
 
 
@@ -265,8 +360,8 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_
   block_layout->file_index = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(block_layout->file_index, 0, sizeof(int) * (file->idx_d->max_file_count));
 
-  block_layout->block_count_per_file = malloc(sizeof(int) * (file->idx_d->max_file_count));
-  memset(block_layout->block_count_per_file, 0, sizeof(int) * (file->idx_d->max_file_count));
+  block_layout->bcpf = malloc(sizeof(int) * (file->idx_d->max_file_count));
+  memset(block_layout->bcpf, 0, sizeof(int) * (file->idx_d->max_file_count));
 
 
   int file_number = 0;
@@ -280,7 +375,7 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_
         file_number = block_layout->hz_block_number_array[i][0] / file->idx->blocks_per_file;
         block_layout->file_bitmap[file_number] = 1;
         block_layout->file_index[file_number] = 1;
-        block_layout->block_count_per_file[file_number]++;
+        block_layout->bcpf[file_number]++;
         break;
       }
     }
@@ -295,7 +390,7 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_
           file_number = block_layout->hz_block_number_array[i][j] / file->idx->blocks_per_file;
           block_layout->file_bitmap[file_number] = 1;
           block_layout->file_index[file_number] = 1;
-          block_layout->block_count_per_file[file_number]++;
+          block_layout->bcpf[file_number]++;
         }
       }
       ctr = ctr * 2;
@@ -318,15 +413,12 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_
       {
         for (j = 0; j < ctr; j++)
         {
-          //if (rank == 0)
-          //  printf("[%d] TTTT %d %d --> %d\n", block_layout->resolution_from, i, j, block_layout->hz_block_number_array[i][j]);
           if (block_layout->hz_block_number_array[i][j] != 0)
           {
             file_number = block_layout->hz_block_number_array[i][j] / file->idx->blocks_per_file;
             block_layout->file_bitmap[file_number] = 1;
             block_layout->file_index[file_number] = 1;
-            //printf("file_number = %d\n", file_number);
-            block_layout->block_count_per_file[file_number]++;
+            block_layout->bcpf[file_number]++;
           }
         }
       }
@@ -334,14 +426,13 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_
     }
   }
 
-  block_layout->existing_file_count = 0;
+  block_layout->efc = 0;
   for (i = 0; i < file->idx_d->max_file_count; i++)
     if (block_layout->file_index[i] == 1)
-      block_layout->existing_file_count++;
+      block_layout->efc++;
 
-  //printf("FC = %d\n", block_layout->existing_file_count);
-  block_layout->existing_file_index = (int*) malloc(block_layout->existing_file_count * sizeof (int));
-  memset(block_layout->existing_file_index, 0, block_layout->existing_file_count * sizeof (int));
+  block_layout->existing_file_index = (int*) malloc(block_layout->efc * sizeof (int));
+  memset(block_layout->existing_file_index, 0, block_layout->efc * sizeof (int));
 
   block_layout->inverse_existing_file_index = (int*) malloc(file->idx_d->max_file_count * sizeof (int));
   memset(block_layout->inverse_existing_file_index, 0, file->idx_d->max_file_count * sizeof (int));
@@ -468,7 +559,7 @@ PIDX_return_code create_non_shared_block_layout(PIDX_hybrid_idx_io file, int gi,
 
 
 
-PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int ei, int hz_level_from, int hz_level_to)
+static PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int ei, int hz_level_from, int hz_level_to)
 {
   int rank = 0;
   int nprocs = 1;
@@ -599,8 +690,8 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
   block_layout->file_index = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(block_layout->file_index, 0, sizeof(int) * (file->idx_d->max_file_count));
 
-  block_layout->block_count_per_file = malloc(sizeof(int) * (file->idx_d->max_file_count));
-  memset(block_layout->block_count_per_file, 0, sizeof(int) * (file->idx_d->max_file_count));
+  block_layout->bcpf = malloc(sizeof(int) * (file->idx_d->max_file_count));
+  memset(block_layout->bcpf, 0, sizeof(int) * (file->idx_d->max_file_count));
 
   if (block_layout->resolution_from <= block_layout->bits_per_block)
   {
@@ -611,7 +702,7 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
         file_number = block_layout->hz_block_number_array[i][0] / file->idx->blocks_per_file;
         block_layout->file_bitmap[file_number] = 1;
         block_layout->file_index[file_number] = 1;
-        block_layout->block_count_per_file[file_number]++;
+        block_layout->bcpf[file_number]++;
         break;
       }
     }
@@ -626,7 +717,7 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
           file_number = block_layout->hz_block_number_array[i][j] / file->idx->blocks_per_file;
           block_layout->file_bitmap[file_number] = 1;
           block_layout->file_index[file_number] = 1;
-          block_layout->block_count_per_file[file_number]++;
+          block_layout->bcpf[file_number]++;
         }
       }
       ctr = ctr * 2;
@@ -648,7 +739,7 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
             file_number = block_layout->hz_block_number_array[i][j] / file->idx->blocks_per_file;
             block_layout->file_bitmap[file_number] = 1;
             block_layout->file_index[file_number] = 1;
-            block_layout->block_count_per_file[file_number]++;
+            block_layout->bcpf[file_number]++;
           }
         }
       }
@@ -657,13 +748,13 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
   }
 
 
-  block_layout->existing_file_count = 0;
+  block_layout->efc = 0;
   for (i = 0; i < file->idx_d->max_file_count; i++)
     if (block_layout->file_index[i] == 1)
-      block_layout->existing_file_count++;
+      block_layout->efc++;
 
-  block_layout->existing_file_index = (int*) malloc(block_layout->existing_file_count * sizeof (int));
-  memset(block_layout->existing_file_index, 0, block_layout->existing_file_count * sizeof (int));
+  block_layout->existing_file_index = (int*) malloc(block_layout->efc * sizeof (int));
+  memset(block_layout->existing_file_index, 0, block_layout->efc * sizeof (int));
 
   block_layout->inverse_existing_file_index = (int*) malloc(file->idx_d->max_file_count * sizeof (int));
   memset(block_layout->inverse_existing_file_index, 0, file->idx_d->max_file_count * sizeof (int));
@@ -674,7 +765,7 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
     if (block_layout->file_index[i] == 1)
     {
       //if (rank == 0)
-      //  printf("[%d %d] BPF %d = %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->block_count_per_file[i]);
+      //  printf("[%d %d] BPF %d = %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->bcpf[i]);
       block_layout->existing_file_index[count] = i;
       block_layout->inverse_existing_file_index[i] = count;
       count++;
@@ -684,6 +775,53 @@ PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_block_l
   return PIDX_success;
 }
 
+
+PIDX_return_code delete_block_layout(PIDX_hybrid_idx_io file, int gi, int hz_from_file_zero, int hz_to_file_zero, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared)
+{
+  int i, i_1;
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  if (hz_from_file_zero != hz_to_file_zero)
+  {
+    PIDX_free_layout(var_grp->f0_block_layout);
+    PIDX_blocks_free_layout(var_grp->f0_block_layout);
+
+    for (i = var_grp->f0_start_layout_index; i < var_grp->f0_end_layout_index ; i++)
+    {
+      i_1 = i - var_grp->f0_start_layout_index;
+      PIDX_blocks_free_layout(var_grp->f0_block_layout_by_level[i_1]);
+    }
+    destroy_file_zero_block_layout(file, gi);
+  }
+
+  if (hz_from_shared != hz_to_shared)
+  {
+    PIDX_free_layout(var_grp->shared_block_layout);
+    PIDX_blocks_free_layout(var_grp->shared_block_layout);
+
+    for (i = var_grp->shared_start_layout_index; i < var_grp->shared_end_layout_index ; i++)
+    {
+      i_1 = i - var_grp->shared_start_layout_index;
+      PIDX_blocks_free_layout(var_grp->shared_block_layout_by_level[i_1]);
+    }
+    destroy_shared_block_layout(file, gi);
+  }
+
+  if (hz_from_non_shared != hz_to_non_shared)
+  {
+    PIDX_free_layout(var_grp->nshared_block_layout);
+    PIDX_blocks_free_layout(var_grp->nshared_block_layout);
+
+    for (i = var_grp->nshared_start_layout_index; i < var_grp->nshared_end_layout_index ; i++)
+    {
+      i_1 = i - var_grp->nshared_start_layout_index;
+      PIDX_blocks_free_layout(var_grp->nshared_block_layout_by_level[i_1]);
+    }
+    destroy_non_shared_block_layout(file, gi);
+  }
+
+  return PIDX_success;
+}
 
 PIDX_return_code destroy_file_zero_block_layout(PIDX_hybrid_idx_io file, int gi)
 {

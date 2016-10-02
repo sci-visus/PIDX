@@ -254,8 +254,8 @@ int main(int argc, char **argv)
     ret = PIDX_default_bits_per_datatype(variable[var]->type_name, &bits_per_sample);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_default_bytes_per_datatype");
 
-    data[var] = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
-    memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->values_per_sample);
+    data[var] = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->vps);
+    memset(data[var], 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable[var]->vps);
 
     ret = PIDX_read_next_variable(file, variable[var]);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_read_next_variable");
@@ -316,7 +316,7 @@ int main(int argc, char **argv)
               {
                 read_count++;
                 //if (rank == 0)
-                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * vps[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
             }
           }
@@ -336,7 +336,7 @@ int main(int argc, char **argv)
               {
                 read_count++;
                 //if (rank == 0)
-                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * vps[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
             }
           }
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
               {
                 read_count++;
                 //if (rank == 0)
-                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * values_per_sample[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[var][index * vps[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
             }
           }
