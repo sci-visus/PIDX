@@ -817,6 +817,34 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int start_var_i
       if (ret != PIDX_success)
         return PIDX_err_flush;
     }
+    else  if (io_type == PIDX_MULTI_PATCH_RAW_IO)
+    {
+      if (start_var_index == file->idx->variable_count)
+        return PIDX_success;
+
+      file->multi_patch_raw_io = PIDX_multi_patch_raw_io_init(file->idx, file->idx_d, file->idx_dbg);
+      if (file->multi_patch_raw_io == NULL)
+        return PIDX_err_flush;
+
+      ret = PIDX_multi_patch_raw_io_set_communicator(file->multi_patch_raw_io, file->comm);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      int ncores = 1;
+#if PIDX_HAVE_MPI
+      MPI_Comm_size(file->comm, &ncores);
+#endif
+      if (file->idx_d->data_core_count == ncores)
+        ret = PIDX_multi_patch_raw_read(file->multi_patch_raw_io, start_var_index, end_var_index);
+      else
+        ret = PIDX_multi_patch_forced_raw_read(file->multi_patch_raw_io, start_var_index, end_var_index);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      ret = PIDX_multi_patch_raw_io_finalize(file->multi_patch_raw_io);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
     else
     {
       if (start_var_index == file->idx->variable_count)
