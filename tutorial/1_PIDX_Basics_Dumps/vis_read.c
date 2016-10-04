@@ -299,11 +299,11 @@ int main(int argc, char **argv)
             {
               memcpy(&double_val, data + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
 
-              if (double_val != var /*+ vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/)
+              if (double_val != vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
               {
                 read_error_count++;
                 //if (rank == 0)
-                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val, var/* + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
+                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val,100 + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
               else
               {

@@ -17,10 +17,10 @@ PIDX_return_code restructure_init(PIDX_hybrid_idx_io file, int gi, int svi, int 
     return PIDX_err_file;
   }
 
-  for (start_index = svi; start_index < evi; start_index = start_index + (file->idx_d->var_pipe_length + 1))
+  int pipe_length = file->idx->variable_count;
+  for (start_index = svi; start_index < evi; start_index = start_index + (pipe_length + 1))
   {
-    end_index = ((start_index + file->idx_d->var_pipe_length) >= (evi)) ? (evi - 1) : (start_index + file->idx_d->var_pipe_length);
-
+    end_index = ((start_index + pipe_length) >= (evi)) ? (evi - 1) : (start_index + pipe_length);
     file->rst_id = PIDX_rst_init(file->idx, file->idx_d, svi, start_index, end_index);
 
     ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
@@ -46,15 +46,11 @@ PIDX_return_code restructure_init(PIDX_hybrid_idx_io file, int gi, int svi, int 
 
 
 
-PIDX_return_code restructure(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
+PIDX_return_code restructure(PIDX_hybrid_idx_io file, int mode)
 {
   int ret = 0;
-  int start_index = 0, end_index = 0;
-
-  for (start_index = svi; start_index < evi; start_index = start_index + (file->idx_d->var_pipe_length + 1))
+  if (mode == PIDX_WRITE)
   {
-    end_index = ((start_index + file->idx_d->var_pipe_length) >= (evi)) ? (evi - 1) : (start_index + file->idx_d->var_pipe_length);
-
     /* Perform data restructuring */
     if (file->idx_dbg->debug_do_rst == 1)
     {
@@ -63,6 +59,24 @@ PIDX_return_code restructure(PIDX_hybrid_idx_io file, int gi, int svi, int evi)
         return PIDX_err_rst;
 
       ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_WRITE);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+
+      ret = PIDX_rst_buf_destroy(file->rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+    }
+  }
+  else if (mode == PIDX_READ)
+  {
+    /* Perform data restructuring */
+    if (file->idx_dbg->debug_do_rst == 1)
+    {
+      ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_READ);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+
+      ret = PIDX_rst_read(file->rst_id);
       if (ret != PIDX_success)
         return PIDX_err_rst;
 

@@ -290,7 +290,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
           else
           {
-
             //printf("CB Size = %d\n", out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]);
             //int rank;
             //MPI_Comm_rank(chunk_id->global_comm, &rank);
@@ -306,7 +305,8 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
             if (MODE == PIDX_WRITE)
               memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->vps);
             else
-              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
+              memcpy(in_patch->reg_patch->buffer, out_patch->patch[j]->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->vps);
+              //memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
           }
         }
       }

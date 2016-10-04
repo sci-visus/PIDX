@@ -354,6 +354,27 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
 
   else if (mode == PIDX_MODE_RDONLY)
   {
+    //if (io_type == PIDX_HYBRID_IDX_IO)
+    {
+      if (start_var_index == file->idx->variable_count)
+        return PIDX_success;
+
+      file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
+      if (file->hybrid_idx_io == NULL)
+        return PIDX_err_flush;
+
+      ret = PIDX_hybrid_idx_io_set_communicator(file->hybrid_idx_io, file->comm);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      ret = PIDX_hybrid_idx_read(file->hybrid_idx_io, group_index, start_var_index, end_var_index);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+
+      ret = PIDX_hybrid_idx_io_finalize(file->hybrid_idx_io);
+      if (ret != PIDX_success)
+        return PIDX_err_flush;
+    }
     /*
     if (io_type == PIDX_IDX_IO)
     {

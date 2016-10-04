@@ -310,6 +310,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset(*file, 0, sizeof (*(*file)) );
 
   (*file)->flags = flags;
+  (*file)->comm = access_type->comm;
     
   (*file)->idx = (idx_dataset)malloc(sizeof (*((*file)->idx)));
   memset((*file)->idx, 0, sizeof (*((*file)->idx)));
@@ -362,6 +363,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;
   (*file)->idx->group_index_tracker = 0;
+  (*file)->local_group_count = 1;
 
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;
@@ -410,12 +412,17 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
-  (*file)->idx->variable_grp[0] = malloc(sizeof (*((*file)->idx->variable_grp[0])));
+  for (i = 0; i < 16; i++)
+  {
+    (*file)->idx->variable_grp[i] = malloc(sizeof(*((*file)->idx->variable_grp[i])));
+    memset((*file)->idx->variable_grp[i], 0, sizeof(*((*file)->idx->variable_grp[i])));
+  }
 
   int var = 0, variable_counter = 0, count = 0, len = 0;
   char *pch, *pch1;
   char line [ 512 ];
 
+  MPI_Comm_rank((*file)->comm, &rank);
   if (rank == 0)
   {
     FILE *fp = fopen((*file)->idx->filename, "r");
@@ -442,6 +449,40 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         {
           if (count % 2 == 1)
             (*file)->idx->bounds[count / 2] = atoi(pch) + 1;
+          count++;
+          pch = strtok(NULL, " ");
+        }
+      }
+
+      if (strcmp(line, "(partition size)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+
+        pch = strtok(line, " ");
+        count = 0;
+        while (pch != NULL)
+        {
+          if (count % 2 == 1)
+            (*file)->idx_d->partition_size[count / 2] = atoi(pch);
+          count++;
+          pch = strtok(NULL, " ");
+        }
+      }
+
+      if (strcmp(line, "(partition count)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+
+        pch = strtok(line, " ");
+        count = 0;
+        while (pch != NULL)
+        {
+          if (count % 2 == 1)
+            (*file)->idx_d->partition_count[count / 2] = atoi(pch) + 1;
           count++;
           pch = strtok(NULL, " ");
         }
@@ -628,17 +669,21 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     fclose(fp);
   }
 
+  (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 
 #if PIDX_HAVE_MPI
   if ((*file)->idx_d->parallel_mode == 1)
   {
-    MPI_Bcast((*file)->idx->bounds, 5, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
-    MPI_Bcast((*file)->idx->reg_patch_size, 5, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
-    MPI_Bcast((*file)->idx->chunk_size, 5, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->reg_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx_d->data_core_count), 1, MPI_INT, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx_d->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx_d->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->compression_bit_rate), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->io_type), 1, MPI_INT, 0, (*file)->comm);
@@ -671,7 +716,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     }
   }
 #endif
-  
+
   for (var = 0; var < (*file)->idx->variable_count; var++)
   {
 #if PIDX_HAVE_MPI

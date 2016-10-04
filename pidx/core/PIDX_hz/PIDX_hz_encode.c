@@ -1632,7 +1632,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               check_bit = 1, s = 0;    
               if (strcmp(var->type_name, FLOAT64) == 0)
               {
-                dvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                dvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                 dvalue_2 = *(*((double**)var->hz_buffer[b]->buffer + i) + ((k * var->vps) + s));
 
                 //printf("X[%lld]  %f %f\n", (long long)global_hz, dvalue_1, dvalue_2);

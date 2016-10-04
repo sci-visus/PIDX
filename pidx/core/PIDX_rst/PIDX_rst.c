@@ -1242,7 +1242,6 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 {
-
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
 
@@ -1690,9 +1689,6 @@ PIDX_return_code PIDX_rst_aggregate_buf_create(PIDX_rst_id rst_id)
       int nz = out_patch->size[2];
 
       patch_group->data_source = 1;
-
-      //printf("[R REG] %d %d %d\n", nx, ny, nz);
-
       var->rst_patch_group[g]->reg_patch->buffer = malloc(nx * ny * nz * (var->bpv/8) * var->vps);
       memset(var->rst_patch_group[g]->reg_patch->buffer, 0, nx * ny * nz * (var->bpv/8) * var->vps);
 
@@ -2209,7 +2205,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
                     }
                     else if (strcmp(var->type_name, FLOAT64) == 0)
                     {
-                      dvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
+                      dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived->color * bounds[0] * bounds[1] * bounds[2]);
                       memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
                       check_bit = check_bit && (dvalue_1 == dvalue_2);

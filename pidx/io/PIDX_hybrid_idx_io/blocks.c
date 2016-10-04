@@ -18,7 +18,7 @@ PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file, int mode)
   int i = 0;
   unsigned long long* cb = file->idx->chunked_bounds;
 
-  if (mode == 0)
+  if (mode == PIDX_WRITE)
   {
     char temp_bs[512];
     char reg_patch_bs[512];

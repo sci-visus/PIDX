@@ -51,7 +51,7 @@ PIDX_return_code PIDX_set_mpi_access(PIDX_access access, MPI_Comm comm)
     return PIDX_err_access;
   */
   access->comm = comm;
-  
+
   return PIDX_success;
 }
 

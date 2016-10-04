@@ -75,7 +75,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int gi, int svi,
   ret = restructure_init(file, gi, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-  ret = restructure(file, gi, svi, evi);
+  ret = restructure(file, PIDX_WRITE);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->idx_rst_end = MPI_Wtime();
 
@@ -95,14 +95,14 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int gi, int svi,
 
   // calculates maxh and bitstring
   time->idx_bit_string_start = PIDX_get_time();
-  ret = populate_bit_string(file, 0);
+  ret = populate_bit_string(file, PIDX_WRITE);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   // selects levels based on mode and maxh
   select_io_mode(file, gi);
 
   // computes the filename temlates
-  ret = one_time_initialize(file);
+  ret = one_time_initialize(file, PIDX_WRITE);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->idx_bit_string_end = PIDX_get_time();
 
@@ -153,7 +153,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int gi, int svi,
   time->idx_agg_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + 1)
   {
-    ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, PIDX_WRITE);
+    ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, 0, PIDX_WRITE);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   }
   time->idx_agg_end = PIDX_get_time();
@@ -186,7 +186,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int gi, int svi,
   ret = destroy_local_comm(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-  ret = destroy_hz_buffers(file, svi, evi);
+  ret = destroy_hz_buffers(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   ret = restructure_cleanup(file, gi);
@@ -232,25 +232,25 @@ PIDX_return_code PIDX_hybrid_idx_read(PIDX_hybrid_idx_io file, int gi, int svi, 
 
   // calculates maxh and bitstring
   time->idx_bit_string_start = PIDX_get_time();
-  ret = populate_bit_string(file, 1);
+  ret = populate_bit_string(file, PIDX_READ);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   // selects levels based on mode and maxh
   select_io_mode(file, gi);
 
   // computes the filename temlates
-  ret = one_time_initialize(file);
+  ret = one_time_initialize(file, PIDX_READ);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->idx_bit_string_end = PIDX_get_time();
 
 
 
-  /*
   // Calculates the number of partititons
   time->idx_partition_start = PIDX_get_time();
   ret = find_partition_count(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
+  /*
   // Setting up for partition
   // group processes (assign same color) to
   // processes within the same partition
@@ -306,18 +306,23 @@ PIDX_return_code PIDX_hybrid_idx_read(PIDX_hybrid_idx_io file, int gi, int svi, 
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->agg_buffer_end = PIDX_get_time();
 
+  for (start_index = svi; start_index < evi; start_index = start_index + 1)
+  {
+    ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, 1, PIDX_READ);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
+  }
+
 
   // Performs data io
   time->idx_io_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + (/*idx->var_pipe_length + */1))
   {
-    create_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
+    //create_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
 
     ret = data_io(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, PIDX_READ);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-    wait_and_destroy_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
-    finalize_aggregation(file, gi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared);
+    //wait_and_destroy_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
   }
   time->idx_io_end = PIDX_get_time();
 
@@ -325,14 +330,15 @@ PIDX_return_code PIDX_hybrid_idx_read(PIDX_hybrid_idx_io file, int gi, int svi, 
   time->idx_agg_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + 1)
   {
-    ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, PIDX_READ);
+    ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, 2, PIDX_READ);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   }
+  finalize_aggregation(file, gi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared);
   time->idx_agg_end = PIDX_get_time();
 
-  populate_hz_buffers(file, svi, evi);
-  ret = restructure(file, gi, svi, evi);
-
+  populate_hz_buffers(file);
+  restructure(file, PIDX_READ);
+#if 0
   // Cleanup all buffers nd ids
   time->buffer_cleanup_start = PIDX_get_time();
   ret = destroy_agg_io_buffer(file);
@@ -346,13 +352,13 @@ PIDX_return_code PIDX_hybrid_idx_read(PIDX_hybrid_idx_io file, int gi, int svi, 
   ret = destroy_local_comm(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-  ret = destroy_hz_buffers(file, svi, evi);
+  ret = destroy_hz_buffers(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   ret = restructure_cleanup(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->buffer_cleanup_end = PIDX_get_time();
-
+#endif
   time->EX = PIDX_get_time();
   return PIDX_success;
 }
