@@ -1,0 +1,1080 @@
+#include "../PIDX_io.h"
+
+#define INVERT_ENDIANESS 0
+#define PIDX_HACK_MULTI_PATCH 0
+
+static int maximum_neighbor_count = 256;
+
+static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
+
+struct PIDX_multi_patch_raw_io_descriptor
+{
+
+#if PIDX_HAVE_MPI
+  MPI_Comm comm;                               ///< MPI sub-communicator (including all processes per IDX file)
+#endif
+
+  PIDX_header_io_id header_io_id;              ///< IDX metadata id
+
+#if PIDX_HACK_MULTI_PATCH
+  PIDX_rst_id rst_id;                          ///< Restructuring phase id
+#else
+  PIDX_multi_patch_rst_id multi_patch_rst_id;
+#endif
+
+  //int flush_used;
+  //int write_on_close;                          ///< HPC Writes
+  int one_time_initializations;                ///<
+
+
+  idx_dataset idx;                             ///< Contains all relevant IDX file info
+                                               ///< Blocks per file, samples per block, bitmask, box, file name template
+
+  idx_dataset_derived_metadata idx_d;          ///< Contains all derieved IDX file info
+                                               ///< number of files, files that are ging to be populated
+
+  idx_debug idx_dbg;
+
+  //PIDX_time time;
+};
+
+
+PIDX_multi_patch_raw_io PIDX_multi_patch_raw_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg)
+{
+  //Creating the restructuring ID
+  PIDX_multi_patch_raw_io multi_patch_raw_io_id;
+  multi_patch_raw_io_id = malloc(sizeof (*multi_patch_raw_io_id));
+  memset(multi_patch_raw_io_id, 0, sizeof (*multi_patch_raw_io_id));
+
+  multi_patch_raw_io_id->idx = idx_meta_data;
+  multi_patch_raw_io_id->idx_d = idx_derived_ptr;
+  multi_patch_raw_io_id->idx_dbg = idx_dbg;
+
+  return (multi_patch_raw_io_id);
+}
+
+
+#if PIDX_HAVE_MPI
+PIDX_return_code PIDX_multi_patch_raw_io_set_communicator(PIDX_multi_patch_raw_io id, MPI_Comm comm)
+{
+  if (id == NULL)
+    return PIDX_err_id;
+
+  id->comm = comm;
+
+  return PIDX_success;
+}
+#endif
+
+PIDX_return_code PIDX_multi_patch_raw_write(PIDX_multi_patch_raw_io file, int start_var_index, int end_var_index)
+{
+  file->idx_d->var_pipe_length = file->idx->variable_count - 1;
+  if (file->idx_d->var_pipe_length == 0)
+    file->idx_d->var_pipe_length = 1;
+
+  PIDX_return_code ret;
+  int nprocs = 1;
+  int rank = 0;
+
+
+  PIDX_time time = file->idx_d->time;
+  time->populate_idx_start_time = PIDX_get_time();
+
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+  {
+    MPI_Comm_size(file->comm,  &nprocs);
+    MPI_Comm_rank(file->comm,  &rank);
+  }
+#endif
+
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
+
+  file->idx_d->rank_r_offset = malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_offset, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
+
+  file->idx_d->rank_r_count =  malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_count, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
+
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+  {
+
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
+
+  }
+  else
+  {
+    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+
+    file->idx->enable_rst = 0;
+  }
+  
+#endif
+
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
+
+  /// Initialization ONLY ONCE per IDX file
+  if (file->one_time_initializations == 0)
+  {
+    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
+    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, 0);
+
+    /*
+    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
+    */
+
+    file->one_time_initializations = 1;
+  }
+  time->populate_idx_end_time = PIDX_get_time();
+
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
+
+  time->write_init_start[time->header_counter] = PIDX_get_time();
+
+#if !SIMULATE_IO
+  if (file->idx_dbg->debug_do_io == 1)
+  {
+    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
+#if PIDX_HAVE_MPI
+    if (file->idx_d->parallel_mode == 1)
+    {
+      ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
+#endif
+
+    ret = PIDX_header_io_enable_raw_dump (file->header_io_id);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+
+    if (file->idx->variable_index_tracker < file->idx->variable_count )
+    {
+      // Create the header
+      ret = PIDX_header_io_file_write(file->header_io_id, file->idx->variable[start_var_index]->global_block_layout,  0);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
+    else if (file->idx->variable_index_tracker == file->idx->variable_count)
+    {
+      ret = PIDX_header_io_file_write(file->header_io_id, file->idx->variable[start_var_index]->global_block_layout, 1);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
+
+    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+
+    ret = PIDX_header_io_finalize(file->header_io_id);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+  }
+#endif
+
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
+
+  time->write_init_end[time->header_counter] = PIDX_get_time();
+  time->header_counter++;
+
+
+  int start_index = 0, end_index = 0;
+  for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->idx_d->var_pipe_length + 1))
+  {
+    end_index = ((start_index + file->idx_d->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->idx_d->var_pipe_length);
+
+
+    /*--------------------------------------Create RST IDs [start]------------------------------------------*/
+    /* Create the restructuring ID */
+#if PIDX_HACK_MULTI_PATCH    
+    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+#else
+    file->multi_patch_rst_id = PIDX_multi_patch_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+#endif
+    /*----------------------------------------Create RST IDs [end]------------------------------------------*/
+
+
+
+    /*------------------------------------Adding communicator [start]----------------------------------------*/
+#if PIDX_HAVE_MPI
+    /* Attaching the communicator to the restructuring phase */
+    if (file->idx_d->parallel_mode == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH    
+      ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
+#else
+      ret = PIDX_multi_patch_rst_set_communicator(file->multi_patch_rst_id, file->comm);
+#endif
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+    }
+#endif
+    /*------------------------------------Adding communicator [end]------------------------------------------*/
+
+
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+
+    /*--------------------------------------------RST [start]------------------------------------------------*/
+
+    time->rst_meta_data_start_io[time->variable_counter] = PIDX_get_time();
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_meta_data_create(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#else 
+    ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#endif
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_meta_data_write(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#else
+    ret = PIDX_multi_patch_rst_meta_data_write(file->multi_patch_rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#endif
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+    /* Creating the buffers required for restructurig */
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_buf_create(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#else
+    ret = PIDX_multi_patch_rst_buf_create(file->multi_patch_rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#endif
+    time->rst_meta_data_end_io[time->variable_counter] = PIDX_get_time();
+
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+    time->rst_start[time->variable_counter] = PIDX_get_time();
+    /* Perform data restructuring */
+    if (file->idx_dbg->debug_do_rst == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH
+      ret = PIDX_rst_staged_write(file->rst_id);
+      //ret = PIDX_rst_write(file->rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+#else
+      ret = PIDX_multi_patch_rst_staged_write(file->multi_patch_rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+#endif
+    }
+    time->rst_end[time->variable_counter] = PIDX_get_time();
+
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+    time->rst_io_start[time->variable_counter] = PIDX_get_time();
+    if (file->idx_dbg->debug_do_io == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH
+      ret = PIDX_rst_buf_aggregate_write(file->rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+#else
+      ret = PIDX_multi_patch_rst_buf_aggregate_write(file->multi_patch_rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+#endif
+    }
+
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+    /* Verifying the correctness of the restructuring phase */
+    if (file->idx_dbg->debug_rst == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH
+      ret = HELPER_rst(file->rst_id);
+#else
+      ret = HELPER_multi_patch_rst(file->multi_patch_rst_id); 
+#endif
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+    }
+
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_buf_destroy(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#else
+    ret = PIDX_multi_patch_rst_buf_destroy(file->multi_patch_rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#endif
+
+
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+    time->rst_io_end[time->variable_counter] = PIDX_get_time();
+
+    /*--------------------------------------------RST [end]---------------------------------------------------*/
+
+
+
+    /*-------------------------------------------finalize [start]---------------------------------------------*/
+    time->finalize_start[time->variable_counter] = PIDX_get_time();
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_meta_data_destroy(file->rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#else
+    ret = PIDX_multi_patch_rst_meta_data_destroy(file->multi_patch_rst_id);
+    if (ret != PIDX_success)
+      return PIDX_err_rst;
+#endif
+
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+    /* Deleting the restructuring ID */
+#if PIDX_HACK_MULTI_PATCH    
+    PIDX_rst_finalize(file->rst_id);
+#else
+    PIDX_multi_patch_rst_finalize(file->multi_patch_rst_id);
+#endif
+
+    //if (rank == 0)
+    //  printf("Reached Line %d\n", __LINE__);
+
+    time->finalize_end[time->variable_counter] = PIDX_get_time();
+    /*-----------------------------------------finalize [end]--------------------------------------------------*/
+
+    time->variable_counter++;
+  }
+
+  free(file->idx_d->rank_r_offset);
+  file->idx_d->rank_r_offset = 0;
+
+  free(file->idx_d->rank_r_count);
+  file->idx_d->rank_r_count = 0;
+
+  //if (rank == 0)
+  //  printf("Reached Line %d\n", __LINE__);
+
+  return PIDX_success;
+}
+
+
+  static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
+  {
+    int d = 0, check_bit = 0;
+    for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
+      check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
+
+    return !(check_bit);
+  }
+
+#if INVERT_ENDIANESS 
+
+static int
+int32_Reverse_Endian(int val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)&val) + 3;
+    unsigned char *out = outbuf;
+    
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+    
+    return 4;
+}
+
+float32_Reverse_Endian(float val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)&val) + 3;
+    unsigned char *out = outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return 4;
+}
+
+float64_Reverse_Endian(double val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)&val) + 7;
+    unsigned char *out = outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return 8;
+}
+
+#endif
+
+PIDX_return_code PIDX_multi_patch_forced_raw_read(PIDX_multi_patch_raw_io file, int start_var_index, int end_var_index)
+{
+  file->idx_d->var_pipe_length = file->idx->variable_count - 1;
+  if (file->idx_d->var_pipe_length == 0)
+    file->idx_d->var_pipe_length = 1;
+
+  int nprocs = 1, rank = 0;
+
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+  {
+    MPI_Comm_size(file->comm,  &nprocs);
+    MPI_Comm_rank(file->comm,  &rank);
+  }
+#endif
+
+  char *idx_directory_path;
+  char offset_path[PATH_MAX];
+  char size_path[PATH_MAX];
+
+  idx_directory_path = malloc(sizeof(*idx_directory_path) * PATH_MAX);
+  memset(idx_directory_path, 0, sizeof(*idx_directory_path) * PATH_MAX);
+  strncpy(idx_directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
+
+  sprintf(offset_path, "%s_OFFSET", idx_directory_path);
+  sprintf(size_path, "%s_SIZE", idx_directory_path);
+  free(idx_directory_path);
+
+  uint32_t number_cores = 0;
+  printf("opening YY %s\n", size_path);
+  int fp = open(size_path, O_RDONLY);
+  ssize_t write_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
+  if (write_count != sizeof(uint32_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+
+#if INVERT_ENDIANESS 
+  uint32_t temp_number_cores = 0;
+  int32_Reverse_Endian(number_cores, &temp_number_cores);
+  number_cores = temp_number_cores;
+#endif
+
+  uint32_t max_patch_count = 0;
+  write_count = pread(fp, &max_patch_count, sizeof(uint32_t), sizeof(uint32_t));
+  if (write_count != sizeof(uint32_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+
+#if INVERT_ENDIANESS 
+  uint32_t temp_max_patch_count = 0;
+  int32_Reverse_Endian(max_patch_count, &temp_max_patch_count);
+  max_patch_count = temp_max_patch_count;
+#endif
+  
+  uint32_t *size_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+  memset(size_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+
+  write_count = pread(fp, size_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
+  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+
+  close(fp);
+
+#if INVERT_ENDIANESS
+  int buff_i;
+  for(buff_i = 0; buff_i < (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)); buff_i++){
+    uint32_t temp_value;
+    int32_Reverse_Endian(size_buffer[buff_i], &temp_value);
+    size_buffer[buff_i] = temp_value;
+  }
+#endif
+
+  uint32_t *offset_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+  memset(offset_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+
+  int fp1 = open(offset_path, O_RDONLY);
+  write_count = pread(fp1, offset_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
+  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t))
+  {
+    fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
+  close(fp1);
+
+#if INVERT_ENDIANESS
+  for(buff_i = 0; buff_i<  (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)); buff_i++){
+    uint32_t temp_value;
+    int32_Reverse_Endian(offset_buffer[buff_i], &temp_value);
+    offset_buffer[buff_i] = temp_value;
+  }
+#endif
+
+  PIDX_time time = file->idx_d->time;
+  time->populate_idx_start_time = PIDX_get_time();
+
+  /// Initialization ONLY ONCE per IDX file
+  if (file->one_time_initializations == 0)
+  {
+    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
+    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, 0);
+    file->one_time_initializations = 1;
+  }
+
+  time->populate_idx_end_time = PIDX_get_time();
+
+  char *file_name;
+  file_name = malloc(PATH_MAX * sizeof(*file_name));
+  memset(file_name, 0, PATH_MAX * sizeof(*file_name));
+
+  char *directory_path;
+  char *data_set_path;
+
+  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+
+  data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
+  memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
+
+  strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
+  sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
+
+  printf("patches max_patch_count %d\n", max_patch_count);
+  int n = 0, m = 0, d = 0;
+  Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
+  memset(local_proc_patch, 0, sizeof (*local_proc_patch));
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  {
+    local_proc_patch->offset[d] = file->idx->variable[start_var_index]->sim_patch[0]->offset[d];
+    local_proc_patch->size[d] = file->idx->variable[start_var_index]->sim_patch[0]->size[d];
+  }
+
+  // PC - - - - - - - - - -     PC - - - - - - - - - -            PC - - - - -
+  // 0  1 2 3 4 5 6 7 8 9 10   11 12 13 14 15 16 17 18 19 20 21  22
+  Ndim_patch n_proc_patch = (Ndim_patch)malloc(sizeof (*n_proc_patch));
+  memset(n_proc_patch, 0, sizeof (*n_proc_patch));
+  int p_counter = 1;
+  int pc = 0, pc_index = 0;
+
+  Ndim_patch_group patch_grp;
+  patch_grp = malloc(sizeof(*(patch_grp)));
+  memset(patch_grp, 0, sizeof(*(patch_grp)));
+
+  int *source_patch_id = malloc(sizeof(int) * maximum_neighbor_count);
+  memset(source_patch_id, 0, sizeof(int) * maximum_neighbor_count);
+
+  patch_grp->source_patch_rank = malloc(sizeof(int) * maximum_neighbor_count);
+  patch_grp->patch = malloc(sizeof(*patch_grp->patch) * maximum_neighbor_count);
+  patch_grp->reg_patch = malloc(sizeof(*patch_grp->reg_patch));
+  memset(patch_grp->source_patch_rank, 0, sizeof(int) * maximum_neighbor_count);
+  memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * maximum_neighbor_count);
+  memset(patch_grp->reg_patch, 0, sizeof(*patch_grp->reg_patch));
+
+  int patch_count = 0;
+  for (n = 0; n < number_cores; n++)
+  {
+    pc = (int)offset_buffer[n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)];
+    pc_index = n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1);
+    for (m = 0; m < pc; m++)
+    {
+      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      {
+        n_proc_patch->offset[d] = (unsigned long long)offset_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
+        n_proc_patch->size[d] = (unsigned long long)size_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
+      }
+
+      if (intersectNDChunk(local_proc_patch, n_proc_patch))
+      {
+        //sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
+        patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
+        memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
+        for (d = 0; d < 3; d++)
+        {
+          //STEP 5 : offset and count of intersecting chunk of process with rank r and regular patch
+          if (n_proc_patch->offset[d] <= local_proc_patch->offset[d] && (n_proc_patch->offset[d] + n_proc_patch->size[d] - 1) <= (local_proc_patch->offset[d] + local_proc_patch->size[d] - 1))
+          {
+            patch_grp->patch[patch_count]->offset[d] = local_proc_patch->offset[d];
+            patch_grp->patch[patch_count]->size[d] = (n_proc_patch->offset[d] + n_proc_patch->size[d] - 1) - local_proc_patch->offset[d] + 1;
+          }
+          else if (local_proc_patch->offset[d] <= n_proc_patch->offset[d] && (n_proc_patch->offset[d] + n_proc_patch->size[d] - 1) >= (local_proc_patch->offset[d] + local_proc_patch->size[d] - 1))
+          {
+            patch_grp->patch[patch_count]->offset[d] = n_proc_patch->offset[d];
+            patch_grp->patch[patch_count]->size[d] = (local_proc_patch->offset[d] + local_proc_patch->size[d] - 1) - n_proc_patch->offset[d] + 1;
+          }
+          else if (( local_proc_patch->offset[d] + local_proc_patch->size[d] - 1) <= (n_proc_patch->offset[d] + n_proc_patch->size[d] - 1) && local_proc_patch->offset[d] >= n_proc_patch->offset[d])
+          {
+            patch_grp->patch[patch_count]->offset[d] = local_proc_patch->offset[d];
+            patch_grp->patch[patch_count]->size[d] = local_proc_patch->size[d];
+          }
+          else if (( n_proc_patch->offset[d] + n_proc_patch->size[d] - 1) <= (local_proc_patch->offset[d] + local_proc_patch->size[d] - 1) && n_proc_patch->offset[d] >= local_proc_patch->offset[d])
+          {
+            patch_grp->patch[patch_count]->offset[d] = n_proc_patch->offset[d];
+            patch_grp->patch[patch_count]->size[d] = n_proc_patch->size[d];
+          }
+        }
+        patch_grp->source_patch_rank[patch_count] = n;
+        source_patch_id[patch_count] = m;
+        //printf("patch_count %d -> %d %d %d\n", patch_count, patch_grp->patch[patch_count]->size[0], patch_grp->patch[patch_count]->size[1], patch_grp->patch[patch_count]->size[2]);
+
+        patch_count++;
+        if (patch_count >= maximum_neighbor_count)
+        {
+          maximum_neighbor_count = maximum_neighbor_count * 2;
+          //printf("patch_count = %d maximum_neighbor_count = %d\n", patch_count, maximum_neighbor_count);
+
+          int *temp_buffer1 = realloc(source_patch_id, sizeof(int) * maximum_neighbor_count);
+          if (temp_buffer1 == NULL)
+          {
+            fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+            return PIDX_err_rst;
+          }
+          else
+            source_patch_id = temp_buffer1;
+
+          int *temp_buffer2 = realloc(patch_grp->source_patch_rank, maximum_neighbor_count * sizeof(int));
+          if (temp_buffer2 == NULL)
+          {
+            fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+            return PIDX_err_rst;
+          }
+          else
+            patch_grp->source_patch_rank = temp_buffer2;
+
+          Ndim_patch *temp_buffer3 = realloc(patch_grp->patch, maximum_neighbor_count * sizeof(*patch_grp->patch));
+          if (temp_buffer3 == NULL)
+          {
+            fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
+            return PIDX_err_rst;
+          }
+          else
+            patch_grp->patch = temp_buffer3;
+        }
+      }
+      p_counter++;
+    }
+  }
+
+  free(local_proc_patch);
+  local_proc_patch = 0;
+  free(n_proc_patch);
+  n_proc_patch = 0;
+
+  unsigned long long k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
+  int count1 = 0, send_o = 0, send_c = 0, index = 0;
+  unsigned long long sim_patch_offsetx[5];
+  unsigned long long sim_patch_countx[5];
+
+  unsigned char ***temp_patch_buffer;
+  temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (end_var_index - start_var_index));
+  memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (end_var_index - start_var_index));
+  //printf("start_var_index = %d end_var_index %d\n", start_var_index, end_var_index);
+  for (i = 0; i < (end_var_index - start_var_index); i++)
+  {
+    //printf("[%d] ----> %d\n", i, patch_count);
+    PIDX_variable var = file->idx->variable[i + start_var_index];
+    temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
+    memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
+
+    for (j = 0; j < patch_count; j++)
+    {
+      //printf("[%d] --> %d %d %d [%d]\n", j, patch_grp->patch[j]->size[0], patch_grp->patch[j]->size[1], patch_grp->patch[j]->size[2], (patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2]));
+      temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
+      memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bits_per_value/8 * var->values_per_sample);
+    }
+  }
+
+  for (i = 0; i < patch_count; i++)
+  {
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, patch_grp->source_patch_rank[i], source_patch_id[i]);
+    int fpx = open(file_name, O_RDONLY);
+    //patch_grp->patch[i]->buffer = malloc(patch_grp->patch[i]->size[0] * patch_grp->patch[i]->size[1] * patch_grp->patch[i]->size[2] * sizeof(double));
+
+    pc_index = patch_grp->source_patch_rank[i] * (max_patch_count * PIDX_MAX_DIMENSIONS + 1);
+    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    {
+      sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
+      sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
+    }
+
+    count1 = 0;
+
+    for (k1 = patch_grp->patch[i]->offset[2]; k1 < patch_grp->patch[i]->offset[2] + patch_grp->patch[i]->size[2]; k1++)
+    {
+      for (j1 = patch_grp->patch[i]->offset[1]; j1 < patch_grp->patch[i]->offset[1] + patch_grp->patch[i]->size[1]; j1++)
+      {
+        for (i1 = patch_grp->patch[i]->offset[0]; i1 < patch_grp->patch[i]->offset[0] + patch_grp->patch[i]->size[0]; i1 = i1 + patch_grp->patch[i]->size[0])
+        {
+          unsigned long long *sim_patch_offset = sim_patch_offsetx;// file->idx->variable[start_var_index]->sim_patch[0]->offset;
+          unsigned long long *sim_patch_count = sim_patch_countx;// file->idx->variable[start_var_index]->sim_patch[0]->size;
+
+          index = (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
+                  (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
+                  (i1 - sim_patch_offset[0]);
+
+          int start_index = 0, other_offset = 0, v1 = 0;
+          for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + 1)
+          {
+            other_offset = 0;
+            for (v1 = 0; v1 < start_index; v1++)
+            {
+              PIDX_variable var1 = file->idx->variable[v1];
+              other_offset = other_offset + ((var1->bits_per_value/8) * var1->values_per_sample * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
+              //printf("[%d] ----> %d [%d %d %d]\n", start_index, other_offset, sim_patch_countx[0], sim_patch_countx[1], sim_patch_countx[2]);
+            }
+
+            PIDX_variable var = file->idx->variable[start_index];
+            send_o = index * var->values_per_sample;
+            send_c = patch_grp->patch[i]->size[0] * var->values_per_sample;
+
+            //size_t preadc = pread(fp, patch_grp->patch[i]->buffer + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, send_o * var->bits_per_value/8);
+
+            size_t preadc = pread(fp, temp_patch_buffer[start_index - start_var_index][i] + (count1 * send_c * var->bits_per_value/8), send_c * var->bits_per_value/8, other_offset + (send_o * var->bits_per_value/8));
+
+            if (preadc != send_c * var->bits_per_value/8)
+            {
+              fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bits_per_value/8);
+              return PIDX_err_rst;
+            }
+          }
+          count1++;
+        }
+      }
+    }
+    close(fpx);
+  }
+
+  int r, recv_o;
+  for (r = 0; r < patch_count; r++)
+  {
+    //Ndim_patch out_patch = file->idx->variable[start_var_index]->sim_patch[0];// var->rst_patch_group[g]->reg_patch;
+    //int nx = out_patch->size[0];
+    //int ny = out_patch->size[1];
+
+    for (k1 = patch_grp->patch[r]->offset[2]; k1 < patch_grp->patch[r]->offset[2] + patch_grp->patch[r]->size[2]; k1++)
+    {
+      for (j1 = patch_grp->patch[r]->offset[1]; j1 < patch_grp->patch[r]->offset[1] + patch_grp->patch[r]->size[1]; j1++)
+      {
+        for (i1 = patch_grp->patch[r]->offset[0]; i1 < patch_grp->patch[r]->offset[0] + patch_grp->patch[r]->size[0]; i1 = i1 + patch_grp->patch[r]->size[0])
+        {
+          index = ((patch_grp->patch[r]->size[0])* (patch_grp->patch[r]->size[1]) * (k1 - patch_grp->patch[r]->offset[2])) + ((patch_grp->patch[r]->size[0]) * (j1 - patch_grp->patch[r]->offset[1])) + (i1 - patch_grp->patch[r]->offset[0]);
+
+          int start_index;
+          for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + 1)
+          {
+            PIDX_variable var = file->idx->variable[start_index];
+
+            send_o = index * var->values_per_sample * (var->bits_per_value/8);
+            send_c = (patch_grp->patch[r]->size[0]);
+            recv_o = (file->idx->variable[start_index]->sim_patch[0]->size[0] * file->idx->variable[start_index]->sim_patch[0]->size[1] * (k1 - file->idx->variable[start_index]->sim_patch[0]->offset[2])) + (file->idx->variable[start_index]->sim_patch[0]->size[0] * (j1 - file->idx->variable[start_index]->sim_patch[0]->offset[1])) + (i1 - file->idx->variable[start_index]->sim_patch[0]->offset[0]);
+
+#if !SIMULATE_IO
+            //memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), patch_grp->patch[r]->buffer + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+            memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)), temp_patch_buffer[start_index - start_var_index][r] + send_o, send_c * var->values_per_sample * (var->bits_per_value/8));
+
+#if INVERT_ENDIANESS
+            if (var->bits_per_value/8 == 4)
+            {
+              int y = 0;
+              float temp;
+              float temp2;
+
+              for (y = 0; y < send_c * var->values_per_sample * (var->bits_per_value/8) / sizeof(float); y++)
+              {
+                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(float)), sizeof(float));
+                float32_Reverse_Endian(temp, &temp2);
+                //number_cores = temp_number_cores;
+                //printf("%f\n", temp2);
+                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(float)), &temp2, sizeof(float));
+              }
+            }
+            else if (var->bits_per_value/8 == 24)
+            {
+              int y = 0;
+              double temp;
+              double temp2;
+
+              for (y = 0; y < send_c * var->values_per_sample * (var->bits_per_value/8) / sizeof(double); y++)
+              {
+                memcpy(&temp, file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(double)), sizeof(double));
+                float64_Reverse_Endian(temp, &temp2);
+                //number_cores = temp_number_cores;
+                //printf("%f\n", temp2);
+                memcpy(file->idx->variable[start_index]->sim_patch[0]->buffer + (recv_o * var->values_per_sample * (var->bits_per_value/8)) + (y * sizeof(double)), &temp2, sizeof(double));
+              }
+            }
+#endif
+          }
+#endif
+        }
+      }
+    }
+    free(patch_grp->patch[r]);
+  }
+
+  for (i = 0; i < (end_var_index - start_var_index); i++)
+  {
+    for (j = 0; j < patch_count; j++)
+      free(temp_patch_buffer[i][j]);
+
+    free(temp_patch_buffer[i]);
+  }
+  free(temp_patch_buffer);
+
+  free(patch_grp->source_patch_rank);
+  free(patch_grp->patch);
+  free(patch_grp->reg_patch);
+  free(patch_grp);
+  free(source_patch_id);
+
+  free(file_name);
+  free(data_set_path);
+  free(directory_path);
+
+  free(offset_buffer);
+  free(size_buffer);
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_multi_patch_raw_read(PIDX_multi_patch_raw_io file, int start_var_index, int end_var_index)
+{
+  file->idx_d->var_pipe_length = file->idx->variable_count - 1;
+  if (file->idx_d->var_pipe_length == 0)
+    file->idx_d->var_pipe_length = 1;
+
+
+  PIDX_return_code ret;
+  int nprocs = 1;
+
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+    MPI_Comm_size(file->comm,  &nprocs);
+#endif
+
+  file->idx_d->rank_r_offset = malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_offset, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
+
+  file->idx_d->rank_r_count =  malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
+  memset(file->idx_d->rank_r_count, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
+
+#if PIDX_HAVE_MPI
+  if (file->idx_d->parallel_mode == 1)
+  {
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
+
+    MPI_Allgather(file->idx->variable[start_var_index]->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_d->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
+  }
+  else
+  {
+    memcpy(file->idx_d->rank_r_offset, file->idx->variable[start_var_index]->sim_patch[0]->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+    memcpy(file->idx_d->rank_r_count, file->idx->variable[start_var_index]->sim_patch[0]->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  }
+#endif
+
+  PIDX_time time = file->idx_d->time;
+  time->populate_idx_start_time = PIDX_get_time();
+
+  /// Initialization ONLY ONCE per IDX file
+  if (file->one_time_initializations == 0)
+  {
+    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
+    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, 0);
+
+    /*
+    ret = PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_file;
+    */
+
+    file->one_time_initializations = 1;
+  }
+
+  time->populate_idx_end_time = PIDX_get_time();
+
+  int start_index = 0, end_index = 0;
+  for (start_index = start_var_index; start_index < end_var_index; start_index = start_index + (file->idx_d->var_pipe_length + 1))
+  {
+    end_index = ((start_index + file->idx_d->var_pipe_length) >= (end_var_index)) ? (end_var_index - 1) : (start_index + file->idx_d->var_pipe_length);
+
+
+    /*--------------------------------------Create RST IDs [start]------------------------------------------*/
+    /* Create the restructuring ID */
+#if PIDX_HACK_MULTI_PATCH
+    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+#else
+    file->multi_patch_rst_id = PIDX_multi_patch_rst_init(file->idx, file->idx_d, start_var_index, start_index, end_index);
+#endif
+    /*----------------------------------------Create RST IDs [end]------------------------------------------*/
+
+
+
+    /*------------------------------------Adding communicator [start]----------------------------------------*/
+#if PIDX_HAVE_MPI
+    /* Attaching the communicator to the restructuring phase */
+    if (file->idx_d->parallel_mode == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH
+      ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
+#else
+      ret = PIDX_multi_patch_rst_set_communicator(file->multi_patch_rst_id, file->comm);
+#endif
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_rst;
+      }
+
+    }
+#endif
+    /*------------------------------------Adding communicator [end]------------------------------------------*/
+
+
+
+    /*--------------------------------------------RST [start]------------------------------------------------*/
+    time->rst_start[start_index] = PIDX_get_time();
+
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_meta_data_create(file->rst_id);
+#else
+    ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
+#endif
+
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_rst;
+    }
+
+    /* Creating the buffers required for restructurig */
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_buf_create(file->rst_id);
+#else
+    ret = PIDX_multi_patch_rst_buf_create(file->multi_patch_rst_id);
+#endif
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_rst;
+    }
+
+    if (file->idx_dbg->debug_do_io == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH
+      ret = PIDX_rst_buf_aggregate_read(file->rst_id);
+#else
+      ret = PIDX_multi_patch_rst_buf_aggregate_read(file->multi_patch_rst_id);
+#endif
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_rst;
+      }
+    }
+
+    /* Verifying the correctness of the restructuring phase */
+    if (file->idx_dbg->debug_rst == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH
+      ret = HELPER_rst(file->rst_id);
+#else
+      ret = HELPER_multi_patch_rst(file->multi_patch_rst_id); 
+#endif
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_rst;
+      }
+    }
+
+    /* Perform data restructuring */
+    if (file->idx_dbg->debug_do_rst == 1)
+    {
+#if PIDX_HACK_MULTI_PATCH
+      ret = PIDX_rst_read(file->rst_id);
+#else
+      ret = PIDX_multi_patch_rst_read(file->multi_patch_rst_id);
+#endif
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        return PIDX_err_rst;
+      }
+    }
+
+    time->rst_end[start_index] = PIDX_get_time();
+    /*--------------------------------------------RST [end]---------------------------------------------------*/
+
+
+
+    /*-------------------------------------------finalize [start]---------------------------------------------*/
+    time->finalize_start[start_index] = PIDX_get_time();
+
+#if PIDX_HACK_MULTI_PATCH
+    ret = PIDX_rst_meta_data_destroy(file->rst_id);
+#else
+    ret = PIDX_multi_patch_rst_meta_data_destroy(file->multi_patch_rst_id);
+#endif
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+      return PIDX_err_rst;
+    }
+
+    /* Deleting the restructuring ID */
+#if PIDX_HACK_MULTI_PATCH    
+    PIDX_rst_finalize(file->rst_id);
+#else
+    PIDX_multi_patch_rst_finalize(file->multi_patch_rst_id);
+
+#endif
+
+    time->finalize_end[start_index] = PIDX_get_time();
+    /*-----------------------------------------finalize [end]--------------------------------------------------*/
+
+  }
+
+  free(file->idx_d->rank_r_offset);
+  file->idx_d->rank_r_offset = 0;
+
+  free(file->idx_d->rank_r_count);
+  file->idx_d->rank_r_count = 0;
+
+  return PIDX_success;
+}
+
+
+PIDX_return_code PIDX_multi_patch_raw_io_finalize(PIDX_multi_patch_raw_io file)
+{
+  free(file);
+  file = 0;
+
+  return PIDX_success;
+}

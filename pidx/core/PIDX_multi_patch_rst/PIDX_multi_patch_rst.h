@@ -89,6 +89,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_write(PIDX_multi_patch_rst_i
 PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_read(PIDX_multi_patch_rst_id multi_patch_rst_id);
 
 
+PIDX_return_code PIDX_multi_patch_rst_meta_data_write(PIDX_multi_patch_rst_id rst_id);
 
 ///
 /// \brief PIDX_multi_patch_rst_write Actually do the restructuring, using pre-calculated data associated with the id
@@ -126,5 +127,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate(PIDX_multi_patch_rst_id mult
 
 
 PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_destroy(PIDX_multi_patch_rst_id multi_patch_rst_id);
+
+PIDX_return_code HELPER_multi_patch_rst(PIDX_multi_patch_rst_id rst_id);
 
 #endif // __PIDX_multi_patch_rst_NEW_H

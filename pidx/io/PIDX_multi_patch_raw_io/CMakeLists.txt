@@ -19,16 +19,7 @@
 # sources
 # ////////////////////////////////////////
 
-ADD_SUBDIRECTORY(PIDX_idx_io)
-ADD_SUBDIRECTORY(PIDX_global_idx_io)
-ADD_SUBDIRECTORY(PIDX_hybrid_idx_io)
-ADD_SUBDIRECTORY(PIDX_raw_io)
-ADD_SUBDIRECTORY(PIDX_multi_patch_raw_io)
-ADD_SUBDIRECTORY(PIDX_partitioned_idx_io)
-ADD_SUBDIRECTORY(PIDX_partition_merge_idx_io)
-ADD_SUBDIRECTORY(PIDX_multi_patch_idx_io)
-
-FILE(GLOB PIDX_IO_SOURCES *.h *.c)
+FILE(GLOB PIDX_MULTI_PATCH_RAW_IO_SOURCES *.h *.c)
 
 
 # ////////////////////////////////////////
@@ -38,19 +29,19 @@ FILE(GLOB PIDX_IO_SOURCES *.h *.c)
 IF (MPI_C_FOUND)
   #MESSAGE("Configuring pidx with MPI support")
   INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-  SET(PIDX_IO_LINK_LIBS ${PIDX_IO_LINK_LIBS} ${MPI_C_LIBRARIES})
+  SET(PIDX_RAW_IO_LINK_LIBS ${PIDX_RAW_IO_LINK_LIBS} ${MPI_C_LIBRARIES})
 ENDIF()
 
 IF (ZFP_FOUND)
   MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
-  SET(PIDX_IO_LINK_LIBS ${PIDX_IO_LINK_LIBS} ${ZFP_LIBRARIES})
+  SET(PIDX_RAW_IO_LINK_LIBS ${PIDX_RAW_IO_LINK_LIBS} ${ZFP_LIBRARIES})
 ENDIF()
 
 # ////////////////////////////////////////
 # library
 # ////////////////////////////////////////
 
-PIDX_ADD_LIBRARY(pidx_io "${PIDX_IO_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_io m pidx_hybrid_idx_io pidx_global_idx_io pidx_idx_io pidx_multi_patch_idx_io pidx_raw_io pidx_multi_patch_raw_io pidx_partitioned_idx_io pidx_partition_merge_idx_io ${PIDX_IO_LINK_LIBS})
-SET_TARGET_PROPERTIES(pidx_io PROPERTIES LINKER_LANGUAGE CXX)
+PIDX_ADD_LIBRARY(pidx_multi_patch_raw_io "${PIDX_MULTI_PATCH_RAW_IO_SOURCES}")
+TARGET_LINK_LIBRARIES(pidx_multi_patch_raw_io pidx_utils pidx_data_handle m pidx_header pidx_rst pidx_comm pidx_topology ${PIDX_RAW_IO_LINK_LIBS})
+SET_TARGET_PROPERTIES(pidx_multi_patch_raw_io PROPERTIES LINKER_LANGUAGE CXX)

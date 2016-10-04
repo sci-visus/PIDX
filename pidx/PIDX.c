@@ -29,7 +29,7 @@
 
 #include "PIDX.h"
 
-#define PIDX_DEBUG_OUTPUT 0
+#define PIDX_DEBUG_OUTPUT 1
 
 static int caching_state = 0;
 static int time_step_caching = 0;
@@ -1689,6 +1689,26 @@ PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file)
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_enable_multi_patch_idx_io(PIDX_file file)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+  
+  file->io_type = PIDX_MULTI_PATCH_IDX_IO;
+  
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_enable_multi_patch_raw_io(PIDX_file file)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+  
+  file->io_type = PIDX_MULTI_PATCH_RAW_IO;
+  
+  return PIDX_success;
+}
+
 
 
 PIDX_return_code PIDX_enable_async_io(PIDX_file file)
@@ -1931,7 +1951,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     else if (file->io_type == PIDX_IDX_IO || file->io_type == PIDX_GLOBAL_IDX_IO)
       PIDX_print_idx_io_timing(file->comm, time, file->idx->variable_count, file->idx_d->layout_count, file->idx_d->start_layout_index, file->idx_d->end_layout_index, NULL);
 
-    else if (file->io_type == PIDX_RAW_IO)
+    else if (file->io_type == PIDX_RAW_IO || file->io_type == PIDX_MULTI_PATCH_RAW_IO)
       PIDX_print_raw_io_timing(file->comm, time, time->variable_counter, file->idx_d->perm_layout_count);
 
     else if (file->io_type == PIDX_PARTITIONED_IDX_IO)
@@ -1945,7 +1965,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   }
   else
   {
-    if (file->io_type == PIDX_RAW_IO)
+    if (file->io_type == PIDX_RAW_IO || file->io_type == PIDX_MULTI_PATCH_RAW_IO)
     {
       double total_time = time->sim_end - time->sim_start;
       double max_time = total_time;
