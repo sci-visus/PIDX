@@ -300,10 +300,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   *file = malloc(sizeof (*(*file)) );
   memset(*file, 0, sizeof (*(*file)) );
 
-
-  //(*file)->time = malloc(sizeof((*file)->time));
-  //memset((*file)->time, 0, sizeof((*file)->time));
-
   (*file)->flags = flags;
     
   (*file)->idx = (idx_dataset)malloc(sizeof (*((*file)->idx)));
@@ -352,11 +348,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->idx_d->color = 0;
 
-  (*file)->io_type = PIDX_IDX_IO;
-  //(*file)->enable_raw_dump = 0;
+  (*file)->io_type = PIDX_RAW_IO;
 
   (*file)->idx_d->parallel_mode = access_type->parallel;
-
+  (*file)->comm = access_type->comm;
 
 #if PIDX_HAVE_MPI
   //unsigned int rank_x = 0, rank_y = 0, rank_z = 0, rank_slice = 0;
@@ -410,7 +405,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       MPI_Comm_dup(access_type->comm, &((*file)->global_comm));
     }
     else
-      MPI_Comm_dup(access_type->comm, &((*file)->comm));
+    {
+      (*file)->comm = access_type->comm;
+      //MPI_Comm_dup(access_type->comm, &((*file)->comm));
+    }
   }
 #endif
 

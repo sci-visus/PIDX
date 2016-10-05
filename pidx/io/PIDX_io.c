@@ -834,12 +834,14 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int start_var_i
 #if PIDX_HAVE_MPI
       MPI_Comm_size(file->comm, &ncores);
 #endif
-      if (file->idx_d->data_core_count == ncores)
-        ret = PIDX_multi_patch_raw_read(file->multi_patch_raw_io, start_var_index, end_var_index);
-      else
-        ret = PIDX_multi_patch_forced_raw_read(file->multi_patch_raw_io, start_var_index, end_var_index);
+      //
+      //if (file->idx_d->data_core_count == ncores)
+      //  ret = PIDX_multi_patch_raw_read(file->multi_patch_raw_io, start_var_index, end_var_index);
+      //else
+      ret = PIDX_multi_patch_forced_raw_read(file->multi_patch_raw_io, start_var_index, end_var_index);
       if (ret != PIDX_success)
         return PIDX_err_flush;
+       //
 
       ret = PIDX_multi_patch_raw_io_finalize(file->multi_patch_raw_io);
       if (ret != PIDX_success)
