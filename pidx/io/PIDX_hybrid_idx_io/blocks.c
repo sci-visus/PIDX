@@ -787,8 +787,8 @@ static PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_
   {
     if (block_layout->file_index[i] == 1)
     {
-      if (rank == 0)
-        printf("[%d %d] BPF %d = %d %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->bcpf[i], count);
+      //if (rank == 0)
+      //  printf("[%d %d] BPF %d = %d %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->bcpf[i], count);
       block_layout->existing_file_index[count] = i;
       block_layout->inverse_existing_file_index[i] = count;
       count++;

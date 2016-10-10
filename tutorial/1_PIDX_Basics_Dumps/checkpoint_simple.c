@@ -389,7 +389,7 @@ int main(int argc, char **argv)
     ret = PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
 
-    PIDX_set_block_count(file, 256);
+    PIDX_set_block_count(file, 128);
 
     //ret = PIDX_set_aggregator_multiplier(file, aggregator_multiplier);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");

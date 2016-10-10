@@ -96,9 +96,9 @@ void set_reg_patch_size(PIDX_rst_id rst_id, int factor)
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
 
-  rst_id->reg_patch_size[0] = factor * getPowerOftwo(var0->sim_patch[0]->size[0]);// * factor;
-  rst_id->reg_patch_size[1] = factor * getPowerOftwo(var0->sim_patch[0]->size[1]);// * factor;
-  rst_id->reg_patch_size[2] = factor * getPowerOftwo(var0->sim_patch[0]->size[2]);// * factor;
+  rst_id->reg_patch_size[0] = factor * 64;//getPowerOftwo(var0->sim_patch[0]->size[0]);// * factor;
+  rst_id->reg_patch_size[1] = factor * 64;//getPowerOftwo(var0->sim_patch[0]->size[1]);// * factor;
+  rst_id->reg_patch_size[2] = factor * 64;//getPowerOftwo(var0->sim_patch[0]->size[2]);// * factor;
 
   //printf("[%d %d]  ::  [%d %d %d] : %d %d %d\n", rst_id->group_index, rst_id->first_index, var0->sim_patch[0]->size[0], var0->sim_patch[0]->size[1], var0->sim_patch[0]->size[2], rst_id->reg_patch_size[0], rst_id->reg_patch_size[1], rst_id->reg_patch_size[2]);
 

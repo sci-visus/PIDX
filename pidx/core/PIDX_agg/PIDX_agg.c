@@ -187,8 +187,8 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         else if (file_status == 2)
           trank = gnprocs - 1;
 
-        if (rank == 0)
-          printf("[%d(%d) %d %d] CR %d AI %d trank %d\n", k, lbl->efc, i, j, calculated_rank, calculated_rank + var_offset * interval + (interval/2), trank);
+        //if (rank == 0)
+        //  printf("[%d(%d) %d %d] CR %d AI %d trank %d\n", k, lbl->efc, i, j, calculated_rank, calculated_rank + var_offset * interval + (interval/2), trank);
 
         id->agg_r[k][i - id->fi][j] = trank;
 
@@ -480,12 +480,12 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
             {
               count = (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1);
 
-              /*
-              double tst;
-              memcpy(&tst, hz_buf->buffer[i], sizeof(double));
-              if (tst == 607205.000000)
-                printf("[CMP %d] [l %d]    Offset %d Count %d\n", rank, i, var0->hz_buffer[p]->start_hz_index[i], count);
-              */
+              //
+              //double tst;
+              //memcpy(&tst, hz_buf->buffer[i], sizeof(double));
+              //if (tst == 607205.000000)
+              //  printf("[CMP %d] [l %d]    Offset %d Count %d\n", rank, i, var0->hz_buffer[p]->start_hz_index[i], count);
+              //
               ret = aggregate(id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
               if (ret != PIDX_success)
               {
@@ -597,11 +597,12 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   //    printf("%d ----> %d TD %d NBO %d\n", hz_start, block_no, target_disp, negative_block_offset);
 
   target_rank = id->agg_r[lbl->inverse_existing_file_index[file_no]][variable_index - id->fi][sample_index];
-  printf("[%d] File no %d IFI %d TR %d\n", rank, file_no, lbl->inverse_existing_file_index[file_no], target_rank);
+  //printf("[%d] File no %d IFI %d TR %d\n", rank, file_no, lbl->inverse_existing_file_index[file_no], target_rank);
 
   MPI_Comm_rank(id->comm, &rank);
   MPI_Comm_size(id->comm, &nprocs);
 
+  /*
   if (layout_id != 0 && id->idx->current_time_step == 0)
   {
     MPI_Comm agg_comm;
@@ -627,6 +628,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
     assert(rank >= min_rank);
     assert(rank <= max_rank);
   }
+  */
 
   target_count = hz_count * vps;
   bpdt = ((var->bpv / 8) * tcs) / (id->idx->compression_factor);
