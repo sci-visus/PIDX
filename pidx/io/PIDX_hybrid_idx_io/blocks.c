@@ -20,57 +20,42 @@ PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file, int mode, int io_t
 
   if (mode == PIDX_WRITE)
   {
-    //if (io_type == PIDX_IDX_IO)
-    //{
-    //  Point3D cbp;
-    //  cbp.x = (int) file->idx->chunked_bounds[0];
-    //  cbp.y = (int) file->idx->chunked_bounds[1];
-    //  cbp.z = (int) file->idx->chunked_bounds[2];
-    //  guess_bit_string(file->idx->bitSequence, cbp);
-    //}
-    //else
+    char temp_bs[512];
+    char reg_patch_bs[512];
+    char process_bs[512];
+    char partition_bs[512];
 
-    {
-      char temp_bs[512];
-      char reg_patch_bs[512];
-      char process_bs[512];
-      char partition_bs[512];
+    // First part of the bitstring
+    Point3D rpp;
+    rpp.x = (int) file->idx->reg_patch_size[0];
+    rpp.y = (int) file->idx->reg_patch_size[1];
+    rpp.z = (int) file->idx->reg_patch_size[2];
+    guess_bit_string(reg_patch_bs, rpp);
 
-      // First part of the bitstring
-      Point3D rpp;
-      rpp.x = (int) file->idx->reg_patch_size[0];
-      rpp.y = (int) file->idx->reg_patch_size[1];
-      rpp.z = (int) file->idx->reg_patch_size[2];
-      guess_bit_string(reg_patch_bs, rpp);
-
-      // Middle part of the bitstring
-      Point3D prcp;
-      prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
-      prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
-      prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
-      if (prcp.x == 0)  prcp.x = 1;
-      if (prcp.y == 0)  prcp.y = 1;
-      if (prcp.z == 0)  prcp.z = 1;
-      guess_bit_string_Z(process_bs, prcp);
+    // Middle part of the bitstring
+    Point3D prcp;
+    prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
+    prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
+    prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
+    if (prcp.x == 0)  prcp.x = 1;
+    if (prcp.y == 0)  prcp.y = 1;
+    if (prcp.z == 0)  prcp.z = 1;
+    guess_bit_string_Z(process_bs, prcp);
 
 
-      // Last part of the bitstring
-      Point3D pcp;
-      pcp.x = (int) file->idx_d->partition_count[0];
-      pcp.y = (int) file->idx_d->partition_count[1];
-      pcp.z = (int) file->idx_d->partition_count[2];
-      guess_bit_string(partition_bs, pcp);
+    // Last part of the bitstring
+    Point3D pcp;
+    pcp.x = (int) file->idx_d->partition_count[0];
+    pcp.y = (int) file->idx_d->partition_count[1];
+    pcp.z = (int) file->idx_d->partition_count[2];
+    guess_bit_string(partition_bs, pcp);
 
-      // Concatenating the three components to get the final bit string
-      strcpy(temp_bs, process_bs);
-      strcat(temp_bs, reg_patch_bs + 1);
-      strcpy(file->idx->bitSequence, partition_bs);
-      strcat(file->idx->bitSequence, temp_bs + 1);
-    }
-
+    // Concatenating the three components to get the final bit string
+    strcpy(temp_bs, process_bs);
+    strcat(temp_bs, reg_patch_bs + 1);
+    strcpy(file->idx->bitSequence, partition_bs);
+    strcat(file->idx->bitSequence, temp_bs + 1);
   }
-
-      //strcpy(file->idx->bitSequence, "V22110010210210210210");
 
   // maxh calculation
   file->idx_d->maxh = strlen(file->idx->bitSequence);
