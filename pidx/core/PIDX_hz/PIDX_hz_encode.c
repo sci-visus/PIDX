@@ -99,6 +99,7 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_der
   hz_id->idx = idx_meta_data;
   hz_id->idx_d = idx_d;
 
+  hz_id->group_index = 0;
   hz_id->init_index = init_index;
   hz_id->first_index = first_index;
   hz_id->last_index = last_index;
@@ -1640,7 +1641,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               }
               else if (strcmp(var->type_name, FLOAT32) == 0)
               {
-                fvalue_1 = (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                fvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                 fvalue_2 = *(*((float**)var->hz_buffer[b]->buffer + i) + ((k * var->vps) + s));
 
                 check_bit = check_bit && (fvalue_1  == fvalue_2);

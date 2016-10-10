@@ -9,8 +9,6 @@ struct PIDX_io_descriptor
 #endif
 
   PIDX_hybrid_idx_io hybrid_idx_io;
-  PIDX_idx_io idx_io;
-  PIDX_raw_io raw_io;
 
   idx_dataset idx;                             ///< Contains all relevant IDX file info
                                                ///< Blocks per file, samples per block, bitmask, box, file name template
@@ -261,254 +259,48 @@ PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index
   int ret;
   if (mode == PIDX_MODE_CREATE)
   {
-    /*
-    if (io_type == PIDX_IDX_IO)
-    {
-      //if (start_var_index == file->idx->variable_count)
-      //  return PIDX_success;
+    if (start_var_index == file->idx->variable_count)
+      return PIDX_success;
 
-      file->idx_io = PIDX_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->idx_io == NULL)
-        return PIDX_err_flush;
+    file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
+    if (file->hybrid_idx_io == NULL)
+      return PIDX_err_flush;
 
-      ret = PIDX_idx_io_set_communicator(file->idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
+    ret = PIDX_hybrid_idx_io_set_communicator(file->hybrid_idx_io, file->comm);
+    if (ret != PIDX_success)
+      return PIDX_err_flush;
 
-      ret = PIDX_idx_write(file->idx_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
+    ret = PIDX_hybrid_idx_write(file->hybrid_idx_io, group_index, start_var_index, end_var_index, io_type);
+    if (ret != PIDX_success)
+      return PIDX_err_flush;
 
-      ret = PIDX_idx_io_finalize(file->idx_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-
-
-    if (io_type == PIDX_RAW_IO)
-    {
-      if (start_var_index == file->idx->variable_count)
-        return PIDX_success;
-
-      file->raw_io = PIDX_raw_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->raw_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_raw_io_set_communicator(file->raw_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_raw_write(file->raw_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_raw_io_finalize(file->raw_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-    */
-
-
-    if (io_type == PIDX_HYBRID_IDX_IO)
-    {
-      if (start_var_index == file->idx->variable_count)
-        return PIDX_success;
-
-      file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->hybrid_idx_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_hybrid_idx_io_set_communicator(file->hybrid_idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_hybrid_idx_write(file->hybrid_idx_io, group_index, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_hybrid_idx_io_finalize(file->hybrid_idx_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-    /*
-    else  if (io_type == PIDX_MULTI_PATCH_IDX_IO)
-    {
-      file->multi_patch_idx_io = PIDX_multi_patch_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->multi_patch_idx_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_multi_patch_idx_io_set_communicator(file->multi_patch_idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_multi_patch_idx_write(file->multi_patch_idx_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_multi_patch_idx_io_finalize(file->multi_patch_idx_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-    */
+    ret = PIDX_hybrid_idx_io_finalize(file->hybrid_idx_io);
+    if (ret != PIDX_success)
+      return PIDX_err_flush;
   }
 
   else if (mode == PIDX_MODE_RDONLY)
-  {
-    //if (io_type == PIDX_HYBRID_IDX_IO)
-    {
-      if (start_var_index == file->idx->variable_count)
-        return PIDX_success;
+  { 
+    if (start_var_index == file->idx->variable_count)
+      return PIDX_success;
 
-      file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->hybrid_idx_io == NULL)
-        return PIDX_err_flush;
+    file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
+    if (file->hybrid_idx_io == NULL)
+      return PIDX_err_flush;
 
-      ret = PIDX_hybrid_idx_io_set_communicator(file->hybrid_idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
+    ret = PIDX_hybrid_idx_io_set_communicator(file->hybrid_idx_io, file->comm);
+    if (ret != PIDX_success)
+      return PIDX_err_flush;
 
-      ret = PIDX_hybrid_idx_read(file->hybrid_idx_io, group_index, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
+    ret = PIDX_hybrid_idx_read(file->hybrid_idx_io, group_index, start_var_index, end_var_index, io_type);
+    if (ret != PIDX_success)
+      return PIDX_err_flush;
 
-      ret = PIDX_hybrid_idx_io_finalize(file->hybrid_idx_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-    /*
-    if (io_type == PIDX_IDX_IO)
-    {
-      //if (start_var_index == file->idx->variable_count)
-      //  return PIDX_success;
-
-      file->idx_io = PIDX_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->idx_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_idx_io_set_communicator(file->idx_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_idx_read(file->idx_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_idx_io_finalize(file->idx_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-
-    if (io_type == PIDX_RAW_IO)
-    {
-      if (start_var_index == file->idx->variable_count)
-        return PIDX_success;
-
-      file->raw_io = PIDX_raw_io_init(file->idx, file->idx_d, file->idx_dbg);
-      if (file->raw_io == NULL)
-        return PIDX_err_flush;
-
-      ret = PIDX_raw_io_set_communicator(file->raw_io, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      int ncores = 1;
-#if PIDX_HAVE_MPI
-      MPI_Comm_size(file->comm, &ncores);
-#endif
-      if (file->idx_d->data_core_count == ncores)
-        ret = PIDX_raw_read(file->raw_io, start_var_index, end_var_index);
-      else
-        ret = PIDX_forced_raw_read(file->raw_io, start_var_index, end_var_index);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-
-      ret = PIDX_raw_io_finalize(file->raw_io);
-      if (ret != PIDX_success)
-        return PIDX_err_flush;
-    }
-    */
+    ret = PIDX_hybrid_idx_io_finalize(file->hybrid_idx_io);
+    if (ret != PIDX_success)
+      return PIDX_err_flush;
   }
 
-  /*
-  else if (mode == PIDX_MODE_RDWR)
-  {
-    int state = file->idx->variable[file->local_variable_index]->io_state;
-    int state_index = file->local_variable_index;
-    int new_state, same_state_count = 0;
-
-    for (i = file->local_variable_index; i < file->local_variable_index + file->local_variable_count; i++)
-    {
-      new_state = file->idx->variable[i]->io_state;
-      if (state == new_state)
-      {
-        same_state_count++;
-        if (i == file->local_variable_index + file->local_variable_count - 1)
-        {
-          if (state == 1)
-          {
-            if (file->local_variable_index == file->idx->variable_count)
-              return PIDX_success;
-
-            file->idx_io = PIDX_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-            if (file->idx_io == NULL)
-              return PIDX_err_flush;
-
-            ret = PIDX_idx_io_set_communicator(file->idx_io, file->comm);
-            if (ret != PIDX_success)
-              return PIDX_err_flush;
-
-            PIDX_idx_write(file->idx_io, state_index, state_index + same_state_count);
-          }
-          else if (state == 0)
-          {
-            file->idx_io = PIDX_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-            if (file->idx_io == NULL)
-              return PIDX_err_flush;
-
-            ret = PIDX_idx_io_set_communicator(file->idx_io, file->comm);
-            if (ret != PIDX_success)
-              return PIDX_err_flush;
-
-            PIDX_idx_read(file->idx_io, state_index, state_index + same_state_count);
-          }
-        }
-      }
-      else
-      {
-        if (state == 1)
-        {
-          if (file->local_variable_index == file->idx->variable_count)
-            return PIDX_success;
-
-          PIDX_idx_write(file->idx_io, state_index, state_index + same_state_count);
-
-          file->idx_io = PIDX_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-          if (file->idx_io == NULL)
-            return PIDX_err_flush;
-
-          ret = PIDX_idx_io_set_communicator(file->idx_io, file->comm);
-          if (ret != PIDX_success)
-            return PIDX_err_flush;
-        }
-        else if (state == 0)
-        {
-          PIDX_idx_read(file->idx_io, state_index, state_index + same_state_count);
-          file->idx_io = PIDX_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-          if (file->idx_io == NULL)
-            return PIDX_err_flush;
-
-          ret = PIDX_idx_io_set_communicator(file->idx_io, file->comm);
-          if (ret != PIDX_success)
-            return PIDX_err_flush;
-        }
-
-        state = new_state;
-        state_index = i;
-        same_state_count = 1;
-      }
-    }
-  }
-  */
   return PIDX_success;
 }
 

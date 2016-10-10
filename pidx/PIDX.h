@@ -468,43 +468,11 @@ PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
 
 
 
-///
-/// \brief PIDX_enable_raw_io
-/// \param file
-/// \return
-///
-PIDX_return_code PIDX_enable_raw_io(PIDX_file file);
-
-
 
 PIDX_return_code PIDX_raw_io_pipe_length(PIDX_file file, int pipe_length);
 
 
 
-
-///
-/// \brief PIDX_enable_partitioned_io
-/// \param file
-/// \return
-///
-PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file);
-
-
-
-PIDX_return_code PIDX_enable_global_io(PIDX_file file);
-
-
-
-
-PIDX_return_code PIDX_enable_hybrid_io(PIDX_file file);
-
-
-///
-/// \brief PIDX_enable_partition_merge_io
-/// \param file
-/// \return
-///
-PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file);
 
 
 ///
@@ -520,6 +488,9 @@ PIDX_return_code PIDX_time_step_caching_OFF();
 ///
 PIDX_return_code PIDX_debug_output(PIDX_file file);
 
+
+
+PIDX_return_code PIDX_io_mode(PIDX_file file, int io_type);
 
 
 ///

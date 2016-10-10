@@ -51,6 +51,7 @@ PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived
   io_id->idx = idx_meta_data;
   io_id->idx_d = idx_d;
 
+  io_id->group_index = 0;
   io_id->init_index = init_index;
   io_id->first_index = first_index;
   io_id->last_index = last_index;

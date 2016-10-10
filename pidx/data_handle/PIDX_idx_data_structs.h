@@ -172,6 +172,7 @@ typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 /// idx_file
 struct idx_file_struct
 {
+  int io_type;
   int current_time_step;                                                ///< Time step tracker
 
   int variable_count;
@@ -220,7 +221,7 @@ typedef struct idx_file_struct* idx_dataset;
 /// idx_dataset_derived_metadata
 struct idx_dataset_derived_metadata_struct
 {
-  int io_mode;
+  //int io_mode;
 
   int dimension;
   int samples_per_block;

@@ -256,7 +256,7 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_hybrid_idx_io file, PIDX_agg_
       }
       time->agg_meta_end[var_index][j] = PIDX_get_time();
       time->agg_buf_start[var_index][j] = PIDX_get_time();
-      ret = PIDX_agg_buf_create_multiple_level(agg_id[var_index][j], agg_buffer[var_index][j], block_layout_by_level[j_1], var_index, j, file_status);
+      ret = PIDX_agg_buf_create_multiple_level(agg_id[var_index][j], agg_buffer[var_index][j], block_layout_by_level[j_1], j, var_index, file_status);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

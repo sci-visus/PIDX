@@ -59,7 +59,7 @@ PIDX_return_code PIDX_hybrid_idx_io_set_communicator(PIDX_hybrid_idx_io id, MPI_
 /// \param end_var_index
 /// \return
 ///
-PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index);
+PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, int MODE);
 
 
 ///
@@ -70,7 +70,7 @@ PIDX_return_code PIDX_hybrid_idx_write(PIDX_hybrid_idx_io file, int group_index,
 /// \param evi
 /// \return
 ///
-PIDX_return_code PIDX_hybrid_idx_read(PIDX_hybrid_idx_io file, int gi, int svi, int evi);
+PIDX_return_code PIDX_hybrid_idx_read(PIDX_hybrid_idx_io file, int gi, int svi, int evi, int MODE);
 
 
 

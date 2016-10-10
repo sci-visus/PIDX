@@ -166,7 +166,7 @@ static void create_synthetic_simulation_data()
           {
             if ((bpv[var]) == 32)
             {
-              fvalue = 100;// + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
+              fvalue = 100 + var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
             else if ((bpv[var]) == 192 || (bpv[var]) == 64)
@@ -383,17 +383,22 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
+    ret = PIDX_io_mode(file, PIDX_IDX_IO);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
+
     ret = PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
+
+    PIDX_set_block_count(file, 256);
 
     //ret = PIDX_set_aggregator_multiplier(file, aggregator_multiplier);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");
 
-    int io_type = PIDX_HYBRID_IDX_IO;
+    /*
+    int io_type = PIDX_IDX_IO;
     switch (io_type)
     {
-      case PIDX_HYBRID_IDX_IO:
-        PIDX_enable_hybrid_io(file);
+      case PIDX_GLOBAL_PARTITION_IDX_IO:
         PIDX_set_block_count(file,blocks_per_file);
         PIDX_set_block_size(file, 13);
         break;
@@ -403,13 +408,13 @@ int main(int argc, char **argv)
         break;
 
       case PIDX_RAW_IO:
-        PIDX_enable_raw_io(file);
         PIDX_raw_io_pipe_length(file, 2);
         PIDX_point reg_patch_size;
         PIDX_set_point_5D(reg_patch_size, 128, 128, 128, 1, 1);
         PIDX_set_restructuring_box(file, reg_patch_size);
         break;
     }
+    */
 
     //ret = PIDX_debug_disable_agg(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");

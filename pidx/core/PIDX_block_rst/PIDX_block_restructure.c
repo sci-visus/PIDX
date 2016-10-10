@@ -66,6 +66,7 @@ PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_met
   chunk_id->idx = idx_meta_data;
   chunk_id->idx_derived = idx_derived;
 
+  chunk_id->group_index = 0;
   chunk_id->init_index = init_index;
   chunk_id->first_index = start_var_index;
   chunk_id->last_index = end_var_index;

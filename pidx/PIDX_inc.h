@@ -110,7 +110,7 @@
 #endif
 #endif
 
-enum IO_MODE {PIDX_READ, PIDX_WRITE};
+enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
 #ifdef __cplusplus
 extern "C" {

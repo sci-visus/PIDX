@@ -37,6 +37,13 @@ PIDX_return_code PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer a
     for (i = 0; i < agg_buf->sample_number; i++)
       data_offset = (unsigned long long) data_offset + agg_buf->buffer_size;
 
+    /*
+    double x1, x2, x3;
+    memcpy(&x1, agg_buf->buffer, sizeof(double));
+    memcpy(&x2, agg_buf->buffer + sizeof(double), sizeof(double));
+    memcpy(&x3, agg_buf->buffer + 2 * sizeof(double), sizeof(double));
+    printf("[XXXXXXXx] : %f %f %f\n", x1, x2, x3);
+    */
     ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, request);
     if (ret != MPI_SUCCESS)
     {

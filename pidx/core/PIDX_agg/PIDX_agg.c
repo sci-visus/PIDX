@@ -43,6 +43,7 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   id->idx = idx_meta_data;
   id->idx_d = idx_d;
 
+  id->gi = 0;
   id->ini = ini;
   id->fi = fi;
   id->li = li;
@@ -133,7 +134,6 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
   MPI_Comm_size(id->global_comm, &gnprocs);
 
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
-
   int i = 0, j = 0, k = 0;
   for (k = 0; k < lbl->efc; k++)
   {
@@ -187,6 +187,9 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         else if (file_status == 2)
           trank = gnprocs - 1;
 
+        if (rank == 0)
+          printf("[%d(%d) %d %d] CR %d AI %d trank %d\n", k, lbl->efc, i, j, calculated_rank, calculated_rank + var_offset * interval + (interval/2), trank);
+
         id->agg_r[k][i - id->fi][j] = trank;
 
         free(first);
@@ -217,6 +220,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
             return PIDX_err_agg;
           }
         }
+
       }
     }
   }
@@ -239,17 +243,8 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 #endif
 
-  if (MODE == PIDX_WRITE)
-  {
-    ret = one_sided_data_com(id, ab, layout_id, lbl, PIDX_WRITE);
-    if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
-  }
-  else
-  {
-    ret = one_sided_data_com(id, ab, layout_id, lbl, PIDX_READ);
-    if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
-  }
-
+  ret = one_sided_data_com(id, ab, layout_id, lbl, MODE);
+  if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
 #if PIDX_HAVE_MPI
 #ifdef PIDX_ACTIVE_TARGET
@@ -260,6 +255,17 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   ret = MPI_Win_free(&(id->win));
   if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 #endif
+
+  /*
+  int rank;
+  MPI_Comm_rank(id->comm, &rank);
+  if (rank == 32)
+  {
+  double x1;
+  memcpy(&x1, ab->buffer, sizeof(double));
+  printf("AAAAAAAAAA %f\n", x1);
+  }
+  */
 
   ret = close_log_file(id);
   if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
@@ -429,8 +435,14 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
             }
 #endif
 
-            ret = aggregate(id, v, hz_buf->start_hz_index[i], count, var->hz_buffer[p]->buffer[i], 0, ab, lbl, mode, layout_id);
-
+            //if (rank == 0)
+           // {
+               // double x1;
+             //   memcpy(&x1, hz_buf->buffer[i], sizeof(double));
+            //printf("[%d] Count %d: %f\n", rank, count, x1);
+            //}
+            //printf("[%d] Offset %d Count %d\n", rank, hz_buf->start_hz_index[i], count);
+            ret = aggregate(id, v, hz_buf->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
             if (ret != PIDX_success)
             {
               fprintf(stderr, " Error in aggregate Line %d File %s\n", __LINE__, __FILE__);
@@ -439,7 +451,6 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
           }
         }
       }
-
       else if (hz_buf->type == 2)
       {
 #ifdef PIDX_DUMP_AGG
@@ -461,14 +472,20 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
               fflush(agg_dump_fp);
             }
 #endif
-            int start_block_index = var->hz_buffer[p]->start_hz_index[i] / id->idx_d->samples_per_block;
-            int end_block_index = var->hz_buffer[p]->end_hz_index[i] / id->idx_d->samples_per_block;
+            int start_block_index = hz_buf->start_hz_index[i] / id->idx_d->samples_per_block;
+            int end_block_index = hz_buf->end_hz_index[i] / id->idx_d->samples_per_block;
             assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
 
             if (end_block_index == start_block_index)
             {
-              count = (var->hz_buffer[p]->end_hz_index[i] - var->hz_buffer[p]->start_hz_index[i] + 1);
+              count = (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1);
 
+              /*
+              double tst;
+              memcpy(&tst, hz_buf->buffer[i], sizeof(double));
+              if (tst == 607205.000000)
+                printf("[CMP %d] [l %d]    Offset %d Count %d\n", rank, i, var0->hz_buffer[p]->start_hz_index[i], count);
+              */
               ret = aggregate(id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
               if (ret != PIDX_success)
               {
@@ -476,6 +493,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
                 return PIDX_err_agg;
               }
             }
+            //
             else
             {
               int send_index = 0;
@@ -487,20 +505,20 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
                   if (bl == start_block_index)
                   {
                     index = 0;
-                    count = ((start_block_index + 1) * id->idx_d->samples_per_block) - var->hz_buffer[p]->start_hz_index[i];
+                    count = ((start_block_index + 1) * id->idx_d->samples_per_block) - hz_buf->start_hz_index[i];
                   }
                   else if (bl == end_block_index)
                   {
-                    index = (end_block_index * id->idx_d->samples_per_block - var->hz_buffer[p]->start_hz_index[i]);
-                    count = var->hz_buffer[p]->end_hz_index[i] - ((end_block_index) * id->idx_d->samples_per_block) + 1;
+                    index = (end_block_index * id->idx_d->samples_per_block - hz_buf->start_hz_index[i]);
+                    count = hz_buf->end_hz_index[i] - ((end_block_index) * id->idx_d->samples_per_block) + 1;
                   }
                   else
                   {
-                    index = (bl * id->idx_d->samples_per_block - var->hz_buffer[p]->start_hz_index[i]);
+                    index = (bl * id->idx_d->samples_per_block - hz_buf->start_hz_index[i]);
                     count = id->idx_d->samples_per_block;
                   }
 
-                  ret = aggregate(id, v, index + var->hz_buffer[p]->start_hz_index[i], count, var->hz_buffer[p]->buffer[i], send_index, ab, lbl, mode, layout_id);
+                  ret = aggregate(id, v, index + hz_buf->start_hz_index[i], count, hz_buf->buffer[i], send_index, ab, lbl, mode, layout_id);
                   if (ret != PIDX_success)
                   {
                     fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
@@ -512,6 +530,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
                   send_index = send_index + id->idx_d->samples_per_block;
               }
             }
+            //
           }
         }
       }
@@ -521,13 +540,13 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
   return PIDX_success;
 }
 
-static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id)
+static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id)
 {
   int rank = 0, nprocs = 1;
   int bpdt;
   int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, vps;
   int target_rank = 0;
-  unsigned long long start_agg_index = 0, end_agg_index = 0, target_disp = 0, target_count = 0, hz_start = 0, samples_in_file = 0;
+  unsigned long long start_agg_index = 0, end_agg_index = 0, target_disp = 0, target_count = 0, samples_in_file = 0;
   unsigned long long samples_per_file = (unsigned long long) id->idx_d->samples_per_block * id->idx->blocks_per_file;
 
   unsigned long long tcs = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
@@ -535,7 +554,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 #if PIDX_HAVE_MPI
   int ret;
 
-  //MPI_Comm_rank(id->global_comm, &nrank);
+  MPI_Comm_rank(id->global_comm, &rank);
 #endif
 
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
@@ -543,14 +562,13 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   vps = var->vps; //number of samples for variable j
 
-  //starting HZ index for the data buffer at level "level" and for regular patch number "patch"
-  hz_start = hz_start_index;
-
+  // hz_start is the starting HZ index for the data buffer at level "level" and for regular patch number "patch"
   //file number to which the first element of the buffer belongs to
   file_no = hz_start / samples_per_file;
 
   //block number for the first element of the buffer
   block_no = hz_start / id->idx_d->samples_per_block;
+
 
   //number of empty blocks befor block "block_no" in the file "file_no"
   //negative_block_offset = PIDX_blocks_find_negative_offset(id->idx->blocks_per_file, block_no, id->idx->variable[id->ini]->global_block_layout);
@@ -575,12 +593,15 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   target_disp = target_disp % (samples_in_file / ab->agg_f);
 
+  //if (rank == 60)
+  //    printf("%d ----> %d TD %d NBO %d\n", hz_start, block_no, target_disp, negative_block_offset);
+
   target_rank = id->agg_r[lbl->inverse_existing_file_index[file_no]][variable_index - id->fi][sample_index];
+  printf("[%d] File no %d IFI %d TR %d\n", rank, file_no, lbl->inverse_existing_file_index[file_no], target_rank);
 
   MPI_Comm_rank(id->comm, &rank);
   MPI_Comm_size(id->comm, &nprocs);
 
-  //
   if (layout_id != 0 && id->idx->current_time_step == 0)
   {
     MPI_Comm agg_comm;
@@ -606,7 +627,6 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
     assert(rank >= min_rank);
     assert(rank <= max_rank);
   }
-  //
 
   target_count = hz_count * vps;
   bpdt = ((var->bpv / 8) * tcs) / (id->idx->compression_factor);
@@ -617,7 +637,6 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   if (start_agg_index != end_agg_index)
   {
-
   }
   else
   {
@@ -637,6 +656,11 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
           fflush(agg_dump_fp);
         }
 #endif
+
+        //if (rank == 60)
+        //{
+        //  printf("TD: %d Count %d\n", target_disp / (vps * bpdt), hz_count);
+        //}
 
         ret = MPI_Put(hz_buffer, hz_count * vps * bpdt, MPI_BYTE, target_rank, target_disp, hz_count * vps * bpdt, MPI_BYTE, id->win);
         if(ret != MPI_SUCCESS)

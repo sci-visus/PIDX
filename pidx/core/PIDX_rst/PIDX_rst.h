@@ -72,6 +72,9 @@ PIDX_return_code PIDX_rst_meta_data_destroy(PIDX_rst_id rst_id);
 
 
 
+void set_reg_patch_size(PIDX_rst_id rst_id, int factor);
+
+
 /// Ceate the appropriate data structs to hold restructured output data
 
 ///

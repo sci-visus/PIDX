@@ -13,50 +13,64 @@ static PIDX_return_code destroy_file_zero_block_layout(PIDX_hybrid_idx_io file, 
 static PIDX_return_code destroy_shared_block_layout(PIDX_hybrid_idx_io file, int gi);
 static PIDX_return_code destroy_non_shared_block_layout(PIDX_hybrid_idx_io file, int gi);
 
-PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file, int mode)
+PIDX_return_code populate_bit_string(PIDX_hybrid_idx_io file, int mode, int io_type)
 {
   int i = 0;
   unsigned long long* cb = file->idx->chunked_bounds;
 
   if (mode == PIDX_WRITE)
   {
-    char temp_bs[512];
-    char reg_patch_bs[512];
-    char process_bs[512];
-    char partition_bs[512];
+    //if (io_type == PIDX_IDX_IO)
+    //{
+    //  Point3D cbp;
+    //  cbp.x = (int) file->idx->chunked_bounds[0];
+    //  cbp.y = (int) file->idx->chunked_bounds[1];
+    //  cbp.z = (int) file->idx->chunked_bounds[2];
+    //  guess_bit_string(file->idx->bitSequence, cbp);
+    //}
+    //else
 
-    // First part of the bitstring
-    Point3D rpp;
-    rpp.x = (int) file->idx->reg_patch_size[0];
-    rpp.y = (int) file->idx->reg_patch_size[1];
-    rpp.z = (int) file->idx->reg_patch_size[2];
-    guess_bit_string(reg_patch_bs, rpp);
+    {
+      char temp_bs[512];
+      char reg_patch_bs[512];
+      char process_bs[512];
+      char partition_bs[512];
+
+      // First part of the bitstring
+      Point3D rpp;
+      rpp.x = (int) file->idx->reg_patch_size[0];
+      rpp.y = (int) file->idx->reg_patch_size[1];
+      rpp.z = (int) file->idx->reg_patch_size[2];
+      guess_bit_string(reg_patch_bs, rpp);
+
+      // Middle part of the bitstring
+      Point3D prcp;
+      prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
+      prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
+      prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
+      if (prcp.x == 0)  prcp.x = 1;
+      if (prcp.y == 0)  prcp.y = 1;
+      if (prcp.z == 0)  prcp.z = 1;
+      guess_bit_string_Z(process_bs, prcp);
 
 
-    // Middle part of the bitstring
-    Point3D prcp;
-    prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
-    prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
-    prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
-    if (prcp.x == 0)  prcp.x = 1;
-    if (prcp.y == 0)  prcp.y = 1;
-    if (prcp.z == 0)  prcp.z = 1;
-    guess_bit_string_Z(process_bs, prcp);
+      // Last part of the bitstring
+      Point3D pcp;
+      pcp.x = (int) file->idx_d->partition_count[0];
+      pcp.y = (int) file->idx_d->partition_count[1];
+      pcp.z = (int) file->idx_d->partition_count[2];
+      guess_bit_string(partition_bs, pcp);
 
+      // Concatenating the three components to get the final bit string
+      strcpy(temp_bs, process_bs);
+      strcat(temp_bs, reg_patch_bs + 1);
+      strcpy(file->idx->bitSequence, partition_bs);
+      strcat(file->idx->bitSequence, temp_bs + 1);
+    }
 
-    // Last part of the bitstring
-    Point3D pcp;
-    pcp.x = (int) file->idx_d->partition_count[0];
-    pcp.y = (int) file->idx_d->partition_count[1];
-    pcp.z = (int) file->idx_d->partition_count[2];
-    guess_bit_string(partition_bs, pcp);
-
-    // Concatenating the three components to get the final bit string
-    strcpy(temp_bs, process_bs);
-    strcat(temp_bs, reg_patch_bs + 1);
-    strcpy(file->idx->bitSequence, partition_bs);
-    strcat(file->idx->bitSequence, temp_bs + 1);
   }
+
+      //strcpy(file->idx->bitSequence, "V22110010210210210210");
 
   // maxh calculation
   file->idx_d->maxh = strlen(file->idx->bitSequence);
@@ -202,12 +216,18 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_
     PIDX_variable_group var_grp = file->idx->variable_grp[gi];
     PIDX_variable var = var_grp->variable[lvi];
 
-    for (p = 0 ; p < var->sim_patch_count ; p++)
+    assert(var->patch_group_count <= 1);
+    //for (p = 0 ; p < var->sim_patch_count ; p++)
+    for (p = 0 ; p < var->patch_group_count ; p++)
     {
       for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
       {
-        bounding_box[0][i] = var->sim_patch[p]->offset[i];
-        bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
+        //bounding_box[0][i] = var->sim_patch[p]->offset[i];
+        //bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
+
+        bounding_box[0][i] = var->rst_patch_group[0]->reg_patch->offset[i];
+        bounding_box[1][i] = var->rst_patch_group[0]->reg_patch->size[i] + var->rst_patch_group[0]->reg_patch->offset[i];
+
 
         bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
 
@@ -216,6 +236,7 @@ PIDX_return_code populate_idx_layout(PIDX_hybrid_idx_io file, int gi, int start_
         else
           bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
       }
+      //printf("[%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
 
       PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
       memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
@@ -683,6 +704,8 @@ static PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_
     }
   }
 
+  //if (rank == 0)
+  //  PIDX_blocks_print_layout(block_layout);
 
   block_layout->file_bitmap = malloc(file->idx_d->max_file_count * sizeof (int));
   memset(block_layout->file_bitmap, 0, file->idx_d->max_file_count * sizeof (int));
@@ -764,8 +787,8 @@ static PIDX_return_code populate_idx_block_layout(PIDX_hybrid_idx_io file, PIDX_
   {
     if (block_layout->file_index[i] == 1)
     {
-      //if (rank == 0)
-      //  printf("[%d %d] BPF %d = %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->bcpf[i]);
+      if (rank == 0)
+        printf("[%d %d] BPF %d = %d %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->bcpf[i], count);
       block_layout->existing_file_index[count] = i;
       block_layout->inverse_existing_file_index[i] = count;
       count++;

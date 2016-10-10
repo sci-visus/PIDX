@@ -694,11 +694,11 @@ int main(int argc, char **argv)
                           //printf("[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
                           if (dlhs == drhs)
                           {
-                            printf("[C] Expected %f Found %f\n", drhs, dlhs);
+                            //printf("[C] Expected %f Found %f\n", drhs, dlhs);
                             element_count1++;
                           }
                           //else
-                          //  printf("[W] [F %d %s] [B %d] Expected %f Found %f\n", fi, bin_file, bpf, drhs, dlhs);
+                            //printf("[W] [F %d %s] [B %d] Expected %f Found %f\n", fi, bin_file, bpf, drhs, dlhs);
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {

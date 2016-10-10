@@ -135,7 +135,7 @@ PIDX_return_code create_hz_buffers(PIDX_hybrid_idx_io file, int svi, int evi)
     }
 
     // Verify the HZ encoding
-    if(file->idx_dbg->debug_hz == 1)
+    //if(file->idx_dbg->debug_hz == 1)
     {
       ret = HELPER_Hz_encode(file->hz_id);
       if (ret != PIDX_success)

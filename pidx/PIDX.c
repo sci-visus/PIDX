@@ -48,12 +48,7 @@ struct PIDX_file_descriptor
 {
   int flags;
 
-
-  int io_type;
   PIDX_io io;
-  PIDX_hybrid_idx_io hybrid_idx_io;
-  PIDX_idx_io idx_io;
-  PIDX_raw_io raw_io;
 
 #if PIDX_HAVE_MPI
   MPI_Comm comm;                               ///< MPI sub-communicator (including all processes per IDX file)
@@ -184,7 +179,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx_d->color = 0;
   (*file)->small_agg_comm = 0;
-  (*file)->io_type = PIDX_IDX_IO;
+  (*file)->idx->io_type = PIDX_IDX_IO;
   //(*file)->enable_raw_dump = 0;
   (*file)->idx_d->data_core_count = -1;
   (*file)->debug_output = 0;
@@ -355,7 +350,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->idx_d->color = 0;
 
-  (*file)->io_type = PIDX_IDX_IO;
+  (*file)->idx->io_type = PIDX_IDX_IO;
   //(*file)->enable_raw_dump = 0;
 
   (*file)->idx_d->parallel_mode = access_type->parallel;
@@ -490,7 +485,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
       if (strcmp(line, "(raw_dump)") == 0)
       {
-        (*file)->io_type = PIDX_RAW_IO;
+        (*file)->idx->io_type = PIDX_RAW_IO;
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
@@ -686,7 +681,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast((*file)->idx_d->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->compression_bit_rate), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->comm);
-    MPI_Bcast(&((*file)->io_type), 1, MPI_INT, 0, (*file)->comm);
+    MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->comm);
 
     if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
     {
@@ -833,7 +828,6 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
   file->idx_d->partition_size[1] = count_y;
   file->idx_d->partition_size[2] = count_z;
 
-  //printf("B %d %d %d\n", file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
   return PIDX_validate(file);
 }
 
@@ -1560,12 +1554,12 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_from, int *hz_to)
 
 
 
-PIDX_return_code PIDX_enable_raw_io(PIDX_file file)
+PIDX_return_code PIDX_io_mode(PIDX_file file, int io_type)
 {
   if(file == NULL)
     return PIDX_err_file;
 
-  file->io_type = PIDX_RAW_IO;
+  file->idx->io_type = io_type;
 
   return PIDX_success;
 }
@@ -1582,54 +1576,6 @@ PIDX_return_code PIDX_raw_io_pipe_length(PIDX_file file, int pipe_length)
   return PIDX_success;
 }
 
-
-
-PIDX_return_code PIDX_enable_global_io(PIDX_file file)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  file->io_type = PIDX_GLOBAL_IDX_IO;
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_enable_hybrid_io(PIDX_file file)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  file->io_type = PIDX_HYBRID_IDX_IO;
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_enable_partitioned_io(PIDX_file file)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  file->io_type = PIDX_PARTITIONED_IDX_IO;
-
-  return PIDX_success;
-}
-
-
-
-
-PIDX_return_code PIDX_enable_partition_merge_io(PIDX_file file)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  file->io_type = PIDX_PARTITION_MERGE_IDX_IO;
-
-  return PIDX_success;
-}
 
 
 
@@ -1651,7 +1597,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
-    ret = PIDX_io_io(file->io, file->flags, file->io_type, i, var_grp->local_variable_index, (var_grp->local_variable_index + var_grp->local_variable_count));
+    ret = PIDX_io_io(file->io, file->flags, file->idx->io_type, i, var_grp->local_variable_index, (var_grp->local_variable_index + var_grp->local_variable_count));
     if (ret != PIDX_success)
       return PIDX_err_io;
   }
@@ -1717,7 +1663,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
   }
 
-  if (file->io_type == PIDX_HYBRID_IDX_IO)
+  if (file->idx->io_type == PIDX_IDX_IO)
   {
     double total_time = time->sim_end - time->sim_start;
     double max_time = total_time;

@@ -24,8 +24,8 @@ PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi)
         colors[(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i] = (file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i;
       }
 
-  Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
-  memset(local_proc_patch, 0, sizeof (*local_proc_patch));
+  Ndim_patch local_p = (Ndim_patch)malloc(sizeof (*local_p));
+  memset(local_p, 0, sizeof (*local_p));
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var = var_grp->variable[svi];
@@ -34,8 +34,8 @@ PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi)
   {
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_proc_patch->offset[d] = var->rst_patch_group[0]->reg_patch->offset[d];
-      local_proc_patch->size[d] = var->rst_patch_group[0]->reg_patch->size[d];
+      local_p->offset[d] = var->rst_patch_group[0]->reg_patch->offset[d];
+      local_p->size[d] = var->rst_patch_group[0]->reg_patch->size[d];
     }
     Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
     memset(reg_patch, 0, sizeof (*reg_patch));
@@ -69,8 +69,8 @@ PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi)
           reg_patch->size[1] = file->idx_d->partition_size[1];
           reg_patch->size[2] = file->idx_d->partition_size[2];
 
-         if (intersectNDChunk(reg_patch, local_proc_patch))
-          {
+         if (intersectNDChunk(reg_patch, local_p))
+         {
             PointND xyzuv_Index;
             xyzuv_Index.x = index_i;
             xyzuv_Index.y = index_j;
@@ -92,18 +92,7 @@ PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi)
             }
 
             file->idx_d->color = colors[z_order];
-            //printf("[%d] ---> %d\n", rank, file->idx_d->color);
-
             assert(var->sim_patch_count == 1);
-            //var->sim_patch_count = 1;
-            var->sim_patch[0]->offset[0] = var->rst_patch_group[0]->reg_patch->offset[0];
-            var->sim_patch[0]->offset[1] = var->rst_patch_group[0]->reg_patch->offset[1];
-            var->sim_patch[0]->offset[2] = var->rst_patch_group[0]->reg_patch->offset[2];
-
-            var->sim_patch[0]->size[0] = var->rst_patch_group[0]->reg_patch->size[0];
-            var->sim_patch[0]->size[1] = var->rst_patch_group[0]->reg_patch->size[1];
-            var->sim_patch[0]->size[2] = var->rst_patch_group[0]->reg_patch->size[2];
-
             break;
           }
         }
@@ -112,20 +101,8 @@ PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi)
     free(reg_patch);
   }
   else
-  {
-    file->idx->bounds[0] = 0;//reg_patch->size[0];
-    file->idx->bounds[1] = 0;//reg_patch->size[1];
-    file->idx->bounds[2] = 0;//reg_patch->size[2];
+    printf("RST artifact\n");
 
-    var->sim_patch_count = 0;
-    var->sim_patch[0]->offset[0] = 0;
-    var->sim_patch[0]->offset[1] = 0;
-    var->sim_patch[0]->offset[2] = 0;
-
-    var->sim_patch[0]->size[0] = 0;//-1;
-    var->sim_patch[0]->size[1] = 0;//-1;
-    var->sim_patch[0]->size[2] = 0;//-1;
-  }
 
 
   free(colors);
@@ -148,8 +125,8 @@ PIDX_return_code partition_setup(PIDX_hybrid_idx_io file, int gi, int svi)
 
   strcpy(file->idx->filename_global, file->idx->filename);
 
-  free(local_proc_patch);
-  local_proc_patch = 0;
+  free(local_p);
+  local_p = 0;
 
   return PIDX_success;
 }

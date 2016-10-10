@@ -90,6 +90,22 @@ static int getPowerOftwo(int x)
 }
 
 
+void set_reg_patch_size(PIDX_rst_id rst_id, int factor)
+{
+
+  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable var0 = var_grp->variable[rst_id->first_index];
+
+  rst_id->reg_patch_size[0] = factor * getPowerOftwo(var0->sim_patch[0]->size[0]);// * factor;
+  rst_id->reg_patch_size[1] = factor * getPowerOftwo(var0->sim_patch[0]->size[1]);// * factor;
+  rst_id->reg_patch_size[2] = factor * getPowerOftwo(var0->sim_patch[0]->size[2]);// * factor;
+
+  //printf("[%d %d]  ::  [%d %d %d] : %d %d %d\n", rst_id->group_index, rst_id->first_index, var0->sim_patch[0]->size[0], var0->sim_patch[0]->size[1], var0->sim_patch[0]->size[2], rst_id->reg_patch_size[0], rst_id->reg_patch_size[1], rst_id->reg_patch_size[2]);
+
+  memcpy(rst_id->idx->reg_patch_size, rst_id->reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+}
+
+
 
 /// Function to find the dimension of the imposing regular patch
 static void set_default_patch_size(PIDX_rst_id rst_id, unsigned long long* process_bounds, int nprocs)
@@ -157,6 +173,7 @@ PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   rst_id->idx = idx_meta_data;
   rst_id->idx_derived = idx_derived;
 
+  rst_id->group_index = 0;
   rst_id->init_index = first_index;
   rst_id->first_index = var_start_index;
   rst_id->last_index = var_end_index;
@@ -302,10 +319,10 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
     var0->patch_group_count = 0;
 
     /// STEP 1 : Compute the dimension of the regular patch
-    if (rst_id->idx->reg_patch_size[0] == 0)
-      set_default_patch_size(rst_id, var_grp->rank_r_count, nprocs);
-    else
-      memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+    //if (rst_id->idx->reg_patch_size[0] == 0)
+    //set_default_patch_size(rst_id, var_grp->rank_r_count, nprocs);
+    //else
+    //memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
     memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
@@ -602,6 +619,8 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           }
           memcpy(patch_group->reg_patch->offset, rst_id->reg_patch_grp[i]->reg_patch->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
           memcpy(patch_group->reg_patch->size, rst_id->reg_patch_grp[i]->reg_patch->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+
+          //printf("[XXXXXX %d %d] : %d %d %d - %d %d %d\n", rank, cnt, patch_group->reg_patch->offset[0], patch_group->reg_patch->offset[1], patch_group->reg_patch->offset[2], patch_group->reg_patch->size[0], patch_group->reg_patch->size[1], patch_group->reg_patch->size[2]);
           cnt++;
         }
       }

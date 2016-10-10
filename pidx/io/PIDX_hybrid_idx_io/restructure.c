@@ -20,6 +20,7 @@ PIDX_return_code restructure_init(PIDX_hybrid_idx_io file, int gi, int svi, int 
   int pipe_length = file->idx->variable_count;
   for (start_index = svi; start_index < evi; start_index = start_index + (pipe_length + 1))
   {
+    int factor = 1;
     end_index = ((start_index + pipe_length) >= (evi)) ? (evi - 1) : (start_index + pipe_length);
     file->rst_id = PIDX_rst_init(file->idx, file->idx_d, svi, start_index, end_index);
 
@@ -27,9 +28,29 @@ PIDX_return_code restructure_init(PIDX_hybrid_idx_io file, int gi, int svi, int 
     if (ret != PIDX_success)
       return PIDX_err_rst;
 
+    restructure_tag:
+
+    set_reg_patch_size(file->rst_id, factor);
+
     ret = PIDX_rst_meta_data_create(file->rst_id);
     if (ret != PIDX_success)
       return PIDX_err_rst;
+
+
+    PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+    PIDX_variable var0 = var_grp->variable[svi];
+    int grp_count = var0->patch_group_count;
+    int max_grp_count;
+    MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
+    if (max_grp_count > 1)
+    {
+      ret = PIDX_rst_meta_data_destroy(file->rst_id);
+      if (ret != PIDX_success)
+        return PIDX_err_rst;
+
+      factor = factor * 2;
+      goto restructure_tag;
+    }
 
     /* Creating the buffers required for restructurig */
     ret = PIDX_rst_buf_create(file->rst_id);

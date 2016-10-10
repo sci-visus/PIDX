@@ -6,60 +6,116 @@ static PIDX_return_code write_headers_non_shared(PIDX_hybrid_idx_io file, int gr
 
 static PIDX_return_code write_headers_file_zero(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, int layout_type);
 
+static PIDX_return_code write_headers_layout(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl);
+
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_hybrid_idx_io file, char* filename, char* filename_template, int current_time_step);
 
-PIDX_return_code write_headers(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, int layout_type)
+PIDX_return_code write_headers(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, int mode)
 {
   int ret = 0;
-  PIDX_time time = file->idx_d->time;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
-  time->write_init_start[time->header_counter] = PIDX_get_time();
   //printf("F: %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
   //printf("S: %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
   //printf("N: %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);
 
   if (var_grp->shared_start_layout_index != var_grp->shared_end_layout_index)
   {
-    ret = write_headers_shared(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, 0);
+    ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, var_grp->shared_block_layout);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
-  time->write_init_end[time->header_counter] = PIDX_get_time();
-  time->header_counter++;
 
-  time->write_init_start[time->header_counter] = PIDX_get_time();
   if (var_grp->nshared_start_layout_index != var_grp->nshared_end_layout_index)
   {
-    ret = write_headers_non_shared(file, group_index, start_var_index, end_var_index, file->idx->filename_global, file->idx->filename_template_global, 0);
-    if (ret != PIDX_success)
+    if (mode == PIDX_IDX_IO)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
+      ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename, file->idx->filename_template, var_grp->nshared_block_layout);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+    }
+    else
+    {
+      ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_global, file->idx->filename_template_global, var_grp->nshared_block_layout);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
     }
   }
-  time->write_init_end[time->header_counter] = PIDX_get_time();
-  time->header_counter++;
 
-  time->write_init_start[time->header_counter] = PIDX_get_time();
   if (var_grp->f0_start_layout_index != var_grp->f0_end_layout_index)
   {
-    ret = write_headers_file_zero(file, group_index, start_var_index, end_var_index, file->idx->filename_file_zero, file->idx->filename_template_file_zero, 0);
+    ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_file_zero, file->idx->filename_template_file_zero, var_grp->f0_block_layout);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
-  time->write_init_end[time->header_counter] = PIDX_get_time();
-  time->header_counter++;
-
 
   return PIDX_success;
 }
+
+
+
+
+static PIDX_return_code write_headers_layout(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl)
+{
+  int ret = 0;
+  PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
+
+  if (file->idx_dbg->debug_do_io == 1)
+  {
+    /* STEP 1 */
+    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
+#if PIDX_HAVE_MPI
+    if (file->idx_d->parallel_mode)
+    {
+      ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
+#endif
+    ret = PIDX_header_io_filename_create(file->header_io_id, bl, filename_template);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+
+    /* STEP 2 */
+    if (var_grp->variable_index_tracker < file->idx->variable_count )
+    {
+      // Create the header
+      ret = PIDX_header_io_filename_write(file->header_io_id, bl, filename, filename_template,  0);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
+
+    if (var_grp->variable_index_tracker == file->idx->variable_count)
+    {
+      ret = PIDX_header_io_filename_write(file->header_io_id, bl, filename, filename_template, 1);
+      if (ret != PIDX_success)
+        return PIDX_err_header;
+    }
+
+    /* STEP 3 */
+    ret = PIDX_header_io_write_idx (file->header_io_id, filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+
+    ret = PIDX_header_io_finalize(file->header_io_id);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+  }
+  return PIDX_success;
+}
+
 
 
 static PIDX_return_code write_headers_shared(PIDX_hybrid_idx_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, int layout_type)
@@ -205,7 +261,7 @@ static PIDX_return_code write_headers_non_shared(PIDX_hybrid_idx_io file, int gr
     }
 
     /* STEP 3 */
-    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename_global, /*file->idx->filename_template_global,*/ file->idx->current_time_step);
+    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename_global, file->idx->current_time_step);
     if (ret != PIDX_success)
       return PIDX_err_header;
 
@@ -218,7 +274,7 @@ static PIDX_return_code write_headers_non_shared(PIDX_hybrid_idx_io file, int gr
 }
 
 
-PIDX_return_code one_time_initialize(PIDX_hybrid_idx_io file, int mode)
+PIDX_return_code one_time_initialize(PIDX_hybrid_idx_io file, int mode, int io_type)
 {
   int total_header_size;
   /// Initialization ONLY ONCE per IDX file
@@ -229,7 +285,7 @@ PIDX_return_code one_time_initialize(PIDX_hybrid_idx_io file, int mode)
 
     PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
 
-    if (mode == PIDX_WRITE)
+    if (mode == PIDX_WRITE && io_type != PIDX_IDX_IO)
     {
       PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
 

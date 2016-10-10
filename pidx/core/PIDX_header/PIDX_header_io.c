@@ -58,6 +58,7 @@ PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data,
   header_io_id->idx = idx_meta_data;
   header_io_id->idx_d = idx_d;
 
+  header_io_id->group_index = 0;
   header_io_id->first_index = first_index;
   header_io_id->last_index = last_index;
 
@@ -104,7 +105,7 @@ PIDX_return_code PIDX_header_io_enable_raw_dump(PIDX_header_io_id header_io)
 
 PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step)
 {
-
+#if 1
   PIDX_variable_group var_grp = header_io->idx->variable_grp[header_io->group_index];
 
   int l = 0, rank = 0, N, ncores = 1;
@@ -118,7 +119,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     MPI_Comm_size(header_io->comm, &ncores);
   }
 #endif
-  
+
   int nbits_blocknumber = (header_io->idx_d->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
 
@@ -183,7 +184,6 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
   if (rank == 0)
   {
     //fprintf(stderr, "writing IDX file...\n", __FILE__, __LINE__);
-
     if (header_io->idx->compression_type != PIDX_NO_COMPRESSION)
     {
       char visus_data_path[PATH_MAX];
@@ -225,7 +225,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
       fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
       fprintf(idx_file_p, "(filename_template)\n./%s\n", header_io->filename_template);
 
-      fprintf(idx_file_p, "(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
+      fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
       fclose(idx_file_p);
     }
 
@@ -280,10 +280,10 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
       fprintf(idx_file_p, "(filename_template)\n./%s\n", header_io->filename_template);
     }
 
-    fprintf(idx_file_p, "\n(time)\n0 %d time%%09d/"/*note: uintah starts at timestep 1, but we shouldn't assume...*/, header_io->idx->current_time_step);
+    fprintf(idx_file_p, "\n(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
-  
+#endif
   return 0;
 }
 
