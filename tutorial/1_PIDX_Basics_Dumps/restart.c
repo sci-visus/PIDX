@@ -223,8 +223,6 @@ int main(int argc, char **argv)
   if (ret == PIDX_err_file_exists)  terminate_with_error_msg("PIDX_file_open: file does not exist");
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
 
-  PIDX_debug_output(file);
-
   variable = malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
 

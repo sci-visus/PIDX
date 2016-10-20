@@ -283,8 +283,6 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    PIDX_debug_output(file);
-
     PIDX_set_block_count(file, 256);
     PIDX_set_block_size(file, 15);
 

@@ -22,8 +22,6 @@
  * \mainpage
  *
  * \author Sidharth Kumar
- * \author Cameron Christensen
- * \author Giorgio Scorzelli
  * \author Valerio Pascucci
  * \date   10/09/14
  *
@@ -36,21 +34,23 @@
 #ifndef __PIDX_H
 #define __PIDX_H
 
-//#include "./io/PIDX_raw_io/PIDX_raw_io.h"
-//#include "./io/PIDX_idx_io/PIDX_idx_io.h"
-#include "./io/PIDX_io.h"
-//#include "PIDX_inc.h"
+#include "PIDX_inc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 
+
+
 struct PIDX_file_descriptor;
 typedef struct PIDX_file_descriptor* PIDX_file;
 
 
-
+/*
+ * Implementation in PIDX_file_create.c
+ */
+///
 /// Creates an IDX file.
 /// PIDX_file_create is the primary function for creating IDX files;
 /// it creates a new IDX file with the specified name and mode
@@ -71,9 +71,14 @@ typedef struct PIDX_file_descriptor* PIDX_file;
 /// file until it is closed using PIDX_File_close.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_file* file);
 
 
+/*
+ * Implementation in PIDX_file_open.c
+ */
+///
 /// Opens an existing IDX file.
 /// PIDX_file_open is the primary function for accessing existing IDX files.
 /// This function opens the named file in the specified access mode.
@@ -89,419 +94,742 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// identifier should be closed by calling PIDX_File_close when it is no longer needed.
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_file* file);
 
 
 
+/*
+ * Implementation in PIDX_close.c
+ */
+///
+/// \brief PIDX_flush Actually write the IDX file for all variables associated with file
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_flush(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_close Calls PIDX_flush and perform all the necessary cleanups
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_close(PIDX_file file);
+
+
+
+/*
+ * Implementation in PIDX_idx_set_get.c
+ */
+///
 /// Sets the dims of the IDX file.
 /// \param file The IDX file handler.
 /// \param dims Global bounds (box size) of the volume.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims);
 
 
 
+///
 /// Gets the dims of the IDX file.
 /// \param file The IDX file handler.
 /// \return dims: Global bounds (box size) of the volume.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims);
 
 
 
+///
+/// Sets the number of variables in the IDX file.
+/// \param file The IDX file handler.
+/// \return The number of variables.
+///
+PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count);
+
+
+
+///
+/// Gets the number of variables in the IDX file.
+/// \param file The IDX file handler.
+/// \return The number of variables.
+///
+PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count);
+
+
+
+///
 /// Sets the transformation from logical dims to the physical coordinates (commonly used to visualize the volume)
 /// \param file The IDX file handler.
 /// \param transform standard 4x4 transformation matrix (right-handed / OpenGL style), see http://www.dirsig.org/docs/new/affine.html.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_set_transform(PIDX_file file, double transform[16]);
 
 
 
+///
 /// Gets the transformation from logical dims to the physical coordinates (commonly used to visualize the volume)
 /// \param file The IDX file handler.
 /// \return transform: will return the standard 4x4 transformation matrix (right-handed / OpenGL style), see http://www.dirsig.org/docs/new/affine.html.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16]);
 
 
 
+///
+/// Sets the current time step for IDX file.
+/// The function should be used for time-varying dataset.
+/// \param file The IDX file handler.
+/// \param time_step The current time step.
+///
+PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int time_step);
+
+
+
+///
+/// Gets the current time step for IDX file.
+/// \param file The IDX file handler.
+/// \return time_step The current time step.
+///
+PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
+
+
+
+///
 /// Sets the block size of the IDX file.  An IDX binary file is composed of blocks.
 /// \param file The IDX file handler.
 /// \param block_size sets the block size of the IDX file.
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_set_block_size(PIDX_file file, const int block_size);
 
 
 
+///
 /// Gets the block size of the IDX file. An IDX binary file is composed of blocks.
 /// \param file The IDX file handler.
 /// \return block_size: gets the block size of the IDX file.
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_get_block_size(PIDX_file file, int* block_size);
 
 
 
+///
 /// Sets the number of blocks in an IDX file. An IDX binary file is composed of blocks.
 /// \param file The IDX file handler.
 /// \param block_count Number of blocks per binary file.
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_set_block_count(PIDX_file file, const int block_count);
 
 
 
+///
 /// Gets the number of blocks in an IDX file.
 /// \param file The IDX file handler.
 /// \return block_count Number of blocks per binary file.
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
+///
 PIDX_return_code PIDX_get_block_count(PIDX_file file, int* block_count);
 
 
 
-/// Sets the current time step for IDX file.
-/// The function should be used for time-varying dataset.
-/// \param file The IDX file handler.
-/// \param time_step The current time step.
-PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int time_step);
-
-
-
-/// Gets the current time step for IDX file.
-/// \param file The IDX file handler.
-/// \return time_step The current time step.
-PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
-
-
-
-/// Creates a PIDX variable...
-PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per_sample, PIDX_data_type type_name, PIDX_variable* variable);
-
-
-
-/// Gets the next PIDX variable...
-PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable);
-
-
-/// Get the number of bits associated with a PIDX_type.
-/// This function can be used to find the number of bits associated with a particular PIDX type.
-/// \param PIDX_type 
-/// \return Number of bits associated with type_name
-PIDX_return_code PIDX_get_bits_per_sample(PIDX_data_type type_name, unsigned int bits_per_sample);
-
-
-
-PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout);
-
-
-
-PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* read_from_this_buffer, PIDX_data_layout data_layout);
-
-
-
-PIDX_return_code PIDX_reset_variable_counter(PIDX_file file);
-
-
-/// Write function used for dumping data from a simulation.
-/// This function is used to write data in increasing order, typically suited for dumping data from a simulation.
-/// \param variable The variable to be written.
-/// \param offset The local offset of the data chunk associated with a process.
-/// \param dims The box size of the chunk associated with the process.
-/// \param src_buffer The data buffer that needs to be written by the process.
-/// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable/*, PIDX_point offset, PIDX_point dims, const void* src_buffer, PIDX_data_layout layout*/);
-
-
-/// Read function used for restarting a simulation from checkpoint dump.
-/// This function is used to read data in the order in which the variables are laid out, typically suited for restarting a simulation from checkpoint.
-/// \param variable The variale to be read.
-/// \param offset The local offset of the data chunk associated with a process.
-/// \param dims The box size of the chunk associated with the process.
-/// \param dst_buffer The buffer to which data is read to.
-/// \param layout The current supported layouts are row major and column major.
-PIDX_return_code PIDX_read_next_variable(PIDX_file file, PIDX_variable variable/*, PIDX_point offset, PIDX_point dims, void* dst_buffer, PIDX_data_layout layout*/);
-
-
-/// Enables dumping of meta-data.
-/// This function enables writes of meta-data for any give variable in the form of box offset and sizes every process writes.
-/// \param variable The variable handler.
-PIDX_return_code PIDX_variable_set_box_metadata_on (PIDX_variable variable);
-
-
-/// Disables dumping of meta-data.
-/// This function disables writes of meta-data for any give variable in the form of box offset and sizes every process writes.
-/// This is the default mode of the API.
-/// \param variable The variable handler.
-PIDX_return_code PIDX_variable_set_box_metadata_off(PIDX_variable variable);
-
-
-
-/// Queries if the box meta-data is saved or not.
-/// This function queries if meta-data associated with variable has been saved or not.
-/// \param variable The variable handler.
-/// \return 1 is meta-data is saved 0 otherwise.
-PIDX_return_code PIDX_variable_get_box_metadata(PIDX_variable variable, int* on_off_bool);
-
-
-
-/// Gets the number of boxes.
-/// This function gets the number of boxes written by all the processes.
-/// \param file The file handler.
-/// \return Number of boxes.
-PIDX_return_code PIDX_get_box_count(PIDX_file file, int* box_count);
-
-
-
-/// Gets the actual box meta-data associated with box_index.
-/// \param file The file handler.
-/// \param box_index The queried box index.
-/// \return The offset of the queried box.
-/// \return The length of the queried box.
-PIDX_return_code PIDX_get_box(PIDX_file file, int box_index, PIDX_point offset, PIDX_point dims);
-
-
-
-/// Gets the number of boxes associated with the given rank.
-/// \param file The file handler.
-/// \param MPI_rank  The rank for which one istrying to find the number of boxes.
-/// \return Number of boxes.
-PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int* box_count);
-
-
-
-/// Gets the actual box meta-data associated with box_index and the MPI rank.
-/// \param file The file handler.
-/// \param box_index The queried box index.
-/// \param MPI_rank The rank for which one istrying to find the number of boxes.
-/// \return The offset of the queried box.
-/// \return The length of the queried box.
-PIDX_return_code PIDX_get_box_with_rank(PIDX_file file, int box_index, int MPI_rank, PIDX_point offset, PIDX_point dims);
-
-
-
-/// Sets the number of variables in the IDX file.
-/// \param file The IDX file handler.
-/// \return The number of variables.
-PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count);
-
-
-
-/// Gets the number of variables in the IDX file.
-/// \param file The IDX file handler.
-/// \return The number of variables.
-PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count);
-
-/// Gets the index of the first timestep in the IDX file.
-/// \param file The IDX file handler.
-/// \return The first timestep index.
-PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep);
-
-/// Gets the index of the last timestep in the IDX file.
-/// \param file The IDX file handler.
-/// \return The last timestep index.
-PIDX_return_code PIDX_get_last_tstep(PIDX_file file, int* tstep);
-
-/// Sets the index of the variable at which location it needs to be written at or read from in an IDX file.
-/// \param file The IDX file handler.
-/// \return Index of the variable.
-PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_index);
-
-
-
-/// Gets the index of the variable in an IDX file.
-/// starts with index 0, to (number of variable - 1) 
-/// \param file The IDX file handler.
-/// \return Index of the variable.
-PIDX_return_code PIDX_get_current_variable_index(PIDX_file file, int* variable_index);
-
-
-
 ///
-PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variable);
-
-
-
-///
-PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variable);
-
-
-
-///
-PIDX_return_code PIDX_read_variable(PIDX_file file, PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void*  dst_buffer, PIDX_data_layout layout);
-
-
-
-///
-PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* src_buffer, PIDX_data_layout layout);
-
-
-
-///Actually write the IDX file for all variables associated with file 
-PIDX_return_code PIDX_flush(PIDX_file file);
-
-
-
-///Perform all the necessary cleanups
-PIDX_return_code PIDX_close(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst);
-
-
-
-///
-PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
-
-
-
-///
-PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info);
-
-
-
-///
-PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info);
-
-
-
+/// \brief PIDX_set_resolution
+/// \param file
+/// \param resolution_from
+/// \param resolution_to
+/// \return
 ///
 PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int resolution_to);
 
 
 
 ///
+/// \brief PIDX_get_resolution
+/// \param file
+/// \param resolution_from
+/// \param resolution_to
+/// \return
+///
 PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *resolution_to);
 
 
 
 ///
-PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_length);
-
-
-
-///
-PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type);
-
-
-
-///
-PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type);
-
-
-
-///
-PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compression_bit_rate);
-
-
-
-///
-PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compression_bit_rate);
-
-
-
-///
-PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point restructured_box_size_point);
-
-
-
-///
-PIDX_return_code PIDX_debug_disable_restructuring(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_debug_disable_chunking(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_debug_disable_compression(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_debug_disable_hz(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_debug_disable_agg(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_debug_disable_io(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_disable_rst(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_disable_agg(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_simulate_io();
-
-
-
-///
-PIDX_return_code PIDX_set_ROI_writes(PIDX_file file);
-
-
-
-///
-PIDX_return_code PIDX_activate_local_aggregation(PIDX_file agg_id);
-
-
-
-
-
-PIDX_return_code PIDX_raw_io_pipe_length(PIDX_file file, int pipe_length);
-
-
-
-
-
-///
-PIDX_return_code PIDX_time_step_caching_ON();
-
-
-
-///
-PIDX_return_code PIDX_time_step_caching_OFF();
-
-
-
-///
-PIDX_return_code PIDX_debug_output(PIDX_file file);
-
-
-
-PIDX_return_code PIDX_io_mode(PIDX_file file, int io_type);
-
-
+/// \brief PIDX_set_partition_size
+/// \param file
+/// \param count_x
+/// \param count_y
+/// \param count_z
+/// \return
 ///
 PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z);
 
 
 
 ///
-PIDX_return_code PIDX_set_aggregator_multiplier(PIDX_file file, int count_aggregator_multiplier);
+/// \brief PIDX_get_partition_size
+/// \param file
+/// \param count_x
+/// \param count_y
+/// \param count_z
+/// \return
+///
+PIDX_return_code PIDX_get_partition_size(PIDX_file file, int* count_x, int* count_y, int* count_z);
 
 
+
+///
+/// \brief PIDX_set_restructuring_box
+/// \param file
+/// \param restructured_box_size_point
+/// \return
+///
+PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point restructured_box_size_point);
+
+
+
+///
+/// \brief PIDX_get_restructuring_box
+/// \param file
+/// \param reg_patch_size
+/// \return
+///
+PIDX_return_code PIDX_get_restructuring_box(PIDX_file file, PIDX_point reg_patch_size);
+
+
+
+///
+/// \brief PIDX_set_first_tstep
+/// \param file
+/// \param tstep
+/// \return
+///
+PIDX_return_code PIDX_set_first_tstep(PIDX_file file, int tstep);
+
+
+
+///
+/// Gets the index of the first timestep in the IDX file.
+/// \param file The IDX file handler.
+/// \return The first timestep index.
+///
+PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep);
+
+
+
+///
+/// \brief PIDX_set_last_tstep
+/// \param file
+/// \param tstep
+/// \return
+///
+PIDX_return_code PIDX_set_last_tstep(PIDX_file file, int tstep);
+
+
+
+///
+/// Gets the index of the last timestep in the IDX file.
+/// \param file The IDX file handler.
+/// \return The last timestep index.
+///
+PIDX_return_code PIDX_get_last_tstep(PIDX_file file, int* tstep);
+
+
+
+///
+/// \brief PIDX_set_compression_type
+/// \param file
+/// \param compression_type
+/// \return
+///
+PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type);
+
+
+
+///
+/// \brief PIDX_get_compression_type
+/// \param file
+/// \param compression_type
+/// \return
+///
+PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type);
+
+
+
+///
+/// \brief PIDX_set_lossy_compression_bit_rate
+/// \param file
+/// \param compression_bit_rate
+/// \return
+///
+PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compression_bit_rate);
+
+
+
+///
+/// \brief PIDX_get_lossy_compression_bit_rate
+/// \param file
+/// \param compression_bit_rate
+/// \return
+///
+PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compression_bit_rate);
+
+
+
+///
+/// \brief PIDX_set_io_mode
+/// \param file
+/// \param io_type
+/// \return
+///
+PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type);
+
+
+
+///
+/// \brief PIDX_get_io_mode
+/// \param file
+/// \param io_type
+/// \return
+///
+PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type);
+
+
+
+///
+/// \brief PIDX_set_ROI_type
+/// \param file
+/// \param type
+/// \return
+///
+PIDX_return_code PIDX_set_ROI_type(PIDX_file file, int type);
+
+
+
+///
+/// \brief PIDX_get_ROI_type
+/// \param file
+/// \param type
+/// \return
+///
+PIDX_return_code PIDX_get_ROI_type(PIDX_file file, int* type);
+
+
+
+///
+/// \brief PIDX_set_raw_io_pipe_length
+/// \param file
+/// \param pipe_length
+/// \return
+///
+PIDX_return_code PIDX_set_raw_io_pipe_length(PIDX_file file, int pipe_length);
+
+
+
+///
+/// \brief PIDX_get_raw_io_pipe_length
+/// \param file
+/// \param pipe_length
+/// \return
+///
+PIDX_return_code PIDX_get_raw_io_pipe_length(PIDX_file file, int* pipe_length);
+
+
+
+///
+/// \brief PIDX_set_variable_pile_length
+/// \param file
+/// \param var_pipe_length
+/// \return
+///
+PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_length);
+
+
+
+///
+/// \brief PIDX_get_variable_pile_length
+/// \param file
+/// \param var_pipe_length
+/// \return
+///
+PIDX_return_code PIDX_get_variable_pile_length(PIDX_file file, int* var_pipe_length);
+
+
+
+/*
+ * Implementation in PIDX_idx_set_get.c
+ */
+///
+/// \brief PIDX_variable_create Creates a PIDX variable.
+/// \param variable_name
+/// \param bits_per_sample
+/// \param type_name
+/// \param variable
+/// \return
+///
+PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per_sample, PIDX_data_type type_name, PIDX_variable* variable);
+
+
+
+///
+/// \brief PIDX_variable_write_data_layout
+/// \param variable
+/// \param offset The local offset of the data chunk associated with a process.
+/// \param dims The box size of the chunk associated with the process.
+/// \param read_from_this_buffer The data buffer that needs to be written by the process.
+/// \param data_layout The current supported layouts are row major and column major.
+/// \return
+///
+PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
+
+///
+/// \brief PIDX_append_and_write_variable Write function used for dumping data from a simulation.
+/// This function is used to write data in increasing order, typically suited for dumping data from a simulation.
+/// \param file
+/// \param variable The variable to be written.
+/// \return
+///
+PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable);
+
+
+
+///
+/// \brief PIDX_get_next_variable Gets the next PIDX variable.
+/// \param file
+/// \param variable
+/// \return
+///
+PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable);
+
+
+
+///
+/// \brief PIDX_variable_read_data_layout
+/// \param variable
+/// \param offset The local offset of the data chunk associated with a process.
+/// \param dims The box size of the chunk associated with the process.
+/// \param read_from_this_buffer The buffer to which data is read to.
+/// \param data_layout The current supported layouts are row major and column major.
+/// \return
+///
+PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
+
+///
+/// \brief PIDX_read_next_variable Read function used for restarting a simulation from checkpoint dump.
+/// This function is used to read data in the order in which the variables are laid out, typically suited for restarting a simulation from checkpoint.
+/// \param file
+/// \param variable The variale to be read.
+/// \return
+///
+PIDX_return_code PIDX_read_next_variable(PIDX_file file, PIDX_variable variable);
+
+
+
+///
+/// \brief PIDX_reset_variable_counter
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_reset_variable_counter(PIDX_file file);
+
+
+
+///
+/// Sets the index of the variable at which location it needs to be written at or read from in an IDX file.
+/// \param file The IDX file handler.
+/// \return Index of the variable.
+///
+PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_index);
+
+
+
+///
+/// Gets the index of the variable in an IDX file.
+/// starts with index 0, to (number of variable - 1) 
+/// \param file The IDX file handler.
+/// \return Index of the variable.
+///
+PIDX_return_code PIDX_get_current_variable_index(PIDX_file file, int* variable_index);
+
+
+
+///
+/// \brief PIDX_set_current_variable
+/// \param file
+/// \param variable
+/// \return
+///
+PIDX_return_code PIDX_set_current_variable(PIDX_file file, PIDX_variable variable);
+
+
+
+///
+/// \brief PIDX_get_current_variable
+/// \param file
+/// \param variable
+/// \return
+///
+PIDX_return_code PIDX_get_current_variable(PIDX_file file, PIDX_variable* variable);
+
+
+
+///
+/// \brief PIDX_read_variable
+/// \param file
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param dst_buffer
+/// \param layout
+/// \return
+///
+PIDX_return_code PIDX_read_variable(PIDX_file file, PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void*  dst_buffer, PIDX_data_layout layout);
+
+
+
+///
+/// \brief PIDX_write_variable
+/// \param file
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param src_buffer
+/// \param layout
+/// \return
+///
+PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* src_buffer, PIDX_data_layout layout);
+
+
+/*
+ * Implementation in PIDX_meta_data.c
+ */
+///
+/// Gets the number of boxes.
+/// This function gets the number of boxes written by all the processes.
+/// \param file The file handler.
+/// \return Number of boxes.
+///
+PIDX_return_code PIDX_get_box_count(PIDX_file file, int* box_count);
+
+
+
+///
+/// Gets the actual box meta-data associated with box_index.
+/// \param file The file handler.
+/// \param box_index The queried box index.
+/// \return The offset of the queried box.
+/// \return The length of the queried box.
+///
+PIDX_return_code PIDX_get_box(PIDX_file file, int box_index, PIDX_point offset, PIDX_point dims);
+
+
+
+///
+/// Gets the number of boxes associated with the given rank.
+/// \param file The file handler.
+/// \param MPI_rank  The rank for which one istrying to find the number of boxes.
+/// \return Number of boxes.
+///
+PIDX_return_code PIDX_get_box_count_with_rank(PIDX_file file, int MPI_rank, int* box_count);
+
+
+
+///
+/// Gets the actual box meta-data associated with box_index and the MPI rank.
+/// \param file The file handler.
+/// \param box_index The queried box index.
+/// \param MPI_rank The rank for which one istrying to find the number of boxes.
+/// \return The offset of the queried box.
+/// \return The length of the queried box.
+///
+PIDX_return_code PIDX_get_box_with_rank(PIDX_file file, int box_index, int MPI_rank, PIDX_point offset, PIDX_point dims);
+
+
+
+///
+/// Enables dumping of meta-data.
+/// This function enables writes of meta-data for any give variable in the form of box offset and sizes every process writes.
+/// \param variable The variable handler.
+///
+PIDX_return_code PIDX_variable_set_box_metadata_on (PIDX_variable variable);
+
+
+
+///
+/// Disables dumping of meta-data.
+/// This function disables writes of meta-data for any give variable in the form of box offset and sizes every process writes.
+/// This is the default mode of the API.
+/// \param variable The variable handler.
+///
+PIDX_return_code PIDX_variable_set_box_metadata_off(PIDX_variable variable);
+
+
+
+///
+/// Queries if the box meta-data is saved or not.
+/// This function queries if meta-data associated with variable has been saved or not.
+/// \param variable The variable handler.
+/// \return 1 is meta-data is saved 0 otherwise.
+///
+PIDX_return_code PIDX_variable_get_box_metadata(PIDX_variable variable, int* on_off_bool);
+
+
+/*
+ * Implementation in PIDX_debug.c
+ */
+///
+/// \brief PIDX_debug_disable_restructuring
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_debug_disable_restructuring(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_debug_disable_chunking
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_debug_disable_chunking(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_debug_disable_compression
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_debug_disable_compression(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_debug_disable_hz
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_debug_disable_hz(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_debug_disable_agg
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_debug_disable_agg(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_debug_disable_io
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_debug_disable_io(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_debug_rst
+/// \param file
+/// \param debug_rst
+/// \return
+///
+PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst);
+
+
+
+///
+/// \brief PIDX_debug_hz
+/// \param file
+/// \param debug_hz
+/// \return
+///
+PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
+
+
+///
+/// \brief PIDX_disable_rst
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_disable_rst(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_disable_agg
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_disable_agg(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_dump_agg_info
+/// \param file
+/// \param dump_agg_info
+/// \return
+///
+PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info);
+
+
+
+///
+/// \brief PIDX_dump_io_info
+/// \param file
+/// \param dump_io_info
+/// \return
+///
+PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info);
+
+
+
+/*
+ * Implementation in PIDX_debug.c
+ */
+///
+/// \brief PIDX_default_bits_per_datatype Get the number of bits associated with a PIDX_type.
+/// This function can be used to find the number of bits associated with a particular PIDX type.
+/// \param type
+/// \param bits Number of bits associated with type_name
+/// \return
+///
+PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits);
+
+
+
+///
+/// \brief PIDX_values_per_datatype
+/// \param type
+/// \param values
+/// \param bits
+/// \return
+///
+PIDX_return_code PIDX_values_per_datatype(PIDX_data_type type, int* values, int* bits);
 
 #ifdef __cplusplus
 }

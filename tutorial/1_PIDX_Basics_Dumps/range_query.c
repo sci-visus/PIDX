@@ -283,7 +283,6 @@ int main(int argc, char **argv)
     ret = PIDX_set_current_time_step(file, time_step_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
 
-    PIDX_debug_output(file);
 
     if (variable_index >= variable_count) terminate_with_error_msg("Variable index more than variable count\n");
     ret = PIDX_set_current_variable_index(file, variable_index);

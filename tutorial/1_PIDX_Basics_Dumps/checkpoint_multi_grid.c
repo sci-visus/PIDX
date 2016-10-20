@@ -342,9 +342,6 @@ int main(int argc, char **argv)
     //ret = PIDX_debug_disable_io(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
-    //ret = PIDX_debug_output(file);
-    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
-
     char var_name[512];
     for (var = 0; var < variable_count; var++)
     {

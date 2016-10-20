@@ -383,7 +383,7 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    ret = PIDX_io_mode(file, PIDX_IDX_IO);
+    ret = PIDX_set_io_mode(file, PIDX_IDX_IO);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
     ret = PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
@@ -424,9 +424,6 @@ int main(int argc, char **argv)
 
     //ret = PIDX_debug_disable_hz(file);
     //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
-
-    ret = PIDX_debug_output(file);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_debug_output");
 
     for (var = 0; var < variable_count; var++)
     {

@@ -301,7 +301,6 @@ int main(int argc, char **argv)
     if (roi_type != 5)
       PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
 
-    PIDX_debug_output(file);
     PIDX_set_block_size(file, 12);
 
     ret = PIDX_set_dims(file, global_size);
@@ -313,7 +312,7 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, 1);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
-    ret = PIDX_set_ROI_writes(file);
+    ret = PIDX_set_ROI_type(file, 1);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_ROI_writes");
 
     ret = PIDX_variable_create("ROI_Var", sizeof(unsigned long long) * 8, FLOAT64, &variable);

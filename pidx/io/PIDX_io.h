@@ -1,107 +1,76 @@
 #ifndef __PIDX_IO_H
 #define __PIDX_IO_H
 
-#include "../PIDX_inc.h"
+///
+/// \brief The PIDX_io_descriptor struct
+///
+struct PIDX_io_descriptor
+{
 
-#ifdef __cplusplus
-extern "C" {
+#if PIDX_HAVE_MPI
+  MPI_Comm global_comm;                               ///< MPI sub-communicator (including all processes per IDX file)
+  MPI_Comm comm;                               ///< MPI sub-communicator (including all processes per IDX file)
 #endif
 
-#include "./PIDX_hybrid_idx_io/PIDX_hybrid_idx_io.h"
-//#include "./PIDX_raw_io/PIDX_raw_io.h"
+  PIDX_header_io_id header_io_id;              ///< IDX metadata id
+  PIDX_rst_id rst_id;                          ///< Restructuring phase id
+  PIDX_chunk_id chunk_id;              ///< Block restructuring id (prepration for compression)
+  PIDX_comp_id comp_id;          ///< Compression (lossy and lossless) id
+  PIDX_hz_encode_id hz_id;                     ///< HZ encoding phase id
 
-#define PIDX_RAW_IO                                   1
-#define PIDX_IDX_IO                                   2
-#define PIDX_LOCAL_PARTITION_IDX_IO                   3
-#define PIDX_GLOBAL_PARTITION_IDX_IO                  4
+  PIDX_agg_id** f0_agg_id;                          ///< Aggregation phase id
+  PIDX_agg_id** shared_agg_id;                          ///< Aggregation phase id
+  PIDX_agg_id** nshared_agg_id;                          ///< Aggregation phase id
 
-#define PIDX_default_bits_per_block              15
-#define PIDX_default_blocks_per_file             256
+  PIDX_file_io_id** f0_io_id;                          ///< Aggregation phase id
+  PIDX_file_io_id** shared_io_id;                          ///< Aggregation phase id
+  PIDX_file_io_id** nshared_io_id;                          ///< Aggregation phase id
 
+  int one_time_initializations;                ///<
 
-/// Create the file if it does not exist.
-#define PIDX_MODE_CREATE              1
+  idx_dataset idx;                             ///< Contains all relevant IDX file info
+                                               ///< Blocks per file, samples per block, bitmask, box, file name template
 
-/// Error creating a file that already exists.
-#define PIDX_MODE_EXCL               64
-
-#define PIDX_MODE_RDONLY              2  /* ADIO_RDONLY */
-#define PIDX_MODE_WRONLY              4  /* ADIO_WRONLY  */
-#define PIDX_MODE_RDWR                8  /* ADIO_RDWR  */
-#define PIDX_MODE_DELETE_ON_CLOSE    16  /* ADIO_DELETE_ON_CLOSE */
-#define PIDX_MODE_UNIQUE_OPEN        32  /* ADIO_UNIQUE_OPEN */
-
-#define PIDX_MODE_APPEND            128  /* ADIO_APPEND */
-#define PIDX_MODE_SEQUENTIAL        256  /* ADIO_SEQUENTIAL */
-
-
-struct PIDX_io_descriptor;
+  idx_dataset_derived_metadata idx_d;          ///< Contains all derieved IDX file info
+                                               ///< number of files, files that are ging to be populated
+  idx_debug idx_dbg;
+};
 typedef struct PIDX_io_descriptor* PIDX_io;
 
-///
-/// \brief PIDX_get_time
-/// \return
-///
-double PIDX_get_time();
 
-
-///
-/// \brief PIDX_init_timming_buffers1
-/// \param time
-/// \param variable_count
-///
-void PIDX_init_timming_buffers1(PIDX_time time, int variable_count);
-
-
-///
-/// \brief PIDX_init_timming_buffers2
-/// \param time
-/// \param variable_count
-/// \param layout_count
-///
-void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_count);
-
-
-
-///
-/// \brief PIDX_delete_timming_buffers1
-/// \param time
-///
-void PIDX_delete_timming_buffers1(PIDX_time time);
-
-
-///
-/// \brief PIDX_delete_timming_buffers2
-/// \param time
-/// \param variable_count
-///
-void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count);
-
-
-void PIDX_print_idx_io_timing(MPI_Comm comm, PIDX_time time, int var_count, int layout_count, int start_layout, int end_layout, int ****lab);
-
-///
-/// \brief PIDX_io_init
-/// \param idx_meta_data
-/// \param idx_derived_ptr
-/// \param idx_dbg
-/// \return
 ///
 PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg);
 
 
+#if PIDX_HAVE_MPI
+/// Attach the communicator wit the ID.
+/// \param id restructuring id
+/// \param comm the communicator
+/// \return error code
+PIDX_return_code PIDX_io_set_communicator(PIDX_io id, MPI_Comm comm);
+#endif
+
+
 ///
-/// \brief PIDX_io
-/// \param mode
+/// \brief PIDX_write
+/// \param file
+/// \param group_index
+/// \param start_var_index
+/// \param end_var_index
 /// \return
 ///
-PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index, int start_var_index, int end_var_index);
+PIDX_return_code PIDX_write(PIDX_io file, int group_index, int start_var_index, int end_var_index, int MODE);
 
 
-
-#if PIDX_HAVE_MPI
-PIDX_return_code PIDX_io_set_communicator(PIDX_io file, MPI_Comm comm);
-#endif
+///
+/// \brief PIDX_read
+/// \param file
+/// \param gi
+/// \param svi
+/// \param evi
+/// \return
+///
+PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE);
 
 
 
@@ -111,14 +80,5 @@ PIDX_return_code PIDX_io_set_communicator(PIDX_io file, MPI_Comm comm);
 /// \return
 ///
 PIDX_return_code PIDX_io_finalize(PIDX_io file);
-
-
-
-///
-//PIDX_return_code PIDX_parameter_validate(idx_dataset file, int start_var_index, int end_var_index);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

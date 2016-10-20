@@ -1,313 +1,110 @@
-#include "PIDX_io.h"
-
-
-struct PIDX_io_descriptor
-{
-
-#if PIDX_HAVE_MPI
-  MPI_Comm comm;                               ///< MPI sub-communicator (including all processes per IDX file)
-#endif
-
-  PIDX_hybrid_idx_io hybrid_idx_io;
-
-  idx_dataset idx;                             ///< Contains all relevant IDX file info
-                                               ///< Blocks per file, samples per block, bitmask, box, file name template
-
-  idx_dataset_derived_metadata idx_d;          ///< Contains all derieved IDX file info
-                                               ///< number of files, files that are ging to be populated
-
-  idx_debug idx_dbg;
-
-};
-
-/// Returns elapsed time
-double PIDX_get_time()
-{
-#if PIDX_HAVE_MPI
-  return MPI_Wtime();
-#else
-  struct timeval temp;
-  gettimeofday(&temp, NULL);
-  return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
-#endif
-}
-
-void PIDX_init_timming_buffers1(PIDX_time time, int variable_count)
-{
-  variable_count = variable_count * 2;
-  time->init_start = malloc (sizeof(double) * variable_count);            memset(time->init_start, 0, sizeof(double) * variable_count);
-  time->init_end = malloc (sizeof(double) * variable_count);              memset(time->init_end, 0, sizeof(double) * variable_count);
-  time->write_init_start = malloc (sizeof(double) * variable_count);      memset(time->write_init_start, 0, sizeof(double) * variable_count);
-  time->write_init_end = malloc (sizeof(double) * variable_count);        memset(time->write_init_end, 0, sizeof(double) * variable_count);
-}
-
-
-
-void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_count)
-{
-  variable_count = variable_count * 2;
-  time->header_counter = 0;
-  time->variable_counter = 0;
-  time->startup_start = malloc (sizeof(double) * variable_count);                 memset(time->startup_start, 0, sizeof(double) * variable_count);
-  time->startup_end = malloc (sizeof(double) * variable_count);                   memset(time->startup_end, 0, sizeof(double) * variable_count);
-
-  time->rst_meta_data_start_io = malloc (sizeof(double) * variable_count);        memset(time->rst_meta_data_start_io, 0, sizeof(double) * variable_count);
-  time->rst_meta_data_end_io = malloc (sizeof(double) * variable_count);          memset(time->rst_meta_data_end_io, 0, sizeof(double) * variable_count);
-
-  time->rst_start = malloc (sizeof(double) * variable_count);                     memset(time->rst_start, 0, sizeof(double) * variable_count);
-  time->rst_end = malloc (sizeof(double) * variable_count);                       memset(time->rst_end, 0, sizeof(double) * variable_count);
-
-  time->rst_io_start = malloc (sizeof(double) * variable_count);                  memset(time->rst_io_start, 0, sizeof(double) * variable_count);
-  time->rst_io_end = malloc (sizeof(double) * variable_count);                    memset(time->rst_io_end, 0, sizeof(double) * variable_count);
-
-  time->hz_start = malloc (sizeof(double) * variable_count);                      memset(time->hz_start, 0, sizeof(double) * variable_count);
-  time->hz_end = malloc (sizeof(double) * variable_count);                        memset(time->hz_end, 0, sizeof(double) * variable_count);
-
-  time->cleanup_start = malloc (sizeof(double) * variable_count);                 memset(time->cleanup_start, 0, sizeof(double) * variable_count);
-  time->cleanup_end = malloc (sizeof(double) * variable_count);                   memset(time->cleanup_end, 0, sizeof(double) * variable_count);
-  time->finalize_start = malloc (sizeof(double) * variable_count);                memset(time->finalize_start, 0, sizeof(double) * variable_count);
-  time->finalize_end = malloc (sizeof(double) * variable_count);                  memset(time->finalize_end, 0, sizeof(double) * variable_count);
-
-  time->buffer_start = malloc (sizeof(double) * variable_count);                  memset(time->buffer_start, 0, sizeof(double) * variable_count);
-  time->buffer_end = malloc (sizeof(double) * variable_count);                    memset(time->buffer_end, 0, sizeof(double) * variable_count);
-
-  time->chunk_start =  malloc (sizeof(double) * variable_count);                  memset(time->chunk_start, 0, sizeof(double) * variable_count);
-  time->chunk_end =  malloc (sizeof(double) * variable_count);                    memset(time->chunk_end, 0, sizeof(double) * variable_count);
-  time->compression_start =  malloc (sizeof(double) * variable_count);            memset(time->compression_start, 0, sizeof(double) * variable_count);
-  time->compression_end =  malloc (sizeof(double) * variable_count);              memset(time->compression_end, 0, sizeof(double) * variable_count);
-
-  time->agg_start = malloc (sizeof(double*) * variable_count);       memset(time->agg_start, 0, sizeof(double*) * variable_count);
-  time->agg_end = malloc (sizeof(double*) * variable_count);         memset(time->agg_end, 0, sizeof(double*) * variable_count);
-  time->agg_buf_start = malloc (sizeof(double*) * variable_count);   memset(time->agg_buf_start, 0, sizeof(double*) * variable_count);
-  time->agg_buf_end = malloc (sizeof(double*) * variable_count);     memset(time->agg_buf_end, 0, sizeof(double*) * variable_count);
-
-  time->agg_meta_start = malloc (sizeof(double*) * variable_count);   memset(time->agg_meta_start, 0, sizeof(double*) * variable_count);
-  time->agg_meta_end = malloc (sizeof(double*) * variable_count);     memset(time->agg_meta_end, 0, sizeof(double*) * variable_count);
-
-  time->windows_start = malloc (sizeof(double*) * variable_count);       memset(time->windows_start, 0, sizeof(double*) * variable_count);
-  time->windows_end = malloc (sizeof(double*) * variable_count);     memset(time->windows_end, 0, sizeof(double*) * variable_count);
-
-  time->first_fence_end = malloc (sizeof(double*) * variable_count);       memset(time->first_fence_end, 0, sizeof(double*) * variable_count);
-  time->first_fence_start = malloc (sizeof(double*) * variable_count);     memset(time->first_fence_start, 0, sizeof(double*) * variable_count);
-
-  time->second_fence_end = malloc (sizeof(double*) * variable_count);       memset(time->second_fence_end, 0, sizeof(double*) * variable_count);
-  time->second_fence_start = malloc (sizeof(double*) * variable_count);     memset(time->second_fence_start, 0, sizeof(double*) * variable_count);
-
-  time->fence_free = malloc (sizeof(double*) * variable_count);       memset(time->fence_free, 0, sizeof(double*) * variable_count);
-
-  time->io_start = malloc (sizeof(double*) * variable_count);        memset(time->io_start, 0, sizeof(double*) * variable_count);
-  time->io_end = malloc (sizeof(double*) * variable_count);          memset(time->io_end, 0, sizeof(double*) * variable_count);
-  time->io_per_process_start = malloc (sizeof(double*) * variable_count);          memset(time->io_per_process_start, 0, sizeof(double*) * variable_count);
-  time->io_per_process_end = malloc (sizeof(double*) * variable_count);          memset(time->io_per_process_end, 0, sizeof(double*) * variable_count);
-
-  int i = 0;
-  for (i = 0; i < variable_count; i++)
-  {
-    time->agg_start[i] = malloc (sizeof(double) * layout_count);       memset(time->agg_start[i], 0, sizeof(double) * layout_count);
-    time->agg_end[i] = malloc (sizeof(double) * layout_count);         memset(time->agg_end[i], 0, sizeof(double) * layout_count);
-    time->agg_buf_start[i] = malloc (sizeof(double) * layout_count);   memset(time->agg_buf_start[i], 0, sizeof(double) * layout_count);
-    time->agg_buf_end[i] = malloc (sizeof(double) * layout_count);     memset(time->agg_buf_end[i], 0, sizeof(double) * layout_count);
-
-    time->agg_meta_start[i] = malloc (sizeof(double) * layout_count);   memset(time->agg_meta_start[i], 0, sizeof(double) * layout_count);
-    time->agg_meta_end[i] = malloc (sizeof(double) * layout_count);     memset(time->agg_meta_end[i], 0, sizeof(double) * layout_count);
-
-    time->first_fence_end[i] = malloc (sizeof(double) * layout_count);   memset(time->first_fence_end[i], 0, sizeof(double) * layout_count);
-    time->first_fence_start[i] = malloc (sizeof(double) * layout_count); memset(time->first_fence_start[i], 0, sizeof(double) * layout_count);
-
-    time->windows_end[i] = malloc (sizeof(double) * layout_count);   memset(time->windows_end[i], 0, sizeof(double) * layout_count);
-    time->windows_start[i] = malloc (sizeof(double) * layout_count); memset(time->windows_start[i], 0, sizeof(double) * layout_count);
-
-    time->fence_free[i] = malloc (sizeof(double) * layout_count);   memset(time->fence_free[i], 0, sizeof(double) * layout_count);
-
-    time->second_fence_end[i] = malloc (sizeof(double) * layout_count);   memset(time->second_fence_end[i], 0, sizeof(double) * layout_count);
-    time->second_fence_start[i] = malloc (sizeof(double) * layout_count); memset(time->second_fence_start[i], 0, sizeof(double) * layout_count);
-
-    time->io_start[i] = malloc (sizeof(double) * layout_count);        memset(time->io_start[i], 0, sizeof(double) * layout_count);
-    time->io_end[i] = malloc (sizeof(double) * layout_count);          memset(time->io_end[i], 0, sizeof(double) * layout_count);
-
-    time->io_per_process_start[i] = malloc (sizeof(double) * layout_count);        memset(time->io_per_process_start[i], 0, sizeof(double) * layout_count);
-    time->io_per_process_end[i] = malloc (sizeof(double) * layout_count);          memset(time->io_per_process_end[i], 0, sizeof(double) * layout_count);
-  }
-}
-
-
-void PIDX_delete_timming_buffers1(PIDX_time time)
-{
-  free(time->init_start);
-  free(time->init_end);
-  free(time->write_init_start);
-  free(time->write_init_end);
-}
-
-
-
-void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
-{
-
-  free(time->startup_start);
-  free(time->startup_end);
-
-  free(time->rst_start);
-  free(time->rst_end);
-
-  free(time->rst_io_end);
-  free(time->rst_io_start);
-
-  free(time->hz_start);
-  free(time->hz_end);
-
-  free(time->rst_meta_data_end_io);
-  free(time->rst_meta_data_start_io);
-
-  free(time->cleanup_start);
-  free(time->cleanup_end);
-  free(time->finalize_start);
-  free(time->finalize_end);
-
-  free(time->buffer_start);
-  free(time->buffer_end);
-
-  free(time->chunk_start);
-  free(time->chunk_end);
-  free(time->compression_start);
-  free(time->compression_end);
-
-  int i = 0;
-  variable_count = variable_count * 2;
-  for (i = 0; i < variable_count; i++)
-  {
-    free(time->agg_start[i]);
-    free(time->agg_end[i]);
-    free(time->agg_buf_start[i]);
-    free(time->agg_buf_end[i]);
-
-    free(time->agg_meta_start[i]);
-    free(time->agg_meta_end[i]);
-
-    free(time->first_fence_start[i]);
-    free(time->first_fence_end[i]);
-
-
-    free(time->windows_start[i]);
-    free(time->windows_end[i]);
-
-    free(time->second_fence_start[i]);
-    free(time->second_fence_end[i]);
-
-    free(time->io_start[i]);
-    free(time->io_end[i]);
-
-    free(time->io_per_process_start[i]);
-    free(time->io_per_process_end[i]);
-
-    free(time->fence_free[i]);
-  }
-  free(time->agg_start);
-  free(time->agg_end);
-  free(time->agg_buf_start);
-  free(time->agg_buf_end);
-
-  free(time->agg_meta_start);
-  free(time->agg_meta_end);
-
-  free(time->first_fence_start);
-  free(time->first_fence_end);
-  free(time->fence_free);
-
-  free(time->windows_end);
-  free(time->windows_start);
-
-  free(time->second_fence_start);
-  free(time->second_fence_end);
-
-  free(time->io_start);
-  free(time->io_end);
-  free(time->io_per_process_start);
-  free(time->io_per_process_end);
-
-}
-
-
-PIDX_io PIDX_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg)
+/*
+ * 1. One global dataset.
+ * 2. Partitions in local index space.
+ * 3. Partitions in global index space.
+ * 4. Partition divided into non-shared, shared, file 0 (global index)
+ * 5. Partition divided into non-shared, shared, file 0 (local index)
+ */
+
+
+#include "../PIDX_inc.h"
+#include "idx_io.h"
+#include "local_partition_idx_io.h"
+#include "global_partition_idx_io.h"
+#include "raw_io.h"
+
+
+PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg)
 {
   //Creating the restructuring ID
-  PIDX_io io;
-  io = malloc(sizeof (*io));
-  memset(io, 0, sizeof (*io));
+  PIDX_io idx_io_id;
+  idx_io_id = malloc(sizeof (*idx_io_id));
+  memset(idx_io_id, 0, sizeof (*idx_io_id));
 
-  io->idx = idx_meta_data;
-  io->idx_d = idx_derived_ptr;
-  io->idx_dbg = idx_dbg;
+  idx_io_id->idx = idx_meta_data;
+  idx_io_id->idx_d = idx_derived_ptr;
+  idx_io_id->idx_dbg = idx_dbg;
 
-  return (io);
+  return (idx_io_id);
 }
 
-#if PIDX_HAVE_MPI
-PIDX_return_code PIDX_io_set_communicator(PIDX_io file, MPI_Comm comm)
+
+PIDX_return_code PIDX_io_set_communicator(PIDX_io id, MPI_Comm comm)
 {
-  if (file == NULL)
+  if (id == NULL)
     return PIDX_err_id;
 
-  file->comm = comm;
+  id->global_comm = comm;
+  id->comm = comm;
 
   return PIDX_success;
 }
-#endif
 
-PIDX_return_code PIDX_io_io(PIDX_io file, int mode, int io_type, int group_index, int start_var_index, int end_var_index)
+
+
+PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 {
-  int ret;
-  if (mode == PIDX_MODE_CREATE)
-  {
-    if (start_var_index == file->idx->variable_count)
-      return PIDX_success;
+  PIDX_time time = file->idx_d->time;
+  time->SX = PIDX_get_time();
 
-    file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-    if (file->hybrid_idx_io == NULL)
-      return PIDX_err_flush;
+  PIDX_return_code ret;
 
-    ret = PIDX_hybrid_idx_io_set_communicator(file->hybrid_idx_io, file->comm);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
+  if (MODE == PIDX_IDX_IO)
+    ret = PIDX_idx_write(file, gi, svi, evi);
 
-    ret = PIDX_hybrid_idx_write(file->hybrid_idx_io, group_index, start_var_index, end_var_index, io_type);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
+  else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
+    ret = PIDX_local_partition_idx_write(file, gi, svi, evi);
 
-    ret = PIDX_hybrid_idx_io_finalize(file->hybrid_idx_io);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
-  }
+  else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
+    ret = PIDX_global_partition_idx_write(file, gi, svi, evi);
 
-  else if (mode == PIDX_MODE_RDONLY)
-  { 
-    if (start_var_index == file->idx->variable_count)
-      return PIDX_success;
+  else if (MODE == PIDX_RAW_IO)
+    ret = PIDX_raw_write(file, gi, svi, evi);
 
-    file->hybrid_idx_io = PIDX_hybrid_idx_io_init(file->idx, file->idx_d, file->idx_dbg);
-    if (file->hybrid_idx_io == NULL)
-      return PIDX_err_flush;
+  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-    ret = PIDX_hybrid_idx_io_set_communicator(file->hybrid_idx_io, file->comm);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
-
-    ret = PIDX_hybrid_idx_read(file->hybrid_idx_io, group_index, start_var_index, end_var_index, io_type);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
-
-    ret = PIDX_hybrid_idx_io_finalize(file->hybrid_idx_io);
-    if (ret != PIDX_success)
-      return PIDX_err_flush;
-  }
-
+  time->EX = PIDX_get_time();
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_io_finalize(PIDX_io io)
+
+
+PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
 {
-  free(io);
-  io = 0;
+
+  PIDX_time time = file->idx_d->time;
+  time->SX = PIDX_get_time();
+
+  PIDX_return_code ret;
+
+  if (MODE == PIDX_IDX_IO)
+    ret = PIDX_idx_read(file, gi, svi, evi);
+
+  else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
+    ret = PIDX_local_partition_idx_read(file, gi, svi, evi);
+
+  else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
+    ret = PIDX_global_partition_idx_read(file, gi, svi, evi);
+
+  else if (MODE == PIDX_RAW_IO)
+    ret = PIDX_raw_read(file, gi, svi, evi);
+
+  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
+
+
+  time->EX = PIDX_get_time();
 
   return PIDX_success;
 }
+
+
+
+
+PIDX_return_code PIDX_io_finalize(PIDX_io file)
+{
+  free(file);
+  file = 0;
+
+  return PIDX_success;
+}
+
