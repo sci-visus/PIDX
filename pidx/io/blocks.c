@@ -1,8 +1,8 @@
 #include "../PIDX_inc.h"
 
-static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int group_index, int start_index, int end_index, int hz_level_from, int hz_level_to);
+static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int group_index, int start_index, int end_index, int hz_level_from, int hz_level_to, int io_type);
 
-static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level);
+static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level, int io_type);
 
 static PIDX_return_code create_file_zero_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to);
 static PIDX_return_code create_shared_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to);
@@ -15,6 +15,8 @@ static PIDX_return_code destroy_non_shared_block_layout(PIDX_io file, int gi);
 PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
 {
   int i = 0;
+  int rank = 0;
+  MPI_Comm_rank(file->comm, &rank);
   unsigned long long* cb = file->idx->chunked_bounds;
 
   if (mode == PIDX_WRITE)
@@ -30,7 +32,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
     rpp.y = (int) file->idx->reg_patch_size[1];
     rpp.z = (int) file->idx->reg_patch_size[2];
     guess_bit_string(reg_patch_bs, rpp);
-    printf("");
+    if (rank == 0)
+      printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
     Point3D prcp;
@@ -41,6 +44,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
     guess_bit_string_Z(process_bs, prcp);
+    if (rank == 0)
+      printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 
 
     // Last part of the bitstring
@@ -49,6 +54,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
     pcp.y = (int) file->idx_d->partition_count[1];
     pcp.z = (int) file->idx_d->partition_count[2];
     guess_bit_string(partition_bs, pcp);
+    if (rank == 0)
+      printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 
     // Concatenating the three components to get the final bit string
     strcpy(temp_bs, process_bs);
@@ -62,7 +69,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
-  printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
+  if (rank == 0)
+    printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
   if (total_reg_sample_count <= 0)
@@ -96,7 +104,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
 }
 
 
-PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, int hz_from_file_zero, int hz_to_file_zero, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared)
+PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, int hz_from_file_zero, int hz_to_file_zero, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared, int io_type)
 {
   int ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -118,7 +126,8 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
                                var_grp->f0_layout_count,
                                gi,
                                svi, evi,
-                               hz_from_file_zero, hz_to_file_zero);
+                               hz_from_file_zero, hz_to_file_zero,
+                               io_type);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -139,8 +148,10 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
                                var_grp->shared_block_layout, var_grp->shared_block_layout_by_level,
                                var_grp->shared_start_layout_index, var_grp->shared_end_layout_index,
                                var_grp->shared_layout_count,
-                               gi,  svi, evi,
-                               hz_from_shared, hz_to_shared);
+                               gi,
+                               svi, evi,
+                               hz_from_shared, hz_to_shared,
+                               io_type);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -163,7 +174,8 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
                                var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index,
                                var_grp->nshared_layout_count,
                                gi,  svi, evi,
-                               hz_from_non_shared, hz_to_non_shared);
+                               hz_from_non_shared, hz_to_non_shared,
+                               io_type);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -173,7 +185,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
 }
 
 
-PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level)
+PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level, int io_type)
 {
   int i, j;
   int p = 0, ctr = 1;
@@ -203,86 +215,172 @@ PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, 
     PIDX_variable_group var_grp = file->idx->variable_grp[gi];
     PIDX_variable var = var_grp->variable[lvi];
 
-    assert(var->patch_group_count <= 1);
-    //for (p = 0 ; p < var->sim_patch_count ; p++)
-    for (p = 0 ; p < var->patch_group_count ; p++)
+    if (io_type == PIDX_IDX_IO)
     {
-      for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+      //for (p = 0 ; p < var->sim_patch_count ; p++)
+      for (p = 0 ; p < var->patch_group_count ; p++)
       {
-        //bounding_box[0][i] = var->sim_patch[p]->offset[i];
-        //bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
-
-        bounding_box[0][i] = var->rst_patch_group[0]->reg_patch->offset[i];
-        bounding_box[1][i] = var->rst_patch_group[0]->reg_patch->size[i] + var->rst_patch_group[0]->reg_patch->offset[i];
-
-
-        bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
-
-        if (bounding_box[1][i] % file->idx->chunk_size[i] == 0)
-          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]);
-        else
-          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
-      }
-      //printf("[%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
-
-      PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
-      memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
-      ret_code = PIDX_blocks_initialize_layout(per_patch_local_block_layout, lower_hz_level, higher_hz_level, file->idx_d->maxh, file->idx->bits_per_block);
-      if (ret_code != PIDX_success)
-      {
-        fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, per_patch_local_block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
-      if (ret_code != PIDX_success)
-      {
-        fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      if (all_patch_local_block_layout->resolution_from <= all_patch_local_block_layout->bits_per_block)
-      {
-        for (i = all_patch_local_block_layout->resolution_from ; i <= all_patch_local_block_layout->bits_per_block ; i++)
+        for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
         {
-          if (per_patch_local_block_layout->hz_block_number_array[i][0] == 0)
-          {
-            all_patch_local_block_layout->hz_block_number_array[i][0] = per_patch_local_block_layout->hz_block_number_array[i][0];
-            break;
-          }
+          //bounding_box[0][i] = var->sim_patch[p]->offset[i];
+          //bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
+
+          bounding_box[0][i] = var->rst_patch_group[p]->reg_patch->offset[i];
+          bounding_box[1][i] = var->rst_patch_group[p]->reg_patch->size[i] + var->rst_patch_group[p]->reg_patch->offset[i];
+
+
+          bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
+
+          if (bounding_box[1][i] % file->idx->chunk_size[i] == 0)
+            bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]);
+          else
+            bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
+        }
+        //printf("[%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
+
+        PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
+        memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
+        ret_code = PIDX_blocks_initialize_layout(per_patch_local_block_layout, lower_hz_level, higher_hz_level, file->idx_d->maxh, file->idx->bits_per_block);
+        if (ret_code != PIDX_success)
+        {
+          fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
+          return PIDX_err_file;
         }
 
-        ctr = 1;
-        for (i = all_patch_local_block_layout->bits_per_block + 1 ; i < all_patch_local_block_layout->resolution_to ; i++)
+        ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, per_patch_local_block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
+        if (ret_code != PIDX_success)
         {
-          for (j = 0 ; j < ctr ; j++)
-          {
-            if(per_patch_local_block_layout->hz_block_number_array[i][j] != 0)
-              all_patch_local_block_layout->hz_block_number_array[i][j] = per_patch_local_block_layout->hz_block_number_array[i][j];
-          }
-          ctr = ctr * 2;
+          fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
+          return PIDX_err_file;
         }
-      }
-      else
-      {
-        ctr = 1;
-        for (i = all_patch_local_block_layout->bits_per_block + 1 ; i < all_patch_local_block_layout->resolution_to ; i++)
+
+        if (all_patch_local_block_layout->resolution_from <= all_patch_local_block_layout->bits_per_block)
         {
-          if (i >= all_patch_local_block_layout->resolution_from)
+          for (i = all_patch_local_block_layout->resolution_from ; i <= all_patch_local_block_layout->bits_per_block ; i++)
+          {
+            if (per_patch_local_block_layout->hz_block_number_array[i][0] == 0)
+            {
+              all_patch_local_block_layout->hz_block_number_array[i][0] = per_patch_local_block_layout->hz_block_number_array[i][0];
+              break;
+            }
+          }
+
+          ctr = 1;
+          for (i = all_patch_local_block_layout->bits_per_block + 1 ; i < all_patch_local_block_layout->resolution_to ; i++)
           {
             for (j = 0 ; j < ctr ; j++)
             {
-              if (per_patch_local_block_layout->hz_block_number_array[i][j] != 0)
+              if(per_patch_local_block_layout->hz_block_number_array[i][j] != 0)
                 all_patch_local_block_layout->hz_block_number_array[i][j] = per_patch_local_block_layout->hz_block_number_array[i][j];
             }
+            ctr = ctr * 2;
           }
-          ctr = ctr * 2;
         }
-      }
+        else
+        {
+          ctr = 1;
+          for (i = all_patch_local_block_layout->bits_per_block + 1 ; i < all_patch_local_block_layout->resolution_to ; i++)
+          {
+            if (i >= all_patch_local_block_layout->resolution_from)
+            {
+              for (j = 0 ; j < ctr ; j++)
+              {
+                if (per_patch_local_block_layout->hz_block_number_array[i][j] != 0)
+                  all_patch_local_block_layout->hz_block_number_array[i][j] = per_patch_local_block_layout->hz_block_number_array[i][j];
+              }
+            }
+            ctr = ctr * 2;
+          }
+        }
 
-      PIDX_blocks_free_layout(per_patch_local_block_layout);
-      free(per_patch_local_block_layout);
-      per_patch_local_block_layout = 0;
+        PIDX_blocks_free_layout(per_patch_local_block_layout);
+        free(per_patch_local_block_layout);
+        per_patch_local_block_layout = 0;
+      }
+    }
+    else
+    {
+      assert(var->patch_group_count <= 1);
+      //for (p = 0 ; p < var->sim_patch_count ; p++)
+      for (p = 0 ; p < var->patch_group_count ; p++)
+      {
+        for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+        {
+          //bounding_box[0][i] = var->sim_patch[p]->offset[i];
+          //bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
+
+          bounding_box[0][i] = var->rst_patch_group[0]->reg_patch->offset[i];
+          bounding_box[1][i] = var->rst_patch_group[0]->reg_patch->size[i] + var->rst_patch_group[0]->reg_patch->offset[i];
+
+
+          bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
+
+          if (bounding_box[1][i] % file->idx->chunk_size[i] == 0)
+            bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]);
+          else
+            bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
+        }
+        //printf("[%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
+
+        PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
+        memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
+        ret_code = PIDX_blocks_initialize_layout(per_patch_local_block_layout, lower_hz_level, higher_hz_level, file->idx_d->maxh, file->idx->bits_per_block);
+        if (ret_code != PIDX_success)
+        {
+          fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
+          return PIDX_err_file;
+        }
+
+        ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, per_patch_local_block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
+        if (ret_code != PIDX_success)
+        {
+          fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
+          return PIDX_err_file;
+        }
+
+        if (all_patch_local_block_layout->resolution_from <= all_patch_local_block_layout->bits_per_block)
+        {
+          for (i = all_patch_local_block_layout->resolution_from ; i <= all_patch_local_block_layout->bits_per_block ; i++)
+          {
+            if (per_patch_local_block_layout->hz_block_number_array[i][0] == 0)
+            {
+              all_patch_local_block_layout->hz_block_number_array[i][0] = per_patch_local_block_layout->hz_block_number_array[i][0];
+              break;
+            }
+          }
+
+          ctr = 1;
+          for (i = all_patch_local_block_layout->bits_per_block + 1 ; i < all_patch_local_block_layout->resolution_to ; i++)
+          {
+            for (j = 0 ; j < ctr ; j++)
+            {
+              if(per_patch_local_block_layout->hz_block_number_array[i][j] != 0)
+                all_patch_local_block_layout->hz_block_number_array[i][j] = per_patch_local_block_layout->hz_block_number_array[i][j];
+            }
+            ctr = ctr * 2;
+          }
+        }
+        else
+        {
+          ctr = 1;
+          for (i = all_patch_local_block_layout->bits_per_block + 1 ; i < all_patch_local_block_layout->resolution_to ; i++)
+          {
+            if (i >= all_patch_local_block_layout->resolution_from)
+            {
+              for (j = 0 ; j < ctr ; j++)
+              {
+                if (per_patch_local_block_layout->hz_block_number_array[i][j] != 0)
+                  all_patch_local_block_layout->hz_block_number_array[i][j] = per_patch_local_block_layout->hz_block_number_array[i][j];
+              }
+            }
+            ctr = ctr * 2;
+          }
+        }
+
+        PIDX_blocks_free_layout(per_patch_local_block_layout);
+        free(per_patch_local_block_layout);
+        per_patch_local_block_layout = 0;
+      }
     }
 
     if (block_layout->resolution_from <= block_layout->bits_per_block)
@@ -567,7 +665,7 @@ PIDX_return_code create_non_shared_block_layout(PIDX_io file, int gi, int hz_lev
 
 
 
-static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int ei, int hz_level_from, int hz_level_to)
+static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int ei, int hz_level_from, int hz_level_to, int io_type)
 {
   int rank = 0;
   int nprocs = 1;
@@ -614,7 +712,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       return PIDX_err_file;
     }
 
-    ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[0], lower_level_low_layout, higher_level_low_layout);
+    ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[0], lower_level_low_layout, higher_level_low_layout, io_type);
     if (ret_code != PIDX_success)
     {
       fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);
@@ -645,7 +743,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i], lower_level_higher_layout, higher_level_higher_layout);
+      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i], lower_level_higher_layout, higher_level_higher_layout, io_type);
       if (ret_code != PIDX_success)
       {
         fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);
@@ -679,7 +777,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i - start_layout_index], lower_level_higher_layout, higher_level_higher_layout);
+      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i - start_layout_index], lower_level_higher_layout, higher_level_higher_layout, io_type);
       if (ret_code != PIDX_success)
       {
         fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);

@@ -298,6 +298,8 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   unsigned long long total_chunked_patch_size = 1;
   int maxH = id->idx_d->maxh;
   int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
+  int rank = 0;
+  MPI_Comm_rank(id->comm, &rank);
 
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
   PIDX_variable var0 = var_grp->variable[id->first_index];
@@ -317,8 +319,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
     return PIDX_err_hz;
   }
 
-  printf("var0->patch_group_count = %d\n", var0->patch_group_count);
-
+  //printf("var0->patch_group_count = %d\n", var0->patch_group_count);
 #if 1
   for (y = 0; y < var0->patch_group_count; y++)
   {
@@ -584,7 +585,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
         if(var0->data_layout == PIDX_row_major)
         {
-
           for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
             for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
               for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
@@ -605,15 +605,15 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                 zero.z = 0;
                 memset(&zero, 0, sizeof (PointND));
 
-                //printf("%lld %lld %lld\n", i, j, k);
                 for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
                 {
                   int bit = id->idx->bitPattern[number_levels];
                   z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
                   PGET(xyzuv_Index, bit) >>= 1;
                 }
-#if 0
+
                 number_levels = maxH - 1;
+#if 1
                 unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
                 z_order |= lastbitmask;
                 while (!(1 & z_order)) z_order >>= 1;
@@ -636,13 +636,13 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
                   //for (s = 0; s < var_grp->variable[v1]->vps; s++)
                   //{
                   /*
-            int nprocs;
-            MPI_Comm_size(id->comm, &nprocs);
-            double x;
-            memcpy(&x, var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype), bytes_for_datatype);
-            if (nprocs == 1)
-            printf("Dest %d %d Src %d Count %d byte size %d V %f\n", level, (int)((hz_index * var_grp->variable[v1]->vps + s) * chunk_size), (int)((index * var_grp->variable[v1]->vps) + s) * chunk_size, (int)chunk_size, var_grp->variable[v1]->bpv, x);
-            */
+                    int nprocs;
+                    MPI_Comm_size(id->comm, &nprocs);
+                    double x;
+                    memcpy(&x, var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype), bytes_for_datatype);
+                    if (nprocs == 1)
+                      printf("Dest %d %d Src %d Count %d byte size %d V %f\n", level, (int)((hz_index * var_grp->variable[v1]->vps + s) * chunk_size), (int)((index * var_grp->variable[v1]->vps) + s) * chunk_size, (int)chunk_size, var_grp->variable[v1]->bpv, x);
+                  */
 
                   //memcpy(var_grp->variable[v1]->hz_buffer[y]->buffer[level] + ((hz_index * var_grp->variable[v1]->vps + s) * bytes_for_datatype), var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + ((index * var_grp->variable[v1]->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 

@@ -132,7 +132,7 @@ PIDX_return_code create_hz_buffers(PIDX_io file, int svi, int evi)
         return PIDX_err_hz;
       }
     }
-#if 0
+#if 1
     // Verify the HZ encoding
     if(file->idx_dbg->debug_hz == 1)
     {

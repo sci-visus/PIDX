@@ -67,11 +67,11 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   time->idx_hz_end = PIDX_get_time();
 
 
-#if 0
+#if 1
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
   time->idx_layout_start = PIDX_get_time();
-  ret = populate_block_layouts(file, gi, svi, evi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
+  ret = populate_block_layouts(file, gi, svi, evi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->idx_layout_end = PIDX_get_time();
 
@@ -193,7 +193,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
   time->idx_layout_start = PIDX_get_time();
-  ret = populate_block_layouts(file, gi, svi, evi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
+  ret = populate_block_layouts(file, gi, svi, evi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->idx_layout_end = PIDX_get_time();
 

@@ -34,6 +34,7 @@ static int patch_count = 1;
 static int ***var_count;
 static int ***var_offset;
 static double   ***double_data;
+static int partition_size[3] = {1, 1, 1};
 static char output_file_name[512] = "test.idx";
 static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list -i hdf5_file_names_list -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./hdf5-to-idx -g 4x4x4 -l 2x2x2 -f Filename_ -v var_list -i hdf5_file_names_list\n"
@@ -373,7 +374,7 @@ static void destroy_synthetic_simulation_data()
 ///< Parse the input arguments
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:p:";
+  char flags[] = "g:l:p:f:t:v:r:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -393,6 +394,11 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
+    case('p'): // local dimension
+      if ((sscanf(optarg, "%dx%dx%d", &partition_size[0], &partition_size[1], &partition_size[2]) == EOF) ||(partition_size[0] < 1 || partition_size[1] < 1 || partition_size[2] < 1))
+        terminate_with_error_msg("Invalid partition dimension\n%s", usage);
+      break;
+
     case('f'): // output file name
       if (sprintf(output_file_template, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
@@ -409,7 +415,7 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid variable count\n%s", usage);
       break;
 
-    case('p'): // a file with a list of variables
+    case('r'): // a file with a list of variables
       if (sscanf(optarg, "%d", &patch_count) < 0)
         terminate_with_error_msg("Invalid patch count\n%s", usage);
       break;
@@ -481,11 +487,15 @@ int main(int argc, char **argv)
     PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_variable_count(file, variable_count);
+    PIDX_set_block_count(file, 128);
     //PIDX_set_io_mode(file, PIDX_RAW_IO);
 
-    PIDX_point rst_box;
-    PIDX_set_point_5D(rst_box, 64,64,64,1,1);
-    PIDX_set_restructuring_box(file, rst_box);
+    //PIDX_point rst_box;
+    //PIDX_set_point_5D(rst_box, 64,64,64,1,1);
+    //PIDX_set_restructuring_box(file, rst_box);
+
+    PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
+
 
     for (var = 0; var < variable_count; var++)
     {

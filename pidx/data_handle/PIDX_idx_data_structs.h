@@ -198,6 +198,7 @@ struct idx_file_struct
   char bitSequence[512];
   char bitPattern[512];
   
+  int reg_box_set;
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   
   int compression_type;                                               ///< counter to enable/disable (1/0) compression

@@ -68,6 +68,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->group_index_tracker = 0;
   (*file)->local_group_count = 1;
 
+  (*file)->idx->reg_box_set = 0;
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;

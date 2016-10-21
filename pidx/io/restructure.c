@@ -34,42 +34,43 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
       ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
       if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-
-      restructure_tag:
-
-      /// Finding the regular power two box dimensions
-      if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
+      if (file->idx->reg_box_set == 1)
       {
-          PIDX_rst_set_reg_patch_size(file->rst_id, file->idx->reg_patch_size);
+        /// Finding the regular power two box dimensions
+        if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
+        {
+            PIDX_rst_set_reg_patch_size(file->rst_id, file->idx->reg_patch_size);
 
-          /// Creating the metadata to perform retructuring
-          ret = PIDX_rst_meta_data_create(file->rst_id);
-          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-          goto skip_auto_adjust_rst_box;
+            /// Creating the metadata to perform retructuring
+            ret = PIDX_rst_meta_data_create(file->rst_id);
+            if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        }
       }
-
-      PIDX_rst_auto_set_reg_patch_size(file->rst_id, factor);
-
-      /// Creating the metadata to perform retructuring
-      ret = PIDX_rst_meta_data_create(file->rst_id);
-      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-
-      grp_count = var0->patch_group_count;
-      max_grp_count = 0;
-      MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
-      if (max_grp_count > 1)
+      else
       {
-        ret = PIDX_rst_meta_data_destroy(file->rst_id);
+        restructure_tag:
+        PIDX_rst_auto_set_reg_patch_size(file->rst_id, factor);
+
+        /// Creating the metadata to perform retructuring
+        ret = PIDX_rst_meta_data_create(file->rst_id);
         if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-        factor = factor * 2;
+        grp_count = var0->patch_group_count;
+        max_grp_count = 0;
+        MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
+        if (max_grp_count > 1)
+        {
+          ret = PIDX_rst_meta_data_destroy(file->rst_id);
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-        /// Ensusring that the partitioning step works fine by
-        /// making sure that number of boxes after restructuring is 1
-        goto restructure_tag;
+          factor = factor * 2;
+
+          /// Ensusring that the partitioning step works fine by
+          /// making sure that number of boxes after restructuring is 1
+          goto restructure_tag;
+        }
       }
 
-      skip_auto_adjust_rst_box:
 
       /// Saving the metadata info needed for reading back the data.
       /// Especially when number of cores is different from number of cores
@@ -103,42 +104,42 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
       if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
 
-      multi_patch_restructure_tag:
-
-      /// Finding the regular power two box dimensions
-      if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
+      if (file->idx->reg_box_set == 1)
       {
-        PIDX_multi_patch_rst_set_reg_patch_size(file->multi_patch_rst_id, file->idx->reg_patch_size);
+        /// Finding the regular power two box dimensions
+        if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
+        {
+            PIDX_multi_patch_rst_set_reg_patch_size(file->multi_patch_rst_id, file->idx->reg_patch_size);
+
+            /// Creating the metadata to perform retructuring
+            ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
+            if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        }
+      }
+      else
+      {
+        multi_patch_restructure_tag:
+        PIDX_multi_patch_rst_auto_set_reg_patch_size(file->multi_patch_rst_id, factor);
 
         /// Creating the metadata to perform retructuring
         ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
         if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-          goto skip_auto_adjust_multi_patch_rst_box;
+
+        grp_count = var0->patch_group_count;
+        max_grp_count = 0;
+        MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
+        if (max_grp_count > 1)
+        {
+          ret = PIDX_multi_patch_rst_meta_data_destroy(file->multi_patch_rst_id);
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+          factor = factor * 2;
+
+          /// Ensusring that the partitioning step works fine by
+          /// making sure that number of boxes after restructuring is 1
+          goto multi_patch_restructure_tag;
+        }
       }
-
-      PIDX_multi_patch_rst_auto_set_reg_patch_size(file->multi_patch_rst_id, factor);
-
-      /// Creating the metadata to perform retructuring
-      ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
-      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-
-      grp_count = var0->patch_group_count;
-      max_grp_count = 0;
-      MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
-      if (max_grp_count > 1)
-      {
-        ret = PIDX_multi_patch_rst_meta_data_destroy(file->multi_patch_rst_id);
-        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-
-        factor = factor * 2;
-
-        /// Ensusring that the partitioning step works fine by
-        /// making sure that number of boxes after restructuring is 1
-        goto multi_patch_restructure_tag;
-      }
-
-      skip_auto_adjust_multi_patch_rst_box:
-
 
       /// Saving the metadata info needed for reading back the data.
       /// Especially when number of cores is different from number of cores
