@@ -19,71 +19,18 @@
 /**
  * \file PIDX_rst.c
  *
+ * \author Steve Petruzza
  * \author Sidharth Kumar
  * \date   10/09/14
  *
- * Implementation of all the functions 
+ * Implementation of all the functions
  * declared in PIDX_multi_patch_rst.h
  *
  */
 
 #include "../../PIDX_inc.h"
 
-//Struct for restructuring ID
-struct PIDX_multi_patch_rst_struct
-{
-  //Passed by PIDX API
-#if PIDX_HAVE_MPI
-  MPI_Comm comm; //Communicator
-#endif
-
-  //Contains all relevant IDX file info
-  //Blocks per file, samples per block, bitmask, patch, file name template and more
-  idx_dataset idx;
-  
-  //Contains all derieved IDX file info
-  //number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_derived;
-  
-  int init_index;
-  int first_index;
-  int last_index;
-  
-  //int if_perform_rst;
-
-  //dimension of the power-two volume imposed patch
-  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
-  int reg_patch_grp_count;
-  Ndim_patch_group* reg_patch_grp;
-};
-
-#if 0
-static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 static int getPowerOftwo(int x);
-#endif
-
-
-#if 0
-/// Function to check if NDimensional data chunks A and B intersects
-static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
-{
-  int d = 0, check_bit = 0;
-  for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
-    check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
-  
-  return !(check_bit);
-}
-
-
-/// Function to find the power of 2 of an integer value (example 5->8)
-static int getPowerOftwo(int x)
-{
-  int n = 1;
-  while (n < x)
-    n <<= 1;
-  return n;
-}
-#endif
 
 
 PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int first_index, int var_start_index, int var_end_index)
@@ -96,6 +43,7 @@ PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx
   multi_patch_rst_id->idx = idx_meta_data;
   multi_patch_rst_id->idx_derived = idx_derived;
 
+  multi_patch_rst_id->group_index = 0;
   multi_patch_rst_id->init_index = first_index;
   multi_patch_rst_id->first_index = var_start_index;
   multi_patch_rst_id->last_index = var_end_index;
@@ -108,7 +56,7 @@ PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx
 PIDX_return_code PIDX_multi_patch_rst_set_communicator(PIDX_multi_patch_rst_id multi_patch_rst_id, MPI_Comm comm)
 {
   if (multi_patch_rst_id == NULL)
-    return PIDX_err_id;
+  return PIDX_err_id;
 
   multi_patch_rst_id->comm = comm;
 
@@ -117,59 +65,33 @@ PIDX_return_code PIDX_multi_patch_rst_set_communicator(PIDX_multi_patch_rst_id m
 #endif
 
 
-PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id multi_patch_rst_id)
+
+PIDX_return_code PIDX_multi_patch_rst_set_reg_patch_size(PIDX_multi_patch_rst_id rst_id, PIDX_point reg_box)
 {
-  return PIDX_err_not_implemented;
-}
-
-
-PIDX_return_code PIDX_multi_patch_rst_buf_create(PIDX_multi_patch_rst_id multi_patch_rst_id)
-{
-  return PIDX_err_not_implemented;
-}
-
-
-PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id multi_patch_rst_id)
-{
-  return PIDX_err_not_implemented;
-}
-
-
-PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id multi_patch_rst_id)
-{
-  return PIDX_err_not_implemented;
+  memcpy(rst_id->idx->reg_patch_size, reg_box, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  memcpy(rst_id->reg_patch_size, reg_box, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_multi_patch_rst_buf_destroy(PIDX_multi_patch_rst_id multi_patch_rst_id)
+
+PIDX_return_code PIDX_multi_patch_rst_auto_set_reg_patch_size(PIDX_multi_patch_rst_id multi_patch_rst_id, int factor)
 {
-  return PIDX_err_not_implemented;
+  PIDX_variable_group var_grp = multi_patch_rst_id->idx->variable_grp[multi_patch_rst_id->group_index];
+  PIDX_variable var0 = var_grp->variable[multi_patch_rst_id->first_index];
+
+  multi_patch_rst_id->reg_patch_size[0] = factor * getPowerOftwo(var0->sim_patch[0]->size[0]);
+  multi_patch_rst_id->reg_patch_size[1] = factor * getPowerOftwo(var0->sim_patch[0]->size[1]);
+  multi_patch_rst_id->reg_patch_size[2] = factor * getPowerOftwo(var0->sim_patch[0]->size[2]);
+
+  memcpy(multi_patch_rst_id->idx->reg_patch_size, multi_patch_rst_id->reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+
+
+  return PIDX_success;
 }
 
 
-PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_read(PIDX_multi_patch_rst_id multi_patch_rst_id)
-{
-  return PIDX_err_not_implemented;
-}
-
-PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_destroy(PIDX_multi_patch_rst_id multi_patch_rst_id)
-{
-  return PIDX_err_not_implemented;
-}
-
-
-
-PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_write(PIDX_multi_patch_rst_id multi_patch_rst_id)
-{
-  return PIDX_err_not_implemented;
-}
-
-
-PIDX_return_code PIDX_multi_patch_rst_meta_data_destroy(PIDX_multi_patch_rst_id multi_patch_rst_id)
-{
-  return PIDX_err_not_implemented;
-}
 
 PIDX_return_code PIDX_multi_patch_rst_finalize(PIDX_multi_patch_rst_id multi_patch_rst_id)
 {
@@ -177,4 +99,15 @@ PIDX_return_code PIDX_multi_patch_rst_finalize(PIDX_multi_patch_rst_id multi_pat
   multi_patch_rst_id = 0;
 
   return PIDX_success;
+}
+
+
+
+/// Function to find the power of 2 of an integer value (example 5->8)
+static int getPowerOftwo(int x)
+{
+  int n = 1;
+  while (n < x)
+    n <<= 1;
+  return n;
 }

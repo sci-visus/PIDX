@@ -1,65 +1,159 @@
 #include "../PIDX_inc.h"
 
-static PIDX_return_code rst_init(PIDX_io file, int gi, int svi, int evi);
-static void set_default_patch_size(PIDX_io file, unsigned long long* process_bounds, int nprocs);
-static int getPowerOftwo(int x);
-
+ /// 0 for patch per process and 1 for multi patch per process
+static int rst_case_type = 0;
 
 PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
 {
   int ret = 0;
   int start_index = 0, end_index = 0;
+  int pipe_length = file->idx->variable_count;
+  int factor = 1;
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  PIDX_variable var0 = var_grp->variable[svi];
+  int grp_count = var0->patch_group_count;
+  int max_grp_count = 0;
+  int patch_count = var0->sim_patch_count;
+  int max_patch_count = 0;
 
-  ret = rst_init(file, gi, svi, evi);
-  if (ret != PIDX_success)
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->comm);
+  if (max_patch_count > 1)
+    rst_case_type = 1;
+
+  if (rst_case_type == 0)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    for (start_index = svi; start_index < evi; start_index = start_index + (pipe_length + 1))
+    {
+      factor = 1;
+      end_index = ((start_index + pipe_length) >= (evi)) ? (evi - 1) : (start_index + pipe_length);
+
+      /// Initialize the restructuring phase
+      file->rst_id = PIDX_rst_init(file->idx, file->idx_d, svi, start_index, end_index);
+
+      /// attach communicator to the restructuring phase
+      ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+
+      restructure_tag:
+
+      /// Finding the regular power two box dimensions
+      if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
+      {
+          PIDX_rst_set_reg_patch_size(file->rst_id, file->idx->reg_patch_size);
+
+          /// Creating the metadata to perform retructuring
+          ret = PIDX_rst_meta_data_create(file->rst_id);
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          goto skip_auto_adjust_rst_box;
+      }
+
+      PIDX_rst_auto_set_reg_patch_size(file->rst_id, factor);
+
+      /// Creating the metadata to perform retructuring
+      ret = PIDX_rst_meta_data_create(file->rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+      grp_count = var0->patch_group_count;
+      max_grp_count = 0;
+      MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
+      if (max_grp_count > 1)
+      {
+        ret = PIDX_rst_meta_data_destroy(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        factor = factor * 2;
+
+        /// Ensusring that the partitioning step works fine by
+        /// making sure that number of boxes after restructuring is 1
+        goto restructure_tag;
+      }
+
+      skip_auto_adjust_rst_box:
+
+      /// Saving the metadata info needed for reading back the data.
+      /// Especially when number of cores is different from number of cores
+      /// used to create the dataset
+      ret = PIDX_rst_meta_data_write(file->rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+      //// Creating the buffers required for restructurig
+      ret = PIDX_rst_buf_create(file->rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+      /// Aggregating the aligned small buffers after restructuring into one single buffer
+      ret = PIDX_rst_aggregate_buf_create(file->rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+    }
   }
 
-  int pipe_length = file->idx->variable_count;
-  for (start_index = svi; start_index < evi; start_index = start_index + (pipe_length + 1))
+  /// Case for more than one patch per process
+  else
   {
-    int factor = 1;
-    end_index = ((start_index + pipe_length) >= (evi)) ? (evi - 1) : (start_index + pipe_length);
-    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, svi, start_index, end_index);
-
-    ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
-    if (ret != PIDX_success)
-      return PIDX_err_rst;
-
-    restructure_tag:
-
-    set_reg_patch_size(file->rst_id, factor);
-
-    ret = PIDX_rst_meta_data_create(file->rst_id);
-    if (ret != PIDX_success)
-      return PIDX_err_rst;
-
-
-    PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-    PIDX_variable var0 = var_grp->variable[svi];
-    int grp_count = var0->patch_group_count;
-    int max_grp_count;
-    MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
-    if (max_grp_count > 1)
+    for (start_index = svi; start_index < evi; start_index = start_index + (pipe_length + 1))
     {
-      ret = PIDX_rst_meta_data_destroy(file->rst_id);
-      if (ret != PIDX_success)
-        return PIDX_err_rst;
+      factor = 1;
+      end_index = ((start_index + pipe_length) >= (evi)) ? (evi - 1) : (start_index + pipe_length);
 
-      factor = factor * 2;
-      goto restructure_tag;
+      /// Initialize the restructuring phase
+      file->multi_patch_rst_id = PIDX_multi_patch_rst_init(file->idx, file->idx_d, svi, start_index, end_index);
+
+      /// attach communicator to the restructuring phase
+      ret = PIDX_multi_patch_rst_set_communicator(file->multi_patch_rst_id, file->comm);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+
+      multi_patch_restructure_tag:
+
+      /// Finding the regular power two box dimensions
+      if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
+      {
+        PIDX_multi_patch_rst_set_reg_patch_size(file->multi_patch_rst_id, file->idx->reg_patch_size);
+
+        /// Creating the metadata to perform retructuring
+        ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          goto skip_auto_adjust_multi_patch_rst_box;
+      }
+
+      PIDX_multi_patch_rst_auto_set_reg_patch_size(file->multi_patch_rst_id, factor);
+
+      /// Creating the metadata to perform retructuring
+      ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+      grp_count = var0->patch_group_count;
+      max_grp_count = 0;
+      MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->comm );
+      if (max_grp_count > 1)
+      {
+        ret = PIDX_multi_patch_rst_meta_data_destroy(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        factor = factor * 2;
+
+        /// Ensusring that the partitioning step works fine by
+        /// making sure that number of boxes after restructuring is 1
+        goto multi_patch_restructure_tag;
+      }
+
+      skip_auto_adjust_multi_patch_rst_box:
+
+
+      /// Saving the metadata info needed for reading back the data.
+      /// Especially when number of cores is different from number of cores
+      /// used to create the dataset
+      ret = PIDX_multi_patch_rst_meta_data_write(file->multi_patch_rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+      //// Creating the buffers required for restructurig
+      ret = PIDX_multi_patch_rst_buf_create(file->multi_patch_rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+      /// Aggregating the aligned small buffers after restructuring into one single buffer
+      ret = PIDX_multi_patch_rst_aggregate_buf_create(file->multi_patch_rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
     }
-
-    /* Creating the buffers required for restructurig */
-    ret = PIDX_rst_buf_create(file->rst_id);
-    if (ret != PIDX_success)
-      return PIDX_err_rst;
-
-    ret = PIDX_rst_aggregate_buf_create(file->rst_id);
-    if (ret != PIDX_success)
-      return PIDX_err_rst;
   }
 
   return PIDX_success;
@@ -70,40 +164,129 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
 PIDX_return_code restructure(PIDX_io file, int mode)
 {
   int ret = 0;
-  if (mode == PIDX_WRITE)
+
+  if (rst_case_type == 0)
   {
-    /* Perform data restructuring */
-    if (file->idx_dbg->debug_do_rst == 1)
+    if (mode == PIDX_WRITE)
     {
-      ret = PIDX_rst_write(file->rst_id);
-      if (ret != PIDX_success)
-        return PIDX_err_rst;
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        /// Perform data restructuring
+        ret = PIDX_rst_staged_write(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-      ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_WRITE);
-      if (ret != PIDX_success)
-        return PIDX_err_rst;
+        /// Aggregating in memory restructured buffers into one large buffer
+        ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_WRITE);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-      ret = PIDX_rst_buf_destroy(file->rst_id);
-      if (ret != PIDX_success)
-        return PIDX_err_rst;
+        /// Destroying the restructure buffers (as they are now combined into one large buffer)
+        ret = PIDX_rst_buf_destroy(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+    }
+    else if (mode == PIDX_READ)
+    {
+      /* Perform data restructuring */
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_READ);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        ret = PIDX_rst_read(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        ret = PIDX_rst_buf_destroy(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
     }
   }
-  else if (mode == PIDX_READ)
+
+  /// Case for more than one patch per process
+  else
   {
-    /* Perform data restructuring */
-    if (file->idx_dbg->debug_do_rst == 1)
+    if (mode == PIDX_WRITE)
     {
-      ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_READ);
-      if (ret != PIDX_success)
-        return PIDX_err_rst;
+      /* Perform data restructuring */
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        ret = PIDX_multi_patch_rst_staged_write(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-      ret = PIDX_rst_read(file->rst_id);
-      if (ret != PIDX_success)
-        return PIDX_err_rst;
+        ret = PIDX_multi_patch_rst_buf_aggregate(file->multi_patch_rst_id, PIDX_WRITE);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-      ret = PIDX_rst_buf_destroy(file->rst_id);
-      if (ret != PIDX_success)
-        return PIDX_err_rst;
+        ret = PIDX_multi_patch_rst_buf_destroy(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+    }
+    else if (mode == PIDX_READ)
+    {
+      /* Perform data restructuring */
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        ret = PIDX_multi_patch_rst_buf_aggregate(file->multi_patch_rst_id, PIDX_READ);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        ret = PIDX_multi_patch_rst_read(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        ret = PIDX_multi_patch_rst_buf_destroy(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+    }
+  }
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code restructure_io(PIDX_io file, int mode)
+{
+  int ret = 0;
+
+  if (rst_case_type == 0)
+  {
+    if (mode == PIDX_WRITE)
+    {
+      /* Perform data restructuring */
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        ret = PIDX_rst_buf_aggregated_write(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+    }
+    else if (mode == PIDX_READ)
+    {
+      /* Perform data restructuring */
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        ret = PIDX_rst_buf_aggregated_read(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+    }
+  }
+
+  /// Case for more than one patch per process
+  else
+  {
+    if (mode == PIDX_WRITE)
+    {
+      /* Perform data restructuring */
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        ret = PIDX_multi_patch_rst_buf_aggregated_write(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+    }
+    else if (mode == PIDX_READ)
+    {
+      /* Perform data restructuring */
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        ret = PIDX_multi_patch_rst_buf_aggregated_read(file->multi_patch_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
     }
   }
 
@@ -115,135 +298,61 @@ PIDX_return_code restructure(PIDX_io file, int mode)
 PIDX_return_code restructure_cleanup(PIDX_io file, int gi)
 {
   int ret = 0;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  /* Destroy buffers allocated during restructuring phase */
-  ret = PIDX_rst_aggregate_buf_destroy(file->rst_id);
-  if (ret != PIDX_success)
+  if (rst_case_type == 0)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_rst;
+    /* Destroy buffers allocated during restructuring phase */
+    ret = PIDX_rst_aggregate_buf_destroy(file->rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    ret = PIDX_rst_meta_data_destroy(file->rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    /* Deleting the restructuring ID */
+    PIDX_rst_finalize(file->rst_id);
   }
 
-  ret = PIDX_rst_meta_data_destroy(file->rst_id);
-  if (ret != PIDX_success)
+  /// Case for more than one patch per process
+  else
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_rst;
+    /* Destroy buffers allocated during restructuring phase */
+    ret = PIDX_multi_patch_rst_aggregate_buf_destroy(file->multi_patch_rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    ret = PIDX_multi_patch_rst_meta_data_destroy(file->multi_patch_rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    /* Deleting the restructuring ID */
+    PIDX_multi_patch_rst_finalize(file->multi_patch_rst_id);
   }
-
-  /* Deleting the restructuring ID */
-  PIDX_rst_finalize(file->rst_id);
-
-
-  free(var_grp->rank_r_offset);
-  var_grp->rank_r_offset = 0;
-
-  free(var_grp->rank_r_count);
-  var_grp->rank_r_count = 0;
 
   return PIDX_success;
 }
 
 
-static PIDX_return_code rst_init(PIDX_io file, int gi, int svi, int evi)
+PIDX_return_code restructure_forced_read(PIDX_io file, int svi, int evi)
 {
-   int nprocs = 1;
-   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-   PIDX_variable var = var_grp->variable[svi];
+  int ret = 0;
+  int start_index = 0, end_index = 0;
+  int pipe_length = file->idx->variable_count;
 
-#if PIDX_HAVE_MPI
-  file->comm = file->global_comm;
-
-  if (file->idx_d->parallel_mode == 1)
-    MPI_Comm_size(file->comm,  &nprocs);
-#endif
-
-  var_grp->rank_r_offset = malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(var_grp->rank_r_offset, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
-
-  var_grp->rank_r_count =  malloc(sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS);
-  memset(var_grp->rank_r_count, 0, (sizeof (unsigned long long) * nprocs * PIDX_MAX_DIMENSIONS));
-
-#if PIDX_HAVE_MPI
-  if (file->idx_d->parallel_mode == 1)
+  for (start_index = svi; start_index < evi; start_index = start_index + (pipe_length + 1))
   {
-    MPI_Allgather(var->sim_patch[0]->offset , PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, var_grp->rank_r_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
+    end_index = ((start_index + pipe_length) >= (evi)) ? (evi - 1) : (start_index + pipe_length);
 
-    MPI_Allgather(var->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, var_grp->rank_r_count, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->comm);
-  }
-  else
-  {
-    memcpy(var_grp->rank_r_offset, var->sim_patch[0]->offset, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
-    memcpy(var_grp->rank_r_count, var->sim_patch[0]->size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
-  }
-#endif
+    /// Initialize the restructuring phase
+    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, svi, start_index, end_index);
 
-  set_default_patch_size(file, var_grp->rank_r_count, nprocs);
+    /// attach communicator to the restructuring phase
+    ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    ret = PIDX_rst_forced_raw_read(file->rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    ret = PIDX_rst_finalize(file->rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  }
 
   return PIDX_success;
-}
-
-
-static void set_default_patch_size(PIDX_io file, unsigned long long* process_bounds, int nprocs)
-{
-  int i = 0, j = 0;
-  unsigned long long average_count = 0;
-  int check_bit = 0;
-  unsigned long long max_dim_length[PIDX_MAX_DIMENSIONS] = {0, 0, 0};
-  int equal_partiton = 0;
-
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-  {
-    max_dim_length[i] = process_bounds[PIDX_MAX_DIMENSIONS * 0 + i];
-    for (j = 0; j < nprocs; j++)
-    {
-      if (max_dim_length[i] <= process_bounds[PIDX_MAX_DIMENSIONS * j + i])
-        max_dim_length[i] = process_bounds[PIDX_MAX_DIMENSIONS * j + i];
-    }
-  }
-
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-  {
-    average_count = average_count + max_dim_length[i];
-  }
-  average_count = average_count / PIDX_MAX_DIMENSIONS;
-  average_count = getPowerOftwo(average_count);
-
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    check_bit = check_bit || ((double) file->idx->bounds[i] / average_count > (double) file->idx->bounds[i] / max_dim_length[i]);
-
-  while (check_bit)
-  {
-    average_count = average_count * 2;
-    check_bit = 0;
-    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-      check_bit = check_bit || ((double) file->idx->bounds[i] / average_count > (double) file->idx->bounds[i] / max_dim_length[i]);
-  }
-  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
-  //reg_patch_size =  average_count;
-  if (equal_partiton == 1)
-  {
-    reg_patch_size[0] = average_count / 1;
-    reg_patch_size[1] = average_count / 1;
-    reg_patch_size[2] = average_count / 1;
-  }
-  else
-  {
-    reg_patch_size[0] = getPowerOftwo(max_dim_length[0]) * 1;
-    reg_patch_size[1] = getPowerOftwo(max_dim_length[1]) * 1;
-    reg_patch_size[2] = getPowerOftwo(max_dim_length[2]) * 1;
-  }
-
-  memcpy(file->idx->reg_patch_size, reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
-  //reg_patch_size = reg_patch_size * 4;
-}
-
-
-static int getPowerOftwo(int x)
-{
-  int n = 1;
-  while (n < x)
-    n <<= 1;
-  return n;
 }

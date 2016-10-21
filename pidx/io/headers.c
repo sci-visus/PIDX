@@ -1,13 +1,10 @@
 #include "../PIDX_inc.h"
 #include "timming.h"
 
-static PIDX_return_code write_headers_shared(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, int layout_type);
 
-static PIDX_return_code write_headers_non_shared(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, int layout_type);
+static PIDX_return_code write_idx_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl);
 
-static PIDX_return_code write_headers_file_zero(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, int layout_type);
-
-static PIDX_return_code write_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl);
+static PIDX_return_code write_raw_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename);
 
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_io file, char* filename, char* filename_template, int current_time_step);
 
@@ -16,13 +13,9 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
-  //printf("F: %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
-  //printf("S: %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
-  //printf("N: %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);
-
   if (var_grp->shared_start_layout_index != var_grp->shared_end_layout_index)
   {
-    ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, var_grp->shared_block_layout);
+    ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, var_grp->shared_block_layout);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -34,7 +27,7 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
   {
     if (mode == PIDX_IDX_IO)
     {
-      ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename, file->idx->filename_template, var_grp->nshared_block_layout);
+      ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename, file->idx->filename_template, var_grp->nshared_block_layout);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -43,7 +36,7 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
     }
     else
     {
-      ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_global, file->idx->filename_template_global, var_grp->nshared_block_layout);
+      ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_global, file->idx->filename_template_global, var_grp->nshared_block_layout);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -54,7 +47,17 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
 
   if (var_grp->f0_start_layout_index != var_grp->f0_end_layout_index)
   {
-    ret = write_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_file_zero, file->idx->filename_template_file_zero, var_grp->f0_block_layout);
+    ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_file_zero, file->idx->filename_template_file_zero, var_grp->f0_block_layout);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+
+  if (mode == PIDX_RAW_IO)
+  {
+    ret = write_raw_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -68,7 +71,7 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
 
 
 
-static PIDX_return_code write_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl)
+static PIDX_return_code write_idx_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl)
 {
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
@@ -119,46 +122,42 @@ static PIDX_return_code write_headers_layout(PIDX_io file, int group_index, int 
 
 
 
-static PIDX_return_code write_headers_shared(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, int layout_type)
+static PIDX_return_code write_raw_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename)
 {
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
   if (file->idx_dbg->debug_do_io == 1)
   {
-    /* STEP 1 */
     file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
 #if PIDX_HAVE_MPI
-    if (file->idx_d->parallel_mode)
+    if (file->idx_d->parallel_mode == 1)
     {
       ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
       if (ret != PIDX_success)
         return PIDX_err_header;
     }
 #endif
-    ret = PIDX_header_io_filename_create(file->header_io_id, var_grp->shared_block_layout, file->idx->filename_template_partition);
+
+    ret = PIDX_header_io_enable_raw_dump (file->header_io_id);
     if (ret != PIDX_success)
       return PIDX_err_header;
 
-    /* STEP 2 */
     if (var_grp->variable_index_tracker < file->idx->variable_count )
     {
       // Create the header
-      ret = PIDX_header_io_filename_write(file->header_io_id, var_grp->shared_block_layout, filename, filename_template,  0);
+      ret = PIDX_header_io_raw_file_write(file->header_io_id, filename);
       if (ret != PIDX_success)
         return PIDX_err_header;
-      //file->flush_used = 1;
     }
-
-    if (var_grp->variable_index_tracker == file->idx->variable_count)
+    else if (var_grp->variable_index_tracker == file->idx->variable_count)
     {
-      ret = PIDX_header_io_filename_write(file->header_io_id, var_grp->shared_block_layout, filename, filename_template, 1);
+      ret = PIDX_header_io_raw_file_write(file->header_io_id, filename);
       if (ret != PIDX_success)
         return PIDX_err_header;
     }
 
-    /* STEP 3 */
-    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename_partition, /*file->idx->filename_template_partition,*/ file->idx->current_time_step);
+    ret = PIDX_header_io_write_idx (file->header_io_id, filename, file->idx->current_time_step);
     if (ret != PIDX_success)
       return PIDX_err_header;
 
@@ -166,113 +165,8 @@ static PIDX_return_code write_headers_shared(PIDX_io file, int group_index, int 
     if (ret != PIDX_success)
       return PIDX_err_header;
   }
-  return PIDX_success;
 }
 
-
-static PIDX_return_code write_headers_file_zero(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template,  int layout_type)
-{
-  int ret = 0;
-  PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
-
-  if (file->idx_dbg->debug_do_io == 1)
-  {
-    /* STEP 1 */
-    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
-#if PIDX_HAVE_MPI
-    if (file->idx_d->parallel_mode)
-    {
-      ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-    }
-#endif
-    ret = PIDX_header_io_filename_create(file->header_io_id, var_grp->f0_block_layout, file->idx->filename_template_file_zero);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
-
-    /* STEP 2 */
-    if (var_grp->variable_index_tracker < file->idx->variable_count )
-    {
-      // Create the header
-      //ret = PIDX_header_io_file_write(file->header_io_id, var_grp->f0_block_layout,  0);
-      ret = PIDX_header_io_filename_write(file->header_io_id, var_grp->f0_block_layout, filename, filename_template, 1);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-      //file->flush_used = 1;
-    }
-
-    if (var_grp->variable_index_tracker == file->idx->variable_count)
-    {
-      ret = PIDX_header_io_filename_write(file->header_io_id, var_grp->f0_block_layout, filename, filename_template, 1);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-    }
-
-    /* STEP 3 */
-    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename_file_zero, /*file->idx->filename_template_global,*/ file->idx->current_time_step);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
-
-    ret = PIDX_header_io_finalize(file->header_io_id);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
-  }
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code write_headers_non_shared(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template,  int layout_type)
-{
-  int ret = 0;
-  PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
-
-  if (file->idx_dbg->debug_do_io == 1)
-  {
-    /* STEP 1 */
-    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
-#if PIDX_HAVE_MPI
-    if (file->idx_d->parallel_mode)
-    {
-      ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-    }
-#endif
-    ret = PIDX_header_io_filename_create(file->header_io_id, var_grp->nshared_block_layout, file->idx->filename_template_global);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
-
-    /* STEP 2 */
-    if (var_grp->variable_index_tracker < file->idx->variable_count )
-    {
-      // Create the header
-      ret = PIDX_header_io_file_write(file->header_io_id, var_grp->nshared_block_layout,  0);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-      //file->flush_used = 1;
-    }
-
-    if (var_grp->variable_index_tracker == file->idx->variable_count)
-    {
-      ret = PIDX_header_io_filename_write(file->header_io_id, var_grp->nshared_block_layout, filename, filename_template, 1);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-    }
-
-    /* STEP 3 */
-    ret = PIDX_header_io_write_idx (file->header_io_id, file->idx->filename_global, file->idx->current_time_step);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
-
-    ret = PIDX_header_io_finalize(file->header_io_id);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
-  }
-
-  return PIDX_success;
-}
 
 
 PIDX_return_code one_time_initialize(PIDX_io file, int mode, int io_type)

@@ -17,6 +17,7 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi);
 
 PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
 {
+
   PIDX_time time = file->idx_d->time;
   PIDX_return_code ret;
 
@@ -43,6 +44,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   time->idx_rst_end = MPI_Wtime();
 
 
+
   // calculates maxh and bitstring
   time->idx_bit_string_start = PIDX_get_time();
   ret = populate_bit_string(file, PIDX_WRITE, PIDX_IDX_IO);
@@ -65,7 +67,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   time->idx_hz_end = PIDX_get_time();
 
 
-
+#if 0
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
   time->idx_layout_start = PIDX_get_time();
@@ -81,7 +83,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->header_write_end = PIDX_get_time();
 
-#if 1
   // Creates the agg and io ids
   time->agg_buffer_start = PIDX_get_time();
   ret = create_agg_io_buffer(file, gi);
@@ -252,9 +253,6 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   free(var_grp->rank_buffer);
-
-  ret = destroy_local_comm(file);
-  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   ret = destroy_hz_buffers(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}

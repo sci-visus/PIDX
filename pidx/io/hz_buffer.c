@@ -132,9 +132,9 @@ PIDX_return_code create_hz_buffers(PIDX_io file, int svi, int evi)
         return PIDX_err_hz;
       }
     }
-
+#if 0
     // Verify the HZ encoding
-    //if(file->idx_dbg->debug_hz == 1)
+    if(file->idx_dbg->debug_hz == 1)
     {
       ret = HELPER_Hz_encode(file->hz_id);
       if (ret != PIDX_success)
@@ -151,6 +151,7 @@ PIDX_return_code create_hz_buffers(PIDX_io file, int svi, int evi)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_chunk;
     }
+#endif
   }
 
   return PIDX_success;

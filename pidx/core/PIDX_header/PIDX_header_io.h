@@ -35,6 +35,10 @@ PIDX_return_code PIDX_header_io_set_communicator(PIDX_header_io_id header_io, MP
 
 
 ///
+PIDX_return_code PIDX_header_io_raw_file_write(PIDX_header_io_id header_io_id, char* filename);
+
+
+///
 PIDX_return_code PIDX_header_io_enable_raw_dump(PIDX_header_io_id header_io);
 
 

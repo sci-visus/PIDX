@@ -58,9 +58,6 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id agg_id, MPI_Comm c
 #endif
 
 
-PIDX_return_code PIDX_destroy_local_aggregation_comm(PIDX_agg_id agg_id);
-
-
 ///
 PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
 

@@ -72,18 +72,6 @@ PIDX_return_code PIDX_agg_set_global_communicator(PIDX_agg_id id, MPI_Comm comm)
 
   return PIDX_success;
 }
-
-
-
-PIDX_return_code PIDX_destroy_local_aggregation_comm(PIDX_agg_id id)
-{
-  if (id == NULL)
-    return PIDX_err_id;
-
-  MPI_Comm_free(&(id->comm));
-
-  return PIDX_success;
-}
 #endif
 
 

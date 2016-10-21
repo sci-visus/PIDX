@@ -57,6 +57,27 @@ struct PIDX_Ndim_patch_group_struct
 typedef struct PIDX_Ndim_patch_group_struct* Ndim_patch_group;
 
 
+
+struct PIDX_source_patch_index_struct{
+  int rank;
+  int index;
+};
+typedef struct PIDX_source_patch_index_struct PIDX_source_patch_index;
+
+
+struct PIDX_Ndim_multi_patch_group_struct
+{
+  int data_source;
+  int type;                                             ///< decide the type of the group
+  int count;                                            ///< how many Ndim_buffer are there in the group
+  Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
+  PIDX_source_patch_index *source_patch;
+  int max_patch_rank;                                   ///<
+  Ndim_patch reg_patch;                                ///< Pointer to the reg patch
+};
+typedef struct PIDX_Ndim_multi_patch_group_struct* Ndim_multi_patch_group;
+
+
 /// Struct to store the HZ encoded data and meta-data
 struct PIDX_HZ_buffer_struct
 {

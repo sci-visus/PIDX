@@ -31,14 +31,45 @@
 #ifndef __PIDX_RST_NEW_H
 #define __PIDX_RST_NEW_H
 
-/// The restructuring module is called only when there is MPI availiable, hence
-/// the entire code is wrapped in PIDX_HAVE_MPI define
 
+///
+/// \brief The PIDX_rst_struct struct is Struct for restructuring ID
+///
+struct PIDX_rst_struct
+{
+  //Passed by PIDX API
+#if PIDX_HAVE_MPI
+  MPI_Comm comm; //Communicator
+#endif
 
-struct PIDX_rst_struct;
+  //Contains all relevant IDX file info
+  //Blocks per file, samples per block, bitmask, patch, file name template and more
+  idx_dataset idx;
+
+  //Contains all derieved IDX file info
+  //number of files, files that are ging to be populated
+  idx_dataset_derived_metadata idx_d;
+
+  int init_index;
+  int group_index;
+  int first_index;
+  int last_index;
+
+  //dimension of the power-two volume imposed patch
+  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
+  int reg_patch_grp_count;
+  Ndim_patch_group* reg_patch_grp;
+
+  unsigned long long *rank_r_offset;
+  unsigned long long *rank_r_count;
+};
 typedef struct PIDX_rst_struct* PIDX_rst_id;
 
 
+
+/*
+ * Implementation in PIDX_rst.c
+ */
 /// Creates an restructuring file ID.
 /// \param idx_meta_data All infor regarding the idx file passed from PIDX.c
 /// \param idx_derived_ptr All derived idx related derived metadata passed from PIDX.c
@@ -46,6 +77,7 @@ typedef struct PIDX_rst_struct* PIDX_rst_id;
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_rst_id The identifier associated with the task
 PIDX_rst_id PIDX_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int first_index, int var_start_index, int var_end_index);
+
 
 
 #if PIDX_HAVE_MPI
@@ -59,60 +91,74 @@ PIDX_return_code PIDX_rst_set_communicator(PIDX_rst_id id, MPI_Comm comm);
 
 
 ///
+/// \brief PIDX_rst_auto_set_reg_patch_size
+/// \param rst_id
+/// \param factor
+/// \return
+///
+PIDX_return_code PIDX_rst_auto_set_reg_patch_size(PIDX_rst_id rst_id, int factor);
+
+
+
+///
+/// \brief PIDX_rst_set_reg_patch_size
+/// \param rst_id
+/// \param box_size
+/// \return
+///
+PIDX_return_code PIDX_rst_set_reg_patch_size(PIDX_rst_id rst_id, PIDX_point box_size);
+
+
+
+///
+/// \brief PIDX_rst_finalize Tear down whatever was calculated for this particular combination of dimensions and bounds
+/// \param id
+/// \return
+///
+PIDX_return_code PIDX_rst_finalize(PIDX_rst_id id);
+
+
+
+/*
+ * Implementation in PIDX_rst_meta_data.c
+ */
+///
 /// \brief PIDX_rst_attach_restructuring_box
 /// \param rst_id
 /// \return
 ///
 PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id);
 
+
+
+///
+/// \brief PIDX_rst_meta_data_write
+/// \param rst_id
+/// \return
+///
 PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id);
 
 
+
+///
+/// \brief PIDX_rst_meta_data_destroy
+/// \param rst_id
+/// \return
+///
 PIDX_return_code PIDX_rst_meta_data_destroy(PIDX_rst_id rst_id);
 
 
 
-void set_reg_patch_size(PIDX_rst_id rst_id, int factor);
-
-
-/// Ceate the appropriate data structs to hold restructured output data
-
+/*
+ * Implementation in PIDX_rst_buffer.c
+ */
 ///
-/// \brief PIDX_rst_buf_create
+/// \brief PIDX_rst_buf_create Create the appropriate data structs to hold restructured output data
 /// \param rst_id
 /// \return
 ///
 PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id);
 
-
-
-PIDX_return_code PIDX_rst_buf_aggregate_write(PIDX_rst_id rst_id);
-
-
-
-
-PIDX_return_code PIDX_rst_buf_aggregate_read(PIDX_rst_id rst_id);
-
-
-
-///
-/// \brief PIDX_rst_write Actually do the restructuring, using pre-calculated data associated with the id
-/// \param rst_id
-/// \return
-///
-PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id);
-
-
-
-PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id);
-
-
-///
-/// \brief PIDX_rst_read
-/// \param rst_id
-/// \return
-///
-PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id);
 
 
 ///
@@ -123,20 +169,116 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id);
 PIDX_return_code PIDX_rst_buf_destroy(PIDX_rst_id rst_id);
 
 
+
 ///
-/// \brief PIDX_rst_finalize Tear down whatever was calculated for this particular combination of dimensions and bounds
-/// \param id
+/// \brief PIDX_rst_aggregate_buf_create
+/// \param rst_id
 /// \return
 ///
-PIDX_return_code PIDX_rst_finalize(PIDX_rst_id id);
-
 PIDX_return_code PIDX_rst_aggregate_buf_create(PIDX_rst_id rst_id);
 
+
+
+///
+/// \brief PIDX_rst_aggregate_buf_destroy
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_aggregate_buf_destroy(PIDX_rst_id rst_id);
+
+
+
+///
+/// \brief PIDX_rst_buf_aggregate
+/// \param rst_id
+/// \param MODE
+/// \return
+///
 PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id, int MODE);
 
 
-PIDX_return_code PIDX_rst_aggregate_buf_destroy(PIDX_rst_id rst_id);
 
+/*
+ * Implementation in PIDX_rst_io.c
+ */
+///
+/// \brief PIDX_rst_buf_aggregate_and_write
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_buf_aggregate_and_write(PIDX_rst_id rst_id);
+
+
+
+///
+/// \brief PIDX_rst_buf_read_and_aggregate
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_buf_read_and_aggregate(PIDX_rst_id rst_id);
+
+
+
+///
+/// \brief PIDX_rst_buf_aggregated_write
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_buf_aggregated_write(PIDX_rst_id rst_id);
+
+
+
+///
+/// \brief PIDX_rst_buf_aggregated_read
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id);
+
+
+
+///
+/// \brief PIDX_rst_forced_raw_read
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id);
+/*
+ * Implementation in PIDX_rst_write.c
+ */
+///
+/// \brief PIDX_rst_write Actually do the restructuring, using pre-calculated data associated with the id
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_write(PIDX_rst_id rst_id);
+
+
+
+///
+/// \brief PIDX_rst_staged_write
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id);
+
+
+
+/*
+ * Implementation in PIDX_rst_read.c
+ */
+///
+/// \brief PIDX_rst_read
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id);
+
+
+
+/*
+ * Implementation in PIDX_rst_verify.c
+ */
 ///
 /// \brief HELPER_rst
 /// \param rst_id

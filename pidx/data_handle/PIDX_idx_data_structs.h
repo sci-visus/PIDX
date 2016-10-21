@@ -147,8 +147,7 @@ struct PIDX_variable_group_struct
 
   //extents of meta-data
   int *rank_buffer;
-  unsigned long long *rank_r_offset;
-  unsigned long long *rank_r_count;
+
 
   // Block level layout
   PIDX_block_layout f0_block_layout;

@@ -317,11 +317,11 @@ int main(int argc, char **argv)
             for (vps = 0; vps < v_per_sample; vps++)
             {
               memcpy(&float_val, data + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
-              if (float_val != var /*+ vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/)
+              if (float_val != var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
               {
                 read_error_count++;
-                if (rank == 0)
-                  printf("W[%d %d %d] [%d] Read error %d %f\n", i,j ,k, vps, var, float_val /*+ vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
+                //if (rank == 0)
+                //  printf("W[%d %d %d] [%d] Read error %d %f\n", i,j ,k, vps, var, float_val /*+ vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
               }
               else
               {

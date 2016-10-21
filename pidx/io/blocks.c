@@ -30,6 +30,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
     rpp.y = (int) file->idx->reg_patch_size[1];
     rpp.z = (int) file->idx->reg_patch_size[2];
     guess_bit_string(reg_patch_bs, rpp);
+    printf("");
 
     // Middle part of the bitstring
     Point3D prcp;
@@ -60,6 +61,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
   file->idx_d->maxh = strlen(file->idx->bitSequence);
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
+
+  printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
   if (total_reg_sample_count <= 0)
