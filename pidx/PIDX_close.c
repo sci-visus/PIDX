@@ -108,7 +108,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
   }
 
-  if (file->idx->io_type == PIDX_IDX_IO)
+  //if (file->idx->io_type == PIDX_IDX_IO)
   {
     double total_time = time->sim_end - time->sim_start;
     double max_time = total_time;

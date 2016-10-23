@@ -15,7 +15,6 @@ extern "C" {
 #define PIDX_HAVE_HDF5 0
 #define PIDX_HAVE_NVISUSIO 0
 
-#define SIMULATE_IO 0
 #define PIDX_MAX_TEMPLATE_DEPTH 6
 
 #ifndef __cplusplus

@@ -4,8 +4,6 @@
 
 static PIDX_return_code write_idx_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl);
 
-static PIDX_return_code write_raw_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename);
-
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_io file, char* filename, char* filename_template, int current_time_step);
 
 PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_index, int end_var_index, int mode)
@@ -55,19 +53,8 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
     }
   }
 
-  if (mode == PIDX_RAW_IO)
-  {
-    ret = write_raw_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-  }
-
   return PIDX_success;
 }
-
 
 
 
@@ -122,7 +109,28 @@ static PIDX_return_code write_idx_headers_layout(PIDX_io file, int group_index, 
 
 
 
-static PIDX_return_code write_raw_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename)
+PIDX_return_code write_and_close_raw_headers(PIDX_io file, char* filename)
+{
+  int ret = 0;
+
+  if (file->idx_dbg->debug_do_io == 1)
+  {
+    ret = PIDX_header_io_write_idx (file->header_io_id, filename, file->idx->current_time_step);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+
+    ret = PIDX_header_io_finalize(file->header_io_id);
+    if (ret != PIDX_success)
+      return PIDX_err_header;
+  }
+
+  return PIDX_success;
+}
+
+
+
+
+PIDX_return_code init_raw_headers_layout(PIDX_io file, int group_index, int start_var_index, int end_var_index, char* filename)
 {
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
@@ -156,16 +164,11 @@ static PIDX_return_code write_raw_headers_layout(PIDX_io file, int group_index, 
       if (ret != PIDX_success)
         return PIDX_err_header;
     }
-
-    ret = PIDX_header_io_write_idx (file->header_io_id, filename, file->idx->current_time_step);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
-
-    ret = PIDX_header_io_finalize(file->header_io_id);
-    if (ret != PIDX_success)
-      return PIDX_err_header;
   }
+
+  return PIDX_success;
 }
+
 
 
 

@@ -68,7 +68,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->group_index_tracker = 0;
   (*file)->local_group_count = 1;
 
-  (*file)->idx->reg_box_set = 0;
+  (*file)->idx->reg_box_set = 1;
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
@@ -208,12 +208,21 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           pch = strtok(NULL, " ");
         }
       }
+
       if (strcmp(line, "(cores)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
         (*file)->idx_d->data_core_count = atoi(line);
+      }
+
+      if (strcmp(line, "(endian)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+        (*file)->idx->endian = atoi(line);
       }
 
       if (strcmp(line, "(fields)") == 0)
@@ -381,6 +390,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
     MPI_Bcast((*file)->idx->reg_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
     MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->comm);
@@ -456,6 +466,23 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 #endif
 
   (*file)->idx_d->time->file_create_time = PIDX_get_time();
+  (*file)->idx->flip_endian = 0;
+
+
+  unsigned int endian = 1;
+  int current_endian = 0;
+  char *c = (char*)&endian;
+  if (*c)
+    current_endian = 0;
+  else
+    current_endian = 1;
+
+  if (current_endian == (*file)->idx->endian)
+    (*file)->idx->flip_endian = 0;
+  else
+    (*file)->idx->flip_endian = 1;
+
+
 #endif
   return PIDX_success;
 }

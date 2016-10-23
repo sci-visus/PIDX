@@ -191,7 +191,6 @@ PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
 // TODO: detect wrong input
 PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 {
-#if !SIMULATE_IO
   PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
   int v = 0, p = 0, j = 0;
   for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
@@ -257,7 +256,6 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       */
     }
   }
-#endif
   return PIDX_success;
 }
 
@@ -282,12 +280,10 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
         {
           if (in_patch->data_source == 0)
           {
-#if !SIMULATE_IO
             if (MODE == PIDX_WRITE)
               memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
             else
               memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
-#endif
           }
           else
           {
@@ -369,10 +365,8 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
               send_o = index * var->vps * (var->bpv/8);
               send_c = (patch_group->patch[r]->size[0]);
               recv_o = ((nx) * (ny) * (k1 - out_patch->patch[0]->offset[2])) + ((nx)* (j1 - out_patch->patch[0]->offset[1])) + (i1 - out_patch->patch[0]->offset[0]);
-#if !SIMULATE_IO
               if (MODE == PIDX_WRITE)
                 memcpy(temp_buffer + (recv_o * var->vps * (var->bpv/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
-#endif
             }
           }
         }
@@ -390,9 +384,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       {
         for (z=0;z<nz;z+=4)
         {
-#if !SIMULATE_IO
           double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bpv/8)*cbz) + nx*ny*nz*s1;
-#endif
           for (y=0;y<ny;y+=4)
           {
             for (x=0;x<nx;x+=4)
@@ -409,7 +401,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
                     int i = xx + yy * 4 + zz * 4 * 4;
                     int j = xx + yy * nx + zz * nx * ny;
                     //printf("%d %d %f\n", i, j, s[i]);
-#if !SIMULATE_IO
                     if (MODE == PIDX_WRITE)
                       s[nx*ny*nz*s1 + i*var->vps+s1] = q[j*var->vps + s1];
                     else
@@ -417,13 +408,10 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
                       //printf("VAL %f\n", s[nx*ny*nz*s1 + i*var->vps+s1]);
                       q[j*var->vps + s1] = s[nx*ny*nz*s1 + i*var->vps+s1];
                     }
-#endif
                   }
                 }
               }
-#if !SIMULATE_IO
               s += cbz;
-#endif
             }
           }
         }
@@ -441,10 +429,8 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
               send_o = index * var->vps * (var->bpv/8);
               send_c = (patch_group->patch[r]->size[0]);
               recv_o = ((nx) * (ny) * (k1 - out_patch->patch[0]->offset[2])) + ((nx)* (j1 - out_patch->patch[0]->offset[1])) + (i1 - out_patch->patch[0]->offset[0]);
-#if !SIMULATE_IO
               if (MODE == PIDX_READ)
                 memcpy(var->rst_patch_group[g]->patch[r]->buffer + send_o, temp_buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
-#endif
             }
           }
         }
@@ -520,7 +506,6 @@ PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
 {
-#if !SIMULATE_IO
   PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
   int j = 0, p = 0, var = 0;
   for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
@@ -534,7 +519,7 @@ PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
       }
     }
   }
-#endif
+
   return PIDX_success;
 }
 

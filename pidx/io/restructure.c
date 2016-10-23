@@ -3,6 +3,11 @@
  /// 0 for patch per process and 1 for multi patch per process
 static int rst_case_type = 0;
 
+
+/// Initialiazation and creation of buffers for restructuring phase
+/// 1. Find if this is a patch per process problem or  multi patch per process problem
+/// 2. If the restructuring box size is provided then use that else find restructuring box size
+/// 3.
 PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
 {
   int ret = 0;

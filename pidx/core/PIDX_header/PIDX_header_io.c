@@ -247,6 +247,8 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 
       fprintf(idx_file_p, "(partition size)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->partition_size[0]), (long long)(header_io->idx_d->partition_size[1]), (long long)(header_io->idx_d->partition_size[2]));
     }
+
+    fprintf(idx_file_p, "(endian)\n%d\n", header_io->idx->endian);
     
     if (header_io->enable_raw_dump == 1)
     {

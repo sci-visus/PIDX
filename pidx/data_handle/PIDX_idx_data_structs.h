@@ -214,6 +214,15 @@ struct idx_file_struct
   unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];                              ///< size of the block at which compression is applied eg. (4x4x4)
                                                                         ///< the current compression schemes only work in three dimensions
   unsigned long long chunked_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents
+
+  /// 1 for little endian
+  /// 0 for big endian
+  int endian;
+
+  /// 1 for flipping endian
+  /// 0 for big endian
+  int flip_endian;
+
 };
 typedef struct idx_file_struct* idx_dataset;
 

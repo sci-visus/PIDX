@@ -31,8 +31,31 @@
 #ifndef __PIDX_HZ_ENCODE_H
 #define __PIDX_HZ_ENCODE_H
 
+struct PIDX_hz_encode_struct
+{
+  /// Contains all relevant IDX file info
+  /// Blocks per file, samples per block, bitmask, patch, file name template and more
+  idx_dataset idx;
 
-struct PIDX_hz_encode_struct;
+  /// Contains all derieved IDX file info
+  /// number of files, files that are ging to be populated
+  idx_dataset_derived_metadata idx_d;
+
+  int** index;
+
+  int group_index;
+
+  int init_index;
+  int first_index;
+  int last_index;
+
+  int resolution_from;
+  int resolution_to;
+
+#if PIDX_HAVE_MPI
+  MPI_Comm comm;
+#endif
+};
 typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 
 

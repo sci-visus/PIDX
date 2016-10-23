@@ -115,7 +115,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
     generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number /*adjusted_file_index*/, file_name, PATH_MAX);
 
-#if !SIMULATE_IO
+
 #if PIDX_HAVE_MPI
     ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
     if (ret != MPI_SUCCESS)
@@ -126,7 +126,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 #else
     fh = open(file_name, O_WRONLY);
 #endif
-#endif
+
 
 #ifdef PIDX_RECORD_TIME
     t2 = PIDX_get_time();
@@ -137,22 +137,19 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     headers = (uint32_t*)malloc(total_header_size);
     memset(headers, 0, total_header_size);
 
-#if !SIMULATE_IO
     if (enable_caching == 1)
       memcpy (headers, cached_header_copy, total_header_size);
     else
     {
       //TODO
     }
-#endif
+
 
 #ifdef PIDX_RECORD_TIME
     t3 = PIDX_get_time();
 #endif
 
     unsigned long long header_size = (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size);
-
-#if !SIMULATE_IO
     unsigned char* temp_buffer = (unsigned char*)realloc(agg_buf->buffer, agg_buf->buffer_size  + header_size);
     if (temp_buffer == NULL)
     {
@@ -166,10 +163,10 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       memcpy(agg_buf->buffer, headers, total_header_size);
       memset(agg_buf->buffer + total_header_size, 0, (header_size - total_header_size));
     }
-#endif
+
     free(headers);
 
-#if !SIMULATE_IO
+
 #if PIDX_HAVE_MPI
     ret = MPI_File_write_at(fh, 0, agg_buf->buffer, agg_buf->buffer_size + header_size, MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)
@@ -194,13 +191,13 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       return PIDX_err_io;
     }
 #endif
-#endif
+
 
 #ifdef PIDX_RECORD_TIME
     t4 = PIDX_get_time();
 #endif
 
-#if !SIMULATE_IO
+
 #if PIDX_HAVE_MPI
     ret = MPI_File_close(&fh);
     if (ret != MPI_SUCCESS)
@@ -211,7 +208,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 #else
     close(fh);
 #endif
-#endif
+
 
 #ifdef PIDX_RECORD_TIME
     t5 = PIDX_get_time();
@@ -239,7 +236,6 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     int use_compression = 0;
     if (use_compression == 0)
     {
-#if !SIMULATE_IO
 #if PIDX_HAVE_MPI
       if (MODE == PIDX_WRITE)
       {
@@ -265,7 +261,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       else
         fh = open(file_name, O_RDONLY);
 #endif
-#endif
+
 
  #ifdef PIDX_RECORD_TIME
       t2 = PIDX_get_time();
@@ -304,7 +300,6 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
   #endif
       }
 
-#if !SIMULATE_IO
 #if PIDX_HAVE_MPI
       if (MODE == PIDX_WRITE)
       {
@@ -382,13 +377,12 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
         }
       }
 #endif
-#endif
+
 
 #ifdef PIDX_RECORD_TIME
       t3 = PIDX_get_time();
 #endif
 
-#if !SIMULATE_IO
 #if PIDX_HAVE_MPI
       ret = MPI_File_close(&fh);
       if (ret != MPI_SUCCESS)
@@ -399,7 +393,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 #else
       close(fh);
 #endif
-#endif
+
 
 #ifdef PIDX_RECORD_TIME
       t4 = PIDX_get_time();
@@ -646,11 +640,8 @@ int PIDX_file_io_per_process(PIDX_file_io_id io_id, PIDX_block_layout block_layo
               fflush(io_dump_fp);
             }
 #endif
-#if !SIMULATE_IO
             ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
-#else
-            ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, NULL, 0, block_layout, MODE);
-#endif
+
             if (ret != PIDX_success)
             {
               fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
@@ -686,11 +677,7 @@ int PIDX_file_io_per_process(PIDX_file_io_id io_id, PIDX_block_layout block_layo
               index = 0;
               count = (var_grp->variable[v]->hz_buffer[p]->end_hz_index[i] - var_grp->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
               //printf("A [%d] offset 0 Count %lld\n", i, (unsigned long long)count);
-#if !SIMULATE_IO
               ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
-#else
-              ret = write_read_samples(io_id, v, var0->hz_buffer[p]->start_hz_index[i], count, NULL, 0, block_layout, MODE);
-#endif
               if (ret != PIDX_success)
               {
                 fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
@@ -722,11 +709,7 @@ int PIDX_file_io_per_process(PIDX_file_io_id io_id, PIDX_block_layout block_layo
                   }
 
                   //printf("B [%d] offset %lld send offset %lld Count %lld\n", i, (unsigned long long)index, (unsigned long long)send_index, (unsigned long long)count);
-#if !SIMULATE_IO
                   ret = write_read_samples(io_id, v, index + var_grp->variable[v]->hz_buffer[p]->start_hz_index[i], count, var_grp->variable[v]->hz_buffer[p]->buffer[i], send_index, block_layout, MODE);
-#else
-                  ret = write_read_samples(io_id, v, index + var_grp->variable[v]->hz_buffer[p]->start_hz_index[i], count, NULL, send_index, block_layout, MODE);
-#endif
                   if (ret != PIDX_success)
                   {
                     fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
@@ -778,10 +761,7 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigne
   samples_per_file = io_id->idx_d->samples_per_block * io_id->idx->blocks_per_file;
 
   bytes_per_datatype = (var_grp->variable[variable_index]->bpv / 8) * (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]) / (io_id->idx->compression_factor);
-  
-#if !SIMULATE_IO
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * var_grp->variable[variable_index]->vps;
-#endif
   
   while (hz_count) 
   {
@@ -824,7 +804,6 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigne
     
     if(MODE == PIDX_WRITE)
     {
-#if !SIMULATE_IO
 #if PIDX_HAVE_MPI
 
 #ifdef PIDX_DUMP_IO
@@ -906,7 +885,6 @@ static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigne
         return PIDX_err_io;
       }
       close(fh);
-#endif
 #endif
     }
     if(MODE == PIDX_READ)

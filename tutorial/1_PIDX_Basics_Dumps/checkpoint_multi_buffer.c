@@ -33,7 +33,7 @@ static char output_file_template[512] = "test_idx";   ///< output IDX file Name 
 static int patch_count = 1;
 static int ***var_count;
 static int ***var_offset;
-static double   ***double_data;
+static float   ***float_data;
 static int partition_size[3] = {1, 1, 1};
 static char output_file_name[512] = "test.idx";
 static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list -i hdf5_file_names_list -f output_idx_file_name\n"
@@ -341,19 +341,19 @@ static void create_synthetic_simulation_data()
   unsigned long long i, j, k;
   //printf("creating data for rank %d\n", rank);
 
-  double_data = malloc(sizeof(double**) * variable_count);
+  float_data = malloc(sizeof(float**) * variable_count);
   for (var = 0; var < variable_count; var++)
   {
-    double_data[var] = malloc(sizeof(double*) * patch_count);
+    float_data[var] = malloc(sizeof(float*) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
-      double_data[var][p] = malloc(sizeof (double) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2]);
+      float_data[var][p] = malloc(sizeof (float) * var_count[var][p][0] * var_count[var][p][1] * var_count[var][p][2]);
       for (k = 0; k < var_count[var][p][2]; k++)
         for (j = 0; j < var_count[var][p][1]; j++)
           for (i = 0; i < var_count[var][p][0]; i++)
           {
             int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
-            double_data[var][p][index] = var + 100 + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
+            float_data[var][p][index] = var + 100 + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
           }
     }
   }
@@ -365,10 +365,10 @@ static void destroy_synthetic_simulation_data()
   for (var = 0; var < variable_count; var++)
   {
     for(p = 0 ; p < patch_count ; p++)
-      free(double_data[var][p]);
-    free(double_data[var]);
+      free(float_data[var][p]);
+    free(float_data[var]);
   }
-  free(double_data);  double_data = 0;
+  free(float_data);  float_data = 0;
 }
 
 ///< Parse the input arguments
@@ -488,7 +488,7 @@ int main(int argc, char **argv)
     PIDX_set_current_time_step(file, ts);
     PIDX_set_variable_count(file, variable_count);
     PIDX_set_block_count(file, 128);
-    //PIDX_set_io_mode(file, PIDX_RAW_IO);
+    PIDX_set_io_mode(file, PIDX_RAW_IO);
 
     //PIDX_point rst_box;
     //PIDX_set_point_5D(rst_box, 64,64,64,1,1);
@@ -501,12 +501,12 @@ int main(int argc, char **argv)
     {
       char variable_name[512];
       sprintf(variable_name, "variable_%d", var);
-      PIDX_variable_create(variable_name, sizeof(double) * 8, FLOAT64, &variable[var]);
+      PIDX_variable_create(variable_name, sizeof(float) * 8, FLOAT32, &variable[var]);
 
       for (p = 0 ; p < patch_count ; p++)
-        PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major);
+        PIDX_variable_write_data_layout(variable[var], local_offset_point[var][p], local_box_count_point[var][p], float_data[var][p], PIDX_row_major);
 
-      PIDX_append_and_write_variable(file, variable[var]/*, local_offset_point[var][p], local_box_count_point[var][p], double_data[var][p], PIDX_row_major*/);
+      PIDX_append_and_write_variable(file, variable[var]/*, local_offset_point[var][p], local_box_count_point[var][p], float_data[var][p], PIDX_row_major*/);
     }
 
     PIDX_close(file);

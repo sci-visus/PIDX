@@ -171,6 +171,15 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, access_type->comm);
 #endif
 
+  (*file)->idx->flip_endian = 0;
+
+  unsigned int endian = 1;
+  char *c = (char*)&endian;
+  if (*c)
+    (*file)->idx->endian = 1;
+  else
+    (*file)->idx->endian = 0;
+
   (*file)->idx_d->time->file_create_time = PIDX_get_time();
 
   return PIDX_success;

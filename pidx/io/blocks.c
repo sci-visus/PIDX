@@ -182,6 +182,8 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
       return PIDX_err_file;
     }
   }
+
+  return PIDX_success;
 }
 
 
