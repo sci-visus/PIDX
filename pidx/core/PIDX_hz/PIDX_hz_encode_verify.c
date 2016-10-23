@@ -22,7 +22,6 @@
 
 PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 {
-#if !SIMULATE_IO
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
   int i = 0, k = 0, b = 0, v = 0;
   unsigned long long global_hz, element_count = 0, lost_element_count = 0;
@@ -143,7 +142,6 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
     if (rank == 0)
       fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
   }
-#endif
 #endif
   return PIDX_success;
 }

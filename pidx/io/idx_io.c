@@ -67,7 +67,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   time->idx_hz_end = PIDX_get_time();
 
 
-#if 1
+
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
   time->idx_layout_start = PIDX_get_time();
@@ -116,7 +116,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   }
   time->idx_io_end = PIDX_get_time();
 
-
+#if 1
   // Cleanup all buffers nd ids
   time->buffer_cleanup_start = PIDX_get_time();
   ret = destroy_agg_io_buffer(file);

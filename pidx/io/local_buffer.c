@@ -345,15 +345,15 @@ PIDX_return_code wait_and_destroy_async_buffers(PIDX_io file, int gi, int agg_io
 }
 
 
-PIDX_return_code finalize_aggregation(PIDX_io file, int start_index, int gi, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared)
+PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   destroy_file_zero_ids_and_buffers(file, start_index, var_grp->f0_start_layout_index, var_grp->f0_end_layout_index, agg_io_level_file_zero);
 
-  destroy_non_shared_ids_and_buffers(file, start_index, var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index, agg_io_level_non_shared);
-
   destroy_shared_ids_and_buffers(file, start_index, var_grp->shared_start_layout_index, var_grp->shared_end_layout_index, agg_io_level_shared);
+
+  destroy_non_shared_ids_and_buffers(file, start_index, var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index, agg_io_level_non_shared);
 
   return PIDX_success;
 }

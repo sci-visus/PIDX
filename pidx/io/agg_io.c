@@ -119,7 +119,6 @@ static PIDX_return_code PIDX_global_async_io(PIDX_io file, PIDX_file_io_id **io_
       }
       time->io_end[var_index][j] = PIDX_get_time();
     }
-
   }
 
   if (file->idx_dbg->debug_do_io == 1)
