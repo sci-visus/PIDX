@@ -84,6 +84,9 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->idx_comm_create_end = PIDX_get_time();
 
+  if (var_grp->variable[svi]->patch_group_count == 0)
+    goto cleanup;
+
 
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
@@ -119,7 +122,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   }
   time->idx_agg_end = PIDX_get_time();
-
+#if 1
   // Performs data io
   time->idx_io_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + (/*idx->var_pipe_length + */1))
@@ -154,7 +157,8 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   ret = restructure_cleanup(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->buffer_cleanup_end = PIDX_get_time();
-
+#endif
+  cleanup:
   return PIDX_success;
 }
 
@@ -425,6 +429,8 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi)
 
     hz_from_non_shared = idx->total_partiton_level;
     hz_to_non_shared =  idx->maxh;
+
+    //printf("S %d %d NS %d %d\n", hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
   }
   else if (file->idx->io_type == PIDX_IDX_IO)
   {

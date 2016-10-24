@@ -82,6 +82,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
 
   MPI_Comm_size(id->comm, &nprocs);
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
+  //printf("DDDDDDDDDD %d %d\n", lbl->efc, ab->agg_f);
 
   ab->aggregator_interval = nprocs / ((id->li - id->fi + 1) * lbl->efc * ab->agg_f);
   assert(ab->aggregator_interval != 0);

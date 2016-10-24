@@ -11,6 +11,10 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
+  //printf("F0: %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
+  //printf("SL: %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
+  //printf("NS: %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);
+
   if (var_grp->shared_start_layout_index != var_grp->shared_end_layout_index)
   {
     ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, var_grp->shared_block_layout);
@@ -34,6 +38,7 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
     }
     else
     {
+      //printf("Filename %s\n", file->idx->filename_global);
       ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_global, file->idx->filename_template_global, var_grp->nshared_block_layout);
       if (ret != PIDX_success)
       {

@@ -53,6 +53,7 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
       }
       else
       {
+
         restructure_tag:
         PIDX_rst_auto_set_reg_patch_size(file->rst_id, factor);
 

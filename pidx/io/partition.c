@@ -100,7 +100,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
     }
     free(reg_patch);
   }
-  else
+  else if (var->patch_group_count > 1)
     printf("RST artifact\n");
 
 
@@ -184,15 +184,6 @@ PIDX_return_code find_partition_count(PIDX_io file)
 
       file->idx_d->partition_count[d] = pow(2, (int)ceil(log2(file->idx_d->partition_count[d])));
   }
-
-  idx->shared_block_level = (int)log2(idx->partition_count[0] * idx->partition_count[1] * idx->partition_count[2]) + file->idx->bits_per_block + 1;
-  if (idx->shared_block_level >= idx->maxh)
-    idx->shared_block_level = idx->maxh;
-
-  int partion_level = (int) log2(idx->partition_count[0] * idx->partition_count[1] * idx->partition_count[2]);
-  idx->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
-  if (idx->total_partiton_level >= idx->maxh)
-    idx->total_partiton_level = idx->maxh;
 
   return PIDX_success;
 }

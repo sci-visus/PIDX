@@ -90,7 +90,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       memset(allign_count, 0, sizeof (int*) * maxH);
 
       for (j = 0; j < maxH; j++)
-      //for (j = id->resolution_from; j < maxH - id->resolution_to; j++)
       {
         allign_offset[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
         memset(allign_offset[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
@@ -104,7 +103,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-        //assert(var->chunk_patch_group[p]->reg_patch_offset[d] % id->idx->chunk_size[d] == 0);
         tpatch[0][d] = var->chunk_patch_group[p]->reg_patch->offset[d] / id->idx->chunk_size[d];
 
         if (var->chunk_patch_group[p]->reg_patch->size[d] % id->idx->chunk_size[d] == 0)
@@ -131,7 +129,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
       }
-
 
       for (j = 0; j < maxH; j++)
       {

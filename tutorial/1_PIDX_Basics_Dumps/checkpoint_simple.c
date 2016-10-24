@@ -386,9 +386,10 @@ int main(int argc, char **argv)
     //PIDX_point reg_patch_size;
     //PIDX_set_point_5D(reg_patch_size, 128, 32, 128, 1, 1);
     //PIDX_set_restructuring_box(file, reg_patch_size);
-
-    //ret = PIDX_set_io_mode(file, PIDX_RAW_IO);
-    //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
+    //PIDX_GLOBAL_PARTITION_IDX_IO
+    //PIDX_IDX_IO
+    ret = PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);
+    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
     ret = PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_partition_size");

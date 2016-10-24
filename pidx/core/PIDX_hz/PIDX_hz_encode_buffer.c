@@ -41,14 +41,11 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
       bytes_for_datatype = ((var->bpv / 8) * chunk_size * var->vps) / id->idx->compression_factor;
       if (var->chunk_patch_group[p]->type == 1 || var->chunk_patch_group[p]->type == 2)
       {
-        //for (c = 0 ; c < maxH ; c++)
         for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
         {
           unsigned long long samples_per_level = (var->hz_buffer[p]->end_hz_index[c] - var->hz_buffer[p]->start_hz_index[c] + 1);
           var->hz_buffer[p]->buffer[c] = malloc(bytes_for_datatype * samples_per_level);
           memset(var->hz_buffer[p]->buffer[c], 0, bytes_for_datatype * samples_per_level);
-          //if (rank == 1)
-          //printf("[%d] Buffer size on level %d = %d %d\n", v, c, samples_per_level, bytes_for_datatype);
         }
       }
     }
@@ -58,7 +55,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 }
 
 
-/* tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well */
+/// tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well
 PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
 {
   int itr = 0, p = 0, v = 0;

@@ -94,6 +94,17 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
   if (file->idx_d->perm_layout_count <= 0)
     file->idx_d->perm_layout_count = 1;
 
+  file->idx_d->shared_block_level = (int)log2(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]) + file->idx->bits_per_block + 1;
+  if (file->idx_d->shared_block_level >= file->idx_d->maxh)
+    file->idx_d->shared_block_level = file->idx_d->maxh;
+
+  int partion_level = (int) log2(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
+  file->idx_d->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
+  if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
+    file->idx_d->total_partiton_level = file->idx_d->maxh;
+
+  //printf("%d [%d %d %d] XXXXXXXXXXXXXXXXXXX %d maxh %d [%d %d]\n", partion_level, idx->partition_count[0], idx->partition_count[1], idx->partition_count[2], idx->total_partiton_level, idx->maxh, file->idx->bits_per_block, (int)log2(file->idx->blocks_per_file));
+
   if (cb[0] == 0 && cb[1] == 0 && cb[2] == 0)
   {
     file->idx_d->maxh = 0;
@@ -135,6 +146,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
     }
   }
 
+
   if (hz_from_shared == hz_to_shared)
   {
     var_grp->shared_start_layout_index = 0;
@@ -158,7 +170,6 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
       return PIDX_err_file;
     }
   }
-
 
   if (hz_from_non_shared == hz_to_non_shared)
   {
