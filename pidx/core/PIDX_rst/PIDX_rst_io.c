@@ -631,8 +631,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     unsigned long long sim_patch_countx[PIDX_MAX_DIMENSIONS];
 
     unsigned char ***temp_patch_buffer;
-    temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi));
-    memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (evi - svi));
+    temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi + 1));
+    memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (evi - svi + 1));
     for (i = 0; i <= (evi - svi); i++)
     {
       PIDX_variable var = var_grp->variable[i + svi];

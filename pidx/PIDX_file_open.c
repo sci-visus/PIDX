@@ -103,6 +103,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   for (i=0;i<PIDX_MAX_DIMENSIONS;i++)
     (*file)->idx->chunk_size[i] = 1;
 
+  (*file)->idx->variable_group_count = 1;
   (*file)->idx_d->dimension = 0;
   (*file)->idx_d->samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
   (*file)->idx_d->maxh = 0;
@@ -394,6 +395,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->comm);
+    MPI_Bcast(&((*file)->idx->variable_grp[0]->variable_count), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx_d->data_core_count), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast((*file)->idx_d->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->comm);
@@ -473,9 +475,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   int current_endian = 0;
   char *c = (char*)&endian;
   if (*c)
-    current_endian = 0;
-  else
     current_endian = 1;
+  else
+    current_endian = 0;
 
   if (current_endian == (*file)->idx->endian)
     (*file)->idx->flip_endian = 0;

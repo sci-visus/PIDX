@@ -21,7 +21,7 @@
 #include <stdint.h>
 #include <PIDX.h>
 
-
+#define MAX_VAR_COUNT 128
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
 
@@ -36,6 +36,13 @@ static int ***var_offset;
 static float   ***float_data;
 static int partition_size[3] = {1, 1, 1};
 static char output_file_name[512] = "test.idx";
+
+static char var_list[512] = "var_list";
+static char var_name[MAX_VAR_COUNT][512];
+static char type_name[MAX_VAR_COUNT][512];
+static int bpv[MAX_VAR_COUNT];
+static int vps[MAX_VAR_COUNT];
+
 static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list -i hdf5_file_names_list -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./hdf5-to-idx -g 4x4x4 -l 2x2x2 -f Filename_ -v var_list -i hdf5_file_names_list\n"
                      "  -g: global dimensions\n"
@@ -44,6 +51,7 @@ static char *usage = "Serial Usage: ./hdf5-to-idx -g 4x4x4 -l 4x4x4 -v var_list 
                      "  -i: file containing list of input hdf5 files\n"
                      "  -v: file containing list of input fields\n";
 
+static int parse_var_list();
 //----------------------------------------------------------------
 static void terminate()
 {
@@ -410,9 +418,10 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid time step count\n%s", usage);
       break;
 
-    case('v'): // a file with a list of variables
-      if (sscanf(optarg, "%d", &variable_count) < 0)
-        terminate_with_error_msg("Invalid variable count\n%s", usage);
+    case('v'): // number of variables
+      if (sprintf(var_list, "%s", optarg) < 0)
+        terminate_with_error_msg("Invalid output file name template\n%s", usage);
+      parse_var_list();
       break;
 
     case('r'): // a file with a list of variables
@@ -490,9 +499,9 @@ int main(int argc, char **argv)
     PIDX_set_block_count(file, 128);
     PIDX_set_io_mode(file, PIDX_RAW_IO);
 
-    //PIDX_point rst_box;
-    //PIDX_set_point_5D(rst_box, 64,64,64,1,1);
-    //PIDX_set_restructuring_box(file, rst_box);
+    PIDX_point rst_box;
+    PIDX_set_point_5D(rst_box, 64,64,64,1,1);
+    PIDX_set_restructuring_box(file, rst_box);
 
     PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);
 
@@ -523,10 +532,106 @@ int main(int argc, char **argv)
   free(local_offset_point);
   free(local_box_count_point);
 
+
+  int i = 0;
+  for(var = 0; var < variable_count; var++)
+  {
+    for(i = 0; i < patch_count ; i++)
+    {
+      free(var_count[var][i]);
+      free(var_offset[var][i]);
+    }
+    free(var_count[var]);
+    free(var_offset[var]);
+  }
+  free(var_count);
+  free(var_offset);
+
   free(variable);
   variable = 0;
 
   shutdown_mpi();
 
   return 0;
+}
+
+
+static int parse_var_list()
+{
+  FILE *fp = fopen(var_list, "r");
+  if (fp == NULL)
+  {
+    fprintf(stdout, "Error Opening %s\n", var_list);
+    return PIDX_err_file;
+  }
+
+  int variable_counter = 0, count = 0, len = 0;
+  char *pch1;
+  char line [ 512 ];
+
+  while (fgets(line, sizeof (line), fp) != NULL)
+  {
+    //printf("%s", line);
+    line[strcspn(line, "\r\n")] = 0;
+
+    if (strcmp(line, "(fields)") == 0)
+    {
+      if( fgets(line, sizeof line, fp) == NULL)
+        return PIDX_err_file;
+      line[strcspn(line, "\r\n")] = 0;
+      count = 0;
+      variable_counter = 0;
+
+      while (line[0] != '(')
+      {
+        pch1 = strtok(line, " +");
+        while (pch1 != NULL)
+        {
+          if (count == 0)
+          {
+            char* temp_name = strdup(pch1);
+            strcpy(var_name[variable_counter], temp_name);
+            free(temp_name);
+          }
+
+          if (count == 1)
+          {
+            len = strlen(pch1) - 1;
+            if (pch1[len] == '\n')
+              pch1[len] = 0;
+
+            strcpy(type_name[variable_counter], pch1);
+            int ret;
+            int bits_per_sample = 0;
+            ret = PIDX_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
+            if (ret != PIDX_success)  return PIDX_err_file;
+
+            bpv[variable_counter] = bits_per_sample;
+            vps[variable_counter] = 1;
+          }
+          count++;
+          pch1 = strtok(NULL, " +");
+        }
+        count = 0;
+
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+        variable_counter++;
+      }
+      variable_count = variable_counter;
+    }
+  }
+  fclose(fp);
+
+  int rank = 0;
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank == 0)
+  {
+    int v = 0;
+    for(v = 0; v < variable_count; v++)
+      printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
+  }
+
+  return PIDX_success;
 }
