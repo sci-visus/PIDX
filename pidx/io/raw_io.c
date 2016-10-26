@@ -7,7 +7,6 @@
 #include "hz_buffer.h"
 #include "agg_io.h"
 
-
 PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
 {
   PIDX_time time = file->idx_d->time;
@@ -98,20 +97,3 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
 
   return PIDX_success;
 }
-
-
-#if 0
-static PIDX_return_code init(PIDX_io file, int gi)
-{
-  int d = 0;
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-  {
-    if (file->idx->bounds[d] % file->idx->chunk_size[d] == 0)
-      file->idx->chunked_bounds[d] = (int) file->idx->bounds[d] / file->idx->chunk_size[d];
-    else
-      file->idx->chunked_bounds[d] = (int) (file->idx->bounds[d] / file->idx->chunk_size[d]) + 1;
-  }
-
-  return PIDX_success;
-}
-#endif

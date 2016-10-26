@@ -5,7 +5,7 @@ static PIDX_return_code PIDX_global_async_io(PIDX_io file, PIDX_file_io_id **io_
 static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, MPI_Comm comm, int init_index, int var_index, int layout_start, int agg_io_level, int file_status, int agg_mode, int mode);
 
 
-PIDX_return_code data_io(PIDX_io file, int gi, int svi, int start_index, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared, int mode )
+PIDX_return_code data_io(PIDX_io file, int gi, int svi, int start_index, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared, int mode)
 {
   int ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -162,8 +162,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int svi, int start_index, 
     return PIDX_err_file;
   }
 
-  if (rank == 0)
-    printf("[%d] %d %d\n", nprocs, var_grp->shared_start_layout_index, agg_io_level_shared);
+#if 1
   ret = PIDX_global_aggregate(file,
                               file->shared_agg_id,
                               idx->shared_agg_buffer,
@@ -178,7 +177,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int svi, int start_index, 
     return PIDX_err_file;
   }
 
-#if 1
+
   ret = PIDX_global_aggregate(file,
                               file->nshared_agg_id,
                               idx->nshared_agg_buffer,

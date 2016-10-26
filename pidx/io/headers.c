@@ -188,15 +188,15 @@ PIDX_return_code one_time_initialize(PIDX_io file, int mode, int io_type)
 
     PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
 
-    if (mode == PIDX_WRITE && io_type != PIDX_IDX_IO)
-    {
+    //if (mode == PIDX_WRITE && io_type != PIDX_IDX_IO)
+    //{
       PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
 
       PIDX_file_initialize_time_step(file, file->idx->filename_partition, file->idx->filename_template_partition, file->idx->current_time_step);
 
       PIDX_file_initialize_time_step(file, file->idx->filename_file_zero, file->idx->filename_template_file_zero, file->idx->current_time_step);
 
-    }
+    //}
 
     total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
     file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;

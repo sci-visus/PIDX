@@ -163,7 +163,7 @@ static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_i
 {
   int i = 0;
   int ret;
-  for (i = start_layout_index_shared; i < (agg_io_level_shared); i++)
+  for (i = start_layout_index_shared; i < agg_io_level_shared; i++)
   {
     ret = PIDX_agg_buf_destroy(file->idx_d->shared_agg_buffer[start_index][i]);
     if (ret != PIDX_success)

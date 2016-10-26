@@ -173,8 +173,6 @@ PIDX_return_code destroy_local_comm(PIDX_io file)
 PIDX_return_code find_partition_count(PIDX_io file)
 {
   int d = 0;
-  idx_dataset_derived_metadata idx = file->idx_d;
-
   // calculate number of partitions
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {

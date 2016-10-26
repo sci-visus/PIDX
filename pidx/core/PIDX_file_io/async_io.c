@@ -60,12 +60,13 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
 {
   unsigned long long data_offset = 0;
   char file_name[PATH_MAX];
-  int i = 0, k = 0;
+  int i = 0;
   MPI_File fp;
   uint32_t *headers;
   int ret;
   MPI_Status status;
 
+#if 1
   int tck = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
   if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
   {
@@ -129,6 +130,7 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
     MPI_File_close(&fp);
     free(headers);
   }
+#endif
 
   return PIDX_success;
 }

@@ -187,15 +187,14 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         while (pch != NULL)
         {
           if (count % 2 == 1)
-            (*file)->idx_d->partition_count[count / 2] = atoi(pch) + 1;
+            (*file)->idx_d->partition_count[count / 2] = atoi(pch);
           count++;
           pch = strtok(NULL, " ");
         }
       }
 
-      if (strcmp(line, "(raw_dump)") == 0)
+      if (strcmp(line, "(restructure box size)") == 0)
       {
-        (*file)->idx->io_type = PIDX_RAW_IO;
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
@@ -216,6 +215,24 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
         (*file)->idx_d->data_core_count = atoi(line);
+      }
+
+      if (strcmp(line, "(io mode)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+        int mode = atoi(line);
+
+        printf("io mode %d\n", mode);
+        if (mode == 1)
+          (*file)->idx->io_type = PIDX_IDX_IO;
+        else if (mode == 2)
+          (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
+        else if (mode == 3)
+          (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
+        else if (mode == 4)
+          (*file)->idx->io_type = PIDX_RAW_IO;
       }
 
       if (strcmp(line, "(endian)") == 0)

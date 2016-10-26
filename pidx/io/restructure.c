@@ -44,11 +44,11 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
         /// Finding the regular power two box dimensions
         if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
         {
-            PIDX_rst_set_reg_patch_size(file->rst_id, file->idx->reg_patch_size);
+          PIDX_rst_set_reg_patch_size(file->rst_id, file->idx->reg_patch_size);
 
-            /// Creating the metadata to perform retructuring
-            ret = PIDX_rst_meta_data_create(file->rst_id);
-            if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          /// Creating the metadata to perform retructuring
+          ret = PIDX_rst_meta_data_create(file->rst_id);
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
         }
       }
       else

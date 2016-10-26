@@ -39,10 +39,10 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 #define PIDX_row_major                           0
 #define PIDX_column_major                        1
 
-#define PIDX_RAW_IO                                   1
-#define PIDX_IDX_IO                                   2
+#define PIDX_IDX_IO                                   1
+#define PIDX_GLOBAL_PARTITION_IDX_IO                  2
 #define PIDX_LOCAL_PARTITION_IDX_IO                   3
-#define PIDX_GLOBAL_PARTITION_IDX_IO                  4
+#define PIDX_RAW_IO                                   4
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256
