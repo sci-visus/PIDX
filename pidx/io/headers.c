@@ -177,7 +177,7 @@ PIDX_return_code init_raw_headers_layout(PIDX_io file, int group_index, int star
 
 
 
-PIDX_return_code one_time_initialize(PIDX_io file, int mode, int io_type)
+PIDX_return_code one_time_initialize(PIDX_io file)
 {
   int total_header_size;
   /// Initialization ONLY ONCE per IDX file

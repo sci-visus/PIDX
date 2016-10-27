@@ -76,10 +76,17 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
   file_name_skeleton[strlen(filename) - 4] = '\0';
 
+  sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_global, "%s.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_partition, "%s.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_file_zero, "%s.idx", file_name_skeleton);
+
+#if 0
   if ((*file)->idx_d->partition_count[0] == 1 && (*file)->idx_d->partition_count[1] == 1 && (*file)->idx_d->partition_count[2] == 1)
     sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   else
     sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
+#endif
 
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
@@ -224,7 +231,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         line[strcspn(line, "\r\n")] = 0;
         int mode = atoi(line);
 
-        printf("io mode %d\n", mode);
         if (mode == 1)
           (*file)->idx->io_type = PIDX_IDX_IO;
         else if (mode == 2)

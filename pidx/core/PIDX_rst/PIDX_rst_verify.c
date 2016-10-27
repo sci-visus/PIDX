@@ -72,9 +72,9 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
               {
                 if (strcmp(var->type_name, FLOAT32) == 0)
                 {
-                  fvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_d->color * bounds[0] * bounds[1] * bounds[2]);
+                  fvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i;
                   memcpy(&fvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
-                  \
+                  //printf("%f %f\n", fvalue_1, fvalue_2);
                   check_bit = check_bit && (fvalue_1 == fvalue_2);
                 }
                 else if (strcmp(var->type_name, FLOAT64) == 0)

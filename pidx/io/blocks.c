@@ -1,8 +1,8 @@
 #include "../PIDX_inc.h"
 
-static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int group_index, int start_index, int end_index, int hz_level_from, int hz_level_to, int io_type);
+static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int group_index, int start_index, int hz_level_from, int hz_level_to, int io_type);
 
-static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level, int io_type);
+static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level, int io_type);
 
 static PIDX_return_code create_file_zero_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to);
 static PIDX_return_code create_shared_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to);
@@ -12,7 +12,7 @@ static PIDX_return_code destroy_file_zero_block_layout(PIDX_io file, int gi);
 static PIDX_return_code destroy_shared_block_layout(PIDX_io file, int gi);
 static PIDX_return_code destroy_non_shared_block_layout(PIDX_io file, int gi);
 
-PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
+PIDX_return_code populate_bit_string(PIDX_io file, int mode)
 {
   int i = 0;
   int rank = 0;
@@ -115,7 +115,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode, int io_type)
 }
 
 
-PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, int hz_from_file_zero, int hz_to_file_zero, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared, int io_type)
+PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_from_file_zero, int hz_to_file_zero, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared, int io_type)
 {
   int ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -136,7 +136,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
                                var_grp->f0_end_layout_index,
                                var_grp->f0_layout_count,
                                gi,
-                               svi, evi,
+                               svi,
                                hz_from_file_zero, hz_to_file_zero,
                                io_type);
     if (ret != PIDX_success)
@@ -161,7 +161,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
                                var_grp->shared_start_layout_index, var_grp->shared_end_layout_index,
                                var_grp->shared_layout_count,
                                gi,
-                               svi, evi,
+                               svi,
                                hz_from_shared, hz_to_shared,
                                io_type);
     if (ret != PIDX_success)
@@ -184,7 +184,8 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
                                var_grp->nshared_block_layout, var_grp->nshared_block_layout_by_level,
                                var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index,
                                var_grp->nshared_layout_count,
-                               gi,  svi, evi,
+                               gi,
+                               svi,
                                hz_from_non_shared, hz_to_non_shared,
                                io_type);
     if (ret != PIDX_success)
@@ -198,7 +199,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int evi, 
 }
 
 
-PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, int end_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level, int io_type)
+static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_index, PIDX_block_layout block_layout, int lower_hz_level, int higher_hz_level, int io_type)
 {
   int i, j;
   int p = 0, ctr = 1;
@@ -678,7 +679,7 @@ PIDX_return_code create_non_shared_block_layout(PIDX_io file, int gi, int hz_lev
 
 
 
-static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int ei, int hz_level_from, int hz_level_to, int io_type)
+static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int hz_level_from, int hz_level_to, int io_type)
 {
   int rank = 0;
   int nprocs = 1;
@@ -725,7 +726,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       return PIDX_err_file;
     }
 
-    ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[0], lower_level_low_layout, higher_level_low_layout, io_type);
+    ret_code = populate_idx_layout(file, gi, si, layout_by_level[0], lower_level_low_layout, higher_level_low_layout, io_type);
     if (ret_code != PIDX_success)
     {
       fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);
@@ -756,7 +757,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i], lower_level_higher_layout, higher_level_higher_layout, io_type);
+      ret_code = populate_idx_layout(file, gi, si, layout_by_level[i], lower_level_higher_layout, higher_level_higher_layout, io_type);
       if (ret_code != PIDX_success)
       {
         fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);
@@ -790,7 +791,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      ret_code = populate_idx_layout(file, gi, si, ei, layout_by_level[i - start_layout_index], lower_level_higher_layout, higher_level_higher_layout, io_type);
+      ret_code = populate_idx_layout(file, gi, si, layout_by_level[i - start_layout_index], lower_level_higher_layout, higher_level_higher_layout, io_type);
       if (ret_code != PIDX_success)
       {
         fprintf(stderr, "[%s] [%d ]Error in populate_idx_layout\n", __FILE__, __LINE__);

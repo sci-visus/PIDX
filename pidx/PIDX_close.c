@@ -107,7 +107,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
   }
-
+#if 0
   //if (file->idx->io_type == PIDX_IDX_IO)
   {
     double total_time = time->sim_end - time->sim_start;
@@ -215,6 +215,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       */
     }
   }
+#endif
 
 
   int j = 0;

@@ -42,19 +42,40 @@ struct PIDX_timming_struct
    double EX;
    double file_create_time;
 
-
    double idx_init_start, idx_init_end;
-   double idx_rst_start, idx_rst_end;
+
+   double idx_write_rst_init_start, idx_write_rst_init_end;
+   double idx_write_rst_start, idx_write_rst_end;
+   double idx_write_layout_start, idx_write_layout_end;
+   double idx_write_header_start, idx_write_header_end;
+   double idx_write_hz_init_start, idx_write_hz_init_end;
+   double idx_write_hz_start, idx_write_hz_end;
+   double idx_write_agg_init_start, idx_write_agg_init_end;
+   double idx_write_agg_start, idx_write_agg_end;
+   double idx_write_io_start, idx_write_io_end;
+   double idx_write_buffer_cleanup_start, idx_write_buffer_cleanup_end;
+
+
+   double idx_read_rst_init_start, idx_read_rst_init_end;
+   double idx_read_rst_start, idx_read_rst_end;
+   double idx_read_layout_start, idx_read_layout_end;
+   double idx_read_header_start, idx_read_header_end;
+   double idx_read_hz_init_start, idx_read_hz_init_end;
+   double idx_read_hz_start, idx_read_hz_end;
+   double idx_read_agg_init_start, idx_read_agg_init_end;
+   double idx_read_agg_start, idx_read_agg_end;
+   double idx_read_io_start, idx_read_io_end;
+   double idx_read_buffer_cleanup_start, idx_read_buffer_cleanup_end;
+
+
    double idx_partition_start, idx_partition_end;
-   double idx_bit_string_start, idx_bit_string_end;
-   double idx_hz_start, idx_hz_end;
+
    double idx_comm_create_start, idx_comm_create_end;
-   double idx_layout_start, idx_layout_end;
-   double header_write_start, header_write_end;
-   double agg_buffer_start, agg_buffer_end;
-   double buffer_cleanup_start, buffer_cleanup_end;
-   double idx_agg_start, idx_agg_end;
-   double idx_io_start, idx_io_end;
+
+
+
+
+
 
 
    double partition_start_time;

@@ -39,7 +39,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
   if(maxH <= 0)
   {
-    fprintf(stderr, "[%s] [%d] maxH not set.\n", __FILE__, __LINE__);
+    fprintf(stderr, "[%s] [%d] maxH [%d] not set.\n", __FILE__, __LINE__, maxH);
     return PIDX_err_hz;
   }
 

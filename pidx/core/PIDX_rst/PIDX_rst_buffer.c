@@ -202,7 +202,12 @@ PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id, int mode)
               if (mode == PIDX_WRITE)
                 memcpy(out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
               else
+              {
+                //float cc1;
+                //memcpy(&cc1, out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), sizeof(float));
+                //printf("value = %f\n", cc1);
                 memcpy(var->rst_patch_group[g]->patch[r]->buffer + send_o, out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
+              }
 #endif
             }
           }

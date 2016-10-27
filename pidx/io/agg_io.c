@@ -217,10 +217,6 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
   for(j = layout_start ; j < agg_io_level; j++)
   {
     j_1 = j - layout_start;
-    //PIDX_agg_id temp_id = agg_id[var_index][j];
-    //Agg_buffer temp_agg = agg_buffer[var_index][j];
-    //PIDX_block_layout temp_layout = block_layout_by_level[j_1];
-
     if (agg_mode == 0 || agg_mode == 1)
     {
       agg_id[var_index][j] = PIDX_agg_init(file->idx, file->idx_d, init_index, var_index, var_index);
@@ -250,11 +246,8 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
         return PIDX_err_agg;
       }
 
-
       time->agg_meta_start[var_index][j] = PIDX_get_time();
       //if (rank == 0)
-      //{
-      //    printf("[%d (%d %d)] j = %d\n", file_status, layout_start, agg_io_level, j);
       ret = PIDX_agg_meta_data_create(agg_id[var_index][j], agg_buffer[var_index][j], block_layout_by_level[j_1]);
       if (ret != PIDX_success)
       {

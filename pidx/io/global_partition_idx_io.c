@@ -24,26 +24,26 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
 
   // Calculate bounds with compression and
   // populate rank buffer
-  time->idx_init_start = MPI_Wtime();
+  //time->idx_init_start = MPI_Wtime();
   ret = init(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_init_end = MPI_Wtime();
+  //time->idx_init_end = MPI_Wtime();
 
 
   // Restructuring the grid into power two blocks
   // After this step every process has got a power two block
   // 15 x 31 x 10 ---> 16 x 32 x 16
-  time->idx_rst_start = MPI_Wtime();
+  //time->idx_rst_start = MPI_Wtime();
   ret = restructure_init(file, gi, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   ret = restructure(file, PIDX_WRITE);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_rst_end = MPI_Wtime();
+  //time->idx_rst_end = MPI_Wtime();
 
 
   // Calculates the number of partititons
-  time->idx_partition_start = PIDX_get_time();
+  //time->idx_partition_start = PIDX_get_time();
   ret = find_partition_count(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
@@ -52,78 +52,78 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   // processes within the same partition
   ret = partition_setup(file, gi, svi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_partition_end = PIDX_get_time();
+  //time->idx_partition_end = PIDX_get_time();
 
 
   // calculates maxh and bitstring
-  time->idx_bit_string_start = PIDX_get_time();
-  ret = populate_bit_string(file, PIDX_WRITE, PIDX_GLOBAL_PARTITION_IDX_IO);
+  //time->idx_bit_string_start = PIDX_get_time();
+  ret = populate_bit_string(file, PIDX_WRITE);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   // selects levels based on mode and maxh
   select_io_mode(file, gi);
 
   // computes the filename temlates
-  ret = one_time_initialize(file, PIDX_WRITE, PIDX_GLOBAL_PARTITION_IDX_IO);
+  ret = one_time_initialize(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_bit_string_end = PIDX_get_time();
+  //time->idx_bit_string_end = PIDX_get_time();
 
 
   // Splits the global communicator into local communicators
   // Essential for MPI scaling
-  time->idx_comm_create_start = PIDX_get_time();
+  //time->idx_comm_create_start = PIDX_get_time();
   ret = create_local_comm(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_comm_create_end = PIDX_get_time();
+  //time->idx_comm_create_end = PIDX_get_time();
 
   if (var_grp->variable[svi]->patch_group_count == 0)
     goto cleanup;
 
   // Reorders data using HZ index scheme
   // Chunks data and compresses using ZFP
-  time->idx_hz_start = PIDX_get_time();
+  //time->idx_hz_start = PIDX_get_time();
   ret = create_hz_buffers(file, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_hz_end = PIDX_get_time();
+  //time->idx_hz_end = PIDX_get_time();
 
 
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
-  time->idx_layout_start = PIDX_get_time();
-  ret = populate_block_layouts(file, gi, svi, evi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
+  //time->idx_layout_start = PIDX_get_time();
+  ret = populate_block_layouts(file, gi, svi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_layout_end = PIDX_get_time();
+  //time->idx_layout_end = PIDX_get_time();
 
 
   // Creates the file heirarchy
   // Also writes the header info for all binary files
-  time->header_write_start = PIDX_get_time();
+  //time->header_write_start = PIDX_get_time();
   ret = write_headers(file, gi, svi, evi, 0);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->header_write_end = PIDX_get_time();
+  //time->header_write_end = PIDX_get_time();
 
 
   // Creates the agg and io ids
-  time->agg_buffer_start = PIDX_get_time();
+  //time->agg_buffer_start = PIDX_get_time();
   ret = create_agg_io_buffer(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   ret = find_agg_level(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->agg_buffer_end = PIDX_get_time();
+  //time->agg_buffer_end = PIDX_get_time();
 
 
   // Performs data aggregation
-  time->idx_agg_start = PIDX_get_time();
+  //time->idx_agg_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + 1)
   {
     ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, 0, PIDX_WRITE);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   }
-  time->idx_agg_end = PIDX_get_time();
+  //time->idx_agg_end = PIDX_get_time();
 #if 1
   // Performs data io
-  time->idx_io_start = PIDX_get_time();
+  //time->idx_io_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + (/*idx->var_pipe_length + */1))
   {
     create_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
@@ -134,11 +134,11 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     wait_and_destroy_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
     finalize_aggregation(file, gi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared);
   }
-  time->idx_io_end = PIDX_get_time();
+  //time->idx_io_end = PIDX_get_time();
 
 
   // Cleanup all buffers nd ids
-  time->buffer_cleanup_start = PIDX_get_time();
+  //time->buffer_cleanup_start = PIDX_get_time();
   ret = destroy_agg_io_buffer(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
@@ -157,7 +157,7 @@ cleanup:
 
   free(var_grp->rank_buffer);
 
-  time->buffer_cleanup_end = PIDX_get_time();
+  //time->buffer_cleanup_end = PIDX_get_time();
 #endif
 
   return PIDX_success;
@@ -175,78 +175,78 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
   // Calculate bounds with compression and
   // populate rank buffer
-  time->idx_init_start = MPI_Wtime();
+  //time->idx_init_start = MPI_Wtime();
   ret = init(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_init_end = MPI_Wtime();
+  //time->idx_init_end = MPI_Wtime();
 
 
   // Restructuring the grid into power two blocks
   // After this step every process has got a power two block
   // 15 x 31 x 10 ---> 16 x 32 x 16
-  time->idx_rst_start = MPI_Wtime();
+  //time->idx_rst_start = MPI_Wtime();
   ret = restructure_init(file, gi, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_rst_end = MPI_Wtime();
+  //time->idx_rst_end = MPI_Wtime();
 
 
-  time->idx_partition_start = PIDX_get_time();
+  //time->idx_partition_start = PIDX_get_time();
   // Setting up for partition
   // group processes (assign same color) to
   // processes within the same partition
   ret = partition_setup(file, gi, svi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_partition_end = PIDX_get_time();
+  //time->idx_partition_end = PIDX_get_time();
 
 
   // calculates maxh and bitstring
-  time->idx_bit_string_start = PIDX_get_time();
-  ret = populate_bit_string(file, PIDX_READ, PIDX_GLOBAL_PARTITION_IDX_IO);
+  //time->idx_bit_string_start = PIDX_get_time();
+  ret = populate_bit_string(file, PIDX_READ);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   // selects levels based on mode and maxh
   select_io_mode(file, gi);
 
   // computes the filename temlates
-  ret = one_time_initialize(file, PIDX_READ, PIDX_GLOBAL_PARTITION_IDX_IO);
+  ret = one_time_initialize(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_bit_string_end = PIDX_get_time();
+  //time->idx_bit_string_end = PIDX_get_time();
 
 
   // Splits the global communicator into local communicators
   // Essential for MPI scaling
-  time->idx_comm_create_start = PIDX_get_time();
+  //time->idx_comm_create_start = PIDX_get_time();
   ret = create_local_comm(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_comm_create_end = PIDX_get_time();
+  //time->idx_comm_create_end = PIDX_get_time();
 
   //if (var_grp->variable[svi]->patch_group_count == 0)
   //  goto cleanup;
 
   // Reorders data using HZ index scheme
   // Chunks data and compresses using ZFP
-  time->idx_hz_start = PIDX_get_time();
+  //time->idx_hz_start = PIDX_get_time();
   ret = setup_hz_buffers(file, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_hz_end = PIDX_get_time();
+  //time->idx_hz_end = PIDX_get_time();
 
 
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
-  time->idx_layout_start = PIDX_get_time();
-  ret = populate_block_layouts(file, gi, svi, evi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
+  //time->idx_layout_start = PIDX_get_time();
+  ret = populate_block_layouts(file, gi, svi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_layout_end = PIDX_get_time();
+  //time->idx_layout_end = PIDX_get_time();
 
 
   // Creates the agg and io ids
-  time->agg_buffer_start = PIDX_get_time();
+  //time->agg_buffer_start = PIDX_get_time();
   ret = create_agg_io_buffer(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   ret = find_agg_level(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->agg_buffer_end = PIDX_get_time();
+  //time->agg_buffer_end = PIDX_get_time();
 
   if (var_grp->variable[svi]->patch_group_count == 0)
     goto cleanup;
@@ -258,7 +258,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
 
   // Performs data io
-  time->idx_io_start = PIDX_get_time();
+  //time->idx_io_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + (/*idx->var_pipe_length + */1))
   {
     //create_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
@@ -268,10 +268,10 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
     //wait_and_destroy_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
   }
-  time->idx_io_end = PIDX_get_time();
+  //time->idx_io_end = PIDX_get_time();
 
   // Performs data aggregation
-  time->idx_agg_start = PIDX_get_time();
+  //time->idx_agg_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + 1)
   {
     ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, 2, PIDX_READ);
@@ -283,9 +283,9 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
     finalize_aggregation(file, gi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared);
   }
 
-  time->idx_agg_end = PIDX_get_time();
+  //time->idx_agg_end = PIDX_get_time();
 
-  ret = populate_hz_buffers(file);
+  ret = populate_hz_buffers(file, svi, evi, PIDX_READ);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   cleanup:
@@ -294,7 +294,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
 
   // Cleanup all buffers nd ids
-  time->buffer_cleanup_start = PIDX_get_time();
+  //time->buffer_cleanup_start = PIDX_get_time();
   ret = destroy_agg_io_buffer(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 #if 1
@@ -312,7 +312,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
   free(var_grp->rank_buffer);
 
-  time->buffer_cleanup_end = PIDX_get_time();
+  //time->buffer_cleanup_end = PIDX_get_time();
 #endif
 
   return PIDX_success;
@@ -332,27 +332,27 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
   // Calculate bounds with compression and
   // populate rank buffer
-  time->idx_init_start = MPI_Wtime();
+  //time->idx_init_start = MPI_Wtime();
   ret = init(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_init_end = MPI_Wtime();
+  //time->idx_init_end = MPI_Wtime();
 
 
   // Restructuring the grid into power two blocks
   // After this step every process has got a power two block
   // 15 x 31 x 10 ---> 16 x 32 x 16
-  time->idx_rst_start = MPI_Wtime();
+  //time->idx_rst_start = MPI_Wtime();
   ret = restructure_init(file, gi, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   //ret = restructure(file, gi, svi, evi);
   //if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_rst_end = MPI_Wtime();
+  //time->idx_rst_end = MPI_Wtime();
 
 
 
   // calculates maxh and bitstring
-  time->idx_bit_string_start = PIDX_get_time();
+  //time->idx_bit_string_start = PIDX_get_time();
   ret = populate_bit_string(file, PIDX_READ, PIDX_GLOBAL_PARTITION_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
@@ -362,12 +362,12 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
   // computes the filename temlates
   ret = one_time_initialize(file, PIDX_READ, PIDX_GLOBAL_PARTITION_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_bit_string_end = PIDX_get_time();
+  //time->idx_bit_string_end = PIDX_get_time();
 
 
 
   // Calculates the number of partititons
-  time->idx_partition_start = PIDX_get_time();
+  //time->idx_partition_start = PIDX_get_time();
   ret = find_partition_count(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
@@ -377,55 +377,55 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
   // processes within the same partition
   ret = partition_setup(file, gi, svi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_partition_end = PIDX_get_time();
+  //time->idx_partition_end = PIDX_get_time();
   */
 
 
 
   // Reorders data using HZ index scheme
   // Chunks data and compresses using ZFP
-  time->idx_hz_start = PIDX_get_time();
+  //time->idx_hz_start = PIDX_get_time();
   ret = setup_hz_buffers(file, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_hz_end = PIDX_get_time();
+  //time->idx_hz_end = PIDX_get_time();
 
 
   /*
   // Splits the global communicator into local communicators
   // Essential for MPI scaling
-  time->idx_comm_create_start = PIDX_get_time();
+  //time->idx_comm_create_start = PIDX_get_time();
   ret = create_local_comm(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_comm_create_end = PIDX_get_time();
+  //time->idx_comm_create_end = PIDX_get_time();
   */
 
 
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
-  time->idx_layout_start = PIDX_get_time();
-  ret = populate_block_layouts(file, gi, svi, evi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
+  //time->idx_layout_start = PIDX_get_time();
+  ret = populate_block_layouts(file, gi, svi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->idx_layout_end = PIDX_get_time();
+  //time->idx_layout_end = PIDX_get_time();
 
 
   /*
    // Creates the file heirarchy
   // Also writes the header info for all binary files
-  time->header_write_start = PIDX_get_time();
+  //time->header_write_start = PIDX_get_time();
   ret = write_headers(file, gi, svi, evi, 0);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->header_write_end = PIDX_get_time();
+  //time->header_write_end = PIDX_get_time();
   */
 
 
   // Creates the agg and io ids
-  time->agg_buffer_start = PIDX_get_time();
+  //time->agg_buffer_start = PIDX_get_time();
   ret = create_agg_io_buffer(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   ret = find_agg_level(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->agg_buffer_end = PIDX_get_time();
+  //time->agg_buffer_end = PIDX_get_time();
 
   for (start_index = svi; start_index < evi; start_index = start_index + 1)
   {
@@ -435,7 +435,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
 
   // Performs data io
-  time->idx_io_start = PIDX_get_time();
+  //time->idx_io_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + (/*idx->var_pipe_length + */1))
   {
     //create_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
@@ -445,23 +445,23 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
     //wait_and_destroy_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
   }
-  time->idx_io_end = PIDX_get_time();
+  //time->idx_io_end = PIDX_get_time();
 
   // Performs data aggregation
-  time->idx_agg_start = PIDX_get_time();
+  //time->idx_agg_start = PIDX_get_time();
   for (start_index = svi; start_index < evi; start_index = start_index + 1)
   {
     ret = data_aggregate(file, gi, svi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared, 2, PIDX_READ);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   }
   finalize_aggregation(file, gi, start_index, agg_l_f0, agg_l_shared, agg_l_nshared);
-  time->idx_agg_end = PIDX_get_time();
+  //time->idx_agg_end = PIDX_get_time();
 
   populate_hz_buffers(file);
   restructure(file, PIDX_READ);
 
   // Cleanup all buffers nd ids
-  time->buffer_cleanup_start = PIDX_get_time();
+  //time->buffer_cleanup_start = PIDX_get_time();
   ret = destroy_agg_io_buffer(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
@@ -478,9 +478,9 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
 
   ret = restructure_cleanup(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->buffer_cleanup_end = PIDX_get_time();
+  //time->buffer_cleanup_end = PIDX_get_time();
 
-  time->EX = PIDX_get_time();
+  //time->EX = PIDX_get_time();
 
   return PIDX_success;
 

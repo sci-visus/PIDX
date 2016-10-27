@@ -53,7 +53,6 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
       }
       else
       {
-
         restructure_tag:
         PIDX_rst_auto_set_reg_patch_size(file->rst_id, factor);
 
@@ -76,7 +75,6 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
           goto restructure_tag;
         }
       }
-
 
       /// Saving the metadata info needed for reading back the data.
       /// Especially when number of cores is different from number of cores
@@ -198,6 +196,8 @@ PIDX_return_code restructure(PIDX_io file, int mode)
       {
         ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_READ);
         if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        HELPER_rst(file->rst_id);
 
         ret = PIDX_rst_read(file->rst_id);
         if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}

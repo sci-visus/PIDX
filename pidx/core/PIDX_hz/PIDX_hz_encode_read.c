@@ -109,8 +109,10 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
                 hz_index = hz_order - var_grp->variable[v1]->hz_buffer[y]->start_hz_index[level];
                 bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
 
+                //float x;
+                //memcpy(&x, var_grp->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype), sizeof(float));
+                //printf("%f\n", x);
                 memcpy(var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype), var_grp->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype), bytes_for_datatype);
-
               }
             }
       }

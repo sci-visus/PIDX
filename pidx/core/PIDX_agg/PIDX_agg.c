@@ -82,7 +82,6 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
 
   MPI_Comm_size(id->comm, &nprocs);
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
-  //printf("DDDDDDDDDD %d %d\n", lbl->efc, ab->agg_f);
 
   ab->aggregator_interval = nprocs / ((id->li - id->fi + 1) * lbl->efc * ab->agg_f);
   assert(ab->aggregator_interval != 0);
@@ -157,12 +156,23 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         Deinterleave(id->idx->bitPattern, (id->idx_d->maxh - 1), file_index, first);
 
         int calculated_rank = 0;
+#if 0
         int rank_x = first[0] / (var_grp->variable[id->fi]->sim_patch[0]->size[0]);
         int rank_y = first[1] / (var_grp->variable[id->fi]->sim_patch[0]->size[1]);
         int rank_z = first[2] / (var_grp->variable[id->fi]->sim_patch[0]->size[2]);
-
         int nrank_x = (id->idx->bounds[0] / var_grp->variable[id->fi]->sim_patch[0]->size[0]);
         int nrank_y = (id->idx->bounds[1] / var_grp->variable[id->fi]->sim_patch[0]->size[1]);
+#endif
+        int rank_x = first[0] / (id->idx->reg_patch_size[0]);
+        int rank_y = first[1] / (id->idx->reg_patch_size[1]);
+        int rank_z = first[2] / (id->idx->reg_patch_size[2]);
+        int nrank_x = (id->idx_d->partition_size[0] / id->idx->reg_patch_size[0]);
+        int nrank_y = (id->idx_d->partition_size[1] / id->idx->reg_patch_size[1]);
+
+#if 0
+        int nrank_x = (id->idx_d->partition_size[0] / id->idx->reg_patch_size[0]);
+        int nrank_y = (id->idx->bounds[1] / id->idx->reg_patch_size[1]);
+#endif
 
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
 
@@ -177,7 +187,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
           trank = gnprocs - 1;
 
         //if (rank == 0)
-        //  printf("[%d(%d) %d %d] CR %d AI %d trank %d\n", k, lbl->efc, i, j, calculated_rank, calculated_rank + var_offset * interval + (interval/2), trank);
+        //  printf("%d FC %d Bits %d FI %d :: %d %d [%d(%d) %d %d] CR %d [%d %d %d : %d %d %d : %d %d] AI %d trank %d\n", interval, file_count, bits, file_index, file_status, interval, k, lbl->efc, i, j, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank + var_offset * interval + (interval/2), trank);
 
         id->agg_r[k][i - id->fi][j] = trank;
 

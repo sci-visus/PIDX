@@ -287,18 +287,20 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
           else
           {
-            //printf("CB Size = %d\n", out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]);
-            //int rank;
-            //MPI_Comm_rank(chunk_id->global_comm, &rank);
-            //int sc = 0;
-            //for (sc = 0; sc < (out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]); sc++)
-            //{
-            //  double xx;
-            //  memcpy(&xx, in_patch->reg_patch->buffer + sc * sizeof(double), sizeof(double));
+            /*
+            printf("CB Size = %d\n", out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]);
+            int rank;
+            MPI_Comm_rank(chunk_id->comm, &rank);
+            int sc = 0;
+            for (sc = 0; sc < (out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]); sc++)
+            {
+              float xx;
+              memcpy(&xx, out_patch->patch[j]->buffer + sc * sizeof(float), sizeof(float));
 
-              //if (rank == 0)
-              //  printf("Value at %d = %f\n", sc,  xx);
-            //}
+              if (rank == 0)
+                printf("Value at %d = %f\n", sc,  xx);
+            }
+            */
             if (MODE == PIDX_WRITE)
               memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->vps);
             else

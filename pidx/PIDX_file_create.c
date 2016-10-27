@@ -104,6 +104,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
   file_name_skeleton[strlen(filename) - 4] = '\0';
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_global, "%s.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_partition, "%s.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_file_zero, "%s.idx", file_name_skeleton);
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;

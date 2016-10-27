@@ -335,7 +335,6 @@ int main(int argc, char **argv)
         }
   }
 
-
   printf("Correct Sample Count %d Incorrect Sample Count %d\n", read_count, read_error_count);
   free(data);
   shutdown_mpi();
