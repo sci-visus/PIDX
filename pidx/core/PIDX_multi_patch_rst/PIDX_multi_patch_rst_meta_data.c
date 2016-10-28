@@ -93,9 +93,25 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
       memcpy(curr_patch_size, tempsize,sizeof(int64_t) * PIDX_MAX_DIMENSIONS);
     }
 
-    MPI_Allgather(&rst_id->sim_multi_patch_r_count[rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->comm);
+    int64_t* count_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*count_buffer_copy));
+    memset(count_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*count_buffer_copy));
 
-    MPI_Allgather(&rst_id->sim_multi_patch_r_offset[rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->comm);
+    memcpy(count_buffer_copy, &rst_id->sim_multi_patch_r_count[rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*count_buffer_copy));
+
+    //MPI_Allgather(&rst_id->sim_multi_patch_r_count[rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->comm);
+
+    MPI_Allgather(count_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->comm);
+    free(count_buffer_copy);
+
+    int64_t* offset_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*offset_buffer_copy));
+    memset(offset_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*offset_buffer_copy));
+
+    memcpy(offset_buffer_copy, &rst_id->sim_multi_patch_r_offset[rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*offset_buffer_copy));
+
+    //MPI_Allgather(&rst_id->sim_multi_patch_r_offset[rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->comm);
+
+    MPI_Allgather(offset_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->comm);
+    free(offset_buffer_copy);
 
     var0->patch_group_count = 0;
 
@@ -280,7 +296,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                   if(curr_patch->size[0] == -1)
                   {
                     // not existing patch for current rank, skip
-                    printf("%d: skipping not existing patch\n", rank);
+                    //printf("%d: skipping not existing patch\n", rank);
                     continue;
                   }
 

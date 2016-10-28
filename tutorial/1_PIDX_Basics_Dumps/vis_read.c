@@ -321,7 +321,7 @@ int main(int argc, char **argv)
               {
                 read_error_count++;
                 //if (rank == 0)
-                //  printf("W[%d %d %d] [%d] Read error %d %f\n", i,j ,k, vps, var, float_val /*+ vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
+                printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, float_val, var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
               else
               {

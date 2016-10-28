@@ -139,7 +139,7 @@ static void calculate_per_process_offsets()
         var_offset[var][0][d] = local_box_offset[d];
       }
     }
-#if 0
+#if 1
     // two patches for this variable
     else if (patch_count == 2)
     {
@@ -452,11 +452,27 @@ static void check_args()
 /// main
 int main(int argc, char **argv)
 {
+  int i = 0;
   init_mpi(argc, argv);
   parse_args(argc, argv);
+
+  if (rank % 4 == 0)
+      patch_count = 1;
+  else if (rank % 4 == 1)
+      patch_count = 2;
+  else
+      patch_count = 4;
+
   check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
+
+#if 0
+  for (i = 0; i < patch_count; i++)
+  {
+    printf("[%d] : [%d %d] --> %d %d %d : %d %d %d\n", rank, patch_count, i, var_offset[0][i][0], var_offset[0][i][1], var_offset[0][i][2], var_count[0][i][0], var_count[0][i][1], var_count[0][i][2]);
+  }
+#endif
 
   int var, p;
   PIDX_point global_bounding_box, **local_offset_point, **local_box_count_point;
@@ -533,7 +549,6 @@ int main(int argc, char **argv)
   free(local_box_count_point);
 
 
-  int i = 0;
   for(var = 0; var < variable_count; var++)
   {
     for(i = 0; i < patch_count ; i++)
