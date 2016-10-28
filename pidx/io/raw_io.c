@@ -32,16 +32,25 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
   PIDX_return_code ret;
 
   /// Step 1 [Start]
+  time->raw_write_header_start = MPI_Wtime();
+  /// Creates the directory heirarchy
+  ret = init_raw_headers_layout(file, gi, svi, evi, file->idx->filename);
+  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
+  time->raw_write_header_end = MPI_Wtime();
+  /// Step 1 [End]
+
+
+  /// Step 2 [Start]
   time->raw_write_rst_init_start = MPI_Wtime();
   /// initialization of restructuring phase
   /// calculate the imposed box size and relevant metadata
   ret = restructure_init(file, gi, svi, evi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->raw_write_rst_init_end = MPI_Wtime();
-  /// Step 1 [End]
+  /// Step 2 [End]
 
 
-  /// Step 2 [Start]
+  /// Step 3 [Start]
   time->raw_write_rst_start = MPI_Wtime();
   /// Restructuring the grid into power two blocks
   /// After this step every process has got a power two block
@@ -49,15 +58,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
   ret = restructure(file, PIDX_WRITE);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   time->raw_write_rst_end = MPI_Wtime();
-  /// Step 2 [End]
-
-
-  /// Step 3 [Start]
-  time->raw_write_header_start = MPI_Wtime();
-  /// Creates the directory heirarchy
-  ret = init_raw_headers_layout(file, gi, svi, evi, file->idx->filename);
-  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  time->raw_write_header_end = MPI_Wtime();
   /// Step 3 [End]
 
 
