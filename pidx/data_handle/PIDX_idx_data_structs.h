@@ -68,10 +68,18 @@ struct PIDX_timming_struct
    double idx_read_buffer_cleanup_start, idx_read_buffer_cleanup_end;
 
 
-   double idx_partition_start, idx_partition_end;
+   double raw_write_rst_init_start, raw_write_rst_init_end;
+   double raw_write_rst_start, raw_write_rst_end;
+   double raw_write_header_start, raw_write_header_end;
+   double raw_write_io_start, raw_write_io_end;
+   double raw_write_buffer_cleanup_start, raw_write_buffer_cleanup_end;
 
-   double idx_comm_create_start, idx_comm_create_end;
+   double raw_read_rst_init_start, raw_read_rst_init_end;
+   double raw_read_rst_start, raw_read_rst_end;
+   double raw_read_io_start, raw_read_io_end;
+   double raw_read_buffer_cleanup_start, raw_read_buffer_cleanup_end;
 
+   double raw_forced_read_start, raw_forced_read_end;
 
 
 

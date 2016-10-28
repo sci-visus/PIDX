@@ -90,11 +90,11 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_time time = file->idx_d->time;
   time->sim_end = PIDX_get_time();
 
+#if 0
   int rank;
   int nprocs;
   MPI_Comm_rank(file->comm, &rank);
   MPI_Comm_size(file->comm, &nprocs);
-
   if (rank == 0)
   {
     fprintf(stdout, "Time step %d File name %s\n", file->idx->current_time_step, file->idx->filename);
@@ -107,6 +107,37 @@ PIDX_return_code PIDX_close(PIDX_file file)
     fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
   }
+#endif
+
+  double total_time = time->sim_end - time->sim_start;
+  double max_time = total_time;
+  int rank = 0, nprocs = 1;
+
+  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
+  MPI_Comm_rank(file->comm, &rank);
+  MPI_Comm_size(file->comm, &nprocs);
+
+  if (max_time == total_time)
+  {
+    if (file->idx->io_type == PIDX_IDX_IO)
+    {
+
+    }
+    else if (file->idx->io_type == PIDX_RAW_IO)
+    {
+      if (file->flags == PIDX_MODE_CREATE)
+      {
+        float component_time = (time->SX - time->sim_start) + (time->raw_write_rst_init_end  - time->raw_write_rst_init_start) + (time->raw_write_rst_end - time->raw_write_rst_start) + (time->raw_write_header_end - time->raw_write_header_start) + (time->raw_write_io_end - time->raw_write_io_start) + (time->raw_write_buffer_cleanup_end - time->raw_write_buffer_cleanup_start);
+
+        printf("[%d (%d %d %d) %d] [%d %d] [%f %f] [B %f] + [M %f + R %f + F %f + I %f + C %f]\n", file->idx->current_time_step, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count, rank, nprocs, max_time, component_time, (time->SX - time->sim_start), (time->raw_write_rst_init_end  - time->raw_write_rst_init_start), (time->raw_write_rst_end - time->raw_write_rst_start), (time->raw_write_header_end - time->raw_write_header_start), (time->raw_write_io_end - time->raw_write_io_start), (time->raw_write_buffer_cleanup_end - time->raw_write_buffer_cleanup_start));
+      }
+      else if (file->flags == PIDX_MODE_RDONLY)
+      {
+
+      }
+    }
+  }
+
 #if 0
   //if (file->idx->io_type == PIDX_IDX_IO)
   {
