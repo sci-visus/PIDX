@@ -90,7 +90,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_time time = file->idx_d->time;
   time->sim_end = PIDX_get_time();
 
-#if 0
+#if 1
   int rank;
   int nprocs;
   MPI_Comm_rank(file->comm, &rank);
@@ -101,21 +101,24 @@ PIDX_return_code PIDX_close(PIDX_file file)
     fprintf(stdout, "Bitstring %s\n", file->idx->bitSequence);
     fprintf(stdout, "Global Data %lld %lld %lld Variables %d\n", (long long) file->idx->bounds[0], (long long) file->idx->bounds[1], (long long) file->idx->bounds[2], file->idx->variable_count);
 
+    if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
+      fprintf(stdout, "Box set by user (PIDX_USER_RST_BOX)\n");
+    else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
+      fprintf(stdout, "Box set automatic for box per process case (PIDX_BOX_PER_PROCESS)\n");
+    else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
+      fprintf(stdout, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING)\n");
+
+    fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2]);
     fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
     fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
-    fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
   }
 #endif
 
   double total_time = time->sim_end - time->sim_start;
   double max_time = total_time;
-  int rank = 0, nprocs = 1;
-
   MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->comm);
-  MPI_Comm_rank(file->comm, &rank);
-  MPI_Comm_size(file->comm, &nprocs);
 
   if (max_time == total_time)
   {

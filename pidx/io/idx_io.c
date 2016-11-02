@@ -321,7 +321,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   time->idx_read_agg_init_end = PIDX_get_time();
   /// Step 5 [End]
 
-#if 0
+#if 1
   /// Step 6 [Start]
   time->idx_read_io_start = PIDX_get_time();
   /// performs actual file io

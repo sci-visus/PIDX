@@ -111,6 +111,15 @@ PIDX_return_code PIDX_rst_set_reg_patch_size(PIDX_rst_id rst_id, PIDX_point box_
 
 
 ///
+/// \brief PIDX_rst_set_reg_patch_size_from_bit_string
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_rst_set_reg_patch_size_from_bit_string(PIDX_rst_id rst_id);
+
+
+
+///
 /// \brief PIDX_rst_finalize Tear down whatever was calculated for this particular combination of dimensions and bounds
 /// \param id
 /// \return

@@ -371,7 +371,7 @@ void guess_bit_string_XYZ(char* bit_string, const Point3D dims)
       power_2_dims.x /= 2;
       buffer[size++] = '0';
     }
-    if (max == power_2_dims.y)
+    else if (max == power_2_dims.y)
     {
       power_2_dims.y /= 2;
       buffer[size++] = '1';

@@ -67,8 +67,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->variable_count = -1;
   (*file)->idx->group_index_tracker = 0;
   (*file)->local_group_count = 1;
-
-  (*file)->idx->reg_box_set = 1;
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
@@ -493,7 +491,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->time->file_create_time = PIDX_get_time();
   (*file)->idx->flip_endian = 0;
 
-
+  if ((*file)->idx->io_type == PIDX_IDX_IO)
+    (*file)->idx->reg_box_set = PIDX_BOX_FROM_BITSTRING;
+  else
+    (*file)->idx->reg_box_set = PIDX_USER_RST_BOX;
   unsigned int endian = 1;
   int current_endian = 0;
   char *c = (char*)&endian;

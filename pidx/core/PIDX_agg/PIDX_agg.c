@@ -255,17 +255,6 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 #endif
 
-  /*
-  int rank;
-  MPI_Comm_rank(id->comm, &rank);
-  if (rank == 32)
-  {
-  double x1;
-  memcpy(&x1, ab->buffer, sizeof(double));
-  printf("AAAAAAAAAA %f\n", x1);
-  }
-  */
-
   ret = close_log_file(id);
   if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
@@ -433,14 +422,6 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
               fflush(agg_dump_fp);
             }
 #endif
-
-            //if (rank == 0)
-           // {
-               // double x1;
-             //   memcpy(&x1, hz_buf->buffer[i], sizeof(double));
-            //printf("[%d] Count %d: %f\n", rank, count, x1);
-            //}
-            //printf("[%d] Offset %d Count %d\n", rank, hz_buf->start_hz_index[i], count);
             ret = aggregate(id, v, hz_buf->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
             if (ret != PIDX_success)
             {
@@ -478,13 +459,6 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
             if (end_block_index == start_block_index)
             {
               count = (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1);
-
-              //
-              //double tst;
-              //memcpy(&tst, hz_buf->buffer[i], sizeof(double));
-              //if (tst == 607205.000000)
-              //  printf("[CMP %d] [l %d]    Offset %d Count %d\n", rank, i, var0->hz_buffer[p]->start_hz_index[i], count);
-              //
               ret = aggregate(id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
               if (ret != PIDX_success)
               {
@@ -638,6 +612,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   if (start_agg_index != end_agg_index)
   {
+      printf("read vs write conflict!\n");
   }
   else
   {

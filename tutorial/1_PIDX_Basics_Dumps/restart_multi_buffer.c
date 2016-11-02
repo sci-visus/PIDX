@@ -463,8 +463,8 @@ int main(int argc, char **argv)
     local_box_count_point[var] = malloc(sizeof(PIDX_point) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
-      PIDX_set_point_5D(local_offset_point[var][p], (int64_t)var_offset[var][p][0], (int64_t)var_offset[var][p][1], (int64_t)var_offset[var][p][2], 0, 0);
-      PIDX_set_point_5D(local_box_count_point[var][p], (int64_t)var_count[var][p][0], (int64_t)var_count[var][p][1], (int64_t)var_count[var][p][2], 1, 1);
+      PIDX_set_point_5D(local_offset_point[var][p], (unsigned long long)var_offset[var][p][0], (unsigned long long)var_offset[var][p][1], (unsigned long long)var_offset[var][p][2], 0, 0);
+      PIDX_set_point_5D(local_box_count_point[var][p], (unsigned long long)var_count[var][p][0], (unsigned long long)var_count[var][p][1], (unsigned long long)var_count[var][p][2], 1, 1);
     }
   }
 

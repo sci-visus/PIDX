@@ -55,13 +55,13 @@ struct PIDX_multi_patch_rst_struct
   int group_index;
 
   //dimension of the power-two volume imposed patch
-  int64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
+  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   int reg_multi_patch_grp_count;
   Ndim_multi_patch_group* reg_multi_patch_grp;
 
-  int64_t sim_max_patch_group_count;
-  int64_t* sim_multi_patch_r_count;
-  int64_t* sim_multi_patch_r_offset;
+  unsigned long long sim_max_patch_group_count;
+  unsigned long long* sim_multi_patch_r_count;
+  unsigned long long* sim_multi_patch_r_offset;
 };
 typedef struct PIDX_multi_patch_rst_struct* PIDX_multi_patch_rst_id;
 
@@ -110,6 +110,14 @@ PIDX_return_code PIDX_multi_patch_rst_set_reg_patch_size(PIDX_multi_patch_rst_id
 /// \return
 ///
 PIDX_return_code PIDX_multi_patch_rst_auto_set_reg_patch_size(PIDX_multi_patch_rst_id multi_patch_rst_id, int factor);
+
+
+///
+/// \brief PIDX_multi_patch_rst_set_reg_patch_size_from_bit_string
+/// \param rst_id
+/// \return
+///
+PIDX_return_code PIDX_multi_patch_rst_set_reg_patch_size_from_bit_string(PIDX_multi_patch_rst_id rst_id);
 
 
 

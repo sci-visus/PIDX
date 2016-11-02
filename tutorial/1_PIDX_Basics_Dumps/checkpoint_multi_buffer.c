@@ -360,7 +360,7 @@ static void create_synthetic_simulation_data()
         for (j = 0; j < var_count[var][p][1]; j++)
           for (i = 0; i < var_count[var][p][0]; i++)
           {
-            int64_t index = (int64_t) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
+            unsigned long long index = (unsigned long long) (var_count[var][p][0] * var_count[var][p][1] * k) + (var_count[var][p][0] * j) + i;
             float_data[var][p][index] = var + 100 + (global_box_size[0] * global_box_size[1]*(var_offset[var][p][2] + k))+(global_box_size[0]*(var_offset[var][p][1] + j)) + (var_offset[var][p][0] + i);
           }
     }
@@ -456,12 +456,14 @@ int main(int argc, char **argv)
   init_mpi(argc, argv);
   parse_args(argc, argv);
 
+#if 0
   if (rank % 4 == 0)
       patch_count = 1;
   else if (rank % 4 == 1)
       patch_count = 2;
   else
       patch_count = 4;
+#endif
 
   check_args();
   calculate_per_process_offsets();
@@ -486,8 +488,8 @@ int main(int argc, char **argv)
     local_box_count_point[var] = malloc(sizeof(PIDX_point) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
-      PIDX_set_point_5D(local_offset_point[var][p], (int64_t)var_offset[var][p][0], (int64_t)var_offset[var][p][1], (int64_t)var_offset[var][p][2], 0, 0);
-      PIDX_set_point_5D(local_box_count_point[var][p], (int64_t)var_count[var][p][0], (int64_t)var_count[var][p][1], (int64_t)var_count[var][p][2], 1, 1);
+      PIDX_set_point_5D(local_offset_point[var][p], (unsigned long long)var_offset[var][p][0], (unsigned long long)var_offset[var][p][1], (unsigned long long)var_offset[var][p][2], 0, 0);
+      PIDX_set_point_5D(local_box_count_point[var][p], (unsigned long long)var_count[var][p][0], (unsigned long long)var_count[var][p][1], (unsigned long long)var_count[var][p][2], 1, 1);
     }
   }
   PIDX_file file;            // IDX file descriptor
@@ -496,7 +498,7 @@ int main(int argc, char **argv)
   variable = malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
 
-  PIDX_set_point_5D(global_bounding_box, (int64_t)global_box_size[0], (int64_t)global_box_size[1], (int64_t)global_box_size[2], 1, 1);
+  PIDX_set_point_5D(global_bounding_box, (unsigned long long)global_box_size[0], (unsigned long long)global_box_size[1], (unsigned long long)global_box_size[2], 1, 1);
 
   PIDX_access access;
   PIDX_create_access(&access);

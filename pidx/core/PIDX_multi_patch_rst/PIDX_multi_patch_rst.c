@@ -68,11 +68,41 @@ PIDX_return_code PIDX_multi_patch_rst_set_communicator(PIDX_multi_patch_rst_id m
 
 PIDX_return_code PIDX_multi_patch_rst_set_reg_patch_size(PIDX_multi_patch_rst_id rst_id, PIDX_point reg_box)
 {
-  memcpy(rst_id->idx->reg_patch_size, reg_box, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   memcpy(rst_id->reg_patch_size, reg_box, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   return PIDX_success;
 }
 
+
+PIDX_return_code PIDX_multi_patch_rst_set_reg_patch_size_from_bit_string(PIDX_multi_patch_rst_id rst_id)
+{
+  int ncores;
+  MPI_Comm_size(rst_id->comm, &ncores);
+  int bits = log2(getPowerOf2(ncores));
+  int counter = 1;
+  unsigned long long power_two_bound[PIDX_MAX_DIMENSIONS];
+  power_two_bound[0] = rst_id->idx_derived->partition_count[0] * rst_id->idx_derived->partition_size[0];
+  power_two_bound[1] = rst_id->idx_derived->partition_count[1] * rst_id->idx_derived->partition_size[1];
+  power_two_bound[2] = rst_id->idx_derived->partition_count[2] * rst_id->idx_derived->partition_size[2];
+
+  memcpy(rst_id->idx->reg_patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  while (bits != 0)
+  {
+    if (rst_id->idx->bitSequence[counter] == '0')
+      rst_id->idx->reg_patch_size[0] = rst_id->idx->reg_patch_size[0] / 2;
+
+    else if (rst_id->idx->bitSequence[counter] == '1')
+      rst_id->idx->reg_patch_size[1] = rst_id->idx->reg_patch_size[1] / 2;
+
+    else if (rst_id->idx->bitSequence[counter] == '2')
+      rst_id->idx->reg_patch_size[2] = rst_id->idx->reg_patch_size[2] / 2;
+
+    counter++;
+    bits--;
+  }
+
+  memcpy(rst_id->reg_patch_size, rst_id->idx->reg_patch_size, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  return PIDX_success;
+}
 
 
 

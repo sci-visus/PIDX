@@ -338,14 +338,14 @@ PIDX_return_code populate_hz_buffers(PIDX_io file, int svi, int evi, int mode)
     {
       // Verify the HZ encoding
       //if(file->idx_dbg->debug_hz == 1)
-      {
+      //{
         ret = HELPER_Hz_encode(file->hz_id);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_hz;
-        }
-      }
+        //if (ret != PIDX_success)
+        //{
+        //  fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        //  return PIDX_err_hz;
+        //}
+      //}
 
       // Perform HZ encoding
       if (file->idx_dbg->debug_do_hz == 1)
@@ -422,6 +422,8 @@ PIDX_return_code populate_hz_buffers(PIDX_io file, int svi, int evi, int mode)
           return PIDX_err_hz;
         }
       }
+
+      HELPER_Hz_encode(file->hz_id);
 
       //HELPER_rst(file->rst_id);
       // Destroy buffers allocated during chunking phase

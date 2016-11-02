@@ -30,6 +30,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
   int maxH = id->idx_d->maxh;
 
+  int rank = 0;
+  MPI_Comm_rank(id->comm, &rank);
+
   tpatch = (int**) malloc(2 * sizeof (int*));
   memset(tpatch, 0, 2 * sizeof (int*));
   tpatch[0] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
@@ -111,6 +114,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
           tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch->offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group[p]->reg_patch->size[d] / id->idx->chunk_size[d]) + 1) - 1;
       }
 
+      //if (rank == 0)
+      //printf("[%d] [%d] [%d %d %d - %d %d %d]\n", rank, p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[1][0], tpatch[1][1], tpatch[1][2]);
+
       //for (j = 0; j < maxH; j++)
       for (j = id->resolution_from; j < maxH - id->resolution_to; j++)
       {
@@ -128,6 +134,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
         endXYZ.z = allign_count[j][2];
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
+
+        if (rank == 0)
+          printf("[%d] [%d] [%d %d %d - %d %d %d] : SE %d %d T %d %d %d\n", j, p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[1][0], tpatch[1][1], tpatch[1][2], hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
       }
 
       for (j = 0; j < maxH; j++)

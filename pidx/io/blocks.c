@@ -21,6 +21,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
 
   if (mode == PIDX_WRITE)
   {
+#if 1
     char temp_bs[512];
     char reg_patch_bs[512];
     char process_bs[512];
@@ -31,7 +32,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     rpp.x = (int) file->idx->reg_patch_size[0];
     rpp.y = (int) file->idx->reg_patch_size[1];
     rpp.z = (int) file->idx->reg_patch_size[2];
-    guess_bit_string(reg_patch_bs, rpp);
+    guess_bit_string_ZYX(reg_patch_bs, rpp);
     if (rank == 0)
       printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
@@ -62,6 +63,17 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     strcat(temp_bs, reg_patch_bs + 1);
     strcpy(file->idx->bitSequence, partition_bs);
     strcat(file->idx->bitSequence, temp_bs + 1);
+
+#else
+    PointND pcp;
+    pcp.x = (int) file->idx->bounds[0];
+    pcp.y = (int) file->idx->bounds[1];
+    pcp.z = (int) file->idx->bounds[2];
+    GuessBitmaskPattern(file->idx->bitSequence, pcp);
+    //guess_bit_string(file->idx->bitSequence, pcp);
+    if (rank == 0)
+      printf("[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
+#endif
   }
 
   // maxh calculation

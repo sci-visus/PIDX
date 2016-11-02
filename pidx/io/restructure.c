@@ -39,7 +39,7 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
       ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
       if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-      if (file->idx->reg_box_set == 1)
+      if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
       {
         /// Finding the regular power two box dimensions
         if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
@@ -51,7 +51,7 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
           if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
         }
       }
-      else
+      else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
       {
         restructure_tag:
         PIDX_rst_auto_set_reg_patch_size(file->rst_id, factor);
@@ -74,6 +74,14 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
           /// making sure that number of boxes after restructuring is 1
           goto restructure_tag;
         }
+      }
+      else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
+      {
+        PIDX_rst_set_reg_patch_size_from_bit_string(file->rst_id);
+
+        /// Creating the metadata to perform retructuring
+        ret = PIDX_rst_meta_data_create(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       }
 
       /// Saving the metadata info needed for reading back the data.
@@ -108,19 +116,19 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
       if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
 
-      if (file->idx->reg_box_set == 1)
+      if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
       {
         /// Finding the regular power two box dimensions
         if (!(file->idx->reg_patch_size[0] == 0 && file->idx->reg_patch_size[1] == 0 && file->idx->reg_patch_size[2] == 0))
         {
-            PIDX_multi_patch_rst_set_reg_patch_size(file->multi_patch_rst_id, file->idx->reg_patch_size);
+          PIDX_multi_patch_rst_set_reg_patch_size(file->multi_patch_rst_id, file->idx->reg_patch_size);
 
-            /// Creating the metadata to perform retructuring
-            ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
-            if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          /// Creating the metadata to perform retructuring
+          ret = PIDX_multi_patch_rst_meta_data_create(file->multi_patch_rst_id);
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
         }
       }
-      else
+      else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
       {
         multi_patch_restructure_tag:
         PIDX_multi_patch_rst_auto_set_reg_patch_size(file->multi_patch_rst_id, factor);
@@ -143,6 +151,14 @@ PIDX_return_code restructure_init(PIDX_io file, int gi, int svi, int evi)
           /// making sure that number of boxes after restructuring is 1
           goto multi_patch_restructure_tag;
         }
+      }
+      else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
+      {
+        PIDX_rst_set_reg_patch_size_from_bit_string(file->multi_patch_rst_id);
+
+        /// Creating the metadata to perform retructuring
+        ret = PIDX_multi_patch_rst_meta_data_create(file->rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       }
 
       /// Saving the metadata info needed for reading back the data.
@@ -179,6 +195,8 @@ PIDX_return_code restructure(PIDX_io file, int mode)
         /// Perform data restructuring
         ret = PIDX_rst_staged_write(file->rst_id);
         if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        HELPER_rst(file->rst_id);
 
         /// Aggregating in memory restructured buffers into one large buffer
         ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_WRITE);

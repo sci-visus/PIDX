@@ -221,6 +221,10 @@ int main(int argc, char **argv)
   ret = PIDX_default_bits_per_datatype(variable->type_name, &bits_per_sample);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_default_bytes_per_datatype");
 
+  //PIDX_point reg_patch_size;
+  //PIDX_set_point_5D(reg_patch_size, 256, 32, 64, 1, 1);
+  //PIDX_set_restructuring_box(file, reg_patch_size);
+
   data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->vps);
   memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->vps);
 
@@ -239,6 +243,7 @@ int main(int argc, char **argv)
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_close_access");
 
   int read_error_count = 0, read_count = 0;
+  int total_read_error_count = 0, total_read_count = 0;
   /*
   int i = 0, j = 0, k = 0, vps = 0;
   for (k = 0; k < local_box_size[2]; k++)
@@ -321,7 +326,7 @@ int main(int argc, char **argv)
               {
                 read_error_count++;
                 //if (rank == 0)
-                printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, float_val, var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, float_val, var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
               else
               {
@@ -335,7 +340,11 @@ int main(int argc, char **argv)
         }
   }
 
-  printf("Correct Sample Count %d Incorrect Sample Count %d\n", read_count, read_error_count);
+  MPI_Allreduce(&read_count, &total_read_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&read_error_count, &total_read_error_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+  if (rank == 0)
+  printf("Correct Sample Count %d Incorrect Sample Count %d\n", total_read_count, total_read_error_count);
   free(data);
   shutdown_mpi();
 
