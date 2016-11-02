@@ -456,13 +456,15 @@ int main(int argc, char **argv)
   init_mpi(argc, argv);
   parse_args(argc, argv);
 
-#if 0
+#if 1
   if (rank % 4 == 0)
-      patch_count = 1;
+    patch_count = 1;
   else if (rank % 4 == 1)
-      patch_count = 2;
+    patch_count = 2;
+  else if (rank % 4 == 2)
+    patch_count = 4;
   else
-      patch_count = 4;
+    patch_count = 8;
 #endif
 
   check_args();

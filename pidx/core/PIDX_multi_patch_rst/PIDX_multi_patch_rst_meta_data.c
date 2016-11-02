@@ -292,6 +292,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                   {
                     // not existing patch for current rank, skip
                     //printf("%d: skipping not existing patch\n", rank);
+                    free(curr_patch);
                     continue;
                   }
 
