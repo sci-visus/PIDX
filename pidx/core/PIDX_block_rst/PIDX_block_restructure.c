@@ -49,13 +49,11 @@ struct PIDX_chunk_id_struct
   //int if_perform_chunk;
 
   int group_index;
-
-  int init_index;
   int first_index;
   int last_index;
 };
 
-PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int init_index, int start_var_index, int end_var_index)
+PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int start_var_index, int end_var_index)
 {
   PIDX_chunk_id chunk_id;
 
@@ -67,7 +65,7 @@ PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_met
   chunk_id->idx_derived = idx_derived;
 
   chunk_id->group_index = 0;
-  chunk_id->init_index = init_index;
+
   chunk_id->first_index = start_var_index;
   chunk_id->last_index = end_var_index;
 

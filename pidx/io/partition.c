@@ -103,8 +103,6 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   else if (var->patch_group_count > 1)
     printf("RST artifact\n");
 
-
-
   free(colors);
 
   //

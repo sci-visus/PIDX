@@ -367,7 +367,6 @@ int main(int argc, char **argv)
   PIDX_create_access(&access);
 #if PIDX_HAVE_MPI
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
-  //PIDX_set_idx_count(access, 2, 2, 2);
 #endif
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -382,6 +381,9 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
+
+    //PIDX_debug_rst(file, 1);
+    //PIDX_debug_hz(file, 1);
 
     //PIDX_point reg_patch_size;
     //PIDX_set_point_5D(reg_patch_size, 128, 32, 128, 1, 1);

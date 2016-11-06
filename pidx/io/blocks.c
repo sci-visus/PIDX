@@ -12,6 +12,8 @@ static PIDX_return_code destroy_file_zero_block_layout(PIDX_io file, int gi);
 static PIDX_return_code destroy_shared_block_layout(PIDX_io file, int gi);
 static PIDX_return_code destroy_non_shared_block_layout(PIDX_io file, int gi);
 
+static PIDX_return_code PIDX_file_initialize_time_step(PIDX_io file, char* filename, char* filename_template, int current_time_step);
+
 PIDX_return_code populate_bit_string(PIDX_io file, int mode)
 {
   int i = 0;
@@ -81,6 +83,11 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
+  PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
+  PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
+  PIDX_file_initialize_time_step(file, file->idx->filename_partition, file->idx->filename_template_partition, file->idx->current_time_step);
+  PIDX_file_initialize_time_step(file, file->idx->filename_file_zero, file->idx->filename_template_file_zero, file->idx->current_time_step);
+
   if (rank == 0)
     printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 
@@ -114,8 +121,6 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
   file->idx_d->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
   if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
     file->idx_d->total_partiton_level = file->idx_d->maxh;
-
-  //printf("%d [%d %d %d] XXXXXXXXXXXXXXXXXXX %d maxh %d [%d %d]\n", partion_level, idx->partition_count[0], idx->partition_count[1], idx->partition_count[2], idx->total_partiton_level, idx->maxh, file->idx->bits_per_block, (int)log2(file->idx->blocks_per_file));
 
   if (cb[0] == 0 && cb[1] == 0 && cb[2] == 0)
   {
@@ -226,7 +231,6 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   };
 
   int lvi = start_var_index;//file->local_variable_index;
-
   if (file->idx_d->parallel_mode == 1 && file->idx->compression_type == PIDX_NO_COMPRESSION)
   {
     PIDX_block_layout all_patch_local_block_layout = malloc(sizeof (*all_patch_local_block_layout));
@@ -243,16 +247,16 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
 
     if (io_type == PIDX_IDX_IO)
     {
-      //for (p = 0 ; p < var->sim_patch_count ; p++)
-      for (p = 0 ; p < var->patch_group_count ; p++)
+      for (p = 0 ; p < var->sim_patch_count ; p++)
+      //for (p = 0 ; p < var->patch_group_count ; p++)
       {
         for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
         {
-          //bounding_box[0][i] = var->sim_patch[p]->offset[i];
-          //bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
+          bounding_box[0][i] = var->sim_patch[p]->offset[i];
+          bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
 
-          bounding_box[0][i] = var->rst_patch_group[p]->reg_patch->offset[i];
-          bounding_box[1][i] = var->rst_patch_group[p]->reg_patch->size[i] + var->rst_patch_group[p]->reg_patch->offset[i];
+          //bounding_box[0][i] = var->rst_patch_group[p]->reg_patch->offset[i];
+          //bounding_box[1][i] = var->rst_patch_group[p]->reg_patch->size[i] + var->rst_patch_group[p]->reg_patch->offset[i];
 
 
           bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
@@ -262,7 +266,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
           else
             bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
         }
-        //printf("[%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
+        //printf("BB ---- [%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
 
         PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
         memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
@@ -1007,5 +1011,84 @@ PIDX_return_code destroy_non_shared_block_layout(PIDX_io file, int gi)
   free(var_grp->nshared_block_layout);
   free(var_grp->nshared_block_layout_by_level);
 
+  return PIDX_success;
+}
+
+
+/// TODO: get rid of this function
+static PIDX_return_code PIDX_file_initialize_time_step(PIDX_io file, char* filename, char* filename_template, int current_time_step)
+{
+  int N;
+  char dirname[1024], basename[1024];
+  int nbits_blocknumber;
+  char *directory_path;
+  char *data_set_path;
+
+  data_set_path = malloc(sizeof(*data_set_path) * 1024);
+  memset(data_set_path, 0, sizeof(*data_set_path) * 1024);
+
+  directory_path = malloc(sizeof(*directory_path) * 1024);
+  memset(directory_path, 0, sizeof(*directory_path) * 1024);
+
+  strncpy(directory_path, filename, strlen(filename) - 4);
+  sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);
+  free(directory_path);
+
+  nbits_blocknumber = (file->idx_d->maxh - file->idx->bits_per_block - 1);
+  VisusSplitFilename(data_set_path, dirname, basename);
+
+  //remove suffix
+  for (N = strlen(basename) - 1; N >= 0; N--)
+  {
+    int ch = basename[N];
+    basename[N] = 0;
+    if (ch == '.') break;
+  }
+
+#if 0
+  //if i put . as the first character, if I move files VisusOpen can do path remapping
+  sprintf(filename_template, "./%s", basename);
+#endif
+  //pidx does not do path remapping
+  strcpy(filename_template, data_set_path);
+  for (N = strlen(filename_template) - 1; N >= 0; N--)
+  {
+    int ch = filename_template[N];
+    filename_template[N] = 0;
+    if (ch == '.') break;
+  }
+
+  //can happen if I have only only one block
+  if (nbits_blocknumber == 0)
+    strcat(filename_template, "/%01x.bin");
+
+  else
+  {
+    //approximate to 4 bits
+    if (nbits_blocknumber % 4)
+    {
+      nbits_blocknumber += (4 - (nbits_blocknumber % 4));
+      //assert(!(nbits_blocknumber % 4));
+    }
+    if (nbits_blocknumber <= 8)
+      strcat(filename_template, "/%02x.bin"); //no directories, 256 files
+    else if (nbits_blocknumber <= 12)
+      strcat(filename_template, "/%03x.bin"); //no directories, 4096 files
+    else if (nbits_blocknumber <= 16)
+      strcat(filename_template, "/%04x.bin"); //no directories, 65536  files
+    else
+    {
+      while (nbits_blocknumber > 16)
+      {
+        strcat(filename_template, "/%02x"); //256 subdirectories
+        nbits_blocknumber -= 8;
+      }
+      strcat(filename_template, "/%04x.bin"); //max 65536  files
+      nbits_blocknumber -= 16;
+      //assert(nbits_blocknumber <= 0);
+    }
+  }
+
+  free(data_set_path);
   return PIDX_success;
 }

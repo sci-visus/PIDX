@@ -31,13 +31,12 @@
 #ifndef __PIDX_MEMORY_LAYOUT_DATA_STRUCTS_H
 #define __PIDX_MEMORY_LAYOUT_DATA_STRUCTS_H
 
-//#include "../PIDX_inc.h"
 
 /// Struct to store the row/column major chunk of data given by application
 struct PIDX_Ndim_patch_struct
 {
-  unsigned long long offset[PIDX_MAX_DIMENSIONS];                  ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
-  unsigned long long size[PIDX_MAX_DIMENSIONS];                    ///< size (extents) in each of the dimensions for the data chunk
+  unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
   unsigned char* buffer;                                ///< the data buffer
 };
 typedef struct PIDX_Ndim_patch_struct* Ndim_patch;
@@ -52,10 +51,9 @@ struct PIDX_Ndim_patch_group_struct
   Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
   int *source_patch_rank;                               ///<
   int max_patch_rank;                                   ///<
-  Ndim_patch reg_patch;                                ///< Pointer to the reg patch
+  Ndim_patch reg_patch;                                 ///< Pointer to the reg patch
 };
 typedef struct PIDX_Ndim_patch_group_struct* Ndim_patch_group;
-
 
 
 struct PIDX_source_patch_index_struct{
@@ -73,7 +71,7 @@ struct PIDX_Ndim_multi_patch_group_struct
   Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
   PIDX_source_patch_index *source_patch;
   int max_patch_rank;                                   ///<
-  Ndim_patch reg_patch;                                ///< Pointer to the reg patch
+  Ndim_patch reg_patch;                                 ///< Pointer to the reg patch
 };
 typedef struct PIDX_Ndim_multi_patch_group_struct* Ndim_multi_patch_group;
 

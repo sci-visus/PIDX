@@ -293,7 +293,6 @@ PIDX_return_code PIDX_rst_buf_aggregated_write(PIDX_rst_id rst_id)
       ssize_t write_count = pwrite(fp, var_start->rst_patch_group[g]->reg_patch->buffer, buffer_size, data_offset);
       if (write_count != buffer_size)
       {
-        //fprintf(stderr, "[%s] [%d] pwrite() failed. %d != %d\n", __FILE__, __LINE__, write_count, buffer_size);
         fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }

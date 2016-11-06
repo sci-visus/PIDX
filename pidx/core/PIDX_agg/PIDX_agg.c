@@ -24,7 +24,6 @@ struct PIDX_agg_struct
   idx_dataset_derived_metadata idx_d;
 
   int gi;
-  int ini;
   int fi;
   int li;
 
@@ -33,7 +32,7 @@ struct PIDX_agg_struct
 
 
 
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int ini, int fi, int li)
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int fi, int li)
 {
   PIDX_agg_id id;
 
@@ -44,7 +43,6 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   id->idx_d = idx_d;
 
   id->gi = 0;
-  id->ini = ini;
   id->fi = fi;
   id->li = li;
 
@@ -166,8 +164,8 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         int rank_x = first[0] / (id->idx->reg_patch_size[0]);
         int rank_y = first[1] / (id->idx->reg_patch_size[1]);
         int rank_z = first[2] / (id->idx->reg_patch_size[2]);
-        int nrank_x = (id->idx_d->partition_size[0] / id->idx->reg_patch_size[0]);
-        int nrank_y = (id->idx_d->partition_size[1] / id->idx->reg_patch_size[1]);
+        int nrank_x = ((id->idx_d->partition_size[0] * id->idx_d->partition_count[0]) / id->idx->reg_patch_size[0]);
+        int nrank_y = ((id->idx_d->partition_size[1] * id->idx_d->partition_count[1]) / id->idx->reg_patch_size[1]);
 
 #if 0
         int nrank_x = (id->idx_d->partition_size[0] / id->idx->reg_patch_size[0]);
@@ -191,8 +189,6 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
 
         id->agg_r[k][i - id->fi][j] = trank;
 
-        free(first);
-
         if(rank == id->agg_r[k][i - id->fi][j])
         {
           ab->file_number = lbl->existing_file_index[k];
@@ -209,7 +205,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
           ab->buffer_size = sample_count * bpdt;
 
           if (i == 0 || i == id->idx->variable_count - 1)
-            printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] -> [AGG %d] [Buffer %lld (%d x %d x %d)]\n", grank, rank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, trank, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+            printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] -> [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", grank, rank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
@@ -219,7 +215,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
             return PIDX_err_agg;
           }
         }
-
+        free(first);
       }
     }
   }

@@ -135,8 +135,8 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
         hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
 
-        if (rank == 0)
-          printf("[%d] [%d] [%d %d %d - %d %d %d] : SE %d %d T %d %d %d\n", j, p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[1][0], tpatch[1][1], tpatch[1][2], hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
+        //if (rank == 0)
+        //  printf("[%d] [%d] [%d %d %d - %d %d %d] : SE %d %d T %d %d %d\n", j, p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[1][0], tpatch[1][1], tpatch[1][2], hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
       }
 
       for (j = 0; j < maxH; j++)

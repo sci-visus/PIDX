@@ -119,6 +119,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->dump_agg_info = 0;
   (*file)->idx_d->dump_io_info = 0;
   (*file)->idx_d->data_core_count = -1;
+  memset((*file)->idx_d->rst_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
@@ -372,6 +373,14 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         (*file)->idx->blocks_per_file= atoi(line);
       }
 
+      if (strcmp(line, "(file system block size)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+        (*file)->idx_d->fs_block_size = atoi(line);
+      }
+
       if (strcmp(line, "(filename_template)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
@@ -424,6 +433,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast(&((*file)->idx->compression_bit_rate), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->comm);
+    MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->comm);
 
     if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
     {
@@ -441,6 +451,11 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         (*file)->idx->compression_factor = 64;
     }
   }
+
+  int total_header_size = (10 + (10 * (*file)->idx->blocks_per_file)) * sizeof (uint32_t) * (*file)->idx->variable_count;
+  (*file)->idx_d->start_fs_block = total_header_size / (*file)->idx_d->fs_block_size;
+  if (total_header_size % (*file)->idx_d->fs_block_size)
+    (*file)->idx_d->start_fs_block++;
 
   (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
 

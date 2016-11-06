@@ -45,7 +45,6 @@ struct PIDX_hz_encode_struct
 
   int group_index;
 
-  int init_index;
   int first_index;
   int last_index;
 
@@ -65,7 +64,7 @@ typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int init_index, int start_var_index, int end_var_index);
+PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
 
 
 #if PIDX_HAVE_MPI

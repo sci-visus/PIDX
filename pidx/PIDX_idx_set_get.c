@@ -63,6 +63,11 @@ PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
   file->idx->variable_grp[0]->variable_count = variable_count;
   file->idx_d->var_pipe_length = file->idx->variable_count - 1 > 1 ? file->idx->variable_count - 1 : 1;
 
+  int total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
+  file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
+  if (total_header_size % file->idx_d->fs_block_size)
+    file->idx_d->start_fs_block++;
+
   return PIDX_success;
 }
 
@@ -113,7 +118,6 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
     return PIDX_err_time;
 
   file->idx->current_time_step = current_time_step;
-
   return PIDX_success;
 }
 
@@ -168,6 +172,11 @@ PIDX_return_code PIDX_set_block_count(PIDX_file file, const int blocks_per_file)
     return PIDX_err_block;
 
   file->idx->blocks_per_file = blocks_per_file;
+
+  int total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
+  file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
+  if (total_header_size % file->idx_d->fs_block_size)
+    file->idx_d->start_fs_block++;
 
   return PIDX_success;
 }
@@ -575,3 +584,4 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
 
   return PIDX_success;
 }
+

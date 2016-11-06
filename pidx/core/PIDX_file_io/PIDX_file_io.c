@@ -40,7 +40,7 @@ static FILE* io_dump_fp;
 static int write_read_samples(PIDX_file_io_id io_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout, int MODE);
 
 
-PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int init_index, int first_index, int last_index)
+PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int first_index, int last_index)
 {
   PIDX_file_io_id io_id;
 
@@ -52,7 +52,6 @@ PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived
   io_id->idx_d = idx_d;
 
   io_id->group_index = 0;
-  io_id->init_index = init_index;
   io_id->first_index = first_index;
   io_id->last_index = last_index;
 
@@ -101,125 +100,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
   int tck = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
 
-  if (enable_caching == 1 && agg_buf->var_number == io_id->init_index && agg_buf->sample_number == 0)
-  {
-#ifdef PIDX_RECORD_TIME
-    t1 = PIDX_get_time();
-#endif
-
-    /*
-    int adjusted_file_index = 0;
-    int l = pow(2, ((int)log2((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file)));
-    adjusted_file_index = (l * (io_id->idx_d->partition_count[0] * io_id->idx_d->partition_count[1] * io_id->idx_d->partition_count[2]) + (((unsigned int) agg_buf->file_number * io_id->idx->blocks_per_file) - l) + (io_id->idx_d->color * l)) / io_id->idx->blocks_per_file;
-    */
-
-    generate_file_name(io_id->idx->blocks_per_file, io_id->idx->filename_template, (unsigned int) agg_buf->file_number /*adjusted_file_index*/, file_name, PATH_MAX);
-
-
-#if PIDX_HAVE_MPI
-    ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-    if (ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed filename %s.\n", __FILE__, __LINE__, file_name);
-      return PIDX_err_io;
-    }
-#else
-    fh = open(file_name, O_WRONLY);
-#endif
-
-
-#ifdef PIDX_RECORD_TIME
-    t2 = PIDX_get_time();
-#endif
-
-    data_offset = 0;
-    total_header_size = (10 + (10 * io_id->idx->blocks_per_file)) * sizeof (uint32_t) * io_id->idx->variable_count;
-    headers = (uint32_t*)malloc(total_header_size);
-    memset(headers, 0, total_header_size);
-
-    if (enable_caching == 1)
-      memcpy (headers, cached_header_copy, total_header_size);
-    else
-    {
-      //TODO
-    }
-
-
-#ifdef PIDX_RECORD_TIME
-    t3 = PIDX_get_time();
-#endif
-
-    unsigned long long header_size = (io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size);
-    unsigned char* temp_buffer = (unsigned char*)realloc(agg_buf->buffer, agg_buf->buffer_size  + header_size);
-    if (temp_buffer == NULL)
-    {
-      fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-    else
-    {
-      agg_buf->buffer = temp_buffer;
-      memmove(agg_buf->buffer + header_size, agg_buf->buffer, agg_buf->buffer_size);
-      memcpy(agg_buf->buffer, headers, total_header_size);
-      memset(agg_buf->buffer + total_header_size, 0, (header_size - total_header_size));
-    }
-
-    free(headers);
-
-
-#if PIDX_HAVE_MPI
-    ret = MPI_File_write_at(fh, 0, agg_buf->buffer, agg_buf->buffer_size + header_size, MPI_BYTE, &status);
-    if (ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed for filename %s.\n", __FILE__, __LINE__, file_name);
-      return PIDX_err_io;
-    }
-
-    int write_count;
-    MPI_Get_count(&status, MPI_BYTE, &write_count);
-    if (write_count != agg_buf->buffer_size + header_size)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-
-#else
-    ssize_t write_count = pwrite(fh, agg_buf->buffer, agg_buf->buffer_size + header_size, 0);
-    if (write_count != agg_buf->buffer_size + header_size)
-    {
-      fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-#endif
-
-
-#ifdef PIDX_RECORD_TIME
-    t4 = PIDX_get_time();
-#endif
-
-
-#if PIDX_HAVE_MPI
-    ret = MPI_File_close(&fh);
-    if (ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-#else
-    close(fh);
-#endif
-
-
-#ifdef PIDX_RECORD_TIME
-    t5 = PIDX_get_time();
-#endif
-
-#ifdef PIDX_RECORD_TIME
-    printf("V0. [R %d] [O 0 C %lld] [FVS %d %d %d] Time: O %f H %f W %f C %f\n", rank, (long long)agg_buf->buffer_size + header_size, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, (t2-t1), (t3-t2), (t4-t3), (t5-t4));
-#else
-#endif
-  }
-  else if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
+  if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
   {
 #ifdef PIDX_RECORD_TIME
     t1 = PIDX_get_time();

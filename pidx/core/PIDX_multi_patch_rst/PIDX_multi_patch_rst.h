@@ -49,7 +49,6 @@ struct PIDX_multi_patch_rst_struct
   //number of files, files that are ging to be populated
   idx_dataset_derived_metadata idx_derived;
 
-  int init_index;
   int first_index;
   int last_index;
   int group_index;
@@ -73,12 +72,11 @@ typedef struct PIDX_multi_patch_rst_struct* PIDX_multi_patch_rst_id;
 /// \brief PIDX_multi_patch_rst_init
 /// \param idx_meta_data
 /// \param idx_derived_ptr
-/// \param first_index
 /// \param var_start_index
 /// \param var_end_index
 /// \return
 ///
-PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int first_index, int var_start_index, int var_end_index);
+PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int var_start_index, int var_end_index);
 
 
 

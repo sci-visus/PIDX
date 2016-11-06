@@ -45,7 +45,6 @@ struct PIDX_comp_id_struct
   /// number of files, files that are ging to be populated
   idx_dataset_derived_metadata idx_derived;
   
-  int init_index;
   int first_index;
   int last_index;
 
@@ -200,7 +199,7 @@ int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
 
 #endif
 
-PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int init_index, int start_var_index, int end_var_index)
+PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int start_var_index, int end_var_index)
 {
   PIDX_comp_id comp_id;
 
@@ -210,7 +209,6 @@ PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derive
   comp_id->idx = idx_meta_data;
   comp_id->idx_derived = idx_derived;
 
-  comp_id->init_index = init_index;
   comp_id->first_index = start_var_index;
   comp_id->last_index = end_var_index;
   

@@ -47,10 +47,6 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
 
 
 ///
-PIDX_return_code PIDX_header_io_write_hybrid_idx (PIDX_header_io_id header_io, char* data_set_path, char* filename_template, int current_time_step);
-
-
-///
 int PIDX_header_io_filename_create(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, char* filename_template);
 
 

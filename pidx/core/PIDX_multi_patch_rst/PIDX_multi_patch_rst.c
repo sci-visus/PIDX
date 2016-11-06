@@ -33,7 +33,7 @@
 static int getPowerOftwo(int x);
 
 
-PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int first_index, int var_start_index, int var_end_index)
+PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int var_start_index, int var_end_index)
 {
   //Creating the restructuring ID
   PIDX_multi_patch_rst_id multi_patch_rst_id;
@@ -44,7 +44,6 @@ PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx
   multi_patch_rst_id->idx_derived = idx_derived;
 
   multi_patch_rst_id->group_index = 0;
-  multi_patch_rst_id->init_index = first_index;
   multi_patch_rst_id->first_index = var_start_index;
   multi_patch_rst_id->last_index = var_end_index;
 

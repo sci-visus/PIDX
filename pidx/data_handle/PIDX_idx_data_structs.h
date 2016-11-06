@@ -36,25 +36,17 @@
 
 struct PIDX_timming_struct
 {
-   int header_counter;
-   int variable_counter;
+   double sim_start, sim_end;
+
    double SX;
    double EX;
    double file_create_time;
 
    double idx_init_start, idx_init_end;
-
-   double idx_write_rst_init_start, idx_write_rst_init_end;
-   double idx_write_rst_start, idx_write_rst_end;
-   double idx_write_layout_start, idx_write_layout_end;
-   double idx_write_header_start, idx_write_header_end;
-   double idx_write_hz_init_start, idx_write_hz_init_end;
-   double idx_write_hz_start, idx_write_hz_end;
-   double idx_write_agg_init_start, idx_write_agg_init_end;
-   double idx_write_agg_start, idx_write_agg_end;
-   double idx_write_io_start, idx_write_io_end;
-   double idx_write_buffer_cleanup_start, idx_write_buffer_cleanup_end;
-
+   double idx_set_reg_box_start, idx_set_reg_box_end;
+   double idx_layout_start, idx_layout_end;
+   double idx_header_io_start, idx_header_io_end;
+   double idx_group_cleanup_start, idx_group_cleanup_end;
 
    double idx_read_rst_init_start, idx_read_rst_init_end;
    double idx_read_rst_start, idx_read_rst_end;
@@ -66,7 +58,6 @@ struct PIDX_timming_struct
    double idx_read_agg_start, idx_read_agg_end;
    double idx_read_io_start, idx_read_io_end;
    double idx_read_buffer_cleanup_start, idx_read_buffer_cleanup_end;
-
 
    double raw_write_rst_init_start, raw_write_rst_init_end;
    double raw_write_rst_start, raw_write_rst_end;
@@ -81,47 +72,71 @@ struct PIDX_timming_struct
 
    double raw_forced_read_start, raw_forced_read_end;
 
+   double global_idx_write_init_start, global_idx_write_init_end;
+   double global_idx_write_rst_init_start, global_idx_write_rst_init_end;
+   double global_idx_write_rst_start, global_idx_write_rst_end;
+   double global_idx_write_partition_setup_start, global_idx_write_partition_setup_end;
+   double global_idx_write_bitstring_start, global_idx_write_bitstring_end;
+   double global_idx_write_comm_create_start, global_idx_write_comm_create_end;
+   double global_idx_write_layout_start, global_idx_write_layout_end;
+   double global_idx_write_header_start, global_idx_write_header_end;
+   double global_idx_write_hz_init_start, global_idx_write_hz_init_end;
+   double global_idx_write_hz_start, global_idx_write_hz_end;
+   double global_idx_write_agg_init_start, global_idx_write_agg_init_end;
+   double global_idx_write_agg_start, global_idx_write_agg_end;
+   double global_idx_write_io_start, global_idx_write_io_end;
+   double global_idx_write_buffer_cleanup_start, global_idx_write_buffer_cleanup_end;
+
+   double global_idx_read_init_start, global_idx_read_init_end;
+   double global_idx_read_rst_init_start, global_idx_read_rst_init_end;
+   double global_idx_read_rst_start, global_idx_read_rst_end;
+   double global_idx_read_partition_setup_start, global_idx_read_partition_setup_end;
+   double global_idx_read_bitstring_start, global_idx_read_bitstring_end;
+   double global_idx_read_comm_create_start, global_idx_read_comm_create_end;
+   double global_idx_read_layout_start, global_idx_read_layout_end;
+   double global_idx_read_header_start, global_idx_read_header_end;
+   double global_idx_read_hz_init_start, global_idx_read_hz_init_end;
+   double global_idx_read_hz_start, global_idx_read_hz_end;
+   double global_idx_read_agg_init_start, global_idx_read_agg_init_end;
+   double global_idx_read_agg_start, global_idx_read_agg_end;
+   double global_idx_read_io_start, global_idx_read_io_end;
+   double global_idx_read_buffer_cleanup_start, global_idx_read_buffer_cleanup_end;
 
 
+   double *rst_init_start, *rst_init_end;
+   double *rst_meta_data_create_start, *rst_meta_data_create_end;
+   double *rst_meta_data_io_start, *rst_meta_data_io_end;
+   double *rst_buffer_start, *rst_buffer_end;
+   double *rst_write_read_start, *rst_write_read_end;
+   double *rst_buff_agg_start, *rst_buff_agg_end;
+   double *rst_buff_agg_free_start, *rst_buff_agg_free_end;
+   double *rst_buff_agg_io_start, *rst_buff_agg_io_end;
+   double *rst_cleanup_start, *rst_cleanup_end;
 
-
-
-   double partition_start_time;
-   double partition_end_time;
-   double populate_idx_start_time;
-   double populate_idx_end_time;
-   double populate_idx_start_time_f0;
-   double populate_idx_end_time_f0;
-   double populate_idx_start_time_ns;
-   double populate_idx_end_time_ns;
-   double populate_idx_start_time_s;
-   double populate_idx_end_time_s;
-   double hz_s_time, hz_e_time;
-   double sim_start, sim_end;
-   double *write_init_start, *write_init_end;
-   double *startup_start, *startup_end;
-   double *init_start, *init_end;
-
-   double *rst_start, *rst_end;
-   double *rst_io_start, *rst_io_end;
-   double *rst_meta_data_start_io, *rst_meta_data_end_io;
-
+   double *hz_init_start, *hz_init_end;
+   double *hz_meta_start, *hz_meta_end;
+   double *hz_buffer_start, *hz_buffer_end;
    double *hz_start, *hz_end;
-   double *cleanup_start, *cleanup_end;
-   double *finalize_start, *finalize_end;
-   double *chunk_start, *chunk_end;
-   double *buffer_start, *buffer_end;
-   double *compression_start, *compression_end;
-   double **agg_start, **agg_end;
-   double **agg_buf_start, **agg_buf_end;
-   double **agg_meta_start, **agg_meta_end;
+   double *hz_buffer_free_start, *hz_buffer_free_end;
+   double *hz_cleanup_start, *hz_cleanup_end;
 
-   double **windows_start, **windows_end;
-   double **first_fence_start, **first_fence_end;
-   double **second_fence_start, **second_fence_end;
-   double **fence_free;
-   double **io_per_process_start, **io_per_process_end;
-   double **io_start, **io_end;
+   double *chunk_init_start, *chunk_init_end;
+   double *chunk_meta_start, *chunk_meta_end;
+   double *chunk_buffer_start, *chunk_buffer_end;
+   double *chunk_start, *chunk_end;
+   double *chunk_buffer_free_start, *chunk_buffer_free_end;
+   double *chunk_cleanup_start, *chunk_cleanup_end;
+
+   double *compression_init_start, *compression_init_end;
+   double *compression_start, *compression_end;
+
+   double **agg_init_start, **agg_init_end;
+   double **agg_meta_start, **agg_meta_end;
+   double **agg_buf_start, **agg_buf_end;
+   double **agg_start, **agg_end;
+   double **agg_meta_cleanup_start, **agg_meta_cleanup_end;
+
+   double *io_start, *io_end;
 };
 typedef struct PIDX_timming_struct* PIDX_time;
 
@@ -129,8 +144,6 @@ typedef struct PIDX_timming_struct* PIDX_time;
 ///
 struct PIDX_variable_struct
 {
-  //int io_state;
-
   // General Info
   char var_name[1024];                                                  ///< Variable name
   int vps;                                                              ///< values per sample, Vector(3), scalar(1), or n
@@ -157,6 +170,7 @@ struct PIDX_variable_group_struct
 {
   int variable_index_tracker;
   int variable_count;
+  int variable_tracker[128];
   PIDX_variable variable[128];
 
   int local_variable_index;
@@ -177,7 +191,6 @@ struct PIDX_variable_group_struct
   //extents of meta-data
   int *rank_buffer;
 
-
   // Block level layout
   PIDX_block_layout f0_block_layout;
   PIDX_block_layout* f0_block_layout_by_level;
@@ -187,12 +200,6 @@ struct PIDX_variable_group_struct
 
   PIDX_block_layout nshared_block_layout;
   PIDX_block_layout* nshared_block_layout_by_level;
-
-  //Compression related
-  //int lossy_compressed_block_size;           ///< The expected size of the compressed buffer
-
-  // Metadata
-  //int dump_meta_data_ON;                     ///< Counter set if meta data dumping activated
 };
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
@@ -203,6 +210,7 @@ struct idx_file_struct
   int io_type;
   int current_time_step;                                                ///< Time step tracker
 
+  int variable_pipe_length;
   int variable_count;
   int variable_group_count;
   int group_index_tracker;
@@ -273,6 +281,9 @@ struct idx_dataset_derived_metadata_struct
   Agg_buffer **shared_agg_buffer;
   Agg_buffer **nshared_agg_buffer;
 
+  FILE *rst_dump_fp;
+  int dump_rst_info;
+  char rst_dump_dir_name[512];
   int dump_agg_info;
   char agg_dump_dir_name[512];
   int dump_io_info;

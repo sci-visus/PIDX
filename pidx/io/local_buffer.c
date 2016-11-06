@@ -207,7 +207,7 @@ static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_io file, int star
 }
 
 
-PIDX_return_code create_agg_io_buffer(PIDX_io file, int group_index)
+PIDX_return_code create_agg_io_buffer(PIDX_io file)
 {
   int vc = file->idx->variable_count;
   if (vc <= 0)

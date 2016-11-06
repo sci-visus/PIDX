@@ -140,6 +140,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->start_fs_block = 0;
   (*file)->idx_d->dump_agg_info = 0;
   (*file)->idx_d->dump_io_info = 0;
+  memset((*file)->idx_d->rst_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 

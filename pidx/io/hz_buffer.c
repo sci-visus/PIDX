@@ -1,449 +1,63 @@
 #include "../PIDX_inc.h"
 
-PIDX_return_code create_hz_buffers(PIDX_io file, int svi, int evi)
+static int cvi = 0;
+static PIDX_return_code hz_init(PIDX_io file, int svi, int evi);
+static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi);
+static PIDX_return_code compression_init(PIDX_io file, int svi, int evi);
+static PIDX_return_code meta_data_create(PIDX_io file);
+static PIDX_return_code buffer_create(PIDX_io file);
+static PIDX_return_code compress_and_encode(PIDX_io file);
+static PIDX_return_code encode_and_uncompress(PIDX_io file);
+static PIDX_return_code hz_cleanup(PIDX_io file);
+static PIDX_return_code chunk_cleanup(PIDX_io file);
+
+PIDX_return_code hz_encode_setup(PIDX_io file, int svi, int evi)
 {
-  int rank = 0, nprocs = 1;
-  int ret = 0;
+  cvi = svi;
 
-#if PIDX_HAVE_MPI
-  if (file->idx_d->parallel_mode == 1)
+  // Init
+  if ( hz_init(file, svi, evi) || chunk_init(file, svi, evi) || compression_init(file, svi, evi) != PIDX_success )
   {
-    MPI_Comm_size(file->comm,  &nprocs);
-    MPI_Comm_rank(file->comm,  &rank);
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
   }
-#endif
 
-  int si = 0, ei = 0;
-  int pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (pipe_length + 1))
+  // Meta data
+  if (meta_data_create(file) != PIDX_success)
   {
-    ei = ((si + pipe_length) >= (evi)) ? (evi - 1) : (si + pipe_length);
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
-
-    // Create the chunking ID
-    file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, svi, si, ei);
-
-    // Create the compression ID
-    file->comp_id = PIDX_compression_init(file->idx, file->idx_d, svi, si, ei);
-
-    // Create the HZ encoding ID
-    file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, svi, si, ei);
-
-
-    if (file->idx_d->parallel_mode)
-    {
-      // Attaching the communicator to the chunking phase
-      ret = PIDX_chunk_set_communicator(file->chunk_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-
-      // Attaching the communicator to the compression phase
-      ret = PIDX_compression_set_communicator(file->comp_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_compress;
-      }
-
-      // Attaching the communicator to the HZ encodig phase phase
-      ret = PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_hz;
-      }
-    }
-
-    // metadata for chunking phase
-    ret = PIDX_chunk_meta_data_create(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
-    }
-
-    // resolution for HZ encoding
-    ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
-    }
-
-    // metadata for hz encoding phase
-    ret = PIDX_hz_encode_meta_data_create(file->hz_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
-    }
-
-
-    // Creating the buffers required for chunking
-    ret = PIDX_chunk_buf_create(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_chunk;
-    }
-
-    // Perform Chunking
-    if (file->idx_dbg->debug_do_chunk == 1)
-    {
-      ret = PIDX_chunk(file->chunk_id, PIDX_WRITE);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-    }
-
-
-    // Perform Compression
-    if (file->idx_dbg->debug_do_compress == 1)
-    {
-      ret = PIDX_compression(file->comp_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_compress;
-      }
-    }
-
-
-    // Creating the buffers required for HZ encoding
-    ret = PIDX_hz_encode_buf_create(file->hz_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_hz;
-    }
-
-    // Perform HZ encoding
-    if (file->idx_dbg->debug_do_hz == 1)
-    {
-      ret = PIDX_hz_encode_write(file->hz_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_hz;
-      }
-    }
-#if 1
-    // Verify the HZ encoding
-    if(file->idx_dbg->debug_hz == 1)
-    {
-      ret = HELPER_Hz_encode(file->hz_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_hz;
-      }
-    }
-
-    // Destroy buffers allocated during chunking phase
-    ret = PIDX_chunk_buf_destroy(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_chunk;
-    }
-#endif
+  // Buffer create
+  if (buffer_create(file) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
   }
 
   return PIDX_success;
 }
 
 
-PIDX_return_code setup_hz_buffers(PIDX_io file, int svi, int evi)
+PIDX_return_code hz_encode(PIDX_io file, int mode)
 {
-  int rank = 0, nprocs = 1;
-  int ret = 0;
-
-#if PIDX_HAVE_MPI
-  if (file->idx_d->parallel_mode == 1)
+  if (mode == PIDX_READ)
   {
-    MPI_Comm_size(file->comm,  &nprocs);
-    MPI_Comm_rank(file->comm,  &rank);
-  }
-#endif
-
-  int si = 0, ei = 0;
-  int pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (pipe_length + 1))
-  {
-    ei = ((si + pipe_length) >= (evi)) ? (evi - 1) : (si + pipe_length);
-
-    // Create the chunking ID
-    file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, svi, si, ei);
-
-    // Create the compression ID
-    file->comp_id = PIDX_compression_init(file->idx, file->idx_d, svi, si, ei);
-
-    // Create the HZ encoding ID
-    file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, svi, si, ei);
-
-
-    if (file->idx_d->parallel_mode)
-    {
-      // Attaching the communicator to the chunking phase
-      ret = PIDX_chunk_set_communicator(file->chunk_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-
-      // Attaching the communicator to the compression phase
-      ret = PIDX_compression_set_communicator(file->comp_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_compress;
-      }
-
-      // Attaching the communicator to the HZ encodig phase phase
-      ret = PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_hz;
-      }
-    }
-
-    // metadata for chunking phase
-    ret = PIDX_chunk_meta_data_create(file->chunk_id);
-    if (ret != PIDX_success)
+    // encode, decompress, unchunk
+    if (encode_and_uncompress(file) != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
-
-    // resolution for HZ encoding
-    ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
-    if (ret != PIDX_success)
+  }
+  if (mode == PIDX_WRITE)
+  {
+    // chunk, compress and encode
+    if (compress_and_encode(file) != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
-    }
-
-    // metadata for hz encoding phase
-    ret = PIDX_hz_encode_meta_data_create(file->hz_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
-    }
-
-
-    // Creating the buffers required for chunking
-    ret = PIDX_chunk_buf_create(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_chunk;
-    }
-
-    /*
-    // Perform Chunking
-    if (file->idx_dbg->debug_do_chunk == 1)
-    {
-      ret = PIDX_chunk(file->chunk_id, PIDX_WRITE);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-    }
-
-
-    // Perform Compression
-    if (file->idx_dbg->debug_do_compress == 1)
-    {
-      ret = PIDX_compression(file->comp_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_compress;
-      }
-    }
-    */
-
-
-    // Creating the buffers required for HZ encoding
-    ret = PIDX_hz_encode_buf_create(file->hz_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_hz;
-    }
-
-    /*
-    // Perform HZ encoding
-    if (file->idx_dbg->debug_do_hz == 1)
-    {
-      ret = PIDX_hz_encode_write(file->hz_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_hz;
-      }
-    }
-
-    // Verify the HZ encoding
-    if(file->idx_dbg->debug_hz == 1)
-    {
-      ret = HELPER_Hz_encode(file->hz_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_hz;
-      }
-    }
-
-    // Destroy buffers allocated during chunking phase
-    ret = PIDX_chunk_buf_destroy(file->chunk_id);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_chunk;
-    }
-    */
-  }
-
-  return PIDX_success;
-}
-
-
-PIDX_return_code populate_hz_buffers(PIDX_io file, int svi, int evi, int mode)
-{
-  int rank = 0, nprocs = 1;
-  int ret = 0;
-
-#if PIDX_HAVE_MPI
-  if (file->idx_d->parallel_mode == 1)
-  {
-    MPI_Comm_size(file->comm,  &nprocs);
-    MPI_Comm_rank(file->comm,  &rank);
-  }
-#endif
-  int si = 0;
-  int pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (pipe_length + 1))
-  {
-    if (mode == PIDX_READ)
-    {
-      // Verify the HZ encoding
-      //if(file->idx_dbg->debug_hz == 1)
-      //{
-        ret = HELPER_Hz_encode(file->hz_id);
-        //if (ret != PIDX_success)
-        //{
-        //  fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        //  return PIDX_err_hz;
-        //}
-      //}
-
-      // Perform HZ encoding
-      if (file->idx_dbg->debug_do_hz == 1)
-      {
-        ret = PIDX_hz_encode_read(file->hz_id);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_hz;
-        }
-      }
-
-      // Perform Compression
-      if (file->idx_dbg->debug_do_compress == 1)
-      {
-        ret = PIDX_decompression(file->comp_id);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_compress;
-        }
-      }
-
-      // Perform Chunking
-      if (file->idx_dbg->debug_do_chunk == 1)
-      {
-        ret = PIDX_chunk(file->chunk_id, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_chunk;
-        }
-      }
-
-      // Destroy buffers allocated during chunking phase
-      ret = PIDX_chunk_buf_destroy(file->chunk_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-    }
-    if (mode == PIDX_WRITE)
-    {
-      // Perform Chunking
-      if (file->idx_dbg->debug_do_chunk == 1)
-      {
-        ret = PIDX_chunk(file->chunk_id, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_chunk;
-        }
-      }
-
-      // Perform Compression
-      if (file->idx_dbg->debug_do_compress == 1)
-      {
-        ret = PIDX_compression(file->comp_id);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_compress;
-        }
-      }
-
-      // Perform HZ encoding
-      if (file->idx_dbg->debug_do_hz == 1)
-      {
-        ret = PIDX_hz_encode_write(file->hz_id);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_hz;
-        }
-      }
-
-      HELPER_Hz_encode(file->hz_id);
-
-      //HELPER_rst(file->rst_id);
-      // Destroy buffers allocated during chunking phase
-      ret = PIDX_chunk_buf_destroy(file->chunk_id);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_chunk;
-      }
-
-      // Verify the HZ encoding
-      if(file->idx_dbg->debug_hz == 1)
-      {
-        ret = HELPER_Hz_encode(file->hz_id);
-        if (ret != PIDX_success)
-        {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_hz;
-        }
-      }
     }
   }
 
@@ -452,18 +66,317 @@ PIDX_return_code populate_hz_buffers(PIDX_io file, int svi, int evi, int mode)
 
 
 
-PIDX_return_code destroy_hz_buffers(PIDX_io file)
+PIDX_return_code hz_encode_cleanup(PIDX_io file)
 {
-  PIDX_return_code ret;
+  // meta data and buffer cleanup
+  if (hz_cleanup(file) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
-  /* Destroy buffers allocated during HZ encoding phase */
-  ret = PIDX_hz_encode_buf_destroy(file->hz_id);
+  // meta data and buffer cleanup
+  if (chunk_cleanup(file) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->hz_init_start[cvi] = PIDX_get_time();
+  // Create the HZ encoding ID
+  file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, svi, evi);
+
+  // Attaching the communicator to the HZ encodig phase phase
+  ret = PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_hz;
   }
 
+  // resolution for HZ encoding
+  ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
+  time->hz_init_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->chunk_init_start[cvi] = PIDX_get_time();
+  // Create the chunking ID
+  file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, svi, evi);
+
+  // Attaching the communicator to the chunking phase
+  ret = PIDX_chunk_set_communicator(file->chunk_id, file->comm);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_chunk;
+  }
+  time->chunk_init_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code compression_init(PIDX_io file, int svi, int evi)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->compression_init_start[cvi] = PIDX_get_time();
+  // Create the compression ID
+  file->comp_id = PIDX_compression_init(file->idx, file->idx_d, svi, evi);
+
+  // Attaching the communicator to the compression phase
+  ret = PIDX_compression_set_communicator(file->comp_id, file->comm);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_compress;
+  }
+  time->compression_init_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code meta_data_create(PIDX_io file)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->chunk_meta_start[cvi] = PIDX_get_time();
+  // metadata for chunking phase
+  ret = PIDX_chunk_meta_data_create(file->chunk_id);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
+  time->chunk_meta_end[cvi] = PIDX_get_time();
+
+
+  time->hz_meta_start[cvi] = PIDX_get_time();
+  // metadata for hz encoding phase
+  ret = PIDX_hz_encode_meta_data_create(file->hz_id);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
+  time->hz_meta_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code buffer_create(PIDX_io file)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->chunk_buffer_start[cvi] = PIDX_get_time();
+  // Creating the buffers required for chunking
+  ret = PIDX_chunk_buf_create(file->chunk_id);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_chunk;
+  }
+  time->chunk_buffer_end[cvi] = PIDX_get_time();
+
+  time->hz_buffer_start[cvi] = PIDX_get_time();
+  // Creating the buffers required for HZ encoding
+  ret = PIDX_hz_encode_buf_create(file->hz_id);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_hz;
+  }
+  time->hz_buffer_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code compress_and_encode(PIDX_io file)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->chunk_start[cvi] = PIDX_get_time();
+  // Perform Chunking
+  if (file->idx_dbg->debug_do_chunk == 1)
+  {
+    ret = PIDX_chunk(file->chunk_id, PIDX_WRITE);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_chunk;
+    }
+  }
+  time->chunk_end[cvi] = PIDX_get_time();
+
+
+  time->compression_start[cvi] = PIDX_get_time();
+  // Perform Compression
+  if (file->idx_dbg->debug_do_compress == 1)
+  {
+    ret = PIDX_compression(file->comp_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_compress;
+    }
+  }
+  time->compression_end[cvi] = PIDX_get_time();
+
+
+  time->hz_start[cvi] = PIDX_get_time();
+  // Perform HZ encoding
+  if (file->idx_dbg->debug_do_hz == 1)
+  {
+    ret = PIDX_hz_encode_write(file->hz_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_hz;
+    }
+  }
+
+  // Verify the HZ encoding
+  if(file->idx_dbg->debug_hz == 1)
+  {
+    ret = HELPER_Hz_encode(file->hz_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_hz;
+    }
+  }
+  time->hz_end[cvi] = PIDX_get_time();
+
+
+  time->chunk_buffer_free_start[cvi] = PIDX_get_time();
+  // Destroy buffers allocated during chunking phase
+  if (PIDX_chunk_buf_destroy(file->chunk_id) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_chunk;
+  }
+  time->chunk_buffer_free_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+static PIDX_return_code encode_and_uncompress(PIDX_io file)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->hz_start[cvi] = PIDX_get_time();
+  // Verify the HZ encoding
+  if(file->idx_dbg->debug_hz == 1)
+  {
+    ret = HELPER_Hz_encode(file->hz_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_hz;
+    }
+  }
+
+  // Perform HZ encoding
+  if (file->idx_dbg->debug_do_hz == 1)
+  {
+    ret = PIDX_hz_encode_read(file->hz_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_hz;
+    }
+  }
+  time->hz_end[cvi] = PIDX_get_time();
+
+
+  time->compression_start[cvi] = PIDX_get_time();
+  // Perform Compression
+  if (file->idx_dbg->debug_do_compress == 1)
+  {
+    ret = PIDX_decompression(file->comp_id);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_compress;
+    }
+  }
+  time->compression_end[cvi] = PIDX_get_time();
+
+
+  time->chunk_start[cvi] = PIDX_get_time();
+  // Perform Chunking
+  if (file->idx_dbg->debug_do_chunk == 1)
+  {
+    ret = PIDX_chunk(file->chunk_id, PIDX_READ);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_chunk;
+    }
+  }
+  time->chunk_end[cvi] = PIDX_get_time();
+
+
+  time->chunk_buffer_free_start[cvi] = PIDX_get_time();
+  // Destroy buffers allocated during chunking phase
+  ret = PIDX_chunk_buf_destroy(file->chunk_id);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_chunk;
+  }
+  time->chunk_buffer_free_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+static PIDX_return_code hz_cleanup(PIDX_io file)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->hz_buffer_free_start[cvi] = PIDX_get_time();
+  // Destroy buffers allocated during HZ encoding phase
+  ret = PIDX_hz_encode_buf_destroy(file->hz_id);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_hz;
+  }
+  time->hz_buffer_free_end[cvi] = PIDX_get_time();
+
+
+  time->hz_cleanup_start[cvi] = PIDX_get_time();
   ret = PIDX_hz_encode_meta_data_destroy(file->hz_id);
   if (ret != PIDX_success)
   {
@@ -471,6 +384,19 @@ PIDX_return_code destroy_hz_buffers(PIDX_io file)
     return PIDX_err_rst;
   }
 
+  PIDX_hz_encode_finalize(file->hz_id);
+  time->hz_cleanup_end[cvi] = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code chunk_cleanup(PIDX_io file)
+{
+  int ret = 0;
+  PIDX_time time = file->idx_d->time;
+
+  time->chunk_cleanup_start[cvi] = PIDX_get_time();
   ret = PIDX_chunk_meta_data_destroy(file->chunk_id);
   if (ret != PIDX_success)
   {
@@ -478,14 +404,10 @@ PIDX_return_code destroy_hz_buffers(PIDX_io file)
     return PIDX_err_rst;
   }
 
-  /* Deleting the compression ID */
   PIDX_compression_finalize(file->comp_id);
 
-  /* Deleting the chunking ID */
   PIDX_chunk_finalize(file->chunk_id);
-
-  /* Deleting the HZ encoding ID */
-  PIDX_hz_encode_finalize(file->hz_id);
+  time->chunk_cleanup_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
 }

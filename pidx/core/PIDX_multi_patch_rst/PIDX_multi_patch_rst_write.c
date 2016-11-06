@@ -29,13 +29,20 @@
  */
 
 #include "../../PIDX_inc.h"
-
+static PIDX_return_code dump_debug_data_init(PIDX_multi_patch_rst_id rst_id);
+static PIDX_return_code dump_debug_data_finalie (PIDX_multi_patch_rst_id id);
 
 PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_id)
 {
   int rank = 0;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   MPI_Comm_rank(rst_id->comm,  &rank);
+
+  if (dump_debug_data_init(rst_id) != PIDX_success)
+  {
+    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+    return PIDX_err_mpi;
+  }
 
   if (rst_id->idx->enable_rst != 1)
   {
@@ -131,6 +138,14 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                     send_o = index * var->vps;
                     send_c = reg_patch_count[0] * var->vps;
                     memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
+
+
+                    if (rst_id->idx_derived->dump_rst_info == 1)
+                    {
+                      fprintf(rst_id->idx_derived->rst_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
+                      fflush(rst_id->idx_derived->rst_dump_fp);
+                    }
+
                   }
                   count1++;
                 }
@@ -147,6 +162,13 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                 fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
                 return PIDX_err_mpi;
               }
+
+              if (rst_id->idx_derived->dump_rst_info == 1)
+              {
+                fprintf(rst_id->idx_derived->rst_dump_fp, "[N REC] [%lld] Dest offset 0 Dest size %d My rank %d Source rank %d\n", v, length, rank,  rst_id->reg_multi_patch_grp[i]->source_patch[j].rank);
+                fflush(rst_id->idx_derived->rst_dump_fp);
+              }
+
               req_counter++;
             }
           }
@@ -208,6 +230,13 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                 fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
                 return PIDX_err_mpi;
               }
+
+              if (rst_id->idx_derived->dump_rst_info == 1)
+              {
+                fprintf(rst_id->idx_derived->rst_dump_fp, "[N SND] [%lld] Source offset 0 Source size 1 My rank %d Dest rank %d\n", v, rank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
+                fflush(rst_id->idx_derived->rst_dump_fp);
+              }
+
               req_counter++;
               chunk_counter++;
 
@@ -237,6 +266,8 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
     status = 0;
     req_counter = 0;
   }
+
+  dump_debug_data_finalie(rst_id);
 
   return PIDX_success;
 #else
@@ -470,4 +501,49 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
     return PIDX_success;
 #endif
 
+}
+
+
+static PIDX_return_code dump_debug_data_init (PIDX_multi_patch_rst_id id)
+{
+  int ret = 0;
+  int rank = 0;
+  MPI_Comm_rank(id->comm, &rank);
+
+  if (id->idx_derived->dump_rst_info == 1 && id->idx->current_time_step == 0)
+  {
+    char rst_file_name[1024];
+    ret = mkdir(id->idx_derived->rst_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
+    if (ret != 0 && errno != EEXIST)
+    {
+      perror("mkdir");
+      fprintf(stderr, " Error in rstregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, id->idx_derived->rst_dump_dir_name);
+      return PIDX_err_rst;
+    }
+
+    MPI_Barrier(id->comm);
+
+    sprintf(rst_file_name, "%s/rank_%d", id->idx_derived->rst_dump_dir_name, rank);
+    id->idx_derived->rst_dump_fp = fopen(rst_file_name, "a+");
+    if (!id->idx_derived->rst_dump_fp)
+    {
+      fprintf(stderr, " [%s] [%d] rst_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, rst_file_name);
+      return PIDX_err_rst;
+    }
+  }
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code dump_debug_data_finalie (PIDX_multi_patch_rst_id id)
+{
+
+  if (id->idx_derived->dump_rst_info == 1 && id->idx->current_time_step == 0)
+  {
+    fprintf(id->idx_derived->rst_dump_fp, "\n");
+    fclose(id->idx_derived->rst_dump_fp);
+  }
+
+  return PIDX_success;
 }
