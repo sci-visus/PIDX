@@ -149,7 +149,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
   ret = hz_encode_cleanup(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-  ret = restructure_cleanup(file, gi);
+  ret = restructure_cleanup(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   //time->buffer_cleanup_end = PIDX_get_time();
 
@@ -309,7 +309,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
   ret = hz_encode_cleanup(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-  ret = restructure_cleanup(file, gi);
+  ret = restructure_cleanup(file);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   //time->buffer_cleanup_end = PIDX_get_time();
 

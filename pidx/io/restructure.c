@@ -297,7 +297,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
 
 
 
-PIDX_return_code restructure_cleanup(PIDX_io file, int gi)
+PIDX_return_code restructure_cleanup(PIDX_io file)
 {
   int ret = 0;
   PIDX_time time = file->idx_d->time;

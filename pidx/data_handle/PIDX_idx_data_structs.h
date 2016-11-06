@@ -47,60 +47,8 @@ struct PIDX_timming_struct
    double idx_layout_start, idx_layout_end;
    double idx_header_io_start, idx_header_io_end;
    double idx_group_cleanup_start, idx_group_cleanup_end;
-
-   double idx_read_rst_init_start, idx_read_rst_init_end;
-   double idx_read_rst_start, idx_read_rst_end;
-   double idx_read_layout_start, idx_read_layout_end;
-   double idx_read_header_start, idx_read_header_end;
-   double idx_read_hz_init_start, idx_read_hz_init_end;
-   double idx_read_hz_start, idx_read_hz_end;
-   double idx_read_agg_init_start, idx_read_agg_init_end;
-   double idx_read_agg_start, idx_read_agg_end;
-   double idx_read_io_start, idx_read_io_end;
-   double idx_read_buffer_cleanup_start, idx_read_buffer_cleanup_end;
-
-   double raw_write_rst_init_start, raw_write_rst_init_end;
-   double raw_write_rst_start, raw_write_rst_end;
-   double raw_write_header_start, raw_write_header_end;
-   double raw_write_io_start, raw_write_io_end;
-   double raw_write_buffer_cleanup_start, raw_write_buffer_cleanup_end;
-
-   double raw_read_rst_init_start, raw_read_rst_init_end;
-   double raw_read_rst_start, raw_read_rst_end;
-   double raw_read_io_start, raw_read_io_end;
-   double raw_read_buffer_cleanup_start, raw_read_buffer_cleanup_end;
-
-   double raw_forced_read_start, raw_forced_read_end;
-
-   double global_idx_write_init_start, global_idx_write_init_end;
-   double global_idx_write_rst_init_start, global_idx_write_rst_init_end;
-   double global_idx_write_rst_start, global_idx_write_rst_end;
-   double global_idx_write_partition_setup_start, global_idx_write_partition_setup_end;
-   double global_idx_write_bitstring_start, global_idx_write_bitstring_end;
-   double global_idx_write_comm_create_start, global_idx_write_comm_create_end;
-   double global_idx_write_layout_start, global_idx_write_layout_end;
-   double global_idx_write_header_start, global_idx_write_header_end;
-   double global_idx_write_hz_init_start, global_idx_write_hz_init_end;
-   double global_idx_write_hz_start, global_idx_write_hz_end;
-   double global_idx_write_agg_init_start, global_idx_write_agg_init_end;
-   double global_idx_write_agg_start, global_idx_write_agg_end;
-   double global_idx_write_io_start, global_idx_write_io_end;
-   double global_idx_write_buffer_cleanup_start, global_idx_write_buffer_cleanup_end;
-
-   double global_idx_read_init_start, global_idx_read_init_end;
-   double global_idx_read_rst_init_start, global_idx_read_rst_init_end;
-   double global_idx_read_rst_start, global_idx_read_rst_end;
-   double global_idx_read_partition_setup_start, global_idx_read_partition_setup_end;
-   double global_idx_read_bitstring_start, global_idx_read_bitstring_end;
-   double global_idx_read_comm_create_start, global_idx_read_comm_create_end;
-   double global_idx_read_layout_start, global_idx_read_layout_end;
-   double global_idx_read_header_start, global_idx_read_header_end;
-   double global_idx_read_hz_init_start, global_idx_read_hz_init_end;
-   double global_idx_read_hz_start, global_idx_read_hz_end;
-   double global_idx_read_agg_init_start, global_idx_read_agg_init_end;
-   double global_idx_read_agg_start, global_idx_read_agg_end;
-   double global_idx_read_io_start, global_idx_read_io_end;
-   double global_idx_read_buffer_cleanup_start, global_idx_read_buffer_cleanup_end;
+   double partition_start, partition_end;
+   double partition_cleanup_start, partition_cleanup_end;
 
 
    double *rst_init_start, *rst_init_end;

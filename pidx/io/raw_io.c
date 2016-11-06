@@ -65,7 +65,7 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
     }
 
     // Step 4: Cleanup all buffers and ids
-    ret = restructure_cleanup(file, gi);
+    ret = restructure_cleanup(file);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -145,7 +145,7 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
       }
 
       // Step 4: Cleanup all buffers and ids
-      ret = restructure_cleanup(file, gi);
+      ret = restructure_cleanup(file);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

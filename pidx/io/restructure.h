@@ -39,10 +39,9 @@ PIDX_return_code restructure_io(PIDX_io file, int mode);
 ///
 /// \brief restructure_cleanup
 /// \param file
-/// \param group_index
 /// \return
 ///
-PIDX_return_code restructure_cleanup(PIDX_io file, int group_index);
+PIDX_return_code restructure_cleanup(PIDX_io file);
 
 
 
