@@ -83,11 +83,6 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
-  PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
-  PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
-  PIDX_file_initialize_time_step(file, file->idx->filename_partition, file->idx->filename_template_partition, file->idx->current_time_step);
-  PIDX_file_initialize_time_step(file, file->idx->filename_file_zero, file->idx->filename_template_file_zero, file->idx->current_time_step);
-
   if (rank == 0)
     printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 
@@ -136,6 +131,11 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
 {
   int ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
+  PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
+  PIDX_file_initialize_time_step(file, file->idx->filename_partition, file->idx->filename_template_partition, file->idx->current_time_step);
+  PIDX_file_initialize_time_step(file, file->idx->filename_file_zero, file->idx->filename_template_file_zero, file->idx->current_time_step);
 
   if (hz_from_file_zero == hz_to_file_zero)
   {
@@ -927,6 +927,7 @@ PIDX_return_code delete_block_layout(PIDX_io file, int gi, int hz_from_file_zero
     for (i = var_grp->f0_start_layout_index; i < var_grp->f0_end_layout_index ; i++)
     {
       i_1 = i - var_grp->f0_start_layout_index;
+      PIDX_free_layout(var_grp->f0_block_layout_by_level[i_1]);
       PIDX_blocks_free_layout(var_grp->f0_block_layout_by_level[i_1]);
     }
     destroy_file_zero_block_layout(file, gi);
@@ -940,6 +941,7 @@ PIDX_return_code delete_block_layout(PIDX_io file, int gi, int hz_from_file_zero
     for (i = var_grp->shared_start_layout_index; i < var_grp->shared_end_layout_index ; i++)
     {
       i_1 = i - var_grp->shared_start_layout_index;
+      PIDX_free_layout(var_grp->shared_block_layout_by_level[i_1]);
       PIDX_blocks_free_layout(var_grp->shared_block_layout_by_level[i_1]);
     }
     destroy_shared_block_layout(file, gi);
@@ -953,6 +955,7 @@ PIDX_return_code delete_block_layout(PIDX_io file, int gi, int hz_from_file_zero
     for (i = var_grp->nshared_start_layout_index; i < var_grp->nshared_end_layout_index ; i++)
     {
       i_1 = i - var_grp->nshared_start_layout_index;
+      PIDX_free_layout(var_grp->nshared_block_layout_by_level[i_1]);
       PIDX_blocks_free_layout(var_grp->nshared_block_layout_by_level[i_1]);
     }
     destroy_non_shared_block_layout(file, gi);

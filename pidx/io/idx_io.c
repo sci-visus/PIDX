@@ -1,13 +1,4 @@
 #include "../PIDX_inc.h"
-#include "restructure.h"
-#include "partition.h"
-#include "local_buffer.h"
-#include "headers.h"
-#include "blocks.h"
-#include "hz_buffer.h"
-#include "agg_io.h"
-#include "initialize.h"
-#include "timming.h"
 
 static int hz_from_non_shared = 0;
 static int hz_to_non_shared = 0;
@@ -186,10 +177,11 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  int pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (pipe_length + 1))
+  file->idx->variable_pipe_length = file->idx->variable_count;
+  for (si = svi; si < evi; si = si + (file->idx->variable_count + 1))
   {
-    ei = ((si + pipe_length) >= (evi)) ? (evi - 1) : (si + pipe_length);
+    ei = ((si + file->idx->variable_count) >= (evi)) ? (evi - 1) : (si + file->idx->variable_count);
+    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
     // Step 1: Setup restructuring buffers
     ret = restructure_setup(file, gi, si, ei);
@@ -334,27 +326,27 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   int ret;
   PIDX_time time = file->idx_d->time;
 
-  time->idx_init_start = MPI_Wtime();
-  ret = init(file, gi);
+  time->init_start = PIDX_get_time();
+  ret = idx_init(file, gi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  time->idx_init_end = MPI_Wtime();
+  time->init_end = PIDX_get_time();
 
 
-  time->idx_set_reg_box_start = MPI_Wtime();
+  time->set_reg_box_start = PIDX_get_time();
   ret = set_rst_box_size(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  time->idx_set_reg_box_end = MPI_Wtime();
+  time->set_reg_box_end = MPI_Wtime();
 
 
-  time->idx_layout_start = PIDX_get_time();
+  time->bit_string_start = PIDX_get_time();
   // calculates maxh and bitstring
   ret = populate_bit_string(file, mode);
   if (ret != PIDX_success)
@@ -365,7 +357,9 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 
   // selects layout levels based on maxh
   select_io_mode(file, gi);
+  time->bit_string_end = PIDX_get_time();
 
+  time->layout_start = PIDX_get_time();
   // calculates the block layout, given this is pure IDX only non-share block layout is populated
   ret = populate_block_layouts(file, gi, svi, 0, 0, 0, 0, hz_from_non_shared, hz_to_non_shared, PIDX_IDX_IO);
   if (ret != PIDX_success)
@@ -392,15 +386,16 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 
   if (file->one_time_initializations == 0)
   {
+    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
     PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
     file->one_time_initializations = 1;
   }
-  time->idx_layout_end = PIDX_get_time();
+  time->layout_end = PIDX_get_time();
 
 
   if (mode == PIDX_WRITE)
   {
-    time->idx_header_io_start = PIDX_get_time();
+    time->header_io_start = PIDX_get_time();
     // Creates the file heirarchy and writes the header info for all binary files
     ret = write_headers(file, gi, svi, evi, PIDX_IDX_IO);
     if (ret != PIDX_success)
@@ -408,7 +403,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-    time->idx_header_io_end = PIDX_get_time();
+    time->header_io_end = PIDX_get_time();
   }
 
   return PIDX_success;
@@ -420,7 +415,7 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi)
   int ret;
   PIDX_time time = file->idx_d->time;
 
-  time->idx_group_cleanup_start = PIDX_get_time();
+  time->group_cleanup_start = PIDX_get_time();
   ret = destroy_agg_io_buffer(file);
   if (ret != PIDX_success)
   {
@@ -437,7 +432,7 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi)
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   free(var_grp->rank_buffer);
-  time->idx_group_cleanup_end = PIDX_get_time();
+  time->group_cleanup_end = PIDX_get_time();
 
   return PIDX_success;
 }

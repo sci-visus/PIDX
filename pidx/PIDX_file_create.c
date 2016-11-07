@@ -64,7 +64,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->local_group_count = 1;
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
-  (*file)->one_time_initializations = 0;
+  //(*file)->one_time_initializations = 0;
+  //(*file)->one_time_initializations = 0;
 
   (*file)->idx_d->color = 0;
   (*file)->idx->io_type = PIDX_IDX_IO;

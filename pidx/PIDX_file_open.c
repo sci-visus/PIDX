@@ -49,7 +49,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->local_group_count = 0;
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
-  (*file)->one_time_initializations = 0;
+  //(*file)->one_time_initializations = 0;
 
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;

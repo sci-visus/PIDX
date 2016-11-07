@@ -56,7 +56,8 @@ struct PIDX_Ndim_patch_group_struct
 typedef struct PIDX_Ndim_patch_group_struct* Ndim_patch_group;
 
 
-struct PIDX_source_patch_index_struct{
+struct PIDX_source_patch_index_struct
+{
   int rank;
   int index;
 };

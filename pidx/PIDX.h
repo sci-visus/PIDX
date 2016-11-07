@@ -789,6 +789,16 @@ PIDX_return_code PIDX_disable_agg(PIDX_file file);
 
 
 ///
+/// \brief PIDX_dump_rst_info
+/// \param file
+/// \param dump_rst_info
+/// \return
+///
+PIDX_return_code PIDX_dump_rst_info(PIDX_file file, int dump_rst_info);
+
+
+
+///
 /// \brief PIDX_dump_agg_info
 /// \param file
 /// \param dump_agg_info

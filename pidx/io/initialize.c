@@ -23,9 +23,9 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
   if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
   {
-    assert(file->idx->reg_patch_size[0] == 0);
-    assert(file->idx->reg_patch_size[1] == 0);
-    assert(file->idx->reg_patch_size[2] == 0);
+    assert(file->idx->reg_patch_size[0] != 0);
+    assert(file->idx->reg_patch_size[1] != 0);
+    assert(file->idx->reg_patch_size[2] != 0);
   }
   else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
   {
@@ -710,7 +710,7 @@ static PIDX_return_code calculate_patch_group_count_for_patch_per_process(PIDX_i
 }
 
 
-PIDX_return_code init(PIDX_io file, int gi)
+PIDX_return_code idx_init(PIDX_io file, int gi)
 {
   int d = 0;
   int grank = 0, gnprocs = 1;

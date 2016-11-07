@@ -1,20 +1,11 @@
 #include "../PIDX_inc.h"
-#include "restructure.h"
-#include "partition.h"
-#include "local_buffer.h"
-#include "headers.h"
-#include "blocks.h"
-#include "hz_buffer.h"
-#include "agg_io.h"
-#include "initialize.h"
-#include "timming.h"
 
 static int hz_from_file_zero = 0, hz_from_shared = 0, hz_from_non_shared = 0;
 static int hz_to_file_zero = 0, hz_to_shared = 0, hz_to_non_shared = 0;
 static int agg_l_nshared = 0, agg_l_shared = 0, agg_l_f0 = 0;
 static PIDX_return_code find_agg_level(PIDX_io file, int gi);
 static PIDX_return_code select_io_mode(PIDX_io file, int gi);
-static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi);
+static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int mode);
 static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi);
 static PIDX_return_code partition(PIDX_io file, int gi, int svi);
 static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
@@ -51,15 +42,14 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   PIDX_time time = file->idx_d->time;
 
   // Step 0:  group and IDX related meta data
-  ret = group_meta_data_init(file, gi, svi);
-  if (ret != PIDX_success)
+  if (group_meta_data_init(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   // Step 1:  Restrucure setup
-  if (restructure_setup(file, gi, svi, evi) != PIDX_success)
+  if (restructure_setup(file, gi, svi, evi - 1) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -73,8 +63,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   }
 
   // Step 3:  Partition
-  ret = partition(file, gi, svi);
-  if (ret != PIDX_success)
+  if (partition(file, gi, svi) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -95,6 +84,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
     ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
     // Step 5:  Setup HZ encoding Phase
     ret = hz_encode_setup(file, si, ei);
@@ -138,7 +128,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     for (li = si; li <= ei; li = li + 1)
     {
       time->io_start[li] = PIDX_get_time();
-      create_async_buffers(file, gi, 0, 0, agg_l_nshared);
+      create_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
 
       ret = data_io(file, gi, li, agg_l_f0, agg_l_shared, agg_l_nshared, PIDX_WRITE);
       if (ret != PIDX_success)
@@ -147,8 +137,8 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
         return PIDX_err_file;
       }
 
-      wait_and_destroy_async_buffers(file, gi, 0, 0, agg_l_nshared);
-      finalize_aggregation(file, gi, li, 0, 0, agg_l_nshared);
+      wait_and_destroy_async_buffers(file, gi, agg_l_f0, agg_l_shared, agg_l_nshared);
+      finalize_aggregation(file, gi, li, agg_l_f0, agg_l_shared, agg_l_nshared);
       time->io_end[li] = PIDX_get_time();
     }
 
@@ -221,7 +211,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
   PIDX_time time = file->idx_d->time;
 
   // Step 0:  group and IDX related meta data
-  ret = group_meta_data_init(file, gi, svi);
+  ret = group_meta_data_init(file, gi, svi, PIDX_READ);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -229,7 +219,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
   }
 
   // Step 1:  Restrucure setup
-  if (restructure_setup(file, gi, svi, evi) != PIDX_success)
+  if (restructure_setup(file, gi, svi, evi - 1) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -278,7 +268,6 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
       }
     }
 
-
     // Setup 6: Performs actual file io
     for (li = si; li <= ei; li = li + 1)
     {
@@ -291,7 +280,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
         return PIDX_err_file;
       }
 
-      finalize_aggregation(file, gi, li, 0, 0, agg_l_nshared);
+      finalize_aggregation(file, gi, li,agg_l_f0, agg_l_shared, agg_l_nshared);
       time->io_end[li] = PIDX_get_time();
     }
 
@@ -448,14 +437,6 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi)
   PIDX_time time = file->idx_d->time;
 
   time->partition_start = MPI_Wtime();
-  // Calculates the number of partititons
-  ret = find_partition_count(file);
-  if (ret != PIDX_success)
-  {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
   // assign same color to processes within the same partition
   ret = partition_setup(file, gi, svi);
   if (ret != PIDX_success)
@@ -478,46 +459,39 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi)
 
 
 
-static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi)
+static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int mode)
 {
   int ret;
   PIDX_time time = file->idx_d->time;
 
-  time->idx_init_start = MPI_Wtime();
-  ret = init(file, gi);
+  time->init_start = MPI_Wtime();
+  ret = idx_init(file, gi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  time->idx_init_end = MPI_Wtime();
+  time->init_end = MPI_Wtime();
 
 
-  time->idx_set_reg_box_start = MPI_Wtime();
+  time->set_reg_box_start = MPI_Wtime();
   ret = set_rst_box_size(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  time->set_reg_box_end = MPI_Wtime();
 
-  if (file->one_time_initializations == 0)
+  time->bit_string_start = PIDX_get_time();
+  // Calculates the number of partititons
+  ret = find_partition_count(file);
+  if (ret != PIDX_success)
   {
-    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
-    file->one_time_initializations = 1;
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
   }
-  time->idx_set_reg_box_end = MPI_Wtime();
 
-  return PIDX_success;
-}
-
-
-static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode)
-{
-  int ret;
-  PIDX_time time = file->idx_d->time;
-
-  time->idx_layout_start = PIDX_get_time();
   // calculates maxh and bitstring
   ret = populate_bit_string(file, mode);
   if (ret != PIDX_success)
@@ -529,6 +503,24 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   // selects levels based on mode and maxh
   select_io_mode(file, gi);
 
+  if (file->one_time_initializations == 0)
+  {
+    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
+    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
+    file->one_time_initializations = 1;
+  }
+  time->bit_string_end = PIDX_get_time();
+
+  return PIDX_success;
+}
+
+
+static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode)
+{
+  int ret;
+  PIDX_time time = file->idx_d->time;
+
+  time->layout_start = PIDX_get_time();
   // calculates the block layout, given this is pure IDX only non-share block layout is populated
   ret = populate_block_layouts(file, gi, svi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
   if (ret != PIDX_success)
@@ -552,12 +544,12 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  time->idx_layout_end = PIDX_get_time();
+  time->layout_end = PIDX_get_time();
 
 
   if (mode == PIDX_WRITE)
   {
-    time->idx_header_io_start = PIDX_get_time();
+    time->header_io_start = PIDX_get_time();
     // Creates the file heirarchy and writes the header info for all binary files
     ret = write_headers(file, gi, svi, evi, PIDX_GLOBAL_PARTITION_IDX_IO);
     if (ret != PIDX_success)
@@ -565,7 +557,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-    time->idx_header_io_end = PIDX_get_time();
+    time->header_io_end = PIDX_get_time();
   }
 
   return PIDX_success;
@@ -577,7 +569,7 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi)
   int ret;
   PIDX_time time = file->idx_d->time;
 
-  time->idx_group_cleanup_start = PIDX_get_time();
+  time->group_cleanup_start = PIDX_get_time();
   ret = destroy_agg_io_buffer(file);
   if (ret != PIDX_success)
   {
@@ -594,7 +586,7 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi)
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   free(var_grp->rank_buffer);
-  time->idx_group_cleanup_end = PIDX_get_time();
+  time->group_cleanup_end = PIDX_get_time();
 
   return PIDX_success;
 }

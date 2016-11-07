@@ -1,12 +1,4 @@
 #include "../PIDX_inc.h"
-#include "restructure.h"
-#include "partition.h"
-#include "local_buffer.h"
-#include "headers.h"
-#include "blocks.h"
-#include "hz_buffer.h"
-#include "agg_io.h"
-#include "timming.h"
 
 static int hz_from_file_zero = 0, hz_from_shared = 0, hz_from_non_shared = 0;
 static int hz_to_file_zero = 0, hz_to_shared = 0, hz_to_non_shared = 0;
@@ -25,10 +17,10 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
 
   // Calculate bounds with compression and
   // populate rank buffer
-  //time->idx_init_start = MPI_Wtime();
+  //time->init_start = MPI_Wtime();
   ret = init(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  //time->idx_init_end = MPI_Wtime();
+  //time->init_end = MPI_Wtime();
 
 
   // Restructuring the grid into power two blocks
@@ -85,10 +77,10 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
 
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
-  //time->idx_layout_start = PIDX_get_time();
+  //time->layout_start = PIDX_get_time();
   ret = populate_block_layouts(file, gi, svi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_LOCAL_PARTITION_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  //time->idx_layout_end = PIDX_get_time();
+  //time->layout_end = PIDX_get_time();
 
 
   // Creates the file heirarchy
@@ -168,10 +160,10 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
 
   // Calculate bounds with compression and
   // populate rank buffer
-  //time->idx_init_start = MPI_Wtime();
+  //time->init_start = MPI_Wtime();
   ret = init(file, gi);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  //time->idx_init_end = MPI_Wtime();
+  //time->init_end = MPI_Wtime();
 
 
   // Restructuring the grid into power two blocks
@@ -234,10 +226,10 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
 
   // Populates the idx block layout
   // individually for file zero, shared and non-sharef file
-  //time->idx_layout_start = PIDX_get_time();
+  //time->layout_start = PIDX_get_time();
   ret = populate_block_layouts(file, gi, svi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_LOCAL_PARTITION_IDX_IO);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-  //time->idx_layout_end = PIDX_get_time();
+  //time->layout_end = PIDX_get_time();
 
 
   /*
@@ -313,7 +305,6 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
   //time->buffer_cleanup_end = PIDX_get_time();
 
-  //time->EX = PIDX_get_time();
 
   return PIDX_success;
 
@@ -343,6 +334,7 @@ static PIDX_return_code init(PIDX_io file, int gi)
 
   if (file->one_time_initializations == 0)
   {
+    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
     PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
     file->one_time_initializations = 1;
   }

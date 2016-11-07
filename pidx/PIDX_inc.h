@@ -53,6 +53,20 @@ extern "C" {
 #include "./core/PIDX_file_io/PIDX_file_io.h"
 
 #include "./io/PIDX_io.h"
+#include "./io/idx_io.h"
+#include "./io/local_partition_idx_io.h"
+#include "./io/global_partition_idx_io.h"
+#include "./io/raw_io.h"
+
+#include "./io/restructure.h"
+#include "./io/partition.h"
+#include "./io/local_buffer.h"
+#include "./io/headers.h"
+#include "./io/blocks.h"
+#include "./io/hz_buffer.h"
+#include "./io/agg_io.h"
+#include "./io/initialize.h"
+#include "./io/timming.h"
 
 #ifdef __cplusplus
 }

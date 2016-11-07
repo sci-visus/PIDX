@@ -8,10 +8,7 @@
 
 
 #include "../PIDX_inc.h"
-#include "idx_io.h"
-#include "local_partition_idx_io.h"
-#include "global_partition_idx_io.h"
-#include "raw_io.h"
+
 
 
 PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg)
@@ -44,11 +41,9 @@ PIDX_return_code PIDX_io_set_communicator(PIDX_io id, MPI_Comm comm)
 
 PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 {
-  PIDX_time time = file->idx_d->time;
-  time->SX = PIDX_get_time();
-
   PIDX_return_code ret;
 
+  file->idx_d->time->SX = PIDX_get_time();
   if (MODE == PIDX_IDX_IO)
     ret = PIDX_idx_write(file, gi, svi, evi);
 
@@ -63,7 +58,8 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
-  time->EX = PIDX_get_time();
+  file->idx_d->time->EX = PIDX_get_time();
+
   return PIDX_success;
 }
 
@@ -71,10 +67,6 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 
 PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
 {
-
-  PIDX_time time = file->idx_d->time;
-  time->SX = PIDX_get_time();
-
   PIDX_return_code ret;
 
   if (MODE == PIDX_IDX_IO)
@@ -90,9 +82,6 @@ PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
     ret = PIDX_raw_read(file, gi, svi, evi);
 
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-
-
-  time->EX = PIDX_get_time();
 
   return PIDX_success;
 }

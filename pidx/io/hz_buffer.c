@@ -271,7 +271,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_hz;
+      //return PIDX_err_hz;
     }
   }
   time->hz_end[cvi] = PIDX_get_time();
@@ -302,7 +302,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_hz;
+      //return PIDX_err_hz;
     }
   }
 

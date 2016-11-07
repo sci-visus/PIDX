@@ -36,20 +36,19 @@
 
 struct PIDX_timming_struct
 {
+   double SX, EX;
    double sim_start, sim_end;
 
-   double SX;
-   double EX;
    double file_create_time;
 
-   double idx_init_start, idx_init_end;
-   double idx_set_reg_box_start, idx_set_reg_box_end;
-   double idx_layout_start, idx_layout_end;
-   double idx_header_io_start, idx_header_io_end;
-   double idx_group_cleanup_start, idx_group_cleanup_end;
+   double init_start, init_end;
+   double set_reg_box_start, set_reg_box_end;
+   double bit_string_start, bit_string_end;
+   double layout_start, layout_end;
+   double header_io_start, header_io_end;
+   double group_cleanup_start, group_cleanup_end;
    double partition_start, partition_end;
    double partition_cleanup_start, partition_cleanup_end;
-
 
    double *rst_init_start, *rst_init_end;
    double *rst_meta_data_create_start, *rst_meta_data_create_end;

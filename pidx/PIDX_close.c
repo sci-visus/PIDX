@@ -18,7 +18,6 @@
 
 #include "PIDX_file_handler.h"
 
-
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
   int i, j, p;
@@ -123,20 +122,21 @@ PIDX_return_code PIDX_close(PIDX_file file)
     int si = 0, gi = 0;
     for (gi = 0; gi < file->idx->variable_group_count; gi++)
     {
-      double group_init = time->idx_init_end - time->idx_init_start;
-      double group_reg_box = time->idx_set_reg_box_end - time->idx_set_reg_box_start;
-      double group_block_layout = time->idx_layout_end - time->idx_layout_start;
-      double header_io = time->idx_header_io_end - time->idx_header_io_start;
-      double group_total = group_init + group_reg_box + group_block_layout + header_io;
-      printf("GROUP INIT: [%f + %f + %f + %f] = %f\n", group_init, group_reg_box, group_block_layout, header_io, group_total);
+      double group_init = time->init_end - time->init_start;
+      double group_bitstring = time->bit_string_end - time->bit_string_start;
+      double group_reg_box = time->set_reg_box_end - time->set_reg_box_start;
+      double group_block_layout = time->layout_end - time->layout_start;
+      double header_io = time->header_io_end - time->header_io_start;
+      double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
+      printf("GROUP INIT: [%f + %f + %f + %f + %f] = %f\n", group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
       double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0;
-      double hz_init = 0, hz_meta_data = 0, hz_buffer = 0, hz = 0, hz_buffer_free = 0, hz_cleanup = 0, hz_total = 0, hz_all;
-      double chunk_init = 0, chunk_meta = 0, chunk_buffer = 0, chunk = 0, chunk_buffer_free = 0, chunk_cleanup = 0, chunk_total = 0, chunk_all;
+      double hz_init = 0, hz_meta_data = 0, hz_buffer = 0, hz = 0, hz_buffer_free = 0, hz_cleanup = 0, hz_total = 0, hz_all = 0;
+      double chunk_init = 0, chunk_meta = 0, chunk_buffer = 0, chunk = 0, chunk_buffer_free = 0, chunk_cleanup = 0, chunk_total = 0, chunk_all = 0;
       double compression_init = 0, compression = 0, compression_total = 0, compression_all = 0;
       double io = 0, io_all = 0;
 
-      double grp_rst_hz_chunk_agg_io = 0;
+      double grp_rst_hz_chunk_agg_io = group_total;
       double agg_all = 0;
       for (si = 0; si < file->idx->variable_grp[gi]->variable_count; si++)
       {
@@ -184,6 +184,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
         double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total;
 
+        printf("SHARED %d %d\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index);
         for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
         {
           agg_init = time->agg_init_end[si][i] - time->agg_init_start[si][i];
@@ -194,9 +195,10 @@ PIDX_return_code PIDX_close(PIDX_file file)
           agg_total = agg_init + agg_meta + agg_buf + agg + agg_meta_cleanup;
           agg_all = agg_all + agg_total;
 
-          printf("[S] [%d] [%d] %f + %f + %f + %f + %f = %f\n", si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
+          printf("[S] [%d] [%d] %f + %f + %f + %f + %f = %f [%f]\n", si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total, agg_all);
         }
 
+        printf("NON SHARED %d %d\n", file->idx->variable_grp[gi]->nshared_start_layout_index, file->idx->variable_grp[gi]->nshared_end_layout_index);
         for (i = file->idx->variable_grp[gi]->nshared_start_layout_index; i < file->idx->variable_grp[gi]->nshared_end_layout_index ; i++)
         {
           agg_init = time->agg_init_end[si][i] - time->agg_init_start[si][i];
@@ -207,18 +209,21 @@ PIDX_return_code PIDX_close(PIDX_file file)
           agg_total = agg_init + agg_meta + agg_buf + agg + agg_meta_cleanup;
           agg_all = agg_all + agg_total;
 
-          printf("[N] [%d] [%d] %f + %f + %f + %f + %f = %f\n", si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
+          printf("[N] [%d] [%d] %f + %f + %f + %f + %f = %f [%f]\n", si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total, agg_all);
         }
 
         io = time->io_end[si] - time->io_start[si];
         io_all = io_all + io;
         printf("IO [%d]: %f\n", si, io);
-
-        grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + group_total + rst_all + hz_all + chunk_all + compression_all + agg_all + io_all;
       }
-      printf("GROUP + RST + CHUNK + CMP + HZ + AGG + IO: [%f + %f + %f + %f + %f + %f + %f] = [%f %f]\n", group_total, rst_all, chunk_all, compression_all, hz_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, max_time);
+
+      grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + hz_all + chunk_all + compression_all + agg_all + io_all;
+
+      printf("GROUP + RST + CHUNK + CMP + HZ + AGG + IO: [%f + %f + %f + %f + %f + %f + %f] = [%f %f] \n", group_total, rst_all, chunk_all, compression_all, hz_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, max_time);
     }
   }
+
+  PIDX_delete_timming_buffers2(file->idx_d->time, file->idx->variable_count);
 
 
   int j = 0;

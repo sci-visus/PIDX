@@ -382,6 +382,8 @@ int main(int argc, char **argv)
     ret = PIDX_set_variable_count(file, variable_count);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
+    PIDX_dump_rst_info(file, 1);
+
     //PIDX_debug_rst(file, 1);
     //PIDX_debug_hz(file, 1);
 
@@ -390,7 +392,7 @@ int main(int argc, char **argv)
     //PIDX_set_restructuring_box(file, reg_patch_size);
     //PIDX_GLOBAL_PARTITION_IDX_IO
     //PIDX_IDX_IO
-    ret = PIDX_set_io_mode(file, PIDX_IDX_IO);
+    ret = PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
 
     ret = PIDX_set_partition_size(file, partition_size[0], partition_size[1], partition_size[2]);

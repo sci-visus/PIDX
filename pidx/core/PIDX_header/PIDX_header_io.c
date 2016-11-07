@@ -793,6 +793,9 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   //int nprocs;
   //MPI_Comm_size(header_io_id->comm, &nprocs);
 
+  //if (rank == 0)
+  //  PIDX_blocks_print_layout(block_layout);
+
   for (i = 0; i < header_io_id->idx->blocks_per_file; i++)
   {
     //if (nprocs == 1)
@@ -827,7 +830,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         //printf("%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bpv / 8), total_chunk_size, header_io_id->idx->variable[j]->vps);
         //if (file_number == 2)
         //if (nprocs == 1)
-        //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps));
+        //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps));
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps / (header_io_id->idx->compression_factor));
 

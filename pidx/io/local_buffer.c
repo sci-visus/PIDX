@@ -331,8 +331,6 @@ PIDX_return_code create_async_buffers(PIDX_io file, int gi, int agg_io_level_fil
 }
 
 
-
-
 PIDX_return_code wait_and_destroy_async_buffers(PIDX_io file, int gi, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];

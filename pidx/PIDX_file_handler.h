@@ -42,7 +42,7 @@ struct PIDX_file_descriptor
 
   int flush_used;
   int write_on_close;                          ///< HPC Writes
-  int one_time_initializations;                ///<
+  //int one_time_initializations;                ///<
 
   int ROI_writes;
 

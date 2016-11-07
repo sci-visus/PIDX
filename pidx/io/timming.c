@@ -1,6 +1,7 @@
 #include "../PIDX_inc.h"
 
-void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_count)
+
+void PIDX_init_timming_buffers1(PIDX_time time, int variable_count)
 {
   // Restructuring phase timings
   time->rst_init_start = malloc (sizeof(double) * variable_count);
@@ -124,7 +125,16 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
   time->compression_end =  malloc (sizeof(double) * variable_count);
   memset(time->compression_end, 0, sizeof(double) * variable_count);
 
+  // File io phase timings
+  time->io_start = malloc (sizeof(double) * variable_count);
+  memset(time->io_start, 0, sizeof(double) * variable_count);
+  time->io_end = malloc (sizeof(double) * variable_count);
+    memset(time->io_end, 0, sizeof(double) * variable_count);
+}
 
+
+void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_count)
+{
   // Aggregation phase timings
   time->agg_init_start = malloc (sizeof(double*) * variable_count);
   memset(time->agg_init_start, 0, sizeof(double*) * variable_count);
@@ -179,12 +189,6 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
     time->agg_meta_cleanup_end[i] = malloc (sizeof(double) * layout_count);
     memset(time->agg_meta_cleanup_end[i], 0, sizeof(double) * layout_count);
   }
-
-  // File io phase timings
-  time->io_start = malloc (sizeof(double) * variable_count);
-  memset(time->io_start, 0, sizeof(double) * variable_count);
-  time->io_end = malloc (sizeof(double) * variable_count);
-  memset(time->io_end, 0, sizeof(double) * variable_count);
 }
 
 
