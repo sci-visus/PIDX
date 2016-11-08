@@ -288,7 +288,7 @@ int main(int argc, char **argv)
 
   for (current_time_step = 0; current_time_step < time_step_count; current_time_step++)
   {
-    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
+    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, global_size, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
     //PIDX_point reg_patch_size;
@@ -302,9 +302,6 @@ int main(int argc, char **argv)
       PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
 
     PIDX_set_block_size(file, 12);
-
-    ret = PIDX_set_dims(file, global_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
 
     ret = PIDX_set_current_time_step(file, current_time_step);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");

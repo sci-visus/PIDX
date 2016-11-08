@@ -1,7 +1,7 @@
 #include "PIDX_file_handler.h"
 
 /// Function to get file descriptor when opening an existing IDX file
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
 {
 #if 1
   int i;
@@ -90,8 +90,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
-  for (i=0;i<PIDX_MAX_DIMENSIONS;i++)
-    (*file)->idx->bounds[i]=65535;
 
   //initialize logic_to_physic transform to identity
   (*file)->idx->transform[0]  = 1.0;
@@ -159,7 +157,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         while (pch != NULL)
         {
           if (count % 2 == 1)
+          {
             (*file)->idx->bounds[count / 2] = atoi(pch) + 1;
+            (*file)->idx->box_bounds[count / 2] = atoi(pch) + 1;
+          }
           count++;
           pch = strtok(NULL, " ");
         }
@@ -419,6 +420,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   if ((*file)->idx_d->parallel_mode == 1)
   {
     MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
+    MPI_Bcast((*file)->idx->box_bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
     MPI_Bcast((*file)->idx->reg_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
     MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->comm);
     MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->comm);
@@ -523,7 +525,22 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   else
     (*file)->idx->flip_endian = 1;
 
+  memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
 
 #endif
+  return PIDX_success;
+}
+
+
+PIDX_return_code PIDX_query_box(PIDX_file file, PIDX_point box_dims)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  //if (box_dims[0] > file->idx->bounds[0] || box_dims[1] > file->idx->bounds[1] || box_dims[2] > file->idx->bounds[2])
+  //  return PIDX_err_file;
+
+  memcpy(file->idx->box_bounds, box_dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+
   return PIDX_success;
 }

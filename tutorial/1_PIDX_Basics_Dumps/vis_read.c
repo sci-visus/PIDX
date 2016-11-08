@@ -185,7 +185,7 @@ int main(int argc, char **argv)
   PIDX_file file;            // IDX file descriptor
   PIDX_variable variable;   // variable descriptor
 
-  PIDX_point global_size, local_offset, local_size;
+  PIDX_point global_size, local_offset, local_size, global_bounds;
   PIDX_set_point_5D(global_size, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
   PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
   PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
@@ -198,11 +198,17 @@ int main(int argc, char **argv)
 #endif
 
   //  PIDX mandatory calls
-  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, access, &file);
+  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, access, global_bounds, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
-  ret = PIDX_get_dims(file, global_size);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
+  //PIDX_debug_rst(file, 1);
+  //PIDX_debug_hz(file, 1);
+
+  //ret = PIDX_get_dims(file, global_size);
+  //ret = PIDX_set_dims(file, global_size);
+  //if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
+
+  PIDX_query_box(file, global_size);
 
   ret = PIDX_get_variable_count(file, &variable_count);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");
@@ -261,6 +267,9 @@ int main(int argc, char **argv)
       }
   */
 
+  global_bounds[0] = 272;
+  global_bounds[1] = 112;
+  global_bounds[2] = 220;
 
   int i, j, k, vps;
   int int_val = 0;
@@ -280,17 +289,17 @@ int main(int argc, char **argv)
             for (vps = 0; vps < v_per_sample; vps++)
             {
               memcpy(&int_val, data + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
-              if (int_val != var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              if (int_val != var + vps + 100 + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
               {
                 read_error_count++;
                 if (rank == 0)
-                  printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                  printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
               else
               {
                 read_count++;
                 //if (rank == 0)
-                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
             }
           }
@@ -302,17 +311,17 @@ int main(int argc, char **argv)
             {
               memcpy(&double_val, data + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
 
-              if (double_val != vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              if (double_val != vps + 100 + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
               {
                 read_error_count++;
                 //if (rank == 0)
-                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val,100 + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val,100 + vps + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
               else
               {
                 read_count++;
                 //if (rank == 0)
-                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val, var /*+ vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
+                //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val, var /*+ vps + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
               }
             }
           }
@@ -322,17 +331,17 @@ int main(int argc, char **argv)
             for (vps = 0; vps < v_per_sample; vps++)
             {
               memcpy(&float_val, data + (index * v_per_sample + vps) * bits_per_sample, bits_per_sample);
-              if (float_val != var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+              if (float_val != var + vps + 100 + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
               {
                 read_error_count++;
-                //if (rank == 0)
-                //printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, float_val, var + vps + 100 + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //if (rank == 63)
+                //printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
               }
               else
               {
                 read_count++;
                 //if (rank == 0)
-                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+                //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((  global_bounds[0] *   global_bounds[1]*(local_box_offset[2] + k))+(  global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
               }
             }
           }

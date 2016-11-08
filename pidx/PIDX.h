@@ -72,7 +72,7 @@ typedef struct PIDX_file_descriptor* PIDX_file;
 /// \return PIDX_return_code The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
 ///
-PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_file* file);
+PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file);
 
 
 /*
@@ -95,7 +95,17 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
 ///
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_file* file);
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_point dims, PIDX_file* file);
+
+
+
+///
+/// \brief PIDX_query_box
+/// \param file
+/// \param box_dims
+/// \return
+///
+PIDX_return_code PIDX_query_box(PIDX_file file, PIDX_point box_dims);
 
 
 
@@ -123,28 +133,6 @@ PIDX_return_code PIDX_close(PIDX_file file);
 /*
  * Implementation in PIDX_idx_set_get.c
  */
-///
-/// Sets the dims of the IDX file.
-/// \param file The IDX file handler.
-/// \param dims Global bounds (box size) of the volume.
-/// \return PIDX_return_code The error code returned by the function.
-/// It is PIDX_success if the task is completed correctly.
-///
-PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims);
-
-
-
-///
-/// Gets the dims of the IDX file.
-/// \param file The IDX file handler.
-/// \return dims: Global bounds (box size) of the volume.
-/// \return PIDX_return_code The error code returned by the function.
-/// It is PIDX_success if the task is completed correctly.
-///
-PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims);
-
-
-
 ///
 /// Sets the number of variables in the IDX file.
 /// \param file The IDX file handler.
@@ -473,7 +461,7 @@ PIDX_return_code PIDX_get_variable_pile_length(PIDX_file file, int* var_pipe_len
 
 
 /*
- * Implementation in PIDX_idx_set_get.c
+ * Implementation in PIDX_variable.c
  */
 ///
 /// \brief PIDX_variable_create Creates a PIDX variable.

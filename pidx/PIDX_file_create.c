@@ -2,7 +2,7 @@
 
 
 /// Function to create IDX file descriptor (based on flags and access)
-PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_file* file)
+PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
 {
   if (flags != PIDX_MODE_CREATE && flags != PIDX_MODE_EXCL)
     return PIDX_err_unsupported_flags;
@@ -45,6 +45,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->flags = flags;
 
   (*file)->access = access_type;
+
+  memcpy((*file)->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy((*file)->idx->box_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
     (*file)->idx_d->partition_count[i] = 1;//access_type->partition_count[i];
@@ -111,9 +114,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
-
-  for (i=0;i<PIDX_MAX_DIMENSIONS;i++)
-    (*file)->idx->bounds[i]=65535;
 
   //initialize logic_to_physic transform to identity
   (*file)->idx->transform[0]  = 1.0;

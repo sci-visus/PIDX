@@ -71,9 +71,14 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
 
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
+#if 0
       adjusted_bounds[d] = rst_id->idx->bounds[d];
       if (rst_id->idx->bounds[d] % rst_id->idx->chunk_size[d] != 0)
         adjusted_bounds[d] = ((rst_id->idx->bounds[d] / rst_id->idx->chunk_size[d]) + 1) * rst_id->idx->chunk_size[d];
+#endif
+      adjusted_bounds[d] = rst_id->idx->box_bounds[d];
+      if (rst_id->idx->box_bounds[d] % rst_id->idx->chunk_size[d] != 0)
+        adjusted_bounds[d] = ((rst_id->idx->box_bounds[d] / rst_id->idx->chunk_size[d]) + 1) * rst_id->idx->chunk_size[d];
     }
 
     rst_id->reg_patch_grp_count = 0;

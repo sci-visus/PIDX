@@ -273,11 +273,9 @@ int main(int argc, char **argv)
   for (ts = 0; ts < time_step_count; ts++)
   {
     //  PIDX mandatory calls
-    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
+    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, global_size, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
-    ret = PIDX_set_dims(file, global_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
     ret = PIDX_set_current_time_step(file, ts);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");
     ret = PIDX_set_variable_count(file, variable_count);

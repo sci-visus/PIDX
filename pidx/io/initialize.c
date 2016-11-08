@@ -120,10 +120,16 @@ static PIDX_return_code calculate_patch_group_count_for_multi_patch_per_process(
   int max_found_reg_patches = 1;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
+#if 0
     adjusted_bounds[d] = file->idx->bounds[d];
     if (file->idx->bounds[d] % file->idx->chunk_size[d] != 0)
       adjusted_bounds[d] = ((file->idx->bounds[d] / file->idx->chunk_size[d]) + 1) * file->idx->chunk_size[d];
     max_found_reg_patches *= ceil((float)file->idx->bounds[d]/(float)file->idx->reg_patch_size[d]);
+#endif
+    adjusted_bounds[d] = file->idx->box_bounds[d];
+    if (file->idx->box_bounds[d] % file->idx->chunk_size[d] != 0)
+      adjusted_bounds[d] = ((file->idx->box_bounds[d] / file->idx->chunk_size[d]) + 1) * file->idx->chunk_size[d];
+    max_found_reg_patches *= ceil((float)file->idx->box_bounds[d]/(float)file->idx->reg_patch_size[d]);
   }
 
   reg_multi_patch_grp_count = 0;
@@ -475,9 +481,14 @@ static PIDX_return_code calculate_patch_group_count_for_patch_per_process(PIDX_i
 
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
+#if 0
     adjusted_bounds[d] = file->idx->bounds[d];
     if (file->idx->bounds[d] % file->idx->chunk_size[d] != 0)
       adjusted_bounds[d] = ((file->idx->bounds[d] / file->idx->chunk_size[d]) + 1) * file->idx->chunk_size[d];
+#endif
+    adjusted_bounds[d] = file->idx->box_bounds[d];
+    if (file->idx->box_bounds[d] % file->idx->chunk_size[d] != 0)
+      adjusted_bounds[d] = ((file->idx->box_bounds[d] / file->idx->chunk_size[d]) + 1) * file->idx->chunk_size[d];
   }
 
   int reg_patch_grp_count = 0;
@@ -785,6 +796,7 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   power_two_bound[2] = file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
 
   memcpy(file->idx->reg_patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+
   while (bits != 0)
   {
     if (file->idx->bitSequence[counter] == '0')

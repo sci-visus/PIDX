@@ -110,7 +110,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
     fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2]);
     fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
     fprintf(stdout, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
-    fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
+    fprintf(stdout, "Shared Block level : Partition level : maxh = %d : %d : %d\n\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
   }
 
   double total_time = time->sim_end - time->sim_start;
@@ -128,7 +128,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
       double group_block_layout = time->layout_end - time->layout_start;
       double header_io = time->header_io_end - time->header_io_start;
       double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
-      printf("GROUP INIT: [%f + %f + %f + %f + %f] = %f\n", group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
+      printf("INIT     :[%f + %f + %f + %f + %f] = %f\n\n", group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
       double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0;
       double hz_init = 0, hz_meta_data = 0, hz_buffer = 0, hz = 0, hz_buffer_free = 0, hz_cleanup = 0, hz_total = 0, hz_all = 0;
@@ -153,7 +153,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
           rst_cleanup = time->rst_cleanup_end[si] - time->rst_cleanup_start[si];
           rst_total = rst_init + rst_meta_data_create + rst_meta_data_io + rst_buffer + rst_write_read + rst_buff_agg + rst_buff_agg_free + rst_buff_agg_io + rst_cleanup;
           rst_all = rst_all + rst_total;
-          printf("RST: [%f + %f + %f + %f + %f + %f + %f + %f + %f] = %f\n", rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
+
 
           hz_init = time->hz_init_end[si] - time->hz_init_start[si];
           hz_meta_data = time->hz_meta_end[si] - time->hz_meta_start[si];
@@ -163,7 +163,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
           hz_cleanup = time->hz_cleanup_end[si] - time->hz_cleanup_start[si];
           hz_total = hz_init + hz_meta_data + hz_buffer + hz + hz_buffer_free + hz_cleanup;
           hz_all = hz_all + hz_total;
-          printf("HZ: [%f + %f + %f + %f + %f + %f] = %f\n", hz_init, hz_meta_data, hz_buffer, hz, hz_buffer_free, hz_cleanup, hz_total);
+
 
           chunk_init = time->chunk_init_end[si] - time->chunk_init_start[si];
           chunk_meta = time->chunk_meta_end[si] - time->chunk_meta_start[si];
@@ -173,18 +173,21 @@ PIDX_return_code PIDX_close(PIDX_file file)
           chunk_cleanup = time->chunk_cleanup_end[si] - time->chunk_cleanup_start[si];
           chunk_total = chunk_init + chunk_meta + chunk_buffer + chunk + chunk_buffer_free + chunk_cleanup;
           chunk_all = chunk_all + chunk_total;
-          printf("chunk: [%f + %f + %f + %f + %f + %f] = %f\n", chunk_init, chunk_meta, chunk_buffer, chunk, chunk_buffer_free, chunk_cleanup, chunk_total);
+
 
           compression_init = time->compression_init_end[si] - time->compression_init_start[si];
           compression = time->compression_end[si] - time->compression_start[si];
           compression_total = compression_init + compression;
           compression_all = compression_all + compression_total;
-          printf("compression: [%f + %f] = %f\n", compression_init, compression, compression_total);
+          printf("RST      :[%d] [%f + %f + %f + %f + %f + %f + %f + %f + %f] = %f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
+          printf("HZ       :[%d] [%f + %f + %f + %f + %f + %f] = %f\n", si, hz_init, hz_meta_data, hz_buffer, hz, hz_buffer_free, hz_cleanup, hz_total);
+          printf("CHUNK    :[%d] [%f + %f + %f + %f + %f + %f] = %f\n", si, chunk_init, chunk_meta, chunk_buffer, chunk, chunk_buffer_free, chunk_cleanup, chunk_total);
+          printf("CMP      :[%d] [%f + %f] = %f\n", si, compression_init, compression, compression_total);
         }
 
         double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total;
 
-        printf("SHARED %d %d\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index);
+        printf("SF AGG   :%d %d\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index);
         for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
         {
           agg_init = time->agg_init_end[si][i] - time->agg_init_start[si][i];
@@ -198,7 +201,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
           printf("[S] [%d] [%d] %f + %f + %f + %f + %f = %f [%f]\n", si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total, agg_all);
         }
 
-        printf("NON SHARED %d %d\n", file->idx->variable_grp[gi]->nshared_start_layout_index, file->idx->variable_grp[gi]->nshared_end_layout_index);
+        printf("NSF AGG  : %d %d\n", file->idx->variable_grp[gi]->nshared_start_layout_index, file->idx->variable_grp[gi]->nshared_end_layout_index);
         for (i = file->idx->variable_grp[gi]->nshared_start_layout_index; i < file->idx->variable_grp[gi]->nshared_end_layout_index ; i++)
         {
           agg_init = time->agg_init_end[si][i] - time->agg_init_start[si][i];

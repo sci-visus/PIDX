@@ -27,30 +27,6 @@
 static PIDX_return_code PIDX_validate(PIDX_file file);
 
 
-PIDX_return_code PIDX_set_dims(PIDX_file file, PIDX_point dims)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  memcpy(file->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_get_dims(PIDX_file file, PIDX_point dims)
-{
-  if(!file)
-    return PIDX_err_file;
-
-  memcpy(dims, file->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
-
-  return PIDX_success;
-}
-
-
-
 PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
 {
   if(!file)

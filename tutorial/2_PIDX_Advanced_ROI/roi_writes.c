@@ -696,7 +696,7 @@ int main(int argc, char **argv)
     //  PIDX mandatory calls
     create_synthetic_simulation_data_and_ROI_extents();
 
-    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
+    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, global_size, &file);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
     PIDX_set_block_size(file, 16);
@@ -705,9 +705,6 @@ int main(int argc, char **argv)
     //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
     PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
     PIDX_set_lossy_compression_bit_rate(file, 1);
-
-    ret = PIDX_set_dims(file, global_size);
-    if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
 
     ret = PIDX_set_current_time_step(file, current_time_step);
     if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_time_step");

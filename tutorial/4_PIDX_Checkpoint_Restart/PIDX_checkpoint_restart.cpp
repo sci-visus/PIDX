@@ -137,8 +137,9 @@ int check_last_state(std::string file_name, int ts){
 
     PIDX_file file;            // IDX file descriptor
     PIDX_variable* variable;   // variable descriptor
+    PIDX_point dims;
 
-    ret = PIDX_file_open(file_name.c_str(), PIDX_MODE_RDONLY, access, &file);
+    ret = PIDX_file_open(file_name.c_str(), PIDX_MODE_RDONLY, access, dims, &file);
     if (ret != PIDX_success)  report_error("PIDX_file_open", __FILE__, __LINE__);
 
     ret = PIDX_get_variable_count(file, &variable_count);
@@ -216,18 +217,13 @@ int open_file(PIDX_file& file, PIDX_access& access, std::string output_filename)
 
     if(restart_time > 0)
     {
-        ret = PIDX_file_open(output_filename.c_str(), PIDX_MODE_RDWR, access, &file);
+        ret = PIDX_file_open(output_filename.c_str(), PIDX_MODE_RDWR, access, global_size, &file);
         if (ret != PIDX_success)  report_error("PIDX_file_open", __FILE__, __LINE__);
-        ret = PIDX_get_dims(file, global_size);
-        if (ret != PIDX_success)  report_error("PIDX_set_dims", __FILE__, __LINE__);
-
     }
     else
     {
-        ret = PIDX_file_create(output_filename.c_str(), PIDX_MODE_CREATE, access, &file);
+        ret = PIDX_file_create(output_filename.c_str(), PIDX_MODE_CREATE, access, global_size, &file);
         if (ret != PIDX_success)  report_error("PIDX_file_create", __FILE__, __LINE__);
-        ret = PIDX_set_dims(file, global_size);
-        if (ret != PIDX_success)  report_error("PIDX_set_dims", __FILE__, __LINE__);
         PIDX_set_block_size(file, bits_per_block);
         PIDX_set_block_count(file, blocks_per_file);
 

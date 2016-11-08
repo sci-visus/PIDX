@@ -210,11 +210,8 @@ int main(int argc, char **argv)
 #endif
 
   //  PIDX mandatory calls
-  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, access, &file);
+  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, access, global_size, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
-
-  ret = PIDX_get_dims(file, global_size);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_dims");
 
   ret = PIDX_get_variable_count(file, &variable_count);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_variable_count");

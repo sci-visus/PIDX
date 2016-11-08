@@ -512,8 +512,7 @@ int main(int argc, char **argv)
   int ts;
   for (ts = 0; ts < time_step_count; ts++)
   {
-    PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
-    PIDX_set_dims(file, global_bounding_box);
+    PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, global_bounding_box, &file);
     PIDX_set_current_time_step(file, ts);
     PIDX_set_variable_count(file, variable_count);
     PIDX_set_block_count(file, 128);

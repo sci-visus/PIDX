@@ -69,35 +69,6 @@ PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_met
   chunk_id->first_index = start_var_index;
   chunk_id->last_index = end_var_index;
 
-  /*
-  if (chunk_id->idx->enable_compression == 1)
-  {
-    // No Chunking and compression without restructuring
-    if (chunk_id->idx->enable_rst != 1)
-    {
-      chunk_id->idx->enable_compression = 0;
-      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-        chunk_id->idx->chunk_size[d] = 1;
-      chunk_id->idx->compression_bit_rate = 64;
-    }
-    else
-    {
-      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-      {
-        if (chunk_id->idx->bounds[d] % chunk_id->idx->chunk_size[d] != 0)
-        {
-          chunk_id->idx->enable_compression = 0;
-          for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-            chunk_id->idx->chunk_size[d] = 1;
-          chunk_id->idx->compression_bit_rate = 64;
-
-          break;
-        }
-      }
-    }
-  }
-  */
-
   return chunk_id;
 }
 

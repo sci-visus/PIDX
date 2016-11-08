@@ -121,10 +121,16 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
     int max_found_reg_patches = 1;
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
+#if 0
       adjusted_bounds[d] = rst_id->idx->bounds[d];
       if (rst_id->idx->bounds[d] % rst_id->idx->chunk_size[d] != 0)
       adjusted_bounds[d] = ((rst_id->idx->bounds[d] / rst_id->idx->chunk_size[d]) + 1) * rst_id->idx->chunk_size[d];
       max_found_reg_patches *= ceil((float)rst_id->idx->bounds[d]/(float)rst_id->reg_patch_size[d]);
+#endif
+      adjusted_bounds[d] = rst_id->idx->box_bounds[d];
+      if (rst_id->idx->box_bounds[d] % rst_id->idx->chunk_size[d] != 0)
+      adjusted_bounds[d] = ((rst_id->idx->box_bounds[d] / rst_id->idx->chunk_size[d]) + 1) * rst_id->idx->chunk_size[d];
+      max_found_reg_patches *= ceil((float)rst_id->idx->box_bounds[d]/(float)rst_id->reg_patch_size[d]);
     }
 
     rst_id->reg_multi_patch_grp_count = 0;

@@ -1,5 +1,7 @@
 #include "../../PIDX_inc.h"
 
+#define PIDX_ACTIVE_TARGET 1
+
 static PIDX_return_code report_error(PIDX_return_code ret, char* file, int line);
 static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab, MPI_Comm comm);
 static PIDX_return_code create_open_log_file (PIDX_agg_id id);
@@ -171,7 +173,6 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         int nrank_x = (id->idx_d->partition_size[0] / id->idx->reg_patch_size[0]);
         int nrank_y = (id->idx->bounds[1] / id->idx->reg_patch_size[1]);
 #endif
-
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
 
         int trank = 0;
@@ -418,6 +419,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
               fflush(agg_dump_fp);
             }
 #endif
+            //printf("A [Level %d] : Offset %d Count %d\n", i, hz_buf->start_hz_index[i], count);
             ret = aggregate(id, v, hz_buf->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
             if (ret != PIDX_success)
             {
@@ -455,6 +457,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
             if (end_block_index == start_block_index)
             {
               count = (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1);
+              //printf("B [Level %d] : Offset %d Count %d\n", i, hz_buf->start_hz_index[i], count);
               ret = aggregate(id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
               if (ret != PIDX_success)
               {
@@ -487,6 +490,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
                     count = id->idx_d->samples_per_block;
                   }
 
+                  //printf("C [Level %d] : Offset %d Count %d\n", i, hz_buf->start_hz_index[i], count);
                   ret = aggregate(id, v, index + hz_buf->start_hz_index[i], count, hz_buf->buffer[i], send_index, ab, lbl, mode, layout_id);
                   if (ret != PIDX_success)
                   {
@@ -511,6 +515,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
 
 static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id)
 {
+  int itr;
   int rank = 0, nprocs = 1;
   int bpdt;
   int file_no = 0, block_no = 0, negative_block_offset = 0, sample_index = 0, vps;
@@ -520,11 +525,9 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   unsigned long long tcs = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
 
-#if PIDX_HAVE_MPI
-  int ret;
 
+  int ret;
   MPI_Comm_rank(id->global_comm, &rank);
-#endif
 
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   PIDX_variable var = var_grp->variable[variable_index];
@@ -553,8 +556,8 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   //Calculating the hz index of "hz_start" relative to the file to which it belongs also taking into account empty blocks in file
   target_disp = ((hz_start - ((samples_per_file * file_no) + (negative_block_offset * id->idx_d->samples_per_block))) * vps)
-    %
-    (samples_in_file * vps);
+      %
+      (samples_in_file * vps);
 
   sample_index = target_disp / (samples_in_file / ab->agg_f);
   if (sample_index >= var->vps * ab->agg_f)
@@ -563,7 +566,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   target_disp = target_disp % (samples_in_file / ab->agg_f);
 
   //if (rank == 60)
-  //    printf("%d ----> %d TD %d NBO %d\n", hz_start, block_no, target_disp, negative_block_offset);
+  //  printf("%d ----> %d TD %d NBO %d\n", hz_start, block_no, target_disp, negative_block_offset);
 
   target_rank = id->agg_r[lbl->inverse_existing_file_index[file_no]][variable_index - id->fi][sample_index];
   //printf("[%d] File no %d IFI %d TR %d\n", rank, file_no, lbl->inverse_existing_file_index[file_no], target_rank);
@@ -574,28 +577,28 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   /*
   if (layout_id != 0 && id->idx->current_time_step == 0)
   {
-    MPI_Comm agg_comm;
-    int max_rank = 0;
-    int min_rank = 0;
+  MPI_Comm agg_comm;
+  int max_rank = 0;
+  int min_rank = 0;
 
-    MPI_Comm_split(id->comm, target_rank, rank, &agg_comm);
-    int nrank = 0;
-    MPI_Comm_rank(agg_comm, &nrank);
+  MPI_Comm_split(id->comm, target_rank, rank, &agg_comm);
+  int nrank = 0;
+  MPI_Comm_rank(agg_comm, &nrank);
 
-    MPI_Allreduce(&rank, &max_rank, 1, MPI_INT, MPI_MAX, agg_comm);
-    MPI_Allreduce(&rank, &min_rank, 1, MPI_INT, MPI_MIN, agg_comm);
+  MPI_Allreduce(&rank, &max_rank, 1, MPI_INT, MPI_MAX, agg_comm);
+  MPI_Allreduce(&rank, &min_rank, 1, MPI_INT, MPI_MIN, agg_comm);
 
-    MPI_Comm_free(&agg_comm);
+  MPI_Comm_free(&agg_comm);
 
-    if (target_rank < min_rank || target_rank > max_rank || rank < min_rank || rank > max_rank)
-    {
-      printf("[TR %d] [%d] V %d P %d A %d FN %d [%d %d]\n", target_rank, rank, variable_index, layout_id, lbl->inverse_existing_file_index[file_no], file_no, min_rank, max_rank);
-    }
+  if (target_rank < min_rank || target_rank > max_rank || rank < min_rank || rank > max_rank)
+  {
+    printf("[TR %d] [%d] V %d P %d A %d FN %d [%d %d]\n", target_rank, rank, variable_index, layout_id, lbl->inverse_existing_file_index[file_no], file_no, min_rank, max_rank);
+  }
 
-    assert(target_rank >= min_rank);
-    assert(target_rank <= max_rank);
-    assert(rank >= min_rank);
-    assert(rank <= max_rank);
+  assert(target_rank >= min_rank);
+  assert(target_rank <= max_rank);
+  assert(rank >= min_rank);
+  assert(rank <= max_rank);
   }
   */
 
@@ -606,10 +609,137 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   start_agg_index = target_disp / (unsigned long long) (samples_in_file / ab->agg_f);
   end_agg_index = ((target_disp + target_count - 1) / (unsigned long long) (samples_in_file / ab->agg_f));
 
+  //printf("SAI : EAI TR %d FN %d IFN %d :: %d : %d\n", target_rank, file_no, lbl->inverse_existing_file_index[file_no], start_agg_index, end_agg_index);
   if (start_agg_index != end_agg_index)
   {
-      printf("read vs write conflict!\n");
+    if (target_rank != rank)
+    {
+#ifndef PIDX_ACTIVE_TARGET
+      MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , id->win);
+#endif
+      //target_disp_address = target_disp;
+      if (MODE == PIDX_WRITE)
+      {
+        ret = MPI_Put(hz_buffer, ((samples_in_file / ab->agg_f) - target_disp) * bpdt, MPI_BYTE, target_rank, target_disp, ( (samples_in_file / ab->agg_f) - target_disp) * bpdt, MPI_BYTE, id->win);
+        if(ret != MPI_SUCCESS)
+        {
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return PIDX_err_agg;
+        }
+      }
+      else
+      {
+        printf("[1] TR %d\n", target_rank);
+        ret = MPI_Get(hz_buffer, ((samples_in_file / ab->agg_f) - target_disp) * bpdt, MPI_BYTE, target_rank, target_disp, ( (samples_in_file / ab->agg_f) - target_disp) * bpdt, MPI_BYTE, id->win);
+        if(ret != MPI_SUCCESS)
+        {
+          fprintf(stderr, " Error in MPI_Get Line %d File %s\n", __LINE__, __FILE__);
+          return PIDX_err_agg;
+        }
+      }
+
+#ifndef PIDX_ACTIVE_TARGET
+      MPI_Win_unlock(target_rank, id->win);
+#endif
+    }
+    else
+    {
+      if (MODE == PIDX_WRITE)
+      {
+        memcpy( ab->buffer + target_disp * bpdt, hz_buffer, ( (samples_in_file / ab->agg_f) - target_disp) * bpdt);
+      }
+      else
+      {
+        memcpy( hz_buffer, ab->buffer + target_disp * bpdt, ( (samples_in_file / ab->agg_f) - target_disp) * bpdt);
+      }
+    }
+
+    for (itr = 0; itr < end_agg_index - start_agg_index - 1; itr++)
+    {
+      if (target_rank != rank)
+      {
+#ifndef PIDX_ACTIVE_TARGET
+        MPI_Win_lock(MPI_LOCK_SHARED, target_rank + ab->aggregator_interval, 0, id->win);
+#endif
+        if (MODE == PIDX_WRITE)
+        {
+          ret = MPI_Put(hz_buffer + (( (samples_in_file / ab->agg_f) - target_disp) + (itr * (samples_in_file / ab->agg_f))) * bpdt, (samples_in_file / ab->agg_f) * bpdt, MPI_BYTE, target_rank + ab->aggregator_interval, 0, (samples_in_file / ab->agg_f) * bpdt, MPI_BYTE, id->win);
+          if (ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+            return PIDX_err_agg;
+          }
+        }
+        else
+        {
+          printf("[2] TR %d\n", target_rank + ab->aggregator_interval);
+          ret = MPI_Get(hz_buffer + (((samples_in_file / ab->agg_f) - target_disp) + (itr * (samples_in_file / ab->agg_f))) * bpdt, (samples_in_file / ab->agg_f) * bpdt, MPI_BYTE, target_rank + ab->aggregator_interval, 0, (samples_in_file / ab->agg_f) * bpdt, MPI_BYTE, id->win);
+          if (ret != MPI_SUCCESS)
+          {
+            fprintf(stderr, " Error in MPI_Get Line %d File %s\n", __LINE__, __FILE__);
+            return PIDX_err_agg;
+          }
+        }
+#ifndef PIDX_ACTIVE_TARGET
+        MPI_Win_unlock(target_rank + ab->aggregator_interval, id->win);
+#endif
+      }
+      else
+      {
+        if (MODE == PIDX_WRITE)
+        {
+          memcpy( ab->buffer, hz_buffer + (( (samples_in_file / ab->agg_f) - target_disp) + (itr * (samples_in_file / ab->agg_f))) * bpdt, (samples_in_file / ab->agg_f) * bpdt);
+        }
+        else
+        {
+          memcpy( hz_buffer + (((samples_in_file / ab->agg_f) - target_disp) + (itr * (samples_in_file / ab->agg_f))) * bpdt, ab->buffer, (samples_in_file / ab->agg_f) * bpdt);
+        }
+      }
+    }
+
+    if (target_rank + ab->aggregator_interval != rank)
+    {
+#ifndef PIDX_ACTIVE_TARGET
+      MPI_Win_lock(MPI_LOCK_SHARED, target_rank + ab->aggregator_interval, 0, id->win);
+#endif
+      if (MODE == PIDX_WRITE)
+      {
+        ret = MPI_Put(hz_buffer + (((samples_in_file / ab->agg_f) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / ab->agg_f))) * bpdt, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / ab->agg_f))) + (((samples_in_file / ab->agg_f)) - target_disp))) * bpdt, MPI_BYTE, target_rank + ab->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / ab->agg_f) - target_disp)) * bpdt, MPI_BYTE, id->win);
+        if(ret != MPI_SUCCESS)
+        {
+          fprintf(stderr, " Error in MPI_Put Line %d File %s\n", __LINE__, __FILE__);
+          return PIDX_err_agg;
+        }
+      }
+      else
+      {
+        printf("[3] TR %d (%d %d)\n", target_rank + ab->aggregator_interval, target_rank, ab->aggregator_interval);
+        ret = MPI_Get(hz_buffer + (((samples_in_file / ab->agg_f) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / ab->agg_f))) * bpdt, (target_count - (((end_agg_index - start_agg_index - 1) * ((samples_in_file / ab->agg_f))) + (((samples_in_file / ab->agg_f)) - target_disp))) * bpdt, MPI_BYTE, target_rank + ab->aggregator_interval, 0, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / ab->agg_f) - target_disp)) * bpdt, MPI_BYTE, id->win);
+        if(ret != MPI_SUCCESS)
+        {
+          fprintf(stderr, " Error in MPI_Get Line %d File %s\n", __LINE__, __FILE__);
+          return PIDX_err_agg;
+        }
+      }
+#ifndef PIDX_ACTIVE_TARGET
+      MPI_Win_unlock(target_rank + ab->aggregator_interval, id->win);
+#endif
+    }
+    else
+    {
+      if(MODE == PIDX_WRITE)
+      {
+        memcpy( ab->buffer, hz_buffer + (((samples_in_file / ab->agg_f) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / ab->agg_f))) * bpdt, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / ab->agg_f) - target_disp)) * bpdt);
+      }
+      else
+      {
+        memcpy( hz_buffer + (((samples_in_file / ab->agg_f) - target_disp) + ((end_agg_index - start_agg_index - 1) * (samples_in_file / ab->agg_f))) * bpdt, ab->buffer, (target_count - ((end_agg_index - start_agg_index) * (samples_in_file / ab->agg_f) - target_disp)) * bpdt);
+      }
+    }
   }
+  //{
+  //  printf("read vs write conflict!\n");
+  //}
   else
   {
     if(target_rank != rank)
@@ -629,11 +759,6 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
         }
 #endif
 
-        //if (rank == 60)
-        //{
-        //  printf("TD: %d Count %d\n", target_disp / (vps * bpdt), hz_count);
-        //}
-
         ret = MPI_Put(hz_buffer, hz_count * vps * bpdt, MPI_BYTE, target_rank, target_disp, hz_count * vps * bpdt, MPI_BYTE, id->win);
         if(ret != MPI_SUCCESS)
         {
@@ -643,7 +768,6 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
       }
       else
       {
-
 #ifdef PIDX_DUMP_AGG
         if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
         {

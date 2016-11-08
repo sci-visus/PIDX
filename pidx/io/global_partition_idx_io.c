@@ -248,6 +248,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
     ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
     // Step 4:  Setup HZ encoding Phase
     ret = hz_encode_setup(file, si, ei);
@@ -279,11 +280,10 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-
-      finalize_aggregation(file, gi, li,agg_l_f0, agg_l_shared, agg_l_nshared);
       time->io_end[li] = PIDX_get_time();
     }
 
+    //
     // Setup 7: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
@@ -293,7 +293,9 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+      finalize_aggregation(file, gi, li,agg_l_f0, agg_l_shared, agg_l_nshared);
     }
+    //
 
     // Step 8: Perform HZ encoding
     ret = hz_encode(file, PIDX_READ);
@@ -472,7 +474,6 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
     return PIDX_err_file;
   }
   time->init_end = MPI_Wtime();
-
 
   time->set_reg_box_start = MPI_Wtime();
   ret = set_rst_box_size(file, gi, svi);

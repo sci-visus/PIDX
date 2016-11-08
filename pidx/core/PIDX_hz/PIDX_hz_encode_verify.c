@@ -54,7 +54,8 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
           {
             global_hz = var->hz_buffer[b]->start_hz_index[i] + k;
             Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_hz, ZYX);
-            if ((ZYX[0] < id->idx->bounds[0] && ZYX[1] < id->idx->bounds[1] && ZYX[2] < id->idx->bounds[2]))
+            //if ((ZYX[0] < id->idx->bounds[0] && ZYX[1] < id->idx->bounds[1] && ZYX[2] < id->idx->bounds[2]))
+            if ((ZYX[0] < id->idx->box_bounds[0] && ZYX[1] < id->idx->box_bounds[1] && ZYX[2] < id->idx->box_bounds[2]))
             {
               check_bit = 1, s = 0;
               if (strcmp(var->type_name, FLOAT64) == 0)
