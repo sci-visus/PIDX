@@ -27,15 +27,14 @@ PIDX_return_code PIDX_rst_buf_create(PIDX_rst_id rst_id)
 
   if(rst_id->idx->enable_rst == 1)
   {
-    int rank = 0, cnt = 0, i = 0;
-    MPI_Comm_rank(rst_id->comm, &rank);
+    int cnt = 0, i = 0;
     for (v = rst_id->first_index; v <= rst_id->last_index; v++)
     {
       PIDX_variable var = var_grp->variable[v];
       cnt = 0;
       for (i = 0; i < rst_id->reg_patch_grp_count; i++)
       {
-        if (rank == rst_id->reg_patch_grp[i]->max_patch_rank)
+        if (rst_id->idx_c->rank == rst_id->reg_patch_grp[i]->max_patch_rank)
         {
           Ndim_patch_group patch_group = var->rst_patch_group[cnt];
           patch_group->data_source = 0;

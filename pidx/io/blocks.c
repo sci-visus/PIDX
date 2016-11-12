@@ -17,8 +17,6 @@ static PIDX_return_code PIDX_file_initialize_time_step(PIDX_io file, char* filen
 PIDX_return_code populate_bit_string(PIDX_io file, int mode)
 {
   int i = 0;
-  int rank = 0;
-  MPI_Comm_rank(file->comm, &rank);
   unsigned long long* cb = file->idx->chunked_bounds;
 
   if (mode == PIDX_WRITE)
@@ -35,8 +33,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     rpp.y = (int) file->idx->reg_patch_size[1];
     rpp.z = (int) file->idx->reg_patch_size[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
-    if (rank == 0)
-      printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+    //if (file->idx_c->rank == 0)
+    //  printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
     Point3D prcp;
@@ -47,8 +45,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
     guess_bit_string_Z(process_bs, prcp);
-    if (rank == 0)
-      printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
+    //if (file->idx_c->rank == 0)
+    //  printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 
 
     // Last part of the bitstring
@@ -57,8 +55,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     pcp.y = (int) file->idx_d->partition_count[1];
     pcp.z = (int) file->idx_d->partition_count[2];
     guess_bit_string(partition_bs, pcp);
-    if (rank == 0)
-      printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
+    //if (file->idx_c->rank == 0)
+    //  printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 
     // Concatenating the three components to get the final bit string
     strcpy(temp_bs, process_bs);
@@ -73,8 +71,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     pcp.z = (int) file->idx->bounds[2];
     GuessBitmaskPattern(file->idx->bitSequence, pcp);
     //guess_bit_string(file->idx->bitSequence, pcp);
-    if (rank == 0)
-      printf("[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
+    //if (file->idx_c->rank == 0)
+    //  printf("[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
 #endif
   }
 
@@ -83,7 +81,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
-  if (rank == 0)
+  if (file->idx_c->rank == 0)
     printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
@@ -221,9 +219,6 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   int i, j;
   int p = 0, ctr = 1;
   PIDX_return_code ret_code;
-
-  int rank;
-  MPI_Comm_rank(file->global_comm, &rank);
 
   int bounding_box[2][5] = {
     {0, 0, 0, 0, 0},
@@ -420,7 +415,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       {
 #if PIDX_HAVE_MPI
         if (file->idx_d->parallel_mode == 1)
-          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->comm);
+          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->comm);
         else
           memcpy(block_layout->hz_block_number_array[i], all_patch_local_block_layout->hz_block_number_array[i], level_count * sizeof(int));
 #else
@@ -432,7 +427,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       {
 #if PIDX_HAVE_MPI
         if (file->idx_d->parallel_mode == 1)
-          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->comm);
+          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->comm);
         else
           memcpy(block_layout->hz_block_number_array[i], all_patch_local_block_layout->hz_block_number_array[i], level_count * sizeof(int));
 #else
@@ -450,7 +445,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
         {
 #if PIDX_HAVE_MPI
           if (file->idx_d->parallel_mode == 1)
-            MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->comm);
+            MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->comm);
           else
             memcpy(block_layout->hz_block_number_array[i], all_patch_local_block_layout->hz_block_number_array[i], level_count * sizeof(int));
 #else
@@ -697,8 +692,6 @@ PIDX_return_code create_non_shared_block_layout(PIDX_io file, int gi, int hz_lev
 
 static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int hz_level_from, int hz_level_to, int io_type)
 {
-  int rank = 0;
-  int nprocs = 1;
   PIDX_return_code ret_code;
 
   int i = 0, j = 0, ctr;
@@ -708,12 +701,6 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
   int lower_level_higher_layout = 0, higher_level_higher_layout = 0;
 
   PIDX_block_layout block_layout = global_layout;
-
-  if (file->idx_d->parallel_mode == 1)
-  {
-    MPI_Comm_rank(file->comm, &rank);
-    MPI_Comm_size(file->comm, &nprocs);
-  }
 
   lower_hz_level = hz_level_from;
   higher_hz_level = hz_level_to;
@@ -818,9 +805,6 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       ctr = ctr * 2;
     }
   }
-
-  //if (rank == 0)
-  //  PIDX_blocks_print_layout(block_layout);
 
   block_layout->file_bitmap = malloc(file->idx_d->max_file_count * sizeof (int));
   memset(block_layout->file_bitmap, 0, file->idx_d->max_file_count * sizeof (int));

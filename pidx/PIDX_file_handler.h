@@ -27,24 +27,19 @@ struct PIDX_file_descriptor
 {
   int flags;
 
-  PIDX_io io;
-
-#if PIDX_HAVE_MPI
-  MPI_Comm comm;                               ///< MPI sub-communicator (including all processes per IDX file)
-  MPI_Comm global_comm;                        ///< MPI super-communicator (includes all processes)
-#endif
-
   PIDX_access access;                          ///< serial or parallel access
-
+  PIDX_io io;
 
   int local_group_index;                    ///<
   int local_group_count;                    ///<
 
   int flush_used;
   int write_on_close;                          ///< HPC Writes
-  //int one_time_initializations;                ///<
 
   int ROI_writes;
+
+  idx_comm idx_c;
+
 
   idx_dataset idx;                             ///< Contains all relevant IDX file info
                                                ///< Blocks per file, samples per block, bitmask, box, file name template

@@ -20,19 +20,6 @@
 
 
 
-#if PIDX_HAVE_MPI
-PIDX_return_code PIDX_hz_encode_set_communicator(PIDX_hz_encode_id hz_id, MPI_Comm comm)
-{
-  if (hz_id == NULL)
-    return PIDX_err_id;
-
-  hz_id->comm = comm;
-
-  return PIDX_success;
-}
-#endif
-
-
 PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_from, int resolution_to)
 {
   if (resolution_from < 0 || resolution_from < 0)
@@ -45,7 +32,7 @@ PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolut
 }
 
 
-PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, int first_index, int last_index)
+PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int first_index, int last_index)
 {
   PIDX_hz_encode_id hz_id;
   hz_id = (PIDX_hz_encode_id)malloc(sizeof (*hz_id));
@@ -53,6 +40,7 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_der
 
   hz_id->idx = idx_meta_data;
   hz_id->idx_d = idx_d;
+  hz_id->idx_c = idx_c;
 
   hz_id->group_index = 0;
   hz_id->first_index = first_index;

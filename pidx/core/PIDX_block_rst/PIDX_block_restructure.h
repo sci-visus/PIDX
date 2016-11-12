@@ -30,13 +30,9 @@ typedef struct PIDX_chunk_id_struct* PIDX_chunk_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_chunk_id The identifier associated with the task
-PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
+PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, int start_var_index, int end_var_index);
 
-#if PIDX_HAVE_MPI
-int PIDX_chunk_set_communicator(PIDX_chunk_id id, MPI_Comm comm);
 
-int PIDX_chunk_set_global_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm);
-#endif
 
 /// Restructures the voxels in (m x n x p) blocks
 /// Example: The following 2D array

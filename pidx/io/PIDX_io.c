@@ -11,7 +11,7 @@
 
 
 
-PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_debug idx_dbg)
+PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg)
 {
   //Creating the restructuring ID
   PIDX_io idx_io_id;
@@ -21,6 +21,7 @@ PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata id
   idx_io_id->idx = idx_meta_data;
   idx_io_id->idx_d = idx_derived_ptr;
   idx_io_id->idx_dbg = idx_dbg;
+  idx_io_id->idx_c = idx_c;
 
   return (idx_io_id);
 }
@@ -31,8 +32,11 @@ PIDX_return_code PIDX_io_set_communicator(PIDX_io id, MPI_Comm comm)
   if (id == NULL)
     return PIDX_err_id;
 
-  id->global_comm = comm;
-  id->comm = comm;
+  id->idx_c->global_comm = comm;
+  id->idx_c->comm = comm;
+
+  MPI_Comm_size(id->idx_c->global_comm, &(id->idx_c->gnprocs));
+  MPI_Comm_rank(id->idx_c->global_comm, &(id->idx_c->grank));
 
   return PIDX_success;
 }
@@ -47,8 +51,8 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
   if (MODE == PIDX_IDX_IO)
     ret = PIDX_idx_write(file, gi, svi, evi);
 
-  else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-    ret = PIDX_local_partition_idx_write(file, gi, svi, evi);
+  //else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
+  //  ret = PIDX_local_partition_idx_write(file, gi, svi, evi);
 
   else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
     ret = PIDX_global_partition_idx_write(file, gi, svi, evi);
@@ -72,8 +76,8 @@ PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
   if (MODE == PIDX_IDX_IO)
     ret = PIDX_idx_read(file, gi, svi, evi);
 
-  else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-    ret = PIDX_local_partition_idx_read(file, gi, svi, evi);
+  //else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
+  //  ret = PIDX_local_partition_idx_read(file, gi, svi, evi);
 
   else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
     ret = PIDX_global_partition_idx_read(file, gi, svi, evi);

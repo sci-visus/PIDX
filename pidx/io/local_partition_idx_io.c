@@ -1,5 +1,5 @@
 #include "../PIDX_inc.h"
-
+#if 0
 static int hz_from_file_zero = 0, hz_from_shared = 0, hz_from_non_shared = 0;
 static int hz_to_file_zero = 0, hz_to_shared = 0, hz_to_non_shared = 0;
 static int agg_l_nshared = 0, agg_l_shared = 0, agg_l_f0 = 0;
@@ -451,3 +451,4 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi)
 
   return PIDX_success;
 }
+#endif

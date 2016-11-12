@@ -30,9 +30,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
   int maxH = id->idx_d->maxh;
 
-  int rank = 0;
-  MPI_Comm_rank(id->comm, &rank);
-
   tpatch = (int**) malloc(2 * sizeof (int*));
   memset(tpatch, 0, 2 * sizeof (int*));
   tpatch[0] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
@@ -114,8 +111,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
           tpatch[1][d] = (var->chunk_patch_group[p]->reg_patch->offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group[p]->reg_patch->size[d] / id->idx->chunk_size[d]) + 1) - 1;
       }
 
-      //if (rank == 0)
-      //printf("[%d] [%d] [%d %d %d - %d %d %d]\n", rank, p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[1][0], tpatch[1][1], tpatch[1][2]);
 
       //for (j = 0; j < maxH; j++)
       for (j = id->resolution_from; j < maxH - id->resolution_to; j++)

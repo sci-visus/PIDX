@@ -32,9 +32,11 @@
 struct PIDX_file_io_struct
 {
 #if PIDX_HAVE_MPI
-  MPI_Comm comm;
-  MPI_Win win;
+  //MPI_Comm comm;
+  //MPI_Win win;
 #endif
+
+  idx_comm idx_c;
 
   //Contains all relevant IDX file info
   //Blocks per file, samples per block, bitmask, box, file name template and more
@@ -57,17 +59,8 @@ typedef struct PIDX_file_io_struct* PIDX_file_io_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
+PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, int start_var_index, int end_var_index);
 
-
-
-#if PIDX_HAVE_MPI
-/// Attach the communicator wit the ID.
-/// \param id IO id
-/// \param comm the communicator
-/// \return error code
-int PIDX_file_io_set_communicator(PIDX_file_io_id io_id, MPI_Comm comm);
-#endif
 
 
 ///
@@ -86,11 +79,6 @@ int PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_blo
 
 ///
 int PIDX_file_io_aggregated_read(PIDX_file_io_id io_id, Agg_buffer agg_buffer);
-
-
-
-///
-int PIDX_file_io_per_process(PIDX_file_io_id io_id, PIDX_block_layout block_layout, int MODE);
 
 
 

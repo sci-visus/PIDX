@@ -92,20 +92,18 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  int nprocs = 1;
   int rst_case_type = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
   int patch_count = var0->sim_patch_count;
   int max_patch_count = 0;
 
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->comm);
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->comm);
   if (max_patch_count > 1)
     rst_case_type = 1;
-  MPI_Comm_size(file->comm, &nprocs);
 
   file->idx->variable_pipe_length = file->idx->variable_count;
-  if (file->idx_d->data_core_count == nprocs && rst_case_type == 0)
+  if (file->idx_d->data_core_count == file->idx_c->nprocs && rst_case_type == 0)
   {
     for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
     {

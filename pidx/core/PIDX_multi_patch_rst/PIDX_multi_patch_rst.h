@@ -36,11 +36,6 @@
 //Struct for restructuring ID
 struct PIDX_multi_patch_rst_struct
 {
-  //Passed by PIDX API
-#if PIDX_HAVE_MPI
-  MPI_Comm comm; //Communicator
-#endif
-
   //Contains all relevant IDX file info
   //Blocks per file, samples per block, bitmask, patch, file name template and more
   idx_dataset idx;
@@ -48,6 +43,9 @@ struct PIDX_multi_patch_rst_struct
   //Contains all derieved IDX file info
   //number of files, files that are ging to be populated
   idx_dataset_derived_metadata idx_derived;
+
+
+  idx_comm idx_c;
 
   int first_index;
   int last_index;
@@ -76,46 +74,8 @@ typedef struct PIDX_multi_patch_rst_struct* PIDX_multi_patch_rst_id;
 /// \param var_end_index
 /// \return
 ///
-PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int var_start_index, int var_end_index);
+PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, int var_start_index, int var_end_index);
 
-
-
-#if PIDX_HAVE_MPI
-/// Attach the communicator wit the ID.
-/// \param id restructuring id
-/// \param comm the communicator
-/// \return error code
-PIDX_return_code PIDX_multi_patch_rst_set_communicator(PIDX_multi_patch_rst_id id, MPI_Comm comm);
-#endif
-
-
-
-///
-/// \brief PIDX_multi_patch_rst_set_reg_patch_size
-/// \param rst_id
-/// \param factor
-/// \return
-///
-PIDX_return_code PIDX_multi_patch_rst_set_reg_patch_size(PIDX_multi_patch_rst_id rst_id, PIDX_point reg_box);
-
-
-
-
-///
-/// \brief PIDX_multi_patch_rst_auto_set_reg_patch_size
-/// \param multi_patch_rst_id
-/// \param factor
-/// \return
-///
-PIDX_return_code PIDX_multi_patch_rst_auto_set_reg_patch_size(PIDX_multi_patch_rst_id multi_patch_rst_id, int factor);
-
-
-///
-/// \brief PIDX_multi_patch_rst_set_reg_patch_size_from_bit_string
-/// \param rst_id
-/// \return
-///
-PIDX_return_code PIDX_multi_patch_rst_set_reg_patch_size_from_bit_string(PIDX_multi_patch_rst_id rst_id);
 
 
 

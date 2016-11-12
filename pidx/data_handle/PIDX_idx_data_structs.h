@@ -66,6 +66,7 @@ struct PIDX_timming_struct
    double *hz_start, *hz_end;
    double *hz_buffer_free_start, *hz_buffer_free_end;
    double *hz_cleanup_start, *hz_cleanup_end;
+   double **hz_io_start, **hz_io_end;
 
    double *chunk_init_start, *chunk_init_end;
    double *chunk_meta_start, *chunk_meta_end;
@@ -112,7 +113,6 @@ typedef struct PIDX_variable_struct* PIDX_variable;
 
 
 
-
 struct PIDX_variable_group_struct
 {
   int variable_index_tracker;
@@ -123,14 +123,17 @@ struct PIDX_variable_group_struct
   int local_variable_index;
   int local_variable_count;
 
+  int agg_l_f0;
   int f0_start_layout_index;
   int f0_end_layout_index;
   int f0_layout_count;
 
+  int agg_l_shared;
   int shared_start_layout_index;
   int shared_end_layout_index;
   int shared_layout_count;
 
+  int agg_l_nshared;
   int nshared_start_layout_index;
   int nshared_end_layout_index;
   int nshared_layout_count;
@@ -149,6 +152,21 @@ struct PIDX_variable_group_struct
   PIDX_block_layout* nshared_block_layout_by_level;
 };
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
+
+
+/// Communicator
+struct idx_comm_struct
+{
+  int rank;
+  int nprocs;
+
+  int grank;
+  int gnprocs;
+
+  MPI_Comm global_comm;
+  MPI_Comm comm;
+};
+typedef struct idx_comm_struct* idx_comm;
 
 
 /// idx_file
@@ -190,8 +208,7 @@ struct idx_file_struct
   int enable_rst;                                               ///< counter to enable/disable (1/0) compression
 
   /// 0 No aggregation
-  /// 1 Hybrid aggregation
-  /// 2 Only aggregation
+  /// 1 Only aggregation
   int enable_agg;                                               ///< counter to enable/disable (1/0) compression
 
   int compression_factor;
@@ -232,8 +249,12 @@ struct idx_dataset_derived_metadata_struct
   FILE *rst_dump_fp;
   int dump_rst_info;
   char rst_dump_dir_name[512];
+
+  FILE *agg_dump_fp;
   int dump_agg_info;
   char agg_dump_dir_name[512];
+
+  FILE *io_dump_fp;
   int dump_io_info;
   char io_dump_dir_name[512];
 
@@ -244,12 +265,8 @@ struct idx_dataset_derived_metadata_struct
   int var_pipe_length;
   int parallel_mode;  
   
-  //int staged_aggregation;
-  int agg_type;
-
   int start_layout_index;
   int end_layout_index;
-
 
   MPI_Status *status_non_shared;
   MPI_File *fp_non_shared;
@@ -258,7 +275,6 @@ struct idx_dataset_derived_metadata_struct
   MPI_Status *status_shared;
   MPI_File *fp_shared;
   MPI_Request *request_shared;
-
 
   MPI_Status *status_file_zero;
   MPI_File *fp_file_zero;

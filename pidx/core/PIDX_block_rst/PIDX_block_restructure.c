@@ -32,11 +32,7 @@
 ///Struct for restructuring ID
 struct PIDX_chunk_id_struct
 {
-#if PIDX_HAVE_MPI
-  /// Passed by PIDX API
-  MPI_Comm comm;
-  MPI_Comm global_comm;
-#endif
+  idx_comm idx_c;
 
   /// Contains all relevant IDX file info
   /// Blocks per file, samples per block, bitmask, block, file name template and more
@@ -53,7 +49,7 @@ struct PIDX_chunk_id_struct
   int last_index;
 };
 
-PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, int start_var_index, int end_var_index)
+PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, int start_var_index, int end_var_index)
 {
   PIDX_chunk_id chunk_id;
 
@@ -63,6 +59,7 @@ PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_met
 
   chunk_id->idx = idx_meta_data;
   chunk_id->idx_derived = idx_derived;
+  chunk_id->idx_c = idx_c;
 
   chunk_id->group_index = 0;
 
@@ -72,28 +69,6 @@ PIDX_chunk_id PIDX_chunk_init(idx_dataset idx_meta_data, idx_dataset_derived_met
   return chunk_id;
 }
 
-
-#if PIDX_HAVE_MPI
-int PIDX_chunk_set_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm)
-{
-  if (chunk_id == NULL)
-    return PIDX_err_id;
-
-  chunk_id->comm = comm;
-
-  return PIDX_success;
-}
-
-int PIDX_chunk_set_global_communicator(PIDX_chunk_id chunk_id, MPI_Comm comm)
-{
-  if (chunk_id == NULL)
-    return PIDX_err_id;
-
-  chunk_id->global_comm = comm;
-
-  return PIDX_success;
-}
-#endif
 
 
 PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
@@ -200,29 +175,6 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
           memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
         }
       }
-
-      /*
-      for(j = 0; j < in_patch->count; j++)
-      {
-        if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP)
-        {
-          char filename[100];
-          sprintf(filename, "%d_%d_%d",p, j, rank);
-          FILE *fp = fopen (filename, "w");
-          double dv;
-          int i;
-
-          fprintf(fp, "[%d] [%d] Offset Count %d %d %d :: %d %d %d\n", p, j, (int)in_patch->patch[j]->offset[0], (int)in_patch->patch[j]->offset[1], (int)in_patch->patch[j]->offset[2], (int)in_patch->patch[j]->size[0], (int)in_patch->patch[j]->size[1], (int)in_patch->patch[j]->size[2]);
-          for (i = 0; i < in_patch->patch[j]->size[0] * in_patch->patch[j]->size[1] * in_patch->patch[j]->size[2]; i++)
-          {
-            //printf("R%d [%d] %d %d : %d\n", rank, i, p, j, var->bpv/8);
-            memcpy(&dv, in_patch->patch[j]->buffer + (i*var->bpv / 8), var->bpv/8);
-            fprintf(fp, "%f\n", dv);
-          }
-          fclose(fp);
-        }
-      }
-      */
     }
   }
   return PIDX_success;
@@ -256,20 +208,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
           else
           {
-            /*
-            printf("CB Size = %d\n", out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]);
-            int rank;
-            MPI_Comm_rank(chunk_id->comm, &rank);
-            int sc = 0;
-            for (sc = 0; sc < (out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2]); sc++)
-            {
-              float xx;
-              memcpy(&xx, out_patch->patch[j]->buffer + sc * sizeof(float), sizeof(float));
-
-              if (rank == 0)
-                printf("Value at %d = %f\n", sc,  xx);
-            }
-            */
             if (MODE == PIDX_WRITE)
               memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->vps);
             else
@@ -371,14 +309,11 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
                   {
                     int i = xx + yy * 4 + zz * 4 * 4;
                     int j = xx + yy * nx + zz * nx * ny;
-                    //printf("%d %d %f\n", i, j, s[i]);
+
                     if (MODE == PIDX_WRITE)
                       s[nx*ny*nz*s1 + i*var->vps+s1] = q[j*var->vps + s1];
                     else
-                    {
-                      //printf("VAL %f\n", s[nx*ny*nz*s1 + i*var->vps+s1]);
                       q[j*var->vps + s1] = s[nx*ny*nz*s1 + i*var->vps+s1];
-                    }
                   }
                 }
               }
@@ -410,34 +345,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       free(temp_buffer);
     }
   }
-
-  /*
-  Remove the comment to print debug info
-  double dv;
-  int i;
-  for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
-  {
-    PIDX_variable var = chunk_id->idx->variable[v];
-
-    // loop through all groups
-    int g = 0;
-    for (g = 0; g < var->patch_group_count; ++g)
-    {
-      char filename[100];
-      sprintf(filename, "%d_%d",g, rank);
-      FILE *fp = fopen (filename, "w");
-
-      Ndim_patch_group out_patch = var->chunk_patch_group[g];
-      fprintf(fp, "Offset Count %d %d %d :: %d %d %d\n", (int)out_patch->reg_patch_offset[0], (int)out_patch->reg_patch_offset[1], (int)out_patch->reg_patch_offset[2], (int)out_patch->reg_patch_size[0], (int)out_patch->reg_patch_size[1], (int)out_patch->reg_patch_size[2]);
-      for (i = 0; i < out_patch->reg_patch_size[0] * out_patch->reg_patch_size[1] * out_patch->reg_patch_size[2]; i++)
-      {
-        memcpy(&dv, out_patch->patch[0]->buffer + (i*var->bpv/8), var->bpv/8);
-        fprintf(fp, "%f\n", dv);
-      }
-      fclose(fp);
-    }
-  }
-  */
 
   return PIDX_success;
 }
@@ -497,7 +404,6 @@ PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
 
 PIDX_return_code PIDX_chunk_finalize(PIDX_chunk_id chunk_id)
 {
-  //TODO?
   free(chunk_id);
   chunk_id = 0;
 

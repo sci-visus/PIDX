@@ -29,12 +29,6 @@ static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf);
 
 PIDX_return_code PIDX_rst_buf_aggregate_and_write(PIDX_rst_id rst_id)
 {
-  int rank = 0;
-#if PIDX_HAVE_MPI
-  if (rst_id->idx_d->parallel_mode == 1)
-    MPI_Comm_rank(rst_id->comm, &rank);
-#endif
-
   int v;
   char *directory_path;
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
@@ -51,7 +45,7 @@ PIDX_return_code PIDX_rst_buf_aggregate_and_write(PIDX_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0, v_end = 0;
@@ -140,12 +134,6 @@ PIDX_return_code PIDX_rst_buf_aggregate_and_write(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_buf_read_and_aggregate(PIDX_rst_id rst_id)
 {
-  int rank = 0;
-
-#if PIDX_HAVE_MPI
-  MPI_Comm_rank(rst_id->comm, &rank);
-#endif
-
   int v;
   MPI_File fh;
 
@@ -195,7 +183,7 @@ PIDX_return_code PIDX_rst_buf_read_and_aggregate(PIDX_rst_id rst_id)
       file_name = malloc(PATH_MAX * sizeof(*file_name));
       memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
 
       MPI_Status status;
       int ret = 0;
@@ -252,9 +240,6 @@ PIDX_return_code PIDX_rst_buf_read_and_aggregate(PIDX_rst_id rst_id)
 PIDX_return_code PIDX_rst_buf_aggregated_write(PIDX_rst_id rst_id)
 {
   int g = 0;
-  int rank = 0;
-  MPI_Comm_rank(rst_id->comm, &rank);
-
   char *directory_path;
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
@@ -269,7 +254,7 @@ PIDX_return_code PIDX_rst_buf_aggregated_write(PIDX_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0;
@@ -310,9 +295,6 @@ PIDX_return_code PIDX_rst_buf_aggregated_write(PIDX_rst_id rst_id)
 PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
 {
   int g = 0;
-  int rank = 0;
-  MPI_Comm_rank(rst_id->comm, &rank);
-
   char *directory_path;
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
@@ -327,7 +309,7 @@ PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
     int fp = open(file_name, O_RDONLY, 0664);
     if (fp == -1)
     {
@@ -378,18 +360,10 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   if (rst_id->idx_d->var_pipe_length == 0)
     rst_id->idx_d->var_pipe_length = 1;
 
-  int nprocs = 1, rank = 0;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;
 
-#if PIDX_HAVE_MPI
-  if (rst_id->idx_d->parallel_mode == 1)
-  {
-    MPI_Comm_size(rst_id->comm,  &nprocs);
-    MPI_Comm_rank(rst_id->comm,  &rank);
-  }
-#endif
 
   char *idx_directory_path;
   char offset_path[PATH_MAX];

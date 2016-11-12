@@ -41,6 +41,9 @@ struct PIDX_hz_encode_struct
   /// number of files, files that are ging to be populated
   idx_dataset_derived_metadata idx_d;
 
+
+  idx_comm idx_c;
+
   int** index;
 
   int group_index;
@@ -50,10 +53,6 @@ struct PIDX_hz_encode_struct
 
   int resolution_from;
   int resolution_to;
-
-#if PIDX_HAVE_MPI
-  MPI_Comm comm;
-#endif
 };
 typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 
@@ -64,16 +63,8 @@ typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index);
+PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, int start_var_index, int end_var_index);
 
-
-#if PIDX_HAVE_MPI
-/// Attach the communicator wit the ID.
-/// \param id hz encoding id
-/// \param comm the communicator
-/// \return error code
-int PIDX_hz_encode_set_communicator(PIDX_hz_encode_id id, MPI_Comm comm);
-#endif
 
 
 
@@ -156,6 +147,14 @@ PIDX_return_code PIDX_hz_encode_finalize(PIDX_hz_encode_id id);
 /// \return
 ///
 PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_from, int resolution_to);
+
+
+
+
+
+///
+int PIDX_file_io_per_process(PIDX_hz_encode_id io_id, PIDX_block_layout block_layout, int MODE);
+
 
 
 ///

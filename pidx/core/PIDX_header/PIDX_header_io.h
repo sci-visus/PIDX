@@ -24,14 +24,8 @@ typedef struct PIDX_header_io_struct* PIDX_header_io_id;
 
 
 ///
-PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index );
+PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int first_index, int last_index);
 
-
-
-#if PIDX_HAVE_MPI
-///
-PIDX_return_code PIDX_header_io_set_communicator(PIDX_header_io_id header_io, MPI_Comm comm);
-#endif
 
 
 ///

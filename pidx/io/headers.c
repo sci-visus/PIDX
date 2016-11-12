@@ -70,15 +70,8 @@ static PIDX_return_code write_idx_headers_layout(PIDX_io file, int group_index, 
   if (file->idx_dbg->debug_do_io == 1)
   {
     /* STEP 1 */
-    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
-#if PIDX_HAVE_MPI
-    if (file->idx_d->parallel_mode)
-    {
-      ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-    }
-#endif
+    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, file->idx_c, start_var_index, end_var_index);
+
     ret = PIDX_header_io_filename_create(file->header_io_id, bl, filename_template);
     if (ret != PIDX_success)
       return PIDX_err_header;
@@ -120,15 +113,7 @@ PIDX_return_code init_raw_headers_layout(PIDX_io file, int group_index, int star
 
   if (file->idx_dbg->debug_do_io == 1)
   {
-    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, start_var_index, end_var_index);
-#if PIDX_HAVE_MPI
-    if (file->idx_d->parallel_mode == 1)
-    {
-      ret = PIDX_header_io_set_communicator(file->header_io_id, file->comm);
-      if (ret != PIDX_success)
-        return PIDX_err_header;
-    }
-#endif
+    file->header_io_id = PIDX_header_io_init(file->idx, file->idx_d, file->idx_c, start_var_index, end_var_index);
 
     ret = PIDX_header_io_enable_raw_dump (file->header_io_id);
     if (ret != PIDX_success)

@@ -129,7 +129,7 @@ void PIDX_init_timming_buffers1(PIDX_time time, int variable_count)
   time->io_start = malloc (sizeof(double) * variable_count);
   memset(time->io_start, 0, sizeof(double) * variable_count);
   time->io_end = malloc (sizeof(double) * variable_count);
-    memset(time->io_end, 0, sizeof(double) * variable_count);
+  memset(time->io_end, 0, sizeof(double) * variable_count);
 }
 
 
@@ -161,6 +161,11 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
   time->agg_meta_cleanup_end = malloc (sizeof(double*) * variable_count);
   memset(time->agg_meta_cleanup_end, 0, sizeof(double*) * variable_count);
 
+  time->hz_io_start = malloc (sizeof(double*) * variable_count);
+  memset(time->hz_io_start, 0, sizeof(double*) * variable_count);
+  time->hz_io_end = malloc (sizeof(double*) * variable_count);
+  memset(time->hz_io_end, 0, sizeof(double*) * variable_count);
+
   int i = 0;
   for (i = 0; i < variable_count; i++)
   {
@@ -188,6 +193,11 @@ void PIDX_init_timming_buffers2(PIDX_time time, int variable_count, int layout_c
     memset(time->agg_meta_cleanup_start[i], 0, sizeof(double) * layout_count);
     time->agg_meta_cleanup_end[i] = malloc (sizeof(double) * layout_count);
     memset(time->agg_meta_cleanup_end[i], 0, sizeof(double) * layout_count);
+
+    time->hz_io_start[i] = malloc (sizeof(double) * layout_count);
+    memset(time->hz_io_start[i], 0, sizeof(double) * layout_count);
+    time->hz_io_end[i] = malloc (sizeof(double) * layout_count);
+    memset(time->hz_io_end[i], 0, sizeof(double) * layout_count);
   }
 }
 
@@ -258,6 +268,9 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
     free(time->agg_end[i]);
     free(time->agg_meta_cleanup_start[i]);
     free(time->agg_meta_cleanup_end[i]);
+
+    free(time->hz_io_start[i]);
+    free(time->hz_io_end[i]);
   }
 
   free(time->agg_init_start);
@@ -270,6 +283,9 @@ void PIDX_delete_timming_buffers2(PIDX_time time, int variable_count)
   free(time->agg_end);
   free(time->agg_meta_cleanup_start);
   free(time->agg_meta_cleanup_end);
+
+  free(time->hz_io_start);
+  free(time->hz_io_end);
 
   free(time->io_start);
   free(time->io_end);

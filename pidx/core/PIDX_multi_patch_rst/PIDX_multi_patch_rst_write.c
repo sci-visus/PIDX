@@ -34,9 +34,7 @@ static PIDX_return_code dump_debug_data_finalie (PIDX_multi_patch_rst_id id);
 
 PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_id)
 {
-  int rank = 0;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
-  MPI_Comm_rank(rst_id->comm,  &rank);
 
   if (dump_debug_data_init(rst_id) != PIDX_success)
   {
@@ -110,14 +108,14 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
 
     for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
     {
-      if (rank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
+      if (rst_id->idx_c->rank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
       {
         for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
         {
           unsigned long long *reg_patch_offset = rst_id->reg_multi_patch_grp[i]->patch[j]->offset;
           unsigned long long *reg_patch_count  = rst_id->reg_multi_patch_grp[i]->patch[j]->size;
 
-          if(rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
+          if(rst_id->idx_c->rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
           {
             count1 = 0;
             int p_index = rst_id->reg_multi_patch_grp[i]->source_patch[j].index;
@@ -156,7 +154,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
             {
               PIDX_variable var = var_grp->variable[v];
               int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
-              ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->comm, &req[req_counter]);
+              ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->comm, &req[req_counter]);
               if (ret != MPI_SUCCESS)
               {
                 fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -165,7 +163,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
 
               if (rst_id->idx_derived->dump_rst_info == 1)
               {
-                fprintf(rst_id->idx_derived->rst_dump_fp, "[N REC] [%lld] Dest offset 0 Dest size %d My rank %d Source rank %d\n", v, length, rank,  rst_id->reg_multi_patch_grp[i]->source_patch[j].rank);
+                fprintf(rst_id->idx_derived->rst_dump_fp, "[N REC] [%lld] Dest offset 0 Dest size %d My rank %d Source rank %d\n", v, length, rst_id->idx_c->rank,  rst_id->reg_multi_patch_grp[i]->source_patch[j].rank);
                 fflush(rst_id->idx_derived->rst_dump_fp);
               }
 
@@ -179,7 +177,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
       {
         for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
         {
-          if(rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
+          if(rst_id->idx_c->rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
           {
             for(v = start_index; v <= end_index; v++)
             {
@@ -224,7 +222,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
 
               MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type[chunk_counter]);
               MPI_Type_commit(&chunk_data_type[chunk_counter]);
-              ret = MPI_Isend(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->comm, &req[req_counter]);
+              ret = MPI_Isend(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->comm, &req[req_counter]);
               if (ret != MPI_SUCCESS)
               {
                 fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -233,7 +231,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
 
               if (rst_id->idx_derived->dump_rst_info == 1)
               {
-                fprintf(rst_id->idx_derived->rst_dump_fp, "[N SND] [%lld] Source offset 0 Source size 1 My rank %d Dest rank %d\n", v, rank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
+                fprintf(rst_id->idx_derived->rst_dump_fp, "[N SND] [%lld] Source offset 0 Source size 1 My rank %d Dest rank %d\n", v, rst_id->idx_c->rank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
                 fflush(rst_id->idx_derived->rst_dump_fp);
               }
 
@@ -303,13 +301,10 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
   unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
   unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0;
-  int rank = 0, ret = 0;
+  int ret = 0;
 
   MPI_Request *req;
   MPI_Status *status;
-
-  //rank and nprocs
-  MPI_Comm_rank(rst_id->comm, &rank);
 
   //printf("rst_id->reg_multi_patch_grp_count = %d\n", rst_id->reg_multi_patch_grp_count);
   for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
@@ -336,7 +331,7 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
 
   for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
   {
-    if (rank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
+    if (rst_id->idx_c->rank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
     {
       //  printf("%d: reg_multi_patch_grp %d count %d\n", rank, i, rst_id->reg_multi_patch_grp[i]->count);
       for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
@@ -346,7 +341,7 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
 
         int patch_count = 0;
         //printf("rank %d is source patch %d??\n", rank, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank);
-        if(rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
+        if(rst_id->idx_c->rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
         {
           count1 = 0;
           int p_index = rst_id->reg_multi_patch_grp[i]->source_patch[j].index;
@@ -394,7 +389,7 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
           {
             PIDX_variable var = var_grp->variable[v];
             int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
-            ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->comm, &req[req_counter]);
+            ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -411,7 +406,7 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
       for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
       {
         int patch_count = 0;
-        if(rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
+        if(rst_id->idx_c->rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
         {
           for(v = rst_id->first_index; v <= rst_id->last_index; v++)
           {
@@ -458,7 +453,7 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
             MPI_Datatype chunk_data_type;
             MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type);
             MPI_Type_commit(&chunk_data_type);
-            ret = MPI_Isend(var->sim_patch[p_index]->buffer, 1, chunk_data_type, rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->comm, &req[req_counter]);
+            ret = MPI_Isend(var->sim_patch[p_index]->buffer, 1, chunk_data_type, rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->comm, &req[req_counter]);
 
             if (ret != MPI_SUCCESS)
             {
@@ -507,9 +502,6 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
 static PIDX_return_code dump_debug_data_init (PIDX_multi_patch_rst_id id)
 {
   int ret = 0;
-  int rank = 0;
-  MPI_Comm_rank(id->comm, &rank);
-
   if (id->idx_derived->dump_rst_info == 1 && id->idx->current_time_step == 0)
   {
     char rst_file_name[1024];
@@ -521,9 +513,9 @@ static PIDX_return_code dump_debug_data_init (PIDX_multi_patch_rst_id id)
       return PIDX_err_rst;
     }
 
-    MPI_Barrier(id->comm);
+    MPI_Barrier(id->idx_c->comm);
 
-    sprintf(rst_file_name, "%s/rank_%d", id->idx_derived->rst_dump_dir_name, rank);
+    sprintf(rst_file_name, "%s/rank_%d", id->idx_derived->rst_dump_dir_name, id->idx_c->rank);
     id->idx_derived->rst_dump_fp = fopen(rst_file_name, "a+");
     if (!id->idx_derived->rst_dump_fp)
     {

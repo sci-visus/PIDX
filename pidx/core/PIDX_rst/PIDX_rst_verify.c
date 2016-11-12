@@ -32,14 +32,9 @@
 PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
 {
 #if !SIMULATE_IO
-  int i, j, k, rank = 0, v = 0, s = 0, m, n, bytes_for_datatype;
+  int i, j, k, v = 0, s = 0, m, n, bytes_for_datatype;
   unsigned long long element_count = 0;
   unsigned long long lost_element_count = 0;
-
-#if PIDX_HAVE_MPI
-  if (rst_id->idx_d->parallel_mode == 1)
-    MPI_Comm_rank(rst_id->comm, &rank);
-#endif
 
   float fvalue_1, fvalue_2;
   double dvalue_1, dvalue_2;
@@ -120,7 +115,7 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
   unsigned long long global_volume;
 #if PIDX_HAVE_MPI
   if (rst_id->idx_d->parallel_mode == 1)
-    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->comm);
+    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_c->comm);
   else
     global_volume = element_count;
 #else
@@ -129,16 +124,16 @@ PIDX_return_code HELPER_rst(PIDX_rst_id rst_id)
 
   if (global_volume != (unsigned long long) bounds[0] * bounds[1] * bounds[2] * (rst_id->last_index - rst_id->first_index + 1))
   {
-    if (rank == 0)
+    if (rst_id->idx_c->rank == 0)
       fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_d->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
 
-    if (rank == 0)
-      printf("[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rank,  rst_id->idx_d->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2]) * (rst_id->last_index - rst_id->first_index + 1), vol);
+    if (rst_id->idx_c->rank == 0)
+      printf("[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rst_id->idx_c->rank,  rst_id->idx_d->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2]) * (rst_id->last_index - rst_id->first_index + 1), vol);
 
     return PIDX_err_rst;
   }
   else
-    if (rank == 0)
+    if (rst_id->idx_c->rank == 0)
       fprintf(stderr, "[RST Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_d->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
 #endif
   return PIDX_success;

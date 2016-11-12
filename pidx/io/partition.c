@@ -10,9 +10,6 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   int i = 0, j = 0, k = 0, d = 0;
   //PIDX_return_code ret;
 
-  int rank = 0;
-  MPI_Comm_rank(file->global_comm, &rank);
-
   colors = malloc(sizeof(*colors) * file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
   memset(colors, 0, sizeof(*colors) * file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
   file->idx_d->color = (file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]) + 1;
@@ -132,24 +129,24 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 
 PIDX_return_code create_local_comm(PIDX_io file, int gi)
 {
-  int rank = 0;
-  int gnprocs = 1;
   int ret;
-
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  ret = MPI_Comm_split(file->global_comm, file->idx_d->color, rank, &(file->comm));
+  ret = MPI_Comm_split(file->idx_c->global_comm, file->idx_d->color, file->idx_c->rank, &(file->idx_c->comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  MPI_Comm_rank(file->comm,  &rank);
-  MPI_Comm_size(file->global_comm, &gnprocs);
+  MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
+  MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
 
-  memset(var_grp->rank_buffer, 0, gnprocs * sizeof(*var_grp->rank_buffer));
-  MPI_Allgather(&rank, 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->global_comm);
+  MPI_Comm_size(file->idx_c->comm, &(file->idx_c->nprocs));
+  MPI_Comm_rank(file->idx_c->comm, &(file->idx_c->rank));
+
+  memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
+  MPI_Allgather(&(file->idx_c->rank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
 
   return PIDX_success;
 }
@@ -158,7 +155,7 @@ PIDX_return_code create_local_comm(PIDX_io file, int gi)
 PIDX_return_code destroy_local_comm(PIDX_io file)
 {
   int ret;
-  ret = MPI_Comm_free(&(file->comm));
+  ret = MPI_Comm_free(&(file->idx_c->comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

@@ -267,10 +267,6 @@ int main(int argc, char **argv)
       }
   */
 
-  global_bounds[0] = 272;
-  global_bounds[1] = 112;
-  global_bounds[2] = 220;
-
   int i, j, k, vps;
   int int_val = 0;
   double double_val = 0;

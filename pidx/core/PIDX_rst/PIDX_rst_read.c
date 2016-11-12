@@ -45,14 +45,11 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
   unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
   unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
-  int rank = 0, ret = 0;
+  int ret = 0;
 
   MPI_Request *req;
   MPI_Status *status;
   MPI_Datatype *chunk_data_type;
-
-  //rank and nprocs
-  MPI_Comm_rank(rst_id->comm, &rank);
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
     for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
@@ -85,14 +82,14 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 
   for (i = 0; i < rst_id->reg_patch_grp_count; i++)
   {
-    if (rank == rst_id->reg_patch_grp[i]->max_patch_rank)
+    if (rst_id->idx_c->rank == rst_id->reg_patch_grp[i]->max_patch_rank)
     {
       for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       {
         unsigned long long *reg_patch_offset = rst_id->reg_patch_grp[i]->patch[j]->offset;
         unsigned long long *reg_patch_count  = rst_id->reg_patch_grp[i]->patch[j]->size;
 
-        if(rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
+        if(rst_id->idx_c->rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
         {
           count1 = 0;
 
@@ -127,7 +124,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
 
             int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
 
-            ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->comm, &req[req_counter]);
+            ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->idx_c->comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -143,7 +140,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
     {
       for(j = 0; j < rst_id->reg_patch_grp[i]->count; j++)
       {
-        if(rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
+        if(rst_id->idx_c->rank == rst_id->reg_patch_grp[i]->source_patch_rank[j])
         {
           for(v = rst_id->first_index; v <= rst_id->last_index; v++)
           {
@@ -192,7 +189,7 @@ PIDX_return_code PIDX_rst_read(PIDX_rst_id rst_id)
             MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type[chunk_counter]);
             MPI_Type_commit(&chunk_data_type[chunk_counter]);
 
-            ret = MPI_Irecv(var->sim_patch[0]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_patch_grp[i]->max_patch_rank, 123, rst_id->comm, &req[req_counter]);
+            ret = MPI_Irecv(var->sim_patch[0]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);

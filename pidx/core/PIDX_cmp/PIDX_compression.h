@@ -23,11 +23,7 @@
 struct PIDX_comp_id_struct;
 typedef struct PIDX_comp_id_struct* PIDX_comp_id;
 
-PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, int start_var_index, int end_var_index );
-
-#if PIDX_HAVE_MPI
-PIDX_return_code PIDX_compression_set_communicator(PIDX_comp_id id, MPI_Comm comm);
-#endif
+PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, int start_var_index, int end_var_index );
 
 
 ///

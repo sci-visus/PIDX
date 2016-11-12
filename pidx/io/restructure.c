@@ -18,7 +18,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
   PIDX_time time = file->idx_d->time;
   cvi = svi;
 
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->comm);
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->comm);
   if (max_patch_count > 1)
     rst_case_type = 1;
 
@@ -26,11 +26,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
   {
     time->rst_init_start[cvi] = PIDX_get_time();
     // Initialize the restructuring phase
-    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, svi, evi);
-
-    // attach communicator to the restructuring phase
-    ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
-    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
     time->rst_init_end[cvi] = PIDX_get_time();
 
 
@@ -66,11 +62,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
   {
     time->rst_init_start[cvi] = PIDX_get_time();
     // Initialize the restructuring phase
-    file->multi_patch_rst_id = PIDX_multi_patch_rst_init(file->idx, file->idx_d, svi, evi);
-
-    // attach communicator to the restructuring phase
-    ret = PIDX_multi_patch_rst_set_communicator(file->multi_patch_rst_id, file->comm);
-    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+    file->multi_patch_rst_id = PIDX_multi_patch_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
     time->rst_init_end[cvi] = PIDX_get_time();
 
 
@@ -341,10 +333,7 @@ PIDX_return_code restructure_forced_read(PIDX_io file, int svi, int evi)
 {
   int ret = 0;
 
-  file->rst_id = PIDX_rst_init(file->idx, file->idx_d, svi, evi);
-
-  ret = PIDX_rst_set_communicator(file->rst_id, file->comm);
-  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
 
   ret = PIDX_rst_forced_raw_read(file->rst_id);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}

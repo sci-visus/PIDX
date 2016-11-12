@@ -30,6 +30,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx = malloc(sizeof (*((*file)->idx)));
   memset((*file)->idx, 0, sizeof (*((*file)->idx)));
 
+  (*file)->idx_c = malloc(sizeof (*((*file)->idx_c)));
+  memset((*file)->idx_c, 0, sizeof (*((*file)->idx_c)));
+
   // IDX derived pointer (everything derived from idx)
   (*file)->idx_d = malloc(sizeof (*((*file)->idx_d)));
   memset((*file)->idx_d, 0, sizeof (*((*file)->idx_d)));
@@ -50,9 +53,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memcpy((*file)->idx->box_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    (*file)->idx_d->partition_count[i] = 1;//access_type->partition_count[i];
-
-  //memcpy ((*file)->idx_d->partition_count, access_type->partition_count, sizeof(int) * PIDX_MAX_DIMENSIONS);
+    (*file)->idx_d->partition_count[i] = 1;
 
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;
@@ -67,12 +68,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->local_group_count = 1;
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
-  //(*file)->one_time_initializations = 0;
-  //(*file)->one_time_initializations = 0;
 
   (*file)->idx_d->color = 0;
   (*file)->idx->io_type = PIDX_IDX_IO;
-  //(*file)->enable_raw_dump = 0;
   (*file)->idx_d->data_core_count = -1;
 
   (*file)->idx_d->reduced_res_from = 0;
@@ -81,23 +79,12 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->parallel_mode = access_type->parallel;
   (*file)->idx_d->raw_io_pipe_length = 0;
 
-#if PIDX_HAVE_MPI
-  if (access_type->parallel)
-  {
-    MPI_Comm_rank(access_type->comm, &rank);
-    (*file)->comm = access_type->comm;
-    (*file)->idx->enable_rst = 1;
-    (*file)->idx->enable_agg = 1;
-  }
-  else
-  {
-    (*file)->idx->enable_rst = 1;
-    (*file)->idx->enable_agg = 1;
-  }
-#else
-  (*file)->idx->enable_rst = 0;
-  (*file)->idx->enable_agg = 0;
-#endif
+  (*file)->idx_c->comm = access_type->comm;
+  MPI_Comm_rank((*file)->idx_c->comm, &((*file)->idx_c->rank));
+  MPI_Comm_size((*file)->idx_c->comm, &((*file)->idx_c->nprocs));
+
+  (*file)->idx->enable_rst = 1;
+  (*file)->idx->enable_agg = 1;
 
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;
@@ -145,7 +132,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
-  (*file)->idx_d->agg_type = 1;
   (*file)->idx_d->layout_count = 0;
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
@@ -173,7 +159,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
 #if PIDX_HAVE_MPI
   if ((*file)->idx_d->parallel_mode == 1)
-    MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, access_type->comm);
+    MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->comm);
 #endif
 
   (*file)->idx->flip_endian = 0;

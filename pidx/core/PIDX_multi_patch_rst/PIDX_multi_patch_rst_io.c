@@ -34,13 +34,12 @@
 
 PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_and_write(PIDX_multi_patch_rst_id rst_id)
 {
-  int rank = 0;
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
 
-  MPI_Comm_rank(rst_id->comm, &rank);
 
   int v;
   char *directory_path;
+  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
@@ -55,7 +54,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_and_write(PIDX_multi_patch_r
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0, v_end = 0;
@@ -144,13 +143,11 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_and_write(PIDX_multi_patch_r
 
 PIDX_return_code PIDX_multi_patch_rst_buf_read_and_aggregate(PIDX_multi_patch_rst_id rst_id)
 {
-  int rank = 0;
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
-  MPI_Comm_rank(rst_id->comm, &rank);
   int v;
   MPI_File fh;
   char *directory_path;
   char *data_set_path;
+  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
 
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
@@ -193,7 +190,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_read_and_aggregate(PIDX_multi_patch_rs
       file_name = malloc(PATH_MAX * sizeof(*file_name));
       memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
 
       MPI_Status status;
       int ret = 0;
@@ -250,9 +247,6 @@ PIDX_return_code PIDX_multi_patch_rst_buf_read_and_aggregate(PIDX_multi_patch_rs
 PIDX_return_code PIDX_multi_patch_rst_buf_aggregated_write(PIDX_multi_patch_rst_id rst_id)
 {
   int g = 0;
-  int rank = 0;
-  MPI_Comm_rank(rst_id->comm, &rank);
-
   char *directory_path;
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
@@ -267,7 +261,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregated_write(PIDX_multi_patch_rst_
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0;
@@ -308,9 +302,6 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregated_write(PIDX_multi_patch_rst_
 PIDX_return_code PIDX_multi_patch_rst_buf_aggregated_read(PIDX_multi_patch_rst_id rst_id)
 {
   int g = 0;
-  int rank = 0;
-  MPI_Comm_rank(rst_id->comm, &rank);
-
   char *directory_path;
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
@@ -325,7 +316,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregated_read(PIDX_multi_patch_rst_i
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0;

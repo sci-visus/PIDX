@@ -66,6 +66,54 @@ PIDX_return_code hz_encode(PIDX_io file, int mode)
 
 
 
+PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
+{
+  int j = 0;
+  int ret;
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  if (file->idx_dbg->debug_do_io == 1)
+  {
+    for (j = var_grp->agg_l_f0; j < var_grp->f0_end_layout_index; j++)
+    {
+      ret = PIDX_file_io_per_process(file->hz_id, var_grp->f0_block_layout_by_level[j - var_grp->agg_l_f0], mode);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
+    }
+
+    for (j = var_grp->agg_l_shared; j < var_grp->shared_end_layout_index; j++)
+    {
+      file->idx_d->time->hz_io_start[cvi][j] = MPI_Wtime();
+      ret = PIDX_file_io_per_process(file->hz_id, var_grp->shared_block_layout_by_level[j - var_grp->agg_l_shared], mode);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
+      file->idx_d->time->hz_io_end[cvi][j] = MPI_Wtime();
+    }
+
+    for (j = var_grp->agg_l_nshared; j < var_grp->nshared_end_layout_index; j++)
+    {
+      file->idx_d->time->hz_io_start[cvi][j] = MPI_Wtime();
+      ret = PIDX_file_io_per_process(file->hz_id, var_grp->nshared_block_layout_by_level[j - var_grp->agg_l_nshared], mode);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
+      file->idx_d->time->hz_io_end[cvi][j] = MPI_Wtime();
+    }
+  }
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code hz_encode_cleanup(PIDX_io file)
 {
   // meta data and buffer cleanup
@@ -93,15 +141,7 @@ static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
 
   time->hz_init_start[cvi] = PIDX_get_time();
   // Create the HZ encoding ID
-  file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, svi, evi);
-
-  // Attaching the communicator to the HZ encodig phase phase
-  ret = PIDX_hz_encode_set_communicator(file->hz_id, file->comm);
-  if (ret != PIDX_success)
-  {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_hz;
-  }
+  file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, file->idx_c, svi, evi);
 
   // resolution for HZ encoding
   ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
@@ -123,15 +163,7 @@ static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi)
 
   time->chunk_init_start[cvi] = PIDX_get_time();
   // Create the chunking ID
-  file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, svi, evi);
-
-  // Attaching the communicator to the chunking phase
-  ret = PIDX_chunk_set_communicator(file->chunk_id, file->comm);
-  if (ret != PIDX_success)
-  {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_chunk;
-  }
+  file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, file->idx_c, svi, evi);
   time->chunk_init_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
@@ -145,15 +177,7 @@ static PIDX_return_code compression_init(PIDX_io file, int svi, int evi)
 
   time->compression_init_start[cvi] = PIDX_get_time();
   // Create the compression ID
-  file->comp_id = PIDX_compression_init(file->idx, file->idx_d, svi, evi);
-
-  // Attaching the communicator to the compression phase
-  ret = PIDX_compression_set_communicator(file->comp_id, file->comm);
-  if (ret != PIDX_success)
-  {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_compress;
-  }
+  file->comp_id = PIDX_compression_init(file->idx, file->idx_d, file->idx_c, svi, evi);
   time->compression_init_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
