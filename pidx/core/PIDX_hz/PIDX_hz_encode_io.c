@@ -282,9 +282,9 @@ static PIDX_return_code dump_debug_data_init(PIDX_hz_encode_id hz_id)
       return PIDX_err_io;
     }
 
-    MPI_Barrier(hz_id->idx_c->comm);
+    MPI_Barrier(hz_id->idx_c->local_comm);
 
-    sprintf(io_file_name, "%s/rank_%d", hz_id->idx_d->io_dump_dir_name, hz_id->idx_c->rank);
+    sprintf(io_file_name, "%s/rank_%d", hz_id->idx_d->io_dump_dir_name, hz_id->idx_c->lrank);
     hz_id->idx_d->io_dump_fp = fopen(io_file_name, "a+");
     if (!hz_id->idx_d->io_dump_fp)
     {

@@ -30,10 +30,8 @@
 #include "../../PIDX_inc.h"
 
 
-
 PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int var_start_index, int var_end_index)
 {
-  //Creating the restructuring ID
   PIDX_rst_id rst_id;
   rst_id = (PIDX_rst_id)malloc(sizeof (*rst_id));
   memset(rst_id, 0, sizeof (*rst_id));
@@ -50,10 +48,8 @@ PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
 }
 
 
-
 PIDX_return_code PIDX_rst_finalize(PIDX_rst_id rst_id)
-{
-  
+{  
   free(rst_id);
   rst_id = 0;
   

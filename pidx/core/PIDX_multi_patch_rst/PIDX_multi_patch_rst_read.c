@@ -143,7 +143,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
 
 #if !SIMULATE_IO
 
-            ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->comm, &req[req_counter]);
+            ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -212,7 +212,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
             MPI_Type_commit(&chunk_data_type[chunk_counter]);
 
 #if !SIMULATE_IO
-            ret = MPI_Irecv(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->comm, &req[req_counter]);
+            ret = MPI_Irecv(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
 
             if (ret != MPI_SUCCESS)
             {

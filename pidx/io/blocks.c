@@ -33,7 +33,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     rpp.y = (int) file->idx->reg_patch_size[1];
     rpp.z = (int) file->idx->reg_patch_size[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
-    //if (file->idx_c->rank == 0)
+    //if (file->idx_c->grank == 0)
     //  printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
@@ -45,7 +45,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
     guess_bit_string_Z(process_bs, prcp);
-    //if (file->idx_c->rank == 0)
+    //if (file->idx_c->grank == 0)
     //  printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 
 
@@ -55,7 +55,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     pcp.y = (int) file->idx_d->partition_count[1];
     pcp.z = (int) file->idx_d->partition_count[2];
     guess_bit_string(partition_bs, pcp);
-    //if (file->idx_c->rank == 0)
+    //if (file->idx_c->grank == 0)
     //  printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 
     // Concatenating the three components to get the final bit string
@@ -71,7 +71,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     pcp.z = (int) file->idx->bounds[2];
     GuessBitmaskPattern(file->idx->bitSequence, pcp);
     //guess_bit_string(file->idx->bitSequence, pcp);
-    //if (file->idx_c->rank == 0)
+    //if (file->idx_c->grank == 0)
     //  printf("[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
 #endif
   }
@@ -81,7 +81,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
-  if (file->idx_c->rank == 0)
+  if (file->idx_c->grank == 0)
     printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
@@ -415,7 +415,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       {
 #if PIDX_HAVE_MPI
         if (file->idx_d->parallel_mode == 1)
-          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->comm);
+          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
         else
           memcpy(block_layout->hz_block_number_array[i], all_patch_local_block_layout->hz_block_number_array[i], level_count * sizeof(int));
 #else
@@ -427,7 +427,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       {
 #if PIDX_HAVE_MPI
         if (file->idx_d->parallel_mode == 1)
-          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->comm);
+          MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
         else
           memcpy(block_layout->hz_block_number_array[i], all_patch_local_block_layout->hz_block_number_array[i], level_count * sizeof(int));
 #else
@@ -445,7 +445,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
         {
 #if PIDX_HAVE_MPI
           if (file->idx_d->parallel_mode == 1)
-            MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->comm);
+            MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
           else
             memcpy(block_layout->hz_block_number_array[i], all_patch_local_block_layout->hz_block_number_array[i], level_count * sizeof(int));
 #else

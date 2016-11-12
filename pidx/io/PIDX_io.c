@@ -27,21 +27,6 @@ PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata id
 }
 
 
-PIDX_return_code PIDX_io_set_communicator(PIDX_io id, MPI_Comm comm)
-{
-  if (id == NULL)
-    return PIDX_err_id;
-
-  id->idx_c->global_comm = comm;
-  id->idx_c->comm = comm;
-
-  MPI_Comm_size(id->idx_c->global_comm, &(id->idx_c->gnprocs));
-  MPI_Comm_rank(id->idx_c->global_comm, &(id->idx_c->grank));
-
-  return PIDX_success;
-}
-
-
 
 PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 {

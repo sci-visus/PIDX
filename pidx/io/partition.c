@@ -132,7 +132,7 @@ PIDX_return_code create_local_comm(PIDX_io file, int gi)
   int ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  ret = MPI_Comm_split(file->idx_c->global_comm, file->idx_d->color, file->idx_c->rank, &(file->idx_c->comm));
+  ret = MPI_Comm_split(file->idx_c->global_comm, file->idx_d->color, file->idx_c->grank, &(file->idx_c->local_comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -142,11 +142,11 @@ PIDX_return_code create_local_comm(PIDX_io file, int gi)
   MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
   MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
 
-  MPI_Comm_size(file->idx_c->comm, &(file->idx_c->nprocs));
-  MPI_Comm_rank(file->idx_c->comm, &(file->idx_c->rank));
+  MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
+  MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
 
   memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  MPI_Allgather(&(file->idx_c->rank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
+  MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
 
   return PIDX_success;
 }
@@ -155,7 +155,7 @@ PIDX_return_code create_local_comm(PIDX_io file, int gi)
 PIDX_return_code destroy_local_comm(PIDX_io file)
 {
   int ret;
-  ret = MPI_Comm_free(&(file->idx_c->comm));
+  ret = MPI_Comm_free(&(file->idx_c->local_comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -171,11 +171,11 @@ PIDX_return_code find_partition_count(PIDX_io file)
   // calculate number of partitions
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-      file->idx_d->partition_count[d] = file->idx->bounds[d] / file->idx_d->partition_size[d];
-      if (file->idx->bounds[d] % file->idx_d->partition_size[d] != 0)
-          file->idx_d->partition_count[d]++;
+    file->idx_d->partition_count[d] = file->idx->bounds[d] / file->idx_d->partition_size[d];
+    if (file->idx->bounds[d] % file->idx_d->partition_size[d] != 0)
+      file->idx_d->partition_count[d]++;
 
-      file->idx_d->partition_count[d] = pow(2, (int)ceil(log2(file->idx_d->partition_count[d])));
+    file->idx_d->partition_count[d] = pow(2, (int)ceil(log2(file->idx_d->partition_count[d])));
   }
 
   return PIDX_success;

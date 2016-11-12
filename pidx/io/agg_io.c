@@ -140,7 +140,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_i
                               file->shared_agg_id,
                               idx->shared_agg_buffer,
                               var_grp->shared_block_layout_by_level,
-                              file->idx_c->comm,
+                              file->idx_c->local_comm,
                               start_index,
                               var_grp->shared_start_layout_index,
                               agg_io_level_shared, 0, agg_mode, mode);
@@ -155,7 +155,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_i
                               file->nshared_agg_id,
                               idx->nshared_agg_buffer,
                               var_grp->nshared_block_layout_by_level,
-                              file->idx_c->comm,
+                              file->idx_c->local_comm,
                               start_index,
                               var_grp->nshared_start_layout_index,
                               agg_io_level_non_shared, 1, agg_mode, mode);

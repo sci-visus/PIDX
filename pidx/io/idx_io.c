@@ -307,7 +307,7 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
     for (i = var_grp->nshared_start_layout_index; i < var_grp->nshared_end_layout_index ; i++)
     {
       no_of_aggregators = var_grp->nshared_block_layout_by_level[i - var_grp->nshared_start_layout_index]->efc;
-      if (no_of_aggregators <= file->idx_c->nprocs)
+      if (no_of_aggregators <= file->idx_c->gnprocs)
         var_grp->agg_l_nshared = i + 1;
     }
   }

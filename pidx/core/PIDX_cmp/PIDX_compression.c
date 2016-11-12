@@ -223,12 +223,6 @@ PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derive
 
 PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
-  //int rank;
-  //MPI_Comm_rank(comp_id->comm, &rank);
-
-  //if (rank == 0)
-  //  printf("Compressin type = %d\n", comp_id->idx->compression_type);
-
   if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
     return PIDX_success;
 

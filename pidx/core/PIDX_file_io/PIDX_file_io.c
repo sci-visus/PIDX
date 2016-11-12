@@ -140,14 +140,6 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
       if (MODE == PIDX_WRITE)
       {
-        /*
-        int rank;
-        MPI_Comm_rank(io_id->comm, &rank);
-        double x1, x2;
-        memcpy(&x1, agg_buf->buffer, sizeof(double));
-        memcpy(&x2, agg_buf->buffer + sizeof(double), sizeof(double));
-        printf("W [%d] [%d %d %d] size = %d and offset = %d [%f %f]\n", rank, agg_buf->file_number, agg_buf->var_number, agg_buf->sample_number, agg_buf->buffer_size, data_offset, x1, x2);
-        */
         ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
         {
@@ -205,7 +197,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
     {
       MPI_Comm new_comm;
       int new_rank = 0, new_count = 0;
-      MPI_Comm_split(io_id->idx_c->comm, agg_buf->file_number, io_id->idx_c->rank, &new_comm);
+      MPI_Comm_split(io_id->idx_c->local_comm, agg_buf->file_number, io_id->idx_c->lrank, &new_comm);
 
       MPI_Comm_rank(new_comm, &new_rank);
       MPI_Comm_size(new_comm, &new_count);

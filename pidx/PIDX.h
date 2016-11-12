@@ -460,6 +460,21 @@ PIDX_return_code PIDX_get_variable_pile_length(PIDX_file file, int* var_pipe_len
 
 
 
+///
+/// \brief PIDX_save_big_endian
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_save_big_endian(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_save_little_endian
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_save_little_endian(PIDX_file file);
 /*
  * Implementation in PIDX_variable.c
  */

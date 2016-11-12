@@ -89,25 +89,24 @@ struct PIDX_timming_struct
 typedef struct PIDX_timming_struct* PIDX_time;
 
 
-///
 struct PIDX_variable_struct
 {
   // General Info
-  char var_name[1024];                                                  ///< Variable name
-  int vps;                                                              ///< values per sample, Vector(3), scalar(1), or n
+  char var_name[1024];                                       ///< Variable name
+  int vps;                                                   ///< values per sample, Vector(3), scalar(1), or n
   int bpv;                                                   ///< Number of bits each need
-  PIDX_data_type type_name;                                                 ///< Name of the type uint8, bob
-  PIDX_data_layout data_layout;                                         ///< Row major or column major
+  PIDX_data_type type_name;                                  ///< Name of the type uint8, bob
+  PIDX_data_layout data_layout;                              ///< Row major or column major
 
   // buffer (before, after HZ encoding phase)
-  int sim_patch_count;                                                  ///< The actual number of patches (application layout), most probably more than 1 in uintah
-  Ndim_patch sim_patch[1024];                                           ///< Pointer to the patches
-  HZ_buffer* hz_buffer;                                                 ///< HZ encoded buffer of the patches
+  int sim_patch_count;                                       ///< The actual number of patches (application layout), most probably more than 1 in uintah
+  Ndim_patch sim_patch[1024];                                ///< Pointer to the patches
+  HZ_buffer* hz_buffer;                                      ///< HZ encoded buffer of the patches
 
   // buffer before aggregation
-  int patch_group_count;                                                ///< Number of groups of patches to be passed to aggregation phase
-  Ndim_patch_group* rst_patch_group;                                    ///< Pointer to the patch groups
-  Ndim_patch_group* chunk_patch_group;                                  ///< Pointer to the patch group after block restructuring
+  int patch_group_count;                                     ///< Number of groups of patches to be passed to aggregation phase
+  Ndim_patch_group* rst_patch_group;                         ///< Pointer to the patch groups
+  Ndim_patch_group* chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -154,17 +153,17 @@ struct PIDX_variable_group_struct
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
 
-/// Communicator
+/// Communicator related struct
 struct idx_comm_struct
 {
-  int rank;
-  int nprocs;
+  int lrank;
+  int lnprocs;
 
   int grank;
   int gnprocs;
 
   MPI_Comm global_comm;
-  MPI_Comm comm;
+  MPI_Comm local_comm;
 };
 typedef struct idx_comm_struct* idx_comm;
 
@@ -173,7 +172,7 @@ typedef struct idx_comm_struct* idx_comm;
 struct idx_file_struct
 {
   int io_type;
-  int current_time_step;                                                ///< Time step tracker
+  int current_time_step;
 
   int variable_pipe_length;
   int variable_count;
@@ -190,8 +189,8 @@ struct idx_file_struct
   char filename_template[1024];
   char filename_template_file_zero[1024];
 
-  int first_tstep;                                                     ///< The first timestep index in the IDX file
-  int last_tstep;                                                      ///< The last timestep index in the IDX file
+  int first_tstep;
+  int last_tstep;
 
   int bits_per_block;
   int blocks_per_file;
@@ -204,18 +203,17 @@ struct idx_file_struct
   int reg_box_set;
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   
-  int compression_type;                                               ///< counter to enable/disable (1/0) compression
-  int enable_rst;                                               ///< counter to enable/disable (1/0) compression
+  int compression_type;
+  int enable_rst;
 
   /// 0 No aggregation
   /// 1 Only aggregation
-  int enable_agg;                                               ///< counter to enable/disable (1/0) compression
+  int enable_agg;
 
   int compression_factor;
   int compression_bit_rate;
-  unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];                              ///< size of the block at which compression is applied eg. (4x4x4)
-                                                                        ///< the current compression schemes only work in three dimensions
-  unsigned long long chunked_bounds[PIDX_MAX_DIMENSIONS];                ///< Compressed global extents
+  unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];
+  unsigned long long chunked_bounds[PIDX_MAX_DIMENSIONS];
 
   /// 1 for little endian
   /// 0 for big endian
@@ -259,8 +257,8 @@ struct idx_dataset_derived_metadata_struct
   char io_dump_dir_name[512];
 
   int color;
-  int partition_count[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
-  int partition_size[PIDX_MAX_DIMENSIONS];          ///< Number of idx files in each dimensions
+  int partition_count[PIDX_MAX_DIMENSIONS];
+  int partition_size[PIDX_MAX_DIMENSIONS];
 
   int var_pipe_length;
   int parallel_mode;  

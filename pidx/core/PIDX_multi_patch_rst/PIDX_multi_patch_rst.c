@@ -33,7 +33,6 @@
 
 PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, int var_start_index, int var_end_index)
 {
-  //Creating the restructuring ID
   PIDX_multi_patch_rst_id multi_patch_rst_id;
   multi_patch_rst_id = (PIDX_multi_patch_rst_id)malloc(sizeof (*multi_patch_rst_id));
   memset(multi_patch_rst_id, 0, sizeof (*multi_patch_rst_id));
@@ -48,7 +47,6 @@ PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx
 
   return (multi_patch_rst_id);
 }
-
 
 
 PIDX_return_code PIDX_multi_patch_rst_finalize(PIDX_multi_patch_rst_id multi_patch_rst_id)

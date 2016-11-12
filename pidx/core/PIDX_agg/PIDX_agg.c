@@ -62,7 +62,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
 
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
 
-  ab->aggregator_interval = id->idx_c->nprocs / ((id->li - id->fi + 1) * lbl->efc * ab->agg_f);
+  ab->aggregator_interval = id->idx_c->lnprocs / ((id->li - id->fi + 1) * lbl->efc * ab->agg_f);
   assert(ab->aggregator_interval != 0);
 
   ab->buffer_size = 0;
@@ -149,7 +149,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
 
         int trank = 0;
-        int interval = (id->idx_c->nprocs/ (lbl->efc * ab->agg_f * id->idx->variable_count));
+        int interval = (id->idx_c->lnprocs/ (lbl->efc * ab->agg_f * id->idx->variable_count));
 
         if (file_status == 1)
           trank = var_grp->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
@@ -163,7 +163,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
 
         id->agg_r[k][i - id->fi][j] = trank;
 
-        if(id->idx_c->rank == id->agg_r[k][i - id->fi][j])
+        if(id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
         {
           ab->file_number = lbl->existing_file_index[k];
           ab->var_number = i;
@@ -179,7 +179,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
           ab->buffer_size = sample_count * bpdt;
 
           if (i == 0)// || i == id->idx->variable_count - 1)
-            printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] -> [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx_c->rank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+            printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] -> [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx_c->lrank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
@@ -284,12 +284,12 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
     int tcs = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
     int bpdt = tcs * (var->bpv/8) / (id->idx->compression_factor);
 
-    ret = MPI_Win_create(ab->buffer, ab->buffer_size, bpdt, MPI_INFO_NULL, id->idx_c->comm, &(id->win));
+    ret = MPI_Win_create(ab->buffer, ab->buffer_size, bpdt, MPI_INFO_NULL, id->idx_c->local_comm, &(id->win));
     if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
   }
   else
   {
-    ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->comm, &(id->win));
+    ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->local_comm, &(id->win));
     if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
   }
 
@@ -312,10 +312,10 @@ static PIDX_return_code create_open_log_file (PIDX_agg_id id)
     }
 
 #if PIDX_HAVE_MPI
-    MPI_Barrier(id->comm);
+    MPI_Barrier(id->local_comm);
 #endif
 
-    sprintf(agg_file_name, "%s/rank_%d", id->idx_d->agg_dump_dir_name, id->idx_c->rank);
+    sprintf(agg_file_name, "%s/rank_%d", id->idx_d->agg_dump_dir_name, id->idx_c->lrank);
     agg_dump_fp = fopen(agg_file_name, "a+");
     if (!agg_dump_fp)
     {
@@ -538,7 +538,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   int max_rank = 0;
   int min_rank = 0;
 
-  MPI_Comm_split(id->comm, target_rank, rank, &agg_comm);
+  MPI_Comm_split(id->local_comm, target_rank, rank, &agg_comm);
   int nrank = 0;
   MPI_Comm_rank(agg_comm, &nrank);
 
@@ -569,7 +569,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   //printf("SAI : EAI TR %d FN %d IFN %d :: %d : %d\n", target_rank, file_no, lbl->inverse_existing_file_index[file_no], start_agg_index, end_agg_index);
   if (start_agg_index != end_agg_index)
   {
-    if (target_rank != id->idx_c->rank)
+    if (target_rank != id->idx_c->lrank)
     {
 #ifndef PIDX_ACTIVE_TARGET
       MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , id->win);
@@ -613,7 +613,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
     for (itr = 0; itr < end_agg_index - start_agg_index - 1; itr++)
     {
-      if (target_rank != id->idx_c->rank)
+      if (target_rank != id->idx_c->lrank)
       {
 #ifndef PIDX_ACTIVE_TARGET
         MPI_Win_lock(MPI_LOCK_SHARED, target_rank + ab->aggregator_interval, 0, id->win);
@@ -654,7 +654,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
       }
     }
 
-    if (target_rank + ab->aggregator_interval != id->idx_c->rank)
+    if (target_rank + ab->aggregator_interval != id->idx_c->lrank)
     {
 #ifndef PIDX_ACTIVE_TARGET
       MPI_Win_lock(MPI_LOCK_SHARED, target_rank + ab->aggregator_interval, 0, id->win);
@@ -699,7 +699,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   //}
   else
   {
-    if(target_rank != id->idx_c->rank)
+    if(target_rank != id->idx_c->lrank)
     {
 #if PIDX_HAVE_MPI
 #ifndef PIDX_ACTIVE_TARGET

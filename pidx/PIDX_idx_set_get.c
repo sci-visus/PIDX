@@ -531,6 +531,34 @@ PIDX_return_code PIDX_get_variable_pile_length(PIDX_file file, int* var_pipe_len
 
 
 
+PIDX_return_code PIDX_save_big_endian(PIDX_file file)
+{
+  file->idx->endian = 0;
+
+  unsigned int endian = 1;
+  char *c = (char*)&endian;
+  if (*c)
+    file->idx->flip_endian = 1;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_save_little_endian(PIDX_file file)
+{
+  file->idx->endian = 1;
+
+  unsigned int endian = 1;
+  char *c = (char*)&endian;
+  if (!*c)
+    file->idx->flip_endian = 1;
+
+  return PIDX_success;
+}
+
+
+
 static PIDX_return_code PIDX_validate(PIDX_file file)
 {
   unsigned long long dims;

@@ -27,7 +27,6 @@ struct PIDX_file_descriptor
 {
   int flags;
 
-  PIDX_access access;                          ///< serial or parallel access
   PIDX_io io;
 
   int local_group_index;                    ///<

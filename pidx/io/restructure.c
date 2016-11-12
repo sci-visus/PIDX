@@ -18,7 +18,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
   PIDX_time time = file->idx_d->time;
   cvi = svi;
 
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->comm);
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
   if (max_patch_count > 1)
     rst_case_type = 1;
 

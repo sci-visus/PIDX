@@ -44,7 +44,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_create(PIDX_multi_patch_rst_id rst_id)
       cnt = 0;
       for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
       {
-        if (rst_id->idx_c->rank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
+        if (rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
         {
           Ndim_patch_group patch_group = var->rst_patch_group[cnt]; // here use patch_group
           patch_group->data_source = 0;

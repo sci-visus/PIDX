@@ -374,7 +374,7 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
     for (i = var_grp->nshared_start_layout_index; i < var_grp->nshared_end_layout_index ; i++)
     {
       no_of_aggregators = var_grp->nshared_block_layout_by_level[i - var_grp->nshared_start_layout_index]->efc;
-      if (no_of_aggregators <= file->idx_c->rank)
+      if (no_of_aggregators <= file->idx_c->lnprocs)
         var_grp->agg_l_nshared = i + 1;
     }
   }
@@ -386,7 +386,7 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
     for (i = var_grp->shared_start_layout_index; i < var_grp->shared_end_layout_index ; i++)
     {
       no_of_aggregators = var_grp->shared_block_layout_by_level[i - var_grp->shared_start_layout_index]->efc;
-      if (no_of_aggregators <= file->idx_c->rank)
+      if (no_of_aggregators <= file->idx_c->lnprocs)
         var_grp->agg_l_shared = i + 1;
     }
   }
@@ -398,7 +398,7 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
     for (i = var_grp->f0_start_layout_index; i < var_grp->f0_end_layout_index ; i++)
     {
       no_of_aggregators = var_grp->f0_block_layout_by_level[i - var_grp->f0_start_layout_index]->efc;
-      if (no_of_aggregators <= file->idx_c->rank)
+      if (no_of_aggregators <= file->idx_c->lnprocs)
         var_grp->agg_l_f0 = i + 1;
     }
   }

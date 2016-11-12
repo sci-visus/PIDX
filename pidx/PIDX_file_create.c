@@ -17,7 +17,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   unsigned long long i = 0;
   int ret;
   char file_name_skeleton[1024];
-  int rank = 0;
 
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;
@@ -46,8 +45,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));
 
   (*file)->flags = flags;
-
-  (*file)->access = access_type;
 
   memcpy((*file)->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
   memcpy((*file)->idx->box_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
@@ -79,9 +76,12 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->parallel_mode = access_type->parallel;
   (*file)->idx_d->raw_io_pipe_length = 0;
 
-  (*file)->idx_c->comm = access_type->comm;
-  MPI_Comm_rank((*file)->idx_c->comm, &((*file)->idx_c->rank));
-  MPI_Comm_size((*file)->idx_c->comm, &((*file)->idx_c->nprocs));
+  (*file)->idx_c->global_comm = access_type->comm;
+  (*file)->idx_c->local_comm = access_type->comm;
+  MPI_Comm_rank((*file)->idx_c->global_comm, &((*file)->idx_c->grank));
+  MPI_Comm_size((*file)->idx_c->global_comm, &((*file)->idx_c->gnprocs));
+  MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
+  MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
 
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;
@@ -142,7 +142,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     memset((*file)->idx->variable_grp[i], 0, sizeof(*((*file)->idx->variable_grp[i])));
   }
 
-  if (rank == 0)
+  if ((*file)->idx_c->grank == 0)
   {
     //TODO: close and delete the file (there is a way to do this automatically by fopen...)
     struct stat stat_buf;
@@ -159,7 +159,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
 #if PIDX_HAVE_MPI
   if ((*file)->idx_d->parallel_mode == 1)
-    MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->comm);
+    MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
 #endif
 
   (*file)->idx->flip_endian = 0;

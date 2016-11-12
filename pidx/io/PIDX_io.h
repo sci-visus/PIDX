@@ -48,14 +48,6 @@ typedef struct PIDX_io_descriptor* PIDX_io;
 PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg);
 
 
-#if PIDX_HAVE_MPI
-/// Attach the communicator wit the ID.
-/// \param id restructuring id
-/// \param comm the communicator
-/// \return error code
-PIDX_return_code PIDX_io_set_communicator(PIDX_io id, MPI_Comm comm);
-#endif
-
 
 ///
 /// \brief PIDX_write

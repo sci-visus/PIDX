@@ -29,10 +29,6 @@ PIDX_return_code PIDX_flush(PIDX_file file)
   if (file->io == NULL)
     return PIDX_err_flush;
 
-  ret = PIDX_io_set_communicator(file->io, file->idx_c->comm);
-  if (ret != PIDX_success)
-    return PIDX_err_io;
-
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
@@ -89,7 +85,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_time time = file->idx_d->time;
   time->sim_end = PIDX_get_time();
 
-  if (file->idx_c->rank == 0)
+  if (file->idx_c->grank == 0)
   {
     fprintf(stdout, "Time step %d File name %s\n", file->idx->current_time_step, file->idx->filename);
     fprintf(stdout, "Bitstring %s\n", file->idx->bitSequence);
@@ -111,7 +107,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   double total_time = time->sim_end - time->sim_start;
   double max_time = total_time;
-  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->comm);
+  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->global_comm);
 
   if (max_time == total_time)
   {

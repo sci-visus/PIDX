@@ -159,7 +159,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     return 1;
   }
     
-  if (header_io->idx_c->rank == 0)
+  if (header_io->idx_c->lrank == 0)
   {
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p) 
@@ -185,7 +185,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     fprintf(idx_file_p, "(partition size)\n0 %lld 0 %lld 0 %lld 0 1 0 1\n", (long long)(header_io->idx_d->partition_size[0]), (long long)(header_io->idx_d->partition_size[1]), (long long)(header_io->idx_d->partition_size[2]));
     fprintf(idx_file_p, "(endian)\n%d\n", header_io->idx->endian);
     fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx->reg_patch_size[0], (long long)header_io->idx->reg_patch_size[1], (long long)header_io->idx->reg_patch_size[2]);
-    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->nprocs);
+    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->gnprocs);
     fprintf(idx_file_p, "(file system block size)\n%d\n", header_io->idx_d->fs_block_size);
     fprintf(idx_file_p, "(fields)\n");
 
@@ -223,9 +223,9 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
 #if PIDX_HAVE_MPI
-    if (i % header_io_id->idx_c->nprocs == header_io_id->idx_c->rank && block_layout->file_bitmap[i] == 1)
+    if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
 #else
-      if (header_io_id->idx_c->rank == 0 && block_layout->file_bitmap[i] == 1)
+      if (header_io_id->idx_c->lrank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
         /*
@@ -241,7 +241,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
         int l = pow(2, ((int)log2(i * header_io_id->idx->blocks_per_file)));
         adjusted_file_index = (l * (header_io_id->idx_d->partition_count[0] * header_io_id->idx_d->partition_count[1] * header_io_id->idx_d->partition_count[2]) + ((i * header_io_id->idx->blocks_per_file) - l) + (header_io_id->idx_d->color * l)) / header_io_id->idx->blocks_per_file;
         */
-        //if (header_io_id->idx_c->nprocs == 2)
+        //if (header_io_id->idx_c->lnprocs == 2)
 
 
         ret = generate_file_name(header_io_id->idx->blocks_per_file, header_io_id->idx->filename_template, /*adjusted_file_index*/ i, bin_file, PATH_MAX);
@@ -313,7 +313,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
   
 #if PIDX_HAVE_MPI
   if (header_io_id->idx_d->parallel_mode == 1)
-    MPI_Barrier(header_io_id->idx_c->comm);
+    MPI_Barrier(header_io_id->idx_c->local_comm);
 #endif
   
   return PIDX_success;
@@ -333,9 +333,9 @@ int PIDX_header_io_filename_create(PIDX_header_io_id header_io_id, PIDX_block_la
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
 #if PIDX_HAVE_MPI
-    if (i % header_io_id->idx_c->nprocs == header_io_id->idx_c->rank && block_layout->file_bitmap[i] == 1)
+    if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
 #else
-      if (header_io_id->idx_c->rank == 0 && block_layout->file_bitmap[i] == 1)
+      if (header_io_id->idx_c->lrank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
         ret = generate_file_name(header_io_id->idx->blocks_per_file, filename_template, /*adjusted_file_index*/ i, bin_file, PATH_MAX);
@@ -401,7 +401,7 @@ int PIDX_header_io_filename_create(PIDX_header_io_id header_io_id, PIDX_block_la
 
 #if PIDX_HAVE_MPI
   if (header_io_id->idx_d->parallel_mode == 1)
-    MPI_Barrier(header_io_id->idx_c->comm);
+    MPI_Barrier(header_io_id->idx_c->local_comm);
 #endif
 
   return PIDX_success;
@@ -431,7 +431,7 @@ PIDX_return_code PIDX_header_io_raw_file_write(PIDX_header_io_id header_io_id, c
   sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
   free(directory_path);
 
-  if (header_io_id->idx_c->rank == 0)
+  if (header_io_id->idx_c->lrank == 0)
   {
     //TODO: the logic for creating the subdirectory hierarchy could
     //be made to be more efficient than this. This implementation
@@ -472,7 +472,7 @@ PIDX_return_code PIDX_header_io_raw_file_write(PIDX_header_io_id header_io_id, c
   }
 #if PIDX_HAVE_MPI
   if (header_io_id->idx_d->parallel_mode == 1)
-    MPI_Barrier(header_io_id->idx_c->comm);
+    MPI_Barrier(header_io_id->idx_c->local_comm);
 #endif
 
   free(data_set_path);
@@ -492,9 +492,9 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
     for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
     {
 #if PIDX_HAVE_MPI
-      if (i % header_io_id->idx_c->nprocs == header_io_id->idx_c->rank && block_layout->file_bitmap[i] == 1)
+      if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
 #else
-      if (header_io_id->idx_c->rank == 0 && block_layout->file_bitmap[i] == 1)
+      if (header_io_id->idx_c->lrank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
         /*
@@ -535,7 +535,7 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
     sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
     free(directory_path);
 
-    if (header_io_id->idx_c->rank == 0)
+    if (header_io_id->idx_c->lrank == 0)
     {
       //TODO: the logic for creating the subdirectory hierarchy could
       //be made to be more efficient than this. This implementation
@@ -576,7 +576,7 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
     }
 #if PIDX_HAVE_MPI
     if (header_io_id->idx_d->parallel_mode == 1)
-      MPI_Barrier(header_io_id->idx_c->comm);
+      MPI_Barrier(header_io_id->idx_c->local_comm);
 #endif
 
     free(data_set_path);
@@ -598,9 +598,9 @@ PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, P
     for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
     {
 #if PIDX_HAVE_MPI
-      if (i % header_io_id->idx_c->nprocs == header_io_id->idx_c->rank && block_layout->file_bitmap[i] == 1)
+      if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
 #else
-      if (header_io_id->idx_c->rank == 0 && block_layout->file_bitmap[i] == 1)
+      if (header_io_id->idx_c->lrank == 0 && block_layout->file_bitmap[i] == 1)
 #endif
       {
         /*
@@ -642,7 +642,7 @@ PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, P
     sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
     free(directory_path);
 
-    if (header_io_id->idx_c->rank == 0)
+    if (header_io_id->idx_c->lrank == 0)
     {
       //TODO: the logic for creating the subdirectory hierarchy could
       //be made to be more efficient than this. This implementation
@@ -683,7 +683,7 @@ PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, P
     }
 #if PIDX_HAVE_MPI
     if (header_io_id->idx_d->parallel_mode == 1)
-      MPI_Barrier(header_io_id->idx_c->comm);
+      MPI_Barrier(header_io_id->idx_c->local_comm);
 #endif
 
     free(data_set_path);

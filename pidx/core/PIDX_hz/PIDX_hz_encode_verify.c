@@ -34,7 +34,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   for(v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    //if (file->idx_c->rank == 0)
+    //if (file->idx_c->lrank == 0)
     //  printf("[%d %d] var->type_name = %s PC = %d\n", v, (id->last_index - id->first_index + 1), var->type_name, var->patch_group_count);
     for (b = 0; b < var->patch_group_count; b++)
     {
@@ -42,7 +42,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
       {
         if (var->hz_buffer[b]->nsamples_per_level[i][0] * var->hz_buffer[b]->nsamples_per_level[i][1] * var->hz_buffer[b]->nsamples_per_level[i][2] != 0)
         {
-          //if (file->idx_c->rank == 0)
+          //if (file->idx_c->lrank == 0)
           //  printf("[B %d L %d] - %d\n", b, i, (var->hz_buffer[b]->end_hz_index[i] - var->hz_buffer[b]->start_hz_index[i] ));
           for (k = 0; k <= (var->hz_buffer[b]->end_hz_index[i] - var->hz_buffer[b]->start_hz_index[i]) * 1; k++)
           {
@@ -65,7 +65,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
                 fvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0];
                 fvalue_2 = *(*((float**)var->hz_buffer[b]->buffer + i) + ((k * var->vps) + s));
 
-                //if (file->idx_c->rank == 0)
+                //if (file->idx_c->lrank == 0)
                 //printf("%f %f\n", fvalue_1, fvalue_2);
                 check_bit = check_bit && (fvalue_1 == fvalue_2);
               }
@@ -99,15 +99,15 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 
               if (check_bit == 1 && fvalue_1 != 0 && fvalue_2 != 0)
               {
-                //printf("HZ [%d] %f %f\n", file->idx_c->rank, dvalue_1, dvalue_2);
-                //if (file->idx_c->rank == 0)
-                //printf("C [level %d] [%d] %lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", i, file->idx_c->rank, (long long)global_hz, fvalue_1, fvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
+                //printf("HZ [%d] %f %f\n", file->idx_c->lrank, dvalue_1, dvalue_2);
+                //if (file->idx_c->lrank == 0)
+                //printf("C [level %d] [%d] %lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", i, file->idx_c->lrank, (long long)global_hz, fvalue_1, fvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
                 element_count++;
               }
               else
               {
-                //if (file->idx_c->rank == 0)
-                  //printf("W [level %d] [%d] %lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", i, file->idx_c->rank, (long long)global_hz, fvalue_1, fvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
+                //if (file->idx_c->lrank == 0)
+                  //printf("W [level %d] [%d] %lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", i, file->idx_c->lrank, (long long)global_hz, fvalue_1, fvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
                 //printf("%lld [HZ] %f %f (%lld :: %lld %lld %lld)\n", (long long)global_hz, fvalue_1, fvalue_2, (long long)global_hz, (long long)ZYX[0], (long long)ZYX[1], (long long)ZYX[2]);
                 lost_element_count++;
               }
@@ -122,7 +122,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 #if PIDX_HAVE_MPI
   unsigned long long global_volume = 0;
   if (id->idx_d->parallel_mode == 1)
-    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, id->idx_c->comm);
+    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, id->idx_c->local_comm);
   else
     global_volume = element_count;
 
@@ -130,18 +130,18 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 
   if (global_volume != (unsigned long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1))
   {
-    if (id->idx_c->rank == 0)
+    if (id->idx_c->lrank == 0)
       fprintf(stderr, "[HZ Debug FAILED!!!!] [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
 
-    if (id->idx_c->rank == 0)
-      printf("[HZ]  file->idx_c->rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", id->idx_c->rank,  id->idx_d->color, (long long) lost_element_count, (long long) element_count, (long long) (id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]) * (id->last_index - id->first_index + 1));
+    if (id->idx_c->lrank == 0)
+      printf("[HZ]  file->idx_c->lrank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", id->idx_c->lrank,  id->idx_d->color, (long long) lost_element_count, (long long) element_count, (long long) (id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]) * (id->last_index - id->first_index + 1));
 
     return PIDX_err_hz;
   }
 
   else
   {
-    if (id->idx_c->rank == 0)
+    if (id->idx_c->lrank == 0)
       fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
   }
 #endif
