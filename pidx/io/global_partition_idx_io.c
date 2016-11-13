@@ -50,7 +50,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   }
 
   // Step 1:  Restrucure setup
-  if (restructure_setup(file, gi, svi, evi - 1) != PIDX_success)
+  if (restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -224,7 +224,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
   }
 
   // Step 1:  Restrucure setup
-  if (restructure_setup(file, gi, svi, evi - 1) != PIDX_success)
+  if (restructure_setup(file, gi, svi, evi - 1, PIDX_READ) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;

@@ -47,7 +47,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
     // Step 1: Setup restructuring buffers
-    ret = restructure_setup(file, gi, si, ei);
+    ret = restructure_setup(file, gi, si, ei, PIDX_WRITE);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -192,7 +192,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
     // Step 1: Setup restructuring buffers
-    ret = restructure_setup(file, gi, si, ei);
+    ret = restructure_setup(file, gi, si, ei, PIDX_READ);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

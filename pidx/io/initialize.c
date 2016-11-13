@@ -14,13 +14,6 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
-  int rst_case_type = 0;
-  int patch_count = var0->sim_patch_count;
-  int max_patch_count = 0;
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
-  if (max_patch_count > 1)
-    rst_case_type = 1;
-
   if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
   {
     assert(file->idx->reg_patch_size[0] != 0);
@@ -29,6 +22,13 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   }
   else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
   {
+    int rst_case_type = 0;
+    int patch_count = var0->sim_patch_count;
+    int max_patch_count = 0;
+    MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
+    if (max_patch_count > 1)
+      rst_case_type = 1;
+
     restructure_tag:
 
     file->idx->reg_patch_size[0] = factor * getPowerOftwo(var0->sim_patch[0]->size[0]);

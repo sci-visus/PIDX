@@ -8,7 +8,7 @@ static int cvi = 0;
 // Initialiazation and creation of buffers for restructuring phase
 // 1. Find if this is a patch per process problem or  multi patch per process problem
 // 2. If the restructuring box size is provided then use that else find restructuring box size
-PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
+PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int mode)
 {
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -24,12 +24,14 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
 
   if (rst_case_type == 0)
   {
+    printf("1\n");
     time->rst_init_start[cvi] = PIDX_get_time();
     // Initialize the restructuring phase
     file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
     time->rst_init_end[cvi] = PIDX_get_time();
 
 
+    printf("2\n");
     time->rst_meta_data_create_start[cvi] = PIDX_get_time();
     // Creating the metadata to perform retructuring
     ret = PIDX_rst_meta_data_create(file->rst_id);
@@ -37,20 +39,26 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
     time->rst_meta_data_create_end[cvi] = PIDX_get_time();
 
 
-    time->rst_meta_data_io_start[cvi] = PIDX_get_time();
-    // Saving the metadata info needed for reading back the data.
-    // Especially when number of cores is different from number of cores
-    // used to create the dataset
-    ret = PIDX_rst_meta_data_write(file->rst_id);
-    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-    time->rst_meta_data_io_end[cvi] = PIDX_get_time();
+    printf("3\n");
+    if (mode == PIDX_WRITE)
+    {
+      time->rst_meta_data_io_start[cvi] = PIDX_get_time();
+      // Saving the metadata info needed for reading back the data.
+      // Especially when number of cores is different from number of cores
+      // used to create the dataset
+      ret = PIDX_rst_meta_data_write(file->rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      time->rst_meta_data_io_end[cvi] = PIDX_get_time();
+    }
 
 
+    printf("4\n");
     time->rst_buffer_start[cvi] = PIDX_get_time();
     // Creating the buffers required for restructurig
     ret = PIDX_rst_buf_create(file->rst_id);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
+    printf("5\n");
     // Aggregating the aligned small buffers after restructuring into one single buffer
     ret = PIDX_rst_aggregate_buf_create(file->rst_id);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
@@ -72,13 +80,16 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi)
     time->rst_meta_data_create_end[cvi] = PIDX_get_time();
 
 
-    time->rst_meta_data_io_start[cvi] = PIDX_get_time();
-    // Saving the metadata info needed for reading back the data.
-    // Especially when number of cores is different from number of cores
-    // used to create the dataset
-    ret = PIDX_multi_patch_rst_meta_data_write(file->multi_patch_rst_id);
-    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-    time->rst_meta_data_io_end[cvi] = PIDX_get_time();
+    if (mode == PIDX_WRITE)
+    {
+      time->rst_meta_data_io_start[cvi] = PIDX_get_time();
+      // Saving the metadata info needed for reading back the data.
+      // Especially when number of cores is different from number of cores
+      // used to create the dataset
+      ret = PIDX_multi_patch_rst_meta_data_write(file->multi_patch_rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      time->rst_meta_data_io_end[cvi] = PIDX_get_time();
+    }
 
 
     time->rst_buffer_start[cvi] = PIDX_get_time();
