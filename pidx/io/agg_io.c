@@ -2,7 +2,7 @@
 
 static PIDX_return_code PIDX_global_async_io(PIDX_io file, PIDX_file_io_id **io_id, Agg_buffer **agg_buffer, PIDX_block_layout* block_layout_by_level,  MPI_File *fp, MPI_Request *request, int var_index, int layout_start, int layout_end, int agg_io_level, int file_zero, int mode);
 
-static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, MPI_Comm comm, int var_index, int layout_start, int agg_io_level, int file_status, int agg_mode, int mode);
+static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, int var_index, int layout_start, int agg_io_level, int file_status, int agg_mode, int mode);
 
 
 PIDX_return_code data_io(PIDX_io file, int gi, int start_index, int agg_io_level_file_zero, int agg_io_level_shared, int agg_io_level_non_shared, int mode)
@@ -125,7 +125,6 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_i
   ret = PIDX_global_aggregate(file, file->f0_agg_id,
                               idx->f0_agg_buffer,
                               var_grp->f0_block_layout_by_level,
-                              file->idx_c->global_comm,
                               start_index,
                               var_grp->f0_start_layout_index,
                               agg_io_level_file_zero, 2, agg_mode, mode);
@@ -140,7 +139,6 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_i
                               file->shared_agg_id,
                               idx->shared_agg_buffer,
                               var_grp->shared_block_layout_by_level,
-                              file->idx_c->local_comm,
                               start_index,
                               var_grp->shared_start_layout_index,
                               agg_io_level_shared, 0, agg_mode, mode);
@@ -155,7 +153,6 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_i
                               file->nshared_agg_id,
                               idx->nshared_agg_buffer,
                               var_grp->nshared_block_layout_by_level,
-                              file->idx_c->local_comm,
                               start_index,
                               var_grp->nshared_start_layout_index,
                               agg_io_level_non_shared, 1, agg_mode, mode);
@@ -170,7 +167,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_i
 }
 
 
-static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, MPI_Comm comm, int var_index, int layout_start, int agg_io_level, int file_status, int agg_mode, int mode)
+static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, int var_index, int layout_start, int agg_io_level, int file_status, int agg_mode, int mode)
 {
   int j;
   int ret = 0;

@@ -220,6 +220,8 @@ int main(int argc, char **argv)
     PIDX_set_variable_count(file_w, 1);
     PIDX_set_partition_size(file_w, partition_size[0], partition_size[1], partition_size[2]);
     PIDX_set_block_count(file_w, 512);
+    PIDX_disable_agg(file_w);
+    PIDX_save_little_endian(file_w);
 
     PIDX_variable_create(var_name,  bits_per_sample, FLOAT32 , &variable_w);
     PIDX_variable_write_data_layout(variable_w, local_offset, local_size, data, PIDX_row_major);

@@ -98,6 +98,16 @@ PIDX_return_code PIDX_close(PIDX_file file)
     else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
       fprintf(stdout, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING)\n");
 
+    if (file->idx->endian == 1)
+      fprintf(stdout, "Little Endian | ");
+    else if (file->idx->endian == 0)
+      fprintf(stdout, "Big Endian | ");
+
+    if (file->idx->flip_endian == 1)
+      fprintf(stdout, "Endian Flipping Done\n");
+    if (file->idx->flip_endian == 0)
+      fprintf(stdout, "Endian Flipping Not Done\n");
+
     fprintf(stdout, "Restructuring Box Size %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     fprintf(stdout, "Partition count %d = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2]);
     fprintf(stdout, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
@@ -178,20 +188,20 @@ PIDX_return_code PIDX_close(PIDX_file file)
           printf("CMP             :[%d] [%f + %f] = %f\n", si, compression_init, compression, compression_total);
 
           double hz_io = 0;
-          for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
+          for (i = file->idx->variable_grp[gi]->agg_l_shared; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
           {
             hz_io = time->hz_io_end[si][i] - time->hz_io_start[si][i];
             hz_io_all = hz_io_all + hz_io;
 
-            printf("[HZ I/O S %d %d]  :[%d] [%d] %f [%f] \n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, hz_io, hz_io_all);
+            printf("[HZ I/O S %d %d]  :[%d] [%d] %f [%f] \n", file->idx->variable_grp[gi]->agg_l_shared, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, hz_io, hz_io_all);
           }
 
-          for (i = file->idx->variable_grp[gi]->nshared_start_layout_index; i < file->idx->variable_grp[gi]->nshared_end_layout_index ; i++)
+          for (i = file->idx->variable_grp[gi]->agg_l_nshared; i < file->idx->variable_grp[gi]->nshared_end_layout_index ; i++)
           {
             hz_io = time->hz_io_end[si][i] - time->hz_io_start[si][i];
             hz_io_all = hz_io_all + hz_io;
 
-            printf("[HZ I/O N %d %d]  :[%d] [%d] %f [%f]\n", file->idx->variable_grp[gi]->nshared_start_layout_index, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, hz_io, hz_io_all);
+            printf("[HZ I/O N %d %d]  :[%d] [%d] %f [%f]\n", file->idx->variable_grp[gi]->agg_l_nshared, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, hz_io, hz_io_all);
           }
 
         }

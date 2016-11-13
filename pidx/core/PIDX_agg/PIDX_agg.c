@@ -162,7 +162,6 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         //  printf("%d FC %d Bits %d FI %d :: %d %d [%d(%d) %d %d] CR %d [%d %d %d : %d %d %d : %d %d] AI %d trank %d\n", interval, file_count, bits, file_index, file_status, interval, k, lbl->efc, i, j, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank + var_offset * interval + (interval/2), trank);
 
         id->agg_r[k][i - id->fi][j] = trank;
-
         if(id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
         {
           ab->file_number = lbl->existing_file_index[k];

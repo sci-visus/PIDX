@@ -21,6 +21,8 @@
 
 static PIDX_return_code dump_debug_data_init(PIDX_hz_encode_id hz_id);
 static PIDX_return_code dump_debug_data_finalie (PIDX_hz_encode_id id);
+static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf);
+static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf);
 static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout, int MODE);
 
 
@@ -42,7 +44,6 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
       {
-
         if (hz_id->idx_d->dump_io_info == 1 && hz_id->idx->current_time_step == 0)
         {
           fprintf(hz_id->idx_d->io_dump_fp, "Variable %d\n", v);
@@ -162,10 +163,12 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
   off_t data_offset = 0;
 
   PIDX_variable_group var_grp = hz_id->idx->variable_grp[hz_id->group_index];
+  PIDX_variable curr_var = var_grp->variable[variable_index];
+
   samples_per_file = hz_id->idx_d->samples_per_block * hz_id->idx->blocks_per_file;
 
-  bytes_per_datatype = (var_grp->variable[variable_index]->bpv / 8) * (hz_id->idx->chunk_size[0] * hz_id->idx->chunk_size[1] * hz_id->idx->chunk_size[2]) / (hz_id->idx->compression_factor);
-  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * var_grp->variable[variable_index]->vps;
+  bytes_per_datatype = (curr_var->bpv / 8) * (hz_id->idx->chunk_size[0] * hz_id->idx->chunk_size[1] * hz_id->idx->chunk_size[2]) / (hz_id->idx->compression_factor);
+  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * curr_var->vps;
 
 
   while (hz_count)
@@ -186,13 +189,13 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
     }
 
     data_offset = 0;
-    bytes_per_sample = var_grp->variable[variable_index]->bpv / 8;
-    data_offset = file_index * bytes_per_sample * var_grp->variable[variable_index]->vps;
+    bytes_per_sample = curr_var->bpv / 8;
+    data_offset = file_index * bytes_per_sample * curr_var->vps;
     data_offset += hz_id->idx_d->start_fs_block * hz_id->idx_d->fs_block_size;
 
     block_negative_offset = PIDX_blocks_find_negative_offset(hz_id->idx->blocks_per_file, block_number, layout);
 
-    data_offset -= block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * var_grp->variable[variable_index]->vps;
+    data_offset -= block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps;
 
     int l = 0;
     for (l = 0; l < variable_index; l++)
@@ -207,7 +210,7 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
     {
       if (hz_id->idx_d->dump_io_info == 1 && hz_id->idx->current_time_step == 0)
       {
-        fprintf(hz_id->idx_d->io_dump_fp, "[A] Count %lld Target Disp %d (%d %d)\n", (long long)file_count * var_grp->variable[variable_index]->vps * (var_grp->variable[variable_index]->bpv/8), (file_index * bytes_per_sample * var_grp->variable[variable_index]->vps - block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * var_grp->variable[variable_index]->vps)/8, (int)hz_id->idx_d->start_fs_block, (int)hz_id->idx_d->fs_block_size);
+        fprintf(hz_id->idx_d->io_dump_fp, "[A] Count %lld Target Disp %d (%d %d)\n", (long long)file_count * curr_var->vps * (curr_var->bpv/8), (file_index * bytes_per_sample * curr_var->vps - block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps)/8, (int)hz_id->idx_d->start_fs_block, (int)hz_id->idx_d->fs_block_size);
         fflush(hz_id->idx_d->io_dump_fp);
       }
 
@@ -221,7 +224,37 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
         return PIDX_err_io;
       }
 
-      ret = MPI_File_write_at(fh, data_offset, hz_buffer, file_count * var_grp->variable[variable_index]->vps * (var_grp->variable[variable_index]->bpv/8), MPI_BYTE, &status);
+      if (hz_id->idx->flip_endian == 1)
+      {
+        if (curr_var->bpv/8 == 4 || curr_var->bpv/8 == 12)
+        {
+          int y = 0;
+          float temp;
+          float temp2;
+
+          for (y = 0; y < (file_count * curr_var->vps * (curr_var->bpv/8)) / sizeof(float); y++)
+          {
+            memcpy(&temp, hz_buffer + (y * sizeof(float)), sizeof(float));
+            bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(hz_buffer + (y * sizeof(float)), &temp2, sizeof(float));
+          }
+        }
+        else if (curr_var->bpv/8 == 8 || curr_var->bpv/8 == 24)
+        {
+          int y = 0;
+          double temp;
+          double temp2;
+
+          for (y = 0; y < (file_count * curr_var->vps * (curr_var->bpv/8)) / sizeof(double); y++)
+          {
+            memcpy(&temp, hz_buffer + (y * sizeof(double)), sizeof(double));
+            bit64_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(hz_buffer + (y * sizeof(double)), &temp2, sizeof(double));
+          }
+        }
+      }
+
+      ret = MPI_File_write_at(fh, data_offset, hz_buffer, file_count * curr_var->vps * (curr_var->bpv/8), MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {
         fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
@@ -230,7 +263,7 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
 
       int write_count;
       MPI_Get_count(&status, MPI_BYTE, &write_count);
-      if (write_count != file_count * var_grp->variable[variable_index]->vps * (var_grp->variable[variable_index]->bpv/8))
+      if (write_count != file_count * curr_var->vps * (curr_var->bpv/8))
       {
         fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
         return PIDX_err_io;
@@ -251,18 +284,48 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
         return PIDX_err_io;
       }
 
-      ret = MPI_File_read_at(fh, data_offset, hz_buffer, file_count * var_grp->variable[variable_index]->vps * (var_grp->variable[variable_index]->bpv/8), MPI_BYTE, &status);
+      ret = MPI_File_read_at(fh, data_offset, hz_buffer, file_count * curr_var->vps * (curr_var->bpv/8), MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {
         fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
 
+      if (hz_id->idx->flip_endian == 1)
+      {
+        if (curr_var->bpv/8 == 4 || curr_var->bpv/8 == 12)
+        {
+          int y = 0;
+          float temp;
+          float temp2;
+
+          for (y = 0; y < (file_count * curr_var->vps * (curr_var->bpv/8)) / sizeof(float); y++)
+          {
+            memcpy(&temp, hz_buffer + (y * sizeof(float)), sizeof(float));
+            bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(hz_buffer + (y * sizeof(float)), &temp2, sizeof(float));
+          }
+        }
+        else if (curr_var->bpv/8 == 8 || curr_var->bpv/8 == 24)
+        {
+          int y = 0;
+          double temp;
+          double temp2;
+
+          for (y = 0; y < (file_count * curr_var->vps * (curr_var->bpv/8)) / sizeof(double); y++)
+          {
+            memcpy(&temp, hz_buffer + (y * sizeof(double)), sizeof(double));
+            bit64_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(hz_buffer + (y * sizeof(double)), &temp2, sizeof(double));
+          }
+        }
+      }
+
       MPI_File_close(&fh);
     }
     hz_count -= file_count;
     hz_start_index += file_count;
-    hz_buffer += file_count * var_grp->variable[variable_index]->vps * bytes_per_datatype;
+    hz_buffer += file_count * curr_var->vps * bytes_per_datatype;
   }
   return PIDX_success;
 }
@@ -307,4 +370,34 @@ static PIDX_return_code dump_debug_data_finalie (PIDX_hz_encode_id id)
   }
 
   return PIDX_success;
+}
+
+static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)val) + 3;
+    unsigned char *out = (unsigned char *)outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return;
+}
+
+static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)val) + 7;
+    unsigned char *out = (unsigned char *)outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return;
 }

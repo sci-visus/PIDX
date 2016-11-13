@@ -21,6 +21,7 @@
 
 static int maximum_neighbor_count = 256;
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
+static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf);
 
 
 PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
@@ -411,11 +412,12 @@ PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id)
     pcounter++;
   }
 
-  global_patch_offset = malloc((rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
-  memset(global_patch_offset, 0,(rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  int wc = (rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2);
+  global_patch_offset = malloc(wc * sizeof(uint32_t));
+  memset(global_patch_offset, 0,wc * sizeof(uint32_t));
 
-  global_patch_size = malloc((rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
-  memset(global_patch_size, 0, (rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  global_patch_size = malloc(wc * sizeof(uint32_t));
+  memset(global_patch_size, 0, wc * sizeof(uint32_t));
 
   if (rst_id->idx_d->parallel_mode == 1)
   {
@@ -446,9 +448,29 @@ PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id)
   free(directory_path);
   if (rst_id->idx_c->grank == 1 || rst_id->idx_c->gnprocs == 1)
   {
+    if (rst_id->idx->flip_endian == 1)
+    {
+      int y = 0;
+      int temp;
+      int temp2;
+      for (y = 0; y < wc; y++)
+      {
+        memcpy(&temp, global_patch_offset + y, sizeof(int));
+        bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+        memcpy(global_patch_offset + y, &temp2, sizeof(int));
+      }
+
+      for (y = 0; y < wc; y++)
+      {
+        memcpy(&temp, global_patch_size + y, sizeof(int));
+        bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+        memcpy(global_patch_size + y, &temp2, sizeof(int));
+      }
+    }
+
     int fp = open(offset_path, O_CREAT | O_WRONLY, 0664);
-    ssize_t write_count = pwrite(fp, global_patch_offset, (rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
-    if (write_count != (rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
+    ssize_t write_count = pwrite(fp, global_patch_offset, wc * sizeof(uint32_t), 0);
+    if (write_count != wc * sizeof(uint32_t))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -456,8 +478,8 @@ PIDX_return_code PIDX_rst_meta_data_write(PIDX_rst_id rst_id)
     close(fp);
 
     fp = open(size_path, O_CREAT | O_WRONLY, 0664);
-    write_count = pwrite(fp, global_patch_size, (rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
-    if (write_count != (rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
+    write_count = pwrite(fp, global_patch_size, wc * sizeof(uint32_t), 0);
+    if (write_count != wc * sizeof(uint32_t))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -548,4 +570,17 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
     check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
 
   return !(check_bit);
+}
+
+static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf)
+{
+    unsigned char *data = ((unsigned char *)val) + 3;
+    unsigned char *out = (unsigned char *)outbuf;
+
+    *out++ = *data--;
+    *out++ = *data--;
+    *out++ = *data--;
+    *out = *data;
+
+    return;
 }

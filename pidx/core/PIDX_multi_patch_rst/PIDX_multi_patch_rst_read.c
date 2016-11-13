@@ -125,9 +125,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
                       PIDX_variable var = var_grp->variable[v];
                       send_o = index * var->vps;
                       send_c = reg_patch_count[0] * var->vps;
-#if !SIMULATE_IO
                       memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
-#endif
                     }
 
                     count1++;
@@ -141,15 +139,12 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
 
             int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
 
-#if !SIMULATE_IO
-
             ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
               return PIDX_err_mpi;
             }
-#endif
             req_counter++;
           }
         }
@@ -211,7 +206,6 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
             MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type[chunk_counter]);
             MPI_Type_commit(&chunk_data_type[chunk_counter]);
 
-#if !SIMULATE_IO
             ret = MPI_Irecv(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
 
             if (ret != MPI_SUCCESS)
@@ -219,7 +213,6 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
               return PIDX_err_mpi;
             }
-#endif
 
             req_counter++;
             chunk_counter++;
@@ -233,14 +226,12 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
     }
   }
 
-#if !SIMULATE_IO
   ret = MPI_Waitall(req_counter, req, status);
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
-#endif
 
   for (i = 0; i < chunk_counter; i++)
     MPI_Type_free(&chunk_data_type[i]);

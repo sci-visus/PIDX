@@ -31,11 +31,8 @@
 #include "../../PIDX_inc.h"
 
 
-
 PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_and_write(PIDX_multi_patch_rst_id rst_id)
 {
-
-
   int v;
   char *directory_path;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];

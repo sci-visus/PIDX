@@ -21,8 +21,6 @@
 #include "../../PIDX_inc.h"
 static int maximum_neighbor_count = 256;
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
-
-
 static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf);
 static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf);
 
@@ -275,6 +273,38 @@ PIDX_return_code PIDX_rst_buf_aggregated_write(PIDX_rst_id rst_id)
         data_offset = data_offset + (out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var_grp->variable[v1]->vps * (var_grp->variable[v1]->bpv/8)));
 
       int buffer_size =  out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * bits;
+
+      if (rst_id->idx->flip_endian == 1)
+      {
+        PIDX_variable curr_var = var_grp->variable[v_start];
+        if (curr_var->bpv/8 == 4 || curr_var->bpv/8 == 12)
+        {
+          int y = 0;
+          float temp;
+          float temp2;
+
+          for (y = 0; y < buffer_size / sizeof(float); y++)
+          {
+            memcpy(&temp, var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(float)), sizeof(float));
+            bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(float)), &temp2, sizeof(float));
+          }
+        }
+        else if (curr_var->bpv/8 == 8 || curr_var->bpv/8 == 24)
+        {
+          int y = 0;
+          double temp;
+          double temp2;
+
+          for (y = 0; y < buffer_size / sizeof(double); y++)
+          {
+            memcpy(&temp, var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(double)), sizeof(double));
+            bit64_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(double)), &temp2, sizeof(double));
+          }
+        }
+      }
+
       ssize_t write_count = pwrite(fp, var_start->rst_patch_group[g]->reg_patch->buffer, buffer_size, data_offset);
       if (write_count != buffer_size)
       {
@@ -341,6 +371,38 @@ PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
         fprintf(stderr, "[%s] [%d] pwrite() %s offset %d failed %lld %lld\n", __FILE__, __LINE__, file_name, data_offset, (unsigned long long)read_count, (unsigned long long)buffer_size);
         return PIDX_err_io;
       }
+
+      if (rst_id->idx->flip_endian == 1)
+      {
+        PIDX_variable curr_var = var_grp->variable[v_start];
+        if (curr_var->bpv/8 == 4 || curr_var->bpv/8 == 12)
+        {
+          int y = 0;
+          float temp;
+          float temp2;
+
+          for (y = 0; y < buffer_size / sizeof(float); y++)
+          {
+            memcpy(&temp, var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(float)), sizeof(float));
+            bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(float)), &temp2, sizeof(float));
+          }
+        }
+        else if (curr_var->bpv/8 == 8 || curr_var->bpv/8 == 24)
+        {
+          int y = 0;
+          double temp;
+          double temp2;
+
+          for (y = 0; y < buffer_size / sizeof(double); y++)
+          {
+            memcpy(&temp, var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(double)), sizeof(double));
+            bit64_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
+            memcpy(var_start->rst_patch_group[g]->reg_patch->buffer + (y * sizeof(double)), &temp2, sizeof(double));
+          }
+        }
+      }
+
     }
     close(fp);
     free(file_name);

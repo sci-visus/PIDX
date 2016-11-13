@@ -16,13 +16,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->flags = flags;
 
-  (*file)->idx_c->global_comm = access_type->comm;
-  (*file)->idx_c->local_comm = access_type->comm;
-  MPI_Comm_rank((*file)->idx_c->global_comm, &((*file)->idx_c->grank));
-  MPI_Comm_size((*file)->idx_c->global_comm, &((*file)->idx_c->gnprocs));
-  MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
-  MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
-
   (*file)->idx = (idx_dataset)malloc(sizeof (*((*file)->idx)));
   memset((*file)->idx, 0, sizeof (*((*file)->idx)));
 
@@ -38,6 +31,13 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->time = malloc(sizeof (*((*file)->idx_d->time)));
   memset((*file)->idx_d->time, 0, sizeof (*((*file)->idx_d->time)));
   (*file)->idx_d->time->sim_start = PIDX_get_time();
+
+  (*file)->idx_c->global_comm = access_type->comm;
+  (*file)->idx_c->local_comm = access_type->comm;
+  MPI_Comm_rank((*file)->idx_c->global_comm, &((*file)->idx_c->grank));
+  MPI_Comm_size((*file)->idx_c->global_comm, &((*file)->idx_c->gnprocs));
+  MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
+  MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
     (*file)->idx_d->partition_count[i] = 1;
