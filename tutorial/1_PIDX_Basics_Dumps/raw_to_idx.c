@@ -210,6 +210,9 @@ int main(int argc, char **argv)
 
   PIDX_file file_w;
   PIDX_variable variable_w;
+  PIDX_point reg_patch_size;
+  PIDX_set_point_5D(reg_patch_size, 512, 256, 256, 1, 1);
+
   int ts = 0;
   time_step_count = 1;
   for (ts = 0; ts < time_step_count; ts++)
@@ -220,6 +223,8 @@ int main(int argc, char **argv)
     PIDX_set_variable_count(file_w, 1);
     PIDX_set_partition_size(file_w, partition_size[0], partition_size[1], partition_size[2]);
     PIDX_set_block_count(file_w, 512);
+    PIDX_set_block_size(file_w, 16);
+    PIDX_set_restructuring_box(file, reg_patch_size);
     PIDX_disable_agg(file_w);
     PIDX_save_little_endian(file_w);
 
