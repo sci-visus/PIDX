@@ -224,7 +224,7 @@ int main(int argc, char **argv)
     PIDX_set_partition_size(file_w, partition_size[0], partition_size[1], partition_size[2]);
     PIDX_set_block_count(file_w, 512);
     PIDX_set_block_size(file_w, 16);
-    PIDX_set_restructuring_box(file, reg_patch_size);
+    PIDX_set_restructuring_box(file_w, reg_patch_size);
     PIDX_disable_agg(file_w);
     PIDX_save_little_endian(file_w);
 
