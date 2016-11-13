@@ -110,7 +110,6 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
       ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
       file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
-      printf("RST A\n");
       // Step 1: Setup restructuring buffers
       ret = restructure_setup(file, gi, si, ei, PIDX_READ);
       if (ret != PIDX_success)
@@ -119,7 +118,6 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
         return PIDX_err_file;
       }
 
-      printf("RST B\n");
       // Step 2: Write out restructured data
       ret = restructure_io(file, PIDX_READ);
       if (ret != PIDX_success)
@@ -128,7 +126,6 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
         return PIDX_err_file;
       }
 
-      printf("RST C\n");
       // Step 3: Perform data restructuring
       ret = restructure(file, PIDX_READ);
       if (ret != PIDX_success)
@@ -151,6 +148,8 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
     for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
     {
       ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+
       ret = restructure_forced_read(file, si, ei);
       if (ret != PIDX_success)
       {
@@ -169,7 +168,6 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   int ret;
   PIDX_time time = file->idx_d->time;
 
-  printf("XXXX\n");
   time->init_start = MPI_Wtime();
   ret = raw_init(file);
   if (ret != PIDX_success)
@@ -180,7 +178,6 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   time->init_end = MPI_Wtime();
 
 
-  printf("YYYY\n");
   time->set_reg_box_start = MPI_Wtime();
   ret = set_rst_box_size(file, gi, svi);
   if (ret != PIDX_success)
@@ -189,14 +186,12 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
     return PIDX_err_file;
   }
 
-  printf("ZZZZ\n");
   if (file->one_time_initializations == 0)
   {
     PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
     PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
     file->one_time_initializations = 1;
   }
-  printf("AAAA\n");
   time->set_reg_box_end = MPI_Wtime();
 
 

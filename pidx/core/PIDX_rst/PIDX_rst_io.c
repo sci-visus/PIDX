@@ -418,14 +418,11 @@ PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 {
-  rst_id->idx_d->var_pipe_length = rst_id->idx->variable_count - 1;
-  if (rst_id->idx_d->var_pipe_length == 0)
-    rst_id->idx_d->var_pipe_length = 1;
-
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;
 
+  printf("SE %d %d\n", svi, evi);
 
   char *idx_directory_path;
   char offset_path[PATH_MAX];
@@ -438,6 +435,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   sprintf(offset_path, "%s_OFFSET", idx_directory_path);
   sprintf(size_path, "%s_SIZE", idx_directory_path);
   free(idx_directory_path);
+
+  printf("%s %s\n", offset_path, size_path);
 
   uint32_t number_cores = 0;
   int fp = open(size_path, O_RDONLY);
@@ -456,6 +455,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     number_cores = temp_number_cores;
   }
 #endif
+  printf("A %d\n", number_cores);
 
   uint32_t max_patch_count = 0;
   write_count = pread(fp, &max_patch_count, sizeof(uint32_t), sizeof(uint32_t));
@@ -464,6 +464,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
+  printf("B %d\n", max_patch_count);
 
 #if INVERT_ENDIANESS
   uint32_t temp_max_patch_count = 0;
@@ -485,6 +486,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   }
 
   close(fp);
+  printf("C %d %d\n", number_cores, max_patch_count);
 
 #if INVERT_ENDIANESS
   int buff_i;
@@ -509,6 +511,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     return PIDX_err_io;
   }
   close(fp1);
+  printf("D %d %d\n", number_cores, max_patch_count);
 
 #if INVERT_ENDIANESS
   for(buff_i = 0; buff_i<  (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)); buff_i++){
@@ -536,6 +539,10 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, rst_id->idx->current_time_step);
+
+  printf("E %s\n", data_set_path);
+
+  printf("F %d\n", var_grp->variable[svi]->sim_patch_count);
 
   int pc1 = 0;
   for (pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
