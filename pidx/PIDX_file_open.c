@@ -3,9 +3,8 @@
 /// Function to get file descriptor when opening an existing IDX file
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
 {
-#if 1
+  printf("A\n");
   int i;
-  //int ret;
   char file_name_skeleton[1024];
 
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
@@ -28,6 +27,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_dbg = malloc(sizeof (*((*file)->idx_dbg)));
   memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));
 
+  printf("B\n");
   (*file)->idx_d->time = malloc(sizeof (*((*file)->idx_d->time)));
   memset((*file)->idx_d->time, 0, sizeof (*((*file)->idx_d->time)));
   (*file)->idx_d->time->sim_start = PIDX_get_time();
@@ -39,6 +39,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
   MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
 
+  printf("C\n");
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
     (*file)->idx_d->partition_count[i] = 1;
 
@@ -77,6 +78,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->enable_agg = 1;
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
 
+  printf("D\n");
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
   file_name_skeleton[strlen(filename) - 4] = '\0';
 
@@ -93,6 +95,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 #endif
 
 
+  printf("E\n");
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
@@ -127,6 +130,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
+  printf("F\n");
   for (i = 0; i < 16; i++)
   {
     (*file)->idx->variable_grp[i] = malloc(sizeof(*((*file)->idx->variable_grp[i])));
@@ -432,6 +436,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     }
     fclose(fp);
   }
+  printf("G\n");
 
   (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 
@@ -472,6 +477,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         (*file)->idx->compression_factor = 64;
     }
   }
+  printf("H\n");
 
   if ((*file)->idx->io_type != PIDX_RAW_IO)
   {
@@ -492,6 +498,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     }
   }
 #endif
+  printf("I\n");
 
   for (var = 0; var < (*file)->idx->variable_count; var++)
   {
@@ -521,6 +528,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     }
     (*file)->idx_d->fs_block_size = stat_buf.st_blksize;
   }
+  printf("J\n");
 
 #if PIDX_HAVE_MPI
   if ((*file)->idx_d->parallel_mode == 1)
@@ -548,8 +556,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx->flip_endian = 1;
 
   memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
+  printf("K\n");
 
-#endif
   return PIDX_success;
 }
 

@@ -266,7 +266,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
 PIDX_return_code PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, MPI_Request* request, MPI_File* fh, char* filename_template, int mode)
 {
-  int ret;
+  int ret = 0;
   if (mode == PIDX_WRITE)
     ret = PIDX_async_aggregated_write(io_id, agg_buf, block_layout, request, fh, filename_template);
   else if (mode == PIDX_READ)

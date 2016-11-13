@@ -270,6 +270,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d->time);          file->idx_d->time = 0;
   free(file->idx_d);                file->idx_d = 0;
   free(file->idx_dbg);              file->idx_dbg = 0;
+  free(file->idx_c);                file->idx_c = 0;
 
   free(file);
 

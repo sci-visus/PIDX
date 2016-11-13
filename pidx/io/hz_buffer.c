@@ -158,7 +158,6 @@ static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
 
 static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi)
 {
-  int ret = 0;
   PIDX_time time = file->idx_d->time;
 
   time->chunk_init_start[cvi] = PIDX_get_time();
@@ -172,7 +171,6 @@ static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi)
 
 static PIDX_return_code compression_init(PIDX_io file, int svi, int evi)
 {
-  int ret = 0;
   PIDX_time time = file->idx_d->time;
 
   time->compression_init_start[cvi] = PIDX_get_time();

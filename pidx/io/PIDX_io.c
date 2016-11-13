@@ -30,7 +30,7 @@ PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata id
 
 PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 {
-  PIDX_return_code ret;
+  PIDX_return_code ret = 0;
 
   file->idx_d->time->SX = PIDX_get_time();
   if (MODE == PIDX_IDX_IO)
@@ -56,7 +56,7 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 
 PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
 {
-  PIDX_return_code ret;
+  PIDX_return_code ret = 0;
 
   if (MODE == PIDX_IDX_IO)
     ret = PIDX_idx_read(file, gi, svi, evi);
