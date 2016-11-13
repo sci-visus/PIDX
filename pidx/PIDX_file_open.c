@@ -221,6 +221,25 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         }
       }
 
+      if (strcmp(line, "(raw_dump)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+
+        pch = strtok(line, " ");
+        count = 0;
+        while (pch != NULL)
+        {
+          (*file)->idx->reg_patch_size[count] = atoi(pch);
+          count++;
+          pch = strtok(NULL, " ");
+        }
+
+        (*file)->idx->io_type = PIDX_RAW_IO;
+        (*file)->idx->endian = 0;
+      }
+
       if (strcmp(line, "(cores)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
@@ -323,11 +342,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         line[strcspn(line, "\r\n")] = 0;
         (*file)->idx->bits_per_block = atoi(line);
         (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
-
-        //if (((*file)->idx->chunk_size[0] == 4) && ((*file)->idx->chunk_size[1] == 4) && ((*file)->idx->chunk_size[2] == 4) && ((*file)->idx->bounds[0] == 4) && ((*file)->idx->bounds[1] == 4) && ((*file)->idx->bounds[2] == 4) && (*file)->idx->bits_per_block == 1)
-        //{
-
-        //}
       }
 
       if (strcmp(line, "(compression type)") == 0)
@@ -459,12 +473,15 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     }
   }
 
-  int total_header_size = (10 + (10 * (*file)->idx->blocks_per_file)) * sizeof (uint32_t) * (*file)->idx->variable_count;
-  (*file)->idx_d->start_fs_block = total_header_size / (*file)->idx_d->fs_block_size;
-  if (total_header_size % (*file)->idx_d->fs_block_size)
-    (*file)->idx_d->start_fs_block++;
+  if ((*file)->idx->io_type != PIDX_RAW_IO)
+  {
+    int total_header_size = (10 + (10 * (*file)->idx->blocks_per_file)) * sizeof (uint32_t) * (*file)->idx->variable_count;
+    (*file)->idx_d->start_fs_block = total_header_size / (*file)->idx_d->fs_block_size;
+    if (total_header_size % (*file)->idx_d->fs_block_size)
+      (*file)->idx_d->start_fs_block++;
 
-  (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
+    (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
+  }
 
   if((*file)->idx_c->grank != 0)
   {
