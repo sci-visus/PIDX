@@ -547,7 +547,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   int pc1 = 0;
   for (pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
   {
-
+    printf("inside 1\n");
     int n = 0, m = 0, d = 0;
     Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
     memset(local_proc_patch, 0, sizeof (*local_proc_patch));
@@ -578,6 +578,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * maximum_neighbor_count);
     memset(patch_grp->reg_patch, 0, sizeof(*patch_grp->reg_patch));
 
+    printf("inside 2 %d %d\n", maximum_neighbor_count, number_cores);
     int patch_count = 0;
     for (n = 0; n < number_cores; n++)
     {
@@ -662,6 +663,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       }
     }
 
+    printf("inside 3\n");
+
     free(local_proc_patch);
     local_proc_patch = 0;
     free(n_proc_patch);
@@ -687,6 +690,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
         memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
       }
     }
+
+    printf("inside 4 %d\n", patch_count);
 
     for (i = 0; i < patch_count; i++)
     {
@@ -743,6 +748,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       }
       close(fpx);
     }
+
+    printf("inside 5\n");
 
     int r, recv_o;
     for (r = 0; r < patch_count; r++)
@@ -804,6 +811,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       free(patch_grp->patch[r]);
     }
 
+    printf("inside 6\n");
+
     for (i = 0; i <= (evi - svi); i++)
     {
       for (j = 0; j < patch_count; j++)
@@ -818,8 +827,11 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     free(patch_grp->reg_patch);
     free(patch_grp);
     free(source_patch_id);
+
+    printf("inside 7\n");
   }
 
+  printf("inside 8\n");
   free(file_name);
   free(data_set_path);
   free(directory_path);
@@ -827,6 +839,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   free(offset_buffer);
   free(size_buffer);
 
+  printf("inside 9\n");
   return PIDX_success;
 }
 
