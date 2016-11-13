@@ -186,10 +186,12 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 
   PIDX_file_open(raw_file_name, PIDX_MODE_RDONLY, access, global_bounds, &file_r);
+  printf("1\n");
   PIDX_query_box(file_r, global_size);
   PIDX_get_variable_count(file_r, &variable_count);
   PIDX_set_current_time_step(file_r, time_step_count);
 
+  printf("2\n");
   if (variable_index >= variable_count)
     terminate_with_error_msg("Variable index more than variable count\n");
 
@@ -200,6 +202,7 @@ int main(int argc, char **argv)
   PIDX_default_bits_per_datatype(variable_r->type_name, &bits_per_sample);
   strcpy(var_name, variable_r->var_name);
 
+  printf("3 %d\n", bits_per_sample);
   data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable_r->vps);
   memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable_r->vps);
 

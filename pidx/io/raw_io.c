@@ -169,6 +169,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   int ret;
   PIDX_time time = file->idx_d->time;
 
+  printf("XXXX\n");
   time->init_start = MPI_Wtime();
   ret = raw_init(file);
   if (ret != PIDX_success)
@@ -179,6 +180,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   time->init_end = MPI_Wtime();
 
 
+  printf("YYYY\n");
   time->set_reg_box_start = MPI_Wtime();
   ret = set_rst_box_size(file, gi, svi);
   if (ret != PIDX_success)
@@ -187,12 +189,14 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
     return PIDX_err_file;
   }
 
+  printf("ZZZZ\n");
   if (file->one_time_initializations == 0)
   {
     PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
     PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
     file->one_time_initializations = 1;
   }
+  printf("AAAA\n");
   time->set_reg_box_end = MPI_Wtime();
 
 
