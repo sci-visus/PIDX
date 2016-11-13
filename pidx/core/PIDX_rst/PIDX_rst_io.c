@@ -678,12 +678,16 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     unsigned char ***temp_patch_buffer;
     temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi + 1));
     memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (evi - svi + 1));
+
+    printf("inside 3 A %d\n", patch_count);
+
     for (i = 0; i <= (evi - svi); i++)
     {
       PIDX_variable var = var_grp->variable[i + svi];
       temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
       memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
+      printf("inside 3 B %d: %d %lld %lld %lld %d %d\n", patch_count, (int)sizeof(*(temp_patch_buffer[i][j])), (unsigned long long)patch_grp->patch[j]->size[0], (unsigned long long)patch_grp->patch[j]->size[1], (unsigned long long)patch_grp->patch[j]->size[2], var->bpv/8, var->vps);
       for (j = 0; j < patch_count; j++)
       {
         temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
