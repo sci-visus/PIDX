@@ -578,12 +578,17 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * maximum_neighbor_count);
     memset(patch_grp->reg_patch, 0, sizeof(*patch_grp->reg_patch));
 
-    printf("inside 2 %d %d\n", maximum_neighbor_count, number_cores);
+    if (rst_id->idx_c->grank == 0)
+      printf("inside 2 Max neighbor count %d number of cores %d max patch count %d\n", maximum_neighbor_count, number_cores, max_patch_count);
     int patch_count = 0;
     for (n = 0; n < number_cores; n++)
     {
       pc = (int)offset_buffer[n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)];
       pc_index = n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1);
+      if (rst_id->idx_c->grank == 0)
+      {
+        printf("PC Index %d (%d x %d) :: pc %d [%d]\n", pc_index, n, (max_patch_count * PIDX_MAX_DIMENSIONS + 1), pc, (n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)));
+      }
       for (m = 0; m < pc; m++)
       {
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -594,6 +599,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
+          if (rst_id->idx_c->grank == 0)
+            printf("LP %d %d %d : %d %d %d NPP %d %d %d %d %d %d\n", (int)local_proc_patch->offset[0], (int)local_proc_patch->offset[1], (int)local_proc_patch->offset[2], (int)local_proc_patch->size[0], (int)local_proc_patch->size[1], (int)local_proc_patch->size[2], (int)n_proc_patch->offset[0], (int)n_proc_patch->offset[1], (int)n_proc_patch->offset[2], (int)n_proc_patch->size[0], (int)n_proc_patch->size[1], (int)n_proc_patch->size[2]);
           //sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, n, m);
           patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
           memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
