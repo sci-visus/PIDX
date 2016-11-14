@@ -671,7 +671,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     }
 
     if (rst_id->idx_c->grank == 0)
-    printf("inside 3 %d\n");
+    printf("inside 3\n");
 
     free(local_proc_patch);
     local_proc_patch = 0;
