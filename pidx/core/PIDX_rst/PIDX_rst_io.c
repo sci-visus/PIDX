@@ -422,6 +422,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;
 
+  if (rst_id->idx_c->grank == 0)
   printf("SE %d %d\n", svi, evi);
 
   char *idx_directory_path;
@@ -436,6 +437,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   sprintf(size_path, "%s_SIZE", idx_directory_path);
   free(idx_directory_path);
 
+  if (rst_id->idx_c->grank == 0)
   printf("%s %s\n", offset_path, size_path);
 
   uint32_t number_cores = 0;
@@ -455,6 +457,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     number_cores = temp_number_cores;
   }
 #endif
+  if (rst_id->idx_c->grank == 0)
   printf("A %d\n", number_cores);
 
   uint32_t max_patch_count = 0;
@@ -464,6 +467,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
+  if (rst_id->idx_c->grank == 0)
   printf("B %d\n", max_patch_count);
 
 #if INVERT_ENDIANESS
@@ -486,6 +490,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   }
 
   close(fp);
+  if (rst_id->idx_c->grank == 0)
   printf("C %d %d\n", number_cores, max_patch_count);
 
 #if INVERT_ENDIANESS
@@ -511,6 +516,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     return PIDX_err_io;
   }
   close(fp1);
+  if (rst_id->idx_c->grank == 0)
   printf("D %d %d\n", number_cores, max_patch_count);
 
 #if INVERT_ENDIANESS
@@ -540,13 +546,16 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, rst_id->idx->current_time_step);
 
+  if (rst_id->idx_c->grank == 0)
   printf("E %s\n", data_set_path);
 
+  if (rst_id->idx_c->grank == 0)
   printf("F %d\n", var_grp->variable[svi]->sim_patch_count);
 
   int pc1 = 0;
   for (pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
   {
+      if (rst_id->idx_c->grank == 0)
     printf("inside 1\n");
     int n = 0, m = 0, d = 0;
     Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
@@ -600,7 +609,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
           if (rst_id->idx_c->grank == 0)
-            printf("LP %d %d %d : %d %d %d NPP %d %d %d %d %d %d\n", (int)local_proc_patch->offset[0], (int)local_proc_patch->offset[1], (int)local_proc_patch->offset[2], (int)local_proc_patch->size[0], (int)local_proc_patch->size[1], (int)local_proc_patch->size[2], (int)n_proc_patch->offset[0], (int)n_proc_patch->offset[1], (int)n_proc_patch->offset[2], (int)n_proc_patch->size[0], (int)n_proc_patch->size[1], (int)n_proc_patch->size[2]);
+            printf("LP %lld %lld %lld : %lld %lld %lld NPP %lld %lld %lld %lld %lld %lld\n", (unsigned long long)local_proc_patch->offset[0], (unsigned long long)local_proc_patch->offset[1], (unsigned long long)local_proc_patch->offset[2], (unsigned long long)local_proc_patch->size[0], (unsigned long long)local_proc_patch->size[1], (unsigned long long)local_proc_patch->size[2], (unsigned long long)n_proc_patch->offset[0], (unsigned long long)n_proc_patch->offset[1], (unsigned long long)n_proc_patch->offset[2], (unsigned long long)n_proc_patch->size[0], (unsigned long long)n_proc_patch->size[1], (unsigned long long)n_proc_patch->size[2]);
           //sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, n, m);
           patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
           memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
@@ -705,6 +714,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       }
     }
 
+    if (rst_id->idx_c->grank == 0)
     printf("inside 4 %d\n", patch_count);
 
     for (i = 0; i < patch_count; i++)
@@ -763,6 +773,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       close(fpx);
     }
 
+    if (rst_id->idx_c->grank == 0)
     printf("inside 5\n");
 
     int r, recv_o;
