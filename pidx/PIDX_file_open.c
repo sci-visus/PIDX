@@ -125,6 +125,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
   memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
 
+  (*file)->idx->endian = 1;
+
   for (i = 0; i < 16; i++)
   {
     (*file)->idx->variable_grp[i] = malloc(sizeof(*((*file)->idx->variable_grp[i])));
@@ -235,7 +237,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         }
 
         (*file)->idx->io_type = PIDX_RAW_IO;
-        (*file)->idx->endian = 0;
+        //(*file)->idx->endian = 0;
       }
 
       if (strcmp(line, "(cores)") == 0)

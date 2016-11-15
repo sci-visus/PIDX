@@ -418,6 +418,7 @@ PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 {
+
   int temp_max_dim = 5;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
@@ -866,6 +867,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   free(size_buffer);
 
   printf("inside 9\n");
+#if 0
+#endif
   return PIDX_success;
 }
 

@@ -390,7 +390,7 @@ int main(int argc, char **argv)
     //PIDX_debug_hz(file, 1);
 
     PIDX_point reg_patch_size;
-    PIDX_set_point_5D(reg_patch_size, 64, 64, 64, 1, 1);
+    PIDX_set_point_5D(reg_patch_size, 128, 128, 128, 1, 1);
     PIDX_set_restructuring_box(file, reg_patch_size);
     //PIDX_GLOBAL_PARTITION_IDX_IO
     //PIDX_IDX_IO

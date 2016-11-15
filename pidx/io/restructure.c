@@ -24,14 +24,12 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
 
   if (rst_case_type == 0)
   {
-    printf("1\n");
     time->rst_init_start[cvi] = PIDX_get_time();
     // Initialize the restructuring phase
     file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
     time->rst_init_end[cvi] = PIDX_get_time();
 
 
-    printf("2\n");
     time->rst_meta_data_create_start[cvi] = PIDX_get_time();
     // Creating the metadata to perform retructuring
     ret = PIDX_rst_meta_data_create(file->rst_id);
@@ -39,7 +37,6 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     time->rst_meta_data_create_end[cvi] = PIDX_get_time();
 
 
-    printf("3\n");
     if (mode == PIDX_WRITE)
     {
       time->rst_meta_data_io_start[cvi] = PIDX_get_time();
@@ -52,13 +49,11 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     }
 
 
-    printf("4\n");
     time->rst_buffer_start[cvi] = PIDX_get_time();
     // Creating the buffers required for restructurig
     ret = PIDX_rst_buf_create(file->rst_id);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-    printf("5\n");
     // Aggregating the aligned small buffers after restructuring into one single buffer
     ret = PIDX_rst_aggregate_buf_create(file->rst_id);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
