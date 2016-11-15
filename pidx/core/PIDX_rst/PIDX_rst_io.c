@@ -418,6 +418,7 @@ PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 {
+  int temp_max_dim = 5;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;
@@ -479,11 +480,11 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   }
 #endif
 
-  uint32_t *size_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
-  memset(size_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+  uint32_t *size_buffer = malloc((number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
+  memset(size_buffer, 0, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
 
-  write_count = pread(fp, size_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
-  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t))
+  write_count = pread(fp, size_buffer, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
+  if (write_count != (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -495,7 +496,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 
 #if INVERT_ENDIANESS
   int buff_i;
-  for(buff_i = 0; buff_i < (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)); buff_i++){
+  for(buff_i = 0; buff_i < (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
     uint32_t temp_value = 0;
     if (rst_id->idx->flip_endian == 1)
     {
@@ -505,12 +506,12 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   }
 #endif
 
-  uint32_t *offset_buffer = malloc((number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
-  memset(offset_buffer, 0, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t));
+  uint32_t *offset_buffer = malloc((number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
+  memset(offset_buffer, 0, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
 
   int fp1 = open(offset_path, O_RDONLY);
-  write_count = pread(fp1, offset_buffer, (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
-  if (write_count != (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)) * sizeof(uint32_t))
+  write_count = pread(fp1, offset_buffer, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
+  if (write_count != (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -520,7 +521,7 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   printf("D %d %d\n", number_cores, max_patch_count);
 
 #if INVERT_ENDIANESS
-  for(buff_i = 0; buff_i<  (number_cores * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)); buff_i++){
+  for(buff_i = 0; buff_i<  (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
     uint32_t temp_value = 0;
     if (rst_id->idx->flip_endian == 1)
     {
@@ -592,18 +593,18 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     int patch_count = 0;
     for (n = 0; n < number_cores; n++)
     {
-      pc = (int)offset_buffer[n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)];
-      pc_index = n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1);
+      pc = (int)offset_buffer[n * (max_patch_count * temp_max_dim + 1)];
+      pc_index = n * (max_patch_count * temp_max_dim + 1);
       if (rst_id->idx_c->grank == 0)
       {
-        printf("PC Index %d (%d x %d) :: pc %d [%d]\n", pc_index, n, (max_patch_count * PIDX_MAX_DIMENSIONS + 1), pc, (n * (max_patch_count * PIDX_MAX_DIMENSIONS + 1)));
+        printf("PC Index %d (%d x %d) :: pc %d [%d]\n", pc_index, n, (max_patch_count * temp_max_dim + 1), pc, (n * (max_patch_count * temp_max_dim + 1)));
       }
       for (m = 0; m < pc; m++)
       {
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         {
-          n_proc_patch->offset[d] = (unsigned long long)offset_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
-          n_proc_patch->size[d] = (unsigned long long)size_buffer[pc_index + m * PIDX_MAX_DIMENSIONS + d + 1];
+          n_proc_patch->offset[d] = (unsigned long long)offset_buffer[pc_index + m * temp_max_dim + d + 1];
+          n_proc_patch->size[d] = (unsigned long long)size_buffer[pc_index + m * temp_max_dim + d + 1];
         }
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
@@ -722,11 +723,11 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, patch_grp->source_patch_rank[i], source_patch_id[i]);
       int fpx = open(file_name, O_RDONLY);
 
-      pc_index = patch_grp->source_patch_rank[i] * (max_patch_count * PIDX_MAX_DIMENSIONS + 1);
+      pc_index = patch_grp->source_patch_rank[i] * (max_patch_count * temp_max_dim + 1);
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-        sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
-        sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * PIDX_MAX_DIMENSIONS + d + 1];
+        sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+        sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
       }
 
       count1 = 0;

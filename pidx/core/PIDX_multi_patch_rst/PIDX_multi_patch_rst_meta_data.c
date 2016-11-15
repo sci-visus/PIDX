@@ -670,7 +670,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_destroy(PIDX_multi_patch_rst_id 
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 {
   int d = 0, check_bit = 0;
-  for (d = 0; d < /*PIDX_MAX_DIMENSIONS*/3; d++)
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
 
   return !(check_bit);
