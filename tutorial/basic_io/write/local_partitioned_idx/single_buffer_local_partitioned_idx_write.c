@@ -393,6 +393,7 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   PIDX_set_variable_count(file, variable_count);
 
+  PIDX_set_block_count(file, 128);
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   // Selecting idx I/O mode

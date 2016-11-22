@@ -215,11 +215,11 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
   if (total_reg_sample_count % max_sample_per_file)
     file->idx_d->max_file_count++;
 
-  file->idx_d->shared_block_level = (int)log2(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]) + file->idx->bits_per_block + 1;
+  file->idx_d->shared_block_level = (int)log2(/*file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]*/1) + file->idx->bits_per_block + 1;
   if (file->idx_d->shared_block_level >= file->idx_d->maxh)
     file->idx_d->shared_block_level = file->idx_d->maxh;
 
-  int partion_level = (int) log2(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
+  int partion_level = (int) log2(/*file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]*/1);
   file->idx_d->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
   if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
     file->idx_d->total_partiton_level = file->idx_d->maxh;

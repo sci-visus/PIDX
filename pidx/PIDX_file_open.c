@@ -557,9 +557,6 @@ PIDX_return_code PIDX_query_box(PIDX_file file, PIDX_point box_dims)
   if(!file)
     return PIDX_err_file;
 
-  //if (box_dims[0] > file->idx->bounds[0] || box_dims[1] > file->idx->bounds[1] || box_dims[2] > file->idx->bounds[2])
-  //  return PIDX_err_file;
-
   memcpy(file->idx->box_bounds, box_dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;
