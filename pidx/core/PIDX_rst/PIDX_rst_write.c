@@ -443,12 +443,14 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
       }
     }
 
+    //printf("[before] Rank %d\n", rst_id->idx_c->grank);
     ret = MPI_Waitall(req_counter, req, status);
     if (ret != MPI_SUCCESS)
     {
       fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
       return (-1);
     }
+    //printf("[after] Rank %d\n", rst_id->idx_c->grank);
 
     for (i = 0; i < chunk_counter; i++)
       MPI_Type_free(&chunk_data_type[i]);

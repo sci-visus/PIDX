@@ -433,6 +433,9 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
 
   file->idx->io_type = io_type;
 
+  if (file->idx->io_type == PIDX_IDX_IO)
+    file->idx->reg_box_set = PIDX_CLOSEST_POWER_TWO;
+
   return PIDX_success;
 }
 

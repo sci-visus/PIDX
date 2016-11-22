@@ -8,7 +8,6 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   int *colors;
   int index_i = 0, index_j = 0, index_k = 0;
   int i = 0, j = 0, k = 0, d = 0;
-  //PIDX_return_code ret;
 
   colors = malloc(sizeof(*colors) * file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
   memset(colors, 0, sizeof(*colors) * file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
@@ -89,7 +88,12 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
             }
 
             file->idx_d->color = colors[z_order];
-            assert(var->sim_patch_count == 1);
+
+            file->idx_d->partition_offset[0] = i;
+            file->idx_d->partition_offset[1] = j;
+            file->idx_d->partition_offset[2] = k;
+
+            //assert(var->sim_patch_count == 1);
             break;
           }
         }
@@ -98,7 +102,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
     free(reg_patch);
   }
   else if (var->patch_group_count > 1)
-    printf("RST artifact\n");
+    printf("RST artifact %d\n", var->patch_group_count);
 
   free(colors);
 

@@ -14,10 +14,18 @@ static PIDX_return_code destroy_non_shared_block_layout(PIDX_io file, int gi);
 
 static PIDX_return_code PIDX_file_initialize_time_step(PIDX_io file, char* filename, char* filename_template, int current_time_step);
 
-PIDX_return_code populate_bit_string(PIDX_io file, int mode)
+PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 {
   int i = 0;
-  unsigned long long* cb = file->idx->chunked_bounds;
+  unsigned long long cb[PIDX_MAX_DIMENSIONS];
+
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
+    if (file->idx->bounds[i] % file->idx->chunk_size[i] == 0)
+      cb[i] = (int) file->idx->bounds[i] / file->idx->chunk_size[i];
+    else
+      cb[i] = (int) (file->idx->bounds[i] / file->idx->chunk_size[i]) + 1;
+  }
 
   if (mode == PIDX_WRITE)
   {
@@ -63,6 +71,115 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     strcat(temp_bs, reg_patch_bs + 1);
     strcpy(file->idx->bitSequence, partition_bs);
     strcat(file->idx->bitSequence, temp_bs + 1);
+
+#else
+    PointND pcp;
+    pcp.x = (int) file->idx->bounds[0];
+    pcp.y = (int) file->idx->bounds[1];
+    pcp.z = (int) file->idx->bounds[2];
+    GuessBitmaskPattern(file->idx->bitSequence, pcp);
+    //guess_bit_string(file->idx->bitSequence, pcp);
+    //if (file->idx_c->grank == 0)
+    //  printf("[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
+#endif
+  }
+
+  // maxh calculation
+  file->idx_d->maxh = strlen(file->idx->bitSequence);
+  for (i = 0; i <= file->idx_d->maxh; i++)
+    file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
+
+  if (file->idx_c->grank == 0)
+    printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
+
+  unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
+  if (total_reg_sample_count <= 0)
+  {
+    fprintf(stderr, "[%s] [%d ]File dimensions are wrong\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  unsigned long long max_sample_per_file = (unsigned long long) file->idx_d->samples_per_block * file->idx->blocks_per_file;
+  if (max_sample_per_file <= 0)
+  {
+    fprintf(stderr, "[%s] [%d ]IDX dimensions are wrong %d %d\n", __FILE__, __LINE__, file->idx_d->samples_per_block, file->idx->blocks_per_file);
+    return PIDX_err_file;
+  }
+
+  file->idx_d->max_file_count = total_reg_sample_count / max_sample_per_file;
+  if (total_reg_sample_count % max_sample_per_file)
+    file->idx_d->max_file_count++;
+
+  file->idx_d->perm_layout_count = (file->idx_d->maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
+  if (file->idx_d->perm_layout_count <= 0)
+    file->idx_d->perm_layout_count = 1;
+
+  file->idx_d->shared_block_level = (int)log2(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]) + file->idx->bits_per_block + 1;
+  if (file->idx_d->shared_block_level >= file->idx_d->maxh)
+    file->idx_d->shared_block_level = file->idx_d->maxh;
+
+  int partion_level = (int) log2(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
+  file->idx_d->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
+  if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
+    file->idx_d->total_partiton_level = file->idx_d->maxh;
+
+  if (cb[0] == 0 && cb[1] == 0 && cb[2] == 0)
+  {
+    file->idx_d->maxh = 0;
+    file->idx_d->max_file_count = 0;
+  }
+
+  return PIDX_success;
+}
+
+PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
+{
+  int i = 0;
+  unsigned long long cb[PIDX_MAX_DIMENSIONS];
+
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
+    if (file->idx->bounds[i] % file->idx->chunk_size[i] == 0)
+      cb[i] = (int) file->idx->bounds[i] / file->idx->chunk_size[i];
+    else
+      cb[i] = (int) (file->idx->bounds[i] / file->idx->chunk_size[i]) + 1;
+  }
+
+  if (mode == PIDX_WRITE)
+  {
+#if 1
+    char temp_bs[512];
+    char reg_patch_bs[512];
+    char process_bs[512];
+
+    // First part of the bitstring
+    Point3D rpp;
+    rpp.x = (int) file->idx->reg_patch_size[0];
+    rpp.y = (int) file->idx->reg_patch_size[1];
+    rpp.z = (int) file->idx->reg_patch_size[2];
+    guess_bit_string_ZYX(reg_patch_bs, rpp);
+    //if (file->idx_c->grank == 0)
+    //  printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+
+    // Middle part of the bitstring
+    Point3D prcp;
+    prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
+    prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
+    prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
+    if (prcp.x == 0)  prcp.x = 1;
+    if (prcp.y == 0)  prcp.y = 1;
+    if (prcp.z == 0)  prcp.z = 1;
+    guess_bit_string_Z(process_bs, prcp);
+    //if (file->idx_c->grank == 0)
+    //  printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
+
+
+    // Concatenating the three components to get the final bit string
+    strcpy(temp_bs, process_bs);
+    strcat(temp_bs, reg_patch_bs + 1);
+    //strcpy(file->idx->bitSequence, partition_bs);
+    //strcat(file->idx->bitSequence, temp_bs + 1);
+    strcpy(file->idx->bitSequence, temp_bs);
 
 #else
     PointND pcp;
@@ -470,10 +587,19 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   }
   else
   {
+    unsigned long long cb[PIDX_MAX_DIMENSIONS];
+    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+    {
+      if (file->idx->bounds[i] % file->idx->chunk_size[i] == 0)
+        cb[i] = (int) file->idx->bounds[i] / file->idx->chunk_size[i];
+      else
+        cb[i] = (int) (file->idx->bounds[i] / file->idx->chunk_size[i]) + 1;
+    }
+
     for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
     {
       bounding_box[0][i] = 0;
-      bounding_box[1][i] = file->idx->chunked_bounds[i];
+      bounding_box[1][i] = cb[i];
     }
 
     ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);

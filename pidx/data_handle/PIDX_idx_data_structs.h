@@ -39,8 +39,6 @@ struct PIDX_timming_struct
    double SX, EX;
    double sim_start, sim_end;
 
-   double file_create_time;
-
    double init_start, init_end;
    double set_reg_box_start, set_reg_box_end;
    double bit_string_start, bit_string_end;
@@ -50,41 +48,41 @@ struct PIDX_timming_struct
    double partition_start, partition_end;
    double partition_cleanup_start, partition_cleanup_end;
 
-   double *rst_init_start, *rst_init_end;
-   double *rst_meta_data_create_start, *rst_meta_data_create_end;
-   double *rst_meta_data_io_start, *rst_meta_data_io_end;
-   double *rst_buffer_start, *rst_buffer_end;
-   double *rst_write_read_start, *rst_write_read_end;
-   double *rst_buff_agg_start, *rst_buff_agg_end;
-   double *rst_buff_agg_free_start, *rst_buff_agg_free_end;
-   double *rst_buff_agg_io_start, *rst_buff_agg_io_end;
-   double *rst_cleanup_start, *rst_cleanup_end;
+   double **rst_init_start, **rst_init_end;
+   double **rst_meta_data_create_start, **rst_meta_data_create_end;
+   double **rst_meta_data_io_start, **rst_meta_data_io_end;
+   double **rst_buffer_start, **rst_buffer_end;
+   double **rst_write_read_start, **rst_write_read_end;
+   double **rst_buff_agg_start, **rst_buff_agg_end;
+   double **rst_buff_agg_free_start, **rst_buff_agg_free_end;
+   double **rst_buff_agg_io_start, **rst_buff_agg_io_end;
+   double **rst_cleanup_start, **rst_cleanup_end;
 
-   double *hz_init_start, *hz_init_end;
-   double *hz_meta_start, *hz_meta_end;
-   double *hz_buffer_start, *hz_buffer_end;
-   double *hz_start, *hz_end;
-   double *hz_buffer_free_start, *hz_buffer_free_end;
-   double *hz_cleanup_start, *hz_cleanup_end;
-   double **hz_io_start, **hz_io_end;
+   double **hz_init_start, **hz_init_end;
+   double **hz_meta_start, **hz_meta_end;
+   double **hz_buffer_start, **hz_buffer_end;
+   double **hz_start, **hz_end;
+   double **hz_buffer_free_start, **hz_buffer_free_end;
+   double **hz_cleanup_start, **hz_cleanup_end;
+   double ***hz_io_start, ***hz_io_end;
 
-   double *chunk_init_start, *chunk_init_end;
-   double *chunk_meta_start, *chunk_meta_end;
-   double *chunk_buffer_start, *chunk_buffer_end;
-   double *chunk_start, *chunk_end;
-   double *chunk_buffer_free_start, *chunk_buffer_free_end;
-   double *chunk_cleanup_start, *chunk_cleanup_end;
+   double **chunk_init_start, **chunk_init_end;
+   double **chunk_meta_start, **chunk_meta_end;
+   double **chunk_buffer_start, **chunk_buffer_end;
+   double **chunk_start, **chunk_end;
+   double **chunk_buffer_free_start, **chunk_buffer_free_end;
+   double **chunk_cleanup_start, **chunk_cleanup_end;
 
-   double *compression_init_start, *compression_init_end;
-   double *compression_start, *compression_end;
+   double **compression_init_start, **compression_init_end;
+   double **compression_start, **compression_end;
 
-   double **agg_init_start, **agg_init_end;
-   double **agg_meta_start, **agg_meta_end;
-   double **agg_buf_start, **agg_buf_end;
-   double **agg_start, **agg_end;
-   double **agg_meta_cleanup_start, **agg_meta_cleanup_end;
+   double ***agg_init_start, ***agg_init_end;
+   double ***agg_meta_start, ***agg_meta_end;
+   double ***agg_buf_start, ***agg_buf_end;
+   double ***agg_start, ***agg_end;
+   double ***agg_meta_cleanup_start, ***agg_meta_cleanup_end;
 
-   double *io_start, *io_end;
+   double **io_start, **io_end;
 };
 typedef struct PIDX_timming_struct* PIDX_time;
 
@@ -213,7 +211,7 @@ struct idx_file_struct
   int compression_factor;
   int compression_bit_rate;
   unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];
-  unsigned long long chunked_bounds[PIDX_MAX_DIMENSIONS];
+
 
   /// 1 for little endian
   /// 0 for big endian
@@ -259,6 +257,7 @@ struct idx_dataset_derived_metadata_struct
   int color;
   int partition_count[PIDX_MAX_DIMENSIONS];
   int partition_size[PIDX_MAX_DIMENSIONS];
+  int partition_offset[PIDX_MAX_DIMENSIONS];
 
   int var_pipe_length;
   int parallel_mode;  

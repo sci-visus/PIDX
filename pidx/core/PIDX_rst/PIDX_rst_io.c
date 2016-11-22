@@ -418,8 +418,7 @@ PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
 
 PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 {
-
-  int temp_max_dim = 5;
+  int temp_max_dim = 3;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;
@@ -438,8 +437,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 
   uint32_t number_cores = 0;
   int fp = open(size_path, O_RDONLY);
-  ssize_t write_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
-  if (write_count != sizeof(uint32_t))
+  ssize_t read_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
+  if (read_count != sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -455,8 +454,8 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 #endif
 
   uint32_t max_patch_count = 0;
-  write_count = pread(fp, &max_patch_count, sizeof(uint32_t), sizeof(uint32_t));
-  if (write_count != sizeof(uint32_t))
+  read_count = pread(fp, &max_patch_count, sizeof(uint32_t), sizeof(uint32_t));
+  if (read_count != sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -471,11 +470,13 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   }
 #endif
 
-  uint32_t *size_buffer = malloc((number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
-  memset(size_buffer, 0, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
+  int buffer_read_size = (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t);
 
-  write_count = pread(fp, size_buffer, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
-  if (write_count != (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t))
+  uint32_t *size_buffer = malloc(buffer_read_size);
+  memset(size_buffer, 0, buffer_read_size);
+
+  read_count = pread(fp, size_buffer, buffer_read_size, 2 * sizeof(uint32_t));
+  if (read_count != buffer_read_size)
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -495,12 +496,12 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
   }
 #endif
 
-  uint32_t *offset_buffer = malloc((number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
-  memset(offset_buffer, 0, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t));
+  uint32_t *offset_buffer = malloc(buffer_read_size);
+  memset(offset_buffer, 0, buffer_read_size);
 
   int fp1 = open(offset_path, O_RDONLY);
-  write_count = pread(fp1, offset_buffer, (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t), 2 * sizeof(uint32_t));
-  if (write_count != (number_cores * (max_patch_count * temp_max_dim + 1)) * sizeof(uint32_t))
+  read_count = pread(fp1, offset_buffer, buffer_read_size, 2 * sizeof(uint32_t));
+  if (read_count != buffer_read_size)
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
@@ -583,9 +584,6 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
-          if (rst_id->idx_c->grank == 0)
-            printf("LP %lld %lld %lld : %lld %lld %lld NPP %lld %lld %lld %lld %lld %lld\n", (unsigned long long)local_proc_patch->offset[0], (unsigned long long)local_proc_patch->offset[1], (unsigned long long)local_proc_patch->offset[2], (unsigned long long)local_proc_patch->size[0], (unsigned long long)local_proc_patch->size[1], (unsigned long long)local_proc_patch->size[2], (unsigned long long)n_proc_patch->offset[0], (unsigned long long)n_proc_patch->offset[1], (unsigned long long)n_proc_patch->offset[2], (unsigned long long)n_proc_patch->size[0], (unsigned long long)n_proc_patch->size[1], (unsigned long long)n_proc_patch->size[2]);
-
           //sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, n, m);
           patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
           memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
@@ -655,9 +653,6 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       }
     }
 
-    if (rst_id->idx_c->grank == 0)
-    printf("inside 3\n");
-
     free(local_proc_patch);
     local_proc_patch = 0;
     free(n_proc_patch);
@@ -672,26 +667,18 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi + 1));
     memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (evi - svi + 1));
 
-    if (rst_id->idx_c->grank == 0)
-    printf("inside 3 A %d\n", patch_count);
-
     for (i = 0; i <= (evi - svi); i++)
     {
       PIDX_variable var = var_grp->variable[i + svi];
       temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
       memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
-      if (rst_id->idx_c->grank == 0)
-      printf("inside 3 B %d: %d %lld %lld %lld %d %d\n", patch_count, (int)sizeof(*(temp_patch_buffer[i][j])), (unsigned long long)patch_grp->patch[j]->size[0], (unsigned long long)patch_grp->patch[j]->size[1], (unsigned long long)patch_grp->patch[j]->size[2], var->bpv/8, var->vps);
       for (j = 0; j < patch_count; j++)
       {
         temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
         memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
       }
     }
-
-    if (rst_id->idx_c->grank == 0)
-    printf("inside 4 %d\n", patch_count);
 
     for (i = 0; i < patch_count; i++)
     {
@@ -748,9 +735,6 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       }
       close(fpx);
     }
-
-    if (rst_id->idx_c->grank == 0)
-    printf("inside 5\n");
 
     int r, recv_o;
     for (r = 0; r < patch_count; r++)
@@ -812,9 +796,6 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
       free(patch_grp->patch[r]);
     }
 
-    if (rst_id->idx_c->grank == 0)
-    printf("inside 6\n");
-
     for (i = 0; i <= (evi - svi); i++)
     {
       for (j = 0; j < patch_count; j++)
@@ -829,22 +810,14 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
     free(patch_grp->reg_patch);
     free(patch_grp);
     free(source_patch_id);
-
-    if (rst_id->idx_c->grank == 0)
-    printf("inside 7\n");
   }
 
-  if (rst_id->idx_c->grank == 0)
-  printf("inside 8\n");
   free(file_name);
   free(data_set_path);
   free(directory_path);
 
   free(offset_buffer);
   free(size_buffer);
-
-  if (rst_id->idx_c->grank == 0)
-  printf("inside 9\n");
 
   return PIDX_success;
 }

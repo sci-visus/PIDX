@@ -2,8 +2,8 @@
 
 static int maximum_neighbor_count = 256;
 static int getPowerOftwo(int x);
-static PIDX_return_code calculate_patch_group_count_for_patch_per_process(PIDX_io file, int gi, int svi);
-static PIDX_return_code calculate_patch_group_count_for_multi_patch_per_process(PIDX_io file, int gi, int svi);
+static int calculate_patch_group_count_for_patch_per_process(PIDX_io file, int gi, int svi);
+static int calculate_patch_group_count_for_multi_patch_per_process(PIDX_io file, int gi, int svi, unsigned long long sim_max_patch_group_count);
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file);
 static int contains_patch(Ndim_patch reg_patch, Ndim_patch* patches, int count);
@@ -14,7 +14,13 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
-  if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
+  if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
+  {
+    file->idx->reg_patch_size[0] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[0]);
+    file->idx->reg_patch_size[1] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[1]);
+    file->idx->reg_patch_size[2] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[2]);
+  }
+  else if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
   {
     assert(file->idx->reg_patch_size[0] != 0);
     assert(file->idx->reg_patch_size[1] != 0);
@@ -35,12 +41,13 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
     file->idx->reg_patch_size[1] = factor * getPowerOftwo(var0->sim_patch[0]->size[1]);
     file->idx->reg_patch_size[2] = factor * getPowerOftwo(var0->sim_patch[0]->size[2]);
 
-    int grp_count;
+    int grp_count = 0;
     if (rst_case_type == 0)
       grp_count = calculate_patch_group_count_for_patch_per_process(file, gi, svi);
     else
-      grp_count = calculate_patch_group_count_for_multi_patch_per_process(file, gi, svi);
+      grp_count = calculate_patch_group_count_for_multi_patch_per_process(file, gi, svi, max_patch_count);
     int max_grp_count = 0;
+
     MPI_Allreduce(&grp_count, &max_grp_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm );
     if (max_grp_count > 1)
     {
@@ -57,13 +64,12 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
 
 
-static PIDX_return_code calculate_patch_group_count_for_multi_patch_per_process(PIDX_io file, int gi, int svi)
+static int calculate_patch_group_count_for_multi_patch_per_process(PIDX_io file, int gi, int svi, unsigned long long sim_max_patch_group_count)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
   int j = 0;
   int patch_group_count = 0;
-  unsigned long long sim_max_patch_group_count;
   unsigned long long* sim_multi_patch_r_count;
   unsigned long long* sim_multi_patch_r_offset;
 
@@ -72,9 +78,6 @@ static PIDX_return_code calculate_patch_group_count_for_multi_patch_per_process(
   int reg_patch_count, edge_case = 0;
   int reg_multi_patch_grp_count;
   Ndim_multi_patch_group* reg_multi_patch_grp;
-
-
-  MPI_Allreduce(&var0->sim_patch_count, &sim_max_patch_group_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
 
   sim_multi_patch_r_count = malloc(sizeof (unsigned long long) * file->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * sim_max_patch_group_count);
   memset(sim_multi_patch_r_count, 0, (sizeof (unsigned long long) * file->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * sim_max_patch_group_count));
@@ -431,12 +434,12 @@ static PIDX_return_code calculate_patch_group_count_for_multi_patch_per_process(
   free(reg_multi_patch_grp);
   reg_multi_patch_grp = 0;
 
-  return PIDX_success;
+  return patch_group_count;
 }
 
 
 
-static PIDX_return_code calculate_patch_group_count_for_patch_per_process(PIDX_io file, int gi, int svi)
+static int calculate_patch_group_count_for_patch_per_process(PIDX_io file, int gi, int svi)
 {
   unsigned long long *rank_r_offset;
   unsigned long long *rank_r_count;
@@ -712,42 +715,17 @@ static PIDX_return_code calculate_patch_group_count_for_patch_per_process(PIDX_i
   reg_patch_grp = 0;
 
 
-  return PIDX_success;
+  return patch_group_count;
 }
 
 
 PIDX_return_code idx_init(PIDX_io file, int gi)
 {
-  int d = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-  {
-    if (file->idx->bounds[d] % file->idx->chunk_size[d] == 0)
-      file->idx->chunked_bounds[d] = (int) file->idx->bounds[d] / file->idx->chunk_size[d];
-    else
-      file->idx->chunked_bounds[d] = (int) (file->idx->bounds[d] / file->idx->chunk_size[d]) + 1;
-  }
 
   var_grp->rank_buffer = malloc(file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
   memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
   MPI_Allgather(&(file->idx_c->grank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code raw_init(PIDX_io file)
-{
-  int d = 0;
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-  {
-    if (file->idx->bounds[d] % file->idx->chunk_size[d] == 0)
-      file->idx->chunked_bounds[d] = (int) file->idx->bounds[d] / file->idx->chunk_size[d];
-    else
-      file->idx->chunked_bounds[d] = (int) (file->idx->bounds[d] / file->idx->chunk_size[d]) + 1;
-  }
 
   return PIDX_success;
 }

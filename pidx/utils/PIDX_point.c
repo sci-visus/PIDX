@@ -19,7 +19,7 @@
 #include "../PIDX_inc.h"
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_set_point_5D(PIDX_point point, unsigned long long  x, unsigned long long  y, unsigned long long  z, unsigned long long  u, unsigned long long  v)
+PIDX_return_code PIDX_set_point(PIDX_point point, unsigned long long  x, unsigned long long  y, unsigned long long  z)
 {
   if(point == NULL)
     return PIDX_err_point;
@@ -32,7 +32,7 @@ PIDX_return_code PIDX_set_point_5D(PIDX_point point, unsigned long long  x, unsi
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_get_point_5D(unsigned long long* x, unsigned long long* y, unsigned long long* z, unsigned long long* u, unsigned long long* v, PIDX_point point)
+PIDX_return_code PIDX_get_point(unsigned long long* x, unsigned long long* y, unsigned long long* z, PIDX_point point)
 {
   if(point == NULL)
     return PIDX_err_point;

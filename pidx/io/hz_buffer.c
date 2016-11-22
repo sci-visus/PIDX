@@ -1,6 +1,7 @@
 #include "../PIDX_inc.h"
 
 static int cvi = 0;
+static int lgi = 0;
 static PIDX_return_code hz_init(PIDX_io file, int svi, int evi);
 static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi);
 static PIDX_return_code compression_init(PIDX_io file, int svi, int evi);
@@ -11,9 +12,10 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file);
 static PIDX_return_code hz_cleanup(PIDX_io file);
 static PIDX_return_code chunk_cleanup(PIDX_io file);
 
-PIDX_return_code hz_encode_setup(PIDX_io file, int svi, int evi)
+PIDX_return_code hz_encode_setup(PIDX_io file, int gi, int svi, int evi)
 {
   cvi = svi;
+  lgi = gi;
 
   // Init
   if ( hz_init(file, svi, evi) || chunk_init(file, svi, evi) || compression_init(file, svi, evi) != PIDX_success )
@@ -86,26 +88,26 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
 
     for (j = var_grp->agg_l_shared; j < var_grp->shared_end_layout_index; j++)
     {
-      file->idx_d->time->hz_io_start[cvi][j] = MPI_Wtime();
+      file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
       ret = PIDX_file_io_per_process(file->hz_id, var_grp->shared_block_layout_by_level[j - var_grp->agg_l_shared], mode);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
-      file->idx_d->time->hz_io_end[cvi][j] = MPI_Wtime();
+      file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
     }
 
     for (j = var_grp->agg_l_nshared; j < var_grp->nshared_end_layout_index; j++)
     {
-      file->idx_d->time->hz_io_start[cvi][j] = MPI_Wtime();
+      file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
       ret = PIDX_file_io_per_process(file->hz_id, var_grp->nshared_block_layout_by_level[j - var_grp->agg_l_nshared], mode);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
-      file->idx_d->time->hz_io_end[cvi][j] = MPI_Wtime();
+      file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
     }
   }
 
@@ -139,7 +141,7 @@ static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
   int ret = 0;
   PIDX_time time = file->idx_d->time;
 
-  time->hz_init_start[cvi] = PIDX_get_time();
+  time->hz_init_start[lgi][cvi] = PIDX_get_time();
   // Create the HZ encoding ID
   file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, file->idx_c, svi, evi);
 
@@ -150,7 +152,7 @@ static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
-  time->hz_init_end[cvi] = PIDX_get_time();
+  time->hz_init_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -160,10 +162,10 @@ static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi)
 {
   PIDX_time time = file->idx_d->time;
 
-  time->chunk_init_start[cvi] = PIDX_get_time();
+  time->chunk_init_start[lgi][cvi] = PIDX_get_time();
   // Create the chunking ID
   file->chunk_id = PIDX_chunk_init(file->idx, file->idx_d, file->idx_c, svi, evi);
-  time->chunk_init_end[cvi] = PIDX_get_time();
+  time->chunk_init_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -173,10 +175,10 @@ static PIDX_return_code compression_init(PIDX_io file, int svi, int evi)
 {
   PIDX_time time = file->idx_d->time;
 
-  time->compression_init_start[cvi] = PIDX_get_time();
+  time->compression_init_start[lgi][cvi] = PIDX_get_time();
   // Create the compression ID
   file->comp_id = PIDX_compression_init(file->idx, file->idx_d, file->idx_c, svi, evi);
-  time->compression_init_end[cvi] = PIDX_get_time();
+  time->compression_init_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -187,7 +189,7 @@ static PIDX_return_code meta_data_create(PIDX_io file)
   int ret = 0;
   PIDX_time time = file->idx_d->time;
 
-  time->chunk_meta_start[cvi] = PIDX_get_time();
+  time->chunk_meta_start[lgi][cvi] = PIDX_get_time();
   // metadata for chunking phase
   ret = PIDX_chunk_meta_data_create(file->chunk_id);
   if (ret != PIDX_success)
@@ -195,10 +197,10 @@ static PIDX_return_code meta_data_create(PIDX_io file)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
-  time->chunk_meta_end[cvi] = PIDX_get_time();
+  time->chunk_meta_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->hz_meta_start[cvi] = PIDX_get_time();
+  time->hz_meta_start[lgi][cvi] = PIDX_get_time();
   // metadata for hz encoding phase
   ret = PIDX_hz_encode_meta_data_create(file->hz_id);
   if (ret != PIDX_success)
@@ -206,7 +208,7 @@ static PIDX_return_code meta_data_create(PIDX_io file)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
-  time->hz_meta_end[cvi] = PIDX_get_time();
+  time->hz_meta_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -217,7 +219,7 @@ static PIDX_return_code buffer_create(PIDX_io file)
   int ret = 0;
   PIDX_time time = file->idx_d->time;
 
-  time->chunk_buffer_start[cvi] = PIDX_get_time();
+  time->chunk_buffer_start[lgi][cvi] = PIDX_get_time();
   // Creating the buffers required for chunking
   ret = PIDX_chunk_buf_create(file->chunk_id);
   if (ret != PIDX_success)
@@ -225,9 +227,9 @@ static PIDX_return_code buffer_create(PIDX_io file)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_chunk;
   }
-  time->chunk_buffer_end[cvi] = PIDX_get_time();
+  time->chunk_buffer_end[lgi][cvi] = PIDX_get_time();
 
-  time->hz_buffer_start[cvi] = PIDX_get_time();
+  time->hz_buffer_start[lgi][cvi] = PIDX_get_time();
   // Creating the buffers required for HZ encoding
   ret = PIDX_hz_encode_buf_create(file->hz_id);
   if (ret != PIDX_success)
@@ -235,7 +237,7 @@ static PIDX_return_code buffer_create(PIDX_io file)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_hz;
   }
-  time->hz_buffer_end[cvi] = PIDX_get_time();
+  time->hz_buffer_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -246,7 +248,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   int ret = 0;
   PIDX_time time = file->idx_d->time;
 
-  time->chunk_start[cvi] = PIDX_get_time();
+  time->chunk_start[lgi][cvi] = PIDX_get_time();
   // Perform Chunking
   if (file->idx_dbg->debug_do_chunk == 1)
   {
@@ -257,10 +259,10 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       return PIDX_err_chunk;
     }
   }
-  time->chunk_end[cvi] = PIDX_get_time();
+  time->chunk_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->compression_start[cvi] = PIDX_get_time();
+  time->compression_start[lgi][cvi] = PIDX_get_time();
   // Perform Compression
   if (file->idx_dbg->debug_do_compress == 1)
   {
@@ -271,10 +273,10 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       return PIDX_err_compress;
     }
   }
-  time->compression_end[cvi] = PIDX_get_time();
+  time->compression_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->hz_start[cvi] = PIDX_get_time();
+  time->hz_start[lgi][cvi] = PIDX_get_time();
   // Perform HZ encoding
   if (file->idx_dbg->debug_do_hz == 1)
   {
@@ -296,17 +298,17 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       //return PIDX_err_hz;
     }
   }
-  time->hz_end[cvi] = PIDX_get_time();
+  time->hz_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->chunk_buffer_free_start[cvi] = PIDX_get_time();
+  time->chunk_buffer_free_start[lgi][cvi] = PIDX_get_time();
   // Destroy buffers allocated during chunking phase
   if (PIDX_chunk_buf_destroy(file->chunk_id) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_chunk;
   }
-  time->chunk_buffer_free_end[cvi] = PIDX_get_time();
+  time->chunk_buffer_free_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -316,7 +318,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
   int ret = 0;
   PIDX_time time = file->idx_d->time;
 
-  time->hz_start[cvi] = PIDX_get_time();
+  time->hz_start[lgi][cvi] = PIDX_get_time();
   // Verify the HZ encoding
   if(file->idx_dbg->debug_hz == 1)
   {
@@ -338,10 +340,10 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
       return PIDX_err_hz;
     }
   }
-  time->hz_end[cvi] = PIDX_get_time();
+  time->hz_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->compression_start[cvi] = PIDX_get_time();
+  time->compression_start[lgi][cvi] = PIDX_get_time();
   // Perform Compression
   if (file->idx_dbg->debug_do_compress == 1)
   {
@@ -352,10 +354,10 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
       return PIDX_err_compress;
     }
   }
-  time->compression_end[cvi] = PIDX_get_time();
+  time->compression_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->chunk_start[cvi] = PIDX_get_time();
+  time->chunk_start[lgi][cvi] = PIDX_get_time();
   // Perform Chunking
   if (file->idx_dbg->debug_do_chunk == 1)
   {
@@ -366,10 +368,10 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
       return PIDX_err_chunk;
     }
   }
-  time->chunk_end[cvi] = PIDX_get_time();
+  time->chunk_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->chunk_buffer_free_start[cvi] = PIDX_get_time();
+  time->chunk_buffer_free_start[lgi][cvi] = PIDX_get_time();
   // Destroy buffers allocated during chunking phase
   ret = PIDX_chunk_buf_destroy(file->chunk_id);
   if (ret != PIDX_success)
@@ -377,7 +379,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_chunk;
   }
-  time->chunk_buffer_free_end[cvi] = PIDX_get_time();
+  time->chunk_buffer_free_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -387,7 +389,7 @@ static PIDX_return_code hz_cleanup(PIDX_io file)
   int ret = 0;
   PIDX_time time = file->idx_d->time;
 
-  time->hz_buffer_free_start[cvi] = PIDX_get_time();
+  time->hz_buffer_free_start[lgi][cvi] = PIDX_get_time();
   // Destroy buffers allocated during HZ encoding phase
   ret = PIDX_hz_encode_buf_destroy(file->hz_id);
   if (ret != PIDX_success)
@@ -395,10 +397,10 @@ static PIDX_return_code hz_cleanup(PIDX_io file)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_hz;
   }
-  time->hz_buffer_free_end[cvi] = PIDX_get_time();
+  time->hz_buffer_free_end[lgi][cvi] = PIDX_get_time();
 
 
-  time->hz_cleanup_start[cvi] = PIDX_get_time();
+  time->hz_cleanup_start[lgi][cvi] = PIDX_get_time();
   ret = PIDX_hz_encode_meta_data_destroy(file->hz_id);
   if (ret != PIDX_success)
   {
@@ -407,7 +409,7 @@ static PIDX_return_code hz_cleanup(PIDX_io file)
   }
 
   PIDX_hz_encode_finalize(file->hz_id);
-  time->hz_cleanup_end[cvi] = PIDX_get_time();
+  time->hz_cleanup_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -418,7 +420,7 @@ static PIDX_return_code chunk_cleanup(PIDX_io file)
   int ret = 0;
   PIDX_time time = file->idx_d->time;
 
-  time->chunk_cleanup_start[cvi] = PIDX_get_time();
+  time->chunk_cleanup_start[lgi][cvi] = PIDX_get_time();
   ret = PIDX_chunk_meta_data_destroy(file->chunk_id);
   if (ret != PIDX_success)
   {
@@ -429,7 +431,7 @@ static PIDX_return_code chunk_cleanup(PIDX_io file)
   PIDX_compression_finalize(file->comp_id);
 
   PIDX_chunk_finalize(file->chunk_id);
-  time->chunk_cleanup_end[cvi] = PIDX_get_time();
+  time->chunk_cleanup_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
 }

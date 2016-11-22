@@ -38,9 +38,9 @@ IF (PIDX_BUILD_PROFILE)
   # executables
   # ////////////////////////////////////////
 
-  PIDX_ADD_EXECUTABLE(idxcompare "${IDXCOMPARE_SOURCES}")
-  PIDX_ADD_EXECUTABLE(idxdumpheader "${DUMPHEADER_SOURCES}")
-  PIDX_ADD_EXECUTABLE(idxverify "${IDXVERIFY_SOURCES}")
+  PIDX_ADD_CEXECUTABLE(idxcompare "${IDXCOMPARE_SOURCES}")
+  PIDX_ADD_CEXECUTABLE(idxdumpheader "${DUMPHEADER_SOURCES}")
+  PIDX_ADD_CEXECUTABLE(idxverify "${IDXVERIFY_SOURCES}")
   
   IF (ZFP_FOUND)
     MESSAGE("Configuring profiling with ZFP support")

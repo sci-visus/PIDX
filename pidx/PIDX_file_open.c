@@ -527,7 +527,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
 #endif
 
-  (*file)->idx_d->time->file_create_time = PIDX_get_time();
   (*file)->idx->flip_endian = 0;
 
   if ((*file)->idx->io_type == PIDX_IDX_IO)

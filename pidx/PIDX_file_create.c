@@ -21,11 +21,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;
 
-  //
   *file = malloc(sizeof (*(*file)));
   memset(*file, 0, sizeof (*(*file)));
 
-  //
   (*file)->idx = malloc(sizeof (*((*file)->idx)));
   memset((*file)->idx, 0, sizeof (*((*file)->idx)));
 
@@ -50,7 +48,10 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memcpy((*file)->idx->box_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
     (*file)->idx_d->partition_count[i] = 1;
+    (*file)->idx_d->partition_size[i] = getPowerOf2(dims[i]);
+  }
 
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;
@@ -170,8 +171,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     (*file)->idx->endian = 1;
   else
     (*file)->idx->endian = 0;
-
-  (*file)->idx_d->time->file_create_time = PIDX_get_time();
 
   return PIDX_success;
 }

@@ -57,8 +57,17 @@ ENDMACRO()
 # PIDX_ADD_EXECUTABLE
 ###########################################
 
-MACRO(PIDX_ADD_EXECUTABLE targetname files)
-  #MESSAGE("Adding executable " ${targetname} " from sources: " ${files})                        
+MACRO(PIDX_ADD_CEXECUTABLE targetname files)
+
+  ADD_EXECUTABLE(${targetname} "MACOSX_BUNDLE" ${files})
+  SET_TARGET_PROPERTIES(${targetname} PROPERTIES LINKER_LANGUAGE C)
+  INSTALL(TARGETS ${targetname} 
+                  RUNTIME DESTINATION bin
+                  BUNDLE DESTINATION  bin)
+ENDMACRO()
+
+MACRO(PIDX_ADD_CXXEXECUTABLE targetname files)
+
   ADD_EXECUTABLE(${targetname} "MACOSX_BUNDLE" ${files})
   SET_TARGET_PROPERTIES(${targetname} PROPERTIES LINKER_LANGUAGE CXX)
   INSTALL(TARGETS ${targetname} 

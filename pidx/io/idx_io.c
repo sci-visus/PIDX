@@ -63,7 +63,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     }
 
     // Step 3: Setup HZ buffers
-    ret = hz_encode_setup(file, si, ei);
+    ret = hz_encode_setup(file, gi, si, ei);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -109,7 +109,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     // Step 7: Performs actual file io
     for (li = si; li <= ei; li = li + 1)
     {
-      time->io_start[li] = PIDX_get_time();
+      time->io_start[gi][li] = PIDX_get_time();
       create_async_buffers(file, gi, 0, 0, var_grp->agg_l_nshared);
 
       ret = data_io(file, gi, li, 0, 0, var_grp->agg_l_nshared, PIDX_WRITE);
@@ -121,7 +121,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
 
       wait_and_destroy_async_buffers(file, gi, 0, 0, var_grp->agg_l_nshared);
       finalize_aggregation(file, gi, li, 0, 0, var_grp->agg_l_nshared);
-      time->io_end[li] = PIDX_get_time();
+      time->io_end[gi][li] = PIDX_get_time();
     }
 
     // Step 8: Cleanup all buffers and ids
@@ -200,7 +200,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     }
 
     // Step 2: Setup HZ buffers
-    ret = hz_encode_setup(file, si, ei);
+    ret = hz_encode_setup(file, gi, si, ei);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -227,14 +227,14 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     // Step 4: Performs actual file io
     for (li = si; li <= ei; li = li + 1)
     {
-      time->io_start[li] = PIDX_get_time();
+      time->io_start[gi][li] = PIDX_get_time();
       ret = data_io(file, gi, li, 0, 0, var_grp->agg_l_nshared, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      time->io_end[li] = PIDX_get_time();
+      time->io_end[gi][li] = PIDX_get_time();
     }
 
     // Step 5: Performs data aggregation
@@ -360,7 +360,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 
   time->bit_string_start = PIDX_get_time();
   // calculates maxh and bitstring
-  ret = populate_bit_string(file, mode);
+  ret = populate_global_bit_string(file, mode);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -394,13 +394,6 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
-  }
-
-  if (file->one_time_initializations == 0)
-  {
-    PIDX_init_timming_buffers1(file->idx_d->time, file->idx->variable_count);
-    PIDX_init_timming_buffers2(file->idx_d->time, file->idx->variable_count, file->idx_d->perm_layout_count);
-    file->one_time_initializations = 1;
   }
   time->layout_end = PIDX_get_time();
 
