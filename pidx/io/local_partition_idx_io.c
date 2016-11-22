@@ -6,9 +6,10 @@ static int hz_to_file_zero = 0, hz_to_shared = 0, hz_to_non_shared = 0;
 static PIDX_return_code find_agg_level(PIDX_io file, int gi);
 static PIDX_return_code select_io_mode(PIDX_io file, int gi);
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int mode);
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi);
+static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode);
 static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi);
+static PIDX_return_code re_adjust_offsets(PIDX_io file, int gi, int svi);
 static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
 
 
@@ -43,7 +44,6 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
   int si = 0, ei = 0;
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   // Step 0:  group and IDX related meta data
   if (group_meta_data_init(file, gi, svi, PIDX_WRITE) != PIDX_success)
@@ -120,7 +120,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     // Setup 8: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared, AGG_SETUP, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -131,7 +131,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     // Setup 9: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared, AGG_PERFORM, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -143,17 +143,17 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     for (li = si; li <= ei; li = li + 1)
     {
       time->io_start[gi][li] = PIDX_get_time();
-      create_async_buffers(file, gi, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared);
+      create_async_buffers(file, gi);
 
-      ret = data_io(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared, PIDX_WRITE);
+      ret = data_io(file, gi, li, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
-      wait_and_destroy_async_buffers(file, gi, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared);
-      finalize_aggregation(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared);
+      wait_and_destroy_async_buffers(file, gi);
+      finalize_aggregation(file, gi, li);
       time->io_end[gi][li] = PIDX_get_time();
     }
 
@@ -166,7 +166,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
   }
 
   // Step 12: Cleanup the group and IDX related meta-data
-  ret = group_meta_data_finalize(file, gi);
+  ret = group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -225,7 +225,6 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
   int si = 0, ei = 0;
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   // Step 0:  group and IDX related meta data
   ret = group_meta_data_init(file, gi, svi, PIDX_READ);
@@ -291,7 +290,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     // Setup 6: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared, AGG_SETUP, PIDX_READ);
+      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -304,7 +303,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     {
       time->io_start[gi][li] = PIDX_get_time();
 
-      ret = data_io(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared, PIDX_READ);
+      ret = data_io(file, gi, li, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -317,13 +316,13 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     // Setup 8: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared, AGG_PERFORM, PIDX_READ);
+      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      finalize_aggregation(file, gi, li, var_grp->agg_l_f0, var_grp->agg_l_shared, var_grp->agg_l_nshared);
+      finalize_aggregation(file, gi, li);
     }
     //
 
@@ -345,7 +344,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
   }
 
   // Step 11: Cleanup the group and IDX related meta-data
-  ret = group_meta_data_finalize(file, gi);
+  ret = group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -361,6 +360,13 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     return PIDX_err_file;
   }
   time->partition_cleanup_end = MPI_Wtime();
+
+  // Step 3: Adjust per process offsets and global bounds as per the partition
+  if (re_adjust_offsets(file, gi, svi) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
 
   // Step 13:  Restrucure
   if (restructure(file, PIDX_READ) != PIDX_success)
@@ -532,6 +538,42 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
 }
 
 
+static PIDX_return_code re_adjust_offsets(PIDX_io file, int gi, int svi)
+{
+  int i = 0, p = 0;
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  PIDX_variable var = var_grp->variable[svi];
+
+  if (var->patch_group_count > 1)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  for (p = 0 ; p < var->patch_group_count; p++)
+  {
+    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+    {
+      var->rst_patch_group[0]->reg_patch->offset[i] = var->rst_patch_group[0]->reg_patch->offset[i] + file->idx_d->partition_offset[i];
+    }
+  }
+
+  // TODO
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
+    if (file->idx_d->partition_offset[i] + file->idx_d->partition_size[i] <= file->idx->bounds[i])
+      file->idx->bounds[i] = file->idx_d->partition_size[i];
+    else
+      file->idx->bounds[i] = file->idx->bounds[i] - file->idx_d->partition_offset[i];
+
+    //file->idx->bounds[i] = 64;
+  }
+
+  return PIDX_success;
+}
+
+
+
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int mode)
 {
   int ret;
@@ -585,16 +627,16 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
      return PIDX_err_file;
   }
 
-  // Creates the agg and io ids
-  ret = create_agg_io_buffer(file);
+  // Calculate the hz level upto which aggregation is possible
+  ret = find_agg_level(file, gi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  // Calculate the hz level upto which aggregation is possible
-  ret = find_agg_level(file, gi);
+  // Creates the agg and io ids
+  ret = create_agg_io_buffer(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -620,13 +662,13 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
 }
 
 
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi)
+static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi)
 {
   int ret;
   PIDX_time time = file->idx_d->time;
 
   time->group_cleanup_start = PIDX_get_time();
-  ret = destroy_agg_io_buffer(file);
+  ret = destroy_agg_io_buffer(file, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

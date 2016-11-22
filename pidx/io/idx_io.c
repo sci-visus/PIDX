@@ -2,11 +2,10 @@
 
 static int hz_from_non_shared = 0;
 static int hz_to_non_shared = 0;
-//static int agg_l_nshared = 0;
 static PIDX_return_code find_agg_level(PIDX_io file, int gi);
 static PIDX_return_code select_io_mode(PIDX_io file, int gi);
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi);
+static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
 
 // IDX Write Steps
 /********************************************************
@@ -30,7 +29,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   int si = 0, ei = 0;
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   // Step 0
   ret = group_meta_data_init(file, gi, svi, evi, PIDX_WRITE);
@@ -87,7 +85,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     // Step 5: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, 0, 0, var_grp->agg_l_nshared, AGG_SETUP, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -98,7 +96,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     // Step 6: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, 0, 0, var_grp->agg_l_nshared, AGG_PERFORM, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -110,17 +108,17 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     for (li = si; li <= ei; li = li + 1)
     {
       time->io_start[gi][li] = PIDX_get_time();
-      create_async_buffers(file, gi, 0, 0, var_grp->agg_l_nshared);
+      create_async_buffers(file, gi);
 
-      ret = data_io(file, gi, li, 0, 0, var_grp->agg_l_nshared, PIDX_WRITE);
+      ret = data_io(file, gi, li, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
-      wait_and_destroy_async_buffers(file, gi, 0, 0, var_grp->agg_l_nshared);
-      finalize_aggregation(file, gi, li, 0, 0, var_grp->agg_l_nshared);
+      wait_and_destroy_async_buffers(file, gi);
+      finalize_aggregation(file, gi, li);
       time->io_end[gi][li] = PIDX_get_time();
     }
 
@@ -141,7 +139,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   }
 
   // Step 9
-  ret = group_meta_data_finalize(file, gi);
+  ret = group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -175,7 +173,6 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   int si = 0, ei = 0;
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   // Step 0
   ret = group_meta_data_init(file, gi, svi, evi, PIDX_READ);
@@ -216,7 +213,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     // Step 3: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, 0, 0, var_grp->agg_l_nshared, AGG_SETUP, PIDX_READ);
+      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -228,7 +225,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     for (li = si; li <= ei; li = li + 1)
     {
       time->io_start[gi][li] = PIDX_get_time();
-      ret = data_io(file, gi, li, 0, 0, var_grp->agg_l_nshared, PIDX_READ);
+      ret = data_io(file, gi, li, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -240,14 +237,14 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     // Step 5: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, 0, 0, var_grp->agg_l_nshared, AGG_PERFORM, PIDX_READ);
+      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
-      finalize_aggregation(file, gi, li, 0, 0, var_grp->agg_l_nshared);
+      finalize_aggregation(file, gi, li);
     }
 
     // Step 6: Perform HZ encoding
@@ -283,7 +280,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   }
 
   // Step 9
-  ret = group_meta_data_finalize(file, gi);
+  ret = group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -321,10 +318,15 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   idx_dataset_derived_metadata idx = file->idx_d;
 
+  var_grp->agg_l_f0 = 0;
   var_grp->f0_start_layout_index = 0;
   var_grp->f0_end_layout_index = 0;
+  var_grp->f0_layout_count = 0;
+
+  var_grp->agg_l_shared = 0;
   var_grp->shared_start_layout_index = 0;
   var_grp->shared_end_layout_index = 0;
+  var_grp->shared_layout_count = 0;
 
   hz_from_non_shared = 0;
   hz_to_non_shared =  idx->maxh;
@@ -380,16 +382,16 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
     return PIDX_err_file;
   }
 
-  // Creates the agg and io ids
-  ret = create_agg_io_buffer(file);
+  // Calculate the hz level upto which aggregation is possible
+  ret = find_agg_level(file, gi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  // Calculate the hz level upto which aggregation is possible
-  ret = find_agg_level(file, gi);
+  // Creates the agg and io ids
+  ret = create_agg_io_buffer(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -415,13 +417,13 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 }
 
 
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi)
+static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi)
 {
   int ret;
   PIDX_time time = file->idx_d->time;
 
   time->group_cleanup_start = PIDX_get_time();
-  ret = destroy_agg_io_buffer(file);
+  ret = destroy_agg_io_buffer(file, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

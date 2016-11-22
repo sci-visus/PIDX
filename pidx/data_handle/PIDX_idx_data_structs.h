@@ -280,7 +280,6 @@ struct idx_dataset_derived_metadata_struct
   MPI_File *fp;
   MPI_Request *request;
 
-  int perm_layout_count;
   int layout_count;
   int reduced_res_from;
   int reduced_res_to;

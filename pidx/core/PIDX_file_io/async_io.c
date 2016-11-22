@@ -70,7 +70,17 @@ PIDX_return_code PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer a
       }
     }
 
-    ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, request);
+    /*
+    printf("[W] Offset %d Size %d File %s\n", data_offset, agg_buf->buffer_size, file_name);
+    if (io_id->idx_c->grank == 1)
+    {
+        float x1, x2;
+        memcpy(&x1, agg_buf->buffer, sizeof(float));
+        memcpy(&x2, agg_buf->buffer + sizeof(float), sizeof(float));
+        printf("FOT %f %f\n", x1, x2);
+    }
+    */
+    ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size, MPI_BYTE, request);
     if (ret != MPI_SUCCESS)
     {
       fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
@@ -136,12 +146,23 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
         data_size = htonl(headers[14 + ((i + (io_id->idx->blocks_per_file * agg_buf->var_number))*10 )]);
 
         int buffer_index = (block_count * io_id->idx_d->samples_per_block * (var_grp->variable[agg_buf->var_number]->bpv/8) * var_grp->variable[agg_buf->var_number]->vps * tck) / io_id->idx->compression_factor;
+
+        //printf("[R] Offset %d Size %d File %s\n", data_offset, data_size, file_name);
         ret = MPI_File_read_at(fp, data_offset, agg_buf->buffer + buffer_index, data_size, MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
         {
           fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
           return PIDX_err_io;
         }
+        /*
+        if (io_id->idx_c->grank == 1)
+        {
+            float x1, x2;
+            memcpy(&x1, agg_buf->buffer + buffer_index, sizeof(float));
+            memcpy(&x2, agg_buf->buffer + buffer_index + sizeof(float), sizeof(float));
+            printf("FOT %f %f\n", x1, x2);
+        }
+        */
 
         if (io_id->idx->flip_endian == 1)
         {
