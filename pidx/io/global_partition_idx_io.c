@@ -7,7 +7,7 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi);
 static PIDX_return_code select_io_mode(PIDX_io file, int gi);
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int mode);
 static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi);
-static PIDX_return_code partition(PIDX_io file, int gi, int svi);
+static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode);
 static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
 
 
@@ -64,7 +64,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
   }
 
   // Step 3:  Partition
-  if (partition(file, gi, svi) != PIDX_success)
+  if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -231,7 +231,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
   }
 
   // Step 2:  Partition
-  ret = partition(file, gi, svi);
+  ret = partition(file, gi, svi, PIDX_WRITE);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -442,18 +442,21 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi)
   return PIDX_success;
 }
 
-static PIDX_return_code partition(PIDX_io file, int gi, int svi)
+static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
 {
   int ret;
   PIDX_time time = file->idx_d->time;
 
   time->partition_start = MPI_Wtime();
   // Calculates the number of partititons
-  ret = find_partition_count(file);
-  if (ret != PIDX_success)
+  if (mode == PIDX_WRITE)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    ret = find_partition_count(file);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
   }
 
   // assign same color to processes within the same partition

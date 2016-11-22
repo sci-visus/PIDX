@@ -63,7 +63,6 @@ static PIDX_return_code PIDX_global_async_io(PIDX_io file, PIDX_file_io_id **io_
   int ret = 0;
   int j_1 = 0;
 
-
   for(j = layout_start ; j < layout_end; j++)
   {
     j_1 = j - layout_start;

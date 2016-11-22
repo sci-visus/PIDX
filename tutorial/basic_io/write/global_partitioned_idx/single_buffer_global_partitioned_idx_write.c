@@ -147,7 +147,7 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
-    case('c'): // local dimension
+    case('c'): // partition box dimension
       if ((sscanf(optarg, "%dx%dx%d", &partition_box_size[X], &partition_box_size[Y], &partition_box_size[Z]) == EOF) ||(partition_box_size[X] < 1 || partition_box_size[Y] < 1 || partition_box_size[Z] < 1))
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
@@ -394,6 +394,8 @@ static void set_pidx_file(int ts)
   PIDX_set_variable_count(file, variable_count);
 
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
+
+  PIDX_set_block_count(file, 128);
 
   // Selecting idx I/O mode
   PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);
