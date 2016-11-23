@@ -204,48 +204,53 @@ PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id, int mode)
     }
   }
 #else
-    int v = 0;
-    PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
-    for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
+  int v = 0;
+  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable var0 = var_grp->variable[rst_id->first_index];
+
+  // loop through all groups
+  int g = 0;
+  for (g = 0; g < var0->patch_group_count; ++g)
+  {
+    // copy the size and offset to output
+    Ndim_patch_group patch_group0 = var0->rst_patch_group[g];
+    Ndim_patch out_patch0 = var0->rst_patch_group[g]->reg_patch;
+
+    int nx = out_patch0->size[0];
+    int ny = out_patch0->size[1];
+
+    patch_group0->data_source = 1;
+    int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
+    for (r = 0; r < var0->rst_patch_group[g]->count; r++)
     {
-      PIDX_variable var = var_grp->variable[v];
-
-      // loop through all groups
-      int g = 0;
-      for (g = 0; g < var->patch_group_count; ++g)
+      for (k1 = patch_group0->patch[r]->offset[2]; k1 < patch_group0->patch[r]->offset[2] + patch_group0->patch[r]->size[2]; k1++)
       {
-        // copy the size and offset to output
-        Ndim_patch_group patch_group = var->rst_patch_group[g];
-        Ndim_patch out_patch = var->rst_patch_group[g]->reg_patch;
-
-        int nx = out_patch->size[0];
-        int ny = out_patch->size[1];
-
-        patch_group->data_source = 1;
-        int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
-        for (r = 0; r < var->rst_patch_group[g]->count; r++)
+        for (j1 = patch_group0->patch[r]->offset[1]; j1 < patch_group0->patch[r]->offset[1] + patch_group0->patch[r]->size[1]; j1++)
         {
-          for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
+          for (i1 = patch_group0->patch[r]->offset[0]; i1 < patch_group0->patch[r]->offset[0] + patch_group0->patch[r]->size[0]; i1 = i1 + patch_group0->patch[r]->size[0])
           {
-            for (j1 = patch_group->patch[r]->offset[1]; j1 < patch_group->patch[r]->offset[1] + patch_group->patch[r]->size[1]; j1++)
-            {
-              for (i1 = patch_group->patch[r]->offset[0]; i1 < patch_group->patch[r]->offset[0] + patch_group->patch[r]->size[0]; i1 = i1 + patch_group->patch[r]->size[0])
-              {
-                index = ((patch_group->patch[r]->size[0])* (patch_group->patch[r]->size[1]) * (k1 - patch_group->patch[r]->offset[2])) + ((patch_group->patch[r]->size[0]) * (j1 - patch_group->patch[r]->offset[1])) + (i1 - patch_group->patch[r]->offset[0]);
-                send_o = index * var->vps * (var->bpv/8);
-                send_c = (patch_group->patch[r]->size[0]);
-                recv_o = (nx * ny * (k1 - out_patch->offset[2])) + (nx * (j1 - out_patch->offset[1])) + (i1 - out_patch->offset[0]);
+            index = ((patch_group0->patch[r]->size[0])* (patch_group0->patch[r]->size[1]) * (k1 - patch_group0->patch[r]->offset[2])) + ((patch_group0->patch[r]->size[0]) * (j1 - patch_group0->patch[r]->offset[1])) + (i1 - patch_group0->patch[r]->offset[0]);
 
-                if (mode == PIDX_WRITE)
-                  memcpy(out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
-                else
-                  memcpy(var->rst_patch_group[g]->patch[r]->buffer + send_o, out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
-              }
+            send_c = (patch_group0->patch[r]->size[0]);
+            recv_o = (nx * ny * (k1 - out_patch0->offset[2])) + (nx * (j1 - out_patch0->offset[1])) + (i1 - out_patch0->offset[0]);
+
+            for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
+            {
+              PIDX_variable var = var_grp->variable[v];
+              Ndim_patch out_patch = var->rst_patch_group[g]->reg_patch;
+
+              send_o = index * var->vps * (var->bpv/8);
+              if (mode == PIDX_WRITE)
+                memcpy(out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), var->rst_patch_group[g]->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
+              else
+                memcpy(var->rst_patch_group[g]->patch[r]->buffer + send_o, out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
             }
           }
         }
       }
     }
+  }
+
 #endif
 
   return PIDX_success;
