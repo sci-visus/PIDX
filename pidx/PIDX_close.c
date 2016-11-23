@@ -145,7 +145,11 @@ static int approx_maxh(PIDX_file file)
 {
   int maxh = log2(getPowerOf2(file->idx->bounds[0])) * log2(getPowerOf2(file->idx->bounds[1])) * log2(getPowerOf2(file->idx->bounds[2])) + 1;
 
-  return maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
+  int lc = maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
+  if (lc < 1)
+    return 1;
+  else
+    return maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
 }
 
 

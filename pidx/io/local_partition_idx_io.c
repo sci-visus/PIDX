@@ -532,7 +532,11 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
       file->idx->box_bounds[i] = file->idx_d->partition_size[i];
     else
       file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx_d->partition_offset[i];
+
+    //if (file->idx_c->grank == 0)
+    //  printf("%d: %d\n", i, file->idx->box_bounds[i]);
   }
+  //printf("%d %d %d\n", file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
   return PIDX_success;
 }
@@ -557,6 +561,27 @@ static PIDX_return_code re_adjust_offsets(PIDX_io file, int gi, int svi)
       var->rst_patch_group[0]->reg_patch->offset[i] = var->rst_patch_group[0]->reg_patch->offset[i] + file->idx_d->partition_offset[i];
     }
   }
+
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
+    //if (file->idx_c->grank == 0)
+    //  printf("%d: %d\n", i, file->idx->bounds[i]);
+
+    file->idx->box_bounds[i] = file->idx->bounds[i];
+  }
+
+  // TODO
+  /*
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
+    if (file->idx_d->partition_offset[i] + file->idx_d->partition_size[i] <= file->idx->bounds[i])
+      file->idx->bounds[i] = file->idx_d->partition_size[i];
+    else
+      file->idx->bounds[i] = file->idx->bounds[i] - file->idx_d->partition_offset[i];
+
+    //file->idx->bounds[i] = 256;
+  }
+  */
 
   return PIDX_success;
 }

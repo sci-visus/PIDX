@@ -135,10 +135,10 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
-    if (file->idx->bounds[i] % file->idx->chunk_size[i] == 0)
-      cb[i] = (int) file->idx->bounds[i] / file->idx->chunk_size[i];
+    if (file->idx->box_bounds[i] % file->idx->chunk_size[i] == 0)
+      cb[i] = (int) file->idx->box_bounds[i] / file->idx->chunk_size[i];
     else
-      cb[i] = (int) (file->idx->bounds[i] / file->idx->chunk_size[i]) + 1;
+      cb[i] = (int) (file->idx->box_bounds[i] / file->idx->chunk_size[i]) + 1;
   }
 
   if (mode == PIDX_WRITE)
