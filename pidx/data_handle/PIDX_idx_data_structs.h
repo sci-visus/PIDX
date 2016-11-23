@@ -221,6 +221,7 @@ struct idx_file_struct
   /// 0 for big endian
   int flip_endian;
 
+  int cached_ts;
 };
 typedef struct idx_file_struct* idx_dataset;
 

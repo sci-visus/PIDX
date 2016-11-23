@@ -475,6 +475,26 @@ PIDX_return_code PIDX_save_big_endian(PIDX_file file);
 /// \return
 ///
 PIDX_return_code PIDX_save_little_endian(PIDX_file file);
+
+
+
+///
+/// \brief PIDX_set_cache_time_step
+/// \param file
+/// \param ts
+/// \return
+///
+PIDX_return_code PIDX_set_cache_time_step(PIDX_file file, int ts);
+
+
+
+///
+/// \brief PIDX_get_cache_time_step
+/// \param file
+/// \param ts
+/// \return
+///
+PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts);
 /*
  * Implementation in PIDX_variable.c
  */

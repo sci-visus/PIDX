@@ -400,6 +400,8 @@ static void set_pidx_file(int ts)
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_RAW_IO);
 
+  PIDX_set_cache_time_step(file, 0);
+
   return;
 }
 

@@ -562,6 +562,30 @@ PIDX_return_code PIDX_save_little_endian(PIDX_file file)
 
 
 
+PIDX_return_code PIDX_set_cache_time_step(PIDX_file file, int ts)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  file->idx->cached_ts = ts;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  *ts = file->idx->cached_ts;
+
+  return PIDX_success;
+}
+
+
+
 static PIDX_return_code PIDX_validate(PIDX_file file)
 {
   unsigned long long dims;
