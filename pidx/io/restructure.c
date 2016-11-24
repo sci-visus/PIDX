@@ -1,3 +1,4 @@
+#define ACTUAL_IO 0
 #include "../PIDX_inc.h"
 
  // 0 for patch per process and 1 for multi patch per process
@@ -38,7 +39,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
     time->rst_meta_data_create_end[lgi][cvi] = PIDX_get_time();
 
-
+#if ACTUAL_IO
     if (file->idx->cached_ts == file->idx->current_time_step)
     {
       if (mode == PIDX_WRITE)
@@ -52,6 +53,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
         time->rst_meta_data_io_end[lgi][cvi] = PIDX_get_time();
       }
     }
+#endif
 
 
     time->rst_buffer_start[lgi][cvi] = PIDX_get_time();
@@ -135,13 +137,13 @@ PIDX_return_code restructure(PIDX_io file, int mode)
         time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
       }
 
-
+#if ACTUAL_IO
       time->rst_buff_agg_start[lgi][cvi] = PIDX_get_time();
       // Aggregating in memory restructured buffers into one large buffer
       ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_WRITE);
       if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
-
+#endif
 
       time->rst_buff_agg_free_start[lgi][cvi] = PIDX_get_time();
       // Destroying the restructure buffers (as they are now combined into one large buffer)
@@ -247,6 +249,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
 
   if (rst_case_type == 0)
   {
+#if ACTUAL_IO
     if (mode == PIDX_WRITE)
     {
       if (file->idx_dbg->debug_do_rst == 1)
@@ -269,6 +272,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
         time->rst_buff_agg_io_end[lgi][cvi] = PIDX_get_time();
       }
     }
+#endif
   }
 
   // Case for more than one patch per process

@@ -157,10 +157,9 @@ PIDX_return_code PIDX_rst_aggregate_buf_destroy(PIDX_rst_id rst_id)
 
 
 
-
 PIDX_return_code PIDX_rst_buf_aggregate(PIDX_rst_id rst_id, int mode)
 {
-#if 0
+#if 1
   int v = 0;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
