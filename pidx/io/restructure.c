@@ -1,4 +1,4 @@
-#define ACTUAL_IO 0
+#define ACTUAL_IO 1
 #include "../PIDX_inc.h"
 
  // 0 for patch per process and 1 for multi patch per process
