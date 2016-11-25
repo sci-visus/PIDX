@@ -16,10 +16,19 @@
 # **                                                 **
 # *****************************************************/
 
+IF (PIDX_OPTION_HDF5)
+
+  SET(HDF_LINK_LIBS ${HDF5_LIBRARIES} ${MPI_C_LIBRARIES})
+  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_PATH})
+  ADD_EXECUTABLE(hdf5_write "HDF5/test-HDF5-writer.c")
+  TARGET_LINK_LIBRARIES(hdf5_write ${HDF_LINK_LIBS})
+
+ENDIF()
+
 IF (PIDX_BUILD_TUTORIAL)
 
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
-  SET(TUTORIAL_LINK_LIBS pidx) 
+  SET(TUTORIAL_LINK_LIBS pidx)
   IF (MPI_C_FOUND)
     MESSAGE("Configuring tutorials with MPI support")
     INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
@@ -35,6 +44,7 @@ IF (PIDX_BUILD_TUTORIAL)
   # ////////////////////////////////////////
   # executable
   # ////////////////////////////////////////
+
 
   PIDX_ADD_CEXECUTABLE(multi_buffer_single_variable_read "basic_io/read/multi_buffer_single_variable_read.c")
   TARGET_LINK_LIBRARIES(multi_buffer_single_variable_read ${TUTORIAL_LINK_LIBS})
