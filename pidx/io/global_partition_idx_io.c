@@ -106,6 +106,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       return PIDX_err_file;
     }
 
+#if 0
     // Setup 7: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
@@ -145,6 +146,28 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       finalize_aggregation(file, gi, li);
       time->io_end[gi][li] = PIDX_get_time();
     }
+#else
+    // Setup 7: Setup aggregation buffers
+    for (li = si; li <= ei; li = li + 1)
+    {
+      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_WRITE);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_WRITE);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      finalize_aggregation(file, gi, li);
+    }
+#endif
+
 
     // Step 10: Cleanup for step 6
     if (hz_encode_cleanup(file) != PIDX_success)
@@ -414,7 +437,7 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi)
   hz_to_file_zero =  0;
 
   hz_from_shared = 0;
-  hz_to_shared =  idx->total_partiton_level;
+  hz_to_shared = 0;// idx->total_partiton_level;
 
   hz_from_non_shared = idx->total_partiton_level;
   hz_to_non_shared =  idx->maxh;

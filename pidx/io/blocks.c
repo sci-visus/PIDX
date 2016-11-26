@@ -155,7 +155,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
       int r = rand() % (in + 1); /* generate a random number 'r' */
       if (is_used[r])
       {
-        printf("RANDOM %d %d ", r, in);
+        //printf("RANDOM %d %d ", r, in);
         r = in;
       }
 
