@@ -48,6 +48,7 @@ static int partition_box_size[NUM_DIMS];
 int sub_div[NUM_DIMS];
 static int time_step_count = 1;
 static int variable_count = 1;
+static int bit_string_type = 0;
 static char output_file_template[512];
 static char var_list[512];
 static unsigned char **data;
@@ -129,7 +130,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:c:f:t:v:";
+  char flags[] = "g:l:c:f:t:v:b:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -167,6 +168,11 @@ static void parse_args(int argc, char **argv)
       if (sprintf(var_list, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
       parse_var_list();
+      break;
+
+    case('b'): // bit string type
+      if (sscanf(optarg, "%d", &bit_string_type) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
     default:
@@ -329,7 +335,6 @@ static void create_synthetic_simulation_data()
               dvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
             }
-
           }
         }
   }
@@ -396,6 +401,7 @@ static void set_pidx_file(int ts)
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, 128);
+  PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
   PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);

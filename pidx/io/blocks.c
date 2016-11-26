@@ -41,8 +41,8 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     rpp.y = (int) file->idx->reg_patch_size[1];
     rpp.z = (int) file->idx->reg_patch_size[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
-    //if (file->idx_c->grank == 0)
-    //  printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+    if (file->idx_c->grank == 0)
+      printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
     Point3D prcp;
@@ -52,9 +52,21 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     if (prcp.x == 0)  prcp.x = 1;
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
-    guess_bit_string_Z(process_bs, prcp);
-    //if (file->idx_c->grank == 0)
-    //  printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
+    if (file->idx->bitsequence_type == 0)
+      guess_bit_string_Z(process_bs, prcp);
+    else if (file->idx->bitsequence_type == 1)
+      guess_bit_string_Y(process_bs, prcp);
+    else if (file->idx->bitsequence_type == 2)
+      guess_bit_string_X(process_bs, prcp);
+    else if (file->idx->bitsequence_type == 3)
+      guess_bit_string_XZY(process_bs, prcp);
+    else if (file->idx->bitsequence_type == 4)
+      guess_bit_string_YXZ(process_bs, prcp);
+    else if (file->idx->bitsequence_type == 5)
+      guess_bit_string_ZYX(process_bs, prcp);
+
+    if (file->idx_c->grank == 0)
+      printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 
 
     // Last part of the bitstring
@@ -63,8 +75,8 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     pcp.y = (int) file->idx_d->partition_count[1];
     pcp.z = (int) file->idx_d->partition_count[2];
     guess_bit_string(partition_bs, pcp);
-    //if (file->idx_c->grank == 0)
-    //  printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
+    if (file->idx_c->grank == 0)
+      printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 
     // Concatenating the three components to get the final bit string
     strcpy(temp_bs, process_bs);
@@ -118,6 +130,57 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
   file->idx_d->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
   if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
     file->idx_d->total_partiton_level = file->idx_d->maxh;
+
+  file->idx->random_agg_list = malloc(sizeof(*file->idx->random_agg_list) * file->idx_d->max_file_count * file->idx->variable_count);
+  memset(file->idx->random_agg_list, 0, sizeof(*file->idx->random_agg_list) * file->idx_d->max_file_count * file->idx->variable_count);
+
+  if (file->idx_c->grank == 0)
+  {
+    time_t t;
+    srand((unsigned) time(&t));
+    //srand(0);
+
+    int M = file->idx_d->max_file_count * file->idx->variable_count;
+    int N = file->idx_c->gnprocs - 1;
+
+    unsigned char *is_used;
+    is_used = malloc(sizeof(*is_used) * N);
+    memset(is_used, 0, sizeof(*is_used) * N);
+
+    int in, im;
+    im = 0;
+
+    for (in = N - M; in < N && im < M; ++in)
+    {
+      int r = rand() % (in + 1); /* generate a random number 'r' */
+      if (is_used[r])
+      {
+        printf("RANDOM %d %d ", r, in);
+        r = in;
+      }
+
+      assert(!is_used[r]);
+      file->idx->random_agg_list[im++] = r; /* +1 since your range begins from 1 */
+        is_used[r] = 1;
+    }
+
+    assert(im == M);
+
+    /*
+    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+      file->idx->random_agg_list[i] = rand();
+
+    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+      file->idx->random_agg_list[i] = file->idx->random_agg_list[i] % file->idx_c->gnprocs;
+    */
+
+    printf("\nAggs: ");
+    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+      printf ("%d ", file->idx->random_agg_list[i]);
+    printf("\n");
+  }
+  MPI_Bcast(file->idx->random_agg_list, (file->idx_d->max_file_count * file->idx->variable_count), MPI_INT, 0, file->idx_c->global_comm);
+  file->idx->random_agg_counter = 0;
 
   if (cb[0] == 0 && cb[1] == 0 && cb[2] == 0)
   {

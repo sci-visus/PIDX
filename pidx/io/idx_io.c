@@ -423,6 +423,10 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
   PIDX_time time = file->idx_d->time;
 
   time->group_cleanup_start = PIDX_get_time();
+
+  free(file->idx->random_agg_list);
+  file->idx->random_agg_counter = 0;
+
   ret = destroy_agg_io_buffer(file, svi, evi);
   if (ret != PIDX_success)
   {

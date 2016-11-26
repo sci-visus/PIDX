@@ -11,107 +11,13 @@
 #      or contact: pascucci@sci.utah.edu         
 ###################################
 
-MPICC = mpicc -Wall
-MPI_LDFLAGS_PIDX = -L. -lpidx -lm -I ../pidx
+MPICC = mpicc
+MPI_LDFLAGS_PIDX = -L. -lhdf5 -lm -I.
 
-all: PIDX_comm.o PIDX_blocks.o PIDX_data_layout.o PIDX_data_types.o PIDX_global_agg.o PIDX_local_agg.o PIDX_agg.o PIDX_block_restructure.o PIDX_cmp.o PIDX_file_io.o PIDX_header_io.o PIDX_hz_encode.o PIDX_rst.o PIDX_hybrid_idx_io.o PIDX_global_idx_io.o PIDX_multi_patch_rst.o PIDX_idx_io.o PIDX_multi_patch_idx_io.o PIDX_partition_merge_idx_io.o PIDX_partitioned_idx_io.o PIDX_raw_io.o PIDX_io.o PIDX_error_codes.o PIDX_file_access_modes.o PIDX_file_name.o PIDX_point.o PIDX_utils.o PIDX.o libpidx.a checkpoint_simple idx-verify global_idx_merge
+all: test-HDF5-writer
 
-PIDX_comm.o: ../pidx/comm/PIDX_comm.c ../pidx/comm/PIDX_comm.h
-	$(MPICC)  $< -c -o $@
-
-PIDX_blocks.o: ../pidx/data_handle/PIDX_blocks.c ../pidx/data_handle/PIDX_blocks.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_data_layout.o: ../pidx/data_handle/PIDX_data_layout.c ../pidx/data_handle/PIDX_data_layout.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_data_types.o: ../pidx/data_handle/PIDX_data_types.c ../pidx/data_handle/PIDX_data_types.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_agg.o: ../pidx/core/PIDX_agg/PIDX_agg.c ../pidx/core/PIDX_agg/PIDX_agg.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_global_agg.o: ../pidx/core/PIDX_agg/PIDX_global_agg/PIDX_global_agg.c ../pidx/core/PIDX_agg/PIDX_global_agg/PIDX_global_agg.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_local_agg.o: ../pidx/core/PIDX_agg/PIDX_local_agg/PIDX_local_agg.c ../pidx/core/PIDX_agg/PIDX_local_agg/PIDX_local_agg.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_block_restructure.o: ../pidx/core/PIDX_block_rst/PIDX_block_restructure.c ../pidx/core/PIDX_block_rst/PIDX_block_restructure.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_cmp.o: ../pidx/core/PIDX_cmp/PIDX_compression.c ../pidx/core/PIDX_cmp/PIDX_compression.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_file_io.o: ../pidx/core/PIDX_file_io/PIDX_file_io.c ../pidx/core/PIDX_file_io/PIDX_file_io.h
-	$(MPICC)  $< -c -o $@
-
-PIDX_header_io.o: ../pidx/core/PIDX_header/PIDX_header_io.c ../pidx/core/PIDX_header/PIDX_header_io.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_hz_encode.o: ../pidx/core/PIDX_hz/PIDX_hz_encode.c ../pidx/core/PIDX_hz/PIDX_hz_encode.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_rst.o: ../pidx/core/PIDX_rst/PIDX_rst.c ../pidx/core/PIDX_rst/PIDX_rst.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_multi_patch_rst.o: ../pidx/core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.c ../pidx/core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_idx_io.o: ../pidx/io/PIDX_idx_io/PIDX_idx_io.c ../pidx/io/PIDX_idx_io/PIDX_idx_io.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_global_idx_io.o: ../pidx/io/PIDX_global_idx_io/PIDX_global_idx_io.c ../pidx/io/PIDX_global_idx_io/PIDX_global_idx_io.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_hybrid_idx_io.o: ../pidx/io/PIDX_hybrid_idx_io/PIDX_hybrid_idx_io.c ../pidx/io/PIDX_hybrid_idx_io/PIDX_hybrid_idx_io.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_multi_patch_idx_io.o: ../pidx/io/PIDX_multi_patch_idx_io/PIDX_multi_patch_idx_io.c ../pidx/io/PIDX_multi_patch_idx_io/PIDX_multi_patch_idx_io.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_partition_merge_idx_io.o: ../pidx/io/PIDX_partition_merge_idx_io/PIDX_partition_merge_idx_io.c ../pidx/io/PIDX_partition_merge_idx_io/PIDX_partition_merge_idx_io.h
-	$(MPICC)  $< -c -o $@	
-	
-PIDX_partitioned_idx_io.o: ../pidx/io/PIDX_partitioned_idx_io/PIDX_partitioned_idx_io.c ../pidx/io/PIDX_partitioned_idx_io/PIDX_partitioned_idx_io.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_raw_io.o: ../pidx/io/PIDX_raw_io/PIDX_raw_io.c ../pidx/io/PIDX_raw_io/PIDX_raw_io.h
-	$(MPICC)  $< -c -o $@	
-
-PIDX_io.o: ../pidx/io/PIDX_io.c ../pidx/io/PIDX_io.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_error_codes.o: ../pidx/utils/PIDX_error_codes.c ../pidx/utils/PIDX_error_codes.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_file_access_modes.o: ../pidx/utils/PIDX_file_access_modes.c ../pidx/utils/PIDX_file_access_modes.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_file_name.o: ../pidx/utils/PIDX_file_name.c ../pidx/utils/PIDX_file_name.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX_point.o: ../pidx/utils/PIDX_point.c ../pidx/utils/PIDX_point.h
-	$(MPICC)  $< -c -o $@
-
-PIDX_utils.o: ../pidx/utils/PIDX_utils.c ../pidx/utils/PIDX_utils.h
-	$(MPICC)  $< -c -o $@
-	
-PIDX.o: ../pidx/PIDX.c ../pidx/PIDX.h
-	$(MPICC)  $< -c -o $@
-	
-libpidx.a: ../pidx/PIDX.c ../pidx/PIDX.h
-	ar rcs libpidx.a *.o
-	rm *.o
-
-checkpoint_simple: ../tutorial/1_PIDX_Basics_Dumps/checkpoint_simple.c
+test-HDF5-writer: ../tutorial/HDF5/test-HDF5-writer.c
 	$(MPICC) $< -o $@ $(MPI_LDFLAGS_PIDX)
 	
-idx-verify: ../profile/idx-verify.c
-	cc   ../profile/idx-verify.c   -o idx-verify -lm
-
-global_idx_merge: ../processing/global_idx_merge.c
-	cc   ../processing/global_idx_merge.c   -o global_idx_merge -lm
-
 clean::
-	rm -f *.o libpidx* checkpoint_simple idx-verify global_idx_merge
+	rm -f *.o test-HDF5-writer

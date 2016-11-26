@@ -388,8 +388,10 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   PIDX_set_variable_count(file, variable_count);
 
-  PIDX_debug_rst(file, 1);
-  PIDX_debug_hz(file, 1);
+  //PIDX_debug_rst(file, 1);
+  //PIDX_debug_hz(file, 1);
+
+  PIDX_set_block_count(file, 128);
 
   // Selecting idx I/O mode
   PIDX_set_io_mode(file, PIDX_IDX_IO);

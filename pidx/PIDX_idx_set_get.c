@@ -585,6 +585,29 @@ PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts)
 }
 
 
+PIDX_return_code PIDX_set_bit_string_type(PIDX_file file, int bs_type)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  file->idx->bitsequence_type = bs_type;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_bit_string_type(PIDX_file file, int* bs_type)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  *bs_type = file->idx->bitsequence_type;
+
+  return PIDX_success;
+}
+
+
 
 static PIDX_return_code PIDX_validate(PIDX_file file)
 {

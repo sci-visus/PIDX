@@ -3,6 +3,7 @@
 
 #include "PIDX_define.h"
 
+#include <time.h>
 #include <byteswap.h>
 #include <string.h>
 #include <stdlib.h>

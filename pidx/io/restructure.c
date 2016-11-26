@@ -40,17 +40,20 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     time->rst_meta_data_create_end[lgi][cvi] = PIDX_get_time();
 
 #if ACTUAL_IO
-    if (file->idx->cached_ts == file->idx->current_time_step)
+    if (file->idx->io_type == PIDX_RAW_IO)
     {
-      if (mode == PIDX_WRITE)
+      if (file->idx->cached_ts == file->idx->current_time_step)
       {
-        time->rst_meta_data_io_start[lgi][cvi] = PIDX_get_time();
-        // Saving the metadata info needed for reading back the data.
-        // Especially when number of cores is different from number of cores
-        // used to create the dataset
-        ret = PIDX_rst_meta_data_write(file->rst_id);
-        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-        time->rst_meta_data_io_end[lgi][cvi] = PIDX_get_time();
+        if (mode == PIDX_WRITE)
+        {
+          time->rst_meta_data_io_start[lgi][cvi] = PIDX_get_time();
+          // Saving the metadata info needed for reading back the data.
+          // Especially when number of cores is different from number of cores
+          // used to create the dataset
+          ret = PIDX_rst_meta_data_write(file->rst_id);
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          time->rst_meta_data_io_end[lgi][cvi] = PIDX_get_time();
+        }
       }
     }
 #endif

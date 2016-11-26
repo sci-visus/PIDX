@@ -495,6 +495,26 @@ PIDX_return_code PIDX_set_cache_time_step(PIDX_file file, int ts);
 /// \return
 ///
 PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts);
+
+
+
+///
+/// \brief PIDX_set_bit_string_type
+/// \param file
+/// \param bs_type
+/// \return
+///
+PIDX_return_code PIDX_set_bit_string_type(PIDX_file file, int bs_type);
+
+
+
+///
+/// \brief PIDX_get_bit_string_type
+/// \param file
+/// \param bs_type
+/// \return
+///
+PIDX_return_code PIDX_get_bit_string_type(PIDX_file file, int* bs_type);
 /*
  * Implementation in PIDX_variable.c
  */

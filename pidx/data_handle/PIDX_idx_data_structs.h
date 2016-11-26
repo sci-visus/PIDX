@@ -138,6 +138,7 @@ struct PIDX_variable_group_struct
   //extents of meta-data
   int *rank_buffer;
 
+
   // Block level layout
   PIDX_block_layout f0_block_layout;
   PIDX_block_layout* f0_block_layout_by_level;
@@ -195,6 +196,7 @@ struct idx_file_struct
   unsigned long long bounds[PIDX_MAX_DIMENSIONS];
   unsigned long long box_bounds[PIDX_MAX_DIMENSIONS];
   double transform[16];
+  int bitsequence_type;
   char bitSequence[512];
   char bitPattern[512];
   
@@ -220,6 +222,9 @@ struct idx_file_struct
   /// 1 for flipping endian
   /// 0 for big endian
   int flip_endian;
+
+  int random_agg_counter;
+  int *random_agg_list;
 
   int cached_ts;
 };

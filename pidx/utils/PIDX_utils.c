@@ -313,7 +313,7 @@ void guess_bit_string_ZYX(char* bit_string, const Point3D dims)
 }
 
 
-void guess_bit_string_YZX(char* bit_string, const Point3D dims)
+void guess_bit_string_YXZ(char* bit_string, const Point3D dims)
 {
   Point3D power_2_dims;
   power_2_dims.x = pow_greater_equal(2, dims.x);
@@ -330,15 +330,15 @@ void guess_bit_string_YZX(char* bit_string, const Point3D dims)
       power_2_dims.y /= 2;
       buffer[size++] = '1';
     }
-    else if (max == power_2_dims.z)
-    {
-      power_2_dims.z /= 2;
-      buffer[size++] = '2';
-    }
-    else
+    else if (max == power_2_dims.x)
     {
       power_2_dims.x /= 2;
       buffer[size++] = '0';
+    }
+    else
+    {
+      power_2_dims.z /= 2;
+      buffer[size++] = '2';
     }
   }
 
@@ -354,7 +354,7 @@ void guess_bit_string_YZX(char* bit_string, const Point3D dims)
 }
 
 
-void guess_bit_string_XYZ(char* bit_string, const Point3D dims)
+void guess_bit_string_XZY(char* bit_string, const Point3D dims)
 {
   Point3D power_2_dims;
   power_2_dims.x = pow_greater_equal(2, dims.x);
@@ -371,15 +371,15 @@ void guess_bit_string_XYZ(char* bit_string, const Point3D dims)
       power_2_dims.x /= 2;
       buffer[size++] = '0';
     }
-    else if (max == power_2_dims.y)
-    {
-      power_2_dims.y /= 2;
-      buffer[size++] = '1';
-    }
-    else
+    else if (max == power_2_dims.z)
     {
       power_2_dims.z /= 2;
       buffer[size++] = '2';
+    }
+    else
+    {
+      power_2_dims.y /= 2;
+      buffer[size++] = '1';
     }
   }
 

@@ -215,7 +215,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       double group_block_layout = time->layout_end - time->layout_start;
       double header_io = time->header_io_end - time->header_io_start;
       double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
-      printf("\nINIT      :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n\n", group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
+      printf("\nINIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n\n", group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
       double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0;
       double hz_init = 0, hz_meta_data = 0, hz_buffer = 0, hz = 0, hz_buffer_free = 0, hz_cleanup = 0, hz_total = 0, hz_all = 0;
@@ -267,10 +267,10 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           compression = time->compression_end[gi][si] - time->compression_start[gi][si];
           compression_total = compression_init + compression;
           compression_all = compression_all + compression_total;
-          printf("RST       :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
-          printf("HZ      :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, hz_init, hz_meta_data, hz_buffer, hz, hz_buffer_free, hz_cleanup, hz_total);
-          printf("CHUNK     :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, chunk_init, chunk_meta, chunk_buffer, chunk, chunk_buffer_free, chunk_cleanup, chunk_total);
-          printf("CMP       :[%d] [%.4f + %.4f] = %.4f\n", si, compression_init, compression, compression_total);
+          printf("RST           :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
+          printf("HZ            :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, hz_init, hz_meta_data, hz_buffer, hz, hz_buffer_free, hz_cleanup, hz_total);
+          printf("CHUNK         :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, chunk_init, chunk_meta, chunk_buffer, chunk, chunk_buffer_free, chunk_cleanup, chunk_total);
+          printf("CMP           :[%d] [%.4f + %.4f] = %.4f\n", si, compression_init, compression, compression_total);
 
           double hz_io = 0;
           for (i = file->idx->variable_grp[gi]->agg_l_shared; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
@@ -320,7 +320,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
         io = time->io_end[gi][si] - time->io_start[gi][si];
         io_all = io_all + io;
-        printf("IO [%d]    :[%d] %.4f\n", file->idx->variable_grp[gi]->variable_count, si, io);
+        printf("IO [%d]        :[%d] %.4f\n", file->idx->variable_grp[gi]->variable_count, si, io);
       }
 
       grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
