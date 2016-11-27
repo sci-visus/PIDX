@@ -208,9 +208,9 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
 
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
 
-        var_offset = 0;
+        //var_offset = 0;
         int trank = 0;
-        int interval = (id->idx_c->lnprocs/ (lbl->efc * ab->agg_f /* id->idx->variable_count*/));
+        int interval = (id->idx_c->lnprocs/ (lbl->efc * ab->agg_f * id->idx->variable_count));
 
         if (file_status == 1)
           trank = var_grp->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
