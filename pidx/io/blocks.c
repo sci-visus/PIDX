@@ -170,16 +170,18 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     assert(im == M);
     */
 
+    /*
     int interval = ((N + 1) / M);
     for (i = 0; i < M; i++)
     {
       file->idx->random_agg_list[i] = i * interval;
     }
+    */
 
 
-    /*
-    int interval = (N / M) * 2;
-    int constant = (N / M);
+    //
+    int interval = ((N + 1) / M) * 2;
+    int constant = ((N + 1) / M);
     for (i = 0; i < M/2; i++)
     {
       file->idx->random_agg_list[i] = i * interval;
@@ -188,7 +190,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     {
       file->idx->random_agg_list[i] = (i - M/2) * interval + constant;
     }
-    */
+    //
     /*
     int interval = (N / M);
     for (i = 0; i < M; i++)
