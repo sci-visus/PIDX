@@ -402,7 +402,7 @@ static void set_pidx_file(int ts)
 
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
-  PIDX_set_block_count(file, 128);
+  //PIDX_set_block_count(file, 128);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
