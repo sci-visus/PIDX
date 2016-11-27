@@ -168,13 +168,13 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     //
 
     assert(im == M);
-    //
+    /*
     int interval = ((N + 1) / M);
     for (i = 0; i < 2; i++)
     {
       file->idx->random_agg_list[i] = i * interval;
     }
-    //
+    */
 
     /*
     int interval = (N / M) * 2;
