@@ -138,11 +138,12 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
   {
     time_t t;
     srand((unsigned) time(&t));
-    //srand(0);
+
 
     int M = file->idx_d->max_file_count * file->idx->variable_count;
-    int N = file->idx_c->gnprocs - 1;
+    int N = file->idx_c->gnprocs;
 
+    /*
     unsigned char *is_used;
     is_used = malloc(sizeof(*is_used) * N);
     memset(is_used, 0, sizeof(*is_used) * N);
@@ -152,7 +153,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
     for (in = N - M; in < N && im < M; ++in)
     {
-      int r = rand() % (in + 1); /* generate a random number 'r' */
+      int r = rand() % (in + 1);
       if (is_used[r])
       {
         //printf("RANDOM %d %d ", r, in);
@@ -160,11 +161,17 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
       }
 
       assert(!is_used[r]);
-      file->idx->random_agg_list[im++] = r; /* +1 since your range begins from 1 */
+      file->idx->random_agg_list[im++] = r;
         is_used[r] = 1;
     }
 
     assert(im == M);
+    */
+    int interval = N / M;
+    for (i = 0; i < M; i++)
+    {
+      file->idx->random_agg_list[i] = i * interval;
+    }
 
     /*
     for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
