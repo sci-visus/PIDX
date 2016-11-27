@@ -106,7 +106,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       return PIDX_err_file;
     }
 
-#if 0
+#if 1
     // Setup 7: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
