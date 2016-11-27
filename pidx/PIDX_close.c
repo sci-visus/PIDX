@@ -302,7 +302,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           agg_total = agg_init + agg_meta + agg_buf + agg + agg_meta_cleanup;
           agg_all = agg_all + agg_total;
 
-          printf("[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta + agg_buf, agg,  agg_meta_cleanup, agg_total);
+          printf("[S] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
 
 
           //printf("[AGG S %d %d]   :[%d] [%d] %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total, agg_all);
@@ -318,7 +318,8 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           agg_total = agg_init + agg_meta + agg_buf + agg + agg_meta_cleanup;
           agg_all = agg_all + agg_total;
 
-          printf("[%d %d] Agg Buf Time + Agg time + AGG I/O time + Per-Process I/O time = %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta + agg_buf, agg,  agg_meta_cleanup, agg_total);
+          printf("[N] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
+          //printf("[N] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta + agg_buf, agg,  agg_meta_cleanup, agg_total);
 
           //printf("[AGG N %d %d]   :[%d] [%d] %.4f + %.4f + %.4f + %.4f + %.4f = %.4f [%.4f]\n", file->idx->variable_grp[gi]->nshared_start_layout_index, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total, agg_all);
         }
