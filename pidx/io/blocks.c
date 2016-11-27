@@ -143,7 +143,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     int M = file->idx_d->max_file_count * file->idx->variable_count;
     int N = file->idx_c->gnprocs;
 
-    /*
+    //
     unsigned char *is_used;
     is_used = malloc(sizeof(*is_used) * N);
     memset(is_used, 0, sizeof(*is_used) * N);
@@ -166,7 +166,8 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     }
 
     assert(im == M);
-    */
+    //
+    /*
     int interval = (N / M) * 2;
     int constant = (N / M);
     for (i = 0; i < M/2; i++)
@@ -177,6 +178,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     {
       file->idx->random_agg_list[i] = (i - M/2) * interval + constant;
     }
+    */
 
     /*
     for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
