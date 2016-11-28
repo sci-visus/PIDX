@@ -49,6 +49,7 @@ int sub_div[NUM_DIMS];
 static int time_step_count = 1;
 static int variable_count = 1;
 static int bit_string_type = 0;
+static int blocks_per_file = 256;
 static char output_file_template[512];
 static char var_list[512];
 static unsigned char **data;
@@ -130,7 +131,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:c:f:t:v:b:";
+  char flags[] = "g:l:c:f:t:v:b:a:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -172,6 +173,11 @@ static void parse_args(int argc, char **argv)
 
     case('b'): // bit string type
       if (sscanf(optarg, "%d", &bit_string_type) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('a'): // blocks per file
+      if (sscanf(optarg, "%d", &blocks_per_file) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -398,11 +404,11 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   PIDX_set_variable_count(file, variable_count);
 
-  PIDX_debug_disable_agg(file);
+  //PIDX_debug_disable_agg(file);
 
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
-  //PIDX_set_block_count(file, 128);
+  PIDX_set_block_count(file, blocks_per_file);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode

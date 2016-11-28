@@ -135,14 +135,14 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
   memset(file->idx->random_agg_list, 0, sizeof(*file->idx->random_agg_list) * file->idx_d->max_file_count * file->idx->variable_count);
 
 
-  if (file->idx_c->grank == 0)
+  if (file->idx_c->lrank == 0)
   {
     //time_t t;
     srand(/*(unsigned) time(&t)*/0);
 
 
     int M = file->idx_d->max_file_count * file->idx->variable_count;
-    int N = file->idx_c->gnprocs - 1;
+    int N = file->idx_c->lnprocs - 1;
 
     /*
     unsigned char *is_used;
@@ -170,16 +170,16 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     assert(im == M);
     */
 
-    /*
+
     int interval = ((N + 1) / M);
     for (i = 0; i < M; i++)
     {
       file->idx->random_agg_list[i] = i * interval;
     }
-    */
 
 
-    //
+
+    /*
     int interval = ((N + 1) / M) * 2;
     int constant = ((N + 1) / M);
     for (i = 0; i < M/2; i++)
@@ -190,7 +190,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     {
       file->idx->random_agg_list[i] = (i - M/2) * interval + constant;
     }
-    //
+    */
     /*
     int interval = (N / M);
     for (i = 0; i < M; i++)
@@ -212,7 +212,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
       printf ("%d ", file->idx->random_agg_list[i]);
     printf("\n");
   }
-  MPI_Bcast(file->idx->random_agg_list, (file->idx_d->max_file_count * file->idx->variable_count), MPI_INT, 0, file->idx_c->global_comm);
+  MPI_Bcast(file->idx->random_agg_list, (file->idx_d->max_file_count * file->idx->variable_count), MPI_INT, 0, file->idx_c->local_comm);
   file->idx->random_agg_counter = 0;
 
   if (cb[0] == 0 && cb[1] == 0 && cb[2] == 0)
