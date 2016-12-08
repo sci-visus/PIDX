@@ -16,6 +16,13 @@
  **                                                 **
  *****************************************************/
 
+/*
+ * Local partition read write
+ * All idx mode read and write
+ * group examples
+ * documentation
+ */
+
 /**
  * \file PIDX.h
  *

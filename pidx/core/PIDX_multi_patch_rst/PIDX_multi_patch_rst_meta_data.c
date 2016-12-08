@@ -49,8 +49,6 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 ///
 static int contains_patch(Ndim_patch reg_patch, Ndim_patch* patches, int count);
 
-static int maximum_neighbor_count = 256;
-
 
 PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id rst_id)
 {
@@ -261,11 +259,11 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
 
               Ndim_multi_patch_group patch_grp = rst_id->reg_multi_patch_grp[reg_patch_count];
 
-              patch_grp->source_patch = (PIDX_source_patch_index*)malloc(sizeof(PIDX_source_patch_index) * maximum_neighbor_count);
-              patch_grp->patch = malloc(sizeof(*patch_grp->patch) * maximum_neighbor_count);
+              patch_grp->source_patch = (PIDX_source_patch_index*)malloc(sizeof(PIDX_source_patch_index) * rst_id->maximum_neighbor_count);
+              patch_grp->patch = malloc(sizeof(*patch_grp->patch) * rst_id->maximum_neighbor_count);
               patch_grp->reg_patch = malloc(sizeof(*patch_grp->reg_patch));
-              memset(patch_grp->source_patch, 0, sizeof(PIDX_source_patch_index) * maximum_neighbor_count);
-              memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * maximum_neighbor_count);
+              memset(patch_grp->source_patch, 0, sizeof(PIDX_source_patch_index) * rst_id->maximum_neighbor_count);
+              memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * rst_id->maximum_neighbor_count);
               memset(patch_grp->reg_patch, 0, sizeof(*patch_grp->reg_patch));
 
               patch_count = 0;
@@ -337,11 +335,11 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                     patch_grp->source_patch[patch_count].index = pc;
                     patch_count++;
 
-                    if (patch_count >= maximum_neighbor_count)
+                    if (patch_count >= rst_id->maximum_neighbor_count)
                     {
-                      maximum_neighbor_count = maximum_neighbor_count * 2;
+                      rst_id->maximum_neighbor_count = rst_id->maximum_neighbor_count * 2;
 
-                      PIDX_source_patch_index *temp_buffer2 = realloc(patch_grp->source_patch, maximum_neighbor_count * sizeof(PIDX_source_patch_index));
+                      PIDX_source_patch_index *temp_buffer2 = realloc(patch_grp->source_patch, rst_id->maximum_neighbor_count * sizeof(PIDX_source_patch_index));
                       if (temp_buffer2 == NULL)
                       {
                         fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
@@ -350,7 +348,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                       else
                         patch_grp->source_patch = temp_buffer2;
 
-                      Ndim_patch *temp_buffer3 = realloc(patch_grp->patch, maximum_neighbor_count * sizeof(*patch_grp->patch));
+                      Ndim_patch *temp_buffer3 = realloc(patch_grp->patch, rst_id->maximum_neighbor_count * sizeof(*patch_grp->patch));
                       if (temp_buffer3 == NULL)
                       {
                         fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
@@ -360,7 +358,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                         patch_grp->patch = temp_buffer3;
 
                       if (rst_id->idx_c->grank == 0)
-                        printf("[ERROR] maximum_neighbor_count needs to be increased\n");
+                        printf("[ERROR] rst_id->maximum_neighbor_count needs to be increased\n");
                     }
 
                     patch_grp->count = patch_count;

@@ -23,9 +23,6 @@
 #include "sync_io.h"
 
 
-static uint32_t *cached_header_copy;
-static int enable_caching = 0;
-
 //#define PIDX_DUMP_IO 1
 
 #ifdef PIDX_DUMP_IO
@@ -54,13 +51,6 @@ PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived
 }
 
 
-int PIDX_file_io_cached_data(uint32_t* cached_header)
-{
-  cached_header_copy = cached_header;
-  enable_caching = 1;
-
-  return PIDX_success;
-}
 
 
 int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE)

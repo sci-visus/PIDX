@@ -31,6 +31,9 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
     ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
+    if (file->idx_c->grank == 0)
+      printf("Inside rst Loop\n");
+
     // Step 1: Setup restructuring buffers
     ret = restructure_setup(file, gi, si, ei, PIDX_WRITE);
     if (ret != PIDX_success)
@@ -38,6 +41,9 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+
+    if (file->idx_c->grank == 0)
+      printf("restructure_setup end\n");
 
     // Step 2: Perform data restructuring
     ret = restructure(file, PIDX_WRITE);
@@ -47,6 +53,9 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
+    if (file->idx_c->grank == 0)
+      printf("restructure end\n");
+
     // Step 3: Write out restructured data
     ret = restructure_io(file, PIDX_WRITE);
     if (ret != PIDX_success)
@@ -55,6 +64,9 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
+    if (file->idx_c->grank == 0)
+      printf("restructure_io end\n");
+
     // Step 4: Cleanup all buffers and ids
     ret = restructure_cleanup(file);
     if (ret != PIDX_success)
@@ -62,6 +74,9 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+
+    if (file->idx_c->grank == 0)
+      printf("restructure_cleanup end\n");
   }
 
   return PIDX_success;

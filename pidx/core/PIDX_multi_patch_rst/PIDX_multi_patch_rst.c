@@ -45,6 +45,8 @@ PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx
   multi_patch_rst_id->first_index = var_start_index;
   multi_patch_rst_id->last_index = var_end_index;
 
+  multi_patch_rst_id->maximum_neighbor_count = 256;
+
   return (multi_patch_rst_id);
 }
 

@@ -59,6 +59,8 @@ struct PIDX_multi_patch_rst_struct
   unsigned long long sim_max_patch_group_count;
   unsigned long long* sim_multi_patch_r_count;
   unsigned long long* sim_multi_patch_r_offset;
+
+  int maximum_neighbor_count;
 };
 typedef struct PIDX_multi_patch_rst_struct* PIDX_multi_patch_rst_id;
 
