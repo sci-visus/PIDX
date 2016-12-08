@@ -190,6 +190,9 @@ PIDX_return_code restructure(PIDX_io file, int mode)
   {
     if (mode == PIDX_WRITE)
     {
+      if (file->idx_c->grank == 0)
+        printf("Multi patch case\n");
+
       if (file->idx_dbg->debug_do_rst == 1)
       {
         time->rst_write_read_start[lgi][cvi] = PIDX_get_time();
