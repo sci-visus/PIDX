@@ -140,12 +140,18 @@ PIDX_return_code restructure(PIDX_io file, int mode)
         time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
       }
 
+      if (file->idx_c->grank == 0)
+        printf("Finished restructuring\n");
+
 #if ACTUAL_IO
       time->rst_buff_agg_start[lgi][cvi] = PIDX_get_time();
       // Aggregating in memory restructured buffers into one large buffer
       ret = PIDX_rst_buf_aggregate(file->rst_id, PIDX_WRITE);
       if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
+
+      if (file->idx_c->grank == 0)
+        printf("Restructuring buffer aggregate\n");
 #endif
 
       time->rst_buff_agg_free_start[lgi][cvi] = PIDX_get_time();
@@ -153,6 +159,9 @@ PIDX_return_code restructure(PIDX_io file, int mode)
       ret = PIDX_rst_buf_destroy(file->rst_id);
       if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_free_end[lgi][cvi] = PIDX_get_time();
+
+      if (file->idx_c->grank == 0)
+        printf("Restructuring buffer destroy\n");
     }
     else if (mode == PIDX_READ)
     {
