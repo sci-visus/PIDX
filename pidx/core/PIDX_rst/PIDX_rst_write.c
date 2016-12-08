@@ -339,8 +339,10 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
 
                     if (rst_id->idx_d->dump_rst_info == 1)
                     {
+                      printf("X %d\n", rst_id->idx_d->dump_rst_info);
                       fprintf(rst_id->idx_d->rst_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
                       fflush(rst_id->idx_d->rst_dump_fp);
+                      printf("Y\n");
                     }
                     printf("C\n");
                   }
