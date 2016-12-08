@@ -67,6 +67,10 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
 
+  (*file)->idx_d->dump_rst_info = 0;
+  (*file)->idx_d->dump_agg_info = 0;
+  (*file)->idx_d->dump_io_info = 0;
+
   (*file)->idx_d->color = 0;
   (*file)->idx->io_type = PIDX_IDX_IO;
   (*file)->idx_d->data_core_count = -1;
