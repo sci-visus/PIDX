@@ -47,12 +47,17 @@ PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx
 
   multi_patch_rst_id->maximum_neighbor_count = 256;
 
+  multi_patch_rst_id->reg_multi_patch_grp_count = 0;
+  multi_patch_rst_id->sim_max_patch_group_count = 0;
+
   return (multi_patch_rst_id);
 }
 
 
 PIDX_return_code PIDX_multi_patch_rst_finalize(PIDX_multi_patch_rst_id multi_patch_rst_id)
 {
+  multi_patch_rst_id->reg_multi_patch_grp_count = 0;
+  multi_patch_rst_id->sim_max_patch_group_count = 0;
   free(multi_patch_rst_id);
   multi_patch_rst_id = 0;
 
