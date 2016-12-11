@@ -140,11 +140,11 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                       memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
 
 
-                    if (rst_id->idx_derived->dump_rst_info == 1)
-                    {
-                      fprintf(rst_id->idx_derived->rst_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
-                      fflush(rst_id->idx_derived->rst_dump_fp);
-                    }
+                    //if (rst_id->idx_derived->dump_rst_info == 1)
+                    //{
+                    //  fprintf(rst_id->idx_derived->rst_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
+                    //  fflush(rst_id->idx_derived->rst_dump_fp);
+                    //}
 
                   }
                   count1++;
@@ -212,6 +212,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
               unsigned long long *sim_patch_count  = var_grp->variable[start_index]->sim_patch[p_index]->size;
               unsigned long long *sim_patch_offset = var_grp->variable[start_index]->sim_patch[p_index]->offset;
 
+              int total_send_count = 0;
               for (k1 = reg_patch_offset[2]; k1 < reg_patch_offset[2] + reg_patch_count[2]; k1++)
                 for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
                   for (i1 = reg_patch_offset[0]; i1 < reg_patch_offset[0] + reg_patch_count[0]; i1 = i1 + reg_patch_count[0])
@@ -221,6 +222,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                             (i1 - sim_patch_offset[0]);
                     send_offset[count1] = index * var->vps * var->bpv/8;
                     send_count[count1] = reg_patch_count[0] * var->vps * var->bpv/8;
+                    total_send_count = total_send_count + send_count[count1];
 
                     count1++;
                   }
@@ -240,7 +242,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
 
               if (rst_id->idx_derived->dump_rst_info == 1)
               {
-                fprintf(rst_id->idx_derived->rst_dump_fp, "[N SND] [%lld] Source offset 0 Source size 1 My rank %d Dest rank %d\n", v, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
+                fprintf(rst_id->idx_derived->rst_dump_fp, "[N SND] [%lld] Source offset 0 Source size %d My rank %d Dest rank %d\n", v, total_send_count, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
                 fflush(rst_id->idx_derived->rst_dump_fp);
               }
 
