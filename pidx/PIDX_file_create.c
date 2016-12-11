@@ -75,6 +75,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx->io_type = PIDX_IDX_IO;
   (*file)->idx_d->data_core_count = -1;
 
+  (*file)->idx_d->simulate_rst = 0;
+  (*file)->idx_d->simulate_rst_io = 0;
+
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
 

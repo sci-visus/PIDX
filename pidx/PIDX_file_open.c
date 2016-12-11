@@ -58,6 +58,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
 
+  (*file)->idx_d->simulate_rst = 0;
+  (*file)->idx_d->simulate_rst_io = 0;
+
   (*file)->idx_d->raw_io_pipe_length = 0;
 
   (*file)->idx_d->color = 0;

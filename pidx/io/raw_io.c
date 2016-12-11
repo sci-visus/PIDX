@@ -180,7 +180,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   }
   time->set_reg_box_end = MPI_Wtime();
 
-  if (mode == PIDX_WRITE)
+  if (mode == PIDX_WRITE && file->idx_d->simulate_rst_io == 0)
   {
     time->header_io_start = PIDX_get_time();
     // Creates the file heirarchy and writes the header info for all binary files

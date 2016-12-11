@@ -258,7 +258,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
 #if ACTUAL_IO
     if (mode == PIDX_WRITE)
     {
-      if (file->idx_dbg->debug_do_rst == 1)
+      if (file->idx_dbg->debug_do_rst == 1 && file->idx_d->simulate_rst_io == 0)
       {
         time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
         // Write out restructured data
@@ -286,7 +286,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
   {
     if (mode == PIDX_WRITE)
     {
-      if (file->idx_dbg->debug_do_rst == 1)
+      if (file->idx_dbg->debug_do_rst == 1 && file->idx_d->simulate_rst_io == 0)
       {
         time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
         // Write out restructured data

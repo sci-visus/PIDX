@@ -105,7 +105,7 @@ int main(int argc, char **argv)
   create_pidx_var_point_and_access();
   for (ts = 0; ts < time_step_count; ts++)
   {
-    set_pidx_file(ts);
+    set_pidx_file(ts + 5);
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
     PIDX_close(file);
@@ -294,17 +294,17 @@ static void calculate_per_process_offsets()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
-  var_count = malloc(sizeof(int**) * variable_count);
-  var_offset = malloc(sizeof(int**) * variable_count);
+  var_count = malloc(sizeof(unsigned long long**) * variable_count);
+  var_offset = malloc(sizeof(unsigned long long**) * variable_count);
 
   for(var = 0; var < variable_count; var++)
   {
-    var_count[var] = malloc(sizeof(int*) * patch_count);
-    var_offset[var] = malloc(sizeof(int*) * patch_count);
+    var_count[var] = malloc(sizeof(unsigned long long*) * patch_count);
+    var_offset[var] = malloc(sizeof(unsigned long long*) * patch_count);
     for(i = 0; i < patch_count ; i++)
     {
-      var_count[var][i] = malloc(sizeof(int) * 3);
-      var_offset[var][i] = malloc(sizeof(int) * 3);
+      var_count[var][i] = malloc(sizeof(unsigned long long) * 3);
+      var_offset[var][i] = malloc(sizeof(unsigned long long) * 3);
     }
 
     // One patch for this variable
@@ -635,6 +635,10 @@ static void set_pidx_file(int ts)
 
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_RAW_IO);
+
+  //PIDX_dump_rst_info(file, PIDX_RST_DUMP_INFO);
+  //PIDX_dump_rst_info(file, PIDX_SIMULATE_RST_AND_DUMP_INFO);
+  //PIDX_dump_rst_info(file, PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO);
 
   return;
 }

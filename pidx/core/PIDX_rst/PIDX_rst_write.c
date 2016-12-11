@@ -333,7 +333,9 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
                     PIDX_variable var = var_grp->variable[v];
                     send_o = index * var->vps;
                     send_c = reg_patch_count[0] * var->vps;
-                    memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[0]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
+
+                    if (rst_id->idx_d->simulate_rst == 0)
+                      memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[0]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
 
                     if (rst_id->idx_d->dump_rst_info == 1)
                     {
@@ -350,11 +352,15 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
             {
               PIDX_variable var = var_grp->variable[v];
               int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
-              ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->idx_c->global_comm, &req[req_counter]);
-              if (ret != MPI_SUCCESS)
+
+              if (rst_id->idx_d->simulate_rst == 0)
               {
-                fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
-                return PIDX_err_mpi;
+                ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->idx_c->global_comm, &req[req_counter]);
+                if (ret != MPI_SUCCESS)
+                {
+                  fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+                  return PIDX_err_mpi;
+                }
               }
 
               if (rst_id->idx_d->dump_rst_info == 1)
@@ -419,11 +425,14 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
               MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type[chunk_counter]);
               MPI_Type_commit(&chunk_data_type[chunk_counter]);
 
-              ret = MPI_Isend(var->sim_patch[0]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
-              if (ret != MPI_SUCCESS)
+              if (rst_id->idx_d->simulate_rst == 0)
               {
-                fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
-                return PIDX_err_mpi;
+                ret = MPI_Isend(var->sim_patch[0]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
+                if (ret != MPI_SUCCESS)
+                {
+                  fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+                  return PIDX_err_mpi;
+                }
               }
 
               if (rst_id->idx_d->dump_rst_info == 1)
@@ -479,7 +488,7 @@ PIDX_return_code PIDX_rst_staged_write(PIDX_rst_id rst_id)
 static PIDX_return_code dump_debug_data_init (PIDX_rst_id id)
 {
   int ret = 0;
-  if (id->idx_d->dump_rst_info == 1 && id->idx->current_time_step == 0)
+  if (id->idx_d->dump_rst_info == 1)
   {
     char rst_file_name[1024];
     ret = mkdir(id->idx_d->rst_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
@@ -508,7 +517,7 @@ static PIDX_return_code dump_debug_data_init (PIDX_rst_id id)
 static PIDX_return_code dump_debug_data_finalie (PIDX_rst_id id)
 {
 
-  if (id->idx_d->dump_rst_info == 1 && id->idx->current_time_step == 0)
+  if (id->idx_d->dump_rst_info == 1)
   {
     fprintf(id->idx_d->rst_dump_fp, "\n");
     fclose(id->idx_d->rst_dump_fp);

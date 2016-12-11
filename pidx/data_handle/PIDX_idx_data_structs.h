@@ -248,6 +248,10 @@ struct idx_dataset_derived_metadata_struct
   Agg_buffer **shared_agg_buffer;
   Agg_buffer **nshared_agg_buffer;
 
+
+  int simulate_rst_io;
+  int simulate_rst;
+
   FILE *rst_dump_fp;
   int dump_rst_info;
   char rst_dump_dir_name[512];

@@ -142,8 +142,23 @@ PIDX_return_code PIDX_dump_rst_info(PIDX_file file, int dump_rst_info)
   if(!file)
     return PIDX_err_file;
 
+  if (dump_rst_info == PIDX_RST_DUMP_INFO)
+  {
+    file->idx_d->dump_rst_info = 1;
+  }
+  else if (dump_rst_info == PIDX_SIMULATE_RST_AND_DUMP_INFO)
+  {
+    file->idx_d->simulate_rst = 1;
+    file->idx_d->dump_rst_info = 1;
+  }
+  else if (dump_rst_info == PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO)
+  {
+    file->idx_d->simulate_rst = 1;
+    file->idx_d->simulate_rst_io = 1;
+    file->idx_d->dump_rst_info = 1;
+  }
+
   char filename_skeleton[512];
-  file->idx_d->dump_rst_info = dump_rst_info;
   strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
   sprintf(file->idx_d->rst_dump_dir_name, "%s_%d_rst_dump", filename_skeleton, file->idx->current_time_step);
