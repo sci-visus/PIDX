@@ -20,8 +20,6 @@
 
 static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_type);
 static int approx_maxh(PIDX_file file);
-static PIDX_return_code dump_debug_data_init(PIDX_file file);
-static PIDX_return_code dump_debug_data_finalie (PIDX_file file);
 
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
@@ -105,28 +103,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
   int j = 0;
   int k = 0;
   file->write_on_close = 1;
-
-
-  dump_debug_data_init(file);
-  for (i = 0; i < file->idx->variable_group_count; i++)
-  {
-    PIDX_variable_group var_grp = file->idx->variable_grp[i];
-    for (j = 0; j < var_grp->variable_count; j++)
-    {
-      for (k = 0; k < var_grp->variable[j]->sim_patch_count; k++)
-      {
-        if (file->idx_dbg->dump_process_state == 1)
-        {
-          fprintf(file->idx_dbg->process_state_dump_fp, "[%d] [%d] %d %d %d %d %d %d\n", j, k, (int)var_grp->variable[j]->sim_patch[k]->offset[0], (int)var_grp->variable[j]->sim_patch[k]->offset[1], (int)var_grp->variable[j]->sim_patch[k]->offset[2], (int)var_grp->variable[j]->sim_patch[k]->size[0], (int)var_grp->variable[j]->sim_patch[k]->size[1], (int)var_grp->variable[j]->sim_patch[k]->size[2]);
-        }
-      }
-      if (file->idx_dbg->dump_process_state == 1)
-        fprintf(file->idx_dbg->process_state_dump_fp, "\n");
-    }
-  }
-  dump_debug_data_finalie(file);
-
-
 
   ret = PIDX_flush(file);
   if (ret != PIDX_success)
@@ -409,42 +385,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 }
 
 
-static PIDX_return_code dump_debug_data_init(PIDX_file file)
-{
-  if (file->idx_dbg->dump_process_state == 1)
-  {
-    int ret;
-    char io_file_name[1024];
-    ret = mkdir(file->idx_dbg->process_state_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
-    if (ret != 0 && errno != EEXIST)
-    {
-      perror("mkdir");
-      fprintf(stderr, " Error in aggregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, file->idx_dbg->io_dump_dir_name);
-      return PIDX_err_io;
-    }
-
-    MPI_Barrier(file->idx_c->global_comm);
-
-    sprintf(io_file_name, "%s/rank_%d", file->idx_dbg->process_state_dump_dir_name, file->idx_c->grank);
-    file->idx_dbg->process_state_dump_fp = fopen(io_file_name, "a+");
-    if (!file->idx_dbg->process_state_dump_fp)
-    {
-      fprintf(stderr, " [%s] [%d] io_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, io_file_name);
-      return PIDX_err_io;
-    }
-  }
-
-  return PIDX_success;
-}
 
 
-static PIDX_return_code dump_debug_data_finalie (PIDX_file file)
-{
 
-  if (file->idx_dbg->dump_process_state == 1)
-  {
-    fclose(file->idx_dbg->process_state_dump_fp);
-  }
 
-  return PIDX_success;
-}
