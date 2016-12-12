@@ -28,6 +28,8 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
+  dump_process_extent(file);
+
   file->idx->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
@@ -69,8 +71,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
   }
-
-  dump_process_extent(file);
 
   return PIDX_success;
 }
