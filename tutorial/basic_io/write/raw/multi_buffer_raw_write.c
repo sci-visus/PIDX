@@ -673,7 +673,7 @@ static void set_pidx_file(int ts)
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_RAW_IO);
 
-  //PIDX_dump_process_state(file, 1);
+  PIDX_dump_process_state(file, 1);
 
   //PIDX_dump_rst_info(file, PIDX_RST_DUMP_INFO);
   //PIDX_dump_rst_info(file, PIDX_SIMULATE_RST_AND_DUMP_INFO);

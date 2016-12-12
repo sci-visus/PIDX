@@ -106,15 +106,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   int k = 0;
   file->write_on_close = 1;
 
-  ret = PIDX_flush(file);
-  if (ret != PIDX_success)
-    return PIDX_err_close;
-
-  PIDX_time time = file->idx_d->time;
-  time->sim_end = PIDX_get_time();
 
   dump_debug_data_init(file);
-
   for (i = 0; i < file->idx->variable_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
@@ -126,19 +119,36 @@ PIDX_return_code PIDX_close(PIDX_file file)
         {
           fprintf(file->idx_dbg->process_state_dump_fp, "[%d] [%d] %d %d %d %d %d %d\n", j, k, (int)var_grp->variable[j]->sim_patch[k]->offset[0], (int)var_grp->variable[j]->sim_patch[k]->offset[1], (int)var_grp->variable[j]->sim_patch[k]->offset[2], (int)var_grp->variable[j]->sim_patch[k]->size[0], (int)var_grp->variable[j]->sim_patch[k]->size[1], (int)var_grp->variable[j]->sim_patch[k]->size[2]);
         }
-
-        free(var_grp->variable[j]->sim_patch[k]);
-        var_grp->variable[j]->sim_patch[k] = 0;
       }
       if (file->idx_dbg->dump_process_state == 1)
         fprintf(file->idx_dbg->process_state_dump_fp, "\n");
+    }
+  }
+  dump_debug_data_finalie(file);
 
+
+
+  ret = PIDX_flush(file);
+  if (ret != PIDX_success)
+    return PIDX_err_close;
+
+  PIDX_time time = file->idx_d->time;
+  time->sim_end = PIDX_get_time();
+
+  for (i = 0; i < file->idx->variable_group_count; i++)
+  {
+    PIDX_variable_group var_grp = file->idx->variable_grp[i];
+    for (j = 0; j < var_grp->variable_count; j++)
+    {
+      for (k = 0; k < var_grp->variable[j]->sim_patch_count; k++)
+      {
+        free(var_grp->variable[j]->sim_patch[k]);
+        var_grp->variable[j]->sim_patch[k] = 0;
+      }
       free(var_grp->variable[j]);
       var_grp->variable[j] = 0;
     }
   }
-
-  dump_debug_data_finalie(file);
 
   file->idx->variable_count = 0;
 

@@ -56,7 +56,7 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-printf("rst io done %d\n", file->idx_c->grank);
+
 
     // Step 4: Cleanup all buffers and ids
     ret = restructure_cleanup(file);
@@ -65,7 +65,6 @@ printf("rst io done %d\n", file->idx_c->grank);
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-//printf("rst cleanup done %d\n", file->idx_c->grank);
   }
 
   return PIDX_success;
