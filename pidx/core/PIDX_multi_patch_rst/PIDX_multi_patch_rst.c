@@ -31,7 +31,7 @@
 #include "../../PIDX_inc.h"
 
 
-PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, int var_start_index, int var_end_index)
+PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index)
 {
   PIDX_multi_patch_rst_id multi_patch_rst_id;
   multi_patch_rst_id = (PIDX_multi_patch_rst_id)malloc(sizeof (*multi_patch_rst_id));
@@ -40,6 +40,7 @@ PIDX_multi_patch_rst_id PIDX_multi_patch_rst_init(idx_dataset idx_meta_data, idx
   multi_patch_rst_id->idx = idx_meta_data;
   multi_patch_rst_id->idx_derived = idx_derived;
   multi_patch_rst_id->idx_c = idx_c;
+  multi_patch_rst_id->idx_dbg = idx_dbg;
 
   multi_patch_rst_id->group_index = 0;
   multi_patch_rst_id->first_index = var_start_index;

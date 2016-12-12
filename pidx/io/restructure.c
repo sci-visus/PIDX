@@ -29,7 +29,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
   {
     time->rst_init_start[lgi][cvi] = PIDX_get_time();
     // Initialize the restructuring phase
-    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
+    file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
     time->rst_init_end[lgi][cvi] = PIDX_get_time();
 
 
@@ -75,7 +75,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
   {
     time->rst_init_start[lgi][cvi] = PIDX_get_time();
     // Initialize the restructuring phase
-    file->multi_patch_rst_id = PIDX_multi_patch_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
+    file->multi_patch_rst_id = PIDX_multi_patch_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
     time->rst_init_end[lgi][cvi] = PIDX_get_time();
 
 
@@ -258,7 +258,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
 #if ACTUAL_IO
     if (mode == PIDX_WRITE)
     {
-      if (file->idx_dbg->debug_do_rst == 1 && file->idx_d->simulate_rst_io == 0)
+      if (file->idx_dbg->debug_do_rst == 1 && file->idx_dbg->simulate_rst_io == 0)
       {
         time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
         // Write out restructured data
@@ -286,7 +286,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
   {
     if (mode == PIDX_WRITE)
     {
-      if (file->idx_dbg->debug_do_rst == 1 && file->idx_d->simulate_rst_io == 0)
+      if (file->idx_dbg->debug_do_rst == 1 && file->idx_dbg->simulate_rst_io == 0)
       {
         time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
         // Write out restructured data
@@ -357,7 +357,7 @@ PIDX_return_code restructure_forced_read(PIDX_io file, int svi, int evi)
 {
   int ret = 0;
 
-  file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, svi, evi);
+  file->rst_id = PIDX_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
 
   ret = PIDX_rst_forced_raw_read(file->rst_id);
   if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}

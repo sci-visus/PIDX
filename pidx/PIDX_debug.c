@@ -144,24 +144,24 @@ PIDX_return_code PIDX_dump_rst_info(PIDX_file file, int dump_rst_info)
 
   if (dump_rst_info == PIDX_RST_DUMP_INFO)
   {
-    file->idx_d->dump_rst_info = 1;
+    file->idx_dbg->dump_rst_info = 1;
   }
   else if (dump_rst_info == PIDX_SIMULATE_RST_AND_DUMP_INFO)
   {
-    file->idx_d->simulate_rst = 1;
-    file->idx_d->dump_rst_info = 1;
+    file->idx_dbg->simulate_rst = 1;
+    file->idx_dbg->dump_rst_info = 1;
   }
   else if (dump_rst_info == PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO)
   {
-    file->idx_d->simulate_rst = 1;
-    file->idx_d->simulate_rst_io = 1;
-    file->idx_d->dump_rst_info = 1;
+    file->idx_dbg->simulate_rst = 1;
+    file->idx_dbg->simulate_rst_io = 1;
+    file->idx_dbg->dump_rst_info = 1;
   }
 
   char filename_skeleton[512];
   strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
-  sprintf(file->idx_d->rst_dump_dir_name, "%s_%d_rst_dump", filename_skeleton, file->idx->current_time_step);
+  sprintf(file->idx_dbg->rst_dump_dir_name, "%s_%d_rst_dump", filename_skeleton, file->idx->current_time_step);
 
   return PIDX_success;
 }
@@ -173,10 +173,10 @@ PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info)
     return PIDX_err_file;
 
   char filename_skeleton[512];
-  file->idx_d->dump_agg_info = dump_agg_info;
+  file->idx_dbg->dump_agg_info = dump_agg_info;
   strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
-  sprintf(file->idx_d->agg_dump_dir_name, "%s_agg_dump", filename_skeleton);
+  sprintf(file->idx_dbg->agg_dump_dir_name, "%s_agg_dump", filename_skeleton);
 
   return PIDX_success;
 }
@@ -189,10 +189,26 @@ PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info)
     return PIDX_err_file;
 
   char filename_skeleton[512];
-  file->idx_d->dump_io_info = dump_io_info;
+  file->idx_dbg->dump_io_info = dump_io_info;
   strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
-  sprintf(file->idx_d->io_dump_dir_name, "%s_io_dump", filename_skeleton);
+  sprintf(file->idx_dbg->io_dump_dir_name, "%s_io_dump", filename_skeleton);
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_dump_process_state(PIDX_file file, int process_state)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  char filename_skeleton[512];
+  file->idx_dbg->dump_process_state = process_state;
+  strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
+  filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
+  sprintf(file->idx_dbg->process_state_dump_dir_name, "%s_%d_process_state_dump", filename_skeleton, file->idx->current_time_step);
 
   return PIDX_success;
 }

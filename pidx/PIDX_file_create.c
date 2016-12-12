@@ -67,16 +67,16 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->flush_used = 0;
   (*file)->write_on_close = 0;
 
-  (*file)->idx_d->dump_rst_info = 0;
-  (*file)->idx_d->dump_agg_info = 0;
-  (*file)->idx_d->dump_io_info = 0;
+  (*file)->idx_dbg->dump_rst_info = 0;
+  (*file)->idx_dbg->dump_agg_info = 0;
+  (*file)->idx_dbg->dump_io_info = 0;
 
   (*file)->idx_d->color = 0;
   (*file)->idx->io_type = PIDX_IDX_IO;
   (*file)->idx_d->data_core_count = -1;
 
-  (*file)->idx_d->simulate_rst = 0;
-  (*file)->idx_d->simulate_rst_io = 0;
+  (*file)->idx_dbg->simulate_rst = 0;
+  (*file)->idx_dbg->simulate_rst_io = 0;
 
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
@@ -134,11 +134,12 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->max_file_count = 0;
   (*file)->idx_d->fs_block_size = 0;
   (*file)->idx_d->start_fs_block = 0;
-  (*file)->idx_d->dump_agg_info = 0;
-  (*file)->idx_d->dump_io_info = 0;
-  memset((*file)->idx_d->rst_dump_dir_name, 0, 512*sizeof(char));
-  memset((*file)->idx_d->agg_dump_dir_name, 0, 512*sizeof(char));
-  memset((*file)->idx_d->io_dump_dir_name, 0, 512*sizeof(char));
+
+  (*file)->idx_dbg->dump_agg_info = 0;
+  (*file)->idx_dbg->dump_io_info = 0;
+  memset((*file)->idx_dbg->rst_dump_dir_name, 0, 512*sizeof(char));
+  memset((*file)->idx_dbg->agg_dump_dir_name, 0, 512*sizeof(char));
+  memset((*file)->idx_dbg->io_dump_dir_name, 0, 512*sizeof(char));
 
   (*file)->idx_d->layout_count = 0;
   (*file)->idx_d->reduced_res_from = 0;

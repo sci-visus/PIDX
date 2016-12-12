@@ -32,7 +32,7 @@ PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolut
 }
 
 
-PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int first_index, int last_index)
+PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, idx_debug idx_dbg, int first_index, int last_index)
 {
   PIDX_hz_encode_id hz_id;
   hz_id = (PIDX_hz_encode_id)malloc(sizeof (*hz_id));
@@ -41,6 +41,7 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_der
   hz_id->idx = idx_meta_data;
   hz_id->idx_d = idx_d;
   hz_id->idx_c = idx_c;
+  hz_id->idx_dbg = idx_dbg;
 
   hz_id->group_index = 0;
   hz_id->first_index = first_index;

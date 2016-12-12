@@ -868,6 +868,13 @@ PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info);
 
 
 
+///
+/// \brief PIDX_process_state
+/// \param file
+/// \param process_state
+/// \return
+///
+PIDX_return_code PIDX_dump_process_state(PIDX_file file, int process_state);
 /*
  * Implementation in PIDX_debug.c
  */

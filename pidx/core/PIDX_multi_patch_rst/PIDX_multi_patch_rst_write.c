@@ -136,14 +136,14 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                     send_o = index * var->vps;
                     send_c = reg_patch_count[0] * var->vps;
 
-                    if (rst_id->idx_derived->simulate_rst == 0)
+                    if (rst_id->idx_dbg->simulate_rst == 0)
                       memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
 
 
-                    //if (rst_id->idx_derived->dump_rst_info == 1)
+                    //if (rst_id->idx_dbg->dump_rst_info == 1)
                     //{
-                    //  fprintf(rst_id->idx_derived->rst_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
-                    //  fflush(rst_id->idx_derived->rst_dump_fp);
+                    //  fprintf(rst_id->idx_dbg->rst_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
+                    //  fflush(rst_id->idx_dbg->rst_dump_fp);
                     //}
 
                   }
@@ -156,7 +156,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
             {
               PIDX_variable var = var_grp->variable[v];
               int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
-              if (rst_id->idx_derived->simulate_rst == 0)
+              if (rst_id->idx_dbg->simulate_rst == 0)
               {
                 ret = MPI_Irecv(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
                 if (ret != MPI_SUCCESS)
@@ -166,10 +166,10 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                 }
               }
 
-              if (rst_id->idx_derived->dump_rst_info == 1)
+              if (rst_id->idx_dbg->dump_rst_info == 1)
               {
-                fprintf(rst_id->idx_derived->rst_dump_fp, "[N REC] [%lld] Dest offset 0 Dest size %d My rank %d Source rank %d\n", v, length, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->source_patch[j].rank);
-                fflush(rst_id->idx_derived->rst_dump_fp);
+                fprintf(rst_id->idx_dbg->rst_dump_fp, "[N REC] [%lld] Dest offset 0 Dest size %d My rank %d Source rank %d\n", v, length, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->source_patch[j].rank);
+                fflush(rst_id->idx_dbg->rst_dump_fp);
               }
 
               req_counter++;
@@ -230,7 +230,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
               MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type[chunk_counter]);
               MPI_Type_commit(&chunk_data_type[chunk_counter]);
 
-              if (rst_id->idx_derived->simulate_rst == 0)
+              if (rst_id->idx_dbg->simulate_rst == 0)
               {
                 ret = MPI_Isend(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
                 if (ret != MPI_SUCCESS)
@@ -240,10 +240,10 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                 }
               }
 
-              if (rst_id->idx_derived->dump_rst_info == 1)
+              if (rst_id->idx_dbg->dump_rst_info == 1)
               {
-                fprintf(rst_id->idx_derived->rst_dump_fp, "[N SND] [%lld] Source offset 0 Source size %d My rank %d Dest rank %d\n", v, total_send_count, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
-                fflush(rst_id->idx_derived->rst_dump_fp);
+                fprintf(rst_id->idx_dbg->rst_dump_fp, "[N SND] [%lld] Source offset 0 Source size %d My rank %d Dest rank %d\n", v, total_send_count, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
+                fflush(rst_id->idx_dbg->rst_dump_fp);
               }
 
               req_counter++;
@@ -257,7 +257,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
       }
     }
 
-    if (rst_id->idx_derived->simulate_rst == 0)
+    if (rst_id->idx_dbg->simulate_rst == 0)
     {
       ret = MPI_Waitall(req_counter, req, status);
       if (ret != MPI_SUCCESS)
@@ -516,22 +516,22 @@ PIDX_return_code PIDX_multi_patch_rst_write(PIDX_multi_patch_rst_id rst_id)
 static PIDX_return_code dump_debug_data_init (PIDX_multi_patch_rst_id id)
 {
   int ret = 0;
-  if (id->idx_derived->dump_rst_info == 1)
+  if (id->idx_dbg->dump_rst_info == 1)
   {
     char rst_file_name[1024];
-    ret = mkdir(id->idx_derived->rst_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
+    ret = mkdir(id->idx_dbg->rst_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
     if (ret != 0 && errno != EEXIST)
     {
       perror("mkdir");
-      fprintf(stderr, " Error in rstregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, id->idx_derived->rst_dump_dir_name);
+      fprintf(stderr, " Error in rstregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, id->idx_dbg->rst_dump_dir_name);
       return PIDX_err_rst;
     }
 
     MPI_Barrier(id->idx_c->global_comm);
 
-    sprintf(rst_file_name, "%s/rank_%d", id->idx_derived->rst_dump_dir_name, id->idx_c->grank);
-    id->idx_derived->rst_dump_fp = fopen(rst_file_name, "a+");
-    if (!id->idx_derived->rst_dump_fp)
+    sprintf(rst_file_name, "%s/rank_%d", id->idx_dbg->rst_dump_dir_name, id->idx_c->grank);
+    id->idx_dbg->rst_dump_fp = fopen(rst_file_name, "a+");
+    if (!id->idx_dbg->rst_dump_fp)
     {
       fprintf(stderr, " [%s] [%d] rst_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, rst_file_name);
       return PIDX_err_rst;
@@ -545,10 +545,10 @@ static PIDX_return_code dump_debug_data_init (PIDX_multi_patch_rst_id id)
 static PIDX_return_code dump_debug_data_finalie (PIDX_multi_patch_rst_id id)
 {
 
-  if (id->idx_derived->dump_rst_info == 1)
+  if (id->idx_dbg->dump_rst_info == 1)
   {
-    fprintf(id->idx_derived->rst_dump_fp, "\n");
-    fclose(id->idx_derived->rst_dump_fp);
+    fprintf(id->idx_dbg->rst_dump_fp, "\n");
+    fclose(id->idx_dbg->rst_dump_fp);
   }
 
   return PIDX_success;

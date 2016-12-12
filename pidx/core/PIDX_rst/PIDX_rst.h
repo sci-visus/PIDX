@@ -48,6 +48,9 @@ struct PIDX_rst_struct
 
   idx_comm idx_c;
 
+
+  idx_debug idx_dbg;
+
   int group_index;
   int first_index;
   int last_index;
@@ -73,7 +76,7 @@ typedef struct PIDX_rst_struct* PIDX_rst_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_rst_id The identifier associated with the task
-PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int var_start_index, int var_end_index);
+PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index);
 
 
 

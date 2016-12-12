@@ -248,22 +248,6 @@ struct idx_dataset_derived_metadata_struct
   Agg_buffer **shared_agg_buffer;
   Agg_buffer **nshared_agg_buffer;
 
-
-  int simulate_rst_io;
-  int simulate_rst;
-
-  FILE *rst_dump_fp;
-  int dump_rst_info;
-  char rst_dump_dir_name[512];
-
-  FILE *agg_dump_fp;
-  int dump_agg_info;
-  char agg_dump_dir_name[512];
-
-  FILE *io_dump_fp;
-  int dump_io_info;
-  char io_dump_dir_name[512];
-
   int color;
   int partition_count[PIDX_MAX_DIMENSIONS];
   int partition_size[PIDX_MAX_DIMENSIONS];
@@ -310,6 +294,27 @@ typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata
 
 struct idx_debug_info_struct
 {
+  int simulate_rst_io;
+  int simulate_rst;
+
+  FILE *rst_dump_fp;
+  int dump_rst_info;
+  char rst_dump_dir_name[512];
+
+  FILE *agg_dump_fp;
+  int dump_agg_info;
+  char agg_dump_dir_name[512];
+
+  FILE *io_dump_fp;
+  int dump_io_info;
+  char io_dump_dir_name[512];
+
+  FILE *process_state_dump_fp;
+  int dump_process_state;
+  char process_state_dump_dir_name[512];
+
+
+
   int debug_rst;                               ///< Debug restructuring phase, works only on the test application
   int debug_hz;                                ///< Debug HZ encoding phase, works only on the test application
 

@@ -30,7 +30,7 @@
 #include "../../PIDX_inc.h"
 
 
-PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int var_start_index, int var_end_index)
+PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index)
 {
   PIDX_rst_id rst_id;
   rst_id = (PIDX_rst_id)malloc(sizeof (*rst_id));
@@ -39,6 +39,7 @@ PIDX_rst_id PIDX_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   rst_id->idx = idx_meta_data;
   rst_id->idx_d = idx_d;
   rst_id->idx_c = idx_c;
+  rst_id->idx_dbg = idx_dbg;
 
   rst_id->group_index = 0;
   rst_id->first_index = var_start_index;
