@@ -130,7 +130,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
         free(var_grp->variable[j]->sim_patch[k]);
         var_grp->variable[j]->sim_patch[k] = 0;
       }
-      fprintf(file->idx_dbg->process_state_dump_fp, "\n");
+      if (file->idx_dbg->dump_process_state == 1)
+        fprintf(file->idx_dbg->process_state_dump_fp, "\n");
 
       free(var_grp->variable[j]);
       var_grp->variable[j] = 0;

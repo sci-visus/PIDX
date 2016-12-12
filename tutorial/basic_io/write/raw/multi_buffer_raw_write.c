@@ -96,7 +96,7 @@ int main(int argc, char **argv)
   int ts = 0, var = 0;
   init_mpi(argc, argv);
   parse_args(argc, argv);
-  check_args();
+  //check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
@@ -282,18 +282,14 @@ static void check_args()
 //----------------------------------------------------------------
 static void calculate_per_process_offsets()
 {
-  //   Calculating every process's offset and count
-  int var = 0, d = 0, i = 0;
-  int sub_div[3];
-  int local_box_offset[3];
-  sub_div[X] = (global_box_size[X] / local_box_size[X]);
-  sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
-  sub_div[Z] = (global_box_size[Z] / local_box_size[Z]);
-  local_box_offset[Z] = (rank / (sub_div[X] * sub_div[Y])) * local_box_size[Z];
-  int slice = rank % (sub_div[X] * sub_div[Y]);
-  local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
-  local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
+  int var = 0, i = 0;
+  int vi;
+  int pi;
+  int vo_x, vo_y, vo_z, vc_x, vc_y, vc_z;
+  char fn[512];
+
+  //   Calculating every process's offset and count
   var_count = malloc(sizeof(unsigned long long**) * variable_count);
   var_offset = malloc(sizeof(unsigned long long**) * variable_count);
 
@@ -306,7 +302,47 @@ static void calculate_per_process_offsets()
       var_count[var][i] = malloc(sizeof(unsigned long long) * 3);
       var_offset[var][i] = malloc(sizeof(unsigned long long) * 3);
     }
+  }
 
+  sprintf(fn, "/home/sid/uintah/PIDX/PIDX/build/CCVars_1_process_state_dump/rank_%d", rank);
+  //printf("FN %s\n", fn);
+  FILE *fp = fopen(fn, "r");
+  if (fp == NULL)
+    fprintf(stdout, "Error Opening %s\n", var_list);
+
+  for (i = 0; i < 16; i++)
+  {
+    fscanf(fp, "[%d] [%d] %d %d %d %d %d %d\n", &vi, &pi, &vo_x, &vo_y, &vo_z, &vc_x, &vc_y, &vc_z);
+    assert(pi == i);
+    assert(vi == 0);
+    for(var = 0; var < variable_count; var++)
+    {
+      var_offset[var][i][X] = vo_x;
+      var_offset[var][i][Y] = vo_y;
+      var_offset[var][i][Z] = vo_z;
+
+      var_count[var][i][X] = vc_x;
+      var_count[var][i][Y] = vc_y;
+      var_count[var][i][Z] = vc_z;
+      //printf("%d : %d %d %d %d %d %d\n", i, (int)var_offset[var][i][X], (int)var_offset[var][i][Y], (int)var_offset[var][i][Z], (int)var_count[var][i][X], (int)var_count[var][i][Y], (int)var_count[var][i][Z]);
+    }
+  }
+  fclose(fp);
+
+#if 0
+  int var = 0, i = 0;
+  int sub_div[3];
+  int local_box_offset[3];
+  sub_div[X] = (global_box_size[X] / local_box_size[X]);
+  sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
+  sub_div[Z] = (global_box_size[Z] / local_box_size[Z]);
+  local_box_offset[Z] = (rank / (sub_div[X] * sub_div[Y])) * local_box_size[Z];
+  int slice = rank % (sub_div[X] * sub_div[Y]);
+  local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
+  local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
+
+  for(var = 0; var < variable_count; var++)
+  {
     // One patch for this variable
     if (patch_count == 1)
     {
@@ -516,6 +552,7 @@ static void calculate_per_process_offsets()
     else
       printf("This patch count not supported !!!!\n");
   }
+#endif
 }
 
 //----------------------------------------------------------------
@@ -636,10 +673,11 @@ static void set_pidx_file(int ts)
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_RAW_IO);
 
-  PIDX_dump_process_state(file, 1);
+  //PIDX_dump_process_state(file, 1);
+
   //PIDX_dump_rst_info(file, PIDX_RST_DUMP_INFO);
   //PIDX_dump_rst_info(file, PIDX_SIMULATE_RST_AND_DUMP_INFO);
-  PIDX_dump_rst_info(file, PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO);
+  //PIDX_dump_rst_info(file, PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO);
 
   return;
 }
