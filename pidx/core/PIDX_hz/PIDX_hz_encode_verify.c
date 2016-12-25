@@ -27,9 +27,9 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   unsigned long long global_hz, element_count = 0, lost_element_count = 0;
   unsigned long long ZYX[PIDX_MAX_DIMENSIONS];
   int check_bit = 1, s = 0;
-  double dvalue_1, dvalue_2;
-  float fvalue_1, fvalue_2;
-  unsigned long long uvalue_1, uvalue_2;
+  double dvalue_1 = 0, dvalue_2 = 0;
+  float fvalue_1 = 0, fvalue_2 = 0;
+  unsigned long long uvalue_1 = 0, uvalue_2 = 0;
 
   for(v = id->first_index; v <= id->last_index; v++)
   {

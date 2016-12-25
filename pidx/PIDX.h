@@ -839,42 +839,12 @@ PIDX_return_code PIDX_disable_agg(PIDX_file file);
 
 
 ///
-/// \brief PIDX_dump_rst_info
-/// \param file
-/// \param dump_rst_info
-/// \return
-///
-PIDX_return_code PIDX_dump_rst_info(PIDX_file file, int dump_rst_info);
-
-
-
-///
-/// \brief PIDX_dump_agg_info
-/// \param file
-/// \param dump_agg_info
-/// \return
-///
-PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info);
-
-
-
-///
-/// \brief PIDX_dump_io_info
-/// \param file
-/// \param dump_io_info
-/// \return
-///
-PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info);
-
-
-
-///
-/// \brief PIDX_process_state
+/// \brief PIDX_state_dump
 /// \param file
 /// \param process_state
 /// \return
 ///
-PIDX_return_code PIDX_dump_process_state(PIDX_file file, int process_state);
+PIDX_return_code PIDX_dump_state(PIDX_file file, int process_state);
 /*
  * Implementation in PIDX_debug.c
  */

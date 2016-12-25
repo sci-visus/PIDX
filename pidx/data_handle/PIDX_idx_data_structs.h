@@ -297,23 +297,25 @@ struct idx_debug_info_struct
   int simulate_rst_io;
   int simulate_rst;
 
-  FILE *rst_dump_fp;
-  int dump_rst_info;
-  char rst_dump_dir_name[512];
+  //FILE *rst_dump_fp;
+  //int dump_rst_info;
+  //char rst_dump_dir_name[512];
 
-  FILE *agg_dump_fp;
-  int dump_agg_info;
-  char agg_dump_dir_name[512];
+  //FILE *agg_dump_fp;
+  //int dump_agg_info;
+  //char agg_dump_dir_name[512];
 
-  FILE *io_dump_fp;
-  int dump_io_info;
-  char io_dump_dir_name[512];
+  //FILE *io_dump_fp;
+  //int dump_io_info;
+  //char io_dump_dir_name[512];
 
-  FILE *process_state_dump_fp;
-  int dump_process_state;
-  char process_state_dump_dir_name[512];
+  //FILE *process_size_and_offset_dump_fp;
+  //int dump_process_state;
+  //char process_state_dump_dir_name[512];
 
-
+  FILE *local_dump_fp;
+  FILE *mpi_dump_fp;
+  int state_dump;
 
   int debug_rst;                               ///< Debug restructuring phase, works only on the test application
   int debug_hz;                                ///< Debug HZ encoding phase, works only on the test application

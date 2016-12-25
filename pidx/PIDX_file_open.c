@@ -58,9 +58,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
 
-  (*file)->idx_dbg->simulate_rst = 0;
-  (*file)->idx_dbg->simulate_rst_io = 0;
-
   (*file)->idx_d->raw_io_pipe_length = 0;
 
   (*file)->idx_d->color = 0;
@@ -123,11 +120,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   //(*file)->idx_d->agg_buffer->agg_f = 1;
   (*file)->idx_d->data_core_count = -1;
 
-  (*file)->idx_dbg->dump_agg_info = 0;
-  (*file)->idx_dbg->dump_io_info = 0;
-  memset((*file)->idx_dbg->rst_dump_dir_name, 0, 512*sizeof(char));
-  memset((*file)->idx_dbg->agg_dump_dir_name, 0, 512*sizeof(char));
-  memset((*file)->idx_dbg->io_dump_dir_name, 0, 512*sizeof(char));
+  (*file)->idx_dbg->state_dump = PIDX_NO_META_DATA_DUMP;
 
   (*file)->idx->endian = 1;
 

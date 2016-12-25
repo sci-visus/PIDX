@@ -96,7 +96,7 @@ int main(int argc, char **argv)
   int ts = 0, var = 0;
   init_mpi(argc, argv);
   parse_args(argc, argv);
-  //check_args();
+  check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
@@ -282,12 +282,7 @@ static void check_args()
 //----------------------------------------------------------------
 static void calculate_per_process_offsets()
 {
-
-  int var = 0, i = 0;
-  int vi;
-  int pi;
-  int vo_x, vo_y, vo_z, vc_x, vc_y, vc_z;
-  char fn[512];
+  int var = 0, i = 0, d = 0;
 
   //   Calculating every process's offset and count
   var_count = malloc(sizeof(unsigned long long**) * variable_count);
@@ -304,6 +299,11 @@ static void calculate_per_process_offsets()
     }
   }
 
+#if 0
+  int vi = 0;
+  int pi = 0;
+  int vo_x = 0, vo_y = 0, vo_z = 0, vc_x = 0, vc_y = 0, vc_z = 0;
+  char fn[512];
   sprintf(fn, "/home/sid/uintah/PIDX/PIDX/build/CCVars_1_process_state_dump/rank_%d", rank);
   //printf("FN %s\n", fn);
   FILE *fp = fopen(fn, "r");
@@ -312,7 +312,7 @@ static void calculate_per_process_offsets()
 
   for (i = 0; i < 16; i++)
   {
-    fscanf(fp, "[%d] [%d] %d %d %d %d %d %d\n", &vi, &pi, &vo_x, &vo_y, &vo_z, &vc_x, &vc_y, &vc_z);
+    assert(8 == fscanf(fp, "[%d] [%d] %d %d %d %d %d %d\n", &vi, &pi, &vo_x, &vo_y, &vo_z, &vc_x, &vc_y, &vc_z));
     assert(pi == i);
     assert(vi == 0);
     for(var = 0; var < variable_count; var++)
@@ -328,9 +328,7 @@ static void calculate_per_process_offsets()
     }
   }
   fclose(fp);
-
-#if 0
-  int var = 0, i = 0;
+#else
   int sub_div[3];
   int local_box_offset[3];
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
@@ -673,11 +671,7 @@ static void set_pidx_file(int ts)
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_RAW_IO);
 
-  PIDX_dump_process_state(file, 1);
-
-  //PIDX_dump_rst_info(file, PIDX_RST_DUMP_INFO);
-  //PIDX_dump_rst_info(file, PIDX_SIMULATE_RST_AND_DUMP_INFO);
-  //PIDX_dump_rst_info(file, PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO);
+  PIDX_dump_state(file, PIDX_META_DATA_DUMP_ONLY);
 
   return;
 }

@@ -19,8 +19,6 @@
 
 #include "../../PIDX_inc.h"
 
-static PIDX_return_code dump_debug_data_init(PIDX_hz_encode_id hz_id);
-static PIDX_return_code dump_debug_data_finalie (PIDX_hz_encode_id id);
 static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf);
 static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf);
 static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout, int MODE);
@@ -32,8 +30,6 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
   int send_index = 0;
   unsigned long long index = 0, count = 0;
 
-  dump_debug_data_init(hz_id);
-
   PIDX_variable_group var_grp = hz_id->idx->variable_grp[hz_id->group_index];
   PIDX_variable var0 = var_grp->variable[hz_id->first_index];
   for (p = 0; p < var0->patch_group_count; p++)
@@ -44,10 +40,10 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
       {
-        if (hz_id->idx_dbg->dump_io_info == 1 && hz_id->idx->current_time_step == 0)
+        if (hz_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || hz_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
         {
-          fprintf(hz_id->idx_dbg->io_dump_fp, "Variable %d\n", v);
-          fflush(hz_id->idx_dbg->io_dump_fp);
+          fprintf(hz_id->idx_dbg->local_dump_fp, "Variable %d\n", v);
+          fflush(hz_id->idx_dbg->local_dump_fp);
         }
 
         HZ_buffer hz_buf = var_grp->variable[v]->hz_buffer[p];
@@ -58,10 +54,10 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
             index = 0;
             count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1;
 
-            if (hz_id->idx_dbg->dump_io_info == 1 && hz_id->idx->current_time_step == 0)
+            if (hz_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || hz_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
             {
-              fprintf(hz_id->idx_dbg->io_dump_fp, "[%d]: ", i);
-              fflush(hz_id->idx_dbg->io_dump_fp);
+              fprintf(hz_id->idx_dbg->local_dump_fp, "[%d]: ", i);
+              fflush(hz_id->idx_dbg->local_dump_fp);
             }
 
             ret = write_read_samples(hz_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
@@ -79,10 +75,10 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
       {
-        if (hz_id->idx_dbg->dump_io_info == 1 && hz_id->idx->current_time_step == 0)
+        if (hz_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || hz_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
         {
-          fprintf(hz_id->idx_dbg->io_dump_fp, "Variable %d\n", v);
-          fflush(hz_id->idx_dbg->io_dump_fp);
+          fprintf(hz_id->idx_dbg->local_dump_fp, "Variable %d\n", v);
+          fflush(hz_id->idx_dbg->local_dump_fp);
         }
 
         HZ_buffer hz_buf = var_grp->variable[v]->hz_buffer[p];
@@ -148,8 +144,6 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
     }
   }
 
-  dump_debug_data_finalie(hz_id);
-
   return PIDX_success;
 }
 
@@ -208,10 +202,10 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
 
     if(MODE == PIDX_WRITE)
     {
-      if (hz_id->idx_dbg->dump_io_info == 1 && hz_id->idx->current_time_step == 0)
+      if (hz_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || hz_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
       {
-        fprintf(hz_id->idx_dbg->io_dump_fp, "[A] Count %lld Target Disp %d (%d %d)\n", (long long)file_count * curr_var->vps * (curr_var->bpv/8), (file_index * bytes_per_sample * curr_var->vps - block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps)/8, (int)hz_id->idx_d->start_fs_block, (int)hz_id->idx_d->fs_block_size);
-        fflush(hz_id->idx_dbg->io_dump_fp);
+        fprintf(hz_id->idx_dbg->local_dump_fp, "[A] Count %lld Target Disp %d (%d %d)\n", (long long)file_count * curr_var->vps * (curr_var->bpv/8), (file_index * bytes_per_sample * curr_var->vps - block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps)/8, (int)hz_id->idx_d->start_fs_block, (int)hz_id->idx_d->fs_block_size);
+        fflush(hz_id->idx_dbg->local_dump_fp);
       }
 
       MPI_File fh;
@@ -331,46 +325,6 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
 }
 
 
-static PIDX_return_code dump_debug_data_init(PIDX_hz_encode_id hz_id)
-{
-  if (hz_id->idx_dbg->dump_io_info == 1)
-  {
-    int ret;
-    char io_file_name[1024];
-    ret = mkdir(hz_id->idx_dbg->io_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
-    if (ret != 0 && errno != EEXIST)
-    {
-      perror("mkdir");
-      fprintf(stderr, " Error in aggregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, hz_id->idx_dbg->io_dump_dir_name);
-      return PIDX_err_io;
-    }
-
-    MPI_Barrier(hz_id->idx_c->local_comm);
-
-    sprintf(io_file_name, "%s/rank_%d", hz_id->idx_dbg->io_dump_dir_name, hz_id->idx_c->lrank);
-    hz_id->idx_dbg->io_dump_fp = fopen(io_file_name, "a+");
-    if (!hz_id->idx_dbg->io_dump_fp)
-    {
-      fprintf(stderr, " [%s] [%d] io_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, io_file_name);
-      return PIDX_err_io;
-    }
-  }
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code dump_debug_data_finalie (PIDX_hz_encode_id id)
-{
-
-  if (id->idx_dbg->dump_io_info == 1)
-  {
-    fprintf(id->idx_dbg->io_dump_fp, "\n");
-    fclose(id->idx_dbg->io_dump_fp);
-  }
-
-  return PIDX_success;
-}
 
 static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf)
 {

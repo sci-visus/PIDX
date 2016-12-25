@@ -19,6 +19,7 @@
 #include "PIDX_file_handler.h"
 
 static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_type);
+static PIDX_return_code PIDX_dump_state_finalize (PIDX_file file);
 static int approx_maxh(PIDX_file file);
 
 int pidx_global_variable = 0;
@@ -26,7 +27,7 @@ int pidx_global_variable = 0;
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
   int i;
-  int ret;
+  int ret = PIDX_success;
   int vgc = file->idx->variable_group_count;
   PIDX_time time = file->idx_d->time;
 
@@ -135,6 +136,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
     free(file->idx->variable_grp[i]);
     file->idx->variable_grp[i] = 0;
   }
+
+  PIDX_dump_state_finalize(file);
 
   free(file->idx);                  file->idx = 0;
   free(file->idx_d->time);          file->idx_d->time = 0;
@@ -312,7 +315,6 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
           printf("[S] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
 
-
           //printf("[AGG S %d %d]   :[%d] [%d] %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total, agg_all);
         }
 
@@ -387,11 +389,16 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       printf("TOT       :[%.4f + %.4f = %.4f] + %.4f [%.4f %.4f] \n\n", group_total, rst_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
     }
   }
-
 }
 
 
+static PIDX_return_code PIDX_dump_state_finalize (PIDX_file file)
+{
+  if (file->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || file->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
+  {
+    fclose(file->idx_dbg->mpi_dump_fp);
+    fclose(file->idx_dbg->local_dump_fp);
+  }
 
-
-
-
+  return PIDX_success;
+}

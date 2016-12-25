@@ -29,26 +29,66 @@ extern "C" {
 #endif
 
 
+
+// PIDX write and read mode
+// PIDX_READ - Read only mode
+// PIDX_WRITE - Write only mode
 enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
+
+
+
+// Types of restructuring boxes
+// PIDX_USER_RST_BOX - Box size ste by user/application
+// PIDX_BOX_PER_PROCESS - Box size set automatically such that at the end of restructuring every process has at max only one box to process
+// PIDX_BOX_FROM_BITSTRING - Box size set automatically suing the bitstring
+// PIDX_CLOSEST_POWER_TWO - Box size is closest power in two in every dimension of the per process box size
 enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, PIDX_CLOSEST_POWER_TWO};
+
+
+
+// Aggregation modes
+// AGG_SETUP - Only sets the aggregation buffers
+// AGG_PERFORM - Performs aggregation phase
+// AGG_SETUP_AND_PERFORM - Sets aggregation buffers and also performs aggregation
 enum AGG_MODES {AGG_SETUP, AGG_PERFORM, AGG_SETUP_AND_PERFORM};
 
-#define PIDX_RST_DUMP_INFO                               1
-#define PIDX_SIMULATE_RST_AND_DUMP_INFO                  2
-#define PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO        3
+
+// No process dumps any meta data info
+#define PIDX_NO_META_DATA_DUMP             0
+
+// Every process writes the MPI related meta data into a seperate file while continuing actual MPI and IO calls
+#define PIDX_META_DATA_DUMP_ONLY             1
+
+// Every process writes the MPI related meta data into a seperate file while preventing any actual MPI and IO call
+#define PIDX_NO_IO_AND_META_DATA_DUMP        2
+
+
 
 #define PIDX_NO_COMPRESSION 0
 #define PIDX_CHUNKING_ONLY 1
 #define PIDX_CHUNKING_ZFP 2
 #define PIDX_CHUNKING_ZFP_ACCURACY 3
 
+
+// Data in buffer is in row order
 #define PIDX_row_major                           0
+
+// Data in buffer is in column order
 #define PIDX_column_major                        1
 
+
+// Writes data in IDX format
 #define PIDX_IDX_IO                                   1
+
+// Writes data in partitioned space with global indexing
 #define PIDX_GLOBAL_PARTITION_IDX_IO                  2
+
+// Writes data in partitioned space with local indexing
 #define PIDX_LOCAL_PARTITION_IDX_IO                   3
+
+// Writes data in raw format
 #define PIDX_RAW_IO                                   4
+
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256

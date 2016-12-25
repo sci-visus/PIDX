@@ -17,7 +17,9 @@
  *****************************************************/
 
 #include "PIDX_file_handler.h"
-
+static char mpi_state_dump_dir_name[512];
+static char local_state_dump_dir_name[512];
+static PIDX_return_code dump_debug_data_init(PIDX_file file);
 
 PIDX_return_code PIDX_debug_disable_restructuring(PIDX_file file)
 {
@@ -137,78 +139,87 @@ PIDX_return_code PIDX_disable_agg(PIDX_file file)
 }
 
 
-PIDX_return_code PIDX_dump_rst_info(PIDX_file file, int dump_rst_info)
+
+
+PIDX_return_code PIDX_dump_state(PIDX_file file, int process_state)
 {
   if(!file)
     return PIDX_err_file;
 
-  if (dump_rst_info == PIDX_RST_DUMP_INFO)
-  {
-    file->idx_dbg->dump_rst_info = 1;
-  }
-  else if (dump_rst_info == PIDX_SIMULATE_RST_AND_DUMP_INFO)
-  {
-    file->idx_dbg->simulate_rst = 1;
-    file->idx_dbg->dump_rst_info = 1;
-  }
-  else if (dump_rst_info == PIDX_NO_IO_AND_SIMULATE_RST_AND_DUMP_INFO)
-  {
-    file->idx_dbg->simulate_rst = 1;
-    file->idx_dbg->simulate_rst_io = 1;
-    file->idx_dbg->dump_rst_info = 1;
-  }
+  file->idx_dbg->state_dump = process_state;
 
   char filename_skeleton[512];
   strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
-  sprintf(file->idx_dbg->rst_dump_dir_name, "%s_%d_rst_dump", filename_skeleton, file->idx->current_time_step);
 
-  return PIDX_success;
-}
+  sprintf(mpi_state_dump_dir_name, "%s_%d_global_state_dump", filename_skeleton, file->idx->current_time_step);
+  sprintf(local_state_dump_dir_name, "%s_%d_local_state_dump", filename_skeleton, file->idx->current_time_step);
 
-
-PIDX_return_code PIDX_dump_agg_info(PIDX_file file, int dump_agg_info)
-{
-  if(!file)
-    return PIDX_err_file;
-
-  char filename_skeleton[512];
-  file->idx_dbg->dump_agg_info = dump_agg_info;
-  strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
-  filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
-  sprintf(file->idx_dbg->agg_dump_dir_name, "%s_agg_dump", filename_skeleton);
+  if (dump_debug_data_init(file) != PIDX_success)
+  {
+    fprintf(stderr, "[%s] [%d] PIDX debug failed.\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
 
   return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_dump_io_info(PIDX_file file, int dump_io_info)
+static PIDX_return_code dump_debug_data_init(PIDX_file file)
 {
-  if(!file)
-    return PIDX_err_file;
+  if (file->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || file->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
+  {
+    char mpi_file_name[1024];
+    char local_file_name[1024];
 
-  char filename_skeleton[512];
-  file->idx_dbg->dump_io_info = dump_io_info;
-  strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
-  filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
-  sprintf(file->idx_dbg->io_dump_dir_name, "%s_io_dump", filename_skeleton);
+    if (file->idx_c->grank == 0)
+    {
+#if 1
+      char mkdir_line1[1024];
+      char mkdir_line2[1024];
+      sprintf(mkdir_line1, "mkdir -p %s", mpi_state_dump_dir_name);
+      sprintf(mkdir_line2, "mkdir -p %s", local_state_dump_dir_name);
+      system(mkdir_line1);
+      system(mkdir_line2);
+#else
+      int ret;
+      ret = mkdir(mpi_state_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
+      if (ret != 0 && errno != EEXIST)
+      {
+        perror("mkdir");
+        fprintf(stderr, " Error in aggregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, mpi_state_dump_dir_name);
+        return PIDX_err_io;
+      }
 
-  return PIDX_success;
-}
+      ret = mkdir(local_state_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
+      if (ret != 0 && errno != EEXIST)
+      {
+        perror("mkdir");
+        fprintf(stderr, " Error in aggregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, local_state_dump_dir_name);
+        return PIDX_err_io;
+      }
+#endif
+    }
 
+    MPI_Barrier(file->idx_c->global_comm);
 
+    sprintf(mpi_file_name, "%s/rank_%d", mpi_state_dump_dir_name, file->idx_c->grank);
+    file->idx_dbg->mpi_dump_fp = fopen(mpi_file_name, "a+");
+    if (!file->idx_dbg->mpi_dump_fp)
+    {
+      fprintf(stderr, " [%s] [%d] io_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, mpi_file_name);
+      return PIDX_err_io;
+    }
 
-PIDX_return_code PIDX_dump_process_state(PIDX_file file, int process_state)
-{
-  if(!file)
-    return PIDX_err_file;
-
-  char filename_skeleton[512];
-  file->idx_dbg->dump_process_state = process_state;
-  strncpy(filename_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
-  filename_skeleton[strlen(file->idx->filename) - 4] = '\0';
-  sprintf(file->idx_dbg->process_state_dump_dir_name, "%s_%d_process_state_dump", filename_skeleton, file->idx->current_time_step);
+    sprintf(local_file_name, "%s/rank_%d", local_state_dump_dir_name, file->idx_c->grank);
+    file->idx_dbg->local_dump_fp = fopen(local_file_name, "a+");
+    if (!file->idx_dbg->local_dump_fp)
+    {
+      fprintf(stderr, " [%s] [%d] io_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, local_file_name);
+      return PIDX_err_io;
+    }
+  }
 
   return PIDX_success;
 }

@@ -30,6 +30,8 @@
         |         |         | *
         | P0      | P1      |/
         *---------*---------*
+
+        Writes data in PIDX raw format
 */
 
 #include <unistd.h>
@@ -101,6 +103,7 @@ int main(int argc, char **argv)
   for (ts = 0; ts < time_step_count; ts++)
   {
     set_pidx_file(ts);
+    PIDX_dump_state(file, PIDX_META_DATA_DUMP_ONLY);
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
     PIDX_close(file);
@@ -400,7 +403,7 @@ static void set_pidx_file(int ts)
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_RAW_IO);
 
-  //PIDX_set_cache_time_step(file, 0);
+  PIDX_set_cache_time_step(file, 0);
 
   return;
 }
