@@ -31,7 +31,34 @@
         | P0      | P1      |/
         *---------*---------*
 
+        ABOUT this application:
         Writes data in PIDX raw format
+        Takes input the size of the volume and the size of per-process volumes
+        and input file with list of fields and the restructuring box.
+        Restructuring box is imposed on the grid, processes communicate and transfer data
+        among each other after which processes hold data only for restructured box.
+        Processes holding the restructured box writes its data to a seperate file.
+
+
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+       =========||=========||=========||=========  ->   - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        ============||=============||=========
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
 */
 
 #include <unistd.h>
@@ -84,6 +111,7 @@ static char *usage = "Serial Usage: ./single_buffer_raw_write -g 32x32x32 -l 32x
                      "Parallel Usage: mpirun -n 8 ./single_buffer_raw_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
+                     "  -r: restructured box dimension\n"
                      "  -f: Raw file name template\n"
                      "  -t: number of timesteps\n"
                      "  -v: number of variables\n";

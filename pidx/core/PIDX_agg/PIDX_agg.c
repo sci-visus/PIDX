@@ -4,8 +4,6 @@
 
 static PIDX_return_code report_error(PIDX_return_code ret, char* file, int line);
 static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab);
-static PIDX_return_code create_open_log_file (PIDX_agg_id id);
-static PIDX_return_code close_log_file (PIDX_agg_id id);
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode);
 static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id);
 
@@ -265,9 +263,6 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   ret = create_window(id, ab);
   if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
-  ret = create_open_log_file(id);
-  if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
-
 #ifdef PIDX_ACTIVE_TARGET
   ret = MPI_Win_fence(0, id->win);
   if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
@@ -285,9 +280,6 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   ret = MPI_Win_free(&(id->win));
   if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 #endif
-
-  ret = close_log_file(id);
-  if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
   return PIDX_success;
 }
@@ -353,51 +345,6 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
     ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->local_comm, &(id->win));
     if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
   }
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code create_open_log_file (PIDX_agg_id id)
-{
-#ifdef PIDX_DUMP_AGG
-  if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
-  {
-    char agg_file_name[1024];
-    ret = mkdir(id->idx_d->agg_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);
-    if (ret != 0 && errno != EEXIST)
-    {
-      perror("mkdir");
-      fprintf(stderr, " Error in aggregate_write_read Line %d File %s folder name %s\n", __LINE__, __FILE__, id->idx_d->agg_dump_dir_name);
-      return PIDX_err_agg;
-    }
-
-#if PIDX_HAVE_MPI
-    MPI_Barrier(id->local_comm);
-#endif
-
-    sprintf(agg_file_name, "%s/rank_%d", id->idx_d->agg_dump_dir_name, id->idx_c->lrank);
-    agg_dump_fp = fopen(agg_file_name, "a+");
-    if (!agg_dump_fp)
-    {
-      fprintf(stderr, " [%s] [%d] agg_dump_fp filename = %s is corrupt.\n", __FILE__, __LINE__, agg_file_name);
-      return PIDX_err_agg;
-    }
-  }
-#endif
-
-  return PIDX_success;
-}
-
-static PIDX_return_code close_log_file (PIDX_agg_id id)
-{
-#ifdef PIDX_DUMP_AGG
-  if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
-  {
-    fprintf(agg_dump_fp, "\n");
-    fclose(agg_dump_fp);
-  }
-#endif
 
   return PIDX_success;
 }
