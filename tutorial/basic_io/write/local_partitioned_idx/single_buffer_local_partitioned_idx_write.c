@@ -22,7 +22,7 @@
           *---------*---------* |
          /         /         /| |
         *---------*---------* | *
-        |         |         | |/|           --------->        RAW Data format
+        |         |         | |/|           --------->        Partitioned local Index space IDX Data
         |         |         | * |
         | P4      | P5      |/| | P3
         *---------*---------* | *
@@ -79,7 +79,7 @@ static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
 
 static char *usage = "Serial Usage: ./single_buffer_global_partitioned_idx_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./single_buffer_global_partitioned_idx_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./single_buffer_local_partitioned_idx_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX file name template\n"
@@ -147,7 +147,7 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
-    case('c'): // local dimension
+    case('c'): // partitioned box dimension
       if ((sscanf(optarg, "%dx%dx%d", &partition_box_size[X], &partition_box_size[Y], &partition_box_size[Z]) == EOF) ||(partition_box_size[X] < 1 || partition_box_size[Y] < 1 || partition_box_size[Z] < 1))
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
@@ -398,6 +398,7 @@ static void set_pidx_file(int ts)
 
   // Selecting idx I/O mode
   PIDX_set_io_mode(file, PIDX_LOCAL_PARTITION_IDX_IO);
+  //PIDX_disable_agg(file);
 
   return;
 }

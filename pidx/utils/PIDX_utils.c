@@ -151,13 +151,13 @@ void revstr(char* str)
   strcpy(str, cpstr);
 }
 
-void GuessBitmaskPattern(char* _bits, PointND dims)
+void GuessBitmaskPattern(char* _bits, Point3D dims)
 {
   int D,N,ordered;
   int dim = 1;
   char* p=_bits;
 	      
-  PointND id,sorted_id;
+  Point3D id,sorted_id;
 
   *p++='V';
 
@@ -636,12 +636,12 @@ void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, uns
   while ((lastbitmask & hzaddress) == 0) hzaddress <<= 1;
     hzaddress &= lastbitmask - 1;
   
-  PointND cnt;
-  PointND p  ;
+  Point3D cnt;
+  Point3D p  ;
   int n = 0;
 
-  memset(&cnt,0,sizeof(PointND));
-  memset(&p  ,0,sizeof(PointND));
+  memset(&cnt,0,sizeof(Point3D));
+  memset(&p  ,0,sizeof(Point3D));
 
   for (;hzaddress; hzaddress >>= 1,++n, maxh--) 
   {
@@ -654,15 +654,15 @@ void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, uns
   xyz[2] = p.z;
 }
 
-unsigned long long xyz_to_HZ(const char* bitmask, int maxh, PointND xyz)
+unsigned long long xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz)
 {
   unsigned long long zaddress=0;
   int cnt   = 0;
-  PointND zero;
+  Point3D zero;
   int temp_maxh = maxh;
-  memset(&zero,0,sizeof(PointND));
+  memset(&zero,0,sizeof(Point3D));
 
-  for (cnt=0 ; memcmp(&xyz, &zero, sizeof(PointND)) ; cnt++, maxh--)
+  for (cnt=0 ; memcmp(&xyz, &zero, sizeof(Point3D)) ; cnt++, maxh--)
   {
     int bit= bitmask[maxh];
     zaddress |= ((unsigned long long)PGET(xyz,bit) & 1) << cnt;

@@ -106,7 +106,6 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       return PIDX_err_file;
     }
 
-#if 1
     // Setup 7: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
@@ -128,7 +127,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
         return PIDX_err_file;
       }
     }
-
+#if 1
     // Setup 9: Performs actual file io
     for (li = si; li <= ei; li = li + 1)
     {
@@ -146,20 +145,6 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       finalize_aggregation(file, gi, li);
       time->io_end[gi][li] = PIDX_get_time();
     }
-#else
-    // Setup 7: Setup aggregation buffers
-    for (li = si; li <= ei; li = li + 1)
-    {
-      ret = data_aggregate(file, gi, li, AGG_SETUP_AND_PERFORM, PIDX_WRITE);
-      if (ret != PIDX_success)
-      {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-      finalize_aggregation(file, gi, li);
-    }
-#endif
-
 
     // Step 10: Cleanup for step 6
     if (hz_encode_cleanup(file) != PIDX_success)
@@ -167,8 +152,9 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+#endif
   }
-
+#if 1
   // Step 11: Cleanup the group and IDX related meta-data
   ret = group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
@@ -176,7 +162,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#endif
   // Step 12: Partition cleanup
   cleanup:
   time->partition_cleanup_start = MPI_Wtime();
@@ -481,7 +467,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
   }
 
   // Splits the global communicator into local communicators
-  ret = create_local_comm(file, gi);
+  ret = create_local_comm(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -500,7 +486,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   PIDX_time time = file->idx_d->time;
 
   time->init_start = MPI_Wtime();
-  ret = idx_init(file, gi);
+  ret = idx_init(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -602,9 +588,6 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  free(var_grp->rank_buffer);
   time->group_cleanup_end = PIDX_get_time();
 
   return PIDX_success;

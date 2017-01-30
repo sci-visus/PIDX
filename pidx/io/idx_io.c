@@ -309,6 +309,9 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
     }
   }
 
+  if (file->idx_c->grank == 0)
+    printf("%d - %d %d %d\n", var_grp->agg_l_nshared, var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index, var_grp->nshared_layout_count);
+
   return PIDX_success;
 }
 
@@ -341,14 +344,13 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   PIDX_time time = file->idx_d->time;
 
   time->init_start = PIDX_get_time();
-  ret = idx_init(file, gi);
+  ret = idx_init(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->init_end = PIDX_get_time();
-
 
   time->set_reg_box_start = PIDX_get_time();
   ret = set_rst_box_size(file, gi, svi);
@@ -441,8 +443,6 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
     return PIDX_err_file;
   }
 
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  free(var_grp->rank_buffer);
   time->group_cleanup_end = PIDX_get_time();
 
   return PIDX_success;

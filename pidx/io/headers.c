@@ -35,6 +35,15 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
         return PIDX_err_file;
       }
     }
+    if (mode == PIDX_LOCAL_PARTITION_IDX_IO)
+    {
+      ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, var_grp->nshared_block_layout);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+    }
     else
     {
       //printf("Filename %s\n", file->idx->filename_global);

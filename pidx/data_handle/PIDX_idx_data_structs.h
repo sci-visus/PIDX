@@ -135,10 +135,6 @@ struct PIDX_variable_group_struct
   int nshared_end_layout_index;
   int nshared_layout_count;
 
-  //extents of meta-data
-  int *rank_buffer;
-
-
   // Block level layout
   PIDX_block_layout f0_block_layout;
   PIDX_block_layout* f0_block_layout_by_level;
@@ -226,6 +222,9 @@ struct idx_file_struct
   int random_agg_counter;
   int *random_agg_list;
 
+  unsigned long long *all_offset;
+  unsigned long long *all_size;
+
   int cached_ts;
 };
 typedef struct idx_file_struct* idx_dataset;
@@ -234,7 +233,7 @@ typedef struct idx_file_struct* idx_dataset;
 /// idx_dataset_derived_metadata
 struct idx_dataset_derived_metadata_struct
 {
-  //int io_mode;
+  int io_mode;
 
   int dimension;
   int samples_per_block;
@@ -287,6 +286,8 @@ struct idx_dataset_derived_metadata_struct
 
   int shared_block_level;
   int total_partiton_level;
+
+  int **block_bitmap;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

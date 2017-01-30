@@ -714,18 +714,17 @@ static int calculate_patch_group_count_for_patch_per_process(PIDX_io file, int g
   free(reg_patch_grp);
   reg_patch_grp = 0;
 
-
   return patch_group_count;
 }
 
 
-PIDX_return_code idx_init(PIDX_io file, int gi)
+PIDX_return_code idx_init(PIDX_io file, int gi, int svi)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  PIDX_variable var0 = var_grp->variable[svi];
 
-  var_grp->rank_buffer = malloc(file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  MPI_Allgather(&(file->idx_c->grank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
+  MPI_Allgather(var0->sim_patch[0]->offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
+  MPI_Allgather(var0->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
 
   return PIDX_success;
 }

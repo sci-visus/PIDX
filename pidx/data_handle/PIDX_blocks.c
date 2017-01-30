@@ -359,6 +359,9 @@ void PIDX_free_layout(PIDX_block_layout layout)
   free(layout->bcpf);
   layout->bcpf = 0;
 
+  free(layout->lbi);
+  layout->lbi = 0;
+
   free(layout->existing_file_index);
   layout->existing_file_index = 0;
 

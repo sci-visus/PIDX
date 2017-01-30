@@ -78,6 +78,9 @@ MESSAGE("PIDX_GIT_REVISION ${PIDX_GIT_REVISION}")
 OPTION(PIDX_BUILD_TUTORIAL "Build tutorial" FALSE)
 MESSAGE("PIDX_BUILD_TUTORIAL ${PIDX_BUILD_TUTORIAL}")
 
+OPTION(PIDX_BUILD_UTILITY "Build utility" FALSE)
+MESSAGE("PIDX_BUILD_TUTORIAL ${PIDX_BUILD_UTILITY}")
+
 OPTION(PIDX_BUILD_EXAMPLE "Build example" FALSE)
 MESSAGE("PIDX_BUILD_EXAMPLE ${PIDX_BUILD_EXAMPLE}")
 
@@ -89,6 +92,22 @@ MESSAGE("PIDX_BUILD_PROFILE ${PIDX_BUILD_PROFILE}")
 
 OPTION(PIDX_BUILD_PROCESSING "Build processing" TRUE)
 MESSAGE("PIDX_BUILD_PROCESSING ${PIDX_BUILD_PROCESSING}")
+
+OPTION(PIDX_BUILD_IN_SITU_MERGE "Build in situ merge" FALSE)
+MESSAGE("PIDX_BUILD_IN_SITU_MERGE ${PIDX_BUILD_IN_SITU_MERGE}")
+IF (PIDX_BUILD_IN_SITU_MERGE)
+  set(DATAFLOW_DIR "${CMAKE_PREFIX_PATH}../../PIDX_external/dataflow/build" CACHE STRING "DataFlow installation directory")
+  find_library(DATAFLOW_LIB NAMES dataflow HINTS ${DATAFLOW_DIR}/lib)
+  include_directories(${DATAFLOW_DIR}/include)
+
+  set(PMT_SRC_DIR "${CMAKE_PREFIX_PATH}../../PIDX_external/parallelmergetree/src" CACHE STRING "PMT src directory")
+
+  file(GLOB PMT_SRC ${PMT_SRC_DIR}/*.cpp)
+  include_directories(${PMT_SRC_DIR}/)
+
+  add_executable(your_app your_app.cpp ${PMT_SRC})
+  target_link_libraries(your_app ${DATAFLOW_LIB})
+ENDIF()
 
 # ///////////////////////////////////////////////
 # PIDX_OPTION_XXXX
@@ -164,6 +183,7 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
 ADD_SUBDIRECTORY(external)
 ADD_SUBDIRECTORY(pidx)
 ADD_SUBDIRECTORY(tutorial)
+ADD_SUBDIRECTORY(utility)
 ADD_SUBDIRECTORY(viewer2D)
 ADD_SUBDIRECTORY(profile)
 ADD_SUBDIRECTORY(processing)

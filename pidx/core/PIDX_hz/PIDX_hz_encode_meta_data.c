@@ -117,13 +117,13 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       {
         Align((maxH - 1), j, id->idx->bitPattern, tpatch, allign_offset, allign_count, hz_buf->nsamples_per_level);
 
-        PointND startXYZ;
+        Point3D startXYZ;
         startXYZ.x = allign_offset[j][0];
         startXYZ.y = allign_offset[j][1];
         startXYZ.z = allign_offset[j][2];
         hz_buf->start_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, startXYZ);
 
-        PointND endXYZ;
+        Point3D endXYZ;
         endXYZ.x = allign_count[j][0];
         endXYZ.y = allign_count[j][1];
         endXYZ.z = allign_count[j][2];

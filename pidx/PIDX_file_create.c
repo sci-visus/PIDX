@@ -51,6 +51,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   {
     (*file)->idx_d->partition_count[i] = 1;
     (*file)->idx_d->partition_size[i] = getPowerOf2(dims[i]);
+    (*file)->idx_d->partition_offset[i] = 0;
   }
 
   (*file)->idx_dbg->debug_do_rst = 1;
@@ -83,6 +84,11 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   MPI_Comm_size((*file)->idx_c->global_comm, &((*file)->idx_c->gnprocs));
   MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
   MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
+
+  (*file)->idx->all_offset = malloc(sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS);
+  memset((*file)->idx->all_offset, 0, (sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
+  (*file)->idx->all_size =  malloc(sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS);
+  memset((*file)->idx->all_size, 0, (sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
 
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;

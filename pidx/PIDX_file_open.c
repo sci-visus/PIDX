@@ -37,8 +37,16 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
   MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
 
+  (*file)->idx->all_offset = malloc(sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS);
+  memset((*file)->idx->all_offset, 0, (sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
+  (*file)->idx->all_size =  malloc(sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS);
+  memset((*file)->idx->all_size, 0, (sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
+
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
     (*file)->idx_d->partition_count[i] = 1;
+    (*file)->idx_d->partition_offset[i] = 0;
+  }
 
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;
@@ -178,8 +186,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         count = 0;
         while (pch != NULL)
         {
-          if (count % 2 == 1)
-            (*file)->idx_d->partition_size[count / 2] = atoi(pch);
+          (*file)->idx_d->partition_size[count] = atoi(pch);
           count++;
           pch = strtok(NULL, " ");
         }
@@ -195,8 +202,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         count = 0;
         while (pch != NULL)
         {
-          if (count % 2 == 1)
-            (*file)->idx_d->partition_count[count / 2] = atoi(pch);
+          (*file)->idx_d->partition_count[count] = atoi(pch);
           count++;
           pch = strtok(NULL, " ");
         }
@@ -448,6 +454,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast(&((*file)->idx_d->data_core_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast((*file)->idx_d->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast((*file)->idx_d->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
+    MPI_Bcast((*file)->idx_d->partition_offset, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->compression_bit_rate), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->global_comm);

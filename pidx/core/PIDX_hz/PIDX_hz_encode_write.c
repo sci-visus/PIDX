@@ -64,7 +64,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
       }
 
       number_levels = maxH - 1;
-      PointND xyzuv_Index;
+      Point3D xyzuv_Index;
 
       if(var0->data_layout == PIDX_row_major)
       {
@@ -82,13 +82,13 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
               xyzuv_Index.z = k;
 
               z_order = 0;
-              PointND zero;
+              Point3D zero;
               zero.x = 0;
               zero.y = 0;
               zero.z = 0;
-              memset(&zero, 0, sizeof (PointND));
+              memset(&zero, 0, sizeof (Point3D));
 
-              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (Point3D)); cnt++, number_levels--)
               {
                 int bit = id->idx->bitPattern[number_levels];
                 z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
@@ -130,13 +130,13 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
               xyzuv_Index.z = k;
 
               z_order = 0;
-              PointND zero;
+              Point3D zero;
               zero.x = 0;
               zero.y = 0;
               zero.z = 0;
-              memset(&zero, 0, sizeof (PointND));
+              memset(&zero, 0, sizeof (Point3D));
 
-              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (Point3D)); cnt++, number_levels--)
               {
                 int bit = id->idx->bitPattern[number_levels];
                 z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
@@ -244,12 +244,12 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int res_from
               while ((lastbitmask & mindex) == 0) mindex <<= 1;
               mindex &= lastbitmask - 1;
 
-              PointND cnt;
-              PointND p  ;
+              Point3D cnt;
+              Point3D p  ;
               int n = 0;
 
-              memset(&cnt,0,sizeof(PointND));
-              memset(&p  ,0,sizeof(PointND));
+              memset(&cnt,0,sizeof(Point3D));
+              memset(&p  ,0,sizeof(Point3D));
 
               for (;mindex; mindex >>= 1,++n, maxH--)
               {
@@ -306,12 +306,12 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int res_from
               while ((lastbitmask & mindex) == 0) mindex <<= 1;
               mindex &= lastbitmask - 1;
 
-              PointND cnt;
-              PointND p  ;
+              Point3D cnt;
+              Point3D p  ;
               int n = 0;
 
-              memset(&cnt,0,sizeof(PointND));
-              memset(&p  ,0,sizeof(PointND));
+              memset(&cnt,0,sizeof(Point3D));
+              memset(&p  ,0,sizeof(Point3D));
 
               for (;mindex; mindex >>= 1,++n, maxH--)
               {

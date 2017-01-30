@@ -85,7 +85,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     strcat(file->idx->bitSequence, temp_bs + 1);
 
 #else
-    PointND pcp;
+    Point3D pcp;
     pcp.x = (int) file->idx->bounds[0];
     pcp.y = (int) file->idx->bounds[1];
     pcp.z = (int) file->idx->bounds[2];
@@ -121,6 +121,14 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
   file->idx_d->max_file_count = total_reg_sample_count / max_sample_per_file;
   if (total_reg_sample_count % max_sample_per_file)
     file->idx_d->max_file_count++;
+
+  file->idx_d->block_bitmap = malloc(file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
+  memset(file->idx_d->block_bitmap, 0, file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
+  for (i = 0; i < file->idx_d->max_file_count; i++)
+  {
+    file->idx_d->block_bitmap[i] = malloc(file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
+    memset(file->idx_d->block_bitmap[i], 0, file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
+  }
 
   file->idx_d->shared_block_level = (int)log2(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]) + file->idx->bits_per_block + 1;
   if (file->idx_d->shared_block_level >= file->idx_d->maxh)
@@ -250,20 +258,23 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     rpp.y = (int) file->idx->reg_patch_size[1];
     rpp.z = (int) file->idx->reg_patch_size[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
-    //if (file->idx_c->grank == 0)
-    //  printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+    if (file->idx_c->lrank == 0)
+      printf("[1X %d] %s : %d %d %d\n", file->idx_d->color, reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
     Point3D prcp;
-    prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
-    prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
-    prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
+    prcp.x = (int) getPowerOf2(file->idx->box_bounds[0]) / file->idx->reg_patch_size[0];
+    prcp.y = (int) getPowerOf2(file->idx->box_bounds[1]) / file->idx->reg_patch_size[1];
+    prcp.z = (int) getPowerOf2(file->idx->box_bounds[2]) / file->idx->reg_patch_size[2];
+    //prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
+    //prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
+    //prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
     if (prcp.x == 0)  prcp.x = 1;
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
     guess_bit_string_Z(process_bs, prcp);
-    //if (file->idx_c->grank == 0)
-    //  printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
+    if (file->idx_c->lrank == 0)
+      printf("[2Y %d] %s : %d %d %d\n", file->idx_d->color, process_bs, prcp.x, prcp.y, prcp.z);
 
 
     // Concatenating the three components to get the final bit string
@@ -274,7 +285,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     strcpy(file->idx->bitSequence, temp_bs);
 
 #else
-    PointND pcp;
+    Point3D pcp;
     pcp.x = (int) file->idx->bounds[0];
     pcp.y = (int) file->idx->bounds[1];
     pcp.z = (int) file->idx->bounds[2];
@@ -290,8 +301,8 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
-  if (file->idx_c->grank == 0)
-    printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
+  if (file->idx_c->lrank == 0)
+    printf("%d Bitstring %s maxh %d\n", file->idx_d->color, file->idx->bitSequence, file->idx_d->maxh);
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
   if (total_reg_sample_count <= 0)
@@ -310,6 +321,16 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
   file->idx_d->max_file_count = total_reg_sample_count / max_sample_per_file;
   if (total_reg_sample_count % max_sample_per_file)
     file->idx_d->max_file_count++;
+
+  if (file->idx_c->lrank == 0)
+  printf("[%d] MFC %d : %d %d %d (%d %d %d)\n", file->idx_d->color, file->idx_d->max_file_count, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
+  file->idx_d->block_bitmap = malloc(file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
+  memset(file->idx_d->block_bitmap, 0, file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
+  for (i = 0; i < file->idx_d->max_file_count; i++)
+  {
+    file->idx_d->block_bitmap[i] = malloc(file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
+    memset(file->idx_d->block_bitmap[i], 0, file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
+  }
 
   file->idx_d->shared_block_level = (int)log2(/*file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]*/1) + file->idx->bits_per_block + 1;
   if (file->idx_d->shared_block_level >= file->idx_d->maxh)
@@ -365,8 +386,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
       return PIDX_err_file;
     }
   }
-
-
+#if 1
   if (hz_from_shared == hz_to_shared)
   {
     var_grp->shared_start_layout_index = 0;
@@ -390,6 +410,11 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
       return PIDX_err_file;
     }
   }
+#endif
+#if 1
+
+  if (file->idx_c->grank == 32)
+    printf("HZ %d %d -- %d %d\n", hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
 
   if (hz_from_non_shared == hz_to_non_shared)
   {
@@ -412,8 +437,9 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
-    }
+    } 
   }
+#endif
 
   return PIDX_success;
 }
@@ -429,7 +455,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     {0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0}
   };
-
+#if 1
   int lvi = start_var_index;//file->local_variable_index;
   if (file->idx_d->parallel_mode == 1 && file->idx->compression_type == PIDX_NO_COMPRESSION)
   {
@@ -550,7 +576,8 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
           else
             bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
         }
-        //printf("[%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
+        if (file->idx_d->color == 1)
+          printf("A: [%d %d]: %d %d %d - %d %d %d\n", file->idx_d->color, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
 
         PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
         memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
@@ -612,7 +639,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
         per_patch_local_block_layout = 0;
       }
     }
-
+#if 1
     if (block_layout->resolution_from <= block_layout->bits_per_block)
     {
       int level_count = 1;
@@ -643,12 +670,19 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     }
     else
     {
+#if 1
       int level_count = 1;
       for (i = block_layout->bits_per_block + 1; i < (block_layout->resolution_to); i++)
       {
         if (i >= block_layout->resolution_from)
         {
 #if PIDX_HAVE_MPI
+          //if (file->idx_c->lrank == 0)
+          //{
+          //  int k = 0;
+          //  for (k = 0; k < level_count; k++)
+          //    printf("i = %d %d\n", i, block_layout->hz_block_number_array[i][k], all_patch_local_block_layout->hz_block_number_array[i][k]);
+          //}
           if (file->idx_d->parallel_mode == 1)
             MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
           else
@@ -659,6 +693,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
         }
         level_count = level_count * 2;
       }
+#endif
     }
 
     /*
@@ -672,6 +707,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     PIDX_blocks_free_layout(all_patch_local_block_layout);
     free(all_patch_local_block_layout);
     all_patch_local_block_layout = 0;
+#endif
   }
   else
   {
@@ -708,6 +744,8 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   block_layout->bcpf = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(block_layout->bcpf, 0, sizeof(int) * (file->idx_d->max_file_count));
 
+  block_layout->lbi = malloc(sizeof(int) * (file->idx_d->max_file_count));
+  memset(block_layout->lbi, 0, sizeof(int) * (file->idx_d->max_file_count));
 
   int file_number = 0;
   //printf("[AAAA] RES from TO to : %d %d\n", block_layout->resolution_from, block_layout->resolution_to);
@@ -721,6 +759,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
         block_layout->file_bitmap[file_number] = 1;
         block_layout->file_index[file_number] = 1;
         block_layout->bcpf[file_number]++;
+        block_layout->lbi[file_number] = 0;
         break;
       }
     }
@@ -736,13 +775,14 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
           block_layout->file_bitmap[file_number] = 1;
           block_layout->file_index[file_number] = 1;
           block_layout->bcpf[file_number]++;
+          block_layout->lbi[file_number] = block_layout->hz_block_number_array[i][j] % file->idx->blocks_per_file;
         }
       }
       ctr = ctr * 2;
     }
 
     /*
-    if (rank == 4)
+    if (file->idx_c->lnprocsrank == 4)
     {
       printf("[XXXX] Final Block Bitmap\n");
       PIDX_blocks_print_layout(block_layout);
@@ -751,6 +791,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   }
   else
   {
+#if 1
     ctr = 1;
     for (i = block_layout->bits_per_block + 1 ; i < block_layout->resolution_to ; i++)
     {
@@ -764,13 +805,15 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
             block_layout->file_bitmap[file_number] = 1;
             block_layout->file_index[file_number] = 1;
             block_layout->bcpf[file_number]++;
+            block_layout->lbi[file_number] = block_layout->hz_block_number_array[i][j] % file->idx->blocks_per_file;
           }
         }
       }
       ctr = ctr * 2;
     }
+#endif
   }
-
+#if 1
   block_layout->efc = 0;
   for (i = 0; i < file->idx_d->max_file_count; i++)
     if (block_layout->file_index[i] == 1)
@@ -793,7 +836,8 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       count++;
     }
   }
-
+#endif
+#endif
   return PIDX_success;
 }
 
@@ -943,6 +987,8 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       return PIDX_err_file;
     }
 
+    if (file->idx_d->color == 1)
+      printf("II %d %d\n", start_layout_index, layout_count);
     ret_code = populate_idx_layout(file, gi, si, layout_by_level[0], lower_level_low_layout, higher_level_low_layout, io_type);
     if (ret_code != PIDX_success)
     {
@@ -974,6 +1020,8 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+      if (file->idx_d->color == 1)
+        printf("IIIII %d: \n", i);
       ret_code = populate_idx_layout(file, gi, si, layout_by_level[i], lower_level_higher_layout, higher_level_higher_layout, io_type);
       if (ret_code != PIDX_success)
       {
@@ -987,6 +1035,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
   }
   else
   {
+
     ctr = 1;
     ctr = 1;
     int temp_level = file->idx->bits_per_block + log2(file->idx->blocks_per_file) + 1;
@@ -1008,6 +1057,10 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+
+      if (file->idx_d->color == 1)
+        printf("[%d] IIIIII %d %d -- %d\n", file->idx_c->grank, lower_level_higher_layout, higher_level_higher_layout, file->idx_d->max_file_count);
+      #if 1
       ret_code = populate_idx_layout(file, gi, si, layout_by_level[i - start_layout_index], lower_level_higher_layout, higher_level_higher_layout, io_type);
       if (ret_code != PIDX_success)
       {
@@ -1016,8 +1069,10 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       }
 
       memcpy(block_layout->hz_block_number_array[lower_level_higher_layout], layout_by_level[i - start_layout_index]->hz_block_number_array[lower_level_higher_layout], sizeof(int) * ctr);
+      #endif
       ctr = ctr * 2;
     }
+
   }
 
   block_layout->file_bitmap = malloc(file->idx_d->max_file_count * sizeof (int));
@@ -1029,6 +1084,9 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
   block_layout->bcpf = malloc(sizeof(int) * (file->idx_d->max_file_count));
   memset(block_layout->bcpf, 0, sizeof(int) * (file->idx_d->max_file_count));
 
+  block_layout->lbi = malloc(sizeof(int) * (file->idx_d->max_file_count));
+  memset(block_layout->lbi, 0, sizeof(int) * (file->idx_d->max_file_count));
+
   if (block_layout->resolution_from <= block_layout->bits_per_block)
   {
     for (i = block_layout->resolution_from ; i <= file->idx->bits_per_block ; i++)
@@ -1037,6 +1095,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       {
         file_number = block_layout->hz_block_number_array[i][0] / file->idx->blocks_per_file;
         block_layout->file_bitmap[file_number] = 1;
+        file->idx_d->block_bitmap[file_number][block_layout->hz_block_number_array[i][0] % file->idx->blocks_per_file] = 1;
         block_layout->file_index[file_number] = 1;
         block_layout->bcpf[file_number]++;
         break;
@@ -1052,8 +1111,10 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         {
           file_number = block_layout->hz_block_number_array[i][j] / file->idx->blocks_per_file;
           block_layout->file_bitmap[file_number] = 1;
+          file->idx_d->block_bitmap[file_number][block_layout->hz_block_number_array[i][j] % file->idx->blocks_per_file] = 1;
           block_layout->file_index[file_number] = 1;
           block_layout->bcpf[file_number]++;
+          block_layout->lbi[file_number] = block_layout->hz_block_number_array[i][j] % file->idx->blocks_per_file;
         }
       }
       ctr = ctr * 2;
@@ -1074,8 +1135,12 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
           {
             file_number = block_layout->hz_block_number_array[i][j] / file->idx->blocks_per_file;
             block_layout->file_bitmap[file_number] = 1;
+            if (file->idx_c->lrank == 0)
+              printf("%d file number %d %d \n", file->idx_c->grank, block_layout->hz_block_number_array[i][j], file_number);
+            file->idx_d->block_bitmap[file_number][block_layout->hz_block_number_array[i][j] % file->idx->blocks_per_file] = 1;
             block_layout->file_index[file_number] = 1;
             block_layout->bcpf[file_number]++;
+            block_layout->lbi[file_number] = block_layout->hz_block_number_array[i][j] % file->idx->blocks_per_file;
           }
         }
       }
@@ -1106,6 +1171,11 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       block_layout->inverse_existing_file_index[i] = count;
       count++;
     }
+  }
+
+  if (file->idx_c->grank == 32)
+  {
+    PIDX_blocks_print_layout(block_layout);
   }
 
   return PIDX_success;

@@ -1,11 +1,14 @@
 #include "../../PIDX_inc.h"
 
+#define PIDX_MIN(a,b) (((a)<(b))?(a):(b))
+
 #define PIDX_ACTIVE_TARGET 1
 
 static PIDX_return_code report_error(PIDX_return_code ret, char* file, int line);
 static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode);
 static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id);
+static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 
 struct PIDX_agg_struct
 {
@@ -165,80 +168,221 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
 {
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   int i = 0, j = 0, k = 0;
+
   for (k = 0; k < lbl->efc; k++)
   {
     for (i = id->fi; i <= id->li; i++)
     {
       for (j = 0; j < var_grp->variable[i]->vps * ab->agg_f; j++)
       {
-        unsigned long long file_index = 0;
+        int start_rank = -1, end_rank = -1;
+        unsigned long long global_file_index = lbl->existing_file_index[k];
 
-        int *first;
-        first = malloc(sizeof(*first) * PIDX_MAX_DIMENSIONS);
-        memset(first, 0, sizeof(*first) * PIDX_MAX_DIMENSIONS);
-
-        int file_count = 1;
-
-        int negative_file_index = 0;
-        if (agg_offset == 0 || agg_offset == 1)
+        int first_block = 0, last_block = 0;
+        int b = 0;
+        for (b = 0; b < id->idx->blocks_per_file; b++)
         {
-          file_count = 1;
-          file_index = 0 * ab->agg_f + j;
+          if (id->idx_d->block_bitmap[global_file_index][b] == 1)
+          {
+            first_block = b;
+            break;
+          }
+        }
+        for (b = id->idx->blocks_per_file - 1; b >= 0; b--)
+        {
+          if (id->idx_d->block_bitmap[global_file_index][b] == 1)
+          {
+            last_block = b;
+            break;
+          }
+        }
+        assert(last_block == lbl->lbi[global_file_index]);
+
+        //printf("[%d] first last block %d %d [%d %d %d - %d %d %d]\n", id->idx_d->color, first_block, last_block, id->idx_d->partition_offset[0], id->idx_d->partition_offset[1], id->idx_d->partition_offset[2], (id->idx_d->partition_offset[0] + id->idx_d->partition_size[0] - 1), (id->idx_d->partition_offset[1] + id->idx_d->partition_size[1] - 1), (id->idx_d->partition_offset[2] + id->idx_d->partition_size[2] - 1));
+
+        int s = 0;
+        int last_index = 0;
+        int first_index = 0;
+        unsigned long long ZYX[PIDX_MAX_DIMENSIONS];
+
+        if (id->idx_d->io_mode == 0)
+        {
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+            // HZ index of last sample of the block.
+            last_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (lbl->lbi[global_file_index] + 1) * id->idx_d->samples_per_block - 1 - s;
+
+            // xyz index of the last sample of the block.
+            Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
+
+            // check to see if the sample is within bounds.
+            if (ZYX[0] < PIDX_MIN(id->idx->box_bounds[0], id->idx_d->partition_offset[0] + id->idx_d->partition_size[0]) &&
+                ZYX[1] < PIDX_MIN(id->idx->box_bounds[1], id->idx_d->partition_offset[1] + id->idx_d->partition_size[1]) &&
+                ZYX[2] < PIDX_MIN(id->idx->box_bounds[2], id->idx_d->partition_offset[2] + id->idx_d->partition_size[2]))
+              break;
+          }
+
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+             // HZ index of first sample of the block.
+            first_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (first_block) * id->idx_d->samples_per_block + s;
+
+            // xyz index of the first sample of the block.
+            Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, first_index, ZYX);
+
+            // check to see if the sample is within bounds.
+            if (ZYX[0] >= id->idx_d->partition_offset[0] && ZYX[0] < PIDX_MIN(id->idx->box_bounds[0], id->idx_d->partition_offset[0] + id->idx_d->partition_size[0]) &&
+                ZYX[1] >= id->idx_d->partition_offset[1] && ZYX[1] < PIDX_MIN(id->idx->box_bounds[1], id->idx_d->partition_offset[1] + id->idx_d->partition_size[1]) &&
+                ZYX[2] >= id->idx_d->partition_offset[2] && ZYX[2] < PIDX_MIN(id->idx->box_bounds[2], id->idx_d->partition_offset[2] + id->idx_d->partition_size[2]))
+              break;
+          }
         }
         else
         {
-          file_count = (int)pow(2, agg_offset - 1);
-          negative_file_index = (int)pow(2, agg_offset - 1);
-          file_index = (lbl->existing_file_index[k] - negative_file_index) * ab->agg_f + j;
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+            // HZ index of last sample of the block.
+            last_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (lbl->lbi[global_file_index] + 1) * id->idx_d->samples_per_block - 1 - s;
+
+            // xyz index of the last sample of the block.
+            Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
+
+            // check to see if the sample is within bounds.
+            if (ZYX[0] < id->idx->box_bounds[0] &&
+                ZYX[1] < id->idx->box_bounds[1] &&
+                ZYX[2] < id->idx->box_bounds[2])
+              break;
+          }
+
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+            // HZ index of first sample of the block.
+            first_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (first_block) * id->idx_d->samples_per_block + s;
+
+            // xyz index of the first sample of the block.
+            Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, first_index, ZYX);
+
+            // check to see if the sample is within bounds.
+            if (ZYX[0] >= 0 && ZYX[0] < id->idx->box_bounds[0] &&
+                ZYX[1] >= 0 && ZYX[1] < id->idx->box_bounds[1] &&
+                ZYX[2] >= 0 && ZYX[2] < id->idx->box_bounds[2])
+              break;
+          }
         }
 
-        int bits = (id->idx_d->maxh - 1 - (int)log2(file_count * ab->agg_f));
-        file_index = file_index << bits;
+        unsigned long long global_start_hz = first_index;//global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block;
+        unsigned long long global_end_hz = last_index;//global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (lbl->lbi[global_file_index] + 1) * id->idx_d->samples_per_block - 1;
+        unsigned long long global_start_ZYX[PIDX_MAX_DIMENSIONS], global_end_ZYX[PIDX_MAX_DIMENSIONS];
 
-        Deinterleave(id->idx->bitPattern, (id->idx_d->maxh - 1), file_index, first);
+        Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_start_hz, global_start_ZYX);
+        Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_end_hz, global_end_ZYX);
 
-        int calculated_rank = 0;
-        int rank_x = first[0] / (id->idx->reg_patch_size[0]);
-        int rank_y = first[1] / (id->idx->reg_patch_size[1]);
-        int rank_z = first[2] / (id->idx->reg_patch_size[2]);
-        int nrank_x = ((id->idx_d->partition_size[0] * id->idx_d->partition_count[0]) / id->idx->reg_patch_size[0]);
-        int nrank_y = ((id->idx_d->partition_size[1] * id->idx_d->partition_count[1]) / id->idx->reg_patch_size[1]);
+        Ndim_patch global_start_point = (Ndim_patch)malloc(sizeof (*global_start_point));
+        memset(global_start_point, 0, sizeof (*global_start_point));
+        global_start_point->offset[0] = global_start_ZYX[0];
+        global_start_point->offset[1] = global_start_ZYX[1];
+        global_start_point->offset[2] = global_start_ZYX[2];
+        global_start_point->size[0] = 1;
+        global_start_point->size[1] = 1;
+        global_start_point->size[2] = 1;
 
-        calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
+        //Extent of process with rank r
+        Ndim_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
+        memset(rank_r_patch, 0, sizeof (*rank_r_patch));
 
-        //var_offset = 0;
-        int trank = 0;
-        int interval = (id->idx_c->lnprocs/ (lbl->efc * ab->agg_f * id->idx->variable_count));
+        //TODO: case when you load a file with fewer process than what was used to create it
+        //      and then a process will have more than one data block, in a condtion like that
+        //      use lnprocs x max block a process can have.
+        int r = 0, d = 0;
+        for (r = 0; r < id->idx_c->lnprocs; r++)
+        {
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+          {
+            rank_r_patch->offset[d] = id->idx->all_offset[PIDX_MAX_DIMENSIONS * r + d];
+            rank_r_patch->size[d] = id->idx->all_size[PIDX_MAX_DIMENSIONS * r + d];
+          }
 
+          if (intersectNDChunk(global_start_point, rank_r_patch))
+          {
+            start_rank = r;
+            break;
+          }
+        }
+        free(global_start_point);
+
+        Ndim_patch global_end_point = (Ndim_patch)malloc(sizeof (*global_end_point));
+        memset(global_end_point, 0, sizeof (*global_end_point));
+        global_end_point->offset[0] = global_end_ZYX[0];
+        global_end_point->offset[1] = global_end_ZYX[1];
+        global_end_point->offset[2] = global_end_ZYX[2];
+        global_end_point->size[0] = 1;
+        global_end_point->size[1] = 1;
+        global_end_point->size[2] = 1;
+
+        memset(rank_r_patch, 0, sizeof (*rank_r_patch));
+        for (r = 0; r < id->idx_c->lnprocs; r++)
+        {
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+          {
+            rank_r_patch->offset[d] = id->idx->all_offset[PIDX_MAX_DIMENSIONS * r + d];
+            rank_r_patch->size[d] = id->idx->all_size[PIDX_MAX_DIMENSIONS * r + d];
+          }
+
+          if (intersectNDChunk(global_end_point, rank_r_patch))
+          {
+            end_rank = r;
+            break;
+          }
+        }
+        free(rank_r_patch);
+        free(global_end_point);
+
+        int range = (end_rank - start_rank + 1) / id->idx->variable_count;
         if (file_status == 1)
-          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
+          id->agg_r[k][i - id->fi][j] = start_rank + (i * range) + (range/2);
         else if (file_status == 0)
-          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval];
+          id->agg_r[k][i - id->fi][j] = start_rank + (i * range);
         else if (file_status == 2)
-          trank = id->idx_c->gnprocs - 1;
-
-        //if (rank == 0)
-        //  printf("%d FC %d Bits %d FI %d :: %d %d [%d(%d) %d %d] CR %d [%d %d %d : %d %d %d : %d %d] AI %d trank %d\n", interval, file_count, bits, file_index, file_status, interval, k, lbl->efc, i, j, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank + var_offset * interval + (interval/2), trank);
-
-        id->agg_r[k][i - id->fi][j] = trank;
-
-        if(id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
+          id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
+#if 0
+        printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
+        printf("XX: [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%d : %d %d %d) - %d (%d (%d %d) : %d %d %d) %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+             agg_offset, id->idx_d->color,
+             id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
+             start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
+             end_rank, global_end_hz, global_file_index, lbl->lbi[global_file_index], global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
+             range,
+             i,
+             k, lbl->existing_file_index[k],
+             j,
+             file_status);
+#endif
+        if (id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
         {
           ab->file_number = lbl->existing_file_index[k];
           ab->var_number = i;
           ab->sample_number = j;
 
           unsigned long long sample_count = lbl->bcpf[ab->file_number] * id->idx_d->samples_per_block / ab->agg_f;
-
           int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
-
-          int bpdt = 0;
-          bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
+          int bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
 
           ab->buffer_size = sample_count * bpdt;
 
-          //if (i == 0)// || i == id->idx->variable_count - 1)
-            printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx_c->lrank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+          if (i == 0)
+            printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %d] [BL %d %d] [HZ %d %d] [%d %d %d : %d %d %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
+                 agg_offset, id->idx_d->color,
+                 id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
+                 start_rank, end_rank, range,
+                 first_block, last_block,
+                 global_start_hz, global_end_hz,
+                 global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
+                 global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
+                 i,
+                 k, lbl->existing_file_index[k],
+                 j,
+                 file_status,
+                 ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
@@ -248,7 +392,6 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
             return PIDX_err_agg;
           }
         }
-        free(first);
       }
     }
   }
@@ -537,7 +680,8 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   //  printf("%d ----> %d TD %d NBO %d\n", hz_start, block_no, target_disp, negative_block_offset);
 
   target_rank = id->agg_r[lbl->inverse_existing_file_index[file_no]][variable_index - id->fi][sample_index];
-  //printf("[%d] File no %d IFI %d TR %d\n", rank, file_no, lbl->inverse_existing_file_index[file_no], target_rank);
+  //if (id->idx_c->grank == 0)
+  //  printf("File no %d IFI %d TR %d: ", file_no, lbl->inverse_existing_file_index[file_no], target_rank);
 
   /*
   if (layout_id != 0 && id->idx->current_time_step == 0)
@@ -724,6 +868,8 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
         }
 #endif
 
+        //if (id->idx_c->grank == 0)
+        //  printf("Size %d Target rank %d Target disp %d\n", hz_count, target_rank, target_disp);
         ret = MPI_Put(hz_buffer, hz_count * vps * bpdt, MPI_BYTE, target_rank, target_disp, hz_count * vps * bpdt, MPI_BYTE, id->win);
         if(ret != MPI_SUCCESS)
         {
@@ -741,6 +887,8 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
         }
 #endif
 
+        //if (id->idx_c->grank == 0)
+        //  printf("Size %d Target rank %d Target disp %d\n", hz_count, target_rank, target_disp);
         ret = MPI_Get(hz_buffer, hz_count * vps * bpdt, MPI_BYTE, target_rank, target_disp, hz_count * vps * bpdt, MPI_BYTE, id->win);
         if(ret != MPI_SUCCESS)
         {
@@ -788,4 +936,15 @@ static PIDX_return_code report_error(PIDX_return_code ret, char* file, int line)
 {
   fprintf(stdout,"File %s Line %d\n", file, line);
   return ret;
+}
+
+
+/// Function to check if NDimensional data chunks A and B intersects
+static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
+{
+  int d = 0, check_bit = 0;
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
+
+  return !(check_bit);
 }

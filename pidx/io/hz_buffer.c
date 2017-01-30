@@ -78,7 +78,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
   {
     for (j = var_grp->agg_l_f0; j < var_grp->f0_end_layout_index; j++)
     {
-      ret = PIDX_file_io_per_process(file->hz_id, var_grp->f0_block_layout_by_level[j - var_grp->agg_l_f0], mode);
+      ret = PIDX_file_io_per_process(file->hz_id, var_grp->f0_block_layout_by_level[j /*- var_grp->agg_l_f0*/], mode);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -89,7 +89,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
     for (j = var_grp->agg_l_shared; j < var_grp->shared_end_layout_index; j++)
     {
       file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
-      ret = PIDX_file_io_per_process(file->hz_id, var_grp->shared_block_layout_by_level[j - var_grp->agg_l_shared], mode);
+      ret = PIDX_file_io_per_process(file->hz_id, var_grp->shared_block_layout_by_level[j /*- var_grp->agg_l_shared*/], mode);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -101,7 +101,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
     for (j = var_grp->agg_l_nshared; j < var_grp->nshared_end_layout_index; j++)
     {
       file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
-      ret = PIDX_file_io_per_process(file->hz_id, var_grp->nshared_block_layout_by_level[j - var_grp->agg_l_nshared], mode);
+      ret = PIDX_file_io_per_process(file->hz_id, var_grp->nshared_block_layout_by_level[j /*- var_grp->agg_l_nshared*/], mode);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

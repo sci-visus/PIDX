@@ -36,7 +36,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
     Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
     memset(reg_patch, 0, sizeof (*reg_patch));
 
-    PointND bounds_point;
+    Point3D bounds_point;
     int maxH = 0;
     bounds_point.x = (int) file->idx_d->partition_count[0];
     bounds_point.y = (int) file->idx_d->partition_count[1];
@@ -67,20 +67,20 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 
          if (intersectNDChunk(reg_patch, local_p))
          {
-            PointND xyzuv_Index;
+            Point3D xyzuv_Index;
             xyzuv_Index.x = index_i;
             xyzuv_Index.y = index_j;
             xyzuv_Index.z = index_k;
 
             z_order = 0;
-            PointND zero;
+            Point3D zero;
             zero.x = 0;
             zero.y = 0;
             zero.z = 0;
-            memset(&zero, 0, sizeof (PointND));
+            memset(&zero, 0, sizeof (Point3D));
 
             int cnt = 0;
-            for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (PointND)); cnt++, number_levels--)
+            for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (Point3D)); cnt++, number_levels--)
             {
               int bit = bitPattern[number_levels];
               z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
@@ -131,7 +131,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 }
 
 
-PIDX_return_code create_local_comm(PIDX_io file, int gi)
+PIDX_return_code create_local_comm(PIDX_io file, int gi, int svi)
 {
   int ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -149,8 +149,12 @@ PIDX_return_code create_local_comm(PIDX_io file, int gi)
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
 
-  memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
+  memset(file->idx->all_offset, 0, (sizeof (unsigned long long) * file->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
+  memset(file->idx->all_size, 0, (sizeof (unsigned long long) * file->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
+
+  PIDX_variable var0 = var_grp->variable[svi];
+  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
+  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
 
   return PIDX_success;
 }

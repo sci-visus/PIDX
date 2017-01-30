@@ -139,6 +139,17 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   PIDX_dump_state_finalize(file);
 
+  for (i = 0; i < file->idx_d->max_file_count; i++)
+  {
+    free(file->idx_d->block_bitmap[i]);
+    file->idx_d->block_bitmap[i] = 0;
+  }
+  free(file->idx_d->block_bitmap);
+  file->idx_d->block_bitmap = 0;
+
+  free(file->idx->all_offset);
+  free(file->idx->all_size);
+
   free(file->idx);                  file->idx = 0;
   free(file->idx_d->time);          file->idx_d->time = 0;
   free(file->idx_d);                file->idx_d = 0;
@@ -341,7 +352,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
       grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
 
-      printf("IRCCHHAI    :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f] \n", group_total, rst_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      printf("IRCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f] \n", group_total, rst_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 
     }
   }

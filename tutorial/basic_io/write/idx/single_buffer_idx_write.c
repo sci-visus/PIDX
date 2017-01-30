@@ -391,7 +391,7 @@ static void set_pidx_file(int ts)
   //PIDX_debug_rst(file, 1);
   //PIDX_debug_hz(file, 1);
 
-  PIDX_set_block_count(file, 128);
+  PIDX_set_block_count(file, 256);
 
   // Selecting idx I/O mode
   PIDX_set_io_mode(file, PIDX_IDX_IO);

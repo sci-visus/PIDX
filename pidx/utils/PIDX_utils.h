@@ -26,8 +26,6 @@
 #define For(_D_) for ((_D_)=0;(_D_)<PIDX_MAX_DIMENSIONS;(_D_)++)
 #define PGET(_Point_,_Coordinate_) ((&((_Point_).x))[(_Coordinate_)])
 
-typedef struct {int x,y,z;} PointND;
-
 typedef struct {int x,y,z;} Point3D;
 
 unsigned int getNumBits ( unsigned int v );
@@ -56,13 +54,13 @@ int** AlignEx(int** box, int* p0, int* delta);
 
 void revstr(char* str);
 
-void GuessBitmaskPattern(char* _bits, PointND dims);
+void GuessBitmaskPattern(char* _bits, Point3D dims);
 
 void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples);
 
 int RegExBitmaskBit(const char* bitmask_pattern,int N);
 
-unsigned long long xyz_to_HZ(const char* bitmask, int maxh, PointND xyz);
+unsigned long long xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz);
 
 void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, unsigned long long* xyz);
 

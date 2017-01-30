@@ -34,6 +34,8 @@ struct PIDX_block_layout_struct
   int efc;  ///existing file count
 
   int *file_bitmap;
+  int *lbi;         /// index of last block in a file
+  //int *fbi;         /// index of first block in a file
   int *bcpf;        /// block count per file
   int *existing_file_index;
   int *inverse_existing_file_index;

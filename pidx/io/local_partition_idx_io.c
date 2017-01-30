@@ -90,7 +90,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#if 1
   file->idx->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
@@ -172,7 +172,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#endif
   // Step 13: Partition cleanup
   cleanup:
   time->partition_cleanup_start = MPI_Wtime();
@@ -493,7 +493,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
   }
 
   // Splits the local communicator into local communicators
-  ret = create_local_comm(file, gi);
+  ret = create_local_comm(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -533,9 +533,13 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
     else
       file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx_d->partition_offset[i];
 
-    //if (file->idx_c->grank == 0)
-    //  printf("%d: %d\n", i, file->idx->box_bounds[i]);
+    if (getPowerOf2(file->idx->box_bounds[i]) < file->idx->reg_patch_size[i])
+      file->idx->box_bounds[i] = file->idx->reg_patch_size[i];//(file->idx->box_bounds[i] / file->idx->reg_patch_size[i] + 1) * file->idx->reg_patch_size[i];
   }
+
+  PIDX_variable var0 = var_grp->variable[svi];
+  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
+  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
   //printf("%d %d %d\n", file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
   return PIDX_success;
@@ -594,7 +598,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   PIDX_time time = file->idx_d->time;
 
   time->init_start = MPI_Wtime();
-  ret = idx_init(file, gi);
+  ret = idx_init(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -640,7 +644,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
      return PIDX_err_file;
   }
-
+#if 1
   // Calculate the hz level upto which aggregation is possible
   ret = find_agg_level(file, gi);
   if (ret != PIDX_success)
@@ -671,7 +675,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
     }
     time->header_io_end = PIDX_get_time();
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -696,8 +700,6 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
     return PIDX_err_file;
   }
 
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  free(var_grp->rank_buffer);
   time->group_cleanup_end = PIDX_get_time();
 
   return PIDX_success;

@@ -60,6 +60,16 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
               fflush(hz_id->idx_dbg->local_dump_fp);
             }
 
+            if (hz_id->idx_c->grank == 0)
+            {
+              double x1, x2, x3, x4;
+              memcpy(&x1, hz_buf->buffer[i] + 0*sizeof(double), sizeof(double));
+              memcpy(&x2, hz_buf->buffer[i] + 1*sizeof(double), sizeof(double));
+              memcpy(&x3, hz_buf->buffer[i] + 2*sizeof(double), sizeof(double));
+              memcpy(&x4, hz_buf->buffer[i] + 3*sizeof(double), sizeof(double));
+              printf("[%d] OS %d %d - %f %f %f %f\n", i, var0->hz_buffer[p]->start_hz_index[i], count, x1, x2, x3, x4);
+
+            }
             ret = write_read_samples(hz_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
             if (ret != PIDX_success)
             {

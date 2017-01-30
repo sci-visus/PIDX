@@ -48,6 +48,8 @@ extern "C" {
 #include "./core/PIDX_rst/PIDX_rst.h"
 #include "./core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.h"
 #include "./core/PIDX_hz/PIDX_hz_encode.h"
+#include "./core/PIDX_in_situ_interface/PIDX_in_situ_interface.h"
+#include "./core/PIDX_in_transit_interface/PIDX_in_transit_interface.h"
 #include "./core/PIDX_block_rst/PIDX_block_restructure.h"
 #include "./core/PIDX_cmp/PIDX_compression.h"
 #include "./core/PIDX_agg/PIDX_agg.h"
