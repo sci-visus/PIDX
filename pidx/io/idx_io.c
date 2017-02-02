@@ -38,27 +38,27 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
+  // Step 1: Setup restructuring buffers
+  ret = restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  // Step 2: Perform data restructuring
+  ret = restructure(file, PIDX_WRITE);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
   file->idx->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
     ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
-
-    // Step 1: Setup restructuring buffers
-    ret = restructure_setup(file, gi, si, ei, PIDX_WRITE);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    // Step 2: Perform data restructuring
-    ret = restructure(file, PIDX_WRITE);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
 
     // Step 3: Setup HZ buffers
     ret = hz_encode_setup(file, gi, si, ei);
@@ -129,13 +129,13 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+  }
 
-    ret = restructure_cleanup(file);
-    if (ret != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
+  ret = restructure_cleanup(file);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
   }
 
   // Step 9
@@ -425,9 +425,6 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
   PIDX_time time = file->idx_d->time;
 
   time->group_cleanup_start = PIDX_get_time();
-
-  free(file->idx->random_agg_list);
-  file->idx->random_agg_counter = 0;
 
   ret = destroy_agg_io_buffer(file, svi, evi);
   if (ret != PIDX_success)

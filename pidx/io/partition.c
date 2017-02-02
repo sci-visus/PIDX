@@ -131,11 +131,9 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 }
 
 
-PIDX_return_code create_local_comm(PIDX_io file, int gi, int svi)
+PIDX_return_code create_local_comm(PIDX_io file)
 {
   int ret;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
   ret = MPI_Comm_split(file->idx_c->global_comm, file->idx_d->color, file->idx_c->grank, &(file->idx_c->local_comm));
   if (ret != MPI_SUCCESS)
   {
@@ -148,13 +146,6 @@ PIDX_return_code create_local_comm(PIDX_io file, int gi, int svi)
 
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
-
-  memset(file->idx->all_offset, 0, (sizeof (unsigned long long) * file->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
-  memset(file->idx->all_size, 0, (sizeof (unsigned long long) * file->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
-
-  PIDX_variable var0 = var_grp->variable[svi];
-  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
-  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
 
   return PIDX_success;
 }

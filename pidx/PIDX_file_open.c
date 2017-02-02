@@ -37,16 +37,12 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
   MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
 
-  (*file)->idx->all_offset = malloc(sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS);
-  memset((*file)->idx->all_offset, 0, (sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
-  (*file)->idx->all_size =  malloc(sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS);
-  memset((*file)->idx->all_size, 0, (sizeof (unsigned long long) * (*file)->idx_c->lnprocs * PIDX_MAX_DIMENSIONS));
-
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
     (*file)->idx_d->partition_count[i] = 1;
     (*file)->idx_d->partition_offset[i] = 0;
   }
+
 
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;
@@ -69,6 +65,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->raw_io_pipe_length = 0;
 
   (*file)->idx_d->color = 0;
+  (*file)->idx->agg_counter = 0;
 
   (*file)->idx->io_type = PIDX_IDX_IO;
   //(*file)->enable_raw_dump = 0;

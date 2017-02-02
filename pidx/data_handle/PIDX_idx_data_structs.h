@@ -219,11 +219,7 @@ struct idx_file_struct
   /// 0 for big endian
   int flip_endian;
 
-  int random_agg_counter;
-  int *random_agg_list;
-
-  unsigned long long *all_offset;
-  unsigned long long *all_size;
+  int agg_counter;
 
   int cached_ts;
 };

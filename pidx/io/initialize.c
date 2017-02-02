@@ -720,12 +720,13 @@ static int calculate_patch_group_count_for_patch_per_process(PIDX_io file, int g
 
 PIDX_return_code idx_init(PIDX_io file, int gi, int svi)
 {
+#if 0
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
   MPI_Allgather(var0->sim_patch[0]->offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
   MPI_Allgather(var0->sim_patch[0]->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
-
+#endif
   return PIDX_success;
 }
 

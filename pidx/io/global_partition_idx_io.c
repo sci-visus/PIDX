@@ -467,7 +467,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
   }
 
   // Splits the global communicator into local communicators
-  ret = create_local_comm(file, gi, svi);
+  ret = create_local_comm(file);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

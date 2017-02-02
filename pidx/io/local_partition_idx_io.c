@@ -493,7 +493,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
   }
 
   // Splits the local communicator into local communicators
-  ret = create_local_comm(file, gi, svi);
+  ret = create_local_comm(file);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -536,11 +536,6 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
     if (getPowerOf2(file->idx->box_bounds[i]) < file->idx->reg_patch_size[i])
       file->idx->box_bounds[i] = file->idx->reg_patch_size[i];//(file->idx->box_bounds[i] / file->idx->reg_patch_size[i] + 1) * file->idx->reg_patch_size[i];
   }
-
-  PIDX_variable var0 = var_grp->variable[svi];
-  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
-  MPI_Allgather(var0->rst_patch_group[0]->reg_patch->size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx->all_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
-  //printf("%d %d %d\n", file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
   return PIDX_success;
 }
