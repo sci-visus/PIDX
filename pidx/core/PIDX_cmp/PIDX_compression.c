@@ -223,6 +223,7 @@ PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derive
 
 PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
+#if 0
   if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
     return PIDX_success;
 
@@ -269,12 +270,13 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 #endif
   }
 
-
+#endif
   return PIDX_success;
 }
 
 PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
 {
+#if 0
   if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
     return PIDX_success;
 
@@ -323,7 +325,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
     return PIDX_err_compress;
 #endif
   }
-
+#endif
   return PIDX_success;
 }
 

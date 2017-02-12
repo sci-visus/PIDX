@@ -33,6 +33,16 @@
 
 
 /// Struct to store the row/column major chunk of data given by application
+struct PIDX_Ndim_empty_patch_struct
+{
+  int rank;
+  unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
+};
+typedef struct PIDX_Ndim_empty_patch_struct* Ndim_empty_patch;
+
+
+/// Struct to store the row/column major chunk of data given by application
 struct PIDX_Ndim_patch_struct
 {
   unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)

@@ -65,7 +65,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
     int lvi = var_grp->local_variable_index;
     int lvc = var_grp->local_variable_count;
-    PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
+    //PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
   }
   PIDX_delete_timming_buffers1(time, vgc, file->idx->variable_count);
 
@@ -189,7 +189,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
     fprintf(stdout, "[%d : %d %d] [%d %d %d : %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count);
 
     if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
-      fprintf(stdout, "Box set by user (PIDX_CLOSEST_POWER_TWO) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+      fprintf(stdout, "Box set using PIDX_CLOSEST_POWER_TWO %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     else if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
       fprintf(stdout, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)

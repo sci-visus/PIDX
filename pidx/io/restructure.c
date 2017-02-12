@@ -21,9 +21,15 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
   cvi = svi;
   lgi = gi;
 
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
-  if (max_patch_count > 1)
-    rst_case_type = 1;
+  // if using analysis then use generic restructuring
+  if (file->idx->reg_box_set == PIDX_BOX_WITH_GHOST_CELL)
+    rst_case_type = 2;
+  else
+  {
+    MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
+    if (max_patch_count > 1)
+      rst_case_type = 1;
+  }
 
   if (rst_case_type == 0)
   {
@@ -71,7 +77,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
   }
 
   // Case for more than one patch per process
-  else
+  else if (rst_case_type == 1)
   {
     time->rst_init_start[lgi][cvi] = PIDX_get_time();
     // Initialize the restructuring phase
@@ -111,6 +117,32 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     time->rst_buffer_end[lgi][cvi] = PIDX_get_time();
   }
 
+  else if (rst_case_type == 2)
+  {
+    time->rst_init_start[lgi][cvi] = PIDX_get_time();
+    // Initialize the restructuring phase
+    file->generic_rst_id = PIDX_generic_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
+    time->rst_init_end[lgi][cvi] = PIDX_get_time();
+
+
+    time->rst_meta_data_create_start[lgi][cvi] = PIDX_get_time();
+    // Creating the metadata to perform retructuring
+    ret = PIDX_generic_rst_meta_data_create(file->generic_rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+    time->rst_meta_data_create_end[lgi][cvi] = PIDX_get_time();
+
+
+    time->rst_buffer_start[lgi][cvi] = PIDX_get_time();
+    // Creating the buffers required for restructurig
+    ret = PIDX_generic_rst_buf_create(file->generic_rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    // Aggregating the aligned small buffers after restructuring into one single buffer
+    ret = PIDX_rst_aggregate_buf_create(file->generic_rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+    time->rst_buffer_end[lgi][cvi] = PIDX_get_time();
+  }
+
   return PIDX_success;
 }
 
@@ -132,11 +164,13 @@ PIDX_return_code restructure(PIDX_io file, int mode)
         ret = PIDX_rst_staged_write(file->rst_id);
         if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
+        //
         if (file->idx_dbg->debug_rst == 1)
         {
           ret = HELPER_rst(file->rst_id);
-          //if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
         }
+        //
         time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
       }
 
@@ -186,7 +220,7 @@ PIDX_return_code restructure(PIDX_io file, int mode)
   }
 
   // Case for more than one patch per process
-  else
+  else if (rst_case_type == 1)
   {
     if (mode == PIDX_WRITE)
     {
@@ -243,6 +277,41 @@ PIDX_return_code restructure(PIDX_io file, int mode)
     }
   }
 
+  else if (rst_case_type == 2)
+  {
+    if (mode == PIDX_WRITE)
+    {
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        time->rst_write_read_start[lgi][cvi] = PIDX_get_time();
+        // Perform data restructuring
+        ret = PIDX_generic_rst_staged_write(file->generic_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+        //if (file->idx_dbg->debug_rst == 1)
+        //{
+        // ret = HELPER_rst(file->rst_id);
+          //if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        //}
+        time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
+      }
+
+#if ACTUAL_IO
+      time->rst_buff_agg_start[lgi][cvi] = PIDX_get_time();
+      // Aggregating in memory restructured buffers into one large buffer
+      ret = PIDX_generic_rst_buf_aggregate(file->generic_rst_id, PIDX_WRITE);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
+#endif
+
+      time->rst_buff_agg_free_start[lgi][cvi] = PIDX_get_time();
+      // Destroying the restructure buffers (as they are now combined into one large buffer)
+      ret = PIDX_generic_rst_buf_destroy(file->generic_rst_id);
+      if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      time->rst_buff_agg_free_end[lgi][cvi] = PIDX_get_time();
+    }
+  }
+
   return PIDX_success;
 }
 
@@ -282,7 +351,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
   }
 
   // Case for more than one patch per process
-  else
+  else if (rst_case_type == 1)
   {
     if (mode == PIDX_WRITE)
     {
@@ -306,6 +375,23 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
         time->rst_buff_agg_io_end[lgi][cvi] = PIDX_get_time();
       }
     }
+  }
+
+  if (rst_case_type == 2)
+  {
+#if ACTUAL_IO
+    if (mode == PIDX_WRITE)
+    {
+      if (file->idx_dbg->debug_do_rst == 1 && file->idx_dbg->simulate_rst_io != PIDX_NO_IO_AND_META_DATA_DUMP)
+      {
+        time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
+        // Write out restructured data
+        ret = PIDX_generic_rst_buf_aggregated_write(file->generic_rst_id);
+        if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        time->rst_buff_agg_io_end[lgi][cvi] = PIDX_get_time();
+      }
+    }
+#endif
   }
 
   return PIDX_success;
@@ -334,7 +420,7 @@ PIDX_return_code restructure_cleanup(PIDX_io file)
   }
 
   // Case for more than one patch per process
-  else
+  else if (rst_case_type == 1)
   {
     time->rst_cleanup_start[lgi][cvi] = PIDX_get_time();
     // Destroy buffers allocated during restructuring phase
@@ -346,6 +432,21 @@ PIDX_return_code restructure_cleanup(PIDX_io file)
 
     // Deleting the restructuring ID
     PIDX_multi_patch_rst_finalize(file->multi_patch_rst_id);
+    time->rst_cleanup_end[lgi][cvi] = PIDX_get_time();
+  }
+
+  if (rst_case_type == 2)
+  {
+    time->rst_cleanup_start[lgi][cvi] = PIDX_get_time();
+    // Destroy buffers allocated during restructuring phase
+    ret = PIDX_generic_rst_aggregate_buf_destroy(file->generic_rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    ret = PIDX_generic_rst_meta_data_destroy(file->generic_rst_id);
+    if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+
+    // Deleting the restructuring ID
+    PIDX_generic_rst_finalize(file->generic_rst_id);
     time->rst_cleanup_end[lgi][cvi] = PIDX_get_time();
   }
 

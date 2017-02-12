@@ -19,7 +19,7 @@
 # sources
 # ////////////////////////////////////////
 
-FILE(GLOB PIDX_IN_SITU_INTERFACE *.h *.c)
+FILE(GLOB PIDX_IN_SITU_INTERFACE_SOURCES *.h *.c)
 
 
 # ////////////////////////////////////////
@@ -36,6 +36,12 @@ IF (ZFP_FOUND)
   MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
   SET(PIDX_IN_SITU_INTERFACE_LINK_LIBS ${PIDX_IN_SITU_INTERFACE_LINK_LIBS} ${ZFP_LIBRARIES})
+ENDIF()
+
+IF (PMT_FOUND)
+  MESSAGE("Configuring pidx with PMT support XXXX" ${PMT_INSITU_LINK_LIBRARIES} )
+  INCLUDE_DIRECTORIES(${PMT_INSITU_INCLUDE_DIR})
+  SET(PIDX_IN_SITU_INTERFACE_LINK_LIBS ${PIDX_IN_SITU_INTERFACE_LINK_LIBS} ${PMT_INSITU_LINK_LIBRARIES})
 ENDIF()
 
 # ////////////////////////////////////////

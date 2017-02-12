@@ -95,19 +95,21 @@ MESSAGE("PIDX_BUILD_PROCESSING ${PIDX_BUILD_PROCESSING}")
 
 OPTION(PIDX_BUILD_IN_SITU_MERGE "Build in situ merge" FALSE)
 MESSAGE("PIDX_BUILD_IN_SITU_MERGE ${PIDX_BUILD_IN_SITU_MERGE}")
-IF (PIDX_BUILD_IN_SITU_MERGE)
-  set(DATAFLOW_DIR "${CMAKE_PREFIX_PATH}../../PIDX_external/dataflow/build" CACHE STRING "DataFlow installation directory")
-  find_library(DATAFLOW_LIB NAMES dataflow HINTS ${DATAFLOW_DIR}/lib)
-  include_directories(${DATAFLOW_DIR}/include)
 
-  set(PMT_SRC_DIR "${CMAKE_PREFIX_PATH}../../PIDX_external/parallelmergetree/src" CACHE STRING "PMT src directory")
 
-  file(GLOB PMT_SRC ${PMT_SRC_DIR}/*.cpp)
-  include_directories(${PMT_SRC_DIR}/)
+#IF (PIDX_BUILD_IN_SITU_MERGE)
+#  set(DATAFLOW_DIR "${CMAKE_PREFIX_PATH}../../PIDX_external/dataflow/build" CACHE STRING "DataFlow installation directory")
+#  find_library(DATAFLOW_LIB NAMES dataflow HINTS ${DATAFLOW_DIR}/lib)
+#  include_directories(${DATAFLOW_DIR}/include)
 
-  add_executable(your_app your_app.cpp ${PMT_SRC})
-  target_link_libraries(your_app ${DATAFLOW_LIB})
-ENDIF()
+#  set(PMT_SRC_DIR "${CMAKE_PREFIX_PATH}../../PIDX_external/parallelmergetree/src" CACHE STRING "PMT src directory")
+
+#  file(GLOB PMT_SRC ${PMT_SRC_DIR}/*.cpp)
+#  include_directories(${PMT_SRC_DIR}/)
+
+#  add_executable(your_app your_app.cpp ${PMT_SRC})
+#  target_link_libraries(your_app ${DATAFLOW_LIB})
+#ENDIF()
 
 # ///////////////////////////////////////////////
 # PIDX_OPTION_XXXX
@@ -195,5 +197,6 @@ ADD_SUBDIRECTORY(processing)
 
 MESSAGE("CMAKE_INSTALL_PREFIX is " ${CMAKE_INSTALL_PREFIX})
 INSTALL(DIRECTORY pidx/ DESTINATION include FILES_MATCHING PATTERN "*.h")
+#INSTALL(DIRECTORY external/ DESTINATION include FILES_MATCHING PATTERN "*.h")
 INSTALL(FILES     "${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindPIDX.cmake" DESTINATION .)
 INSTALL(FILES     "${PROJECT_BINARY_DIR}/PIDX_config.h" DESTINATION include)

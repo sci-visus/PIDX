@@ -28,6 +28,10 @@
   #include <zfp.h>  
 #endif
 
+#if PIDX_HAVE_PMT
+  #include <pidx_insitu.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -46,6 +50,7 @@ extern "C" {
 
 #include "./core/PIDX_header/PIDX_header_io.h"
 #include "./core/PIDX_rst/PIDX_rst.h"
+#include "./core/PIDX_generic_rst/PIDX_generic_rst.h"
 #include "./core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.h"
 #include "./core/PIDX_hz/PIDX_hz_encode.h"
 #include "./core/PIDX_in_situ_interface/PIDX_in_situ_interface.h"
@@ -56,6 +61,7 @@ extern "C" {
 #include "./core/PIDX_file_io/PIDX_file_io.h"
 
 #include "./io/PIDX_io.h"
+#include "./io/idx_insitu.h"
 #include "./io/idx_io.h"
 #include "./io/local_partition_idx_io.h"
 #include "./io/global_partition_idx_io.h"

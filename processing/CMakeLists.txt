@@ -32,9 +32,16 @@ IF (PIDX_BUILD_PROCESSING)
     SET(PROCESSING_LINK_LIBS ${PROCESSING_LINK_LIBS} ${ZFP_LIBRARIES})
   ENDIF()
 
+  IF (PMT_FOUND)
+    MESSAGE("Configuring pidx with PMT support")
+    INCLUDE_DIRECTORIES(${PMT_INSITU_INCLUDE_DIR})
+    SET(PROCESSING_LINK_LIBS ${PROCESSING_LINK_LIBS} ${PMT_INSITU_LINK_LIBRARIES})
+  ENDIF()
+
   # ////////////////////////////////////////
   # executable
   # ////////////////////////////////////////
+
 
   SET(MERGE_SOURCES merge.c)
   PIDX_ADD_CEXECUTABLE(merge "${MERGE_SOURCES}")

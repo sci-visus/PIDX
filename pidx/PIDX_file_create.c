@@ -137,6 +137,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
 
+  (*file)->idx->shared_face = 0;
+
   for (i = 0; i < 16; i++)
   {
     (*file)->idx->variable_grp[i] = malloc(sizeof(*((*file)->idx->variable_grp[i])));

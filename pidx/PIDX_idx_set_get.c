@@ -233,7 +233,9 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
   if (file == NULL)
     return PIDX_err_file;
 
-  file->idx->reg_box_set = PIDX_USER_RST_BOX;
+  if (file->idx->io_type != PIDX_MERGE_TREE_ANALYSIS)
+    file->idx->reg_box_set = PIDX_USER_RST_BOX;
+
   memcpy(file->idx->reg_patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;
@@ -433,8 +435,14 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
 
   file->idx->io_type = io_type;
 
-  if (file->idx->io_type == PIDX_IDX_IO)
-    file->idx->reg_box_set = PIDX_CLOSEST_POWER_TWO;
+  //if (file->idx->io_type == PIDX_IDX_IO)
+  //  file->idx->reg_box_set = PIDX_CLOSEST_POWER_TWO;
+
+  if (file->idx->io_type == PIDX_MERGE_TREE_ANALYSIS)
+  {
+    file->idx->reg_box_set = PIDX_BOX_WITH_GHOST_CELL;
+    file->idx->shared_face = 1;
+  }
 
   return PIDX_success;
 }

@@ -10,6 +10,7 @@ extern "C" {
 
 #define PIDX_HAVE_MPI 1
 #define PIDX_HAVE_ZFP 0
+#define PIDX_HAVE_PMT 1
 #define PIDX_HAVE_PNETCDF 0
 #define PIDX_HAVE_NETCDF 0
 #define PIDX_HAVE_HDF5 0
@@ -42,7 +43,7 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 // PIDX_BOX_PER_PROCESS - Box size set automatically such that at the end of restructuring every process has at max only one box to process
 // PIDX_BOX_FROM_BITSTRING - Box size set automatically suing the bitstring
 // PIDX_CLOSEST_POWER_TWO - Box size is closest power in two in every dimension of the per process box size
-enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, PIDX_CLOSEST_POWER_TWO};
+enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, PIDX_CLOSEST_POWER_TWO, PIDX_BOX_WITH_GHOST_CELL};
 
 
 
@@ -89,6 +90,8 @@ enum AGG_MODES {AGG_SETUP, AGG_PERFORM, AGG_SETUP_AND_PERFORM};
 // Writes data in raw format
 #define PIDX_RAW_IO                                   4
 
+// Calls merge tree analysis code (in-situ mode)
+#define PIDX_MERGE_TREE_ANALYSIS                      5
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256

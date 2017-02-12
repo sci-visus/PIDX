@@ -197,6 +197,8 @@ struct idx_file_struct
   char bitPattern[512];
   
   int reg_box_set;
+  int number_processes[PIDX_MAX_DIMENSIONS];
+  Ndim_empty_patch* new_box_set;
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
   
   int compression_type;
@@ -222,6 +224,8 @@ struct idx_file_struct
   int agg_counter;
 
   int cached_ts;
+
+  int shared_face;
 };
 typedef struct idx_file_struct* idx_dataset;
 

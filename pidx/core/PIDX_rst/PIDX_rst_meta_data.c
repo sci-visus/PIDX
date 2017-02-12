@@ -91,16 +91,16 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           reg_patch->offset[0] = i;
           reg_patch->offset[1] = j;
           reg_patch->offset[2] = k;
-          reg_patch->size[0] = rst_id->reg_patch_size[0];
-          reg_patch->size[1] = rst_id->reg_patch_size[1];
-          reg_patch->size[2] = rst_id->reg_patch_size[2];
+          reg_patch->size[0] = rst_id->reg_patch_size[0] + rst_id->idx->shared_face;
+          reg_patch->size[1] = rst_id->reg_patch_size[1] + rst_id->idx->shared_face;
+          reg_patch->size[2] = rst_id->reg_patch_size[2] + rst_id->idx->shared_face;
 
           //Edge regular patches
-          if ((i + rst_id->reg_patch_size[0]) > adjusted_bounds[0])
+          if ((i + rst_id->reg_patch_size[0] + 1) > adjusted_bounds[0])
             reg_patch->size[0] = adjusted_bounds[0] - i;
-          if ((j + rst_id->reg_patch_size[1]) > adjusted_bounds[1])
+          if ((j + rst_id->reg_patch_size[1] + 1) > adjusted_bounds[1])
             reg_patch->size[1] = adjusted_bounds[1] - j;
-          if ((k + rst_id->reg_patch_size[2]) > adjusted_bounds[2])
+          if ((k + rst_id->reg_patch_size[2] + 1) > adjusted_bounds[2])
             reg_patch->size[2] = adjusted_bounds[2] - k;
 
           if (intersectNDChunk(reg_patch, local_proc_patch))
@@ -126,23 +126,23 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
           reg_patch->offset[0] = i;
           reg_patch->offset[1] = j;
           reg_patch->offset[2] = k;
-          reg_patch->size[0] = rst_id->reg_patch_size[0];
-          reg_patch->size[1] = rst_id->reg_patch_size[1];
-          reg_patch->size[2] = rst_id->reg_patch_size[2];
+          reg_patch->size[0] = rst_id->reg_patch_size[0] + rst_id->idx->shared_face;
+          reg_patch->size[1] = rst_id->reg_patch_size[1] + rst_id->idx->shared_face;
+          reg_patch->size[2] = rst_id->reg_patch_size[2] + rst_id->idx->shared_face;
 
           //Edge regular patches
           edge_case = 0;
-          if ((i + rst_id->reg_patch_size[0]) > adjusted_bounds[0])
+          if ((i + rst_id->reg_patch_size[0] + 1) > adjusted_bounds[0])
           {
             reg_patch->size[0] = adjusted_bounds[0] - i;
             edge_case = 1;
           }
-          if ((j + rst_id->reg_patch_size[1]) > adjusted_bounds[1])
+          if ((j + rst_id->reg_patch_size[1] + 1) > adjusted_bounds[1])
           {
             reg_patch->size[1] = adjusted_bounds[1] - j;
             edge_case = 1;
           }
-          if ((k + rst_id->reg_patch_size[2]) > adjusted_bounds[2])
+          if ((k + rst_id->reg_patch_size[2] + 1) > adjusted_bounds[2])
           {
             reg_patch->size[2] = adjusted_bounds[2] - k;
             edge_case = 1;

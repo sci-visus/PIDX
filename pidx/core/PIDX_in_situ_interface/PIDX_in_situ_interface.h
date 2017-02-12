@@ -51,27 +51,19 @@ struct PIDX_in_situ_interface_struct
   int group_index;
 
 };
-typedef struct PIDX_in_situ_interface_struct* PIDX_in_situ_id;
+typedef struct PIDX_in_situ_interface_struct* PIDX_insitu_id;
 
 
 
-PIDX_in_situ_id PIDX_in_situ_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index);
+PIDX_insitu_id PIDX_in_situ_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, int group_index, int var_start_index, int var_end_index);
 
 
 
-PIDX_return_code PIDX_in_situ_finalize(PIDX_in_situ_id id);
+PIDX_return_code PIDX_in_situ_finalize(PIDX_insitu_id id);
 
 
 
-PIDX_return_code PIDX_in_situ_meta_data_create(PIDX_in_situ_id rst_id);
-
-
-
-PIDX_return_code PIDX_in_situ_meta_data_destroy(PIDX_in_situ_id rst_id);
-
-
-
-PIDX_return_code PIDX_in_situ_perform(PIDX_in_situ_id rst_id);
+PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id insitu_id);
 
 
 #endif

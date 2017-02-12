@@ -41,6 +41,12 @@ IF (ZFP_FOUND)
   SET(PIDX_AGG_LINK_LIBS ${PIDX_AGG_LINK_LIBS} ${ZFP_LIBRARIES})
 ENDIF()
 
+IF (PMT_FOUND)
+  MESSAGE("Configuring pidx with PMT support")
+  INCLUDE_DIRECTORIES(${PMT_INSITU_INCLUDE_DIR})
+  SET(PIDX_AGG_LINK_LIBS ${PIDX_AGG_LINK_LIBS} ${PMT_INSITU_LINK_LIBRARIES})
+ENDIF()
+
 # ////////////////////////////////////////
 # library
 # ////////////////////////////////////////

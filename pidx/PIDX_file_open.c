@@ -71,6 +71,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   //(*file)->enable_raw_dump = 0;
 
   (*file)->idx_d->parallel_mode = access_type->parallel;
+  (*file)->idx->shared_face = 0;
 
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;
