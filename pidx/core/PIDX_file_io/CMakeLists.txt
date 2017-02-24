@@ -44,6 +44,10 @@ IF (PMT_FOUND)
   SET(PIDX_FILE_IO_LINK_LIBS ${PIDX_FILE_IO_LINK_LIBS} ${PMT_INSITU_LINK_LIBRARIES})
 ENDIF()
 
+IF (VTK_RENDERER_FOUND)
+  INCLUDE_DIRECTORIES(${VTK_RENDERER_INCLUDE_DIR})
+ENDIF()
+
 # ////////////////////////////////////////
 # library
 # ////////////////////////////////////////

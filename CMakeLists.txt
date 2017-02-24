@@ -90,11 +90,15 @@ MESSAGE("PIDX_BUILD_CONVERT ${PIDX_BUILD_CONVERT}")
 OPTION(PIDX_BUILD_PROFILE "pidx profile tools" FALSE)
 MESSAGE("PIDX_BUILD_PROFILE ${PIDX_BUILD_PROFILE}")
 
-OPTION(PIDX_BUILD_PROCESSING "Build processing" TRUE)
+OPTION(PIDX_BUILD_PROCESSING "Build processing" FALSE)
 MESSAGE("PIDX_BUILD_PROCESSING ${PIDX_BUILD_PROCESSING}")
 
 OPTION(PIDX_BUILD_IN_SITU_MERGE "Build in situ merge" FALSE)
 MESSAGE("PIDX_BUILD_IN_SITU_MERGE ${PIDX_BUILD_IN_SITU_MERGE}")
+
+
+OPTION(PIDX_VTK_RENDERER "Build in vtk renderer" FALSE)
+MESSAGE("PIDX_VTK_RENDERER ${PIDX_VTK_RENDERER}")
 
 
 #IF (PIDX_BUILD_IN_SITU_MERGE)
@@ -170,6 +174,17 @@ IF (PIDX_OPTION_HDF5)
     SET(PIDX_HAVE_HDF5 1)
   ENDIF()
 ENDIF()
+
+
+#MESSAGE("PIDX_OPTION_VTK ${PIDX_OPTION_VTK}")
+#OPTION(PIDX_OPTION_VTK "Build with vtk" FALSE)
+#IF (PIDX_OPTION_VTK)
+#  set(VTK_DIR "/home/sidharth/research/PIDX/external/VTK-7.1.0/build/")
+#  find_package(VTK REQUIRED)
+#  include(${VTK_USE_FILE})
+#  #add_executable(Test Test.cxx)
+#  #target_link_libraries(Test ${VTK_LIBRARIES})
+#ENDIF()
 
 # ///////////////////////////////////////////////
 # configuration

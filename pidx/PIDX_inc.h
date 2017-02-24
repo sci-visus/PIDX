@@ -32,9 +32,14 @@
   #include <pidx_insitu.h>
 #endif
 
+#if PIDX_HAVE_VTK
+  #include <renderer.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 
 #include "./utils/PIDX_error_codes.h"
 #include "./utils/PIDX_point.h"

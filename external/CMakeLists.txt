@@ -27,3 +27,10 @@ IF (PIDX_BUILD_IN_SITU_MERGE)
   ADD_SUBDIRECTORY(dataflow)
   ADD_SUBDIRECTORY(parallelmergetree)
 ENDIF()
+
+
+
+IF (PIDX_VTK_RENDERER)
+  MESSAGE("Compiling vtk renderer")
+  ADD_SUBDIRECTORY(vtkRendered)
+ENDIF()

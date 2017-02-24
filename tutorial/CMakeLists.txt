@@ -48,6 +48,10 @@ IF (PIDX_BUILD_TUTORIAL)
 #    SET(TUTORIAL_LINK_LIBS ${TUTORIAL_LINK_LIBS} ${DATAFLOW_LIBRARIES} ${PMT_INSITU_LINK_LIBRARIES})
   ENDIF()
 
+  IF (VTK_RENDERER_FOUND)
+    INCLUDE_DIRECTORIES(${VTK_RENDERER_INCLUDE_DIR})
+  ENDIF()
+
   # ////////////////////////////////////////
   # executable
   # ////////////////////////////////////////

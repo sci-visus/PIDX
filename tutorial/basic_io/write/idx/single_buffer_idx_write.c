@@ -398,7 +398,8 @@ static void set_pidx_file(int ts)
   //PIDX_set_restructuring_box(file, reg_size);
 
   // Selecting idx I/O mode
-  PIDX_set_io_mode(file, PIDX_IDX_IO);
+  //PIDX_set_io_mode(file, PIDX_IDX_IO);
+  PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
   return;
 }

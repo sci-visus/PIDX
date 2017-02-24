@@ -61,7 +61,7 @@ PIDX_return_code PIDX_in_situ_finalize(PIDX_insitu_id insitu_id)
 
 PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
 {
-
+#if PIDX_HAVE_PMT
   int ret = 0;
   int i = 0;
   int color = 0;
@@ -96,6 +96,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
 
   if (color == 1)
   {
+
     Ndim_patch r_p = id->idx->variable_grp[id->group_index]->variable[id->first_index]->rst_patch_group[0]->reg_patch;
     int low[3] = {(int)r_p->offset[0], (int)r_p->offset[1], (int)r_p->offset[2]};
     int high[3] = {(int)r_p->offset[0] + (int) r_p->size[0] - 1, (int)r_p->offset[1] + (int) r_p->size[1] - 1, (int)r_p->offset[2] + (int) r_p->size[2] - 1};
@@ -107,6 +108,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
 
     printf("PIDX %d %d %d\n", (int)id->idx->bounds[0], (int)id->idx->bounds[1], (int)id->idx->bounds[2]);
 
+    /*
     float x1;
     memcpy(&x1, r_p->buffer, sizeof(float));
     printf("x1 = %f\n", x1);
@@ -115,14 +117,33 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
                 high,
                 bound,
                 (uint32_t*) id->idx->number_processes,
-                2, 0, insitu_comm);
+                2, 0, "test", 5,  insitu_comm);
 
     //double e_t = MPI_Wtime();
     //printf("PIDX %d Time %f\n", id->idx_c->grank, e_t - s_t);
+    */
+
+    int local_bounds[6] = {(int)r_p->offset[0], (int)r_p->offset[0] + (int) r_p->size[0] - 1,
+                           (int)r_p->offset[1], (int)r_p->offset[1] + (int) r_p->size[1] - 1,
+                           (int)r_p->offset[2], (int)r_p->offset[2] + (int) r_p->size[2] - 1};
+
+    int *image_bounds;
+    unsigned char *image;
+    unsigned char *zbuf;
+    int rank;
+    MPI_Comm_rank(insitu_comm, &rank);
+
+    image = malloc(sizeof(*image) * 512 * 512 * 3);
+    memset(image, 0, sizeof(*image) * 512 * 512 * 3);
+
+    zbuf = malloc(sizeof(*zbuf) * 512 * 512);
+    memset(zbuf, 0, sizeof(*zbuf) * 512 * 512);
+
+    volume_render(local_bounds, (char*)r_p->buffer, 512, 512, bound, image, zbuf, rank);
   }
 
   MPI_Comm_free(&insitu_comm);
 
-
+#endif
   return PIDX_success;
 }

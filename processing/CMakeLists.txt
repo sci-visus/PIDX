@@ -38,6 +38,10 @@ IF (PIDX_BUILD_PROCESSING)
     SET(PROCESSING_LINK_LIBS ${PROCESSING_LINK_LIBS} ${PMT_INSITU_LINK_LIBRARIES})
   ENDIF()
 
+  IF (VTK_RENDERER_FOUND)
+    INCLUDE_DIRECTORIES(${VTK_RENDERER_INCLUDE_DIR})
+  ENDIF()
+
   # ////////////////////////////////////////
   # executable
   # ////////////////////////////////////////

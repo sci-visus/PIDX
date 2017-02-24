@@ -1,2 +1,4 @@
 1. When restructuring box is smaller than per process box in id io mode, then that is wrong
 ./tutorial/single_buffer_idx_write -g 34x34x34 -l 34x34x34 -f X2 -t 1 -v VL
+
+mpirun -n 2 ./tutorial/single_buffer_idx_write -g 8x8x8 -l 8x8x4 -f X2 -t 1 -v VL
