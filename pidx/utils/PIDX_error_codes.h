@@ -62,6 +62,6 @@ extern PIDX_return_code PIDX_err_unsupported_compression_type;
 extern PIDX_return_code PIDX_err_close;
 extern PIDX_return_code PIDX_err_flush;
 extern PIDX_return_code PIDX_err_header;
-
+extern PIDX_return_code PIDX_err_wavelet;
 
 #endif

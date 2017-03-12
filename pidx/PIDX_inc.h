@@ -67,11 +67,13 @@ extern "C" {
 
 #include "./io/PIDX_io.h"
 #include "./io/idx_insitu.h"
+#include "./io/wavelet_io.h"
 #include "./io/idx_io.h"
 #include "./io/local_partition_idx_io.h"
 #include "./io/global_partition_idx_io.h"
 #include "./io/raw_io.h"
 
+#include "./io/wavelet_coefficient.h"
 #include "./io/restructure.h"
 #include "./io/partition.h"
 #include "./io/local_buffer.h"

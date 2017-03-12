@@ -155,7 +155,14 @@ struct idx_comm_struct
   int lnprocs;
 
   int grank;
+  int grank_x;
+  int grank_y;
+  int grank_z;
+
   int gnprocs;
+  int gnproc_x;
+  int gnproc_y;
+  int gnproc_z;
 
   MPI_Comm global_comm;
   MPI_Comm local_comm;

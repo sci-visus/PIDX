@@ -160,6 +160,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
 
         patch_count = 0;
         patch_grp->count = 0;
+        patch_grp->type = rst_id->idx->new_box_set[i]->edge;
 
         //Iterate through all processes
         for (r = 0; r < rst_id->idx_c->gnprocs; r++)

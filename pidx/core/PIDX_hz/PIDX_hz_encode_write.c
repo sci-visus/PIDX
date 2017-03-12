@@ -68,6 +68,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
       if(var0->data_layout == PIDX_row_major)
       {
+        //printf("[%d] -> %d %d %d -- %d %d %d\n", id->idx_c->grank, chunked_patch_offset[0], chunked_patch_offset[1], chunked_patch_offset[2], chunked_patch_size[0], chunked_patch_size[1], chunked_patch_size[2]);
         for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
           for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
             for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
@@ -112,6 +113,10 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
               {
                 hz_index = hz_order - var_grp->variable[v1]->hz_buffer[y]->start_hz_index[level];
                 bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
+                //float x;
+                //memcpy(&x, var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype), sizeof (float));
+                //printf("[%d] [%d] value %f\n", level, hz_index, x);
+
                 memcpy(var_grp->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype),
                      var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype),
                      bytes_for_datatype);

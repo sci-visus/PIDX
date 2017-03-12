@@ -522,6 +522,30 @@ PIDX_return_code PIDX_set_bit_string_type(PIDX_file file, int bs_type);
 /// \return
 ///
 PIDX_return_code PIDX_get_bit_string_type(PIDX_file file, int* bs_type);
+
+
+
+///
+/// \brief PIDX_set_process_decomposition
+/// \param file
+/// \param np_x
+/// \param np_y
+/// \param np_z
+/// \return
+///
+PIDX_return_code PIDX_set_process_decomposition(PIDX_file file, int np_x, int np_y, int np_z);
+
+
+
+///
+/// \brief PIDX_get_process_decomposition
+/// \param file
+/// \param np_x
+/// \param np_y
+/// \param np_z
+/// \return
+///
+PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* np_y, int* np_z);
 /*
  * Implementation in PIDX_variable.c
  */

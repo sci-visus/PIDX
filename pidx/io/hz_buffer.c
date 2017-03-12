@@ -275,7 +275,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   }
   time->compression_end[lgi][cvi] = PIDX_get_time();
 
-
+//
   time->hz_start[lgi][cvi] = PIDX_get_time();
   // Perform HZ encoding
   if (file->idx_dbg->debug_do_hz == 1)
@@ -299,7 +299,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
     }
   }
   time->hz_end[lgi][cvi] = PIDX_get_time();
-
+//
 
   time->chunk_buffer_free_start[lgi][cvi] = PIDX_get_time();
   // Destroy buffers allocated during chunking phase

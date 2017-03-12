@@ -439,10 +439,11 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
   //  file->idx->reg_box_set = PIDX_CLOSEST_POWER_TWO;
 
   if (file->idx->io_type == PIDX_MERGE_TREE_ANALYSIS)
-  {
-    file->idx->reg_box_set = PIDX_BOX_WITH_GHOST_CELL;
     file->idx->shared_face = 1;
-  }
+
+  if (file->idx->io_type == PIDX_WAVELET_IO)
+    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
+
 
   return PIDX_success;
 }
@@ -611,6 +612,35 @@ PIDX_return_code PIDX_get_bit_string_type(PIDX_file file, int* bs_type)
     return PIDX_err_file;
 
   *bs_type = file->idx->bitsequence_type;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_set_process_decomposition(PIDX_file file, int np_x, int np_y, int np_z)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  file->idx_c->gnproc_x = np_x;
+  file->idx_c->gnproc_y = np_y;
+  file->idx_c->gnproc_z = np_z;
+
+  return PIDX_success;
+}
+
+
+
+
+PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* np_y, int* np_z)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  *np_x = file->idx_c->gnproc_x;
+  *np_y = file->idx_c->gnproc_y;
+  *np_z = file->idx_c->gnproc_z;
 
   return PIDX_success;
 }

@@ -22,7 +22,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
   lgi = gi;
 
   // if using analysis then use generic restructuring
-  if (file->idx->reg_box_set == PIDX_BOX_WITH_GHOST_CELL)
+  if (file->idx->reg_box_set == PIDX_UNIFORMLY_DISTRIBUTED_BOX)
     rst_case_type = 2;
   else
   {
@@ -117,6 +117,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     time->rst_buffer_end[lgi][cvi] = PIDX_get_time();
   }
 
+  // Boxes are distributed uniformly
   else if (rst_case_type == 2)
   {
     time->rst_init_start[lgi][cvi] = PIDX_get_time();
@@ -138,7 +139,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
     // Aggregating the aligned small buffers after restructuring into one single buffer
-    ret = PIDX_rst_aggregate_buf_create(file->generic_rst_id);
+    ret = PIDX_generic_rst_aggregate_buf_create(file->generic_rst_id);
     if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
     time->rst_buffer_end[lgi][cvi] = PIDX_get_time();
   }

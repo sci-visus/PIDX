@@ -85,6 +85,11 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
   MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
 
+  (*file)->idx_c->gnproc_x = -1;
+  (*file)->idx_c->gnproc_y = -1;
+  (*file)->idx_c->gnproc_z = -1;
+
+
   (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;
 

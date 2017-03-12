@@ -326,7 +326,7 @@ static void create_synthetic_simulation_data()
           {
             if ((bpv[var]) == 32)
             {
-              fvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              fvalue = /*100 + */var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
 
@@ -406,13 +406,19 @@ static void set_pidx_file(int ts)
 
   //PIDX_debug_disable_agg(file);
 
+  PIDX_point reg_size;
+  PIDX_set_point(reg_size, 8, 8, 1);
+  PIDX_set_restructuring_box(file, reg_size);
+
+  PIDX_set_process_decomposition(file, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
-  PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);
+  //PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);
+  PIDX_set_io_mode(file, PIDX_WAVELET_IO);
 
   return;
 }
