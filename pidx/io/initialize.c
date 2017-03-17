@@ -147,6 +147,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
           }
     }
 
+    /*
     if (file->idx_c->grank == 0)
     {
       for (k = 0; k < file->idx->number_processes[2]; k++)
@@ -158,18 +159,148 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
             printf("[%d %d %d] [%d %d %d] Rank %d\n", i, j, k, file->idx_c->grank_x, file->idx_c->grank_y, file->idx_c->grank_z, file->idx->new_box_set[index]->rank);
           }
     }
+    */
+
+    //assert(rank_count == file->idx_c->gnprocs);
+    assert(rank_count == file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]);
+
+  }
+
+  else if (file->idx->reg_box_set == PIDX_WAVELET_BOX)
+  {
+    file->idx->number_processes[0] = ceil(file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
+    file->idx->number_processes[1] = ceil(file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
+    file->idx->number_processes[2] = ceil(file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
+
+    file->idx->new_box_set = malloc(file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set));
+    memset(file->idx->new_box_set, 0, (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set)));
+
+    int i = 0, j = 0, k = 0;
+    for (i = 0; i < file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]; i++)
+    {
+      file->idx->new_box_set[i] = malloc(sizeof(*(file->idx->new_box_set[i])));
+      memset(file->idx->new_box_set[i], 0, sizeof(*(file->idx->new_box_set[i])));
+
+      file->idx->new_box_set[i]->rank = -1;
+    }
+
+    int l = 0, left = 0, right = 0;
+    for (l = 0; l < file->idx_d->wavelet_levels; l++)
+    {
+      left = left + (int)pow(2, l + 1);
+      right = right + (int)pow(2, l);
+    }
+
+    int rank_count = 0;
+    int index = 0;
+    //int color = 0;
+    int nx = 0, ny = 0, nz = 0;
+    int int_x = file->idx_c->gnproc_x / file->idx->number_processes[0];
+    int int_y = file->idx_c->gnproc_y / file->idx->number_processes[1];
+    int int_z = file->idx_c->gnproc_z / file->idx->number_processes[2];
+
+    for (k = 0; k < file->idx->box_bounds[2]; k = k + file->idx->reg_patch_size[2])
+      for (j = 0; j < file->idx->box_bounds[1]; j = j + file->idx->reg_patch_size[1])
+        for (i = 0; i < file->idx->box_bounds[0]; i = i + file->idx->reg_patch_size[0])
+        {
+          //Interior regular patches
+          index = ((k / file->idx->reg_patch_size[2]) * file->idx->number_processes[0] * file->idx->number_processes[1]) + ((j / file->idx->reg_patch_size[1]) * file->idx->number_processes[0]) + (i / file->idx->reg_patch_size[0]);
+
+          file->idx->new_box_set[index]->offset[0] = i;
+          file->idx->new_box_set[index]->offset[1] = j;
+          file->idx->new_box_set[index]->offset[2] = k;
+
+          file->idx->new_box_set[index]->size[0] = file->idx->reg_patch_size[0];
+          file->idx->new_box_set[index]->size[1] = file->idx->reg_patch_size[1];
+          file->idx->new_box_set[index]->size[2] = file->idx->reg_patch_size[2];
+
+          file->idx->new_box_set[index]->edge = 1;
+
+          //Edge regular patches
+          if ((i + file->idx->reg_patch_size[0] + 1) > file->idx->box_bounds[0])
+          {
+            file->idx->new_box_set[index]->edge = 2;
+            file->idx->new_box_set[index]->size[0] = file->idx->box_bounds[0] - i;
+          }
+
+          if ((j + file->idx->reg_patch_size[1] + 1) > file->idx->box_bounds[1])
+          {
+            file->idx->new_box_set[index]->edge = 2;
+            file->idx->new_box_set[index]->size[1] = file->idx->box_bounds[1] - j;
+          }
+
+          if ((k + file->idx->reg_patch_size[2] + 1) > file->idx->box_bounds[2])
+          {
+            file->idx->new_box_set[index]->edge = 2;
+            file->idx->new_box_set[index]->size[2] = file->idx->box_bounds[2] - k;
+          }
+
+          file->idx->new_box_set[index]->rank = rank_count * (file->idx_c->gnprocs / (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]));
+          rank_count++;
+
+          //if (file->idx_c->grank == file->idx->new_box_set[index]->rank)
+          //  color = 1;
+        }
+
+    if (file->idx_c->gnproc_x != -1 && file->idx_c->gnproc_y != -1 && file->idx_c->gnproc_z != -1)
+    {
+      for (nz = 0; nz < file->idx_c->gnproc_z; nz = nz + int_z)
+        for (ny = 0; ny < file->idx_c->gnproc_y; ny = ny + int_y)
+          for (nx = 0; nx < file->idx_c->gnproc_x; nx = nx + int_x)
+          {
+            index = ((nz / int_z) * file->idx->number_processes[0] * file->idx->number_processes[1]) + ((ny / int_y) * file->idx->number_processes[0]) + (nx / int_x);
+
+            file->idx->new_box_set[index]->rank = (nz * file->idx_c->gnproc_x * file->idx_c->gnproc_y) + (ny * file->idx_c->gnproc_x) + nx;
+
+            // TODO: Check this again
+            if (nx != 0)
+              file->idx->new_box_set[index]->size_nx = left;
+            if (nx != file->idx_c->gnproc_x - int_x)
+              file->idx->new_box_set[index]->size_px = right;
+
+            if (ny != 0)
+              file->idx->new_box_set[index]->size_ny = left;
+            if (ny != file->idx_c->gnproc_y - int_y)
+              file->idx->new_box_set[index]->size_py = right;
+
+            if (nz != 0)
+              file->idx->new_box_set[index]->size_nz = left;
+            if (nz != file->idx_c->gnproc_z - int_z)
+              file->idx->new_box_set[index]->size_pz = right;
+
+            //if (file->idx_c->grank == 5)
+            //  printf("[INIT R %d] : %d %d -- %d %d -- %d %d\n", file->idx->new_box_set[index]->rank, file->idx->new_box_set[index]->size_nx, file->idx->new_box_set[index]->size_px, file->idx->new_box_set[index]->size_ny, file->idx->new_box_set[index]->size_py, file->idx->new_box_set[index]->size_nz, file->idx->new_box_set[index]->size_pz );
+
+            if (file->idx_c->grank == file->idx->new_box_set[index]->rank)
+            {
+              file->idx_c->grank_x = nx;
+              file->idx_c->grank_y = ny;
+              file->idx_c->grank_z = nz;
+
+              file->idx_d->w_nx = file->idx->new_box_set[index]->size_nx;
+              file->idx_d->w_px = file->idx->new_box_set[index]->size_px;
+
+              file->idx_d->w_ny = file->idx->new_box_set[index]->size_ny;
+              file->idx_d->w_py = file->idx->new_box_set[index]->size_py;
+
+              file->idx_d->w_nz = file->idx->new_box_set[index]->size_nz;
+              file->idx_d->w_pz = file->idx->new_box_set[index]->size_pz;
+            }
+          }
+    }
 
     /*
-    int ret;
-    ret = MPI_Comm_split(file->idx_c->global_comm, color, file->idx_c->grank, &(file->idx_c->rst_comm));
-    if (ret != MPI_SUCCESS)
+    if (file->idx_c->grank == 0)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
+      for (k = 0; k < file->idx->number_processes[2]; k++)
+        for (j = 0; j < file->idx->number_processes[1]; j++)
+          for (i = 0; i < file->idx->number_processes[0]; i++)
+          {
+            index = (k * file->idx->number_processes[0] * file->idx->number_processes[1]) + (j * file->idx->number_processes[0]) + i;
+
+            printf("[%d %d %d] [%d %d %d] Rank %d\n", i, j, k, file->idx_c->grank_x, file->idx_c->grank_y, file->idx_c->grank_z, file->idx->new_box_set[index]->rank);
+          }
     }
-    file->idx_c->global_comm = file->idx_c->rst_comm;
-    MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
-    MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
     */
 
     //assert(rank_count == file->idx_c->gnprocs);

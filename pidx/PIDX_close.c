@@ -40,7 +40,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
   int block_layout_count = approx_maxh(file);
 
-  PIDX_init_timming_buffers1(time, vgc, file->idx->variable_count, block_layout_count);
+  PIDX_init_timming_buffers1(time, vgc, file->idx->variable_count, block_layout_count, file->idx_d->wavelet_levels);
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
@@ -65,7 +65,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
     int lvi = var_grp->local_variable_index;
     int lvc = var_grp->local_variable_count;
-    //PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
+    PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
   }
   PIDX_delete_timming_buffers1(time, vgc, file->idx->variable_count);
 
@@ -245,10 +245,30 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       double grp_rst_hz_chunk_agg_io = group_total;
       double agg_all = 0;
       double hz_io_all = 0;
+      double w_all = 0;
+
+      for (si = svi; si < evi; si++)
+      {
+        rst_init = time->rst_init_end[gi][si] - time->rst_init_start[gi][si];
+        rst_meta_data_create = time->rst_meta_data_create_end[gi][si] - time->rst_meta_data_create_start[gi][si];
+        rst_meta_data_io = time->rst_meta_data_io_end[gi][si] - time->rst_meta_data_io_start[gi][si];
+        rst_buffer = time->rst_buffer_end[gi][si] - time->rst_buffer_start[gi][si];
+        rst_write_read = time->rst_write_read_end[gi][si] - time->rst_write_read_start[gi][si];
+        rst_buff_agg = time->rst_buff_agg_end[gi][si] - time->rst_buff_agg_start[gi][si];
+        rst_buff_agg_free = time->rst_buff_agg_free_end[gi][si] - time->rst_buff_agg_free_start[gi][si];
+        rst_buff_agg_io = time->rst_buff_agg_io_end[gi][si] - time->rst_buff_agg_io_start[gi][si];
+        rst_cleanup = time->rst_cleanup_end[gi][si] - time->rst_cleanup_start[gi][si];
+        rst_total = rst_init + rst_meta_data_create + rst_meta_data_io + rst_buffer + rst_write_read + rst_buff_agg + rst_buff_agg_free + rst_buff_agg_io + rst_cleanup;
+        rst_all = rst_all + rst_total;
+
+        printf("RST                     :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
+      }
+
       for (si = svi; si < evi; si++)
       {
         if (file->idx->variable_grp[gi]->variable_tracker[si] == 1)
         {
+#if 0
           rst_init = time->rst_init_end[gi][si] - time->rst_init_start[gi][si];
           rst_meta_data_create = time->rst_meta_data_create_end[gi][si] - time->rst_meta_data_create_start[gi][si];
           rst_meta_data_io = time->rst_meta_data_io_end[gi][si] - time->rst_meta_data_io_start[gi][si];
@@ -260,6 +280,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           rst_cleanup = time->rst_cleanup_end[gi][si] - time->rst_cleanup_start[gi][si];
           rst_total = rst_init + rst_meta_data_create + rst_meta_data_io + rst_buffer + rst_write_read + rst_buff_agg + rst_buff_agg_free + rst_buff_agg_io + rst_cleanup;
           rst_all = rst_all + rst_total;
+#endif
 
 
           hz_init = time->hz_init_end[gi][si] - time->hz_init_start[gi][si];
@@ -286,7 +307,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           compression = time->compression_end[gi][si] - time->compression_start[gi][si];
           compression_total = compression_init + compression;
           compression_all = compression_all + compression_total;
-          printf("RST           :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
+          //printf("RST           :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
           printf("HZ            :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, hz_init, hz_meta_data, hz_buffer, hz, hz_buffer_free, hz_cleanup, hz_total);
           printf("CHUNK         :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, chunk_init, chunk_meta, chunk_buffer, chunk, chunk_buffer_free, chunk_cleanup, chunk_total);
           printf("CMP           :[%d] [%.4f + %.4f] = %.4f\n", si, compression_init, compression, compression_total);
@@ -308,6 +329,51 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
             printf("[HZ I/O N %d %d]  :[%d] [%d] %.4f [%.4f]\n", file->idx->variable_grp[gi]->agg_l_nshared, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, hz_io, hz_io_all);
           }
 
+        }
+
+        double w_comm_s_x_odd = 0, w_comp_s_x_odd = 0, w_comm_s_x_even = 0, w_comp_s_x_even;
+        double w_comm_s_y_odd = 0, w_comp_s_y_odd = 0, w_comm_s_y_even = 0, w_comp_s_y_even;
+        double w_comm_s_z_odd = 0, w_comp_s_z_odd = 0, w_comm_s_z_even = 0, w_comp_s_z_even;
+        double w_comm_total = 0, w_comp_total = 0;
+        double w_comp_s_x = 0, w_comp_s_y = 0, w_comp_s_z = 0;
+        for (i = 0; i < file->idx_d->wavelet_levels ; i++)
+        {
+          if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
+          {
+            w_comm_s_x_odd = time->w_stencil_comm_x_odd_end[gi][si][i] - time->w_stencil_comm_x_odd_start[gi][si][i];
+            w_comp_s_x_odd = time->w_stencil_comp_x_odd_end[gi][si][i] - time->w_stencil_comp_x_odd_start[gi][si][i];
+            w_comm_s_x_even = time->w_stencil_comm_x_even_end[gi][si][i] - time->w_stencil_comm_x_even_start[gi][si][i];
+            w_comp_s_x_even = time->w_stencil_comp_x_even_end[gi][si][i] - time->w_stencil_comp_x_even_start[gi][si][i];
+
+            w_comm_s_y_odd = time->w_stencil_comm_y_odd_end[gi][si][i] - time->w_stencil_comm_y_odd_start[gi][si][i];
+            w_comp_s_y_odd = time->w_stencil_comp_y_odd_end[gi][si][i] - time->w_stencil_comp_y_odd_start[gi][si][i];
+            w_comm_s_y_even = time->w_stencil_comm_y_even_end[gi][si][i] - time->w_stencil_comm_y_even_start[gi][si][i];
+            w_comp_s_y_even = time->w_stencil_comp_y_even_end[gi][si][i] - time->w_stencil_comp_y_even_start[gi][si][i];
+
+            w_comm_s_z_odd = time->w_stencil_comm_z_odd_end[gi][si][i] - time->w_stencil_comm_z_odd_start[gi][si][i];
+            w_comp_s_z_odd = time->w_stencil_comp_z_odd_end[gi][si][i] - time->w_stencil_comp_z_odd_start[gi][si][i];
+            w_comm_s_z_even = time->w_stencil_comm_z_even_end[gi][si][i] - time->w_stencil_comm_z_even_start[gi][si][i];
+            w_comp_s_z_even = time->w_stencil_comp_z_even_end[gi][si][i] - time->w_stencil_comp_z_even_start[gi][si][i];
+
+            w_comm_total = w_comm_s_x_odd + w_comm_s_x_even + w_comm_s_y_odd + w_comm_s_y_even + w_comm_s_z_odd + w_comm_s_z_even;
+            w_comp_total = w_comp_s_x_odd + w_comp_s_x_even + w_comp_s_y_odd + w_comp_s_y_even + w_comp_s_z_odd + w_comp_s_z_even;
+            w_all = w_all + w_comm_total + w_comp_total;
+
+            printf("[WAVELET STENCIL COMM][%d]   :[%d] [%f + %f] + [%f + %f] + [%f + %f] = %f [%f]\n", i, si, w_comm_s_x_odd, w_comm_s_x_even, w_comm_s_y_odd, w_comm_s_y_even, w_comm_s_z_odd, w_comm_s_z_even, w_comm_total, w_all);
+            printf("[WAVELET STENCIL COMP][%d]   :[%d] [%f + %f] + [%f + %f] + [%f + %f] = %f [%f]\n", i, si, w_comp_s_x_odd, w_comp_s_x_even, w_comp_s_y_odd, w_comp_s_y_even, w_comp_s_z_odd, w_comp_s_z_even, w_comp_total, w_all);
+          }
+          else
+          {
+            w_comp_s_x = time->w_rst_comp_x_end[gi][si][i] - time->w_rst_comp_x_start[gi][si][i];
+            w_comp_s_y = time->w_rst_comp_y_end[gi][si][i] - time->w_rst_comp_y_start[gi][si][i];
+            w_comp_s_z = time->w_rst_comp_z_end[gi][si][i] - time->w_rst_comp_z_start[gi][si][i];
+
+            w_comp_total = w_comp_s_x + w_comp_s_y + w_comp_s_z;
+            w_all = w_all + w_comm_total + w_comp_total;
+
+            printf("[WAVELET RST COMP][%d]   :[%d] [%f + %f + %f] = %f [%f]\n", i, si, w_comp_s_x, w_comp_s_y, w_comp_s_z, w_comp_total, w_all);
+
+          }
         }
 
         double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total = 0;
@@ -347,9 +413,9 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
         printf("IO [%d]        :[%d] %.4f\n", file->idx->variable_grp[gi]->variable_count, si, io);
       }
 
-      grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
+      grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + w_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
 
-      printf("IRCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f] \n", group_total, rst_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      printf("IRWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f] \n", group_total, rst_all, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 
     }
   }

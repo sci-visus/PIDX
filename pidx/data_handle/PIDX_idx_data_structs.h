@@ -48,6 +48,26 @@ struct PIDX_timming_struct
   double partition_start, partition_end;
   double partition_cleanup_start, partition_cleanup_end;
 
+  double ***w_stencil_comm_x_odd_start, ***w_stencil_comm_x_odd_end;
+  double ***w_stencil_comm_y_odd_start, ***w_stencil_comm_y_odd_end;
+  double ***w_stencil_comm_z_odd_start, ***w_stencil_comm_z_odd_end;
+
+  double ***w_stencil_comm_x_even_start, ***w_stencil_comm_x_even_end;
+  double ***w_stencil_comm_y_even_start, ***w_stencil_comm_y_even_end;
+  double ***w_stencil_comm_z_even_start, ***w_stencil_comm_z_even_end;
+
+  double ***w_stencil_comp_x_odd_start, ***w_stencil_comp_x_odd_end;
+  double ***w_stencil_comp_y_odd_start, ***w_stencil_comp_y_odd_end;
+  double ***w_stencil_comp_z_odd_start, ***w_stencil_comp_z_odd_end;
+
+  double ***w_stencil_comp_x_even_start, ***w_stencil_comp_x_even_end;
+  double ***w_stencil_comp_y_even_start, ***w_stencil_comp_y_even_end;
+  double ***w_stencil_comp_z_even_start, ***w_stencil_comp_z_even_end;
+
+  double ***w_rst_comp_x_start, ***w_rst_comp_x_end;
+  double ***w_rst_comp_y_start, ***w_rst_comp_y_end;
+  double ***w_rst_comp_z_start, ***w_rst_comp_z_end;
+
   double **rst_init_start, **rst_init_end;
   double **rst_meta_data_create_start, **rst_meta_data_create_end;
   double **rst_meta_data_io_start, **rst_meta_data_io_end;
@@ -105,6 +125,8 @@ struct PIDX_variable_struct
   int patch_group_count;                                     ///< Number of groups of patches to be passed to aggregation phase
   Ndim_patch_group* rst_patch_group;                         ///< Pointer to the patch groups
   Ndim_patch_group* chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
+
+  //Ndim_patch rst_wavelet_patch;
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -241,6 +263,15 @@ typedef struct idx_file_struct* idx_dataset;
 struct idx_dataset_derived_metadata_struct
 {
   int io_mode;
+
+  int w_nx;
+  int w_px;
+  int w_ny;
+  int w_py;
+  int w_nz;
+  int w_pz;
+  int wavelet_levels;
+  int wavelet_imeplementation_type;
 
   int dimension;
   int samples_per_block;

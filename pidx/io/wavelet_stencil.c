@@ -1,5 +1,10 @@
 #include "../PIDX_inc.h"
 
+#define ORIGINAL 0
+#define INTERMEDIATE_RESULT 0
+#define FINAL_RESULT 0
+
+
 static MPI_Comm verifyComm;
 
 static int sent_x = 0, receive_x = 0;
@@ -17,7 +22,7 @@ static unsigned char *positive_buffer_z, *negative_buffer_z;
 
 static PIDX_return_code print_global_data (PIDX_io file, int gi, int v);
 static PIDX_return_code create_debug_comm (PIDX_io file, int gi, int v);
-static PIDX_return_code create_wavelet_buffers (PIDX_io file, int gi, int v);
+//static PIDX_return_code create_wavelet_buffers (PIDX_io file, int gi, int v);
 
 static PIDX_return_code calculate_neighbor_ranks (PIDX_io file);
 static PIDX_return_code calculate_neighbor_ranks_x (PIDX_io file);
@@ -52,13 +57,13 @@ static PIDX_return_code wavelet_comm_p2p_even_z (PIDX_io file, int gi, int v, in
 static PIDX_return_code wavelet_comp_even_z (PIDX_io file, int gi, int v, int l);
 
 
-PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
+
+PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
 {
 #if 1
   int ret = 0;
   int v = 0;
   int l = 0;
-  int l_x = 3;
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
@@ -77,14 +82,16 @@ PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
     if (var->patch_group_count == 0)
       goto comm_cleanup;
 
+#if 0
     ret = create_wavelet_buffers(file, gi, v);
     if (ret != PIDX_success)
     {
       fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
       return PIDX_err_wavelet;
     }
+#endif
 
-#if 0
+#if ORIGINAL
     if (file->idx_c->grank == 0)
       printf("ORIGINAL");
 
@@ -96,15 +103,10 @@ PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
     }
 #endif
 
-    for (l = 0; l < l_x; l++)
+    for (l = 0; l < file->idx_d->wavelet_levels; l++)
     {
-      sent_x = 0;
-      sent_y = 0;
-      sent_z = 0;
-
-      receive_x = 0;
-      receive_y = 0;
-      receive_z = 0;
+      sent_x = sent_y = sent_z = 0;
+      receive_x = receive_y = receive_z = 0;
 
       ret = calculate_neighbor_ranks(file);
       if (ret != PIDX_success)
@@ -120,7 +122,7 @@ PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
         return PIDX_err_wavelet;
       }
 
-      if ((int) var->rst_patch_group[0]->wavelet_reg_patch->size[0] >= (int)pow(2, l + 1))
+      if ((int) var->rst_patch_group[0]->reg_patch->size[0] >= (int)pow(2, l + 1))
       {
         ret = wavelet_odd_x (file, gi, v, l);
         if (ret != PIDX_success)
@@ -137,7 +139,8 @@ PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
         }
       }
 
-      if ((int) var->rst_patch_group[0]->wavelet_reg_patch->size[1] >= (int)pow(2, l + 1))
+
+      if ((int) var->rst_patch_group[0]->reg_patch->size[1] >= (int)pow(2, l + 1))
       {
         ret = wavelet_odd_y (file, gi, v, l);
         if (ret != PIDX_success)
@@ -154,7 +157,7 @@ PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
         }
       }
 
-      if ((int) var->rst_patch_group[0]->wavelet_reg_patch->size[2] >= (int)pow(2, l + 1))
+      if ((int) var->rst_patch_group[0]->reg_patch->size[2] >= (int)pow(2, l + 1))
       {
         ret = wavelet_odd_z (file, gi, v, l);
         if (ret != PIDX_success)
@@ -172,6 +175,7 @@ PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
       }
 
 
+/*
       int vrank;
       int total_receive = 0, total_sent = 0;
       int local_receive = receive_x + receive_y + receive_z;
@@ -185,11 +189,11 @@ PIDX_return_code wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
         printf("[%d] Total Data sent %d Total Data received %d\n", l, total_sent, total_receive);
 
       //printf("[%d] Rank %d Sent %d [%d %d %d] Receive %d [%d %d %d]\n", l, file->idx_c->grank, sent_x + sent_y + sent_z, sent_x, sent_y, sent_z, receive_x + receive_y + receive_z, receive_x, receive_y, receive_z);
-
+*/
       destroy_stencil_buffers();
     }
 
-#if 0
+#if FINAL_RESULT
     ret = print_global_data(file, gi, v);
     if (ret != PIDX_success)
     {
@@ -234,7 +238,7 @@ static PIDX_return_code create_debug_comm (PIDX_io file, int gi, int v)
 }
 
 
-
+#if 0
 static PIDX_return_code create_wavelet_buffers (PIDX_io file, int gi, int v)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -261,6 +265,7 @@ static PIDX_return_code create_wavelet_buffers (PIDX_io file, int gi, int v)
 
   return PIDX_success;
 }
+#endif
 
 
 static PIDX_return_code calculate_neighbor_ranks (PIDX_io file)
@@ -393,9 +398,9 @@ static PIDX_return_code create_stencil_buffers (PIDX_io file, int gi, int v, int
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
 
   positive_buffer_x = malloc((int)ceil((double)s_z/stride) * (int)ceil((double)s_y/stride) * bytes_for_datatype);
   memset(positive_buffer_x, 0, (int)ceil((double)s_z/stride) * (int)ceil((double)s_y/stride) * bytes_for_datatype);
@@ -435,27 +440,31 @@ static PIDX_return_code destroy_stencil_buffers()
 
 static PIDX_return_code wavelet_odd_x (PIDX_io file, int gi, int v, int l)
 {
-  int ret;
-  ret = wavelet_comm_p2p_odd_x (file, gi, v, l);
-  if (ret != PIDX_success)
+  PIDX_time time = file->idx_d->time;
+
+  time->w_stencil_comm_x_odd_start[gi][v][l] = MPI_Wtime();
+  if (wavelet_comm_p2p_odd_x (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comm_x_odd_end[gi][v][l] = MPI_Wtime();
 
-  ret = wavelet_comp_odd_x (file, gi, v, l);
-  if (ret != PIDX_success)
+
+  time->w_stencil_comp_x_odd_start[gi][v][l] = MPI_Wtime();
+  if (wavelet_comp_odd_x (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comp_x_odd_end[gi][v][l] = MPI_Wtime();
 
-#if 0
+
+#if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
     printf("[%d] Wavelet XXXX ---- 1", l);
 
-  ret = print_global_data(file, gi, v);
-  if (ret != PIDX_success)
+  if (print_global_data(file, gi, v) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
@@ -469,19 +478,25 @@ static PIDX_return_code wavelet_odd_x (PIDX_io file, int gi, int v, int l)
 
 static PIDX_return_code wavelet_even_x (PIDX_io file, int gi, int v, int l)
 {
+  PIDX_time time = file->idx_d->time;
+
+  time->w_stencil_comm_x_even_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comm_p2p_even_x (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comm_x_even_end[gi][v][l] = MPI_Wtime();
 
+  time->w_stencil_comp_x_even_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comp_even_x (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comp_x_even_end[gi][v][l] = MPI_Wtime();
 
-#if 0
+#if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
     printf("[%d] Wavelet XXXX ---- 2", l);
 
@@ -498,19 +513,25 @@ static PIDX_return_code wavelet_even_x (PIDX_io file, int gi, int v, int l)
 
 static PIDX_return_code wavelet_odd_y (PIDX_io file, int gi, int v, int l)
 {
+  PIDX_time time = file->idx_d->time;
+
+  time->w_stencil_comm_y_odd_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comm_p2p_odd_y (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comm_y_odd_end[gi][v][l] = MPI_Wtime();
 
+  time->w_stencil_comp_y_odd_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comp_odd_y (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comp_y_odd_end[gi][v][l] = MPI_Wtime();
 
-#if 0
+#if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
     printf("[%d] Wavelet YYYY ---- 1", l);
 
@@ -527,19 +548,25 @@ static PIDX_return_code wavelet_odd_y (PIDX_io file, int gi, int v, int l)
 
 static PIDX_return_code wavelet_even_y (PIDX_io file, int gi, int v, int l)
 {
+  PIDX_time time = file->idx_d->time;
+
+  time->w_stencil_comm_y_even_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comm_p2p_even_y (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comm_y_even_end[gi][v][l] = MPI_Wtime();
 
+  time->w_stencil_comp_y_even_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comp_even_y (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comp_y_even_end[gi][v][l] = MPI_Wtime();
 
-#if 0
+#if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
     printf("[%d] Wavelet YYYY ---- 2", l);
 
@@ -556,19 +583,25 @@ static PIDX_return_code wavelet_even_y (PIDX_io file, int gi, int v, int l)
 
 static PIDX_return_code wavelet_odd_z (PIDX_io file, int gi, int v, int l)
 {
+  PIDX_time time = file->idx_d->time;
+
+  time->w_stencil_comm_z_odd_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comm_p2p_odd_z (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comm_z_odd_end[gi][v][l] = MPI_Wtime();
 
+  time->w_stencil_comp_z_odd_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comp_odd_z (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comp_z_odd_end[gi][v][l] = MPI_Wtime();
 
-#if 0
+#if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
     printf("[%d] Wavelet ZZZZ ---- 1", l);
 
@@ -585,19 +618,25 @@ static PIDX_return_code wavelet_odd_z (PIDX_io file, int gi, int v, int l)
 
 static PIDX_return_code wavelet_even_z (PIDX_io file, int gi, int v, int l)
 {
+  PIDX_time time = file->idx_d->time;
+
+  time->w_stencil_comm_z_even_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comm_p2p_even_z (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comm_z_even_end[gi][v][l] = MPI_Wtime();
 
+  time->w_stencil_comp_z_even_start[gi][v][l] = MPI_Wtime();
   if (wavelet_comp_even_z (file, gi, v, l) != PIDX_success)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return PIDX_err_wavelet;
   }
+  time->w_stencil_comp_z_even_end[gi][v][l] = MPI_Wtime();
 
-#if 0
+#if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
     printf("[%d] Wavelet ZZZZ ---- 2", l);
 
@@ -622,10 +661,10 @@ static PIDX_return_code wavelet_comm_p2p_odd_x (PIDX_io file, int gi, int v, int
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   //printf("My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
 
@@ -707,10 +746,10 @@ static PIDX_return_code wavelet_comp_odd_x (PIDX_io file, int gi, int v, int l)
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   int sample_count = 0;
   for (k = 0; k < s_z; k = k + stride)
@@ -783,10 +822,10 @@ static PIDX_return_code wavelet_comm_p2p_even_x (PIDX_io file, int gi, int v, in
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   req_count = 0;
   if (negative_rank_x != -1)
@@ -842,10 +881,10 @@ static PIDX_return_code wavelet_comp_even_x (PIDX_io file, int gi, int v, int l)
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   // Even Samples
   sample_count = 0;
@@ -908,10 +947,10 @@ static PIDX_return_code wavelet_comm_p2p_odd_y (PIDX_io file, int gi, int v, int
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   //printf("My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
 
@@ -983,10 +1022,10 @@ static PIDX_return_code wavelet_comp_odd_y (PIDX_io file, int gi, int v, int l)
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   int stride = (int)pow(2, l);
   int odd_start_offset = (int)pow(2, l);// * s_x;
@@ -1074,10 +1113,10 @@ static PIDX_return_code wavelet_comm_p2p_even_y (PIDX_io file, int gi, int v, in
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   req_count = 0;
   if (negative_rank_y != -1)
@@ -1135,10 +1174,10 @@ static PIDX_return_code wavelet_comp_even_y (PIDX_io file, int gi, int v, int l)
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   // Even Samples
   sample_count = 0;
@@ -1207,10 +1246,10 @@ static PIDX_return_code wavelet_comm_p2p_odd_z (PIDX_io file, int gi, int v, int
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  //int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  //int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   //printf("My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
 
@@ -1282,10 +1321,10 @@ static PIDX_return_code wavelet_comp_odd_z (PIDX_io file, int gi, int v, int l)
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   int stride = (int)pow(2, l);
   int odd_start_offset = (int)pow(2, l);// * s_x;
@@ -1374,10 +1413,10 @@ static PIDX_return_code wavelet_comm_p2p_even_z (PIDX_io file, int gi, int v, in
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  //int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  //int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   req_count = 0;
   if (negative_rank_z != -1)
@@ -1435,10 +1474,10 @@ static PIDX_return_code wavelet_comp_even_z (PIDX_io file, int gi, int v, int l)
   int chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   // Even Samples
   sample_count = 0;
@@ -1510,15 +1549,15 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
 
   int bytes_for_datatype = ((var_grp->variable[v]->bpv / 8) * chunk_size * var_grp->variable[v]->vps) / file->idx->compression_factor;
 
-  int s_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[0];
-  int s_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[1];
-  int s_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->size[2];
+  int s_x = (int) var->rst_patch_group[0]->reg_patch->size[0];
+  int s_y = (int) var->rst_patch_group[0]->reg_patch->size[1];
+  int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
 
-  int o_x = (int) var->rst_patch_group[0]->wavelet_reg_patch->offset[0];
-  int o_y = (int) var->rst_patch_group[0]->wavelet_reg_patch->offset[1];
-  int o_z = (int) var->rst_patch_group[0]->wavelet_reg_patch->offset[2];
+  int o_x = (int) var->rst_patch_group[0]->reg_patch->offset[0];
+  int o_y = (int) var->rst_patch_group[0]->reg_patch->offset[1];
+  int o_z = (int) var->rst_patch_group[0]->reg_patch->offset[2];
 
-  unsigned char* wb = var->rst_patch_group[0]->wavelet_reg_patch->buffer;
+  unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   MPI_Win win;
   int global_buffer_size = file->idx->bounds[0] * file->idx->bounds[1] * file->idx->bounds[2] * bytes_for_datatype;
@@ -1592,7 +1631,8 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
     printf("\n");
     for (k = 0; k < file->idx->bounds[2]; k++)
     {
-      for (j = file->idx->bounds[1] -1; j >= 0 ; j--)
+      for (j = 0; j < file->idx->bounds[1]; j++)
+      //for (j = file->idx->bounds[1] -1; j >= 0 ; j--)
       {
         for (i = 0; i < file->idx->bounds[0]; i++)
         {

@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
-  rank_0_print("Simulation Data Created\n");
+  //rank_0_print("Simulation Data Created\n");
 
   create_pidx_var_point_and_access();
   for (ts = 0; ts < time_step_count; ts++)
@@ -255,6 +255,7 @@ static int parse_var_list()
   }
   fclose(fp);
 
+  /*
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank == 0)
@@ -263,6 +264,7 @@ static int parse_var_list()
     for(v = 0; v < variable_count; v++)
       printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
+  */
 
   return PIDX_success;
 }
@@ -327,7 +329,8 @@ static void create_synthetic_simulation_data()
             if ((bpv[var]) == 32)
             {
               //fvalue = /*100 + */1 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-                fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
+              //fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
+              fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
 
@@ -420,6 +423,8 @@ static void set_pidx_file(int ts)
   // Selecting idx I/O mode
   //PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);
   PIDX_set_io_mode(file, PIDX_WAVELET_IO);
+  PIDX_set_wavelet_implementation_type(file, WAVELET_RST);
+  PIDX_set_wavelet_level(file, 3);
 
   return;
 }

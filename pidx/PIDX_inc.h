@@ -56,6 +56,7 @@ extern "C" {
 #include "./core/PIDX_header/PIDX_header_io.h"
 #include "./core/PIDX_rst/PIDX_rst.h"
 #include "./core/PIDX_generic_rst/PIDX_generic_rst.h"
+#include "./core/PIDX_wavelet_rst/PIDX_wavelet_rst.h"
 #include "./core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.h"
 #include "./core/PIDX_hz/PIDX_hz_encode.h"
 #include "./core/PIDX_in_situ_interface/PIDX_in_situ_interface.h"
@@ -73,7 +74,8 @@ extern "C" {
 #include "./io/global_partition_idx_io.h"
 #include "./io/raw_io.h"
 
-#include "./io/wavelet_coefficient.h"
+#include "./io/wavelet_rst.h"
+#include "./io/wavelet_stencil.h"
 #include "./io/restructure.h"
 #include "./io/partition.h"
 #include "./io/local_buffer.h"

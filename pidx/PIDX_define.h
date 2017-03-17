@@ -44,7 +44,7 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 // PIDX_BOX_PER_PROCESS - Box size set automatically such that at the end of restructuring every process has at max only one box to process
 // PIDX_BOX_FROM_BITSTRING - Box size set automatically suing the bitstring
 // PIDX_CLOSEST_POWER_TWO - Box size is closest power in two in every dimension of the per process box size
-enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, PIDX_CLOSEST_POWER_TWO, PIDX_UNIFORMLY_DISTRIBUTED_BOX};
+enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, PIDX_CLOSEST_POWER_TWO, PIDX_UNIFORMLY_DISTRIBUTED_BOX, PIDX_WAVELET_BOX};
 
 
 
@@ -54,6 +54,8 @@ enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, 
 // AGG_SETUP_AND_PERFORM - Sets aggregation buffers and also performs aggregation
 enum AGG_MODES {AGG_SETUP, AGG_PERFORM, AGG_SETUP_AND_PERFORM};
 
+
+enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 
 // No process dumps any meta data info
 #define PIDX_NO_META_DATA_DUMP             0
@@ -96,6 +98,7 @@ enum AGG_MODES {AGG_SETUP, AGG_PERFORM, AGG_SETUP_AND_PERFORM};
 
 // Calls wavelet computation code
 #define PIDX_WAVELET_IO                               6
+
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256

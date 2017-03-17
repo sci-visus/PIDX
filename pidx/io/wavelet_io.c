@@ -62,14 +62,27 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
+#if 1
   // Step 2.5: Wavelet coefficient computation
-  ret = wavelet(file, gi, svi, evi - 1, PIDX_WRITE);
-  if (ret != PIDX_success)
+  if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    if (stencil_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
   }
+  else
+  {
+    if (rst_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+#endif
 
+#if 0
   // Step 3:  Partition
   if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
@@ -180,14 +193,16 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
   time->partition_cleanup_end = MPI_Wtime();
-
+#endif
+#endif
   // Step 13: Restructuring cleanup
   if (restructure_cleanup(file) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#endif
+
+
   return PIDX_success;
 }
 

@@ -26,7 +26,7 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf);
 
 
-PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
+PIDX_return_code PIDX_wavelet_rst_meta_data_create(PIDX_wavelet_rst_id rst_id)
 {
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
@@ -88,12 +88,12 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
       memset(reg_patch, 0, sizeof (*reg_patch));
 
       //Interior regular patches
-      reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0];// i;
-      reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1];// j;
-      reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2];// k;
-      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0]; //rst_id->reg_patch_size[0];
-      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1]; //rst_id->reg_patch_size[1];
-      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2]; //rst_id->reg_patch_size[2];
+      reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0] - rst_id->idx->new_box_set[i]->size_nx;
+      reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1] - rst_id->idx->new_box_set[i]->size_ny;
+      reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2] - rst_id->idx->new_box_set[i]->size_nz;
+      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0] + rst_id->idx->new_box_set[i]->size_nx + rst_id->idx->new_box_set[i]->size_px;
+      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1] + rst_id->idx->new_box_set[i]->size_ny + rst_id->idx->new_box_set[i]->size_py;
+      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2] + rst_id->idx->new_box_set[i]->size_nz + rst_id->idx->new_box_set[i]->size_pz;
 
       if (intersectNDChunk(reg_patch, local_proc_patch))
       {
@@ -129,12 +129,12 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
       memset(reg_patch, 0, sizeof (*reg_patch));
 
       //Interior regular patches
-      reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0];// i;
-      reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1];// j;
-      reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2];// k;
-      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0]; //rst_id->reg_patch_size[0];
-      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1]; //rst_id->reg_patch_size[1];
-      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2]; //rst_id->reg_patch_size[2];
+      reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0] - rst_id->idx->new_box_set[i]->size_nx;
+      reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1] - rst_id->idx->new_box_set[i]->size_ny;
+      reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2] - rst_id->idx->new_box_set[i]->size_nz;
+      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0] + rst_id->idx->new_box_set[i]->size_nx + rst_id->idx->new_box_set[i]->size_px;
+      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1] + rst_id->idx->new_box_set[i]->size_ny + rst_id->idx->new_box_set[i]->size_py;
+      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2] + rst_id->idx->new_box_set[i]->size_nz + rst_id->idx->new_box_set[i]->size_pz;
 
       //if (rst_id->idx_c->grank == 8)
       //  printf("OS: %d %d %d - %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2]);
@@ -289,12 +289,12 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
       memset(reg_patch, 0, sizeof (*reg_patch));
 
       //Interior regular patches
-      reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0];// i;
-      reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1];// j;
-      reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2];// k;
-      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0]; //rst_id->reg_patch_size[0];
-      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1]; //rst_id->reg_patch_size[1];
-      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2]; //rst_id->reg_patch_size[2];
+      reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0] - rst_id->idx->new_box_set[i]->size_nx;
+      reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1] - rst_id->idx->new_box_set[i]->size_ny;
+      reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2] - rst_id->idx->new_box_set[i]->size_nz;
+      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0] + rst_id->idx->new_box_set[i]->size_nx + rst_id->idx->new_box_set[i]->size_px;
+      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1] + rst_id->idx->new_box_set[i]->size_ny + rst_id->idx->new_box_set[i]->size_py;
+      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2] + rst_id->idx->new_box_set[i]->size_nz + rst_id->idx->new_box_set[i]->size_pz;
 
       //if (rst_id->idx_c->grank == 8)
       //  printf("OS: %d %d %d - %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2]);
@@ -543,7 +543,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
 
 
 
-PIDX_return_code PIDX_generic_rst_meta_data_write(PIDX_generic_rst_id rst_id)
+PIDX_return_code PIDX_wavelet_rst_meta_data_write(PIDX_wavelet_rst_id rst_id)
 {
   int *global_patch_offset;
   int *global_patch_size;
@@ -663,7 +663,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_write(PIDX_generic_rst_id rst_id)
 
 
 
-PIDX_return_code PIDX_generic_rst_meta_data_destroy(PIDX_generic_rst_id rst_id)
+PIDX_return_code PIDX_wavelet_rst_meta_data_destroy(PIDX_wavelet_rst_id rst_id)
 {
   int i, j, v;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];

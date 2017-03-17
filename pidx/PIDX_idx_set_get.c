@@ -441,10 +441,6 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
   if (file->idx->io_type == PIDX_MERGE_TREE_ANALYSIS)
     file->idx->shared_face = 1;
 
-  if (file->idx->io_type == PIDX_WAVELET_IO)
-    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
-
-
   return PIDX_success;
 }
 
@@ -456,6 +452,51 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type)
     return PIDX_err_file;
 
   *io_type = file->idx->io_type;
+
+  return PIDX_success;
+}
+
+
+
+
+PIDX_return_code PIDX_set_wavelet_implementation_type(PIDX_file file, int w_type)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  if (file->idx->io_type != PIDX_WAVELET_IO)
+    return PIDX_err_file;
+
+  file->idx_d->wavelet_imeplementation_type = w_type;
+
+  if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
+    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
+  else if (file->idx_d->wavelet_imeplementation_type == WAVELET_RST)
+    file->idx->reg_box_set = PIDX_WAVELET_BOX;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_set_wavelet_level(PIDX_file file, int w_level)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  file->idx_d->wavelet_levels = w_level;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_wavelet_level(PIDX_file file, int* w_level)
+{
+  if(file == NULL)
+    return PIDX_err_file;
+
+  *w_level = file->idx_d->wavelet_levels;
 
   return PIDX_success;
 }
