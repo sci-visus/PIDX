@@ -261,7 +261,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
         rst_total = rst_init + rst_meta_data_create + rst_meta_data_io + rst_buffer + rst_write_read + rst_buff_agg + rst_buff_agg_free + rst_buff_agg_io + rst_cleanup;
         rst_all = rst_all + rst_total;
 
-        printf("RST                     :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
+        printf("RST                         :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
       }
 
       for (si = svi; si < evi; si++)
@@ -371,7 +371,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
             w_comp_total = w_comp_s_x + w_comp_s_y + w_comp_s_z;
             w_all = w_all + w_comm_total + w_comp_total;
 
-            printf("[WAVELET RST COMP][%d]   :[%d] [%f + %f + %f] = %f [%f]\n", i, si, w_comp_s_x, w_comp_s_y, w_comp_s_z, w_comp_total, w_all);
+            printf("[WAVELET RST COMP][%d]       :[%d] [%f + %f + %f] = %f [%f]\n", i, si, w_comp_s_x, w_comp_s_y, w_comp_s_z, w_comp_total, w_all);
 
           }
         }

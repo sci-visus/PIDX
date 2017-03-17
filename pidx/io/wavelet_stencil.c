@@ -72,12 +72,14 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
     PIDX_variable var = var_grp->variable[v];
     assert(var->patch_group_count <= 1);
 
+#if FINAL_RESULT || INTERMEDIATE_RESULT
     ret = create_debug_comm(file, gi, v);
     if (ret != PIDX_success)
     {
       fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
       return PIDX_err_wavelet;
     }
+#endif
 
     if (var->patch_group_count == 0)
       goto comm_cleanup;
@@ -204,7 +206,10 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
 
 
     comm_cleanup:
+      ;
+#if FINAL_RESULT || INTERMEDIATE_RESULT
       MPI_Comm_free(&verifyComm);
+#endif
 
   }
 
@@ -1560,12 +1565,14 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
   unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
   MPI_Win win;
-  int global_buffer_size = file->idx->bounds[0] * file->idx->bounds[1] * file->idx->bounds[2] * bytes_for_datatype;
-  unsigned char* global_buffer = malloc(global_buffer_size);
-  memset(global_buffer, 0, global_buffer_size);
+  unsigned char* global_buffer;
 
   if (file->idx_c->grank == 0)
   {
+    int global_buffer_size = file->idx->bounds[0] * file->idx->bounds[1] * file->idx->bounds[2] * bytes_for_datatype;
+    global_buffer = malloc(global_buffer_size);
+    memset(global_buffer, 0, global_buffer_size);
+
     ret = MPI_Win_create(global_buffer, global_buffer_size, bytes_for_datatype, MPI_INFO_NULL, verifyComm, &win);
     if (ret != MPI_SUCCESS)
     {
@@ -1646,6 +1653,9 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
     }
     printf("\n");
   }
+
+  if (file->idx_c->grank == 0)
+    free(global_buffer);
 
   exit:
 
