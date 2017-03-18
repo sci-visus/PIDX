@@ -17,7 +17,7 @@
  *****************************************************/
 
 /**
- * \file PIDX_compression.c
+ * \file PIDX_cmp.c
  *
  * \author Sidharth Kumar
  * \date   10/09/14

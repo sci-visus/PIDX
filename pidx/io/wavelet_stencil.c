@@ -72,14 +72,15 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
     PIDX_variable var = var_grp->variable[v];
     assert(var->patch_group_count <= 1);
 
-#if FINAL_RESULT || INTERMEDIATE_RESULT
-    ret = create_debug_comm(file, gi, v);
-    if (ret != PIDX_success)
+    if (file->idx->current_time_step == 0)
     {
-      fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
-      return PIDX_err_wavelet;
+      ret = create_debug_comm(file, gi, v);
+      if (ret != PIDX_success)
+      {
+        fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+        return PIDX_err_wavelet;
+      }
     }
-#endif
 
     if (var->patch_group_count == 0)
       goto comm_cleanup;
@@ -176,22 +177,22 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
         }
       }
 
+      if (file->idx->current_time_step == 0)
+      {
+        int vrank;
+        int total_receive = 0, total_sent = 0;
+        int local_receive = receive_x + receive_y + receive_z;
+        int local_sent = sent_x + sent_y + sent_z;
+        MPI_Comm_rank(verifyComm, &vrank);
 
-/*
-      int vrank;
-      int total_receive = 0, total_sent = 0;
-      int local_receive = receive_x + receive_y + receive_z;
-      int local_sent = sent_x + sent_y + sent_z;
-      MPI_Comm_rank(verifyComm, &vrank);
+        MPI_Allreduce(&local_receive, &total_receive, 1, MPI_INT, MPI_SUM, verifyComm);
+        MPI_Allreduce(&local_sent, &total_sent, 1, MPI_INT, MPI_SUM, verifyComm);
 
-      MPI_Allreduce(&local_receive, &total_receive, 1, MPI_INT, MPI_SUM, verifyComm);
-      MPI_Allreduce(&local_sent, &total_sent, 1, MPI_INT, MPI_SUM, verifyComm);
-
-      if (vrank == 0)
-        printf("[%d] Total Data sent %d Total Data received %d\n", l, total_sent, total_receive);
+        if (vrank == 0)
+          printf("[%d] Total Data sent %d Total Data received %d\n", l, total_sent, total_receive);
+      }
 
       //printf("[%d] Rank %d Sent %d [%d %d %d] Receive %d [%d %d %d]\n", l, file->idx_c->grank, sent_x + sent_y + sent_z, sent_x, sent_y, sent_z, receive_x + receive_y + receive_z, receive_x, receive_y, receive_z);
-*/
       destroy_stencil_buffers();
     }
 
@@ -207,9 +208,10 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
 
     comm_cleanup:
       ;
-#if FINAL_RESULT || INTERMEDIATE_RESULT
-      MPI_Comm_free(&verifyComm);
-#endif
+      if (file->idx->current_time_step == 0)
+        MPI_Comm_free(&verifyComm);
+
+
 
   }
 

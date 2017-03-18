@@ -74,6 +74,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       memset(hz_buf->start_hz_index, 0, sizeof (unsigned long long) * maxH);
       memset(hz_buf->end_hz_index, 0, sizeof (unsigned long long) * maxH);
 
+      hz_buf->compressed_buffer_size = malloc(sizeof (unsigned long long) * maxH);
+      memset(hz_buf->compressed_buffer_size, 0, sizeof (unsigned long long) * maxH);
+
       hz_buf->nsamples_per_level = malloc(sizeof (int*) * maxH);
       if (hz_buf->nsamples_per_level == NULL)
       memset(hz_buf->nsamples_per_level, 0, sizeof (int*) * maxH);

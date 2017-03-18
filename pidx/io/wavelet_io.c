@@ -82,7 +82,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   }
 #endif
 
-#if 0
+#if 1
   // Step 3:  Partition
   if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
@@ -100,7 +100,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if 1
+
   file->idx->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
@@ -120,7 +120,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if 1
+
     if (hz_io(file, gi, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -173,7 +173,6 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#endif
   }
 
   // Step 11: Cleanup the group and IDX related meta-data
@@ -193,7 +192,6 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
   time->partition_cleanup_end = MPI_Wtime();
-#endif
 #endif
   // Step 13: Restructuring cleanup
   if (restructure_cleanup(file) != PIDX_success)

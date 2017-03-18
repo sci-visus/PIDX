@@ -59,6 +59,9 @@ static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
+static int wavelet_type = 0;
+static int wavelet_level = WAVELET_STENCIL;
+
 static PIDX_point global_size, local_offset, local_size;
 static PIDX_access p_access;
 static PIDX_file file;
@@ -131,7 +134,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:c:f:t:v:b:a:";
+  char flags[] = "g:l:c:f:t:v:b:a:w:x:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -178,6 +181,16 @@ static void parse_args(int argc, char **argv)
 
     case('a'): // blocks per file
       if (sscanf(optarg, "%d", &blocks_per_file) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('w'): // wavelet type
+      if (sscanf(optarg, "%d", &wavelet_type) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('x'): // wavelet level
+      if (sscanf(optarg, "%d", &wavelet_level) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -423,8 +436,8 @@ static void set_pidx_file(int ts)
   // Selecting idx I/O mode
   //PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);
   PIDX_set_io_mode(file, PIDX_WAVELET_IO);
-  PIDX_set_wavelet_implementation_type(file, WAVELET_RST);
-  PIDX_set_wavelet_level(file, 3);
+  PIDX_set_wavelet_implementation_type(file, wavelet_type);
+  PIDX_set_wavelet_level(file, wavelet_level);
 
   return;
 }

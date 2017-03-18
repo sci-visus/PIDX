@@ -109,6 +109,7 @@ struct PIDX_HZ_buffer_struct
   unsigned long long *end_hz_index;                                ///< Ending HZ index at of the data at all the HZ levels
   unsigned long long *buffer_index;                                ///< HZ indices of the data (used only when no restructuring phsae is used)
   unsigned char** buffer;                               ///< data buffer at all the HZ levels
+  unsigned long long *compressed_buffer_size;
 };
 typedef struct PIDX_HZ_buffer_struct* HZ_buffer;
 

@@ -17,7 +17,7 @@
  *****************************************************/
 
 #ifndef __PIDX_COMPRESSION_H
-#define __PIDX_COMPRESSION_H 
+#define __PIDX_COMPRESSION_H
 
 
 struct PIDX_comp_id_struct;
