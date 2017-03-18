@@ -143,7 +143,7 @@ PIDX_return_code PIDX_hz_encode_threshold_and_write(PIDX_hz_encode_id id)
 }
 
 
-PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
+PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
 {
   int p = 0, c = 0, v = 0, bytes_for_datatype = 0;
   int maxH = id->idx_d->maxh;
