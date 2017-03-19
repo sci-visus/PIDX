@@ -158,7 +158,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
     {
       var->hz_buffer[p]->buffer = (unsigned char**)malloc( maxH * sizeof (unsigned char*));
       memset(var->hz_buffer[p]->buffer, 0,  maxH * sizeof (unsigned char*));
-      bytes_for_datatype = ((var->bpv / 8) * chunk_size * var->vps) / id->idx->compression_factor;
+      bytes_for_datatype = var->bpv / 8;
       for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
       {
         void* buf = var->hz_buffer[p]->buffer[c];
@@ -170,8 +170,8 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         zfp_stream* zfp = zfp_stream_open(NULL);
         zfp_stream_set_accuracy(zfp, 0, type);
         size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
-        unsigned char* output = (unsigned char*)malloc(max_compressed_bytes);
-        bitstream* stream = stream_open(output + 8, max_compressed_bytes);
+        unsigned char* output = (unsigned char*)malloc(max_compressed_bytes + 16);
+        bitstream* stream = stream_open(output + 16, max_compressed_bytes);
         zfp_stream_set_bit_stream(zfp, stream);
         size_t compressed_bytes = zfp_compress(zfp, field);
         if (compressed_bytes == 0)
@@ -180,14 +180,23 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         }
         var->hz_buffer[p]->compressed_buffer_size[c] = compressed_bytes;
         size_t original_bytes = var->hz_buffer[p]->samples_per_level[c] * bytes_for_datatype;
-        if (compressed_bytes > original_bytes)
+        if (compressed_bytes + 16 > original_bytes)
         {
           puts("WARNING: compressed size > original size\n");
         }
-        *((unsigned long long*)output) = compressed_bytes;
+        if (compressed_bytes > 0x7FFFFFFF)
+        {
+          puts("WARNING: compressed size does not fit in an int");
+        }
+        *((unsigned int*)output) = (unsigned int)compressed_bytes; // first 4 bytes = size of compressed stream
+        ((int*)output)[1] = dim_x; // next 4 bytes = dim x
+        ((int*)output)[2] = dim_y; // next 4 bytes = dim y
+        ((int*)output)[3] = dim_z; // next 4 bytes = dim z
         free(buf);
         var->hz_buffer[p]->buffer[c] = output;
         zfp_field_free(field);
+        zfp_stream_close(zfp);
+        stream_close(stream);
       }
     }
   }

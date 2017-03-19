@@ -1,4 +1,5 @@
 #include "../../PIDX_inc.h"
+#include <zfp.h>
 
 #define PIDX_MIN(a,b) (((a)<(b))?(a):(b))
 
@@ -696,7 +697,40 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
 {
   if (ab->buffer_size != 0)
   {
-    //decompress buffer ab->buffer
+    PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
+    int dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
+    zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
+    unsigned char* buf = ab->buffer;
+    size_t offset = 0;
+    while (offset < ab->buffer_size)
+    {
+      unsigned int compressed_bytes = *(unsigned int*)(buf + offset);
+      if (compressed_bytes != 0)
+      {
+        int dim_x = (int*)(buf + offset)[1];
+        int dim_y = (int*)(buf + offset)[2];
+        int dim_z = (int*)(buf + offset)[3];
+        unsigned char* input = (unsigned char*)malloc(compressed_bytes);
+        memcpy(input, buf + offset + 16, compressed_bytes);
+        zfp_field* field = zfp_field_3d(buf + offset, type, dim_x, dim_y, dim_z);
+        zfp_stream* zfp = zfp_stream_open(NULL);
+        bitstream* stream = stream_open(input, compressed_bytes);
+        zfp_stream_set_accuracy(zfp, 0, type);
+        zfp_stream_set_bit_stream(zfp, stream);
+        if (!zfp_decompress(zfp, field)) {
+          puts("ERROR: Something wrong happened during decompression\n");
+        }
+        zfp_field_free(field);
+        zfp_stream_close(zfp);
+        stream_close(stream);
+        size_t original_bytes = (size_t)dtype_bytes * dim_x * dim_y * dim_z;
+        offset += original_bytes;
+      }
+      else
+      {
+        offset += sizeof(int);
+      }
+    }
   }
   return PIDX_success;
 }
