@@ -698,7 +698,7 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
   if (ab->buffer_size != 0)
   {
     PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
-    int dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
+    size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
     zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
     unsigned char* buf = ab->buffer;
     size_t offset = 0;
@@ -717,14 +717,13 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
         bitstream* stream = stream_open(input, compressed_bytes);
         zfp_stream_set_accuracy(zfp, 0, type);
         zfp_stream_set_bit_stream(zfp, stream);
-        if (!zfp_decompress(zfp, field)) {
+        if (!zfp_decompress(zfp, field))
           puts("ERROR: Something wrong happened during decompression\n");
-        }
         zfp_field_free(field);
         zfp_stream_close(zfp);
         stream_close(stream);
         free(input);
-        size_t original_bytes = (size_t)dtype_bytes * dim_x * dim_y * dim_z;
+        size_t original_bytes = dtype_bytes * dim_x * dim_y * dim_z;
         offset += original_bytes;
       }
       else
