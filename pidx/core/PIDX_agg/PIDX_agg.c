@@ -701,7 +701,7 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
     size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
     zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
     unsigned char* buf = ab->buffer;
-    size_t offset = id->idx_d->samples_per_block;
+    size_t offset = id->idx_d->samples_per_block * dtype_bytes;
     while (offset < ab->buffer_size)
     {
       unsigned int compressed_bytes = *(unsigned int*)(buf + offset);
