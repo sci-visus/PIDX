@@ -18,7 +18,7 @@
 
 
 #include "../../PIDX_inc.h"
-
+#include <zfp.h>
 
 PIDX_return_code PIDX_hz_encode_threshold_and_write(PIDX_hz_encode_id id)
 {
@@ -158,14 +158,36 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
     {
       var->hz_buffer[p]->buffer = (unsigned char**)malloc( maxH * sizeof (unsigned char*));
       memset(var->hz_buffer[p]->buffer, 0,  maxH * sizeof (unsigned char*));
-\
       bytes_for_datatype = ((var->bpv / 8) * chunk_size * var->vps) / id->idx->compression_factor;
       for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
       {
-        // Buffer to compress - var->hz_buffer[p]->buffer[c]
-        // Size of buffer - samples_per_level
-        // do an inplace compression
-        // Size of compressed buffer - var->hz_buffer[p]->compressed_buffer_size[c]
+        void* buf = var->hz_buffer[p]->buffer[c];
+        int dim_x = var->hz_buffer[p]->nsamples_per_level[c][0];
+        int dim_y = var->hz_buffer[p]->nsamples_per_level[c][1];
+        int dim_z = var->hz_buffer[p]->nsamples_per_level[c][2];
+        zfp_type type = (bytes_for_datatype == 4) ? zfp_type_float : zfp_type_double;
+        zfp_field* field = zfp_field_3d(buf, type, dim_x, dim_y, dim_z);
+        zfp_stream* zfp = zfp_stream_open(NULL);
+        zfp_stream_set_accuracy(zfp, 0, type);
+        size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
+        unsigned char* output = (unsigned char*)malloc(max_compressed_bytes);
+        bitstream* stream = stream_open(output + 8, max_compressed_bytes);
+        zfp_stream_set_bit_stream(zfp, stream);
+        size_t compressed_bytes = zfp_compress(zfp, field);
+        if (compressed_bytes == 0)
+        {
+          puts("ERROR: Something wrong happened during compression\n");
+        }
+        var->hz_buffer[p]->compressed_buffer_size[c] = compressed_bytes;
+        size_t original_bytes = var->hz_buffer[p]->samples_per_level[c] * bytes_for_datatype;
+        if (compressed_bytes > original_bytes)
+        {
+          puts("WARNING: compressed size > original size\n");
+        }
+        *((unsigned long long*)output) = compressed_bytes;
+        free(buf);
+        var->hz_buffer[p]->buffer[c] = output;
+        zfp_field_free(field);
       }
     }
   }
