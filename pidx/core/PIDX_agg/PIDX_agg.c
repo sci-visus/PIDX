@@ -723,6 +723,7 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
         zfp_field_free(field);
         zfp_stream_close(zfp);
         stream_close(stream);
+        free(input);
         size_t original_bytes = (size_t)dtype_bytes * dim_x * dim_y * dim_z;
         offset += original_bytes;
       }
@@ -734,7 +735,6 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
   }
   return PIDX_success;
 }
-
 
 static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)
 {
@@ -749,8 +749,6 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
   }
   return PIDX_success;
 }
-
-
 
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode)
 {
