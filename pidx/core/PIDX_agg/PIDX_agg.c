@@ -9,6 +9,7 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode);
 static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id);
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
+static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
 
 struct PIDX_agg_struct
 {
@@ -615,6 +616,9 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 #endif
 
+  ret = decompress_aggregation_buffer(id, ab);
+  if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+
   return PIDX_success;
 }
 
@@ -682,6 +686,17 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
 
   return PIDX_success;
 }
+
+
+static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab)
+{
+  if (ab->buffer_size != 0)
+  {
+    //decompress buffer ab->buffer
+  }
+  return PIDX_success;
+}
+
 
 
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode)
