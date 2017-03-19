@@ -736,6 +736,52 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
   return PIDX_success;
 }
 
+typedef struct Vector3i { int x, y, z; } Vector3i;
+#undef max
+#define max(a,b) ((a) > (b) ? (a) : (b))
+static Vector3i get_strides(const char* bit_string, int bs_len, int len)
+{
+    assert(len >= 0);
+    Vector3i stride = { 0, 0, 0 };
+    size_t start = max(bs_len - len, 0);
+    for (size_t i = start; i < bs_len; ++i)
+    {
+        if      (bit_string[i] == '0') { ++stride.x; }
+        else if (bit_string[i] == '1') { ++stride.y; }
+        else if (bit_string[i] == '2') { ++stride.z; }
+    }
+    if (len > bs_len) { ++stride.x; ++stride.y; ++stride.z; }
+    stride.x = 1 << stride.x;
+    stride.y = 1 << stride.y;
+    stride.z = 1 << stride.z;
+    return stride;
+}
+#undef max
+
+static Vector3i get_intra_block_strides(const char* bit_string, int bs_len, int hz_level)
+{
+    // count the number of x, y, z in the least significant (z_level + 1) bits
+    // in the bit_string
+    int z_level = bs_len - hz_level;
+    int len = z_level + 1;
+    return get_strides(bit_string, bs_len, len);
+}
+
+/* Return the strides (in terms of the first sample) of idx blocks, in x, y, and z. */
+static Vector3i get_inter_block_strides(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
+{
+    assert(bs_len >= hz_level);
+    // count the number of x, y, z in the least significant
+    // (z_level + bits_per_block + 1) bits in the bit_string
+    int len = bs_len - hz_level + bits_per_block + 1;
+    // len can get bigger than bit_string.size if the input hz_level is smaller
+    // than the mininum hz level
+    return get_strides(bit_string, bs_len, len);
+}
+
+/* Get the number of samples in each dimension for a block at the given hz level */
+//static Vector3i get_num_samples() {}
+
 static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)
 {
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
