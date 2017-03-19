@@ -707,9 +707,9 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
       unsigned int compressed_bytes = *(unsigned int*)(buf + offset);
       if (compressed_bytes != 0)
       {
-        int dim_x = (int*)(buf + offset)[1];
-        int dim_y = (int*)(buf + offset)[2];
-        int dim_z = (int*)(buf + offset)[3];
+        int dim_x = ((int*)(buf + offset))[1];
+        int dim_y = ((int*)(buf + offset))[2];
+        int dim_z = ((int*)(buf + offset))[3];
         unsigned char* input = (unsigned char*)malloc(compressed_bytes);
         memcpy(input, buf + offset + 16, compressed_bytes);
         zfp_field* field = zfp_field_3d(buf + offset, type, dim_x, dim_y, dim_z);
@@ -736,62 +736,106 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
   return PIDX_success;
 }
 
-typedef struct Vector3i { int x, y, z; } Vector3i;
 #undef max
 #define max(a,b) ((a) > (b) ? (a) : (b))
-static Vector3i get_strides(const char* bit_string, int bs_len, int len)
+static Point3D get_strides(const char* bit_string, int bs_len, int len)
 {
-    assert(len >= 0);
-    Vector3i stride = { 0, 0, 0 };
-    size_t start = max(bs_len - len, 0);
-    for (size_t i = start; i < bs_len; ++i)
-    {
-        if      (bit_string[i] == '0') { ++stride.x; }
-        else if (bit_string[i] == '1') { ++stride.y; }
-        else if (bit_string[i] == '2') { ++stride.z; }
-    }
-    if (len > bs_len) { ++stride.x; ++stride.y; ++stride.z; }
-    stride.x = 1 << stride.x;
-    stride.y = 1 << stride.y;
-    stride.z = 1 << stride.z;
-    return stride;
+  assert(len >= 0);
+  Point3D stride = { 0, 0, 0 };
+  size_t start = max(bs_len - len, 0);
+  for (size_t i = start; i < bs_len; ++i)
+  {
+    if      (bit_string[i] == '0') { ++stride.x; }
+    else if (bit_string[i] == '1') { ++stride.y; }
+    else if (bit_string[i] == '2') { ++stride.z; }
+  }
+  if (len > bs_len) { ++stride.x; ++stride.y; ++stride.z; }
+  stride.x = 1 << stride.x;
+  stride.y = 1 << stride.y;
+  stride.z = 1 << stride.z;
+  return stride;
 }
 #undef max
 
-static Vector3i get_intra_block_strides(const char* bit_string, int bs_len, int hz_level)
+static Point3D get_intra_block_strides(const char* bit_string, int bs_len, int hz_level)
 {
-    // count the number of x, y, z in the least significant (z_level + 1) bits
-    // in the bit_string
-    int z_level = bs_len - hz_level;
-    int len = z_level + 1;
-    return get_strides(bit_string, bs_len, len);
+  // count the number of x, y, z in the least significant (z_level + 1) bits
+  // in the bit_string
+  int z_level = bs_len - hz_level;
+  int len = z_level + 1;
+  return get_strides(bit_string, bs_len, len);
 }
 
 /* Return the strides (in terms of the first sample) of idx blocks, in x, y, and z. */
-static Vector3i get_inter_block_strides(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
+static Point3D get_inter_block_strides(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
 {
-    assert(bs_len >= hz_level);
-    // count the number of x, y, z in the least significant
-    // (z_level + bits_per_block + 1) bits in the bit_string
-    int len = bs_len - hz_level + bits_per_block + 1;
-    // len can get bigger than bit_string.size if the input hz_level is smaller
-    // than the mininum hz level
-    return get_strides(bit_string, bs_len, len);
+  assert(bs_len >= hz_level);
+  // count the number of x, y, z in the least significant
+  // (z_level + bits_per_block + 1) bits in the bit_string
+  int len = bs_len - hz_level + bits_per_block + 1;
+  // len can get bigger than bit_string.size if the input hz_level is smaller
+  // than the mininum hz level
+  return get_strides(bit_string, bs_len, len);
 }
 
 /* Get the number of samples in each dimension for a block at the given hz level */
-//static Vector3i get_num_samples() {}
+static Point3D get_num_samples_per_block(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
+{
+  Point3D intra_stride = get_intra_block_strides(bit_string, bs_len, hz_level);
+  Point3D inter_stride = get_inter_block_strides(bit_string, bs_len, hz_level, bits_per_block);
+  Point3D block_nsamples;
+  block_nsamples.x = inter_stride.x / intra_stride.x;
+  block_nsamples.y = inter_stride.y / intra_stride.y;
+  block_nsamples.z = inter_stride.z / intra_stride.z;
+  return block_nsamples;
+}
 
 static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)
 {
+  int hz_level = lbl->resolution_from;
+  // TODO: here we assume the bit string contains a 'V' in the beginning
+  const char* bit_string = id->idx->bitSequence + 1;
+  int bs_len = strlen(bit_string) - 1;
+  int bits_per_block = id->idx->bits_per_block;
+  Point3D block_nsamples = get_num_samples_per_block(bit_string, bs_len, hz_level, bits_per_block);
+  assert(block_nsamples.x * block_nsamples.y * block_nsamples.z == id->idx_d->samples_per_block);
+  if (block_nsamples.x * block_nsamples.y * block_nsamples.z != id->idx_d->samples_per_block)
+    puts("ERROR: Wrong number of samples per block\n");
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   if (ab->buffer_size != 0)
   {
     int i;
+    size_t offset = 0;
+    size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
+    size_t original_bytes = id->idx_d->samples_per_block * dtype_bytes;
+    unsigned char* temp = (unsigned char*)malloc(original_bytes);
     for (i = 0; i < lbl->bcpf[ab->file_number]; i++)
     {
-      //compress buffer ab->buffer + i * id->idx_d->samples_per_block * var_grp->variable[ab->var_number]->bpv/8
+      void* buf = ab->buffer + i * dtype_bytes * id->idx_d->samples_per_block;
+      zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
+      zfp_field* field = zfp_field_3d(buf, type, block_nsamples.x, block_nsamples.y, block_nsamples.z);
+      zfp_stream* zfp = zfp_stream_open(NULL);
+      zfp_stream_set_accuracy(zfp, 0, type);
+      size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
+      if (max_compressed_bytes > original_bytes)
+        puts("WARNING: compressed size potentially > original size\n");
+      bitstream* stream = stream_open(temp, original_bytes);
+      zfp_stream_set_bit_stream(zfp, stream);
+      size_t compressed_bytes = zfp_compress(zfp, field);
+      if (compressed_bytes == 0)
+        puts("ERROR: Something wrong happened during compression\n");
+      if (compressed_bytes > original_bytes)
+        puts("WARNING: compressed size > original size\n");
+      memcpy(ab->buffer + offset, temp, compressed_bytes);
+      offset += compressed_bytes;
+      zfp_field_free(field);
+      zfp_stream_close(zfp);
+      stream_close(stream);
     }
+    free(temp);
+    if (offset > ab->buffer_size)
+        puts("WARNING: compressed buffer size > original buffer size\n");
+    ab->buffer_size = ab->compressed_buffer_size = offset;
   }
   return PIDX_success;
 }

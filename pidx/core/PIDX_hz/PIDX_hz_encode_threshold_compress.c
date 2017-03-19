@@ -147,7 +147,6 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
 {
   int p = 0, c = 0, v = 0, bytes_for_datatype = 0;
   int maxH = id->idx_d->maxh;
-  int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
 
   // Allocate actual HZ buffer for the variables
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
@@ -175,19 +174,13 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         zfp_stream_set_bit_stream(zfp, stream);
         size_t compressed_bytes = zfp_compress(zfp, field);
         if (compressed_bytes == 0)
-        {
           puts("ERROR: Something wrong happened during compression\n");
-        }
         var->hz_buffer[p]->compressed_buffer_size[c] = compressed_bytes;
         size_t original_bytes = var->hz_buffer[p]->samples_per_level[c] * bytes_for_datatype;
         if (compressed_bytes + 16 > original_bytes)
-        {
           puts("WARNING: compressed size > original size\n");
-        }
         if (compressed_bytes > 0x7FFFFFFF)
-        {
           puts("WARNING: compressed size does not fit in an int");
-        }
         *((unsigned int*)output) = (unsigned int)compressed_bytes; // first 4 bytes = size of compressed stream
         ((int*)output)[1] = dim_x; // next 4 bytes = dim x
         ((int*)output)[2] = dim_y; // next 4 bytes = dim y
