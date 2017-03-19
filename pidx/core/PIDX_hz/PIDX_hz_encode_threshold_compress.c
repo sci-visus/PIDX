@@ -160,6 +160,8 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
       bytes_for_datatype = var->bpv / 8;
       for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
       {
+        // only compress from the second block onwards
+        if (c <= id->idx->bits_per_block) { continue; }
         void* buf = var->hz_buffer[p]->buffer[c];
         int dim_x = var->hz_buffer[p]->nsamples_per_level[c][0];
         int dim_y = var->hz_buffer[p]->nsamples_per_level[c][1];

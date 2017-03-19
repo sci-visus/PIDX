@@ -701,7 +701,7 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
     size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
     zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
     unsigned char* buf = ab->buffer;
-    size_t offset = 0;
+    size_t offset = id->idx_d->samples_per_block;
     while (offset < ab->buffer_size)
     {
       unsigned int compressed_bytes = *(unsigned int*)(buf + offset);
@@ -808,7 +808,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
     size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
     size_t original_bytes = id->idx_d->samples_per_block * dtype_bytes;
     unsigned char* temp = (unsigned char*)malloc(original_bytes);
-    for (i = 0; i < lbl->bcpf[ab->file_number]; i++)
+    for (i = 1; i < lbl->bcpf[ab->file_number]; i++)
     {
       void* buf = ab->buffer + i * dtype_bytes * id->idx_d->samples_per_block;
       zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
