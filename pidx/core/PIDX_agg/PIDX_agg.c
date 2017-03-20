@@ -801,6 +801,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
   int bs_len = strlen(bit_string) - 1;
   int bits_per_block = id->idx->bits_per_block;
   Point3D block_nsamples = get_num_samples_per_block(bit_string, bs_len, hz_level, bits_per_block);
+  printf("[%d %d %d] [%d] %s, %d, %d, %d\n", block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block);
   assert(block_nsamples.x * block_nsamples.y * block_nsamples.z == id->idx_d->samples_per_block);
   if (block_nsamples.x * block_nsamples.y * block_nsamples.z != id->idx_d->samples_per_block)
     puts("ERROR: Wrong number of samples per block\n");
@@ -891,7 +892,6 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
               fflush(agg_dump_fp);
             }
 #endif
-            //printf("A [Level %d] : Offset %d Count %d\n", i, hz_buf->start_hz_index[i], count);
             if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
               ret = compressed_aggregate(id, v, hz_buf->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode);
             else
@@ -1274,6 +1274,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
           fflush(agg_dump_fp);
         }
 #endif
+        //printf("TD %d TC %d\n", target_disp * bpdt, hz_count * vps * bpdt);
         memcpy( ab->buffer + target_disp * bpdt, hz_buffer, hz_count * vps * bpdt);
       }
       else
@@ -1363,7 +1364,10 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
 #endif
   }
   else
+  {
+    //printf("C %d %d\n", target_disp * bpdt, hz_count);
     memcpy( ab->buffer + target_disp * bpdt, hz_buffer, hz_count);
+  }
 
 
 

@@ -439,6 +439,8 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_implementation_type(file, wavelet_type);
   PIDX_set_wavelet_level(file, wavelet_level);
 
+  PIDX_set_compression_type(file, PIDX_ZFP_COMPRESSION);
+
   return;
 }
 

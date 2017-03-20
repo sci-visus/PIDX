@@ -149,6 +149,11 @@ void PIDX_init_timming_buffers1(PIDX_time time, int group_count, int variable_co
   time->hz_end = malloc (sizeof(double*) * group_count);
   memset(time->hz_end, 0, sizeof(double*) * group_count);
 
+  time->hz_compress_start = malloc (sizeof(double*) * group_count);
+  memset(time->hz_compress_start, 0, sizeof(double*) * group_count);
+  time->hz_compress_end = malloc (sizeof(double*) * group_count);
+  memset(time->hz_compress_end, 0, sizeof(double*) * group_count);
+
   time->hz_buffer_free_start = malloc (sizeof(double*) * group_count);
   memset(time->hz_buffer_free_start, 0, sizeof(double*) * group_count);
   time->hz_buffer_free_end = malloc (sizeof(double*) * group_count);
@@ -394,6 +399,11 @@ void PIDX_init_timming_buffers1(PIDX_time time, int group_count, int variable_co
     memset(time->hz_start[i], 0, sizeof(double) * variable_count);
     time->hz_end[i] = malloc (sizeof(double) * variable_count);
     memset(time->hz_end[i], 0, sizeof(double) * variable_count);
+
+    time->hz_compress_start[i] = malloc (sizeof(double) * variable_count);
+    memset(time->hz_compress_start[i], 0, sizeof(double) * variable_count);
+    time->hz_compress_end[i] = malloc (sizeof(double) * variable_count);
+    memset(time->hz_compress_end[i], 0, sizeof(double) * variable_count);
 
     time->hz_buffer_free_start[i] = malloc (sizeof(double) * variable_count);
     memset(time->hz_buffer_free_start[i], 0, sizeof(double) * variable_count);
@@ -740,6 +750,8 @@ void PIDX_delete_timming_buffers1(PIDX_time time, int group_count, int variable_
     free(time->hz_buffer_end[g]);
     free(time->hz_start[g]);
     free(time->hz_end[g]);
+    free(time->hz_compress_start[g]);
+    free(time->hz_compress_end[g]);
     free(time->hz_io_start[g]);
     free(time->hz_io_end[g]);
     free(time->hz_buffer_free_start[g]);
@@ -840,6 +852,8 @@ void PIDX_delete_timming_buffers1(PIDX_time time, int group_count, int variable_
   free(time->hz_buffer_end);
   free(time->hz_start);
   free(time->hz_end);
+  free(time->hz_compress_start);
+  free(time->hz_compress_end);
   free(time->hz_io_start);
   free(time->hz_io_end);
   free(time->hz_buffer_free_start);

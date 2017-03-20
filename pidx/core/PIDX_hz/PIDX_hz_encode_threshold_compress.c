@@ -168,7 +168,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         // only compress from the second block onwards
         if (c <= id->idx->bits_per_block)
         {
-          var->hz_buffer[p]->compressed_buffer_size[c] = dim_x * dim_y * dim_z;
+          var->hz_buffer[p]->compressed_buffer_size[c] = dim_x * dim_y * dim_z * bytes_for_datatype;
           continue;
         }
         zfp_type type = (bytes_for_datatype == 4) ? zfp_type_float : zfp_type_double;

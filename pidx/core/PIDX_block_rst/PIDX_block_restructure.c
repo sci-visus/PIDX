@@ -91,7 +91,7 @@ PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
       Ndim_patch_group out_patch = var->chunk_patch_group[p];
       Ndim_patch_group in_patch = var->rst_patch_group[p];
 
-      if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP)
+      if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP || in_patch->data_source == 1)
         out_patch->count = 1;
       else
         out_patch->count = in_patch->count;
@@ -185,7 +185,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
 {
   unsigned long long v,p,j;
   PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
-  if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
+  if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION || chunk_id->idx->compression_type == PIDX_ZFP_COMPRESSION)
   {
     for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
     {

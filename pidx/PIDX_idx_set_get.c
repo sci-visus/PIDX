@@ -308,7 +308,7 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   if(!file)
     return PIDX_err_file;
 
-  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP)
+  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP&& compression_type != PIDX_ZFP_COMPRESSION)
     return PIDX_err_unsupported_compression_type;
 
   file->idx->compression_type = compression_type;

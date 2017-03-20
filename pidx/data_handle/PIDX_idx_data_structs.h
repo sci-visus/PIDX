@@ -82,6 +82,7 @@ struct PIDX_timming_struct
   double **hz_meta_start, **hz_meta_end;
   double **hz_buffer_start, **hz_buffer_end;
   double **hz_start, **hz_end;
+  double **hz_compress_start, **hz_compress_end;
   double **hz_buffer_free_start, **hz_buffer_free_end;
   double **hz_cleanup_start, **hz_cleanup_end;
   double ***hz_io_start, ***hz_io_end;

@@ -276,17 +276,20 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   time->compression_end[lgi][cvi] = PIDX_get_time();
 
 //
-  time->hz_start[lgi][cvi] = PIDX_get_time();
+
   // Perform HZ encoding
   if (file->idx_dbg->debug_do_hz == 1)
   {
+    time->hz_start[lgi][cvi] = PIDX_get_time();
     ret = PIDX_hz_encode_write(file->hz_id);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_hz;
     }
+    time->hz_end[lgi][cvi] = PIDX_get_time();
 #if 1
+    time->hz_compress_start[lgi][cvi] = PIDX_get_time();
     if (file->idx->compression_type == PIDX_ZFP_COMPRESSION)
     {
       if (PIDX_hz_encode_compress(file->hz_id) != PIDX_success)
@@ -295,6 +298,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
         return PIDX_err_hz;
       }
     }
+    time->hz_compress_end[lgi][cvi] = PIDX_get_time();
 #endif
   }
 
@@ -308,7 +312,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       //return PIDX_err_hz;
     }
   }
-  time->hz_end[lgi][cvi] = PIDX_get_time();
+
 //
 
   time->chunk_buffer_free_start[lgi][cvi] = PIDX_get_time();
