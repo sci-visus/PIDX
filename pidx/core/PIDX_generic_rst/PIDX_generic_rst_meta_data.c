@@ -122,7 +122,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
     /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
 
     //if (rst_id->idx_c->grank == 8)
-    //  printf("NP %d %d %d\n", rst_id->idx->number_processes[0], rst_id->idx->number_processes[1], rst_id->idx->number_processes[2]);
+    //printf("NP %d %d %d\n", rst_id->idx->number_processes[0], rst_id->idx->number_processes[1], rst_id->idx->number_processes[2]);
     for (i = 0; i < rst_id->idx->number_processes[0] * rst_id->idx->number_processes[1] * rst_id->idx->number_processes[2]; i++)
     {
       Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
@@ -317,6 +317,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
 
         patch_count = 0;
         patch_grp->count = 0;
+        patch_grp->type = rst_id->idx->new_box_set[i]->edge;
 
         //Iterate through all processes
         for (r = 0; r < rst_id->idx_c->gnprocs; r++)

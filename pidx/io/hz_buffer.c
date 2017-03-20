@@ -286,6 +286,13 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_hz;
     }
+#if 1
+    if (PIDX_hz_encode_compress(file->hz_id) != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_hz;
+    }
+#endif
   }
 
   // Verify the HZ encoding

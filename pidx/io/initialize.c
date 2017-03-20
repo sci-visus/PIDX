@@ -102,19 +102,19 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
           file->idx->new_box_set[index]->edge = 1;
 
           //Edge regular patches
-          if ((i + file->idx->reg_patch_size[0] + 1) > file->idx->box_bounds[0])
+          if ((i + file->idx->reg_patch_size[0] /*+ 1*/) > file->idx->box_bounds[0])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[0] = file->idx->box_bounds[0] - i;
           }
 
-          if ((j + file->idx->reg_patch_size[1] + 1) > file->idx->box_bounds[1])
+          if ((j + file->idx->reg_patch_size[1] /*+ 1*/) > file->idx->box_bounds[1])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[1] = file->idx->box_bounds[1] - j;
           }
 
-          if ((k + file->idx->reg_patch_size[2] + 1) > file->idx->box_bounds[2])
+          if ((k + file->idx->reg_patch_size[2] /*+ 1*/) > file->idx->box_bounds[2])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[2] = file->idx->box_bounds[2] - k;
@@ -217,19 +217,19 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
           file->idx->new_box_set[index]->edge = 1;
 
           //Edge regular patches
-          if ((i + file->idx->reg_patch_size[0] + 1) > file->idx->box_bounds[0])
+          if ((i + file->idx->reg_patch_size[0] /*+ 1*/) > file->idx->box_bounds[0])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[0] = file->idx->box_bounds[0] - i;
           }
 
-          if ((j + file->idx->reg_patch_size[1] + 1) > file->idx->box_bounds[1])
+          if ((j + file->idx->reg_patch_size[1] /*+ 1*/) > file->idx->box_bounds[1])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[1] = file->idx->box_bounds[1] - j;
           }
 
-          if ((k + file->idx->reg_patch_size[2] + 1) > file->idx->box_bounds[2])
+          if ((k + file->idx->reg_patch_size[2] /*+ 1*/) > file->idx->box_bounds[2])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[2] = file->idx->box_bounds[2] - k;

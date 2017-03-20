@@ -174,6 +174,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         unsigned char* output = (unsigned char*)malloc(max_compressed_bytes + 16);
         bitstream* stream = stream_open(output + 16, max_compressed_bytes);
         zfp_stream_set_bit_stream(zfp, stream);
+        printf("[%d] [Dim %d %d %d] [BD %d] MCB %d\n", c, dim_x, dim_y, dim_z, type, max_compressed_bytes);
         size_t compressed_bytes = zfp_compress(zfp, field);
         if (compressed_bytes == 0)
           puts("ERROR: Something wrong happened during compression\n");
