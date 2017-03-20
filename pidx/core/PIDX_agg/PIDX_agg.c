@@ -804,7 +804,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
   if (ab->buffer_size != 0)
   {
     int i;
-    size_t offset = 0;
+    size_t offset = dtype_bytes * id->idx_d->samples_per_block; // we skip the first block
     size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
     size_t original_bytes = id->idx_d->samples_per_block * dtype_bytes;
     unsigned char* temp = (unsigned char*)malloc(original_bytes);
