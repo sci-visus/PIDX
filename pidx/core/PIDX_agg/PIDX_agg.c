@@ -803,12 +803,16 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   if (ab->buffer_size != 0)
   {
-    int i;
-    size_t offset = dtype_bytes * id->idx_d->samples_per_block; // we skip the first block
     size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
+    int i = 0; // starting block
+    size_t offset = 0;
+    if (ab->file_number == 0) {
+      offset = dtype_bytes * id->idx_d->samples_per_block; // we skip the first block
+      i = 1; // skip the first block
+    }
     size_t original_bytes = id->idx_d->samples_per_block * dtype_bytes;
     unsigned char* temp = (unsigned char*)malloc(original_bytes);
-    for (i = 1; i < lbl->bcpf[ab->file_number]; i++)
+    for (; i < lbl->bcpf[ab->file_number]; i++)
     {
       void* buf = ab->buffer + i * dtype_bytes * id->idx_d->samples_per_block;
       zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
