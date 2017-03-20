@@ -81,12 +81,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       if (hz_buf->nsamples_per_level == NULL)
       memset(hz_buf->nsamples_per_level, 0, sizeof (int*) * maxH);
 
-      if (var->chunk_patch_group[p]->type == 0)
-      {
-        hz_buf->samples_per_level = malloc( maxH * sizeof (unsigned long long));
-        memset(hz_buf->samples_per_level, 0, maxH * sizeof (unsigned long long));
-      }
-
       allign_offset = malloc(sizeof (int*) * maxH);
       allign_count = malloc(sizeof (int*) * maxH);
       memset(allign_offset, 0, sizeof (int*) * maxH);
@@ -169,11 +163,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
     PIDX_variable var = var_grp->variable[v];
     for (p = 0; p < var->patch_group_count; p++)
     {
-      if (var->chunk_patch_group[p]->type == 0)
-      {
-        free(var->hz_buffer[p]->samples_per_level);
-        var->hz_buffer[p]->samples_per_level = 0;
-      }
       free(var->hz_buffer[p]->start_hz_index);
       free(var->hz_buffer[p]->end_hz_index);
 

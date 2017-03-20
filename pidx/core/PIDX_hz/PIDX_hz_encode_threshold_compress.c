@@ -155,17 +155,22 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
     PIDX_variable var = var_grp->variable[v];
     for (p = 0; p < var->patch_group_count; p++)
     {
-      var->hz_buffer[p]->buffer = (unsigned char**)malloc( maxH * sizeof (unsigned char*));
-      memset(var->hz_buffer[p]->buffer, 0,  maxH * sizeof (unsigned char*));
+      //var->hz_buffer[p]->buffer = (unsigned char**)malloc( maxH * sizeof (unsigned char*));
+      //memset(var->hz_buffer[p]->buffer, 0,  maxH * sizeof (unsigned char*));
       bytes_for_datatype = var->bpv / 8;
       for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
       {
-        // only compress from the second block onwards
-        if (c <= id->idx->bits_per_block) { continue; }
         void* buf = var->hz_buffer[p]->buffer[c];
         int dim_x = var->hz_buffer[p]->nsamples_per_level[c][0];
         int dim_y = var->hz_buffer[p]->nsamples_per_level[c][1];
         int dim_z = var->hz_buffer[p]->nsamples_per_level[c][2];
+
+        // only compress from the second block onwards
+        if (c <= id->idx->bits_per_block)
+        {
+          var->hz_buffer[p]->compressed_buffer_size[c] = dim_x * dim_y * dim_z;
+          continue;
+        }
         zfp_type type = (bytes_for_datatype == 4) ? zfp_type_float : zfp_type_double;
         zfp_field* field = zfp_field_3d(buf, type, dim_x, dim_y, dim_z);
         zfp_stream* zfp = zfp_stream_open(NULL);
@@ -174,11 +179,12 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         unsigned char* output = (unsigned char*)malloc(max_compressed_bytes + 16);
         bitstream* stream = stream_open(output + 16, max_compressed_bytes);
         zfp_stream_set_bit_stream(zfp, stream);
+        //printf("[%d] [Dim %d %d %d] [BD %d] MCB %d\n", c, dim_x, dim_y, dim_z, type, max_compressed_bytes);
         size_t compressed_bytes = zfp_compress(zfp, field);
         if (compressed_bytes == 0)
           puts("ERROR: Something wrong happened during compression\n");
         var->hz_buffer[p]->compressed_buffer_size[c] = compressed_bytes;
-        size_t original_bytes = var->hz_buffer[p]->samples_per_level[c] * bytes_for_datatype;
+        size_t original_bytes = dim_x * dim_y * dim_z * bytes_for_datatype;
         if (compressed_bytes + 16 > original_bytes)
           puts("WARNING: compressed size > original size\n");
         if (compressed_bytes > 0x7FFFFFFF)
@@ -188,6 +194,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         ((int*)output)[2] = dim_y; // next 4 bytes = dim y
         ((int*)output)[3] = dim_z; // next 4 bytes = dim z
         free(buf);
+        var->hz_buffer[p]->compressed_buffer_size[c] = var->hz_buffer[p]->compressed_buffer_size[c] / bytes_for_datatype;
         var->hz_buffer[p]->buffer[c] = output;
         zfp_field_free(field);
         zfp_stream_close(zfp);

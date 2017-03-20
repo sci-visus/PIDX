@@ -104,7 +104,6 @@ struct PIDX_HZ_buffer_struct
 {
   int type;                                             ///< decide the type of the group
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
-  unsigned long long *samples_per_level;                           ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   unsigned long long *start_hz_index;                              ///< Starting HZ index at of the data at all the HZ levels
   unsigned long long *end_hz_index;                                ///< Ending HZ index at of the data at all the HZ levels
   unsigned long long *buffer_index;                                ///< HZ indices of the data (used only when no restructuring phsae is used)
