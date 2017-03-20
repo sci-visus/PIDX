@@ -194,7 +194,6 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         ((int*)output)[2] = dim_y; // next 4 bytes = dim y
         ((int*)output)[3] = dim_z; // next 4 bytes = dim z
         free(buf);
-        var->hz_buffer[p]->compressed_buffer_size[c] = var->hz_buffer[p]->compressed_buffer_size[c] / bytes_for_datatype;
         var->hz_buffer[p]->buffer[c] = output;
         zfp_field_free(field);
         zfp_stream_close(zfp);
