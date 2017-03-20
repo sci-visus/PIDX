@@ -618,8 +618,8 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 #endif
 
-  //ret = decompress_aggregation_buffer(id, ab);
-  //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+  ret = decompress_aggregation_buffer(id, ab);
+  if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
   //ret = block_wise_compression(id, ab, lbl);
   //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
@@ -873,7 +873,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
             count = hz_buf->compressed_buffer_size[i];// hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
             //count = hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
 
-            printf("[%d] : %d : %d [%d - %d]\n", i, hz_buf->compressed_buffer_size[i], (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1), hz_buf->end_hz_index[i], hz_buf->start_hz_index[i]);
+            //printf("L [%d] : %d : %d [%d - %d]\n", i, hz_buf->compressed_buffer_size[i], (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1), hz_buf->end_hz_index[i], hz_buf->start_hz_index[i]);
 #ifdef PIDX_DUMP_AGG
             if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
             {
