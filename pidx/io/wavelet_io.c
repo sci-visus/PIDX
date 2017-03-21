@@ -62,7 +62,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-#if 0
+#if 1
   // Step 2.5: Wavelet coefficient computation
   if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
   {
@@ -82,7 +82,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   }
 #endif
 
-#if 1
+#if 0
   // Step 3:  Partition
   if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {

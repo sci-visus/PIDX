@@ -624,8 +624,8 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
     ret = decompress_aggregation_buffer(id, ab);
     if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
-    //ret = block_wise_compression(id, ab, lbl);
-    //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+    ret = block_wise_compression(id, ab, lbl);
+    if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
   }
 
   return PIDX_success;
@@ -795,16 +795,17 @@ static Point3D get_num_samples_per_block(const char* bit_string, int bs_len, int
 
 static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)
 {
-  int hz_level = lbl->resolution_from;
+  int hz_level;
+  if (ab->file_number == 0)
+    hz_level = id->idx->bits_per_block;
+  else
+    hz_level = lbl->resolution_from;
   // TODO: here we assume the bit string contains a 'V' in the beginning
   const char* bit_string = id->idx->bitSequence + 1;
-  int bs_len = strlen(bit_string) - 1;
+  //printf("BS %s\n", id->idx->bitSequence);
+  int bs_len = strlen(bit_string);
   int bits_per_block = id->idx->bits_per_block;
-  Point3D block_nsamples = get_num_samples_per_block(bit_string, bs_len, hz_level, bits_per_block);
-  printf("[%d %d %d] [%d] %s, %d, %d, %d\n", block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block);
-  assert(block_nsamples.x * block_nsamples.y * block_nsamples.z == id->idx_d->samples_per_block);
-  if (block_nsamples.x * block_nsamples.y * block_nsamples.z != id->idx_d->samples_per_block)
-    puts("ERROR: Wrong number of samples per block\n");
+
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   if (ab->buffer_size != 0)
   {
@@ -815,18 +816,52 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       offset = dtype_bytes * id->idx_d->samples_per_block; // we skip the first block
       i = 1; // skip the first block
     }
+#if 0
+    if (ab->file_number == 0)
+    {
+      int j = 0;
+      //for (j = 32767; j >= 32757; j--)
+      for (j = 0; j < 10; j++)
+      {
+        float x;
+        memcpy(&x, ab->buffer + (/*(i * id->idx_d->samples_per_block) +*/ j) * dtype_bytes, dtype_bytes);
+        printf("Value at %d = %f\n", j, x);
+      }
+    }
+#endif
     size_t original_bytes = id->idx_d->samples_per_block * dtype_bytes;
     unsigned char* temp = (unsigned char*)malloc(original_bytes);
     for (; i < lbl->bcpf[ab->file_number]; i++)
     {
+      if (ab->file_number == 0)
+        if ((i & (i-1)) == 0)
+          hz_level++;
+#if 0
+      if (ab->file_number == 0 && i == 1)
+      {
+        int j = 0;
+        for (j = 0; j < 10; j++)
+        {
+          float x;
+          memcpy(&x, ab->buffer + ((i * id->idx_d->samples_per_block) + j) * dtype_bytes, dtype_bytes);
+          printf("Value at %d = %f\n", j, x);
+        }
+      }
+#endif
+      Point3D block_nsamples = get_num_samples_per_block(bit_string, bs_len, hz_level, bits_per_block);
+      //printf("[%d %d %d] [%d] %s, %d, %d, %d\n", block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block);
+      assert(block_nsamples.x * block_nsamples.y * block_nsamples.z == id->idx_d->samples_per_block);
+      if (block_nsamples.x * block_nsamples.y * block_nsamples.z != id->idx_d->samples_per_block)
+        puts("ERROR: Wrong number of samples per block\n");
+
       void* buf = ab->buffer + i * dtype_bytes * id->idx_d->samples_per_block;
       zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
       zfp_field* field = zfp_field_3d(buf, type, block_nsamples.x, block_nsamples.y, block_nsamples.z);
       zfp_stream* zfp = zfp_stream_open(NULL);
       zfp_stream_set_accuracy(zfp, 0, type);
       size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
-      if (max_compressed_bytes > original_bytes)
-        puts("WARNING: compressed size potentially > original size\n");
+      //if (max_compressed_bytes > original_bytes)
+      //  puts("WARNING: compressed size potentially > original size\n");
       bitstream* stream = stream_open(temp, original_bytes);
       zfp_stream_set_bit_stream(zfp, stream);
       size_t compressed_bytes = zfp_compress(zfp, field);

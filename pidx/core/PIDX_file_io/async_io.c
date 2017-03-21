@@ -80,6 +80,7 @@ PIDX_return_code PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer a
         printf("FOT %f %f\n", x1, x2);
     }
     */
+    printf("%d Agg size %d Agg offset %d\n", agg_buf->file_number, data_offset, agg_buf->buffer_size);
     ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size, MPI_BYTE, request);
     if (ret != MPI_SUCCESS)
     {

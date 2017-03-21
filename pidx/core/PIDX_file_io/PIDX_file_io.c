@@ -130,6 +130,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
       if (MODE == PIDX_WRITE)
       {
+        printf("%d Agg size %d Agg offset %d\n", agg_buf->file_number, data_offset, agg_buf->buffer_size);
         ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
         {

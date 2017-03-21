@@ -863,7 +863,7 @@ int main(int argc, char **argv)
   shutdown_mpi();
 
   end_time = get_time();
-  printf("Total time taken = %f\n", (end_time - start_time));
+  printf("Total time taken = %f %f\n", end_time, start_time);
 
   return 0;
 }
