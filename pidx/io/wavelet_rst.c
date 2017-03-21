@@ -77,7 +77,9 @@ PIDX_return_code rst_wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
 
     for (l = 0; l < file->idx_d->wavelet_levels; l++)
     {
-      //
+      //if (file->idx_c->grank == 0)
+      //{
+      //printf("nx px ny py - %d %d %d %d\n", nx, px, ny, py);
       if ((int) patch_group->reg_patch->size[0] >= (int)pow(2, l + 1))
       {
         time->w_rst_comp_x_start[gi][v][l] = MPI_Wtime();
@@ -112,6 +114,7 @@ PIDX_return_code rst_wavelet(PIDX_io file, int gi, int svi, int evi, int mode)
         }
         time->w_rst_comp_z_end[gi][v][l] = MPI_Wtime();
       }
+      //}
     }
 
 
@@ -324,6 +327,9 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int n
          index = (s_x * s_y * k) + (s_x * j) + i;
          if (bytes_for_datatype == 4)
          {
+           if (i - interval < 0)
+             continue;
+
            float left, right, new_val;
            memcpy (&left, wb + (index - interval) * bytes_for_datatype, bytes_for_datatype);
 
@@ -374,6 +380,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int n
 
 
   //
+  //printf("Size = %d %d %d\n", s_x, s_y, s_z);
   for (k = z_start_offset; k < s_z - 0; k = k + stride)
   {
     for (j = y_start_offset; j < s_y - 0; j =  j + stride)
@@ -382,10 +389,15 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int n
       for (i = even_start_offset ; i < s_x; i = i + stride_x)
       {
          index = (s_x * s_y * k) + (s_x * j) + i;
+
+         if (i + interval >= s_x)
+           continue;
+
          if (bytes_for_datatype == 4)
          {
            float left, right, new_val;
 
+           //printf("[%d] [%d %d %d] index %d interval %d\n", file->idx_c->grank, i, j, k, index, interval);
            memcpy (&right, wb + (index + interval) * bytes_for_datatype, bytes_for_datatype);
 
            if (i - interval < 0)
@@ -536,6 +548,9 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int n
       {
          index = (s_x * s_y * k) + (s_x * j) + i;
 
+         if (j - interval < 0)
+           continue;
+
          int up_index = (s_x * s_y * k) + (s_x * (j + interval)) + i;
          int down_index = (s_x * s_y * k) + (s_x * (j - interval)) + i;
          if (bytes_for_datatype == 4)
@@ -596,6 +611,9 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int n
       for (j = even_start_offset; j < s_y; j =  j + stride_y)
       {
          index = (s_x * s_y * k) + (s_x * j) + i;
+
+         if (j + interval >= s_y)
+           continue;
 
          int up_index = (s_x * s_y * k) + (s_x * (j + interval)) + i;
          int down_index = (s_x * s_y * k) + (s_x * (j - interval)) + i;
@@ -754,6 +772,8 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int n
       // every sample but the last
       for (k = odd_start_offset ; k < s_z; k =  k + stride_z)
       {
+         if (k - interval < 0)
+           continue;
          index = (s_x * s_y * k) + (s_x * j) + i;
          int up_index = (s_x * s_y * (k + interval)) + (s_x * j) + i;
          int down_index = (s_x * s_y * (k - interval)) + (s_x * j) + i;
@@ -785,6 +805,8 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int n
       // every sample but the last
       for (k = even_start_offset ; k < s_z; k =  k + stride_z)
       {
+         if (k + interval >= s_z)
+           continue;
          index = (s_x * s_y * k) + (s_x * j) + i;
          int up_index = (s_x * s_y * (k + interval)) + (s_x * j) + i;
          int down_index = (s_x * s_y * (k - interval)) + (s_x * j) + i;

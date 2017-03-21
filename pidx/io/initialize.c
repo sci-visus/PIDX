@@ -191,6 +191,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
       right = right + (int)pow(2, l);
     }
 
+
     int rank_count = 0;
     int index = 0;
     //int color = 0;

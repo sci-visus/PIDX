@@ -176,7 +176,7 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
           return PIDX_err_wavelet;
         }
       }
-
+#if 1
       if (file->idx->current_time_step == 0)
       {
         int vrank;
@@ -191,7 +191,7 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
         if (vrank == 0)
           printf("[%d] Total Data sent %d Total Data received %d\n", l, total_sent, total_receive);
       }
-
+#endif
       //printf("[%d] Rank %d Sent %d [%d %d %d] Receive %d [%d %d %d]\n", l, file->idx_c->grank, sent_x + sent_y + sent_z, sent_x, sent_y, sent_z, receive_x + receive_y + receive_z, receive_x, receive_y, receive_z);
       destroy_stencil_buffers();
     }
