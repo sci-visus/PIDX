@@ -701,14 +701,18 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
 {
   if (ab->buffer_size != 0)
   {
+    unsigned int total_compressed_bytes = 0;
     PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
     size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
     zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
     unsigned char* buf = ab->buffer;
-    size_t offset = id->idx_d->samples_per_block * dtype_bytes;
+    size_t offset = 0;
+    if (ab->file_number == 0)
+       offset = id->idx_d->samples_per_block * dtype_bytes;
     while (offset < ab->buffer_size)
     {
       unsigned int compressed_bytes = *(unsigned int*)(buf + offset);
+      total_compressed_bytes = total_compressed_bytes + compressed_bytes;
       if (compressed_bytes != 0)
       {
         int dim_x = ((int*)(buf + offset))[1];
@@ -735,6 +739,7 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
         offset += sizeof(int);
       }
     }
+    printf("total compressed block = %d\n", total_compressed_bytes);
   }
   return PIDX_success;
 }
@@ -820,7 +825,6 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
     if (ab->file_number == 0)
     {
       int j = 0;
-      //for (j = 32767; j >= 32757; j--)
       for (j = 0; j < 10; j++)
       {
         float x;
@@ -899,6 +903,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
       index = 0, count = 0;
       HZ_buffer hz_buf = var->hz_buffer[p];
 
+#if 1
       if (hz_buf->type == 1)
       {
 #ifdef PIDX_DUMP_AGG
@@ -919,7 +924,8 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
             else
               count = hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
 
-            //printf("L [%d] : %d : %d [%d - %d]\n", i, hz_buf->compressed_buffer_size[i], (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1), hz_buf->end_hz_index[i], hz_buf->start_hz_index[i]);
+            //if (id->idx_c->grank == 0)
+            //  printf("L [%d] : %d : %d [%d - %d]\n", i, hz_buf->compressed_buffer_size[i], (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1), hz_buf->end_hz_index[i], hz_buf->start_hz_index[i]);
 #ifdef PIDX_DUMP_AGG
             if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
             {
@@ -1017,6 +1023,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
           }
         }
       }
+#endif
     }
   }
 
@@ -1114,6 +1121,9 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   start_agg_index = target_disp / (unsigned long long) (samples_in_file / ab->agg_f);
   end_agg_index = ((target_disp + target_count - 1) / (unsigned long long) (samples_in_file / ab->agg_f));
 
+  //if (id->idx_c->grank == 0)
+  //{
+    //printf("Count %d rank %d disp %d\n", hz_count, target_rank, target_disp);
   //printf("SAI : EAI TR %d FN %d IFN %d :: %d : %d\n", target_rank, file_no, lbl->inverse_existing_file_index[file_no], start_agg_index, end_agg_index);
   if (start_agg_index != end_agg_index)
   {
@@ -1325,6 +1335,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
       }
     }
   }
+  //}
 
   return PIDX_success;
 }
@@ -1380,9 +1391,14 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
   bpdt = ((var->bpv / 8) * tcs) / (id->idx->compression_factor);
   hz_buffer = hz_buffer + buffer_offset * bpdt * vps;
 
+  //if (id->idx_c->grank == 0)
+  //{
+  //  printf("Count %d rank %d disp %d\n", hz_count, target_rank, target_disp);
 
   if(target_rank != id->idx_c->lrank)
   {
+
+
 #if PIDX_HAVE_MPI
 #ifndef PIDX_ACTIVE_TARGET
     MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , id->win);
@@ -1397,6 +1413,7 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
     MPI_Win_unlock(target_rank, id->win);
 #endif
 #endif
+
   }
   else
   {
@@ -1404,6 +1421,7 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
     memcpy( ab->buffer + target_disp * bpdt, hz_buffer, hz_count);
   }
 
+  //}
 
 
   return PIDX_success;

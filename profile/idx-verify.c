@@ -738,7 +738,7 @@ int main(int argc, char **argv)
                           else
                           {
                             lost_element_count1++;
-                            //printf("B [%d]: %f %f\n", bpf, flhs, frhs);
+                            printf("B [%d]: %f %f\n", bpf, flhs, frhs);
                           }
                         }
                       }

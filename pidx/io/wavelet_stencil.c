@@ -105,7 +105,7 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
       return PIDX_err_wavelet;
     }
 #endif
-
+#if 1
     for (l = 0; l < file->idx_d->wavelet_levels; l++)
     {
       sent_x = sent_y = sent_z = 0;
@@ -195,7 +195,7 @@ PIDX_return_code stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
       //printf("[%d] Rank %d Sent %d [%d %d %d] Receive %d [%d %d %d]\n", l, file->idx_c->grank, sent_x + sent_y + sent_z, sent_x, sent_y, sent_z, receive_x + receive_y + receive_z, receive_x, receive_y, receive_z);
       destroy_stencil_buffers();
     }
-
+#endif
 #if FINAL_RESULT
     ret = print_global_data(file, gi, v);
     if (ret != PIDX_success)
@@ -1648,7 +1648,7 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
           int index = (file->idx->bounds[0] * file->idx->bounds[1] * k) + (file->idx->bounds[0] * j) + i;
           float v;
           memcpy(&v, global_buffer + index * bytes_for_datatype, bytes_for_datatype);
-          printf("%3.3f\t", v);
+          printf("%f\t", v);
         }
         printf("\n");
       }

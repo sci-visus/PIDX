@@ -99,7 +99,7 @@ int main(int argc, char **argv)
   check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
-
+#if 1
   //rank_0_print("Simulation Data Created\n");
 
   create_pidx_var_point_and_access();
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     PIDX_close(file);
   }
   destroy_pidx_var_point_and_access();
-
+#endif
   destroy_synthetic_simulation_data();
   shutdown_mpi();
 
@@ -311,6 +311,8 @@ static void calculate_per_process_offsets()
 //----------------------------------------------------------------
 static void create_synthetic_simulation_data()
 {
+  int i1, j1, k1;
+  int index = 0;
   int var = 0;
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
@@ -329,6 +331,7 @@ static void create_synthetic_simulation_data()
 
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
 
+#if 0
     float fvalue = 0;
     double dvalue = 0;
     for (k = 0; k < local_box_size[Z]; k++)
@@ -360,6 +363,59 @@ static void create_synthetic_simulation_data()
             }
           }
         }
+#else
+#if 0
+    int fp = open("magnetic-512-volume.raw", O_RDONLY);
+    int send_o = 0;
+    int send_c = 0;
+    int recv_o = 0;
+    for (k1 = local_box_offset[Z]; k1 < local_box_offset[Z] + local_box_size[Z]; k1++)
+    {
+      for (j1 = local_box_offset[Y]; j1 < local_box_offset[Y] + local_box_size[Y]; j1++)
+      {
+        for (i1 = local_box_offset[X]; i1 < local_box_offset[X] + local_box_size[X]; i1 = i1 + local_box_size[X])
+        {
+          index = (local_box_size[0]* local_box_size[1] * (k1 - local_box_offset[2])) +
+                  (local_box_size[0] * (j1 - local_box_offset[1])) +
+                  (i1 - local_box_offset[0]);
+          send_o = index;
+          send_c = local_box_size[0];
+          recv_o = (global_box_size[X] * global_box_size[Y] * k1) + (global_box_size[X] * j1) + i1;
+
+          //printf("[%d] : read offset %d write offset %d Count %d\n", rank, send_o, recv_o, send_c);
+          pread(fp, data[0] + send_o * sizeof(float), send_c * sizeof(float), recv_o * sizeof(float));
+        }
+      }
+    }
+    close(fp);
+#endif
+#if 1
+    for (k1 = 0; k1 < local_box_size[Z]; k1++)
+    {
+      for (j1 = 0; j1 < local_box_size[Y]; j1++)
+      {
+        for (i1 = 0; i1 < local_box_size[X]; i1 ++)
+        {
+          index = (local_box_size[0]* local_box_size[1] * k1) +
+                  (local_box_size[0] * j1) +
+                   i1;
+          float i = (float) i1;
+          float j = (float) j1;
+          float k = (float) k1;
+          const float PI = 3.1415926535897932384;
+          float PI_2 = 2 * PI;
+          float xx = i == -1 ? 1 : sin(PI_2 * i / 256);
+          float yy = j == -1 ? 1 : sin(PI_2 * j / 256);
+          float zz = k == -1 ? 1 : sin(PI_2 * k / 256);
+          //return xx * yy * zz;
+
+          float x = xx * yy * zz;
+          memcpy(data[0] + index * sizeof(float), &x, sizeof (float));
+        }
+      }
+    }
+#endif
+#endif
   }
 }
 
@@ -424,7 +480,7 @@ static void set_pidx_file(int ts)
   //PIDX_debug_disable_agg(file);
 
   PIDX_point reg_size;
-  PIDX_set_point(reg_size, 64, 64, 64);
+  PIDX_set_point(reg_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
   PIDX_set_restructuring_box(file, reg_size);
 
   PIDX_set_process_decomposition(file, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
@@ -432,7 +488,7 @@ static void set_pidx_file(int ts)
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);
-  PIDX_set_block_size(file, 14);
+  PIDX_set_block_size(file, 15);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
@@ -441,7 +497,7 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_implementation_type(file, wavelet_type);
   PIDX_set_wavelet_level(file, wavelet_level);
 
-  //PIDX_set_compression_type(file, PIDX_ZFP_COMPRESSION);
+  PIDX_set_compression_type(file, PIDX_ZFP_COMPRESSION);
 
   return;
 }
