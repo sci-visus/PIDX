@@ -281,7 +281,8 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   if (file->idx_dbg->debug_do_hz == 1)
   {
     time->hz_start[lgi][cvi] = PIDX_get_time();
-    ret = PIDX_hz_encode_write(file->hz_id);
+    //ret = PIDX_hz_encode_write(file->hz_id);
+    ret = PIDX_hz_encode_row_major_write(file->hz_id);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

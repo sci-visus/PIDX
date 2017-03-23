@@ -364,7 +364,7 @@ static void create_synthetic_simulation_data()
           }
         }
 #else
-#if 0
+#if 1
     int fp = open("magnetic-512-volume.raw", O_RDONLY);
     int send_o = 0;
     int send_c = 0;
@@ -389,7 +389,7 @@ static void create_synthetic_simulation_data()
     }
     close(fp);
 #endif
-#if 1
+#if 0
     for (k1 = 0; k1 < local_box_size[Z]; k1++)
     {
       for (j1 = 0; j1 < local_box_size[Y]; j1++)

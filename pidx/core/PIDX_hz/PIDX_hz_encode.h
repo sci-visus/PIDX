@@ -118,6 +118,15 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id);
 
 
 ///
+/// \brief PIDX_hz_encode_row_major_write
+/// \param id
+/// \return
+///
+PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id);
+
+
+
+///
 /// \brief PIDX_hz_encode_threshold_and_write
 /// \param id
 /// \return

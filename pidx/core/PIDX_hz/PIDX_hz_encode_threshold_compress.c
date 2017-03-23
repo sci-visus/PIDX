@@ -174,7 +174,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         zfp_type type = (bytes_for_datatype == 4) ? zfp_type_float : zfp_type_double;
         zfp_field* field = zfp_field_3d(buf, type, dim_x, dim_y, dim_z);
         zfp_stream* zfp = zfp_stream_open(NULL);
-        zfp_stream_set_accuracy(zfp, 0, type);
+        zfp_stream_set_accuracy(zfp, 1.0, type);
         size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
         unsigned char* output = (unsigned char*)malloc(max_compressed_bytes + 16);
         bitstream* stream = stream_open(output + 16, max_compressed_bytes);
@@ -198,6 +198,9 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         zfp_field_free(field);
         zfp_stream_close(zfp);
         stream_close(stream);
+
+        //if (c == maxH - id->resolution_to - 1)
+        //  printf("Compressed %d Original %d\n", var->hz_buffer[p]->compressed_buffer_size[c], dim_x * dim_y * dim_z * bytes_for_datatype);
       }
     }
   }

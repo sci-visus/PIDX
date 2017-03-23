@@ -723,7 +723,7 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
         zfp_field* field = zfp_field_3d(buf + offset, type, dim_x, dim_y, dim_z);
         zfp_stream* zfp = zfp_stream_open(NULL);
         bitstream* stream = stream_open(input, compressed_bytes);
-        zfp_stream_set_accuracy(zfp, 0, type);
+        zfp_stream_set_accuracy(zfp, 1.0, type);
         zfp_stream_set_bit_stream(zfp, stream);
         if (!zfp_decompress(zfp, field))
           puts("ERROR: Something wrong happened during decompression\n");
@@ -739,7 +739,7 @@ static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer
         offset += sizeof(int);
       }
     }
-    printf("total compressed block = %d\n", total_compressed_bytes);
+    //printf("total compressed block = %d\n", total_compressed_bytes);
   }
   return PIDX_success;
 }
@@ -862,7 +862,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
       zfp_field* field = zfp_field_3d(buf, type, block_nsamples.x, block_nsamples.y, block_nsamples.z);
       zfp_stream* zfp = zfp_stream_open(NULL);
-      zfp_stream_set_accuracy(zfp, 0, type);
+      zfp_stream_set_accuracy(zfp, 1.0, type);
       size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
       //if (max_compressed_bytes > original_bytes)
       //  puts("WARNING: compressed size potentially > original size\n");

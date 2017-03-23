@@ -329,8 +329,8 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
 #endif
 #if 1
 
-  if (file->idx_c->grank == 32)
-    printf("HZ %d %d -- %d %d\n", hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
+  //if (file->idx_c->grank == 32)
+  //  printf("HZ %d %d -- %d %d\n", hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
 
   if (hz_from_non_shared == hz_to_non_shared)
   {
