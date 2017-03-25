@@ -331,7 +331,7 @@ static void create_synthetic_simulation_data()
 
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
 
-#if 0
+#if 1
     float fvalue = 0;
     double dvalue = 0;
     for (k = 0; k < local_box_size[Z]; k++)
@@ -344,9 +344,9 @@ static void create_synthetic_simulation_data()
           {
             if ((bpv[var]) == 32)
             {
-              //fvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              fvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               //fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
-              fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
+              //fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
 
@@ -488,7 +488,7 @@ static void set_pidx_file(int ts)
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);
-  PIDX_set_block_size(file, 15);
+  PIDX_set_block_size(file, 2);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
@@ -497,7 +497,7 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_implementation_type(file, wavelet_type);
   PIDX_set_wavelet_level(file, wavelet_level);
 
-  PIDX_set_compression_type(file, PIDX_ZFP_COMPRESSION);
+  //PIDX_set_compression_type(file, PIDX_ZFP_COMPRESSION);
 
   return;
 }

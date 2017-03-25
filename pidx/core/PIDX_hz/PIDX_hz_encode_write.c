@@ -19,10 +19,6 @@
 
 #include "../../PIDX_inc.h"
 
-static Point3D get_strides(const char* bit_string, int bs_len, int len);
-static Point3D get_intra_block_strides(const char* bit_string, int bs_len, int hz_level);
-static Point3D get_inter_block_strides(const char* bit_string, int bs_len, int hz_level, int bits_per_block);
-static Point3D get_num_samples_per_block(const char* bit_string, int bs_len, int hz_level, int bits_per_block);
 
 PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 {
@@ -214,6 +210,18 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
   int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0};
   int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0};
 
+  for (y = 0; y < var0->patch_group_count; y++)
+  {
+    for (b = 0; b < var0->chunk_patch_group[y]->count; b++)
+    {
+      for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
+      {
+        chunked_patch_offset[l] = var0->chunk_patch_group[y]->patch[b]->offset[l] / id->idx->chunk_size[l];
+        chunked_patch_size[l] = var0->chunk_patch_group[y]->patch[b]->size[l] / id->idx->chunk_size[l];
+      }
+    }
+  }
+
   if (var0->sim_patch_count < 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_d->count not set.\n", __FILE__, __LINE__);
@@ -232,10 +240,40 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
   memset(block_nsamples, 0, sizeof(*block_nsamples) * maxH);
   Point3D* intra_stride = malloc(sizeof(*intra_stride) * maxH);
   memset(intra_stride, 0, sizeof(*intra_stride) * maxH);
+
+  Point3D* block_from = malloc(sizeof(*block_from) * maxH);
+  memset(block_from, 0, sizeof(*block_from) * maxH);
+  Point3D* block_to = malloc(sizeof(*block_to) * maxH);
+  memset(block_to, 0, sizeof(*block_to) * maxH);
+
+  Point3D sub_vol_from = {chunked_patch_offset[0],
+                          chunked_patch_offset[1],
+                          chunked_patch_offset[2]};
+  Point3D sub_vol_to = {(chunked_patch_offset[0] + chunked_patch_size[0] - 1),
+                        (chunked_patch_offset[1] + chunked_patch_size[1] - 1),
+                        (chunked_patch_offset[2] + chunked_patch_size[2] - 1)};
+
   for (j = 0; j < maxH; j++)
   {
     block_nsamples[j] = get_num_samples_per_block(bit_string, bs_len, j, bits_per_block);
     intra_stride[j] = get_intra_block_strides(bit_string, bs_len, j);
+
+    if (j > id->idx->bits_per_block)
+    {
+      Point3D stride;
+
+      if (j == 6)
+      {
+      get_grid( sub_vol_from, sub_vol_to, j, bit_string, bs_len, &(block_from[j]), &(block_to[j]), &stride);
+
+      printf("[%d] [%d %d %d - %d %d %d] Stride %d %d %d From %d %d %d To %d %d %d Count %d %d %d\n", id->idx_c->grank, sub_vol_from.x, sub_vol_from.y, sub_vol_from.z, sub_vol_to.x, sub_vol_to.y, sub_vol_to.z, stride.x, stride.y, stride.z, block_from[j].x, block_from[j].y, block_from[j].z, block_to[j].x, block_to[j].y, block_to[j].z, block_nsamples[j].x, block_nsamples[j].y, block_nsamples[j].z);
+
+      assert((block_to[j].x - block_from[j].x) / stride.x + 1 == block_nsamples[j].x);
+      //assert((block_to[j].y - block_from[j].y) / stride.y + 1 == block_nsamples[j].y);
+      assert((block_to[j].z - block_from[j].z) / stride.z + 1 == block_nsamples[j].z);
+
+      }
+    }
   }
 
   for (y = 0; y < var0->patch_group_count; y++)
@@ -292,7 +330,6 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
               hz_order = z_order;
               level = getLeveL(hz_order);
 #if 1
-              //if (level > id->idx->bits_per_block)
               if (var0->hz_buffer[y]->nsamples_per_level[level][0] * var0->hz_buffer[y]->nsamples_per_level[level][1] * var0->hz_buffer[y]->nsamples_per_level[level][2] >= (int)pow(2, id->idx->bits_per_block))
               {
                 block_index = hz_order / id->idx_d->samples_per_block;
@@ -320,8 +357,12 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
 
                 hz_order = block_index * id->idx_d->samples_per_block + offset_hz_index;
 
-                //if (level == 6)
-                //printf("[%d] [%d %d %d] HZ %lld Level %d block index %d [%d %d %d] offset_hz_index [%d %d %d] %d + %d = %d\n", level, i, j, k, hz_order, level, block_index, block_nsamples[level].x, block_nsamples[level].y, block_nsamples[level].z, inter_block_index.x, inter_block_index.y, inter_block_index.z, offset_hz_index, block_index * id->idx_d->samples_per_block, final_hz_index);
+                if (level == 4)
+                  printf("COMP [%d] [%d %d %d] HZ %lld Level %d block index %d [%d %d %d] offset_hz_index [%d %d %d] %d + %d\n", level, i, j, k, hz_order, level, block_index, block_nsamples[level].x, block_nsamples[level].y, block_nsamples[level].z, inter_block_index.x, inter_block_index.y, inter_block_index.z, offset_hz_index, block_index * id->idx_d->samples_per_block);
+              }
+              else if (level > id->idx->bits_per_block)
+              {
+
               }
 #endif
               if (level >= maxH - id->resolution_to)
@@ -332,8 +373,8 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
               {
                 hz_index = hz_order - var_grp->variable[v1]->hz_buffer[y]->start_hz_index[level];
 
-                //if (level == 6 && id->idx_c->grank == 2)
-                //  printf("[%d] [%d %d %d] [%d] old %d new %d [%d + %d] starting %d -- %d\n", level, i, j, k, id->idx_c->grank, hz_order, final_hz_index, (block_index * id->idx_d->samples_per_block), offset_hz_index, var_grp->variable[v1]->hz_buffer[y]->start_hz_index[level], hz_index);
+                if (level == 4 && id->idx_c->grank == 0)
+                printf("[%d] [%d %d %d] [%d] old %d new [%d + %d] starting %d -- %d\n", level, i, j, k, id->idx_c->grank, hz_order, (block_index * id->idx_d->samples_per_block), offset_hz_index, var_grp->variable[v1]->hz_buffer[y]->start_hz_index[level], hz_index);
 
                 bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
                 //float x;
@@ -533,57 +574,3 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int res_from
   return PIDX_success;
 }
 
-
-#undef max
-#define max(a,b) ((a) > (b) ? (a) : (b))
-static Point3D get_strides(const char* bit_string, int bs_len, int len)
-{
-  assert(len >= 0);
-  Point3D stride = { 0, 0, 0 };
-  size_t start = max(bs_len - len, 0);
-  for (size_t i = start; i < bs_len; ++i)
-  {
-    if      (bit_string[i] == '0') { ++stride.x; }
-    else if (bit_string[i] == '1') { ++stride.y; }
-    else if (bit_string[i] == '2') { ++stride.z; }
-  }
-  if (len > bs_len) { ++stride.x; ++stride.y; ++stride.z; }
-  stride.x = 1 << stride.x;
-  stride.y = 1 << stride.y;
-  stride.z = 1 << stride.z;
-  return stride;
-}
-#undef max
-
-static Point3D get_intra_block_strides(const char* bit_string, int bs_len, int hz_level)
-{
-  // count the number of x, y, z in the least significant (z_level + 1) bits
-  // in the bit_string
-  int z_level = bs_len - hz_level;
-  int len = z_level + 1;
-  return get_strides(bit_string, bs_len, len);
-}
-
-/* Return the strides (in terms of the first sample) of idx blocks, in x, y, and z. */
-static Point3D get_inter_block_strides(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
-{
-  assert(bs_len >= hz_level);
-  // count the number of x, y, z in the least significant
-  // (z_level + bits_per_block + 1) bits in the bit_string
-  int len = bs_len - hz_level + bits_per_block + 1;
-  // len can get bigger than bit_string.size if the input hz_level is smaller
-  // than the mininum hz level
-  return get_strides(bit_string, bs_len, len);
-}
-
-/* Get the number of samples in each dimension for a block at the given hz level */
-static Point3D get_num_samples_per_block(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
-{
-  Point3D intra_stride = get_intra_block_strides(bit_string, bs_len, hz_level);
-  Point3D inter_stride = get_inter_block_strides(bit_string, bs_len, hz_level, bits_per_block);
-  Point3D block_nsamples;
-  block_nsamples.x = inter_stride.x / intra_stride.x;
-  block_nsamples.y = inter_stride.y / intra_stride.y;
-  block_nsamples.z = inter_stride.z / intra_stride.z;
-  return block_nsamples;
-}

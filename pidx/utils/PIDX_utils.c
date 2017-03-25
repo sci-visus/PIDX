@@ -714,3 +714,182 @@ double PIDX_get_time()
   return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
 #endif
 }
+
+
+#undef max
+#define max(a,b) ((a) > (b) ? (a) : (b))
+Point3D get_strides(const char* bit_string, int bs_len, int len)
+{
+  assert(len >= 0);
+  Point3D stride = { 0, 0, 0 };
+  size_t start = max(bs_len - len, 0);
+  for (size_t i = start; i < bs_len; ++i)
+  {
+    if      (bit_string[i] == '0') { ++stride.x; }
+    else if (bit_string[i] == '1') { ++stride.y; }
+    else if (bit_string[i] == '2') { ++stride.z; }
+  }
+  if (len > bs_len) { ++stride.x; ++stride.y; ++stride.z; }
+  stride.x = 1 << stride.x;
+  stride.y = 1 << stride.y;
+  stride.z = 1 << stride.z;
+  return stride;
+}
+#undef max
+
+
+Point3D get_intra_block_strides(const char* bit_string, int bs_len, int hz_level)
+{
+  // count the number of x, y, z in the least significant (z_level + 1) bits
+  // in the bit_string
+  int z_level = bs_len - hz_level;
+  int len = z_level + 1;
+  return get_strides(bit_string, bs_len, len);
+}
+
+
+/* Return the strides (in terms of the first sample) of idx blocks, in x, y, and z. */
+Point3D get_inter_block_strides(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
+{
+  assert(bs_len >= hz_level);
+  // count the number of x, y, z in the least significant
+  // (z_level + bits_per_block + 1) bits in the bit_string
+  int len = bs_len - hz_level + bits_per_block + 1;
+  // len can get bigger than bit_string.size if the input hz_level is smaller
+  // than the mininum hz level
+  return get_strides(bit_string, bs_len, len);
+}
+
+
+/* Get the number of samples in each dimension for a block at the given hz level */
+Point3D get_num_samples_per_block(const char* bit_string, int bs_len, int hz_level, int bits_per_block)
+{
+  Point3D intra_stride = get_intra_block_strides(bit_string, bs_len, hz_level);
+  Point3D inter_stride = get_inter_block_strides(bit_string, bs_len, hz_level, bits_per_block);
+  Point3D block_nsamples;
+  block_nsamples.x = inter_stride.x / intra_stride.x;
+  block_nsamples.y = inter_stride.y / intra_stride.y;
+  block_nsamples.z = inter_stride.z / intra_stride.z;
+  return block_nsamples;
+}
+
+
+void get_grid( Point3D sub_vol_from, Point3D sub_vol_to, int hz_level, const char* bit_string, int bs_len, Point3D* from, Point3D* to, Point3D* stride)
+{
+  *stride = get_intra_block_strides(bit_string, bs_len, hz_level);
+  Point3D start = get_first_coord(bit_string, bs_len, hz_level);
+  Point3D end = get_last_coord(bit_string, bs_len, hz_level);
+
+  intersect_grid(sub_vol_from, sub_vol_to, start, end, stride, from, to);
+
+  return;
+}
+
+
+Point3D get_first_coord(const char* bit_string, int bs_len, int hz_level)
+{
+  if (hz_level == 0)
+  {
+    Point3D zero = {0, 0, 0};
+    return zero;
+  }
+
+  int pos = hz_level - 1; // the position of the right-most 1 bit in the bit string
+  // count the number of "bits" that is the same with the one at position pos
+  int count = 0;
+  char c = bit_string[pos];
+  for (size_t i = pos + 1; i < bs_len; ++i)
+  {
+    if (bit_string[i] == c)
+      ++count;
+  }
+
+  // raise the corresponding coordinate to the appropriate power of 2 (the other
+  // 2 coordinates are 0)
+  Point3D coord = {0, 0, 0};
+  if (c == '0')
+    coord.x = (int)pow(2, count);
+
+  else if (c == '1')
+    coord.y = (int)pow(2, count);
+
+  else if (c == '2')
+    coord.z = (int)pow(2, count);
+
+  return coord;
+}
+
+
+Point3D get_last_coord(const char* bit_string, int bs_len, int hz_level)
+{
+
+  if (hz_level == 0)
+  {
+    Point3D zero = {0, 0, 0};
+    return zero;
+  }
+
+
+  int pos = hz_level - 1; // the position of the right-most 1 bit in the bit string
+  int size = bs_len;
+  Point3D count = {0, 0, 0};
+  for (int i = size - 1; i > pos; --i)
+  {
+    if (bit_string[i] == '0')
+      ++count.x;
+
+    else if (bit_string[i] == '1')
+      ++count.y;
+
+    else if (bit_string[i] == '2')
+      ++count.z;
+
+  }
+
+  Point3D coord = {0, 0, 0};
+  for (int i = pos; i >= 0; --i)
+  {
+    if (bit_string[i] == '0')
+      coord.x += (int)pow(2, count.x++);
+
+    else if (bit_string[i] == '1')
+      coord.y += (int)pow(2,count.y++);
+
+    else if (bit_string[i] == '2')
+      coord.z += (int)pow(2, count.z++);
+
+  }
+  return coord;
+}
+
+
+#undef min
+#define min(a,b) ((a) < (b) ? (a) : (b))
+void intersect_grid(Point3D vol_from, Point3D vol_to, Point3D from, Point3D to, Point3D* stride, Point3D* output_from, Point3D* output_to)
+{
+    Point3D min_to = vol_to;
+    min_to.x = min(min_to.x, to.x);
+    min_to.y = min(min_to.y, to.y);
+    min_to.z = min(min_to.z, to.z);
+
+    (*output_from).x = from.x + ((vol_from.x + (*stride).x - 1 - from.x) / (*stride).x) * (*stride).x;
+    (*output_to).x = from.x + ((min_to.x - from.x) / (*stride).x) * (*stride).x;
+
+    (*output_from).y = from.y + ((vol_from.y + (*stride).y - 1 - from.y) / (*stride).y) * (*stride).y;
+    (*output_to).y = from.y + ((min_to.y - from.y) / (*stride).y) * (*stride).y;
+
+    (*output_from).z = from.z + ((vol_from.z + (*stride).z - 1 - from.z) / (*stride).z) * (*stride).z;
+    (*output_to).z = from.z + ((min_to.z - from.z) / (*stride).z) * (*stride).z;
+
+    // we need to do the following corrections because the behavior of integer
+    // division with negative integers are not well defined...
+    if (vol_from.x < from.x) { (*output_from).x = from.x; }
+    if (vol_from.y < from.y) { (*output_from).y = from.y; }
+    if (vol_from.z < from.z) { (*output_from).z = from.z; }
+    if (min_to.x < from.x) { (*output_to).x = from.x - (*stride).x; }
+    if (min_to.y < from.y) { (*output_to).y = from.y - (*stride).y; }
+    if (min_to.z < from.z) { (*output_to).z = from.z - (*stride).z; }
+
+    return;// output_from <= output_to;
+}
+#undef min

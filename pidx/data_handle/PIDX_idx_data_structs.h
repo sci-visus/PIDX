@@ -238,10 +238,12 @@ struct idx_file_struct
   /// 1 Only aggregation
   int enable_agg;
 
+  int compression_start_level;
   int compression_factor;
   int compression_bit_rate;
   unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];
 
+  int file_zero_merge;
 
   /// 1 for little endian
   /// 0 for big endian

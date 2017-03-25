@@ -127,15 +127,6 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id);
 
 
 ///
-/// \brief PIDX_hz_encode_threshold_and_write
-/// \param id
-/// \return
-///
-PIDX_return_code PIDX_hz_encode_threshold_and_write(PIDX_hz_encode_id id);
-
-
-
-///
 /// \brief PIDX_hz_encode_compress
 /// \param id
 /// \return
@@ -148,6 +139,15 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id);
 /// \return
 ///
 PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id);
+
+
+
+///
+/// \brief PIDX_hz_encode_block_wise_compress
+/// \param id
+/// \return
+///
+PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id);
 
 
 

@@ -84,4 +84,20 @@ int pow_greater_equal(int base, int num);
 
 double PIDX_get_time();
 
+Point3D get_num_samples_per_block(const char* bit_string, int bs_len, int hz_level, int bits_per_block);
+
+Point3D get_inter_block_strides(const char* bit_string, int bs_len, int hz_level, int bits_per_block);
+
+Point3D get_intra_block_strides(const char* bit_string, int bs_len, int hz_level);
+
+Point3D get_strides(const char* bit_string, int bs_len, int len);
+
+void get_grid( Point3D sub_vol_from, Point3D sub_vol_to, int hz_level, const char* bit_string, int bs_len, Point3D* from, Point3D* to, Point3D* stride);
+
+Point3D get_first_coord(const char* bit_string, int bs_len, int hz_level);
+
+Point3D get_last_coord(const char* bit_string, int bs_len, int hz_level);
+
+void intersect_grid(Point3D vol_from, Point3D vol_to, Point3D from, Point3D to, Point3D* stride, Point3D* output_from, Point3D* output_to);
+
 #endif
