@@ -14,6 +14,7 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code block_decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl);
+static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
 
 struct PIDX_agg_struct
 {
@@ -625,7 +626,10 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
     //ret = decompress_aggregation_buffer(id, ab);
     //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
-    ret = block_decompress_aggregation_buffer(id, ab);
+    //ret = block_decompress_aggregation_buffer(id, ab);
+    //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+
+    ret = squeeze_aggregation_buffer(id, ab);
     if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
 
     //ret = block_wise_compression(id, ab, lbl);
@@ -820,6 +824,70 @@ static PIDX_return_code block_decompress_aggregation_buffer(PIDX_agg_id id, Agg_
   }
   return PIDX_success;
 }
+
+
+
+static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab)
+{
+  int start_block_index = pow(2, id->idx->compression_start_level - 1) / id->idx_d->samples_per_block;
+  assert(start_block_index / id->idx->blocks_per_file == 0);
+  //printf("Decompression starts at block %d\n", start_block_index);
+
+  if (ab->buffer_size != 0)
+  {
+    //unsigned int total_compressed_bytes = 0;
+    PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
+    size_t dtype_bytes = var_grp->variable[ab->var_number]->bpv / 8;
+    zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
+    unsigned char* buf = ab->buffer;
+    size_t offset = 0;
+    size_t initial_offset = 0;
+    if (ab->file_number == 0)
+    {
+      offset = start_block_index * id->idx_d->samples_per_block * dtype_bytes;
+      initial_offset = start_block_index * id->idx_d->samples_per_block * dtype_bytes;
+    }
+
+    unsigned char* temp_agg_buffer = malloc(ab->buffer_size - offset);
+    memset(temp_agg_buffer, 0, ab->buffer_size - offset);
+
+    int agg_offset = 0;
+    while (offset < ab->buffer_size)
+    {
+      int ldim_x = ((int*)(buf + offset))[0];
+      int ldim_y = ((int*)(buf + offset))[1];
+      int ldim_z = ((int*)(buf + offset))[2];
+
+      int bdim_x = ((int*)(buf + offset))[3];
+      int bdim_y = ((int*)(buf + offset))[4];
+      int bdim_z = ((int*)(buf + offset))[5];
+
+      int bc = 0;
+      int loffset = 0;
+      while(bc != (ldim_x/bdim_x) * (ldim_y/bdim_y) * (ldim_z/bdim_z))
+      {
+        unsigned int compressed_bytes = *(unsigned int*)(buf + offset + 24 + loffset);
+        if (compressed_bytes != 0)
+        {
+          memcpy(temp_agg_buffer + agg_offset, buf + offset + 24 + 4 + loffset, compressed_bytes);
+          agg_offset = agg_offset + compressed_bytes;
+        }
+        loffset = loffset + compressed_bytes + 4;
+        bc++;
+      }
+      size_t original_bytes = dtype_bytes * ldim_x * ldim_y * ldim_z;
+      offset += original_bytes;
+    }
+
+    memcpy(ab->buffer + initial_offset, temp_agg_buffer, agg_offset);
+    ab->buffer_size = agg_offset;
+    free(temp_agg_buffer);
+
+    printf("total compressed block = %d\n", agg_offset);
+  }
+  return PIDX_success;
+}
+
 
 
 static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)

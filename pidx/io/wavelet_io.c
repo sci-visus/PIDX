@@ -66,7 +66,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   // Step 2.5: Wavelet coefficient computation
   if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
   {
-    if (stencil_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
+    if (idx_stencil_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
@@ -74,7 +74,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   }
   else
   {
-    if (rst_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
+    if (idx_rst_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
@@ -82,7 +82,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   }
 #endif
 
-#if 1
+#if 0
   // Step 3:  Partition
   if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {

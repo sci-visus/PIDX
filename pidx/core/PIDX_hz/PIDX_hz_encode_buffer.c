@@ -41,6 +41,9 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
       bytes_for_datatype = ((var->bpv / 8) * chunk_size * var->vps) / id->idx->compression_factor;
       for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
       {
+        //if (id->idx_c->grank == 0)
+        //  printf("[%d %d] --- %d %d %d\n", c, maxH, var->hz_buffer[p]->nsamples_per_level[c][0], var->hz_buffer[p]->nsamples_per_level[c][1], var->hz_buffer[p]->nsamples_per_level[c][2]);
+
         unsigned long long samples_per_level = (var->hz_buffer[p]->end_hz_index[c] - var->hz_buffer[p]->start_hz_index[c] + 1);
         var->hz_buffer[p]->buffer[c] = malloc(bytes_for_datatype * samples_per_level);
         memset(var->hz_buffer[p]->buffer[c], 0, bytes_for_datatype * samples_per_level);

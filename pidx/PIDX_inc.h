@@ -74,6 +74,8 @@ extern "C" {
 #include "./io/global_partition_idx_io.h"
 #include "./io/raw_io.h"
 
+#include "./io/wavelet_idx_rst.h"
+#include "./io/wavelet_idx_stencil.h"
 #include "./io/wavelet_rst.h"
 #include "./io/wavelet_stencil.h"
 #include "./io/restructure.h"
