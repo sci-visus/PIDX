@@ -720,10 +720,11 @@ double PIDX_get_time()
 #define max(a,b) ((a) > (b) ? (a) : (b))
 Point3D get_strides(const char* bit_string, int bs_len, int len)
 {
+  size_t i = 0;
   assert(len >= 0);
   Point3D stride = { 0, 0, 0 };
   size_t start = max(bs_len - len, 0);
-  for (size_t i = start; i < bs_len; ++i)
+  for (i = start; i < bs_len; ++i)
   {
     if      (bit_string[i] == '0') { ++stride.x; }
     else if (bit_string[i] == '1') { ++stride.y; }
@@ -794,11 +795,12 @@ Point3D get_first_coord(const char* bit_string, int bs_len, int hz_level)
     return zero;
   }
 
+  size_t i = 0;
   int pos = hz_level - 1; // the position of the right-most 1 bit in the bit string
   // count the number of "bits" that is the same with the one at position pos
   int count = 0;
   char c = bit_string[pos];
-  for (size_t i = pos + 1; i < bs_len; ++i)
+  for (i = pos + 1; i < bs_len; ++i)
   {
     if (bit_string[i] == c)
       ++count;
