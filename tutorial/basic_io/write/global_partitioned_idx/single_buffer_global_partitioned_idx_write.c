@@ -331,7 +331,7 @@ static void create_synthetic_simulation_data()
 
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
 
-#if 0
+#if 1
     float fvalue = 0;
     double dvalue = 0;
     for (k = 0; k < local_box_size[Z]; k++)
@@ -344,9 +344,9 @@ static void create_synthetic_simulation_data()
           {
             if ((bpv[var]) == 32)
             {
-              fvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              //fvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               //fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
-              //fvalue = (local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
+              fvalue = 8;//(local_box_offset[X] + i) * (local_box_offset[X] + i) + (local_box_offset[Y] + j) * (local_box_offset[Y] + j) + (local_box_offset[Z] + k) * (local_box_offset[Z] + k);
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
             }
 

@@ -312,6 +312,18 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   return PIDX_success;
 }
 
+PIDX_return_code free_rst_box_size(PIDX_io file)
+{
+  if (file->idx->reg_box_set == PIDX_WAVELET_BOX || file->idx->reg_box_set == PIDX_UNIFORMLY_DISTRIBUTED_BOX)
+  {
+    int i = 0, j = 0, k = 0;
+    for (i = 0; i < file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]; i++)
+      free(file->idx->new_box_set[i]);
+    free(file->idx->new_box_set);
+  }
+  return PIDX_success;
+}
+
 
 
 

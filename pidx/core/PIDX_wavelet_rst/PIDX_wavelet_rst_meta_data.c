@@ -98,7 +98,10 @@ PIDX_return_code PIDX_wavelet_rst_meta_data_create(PIDX_wavelet_rst_id rst_id)
       if (intersectNDChunk(reg_patch, local_proc_patch))
       {
         if (rst_id->idx_c->grank == rst_id->idx->new_box_set[i]->rank)
+        {
+          free(reg_patch);
           continue;
+        }
 
         rst_id->reg_patch_grp_count++;
       }
@@ -144,7 +147,10 @@ PIDX_return_code PIDX_wavelet_rst_meta_data_create(PIDX_wavelet_rst_id rst_id)
       if (intersectNDChunk(reg_patch, local_proc_patch))
       {
         if (rst_id->idx_c->grank == rst_id->idx->new_box_set[i]->rank)
+        {
+          free(reg_patch);
           continue;
+        }
 
         rst_id->reg_patch_grp[reg_patch_count] = malloc(sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));
         memset(rst_id->reg_patch_grp[reg_patch_count], 0, sizeof(*(rst_id->reg_patch_grp[reg_patch_count])));

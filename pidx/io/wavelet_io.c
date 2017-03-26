@@ -6,7 +6,8 @@ static int hz_to_file_zero = 0, hz_to_shared = 0, hz_to_non_shared = 0;
 static PIDX_return_code find_agg_level(PIDX_io file, int gi);
 static PIDX_return_code select_io_mode(PIDX_io file, int gi);
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int mode);
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
+static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int mode);
+static PIDX_return_code post_partition_group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode);
 static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
 
@@ -176,7 +177,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   }
 
   // Step 11: Cleanup the group and IDX related meta-data
-  ret = group_meta_data_finalize(file, gi, svi, evi);
+  ret = post_partition_group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -195,6 +196,12 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
 #endif
   // Step 13: Restructuring cleanup
   if (restructure_cleanup(file) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  if (group_meta_data_finalize(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -352,6 +359,17 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   return PIDX_success;
 }
 
+static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int mode)
+{
+  if (free_rst_box_size(file) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  return PIDX_success;
+}
+
 
 static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode)
 {
@@ -415,7 +433,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
 }
 
 
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi)
+static PIDX_return_code post_partition_group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi)
 {
   int ret;
   PIDX_time time = file->idx_d->time;
