@@ -823,6 +823,7 @@ Point3D get_first_coord(const char* bit_string, int bs_len, int hz_level)
 Point3D get_last_coord(const char* bit_string, int bs_len, int hz_level)
 {
 
+  int i = 0;
   if (hz_level == 0)
   {
     Point3D zero = {0, 0, 0};
@@ -833,7 +834,7 @@ Point3D get_last_coord(const char* bit_string, int bs_len, int hz_level)
   int pos = hz_level - 1; // the position of the right-most 1 bit in the bit string
   int size = bs_len;
   Point3D count = {0, 0, 0};
-  for (int i = size - 1; i > pos; --i)
+  for (i = size - 1; i > pos; --i)
   {
     if (bit_string[i] == '0')
       ++count.x;
@@ -847,7 +848,7 @@ Point3D get_last_coord(const char* bit_string, int bs_len, int hz_level)
   }
 
   Point3D coord = {0, 0, 0};
-  for (int i = pos; i >= 0; --i)
+  for (i = pos; i >= 0; --i)
   {
     if (bit_string[i] == '0')
       coord.x += (int)pow(2, count.x++);
