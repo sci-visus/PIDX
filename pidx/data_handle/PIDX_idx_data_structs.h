@@ -230,7 +230,8 @@ struct idx_file_struct
   int number_processes[PIDX_MAX_DIMENSIONS];
   Ndim_empty_patch* new_box_set;
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
-  
+
+  float zfp_precisison;
   int compression_type;
   int enable_rst;
 
@@ -283,6 +284,8 @@ struct idx_dataset_derived_metadata_struct
   
   int fs_block_size;
   off_t start_fs_block;
+
+  unsigned char* shared_block_agg_buffer;
 
   Agg_buffer **f0_agg_buffer;
   Agg_buffer **shared_agg_buffer;

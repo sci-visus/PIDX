@@ -17,6 +17,8 @@ struct PIDX_io_descriptor
   PIDX_comp_id comp_id;                             ///< Compression (lossy and lossless) id
   PIDX_hz_encode_id hz_id;                          ///< HZ encoding phase id
 
+  PIDX_shared_block_agg_id* shared_block_agg_id;
+
   PIDX_agg_id** f0_agg_id;                          ///< Aggregation phase id for file zero
   PIDX_agg_id** shared_agg_id;                      ///< Aggregation phase id for all shared file
   PIDX_agg_id** nshared_agg_id;                     ///< Aggregation phase id for all nonshared file

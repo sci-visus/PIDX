@@ -59,6 +59,7 @@ static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
+static float precisison = 0;
 static int wavelet_type = 0;
 static int wavelet_level = WAVELET_STENCIL;
 
@@ -134,7 +135,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:c:f:t:v:b:a:w:x:";
+  char flags[] = "g:l:c:f:t:v:b:a:w:x:p:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -191,6 +192,11 @@ static void parse_args(int argc, char **argv)
 
     case('x'): // wavelet level
       if (sscanf(optarg, "%d", &wavelet_level) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('p'): // zfp precision
+      if (sscanf(optarg, "%f", &precisison) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -331,7 +337,7 @@ static void create_synthetic_simulation_data()
 
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
 
-#if 1
+#if 0
     float fvalue = 0;
     double dvalue = 0;
     for (k = 0; k < local_box_size[Z]; k++)
@@ -498,6 +504,8 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_level(file, wavelet_level);
 
   PIDX_set_compression_type(file, PIDX_ZFP_COMPRESSION);
+  PIDX_set_zfp_precisison(file, precisison);
+
 
   return;
 }

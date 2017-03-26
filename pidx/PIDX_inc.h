@@ -64,6 +64,7 @@ extern "C" {
 #include "./core/PIDX_block_rst/PIDX_block_restructure.h"
 #include "./core/PIDX_cmp/PIDX_compression.h"
 #include "./core/PIDX_agg/PIDX_agg.h"
+#include "./core/PIDX_shared_block_agg/PIDX_shared_block_agg.h"
 #include "./core/PIDX_file_io/PIDX_file_io.h"
 
 #include "./io/PIDX_io.h"

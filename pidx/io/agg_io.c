@@ -5,6 +5,7 @@ static PIDX_return_code PIDX_global_async_io(PIDX_io file, PIDX_file_io_id **io_
 
 static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, int svi, int layout_start, int agg_io_level, int file_status, int agg_mode, int mode);
 
+static PIDX_return_code PIDX_shared_block_aggregate(PIDX_io file, PIDX_shared_block_agg_id* agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, int svi, int mode);
 
 PIDX_return_code data_io(PIDX_io file, int gi, int start_index, int mode)
 {
@@ -148,7 +149,39 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_m
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+#if 0
+  if (agg_mode == AGG_PERFORM)
+  {
+    ret = PIDX_shared_block_aggregate(file,
+                                file->shared_block_agg_id,
+                                idx->shared_agg_buffer,
+                                var_grp->shared_block_layout_by_level,
+                                start_index, mode);
+    if (ret != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
 #endif
+
+#endif
+
+  return PIDX_success;
+}
+
+static PIDX_return_code PIDX_shared_block_aggregate(PIDX_io file, PIDX_shared_block_agg_id* agg_id, Agg_buffer** agg_buffer, PIDX_block_layout* block_layout_by_level, int svi, int mode)
+{
+  PIDX_time time = file->idx_d->time;
+
+  agg_id[svi] = PIDX_shared_block_agg_init(file->idx, file->idx_d, file->idx_c, svi, svi);
+  PIDX_shared_block_agg_buf_create(agg_id[svi], agg_buffer[svi][0]);
+
+  PIDX_shared_block_agg_global_and_local(agg_id[svi], agg_buffer[svi][0], block_layout_by_level[0],  mode);
+
+  PIDX_shared_block_agg_buf_destroy(agg_id[svi], agg_buffer[svi][0]);
+  PIDX_shared_block_agg_finalize(agg_id[svi]);
 
   return PIDX_success;
 }

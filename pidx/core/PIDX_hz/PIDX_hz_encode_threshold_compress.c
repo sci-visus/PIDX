@@ -84,7 +84,7 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
           zfp_type type = (bytes_for_datatype == 4) ? zfp_type_float : zfp_type_double;
           zfp_field* field = zfp_field_3d(buf, type, block_nsamples.x, block_nsamples.y, block_nsamples.z);
           zfp_stream* zfp = zfp_stream_open(NULL);
-          zfp_stream_set_accuracy(zfp, 0.5, type);
+          zfp_stream_set_accuracy(zfp, id->idx->zfp_precisison, type);
           size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
           unsigned char* output = (unsigned char*)malloc(max_compressed_bytes + 4);
           bitstream* stream = stream_open(output + 4, max_compressed_bytes);

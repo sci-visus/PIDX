@@ -5,7 +5,6 @@
 
 #define PIDX_ACTIVE_TARGET 1
 
-static PIDX_return_code report_error(PIDX_return_code ret, char* file, int line);
 static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode);
 static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id);
@@ -19,6 +18,8 @@ static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab
 struct PIDX_agg_struct
 {
   MPI_Win win;
+
+  MPI_Win shard_block_win;
 
   idx_comm idx_c;
 
@@ -599,41 +600,49 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
 PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl,  int MODE)
 {
-  int ret;
-  ret = create_window(id, ab);
-  if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
+  if (create_window(id, ab) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
 
 #ifdef PIDX_ACTIVE_TARGET
-  ret = MPI_Win_fence(0, id->win);
-  if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+  if (MPI_Win_fence(0, id->win) != MPI_SUCCESS)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
 #endif
 
-  ret = one_sided_data_com(id, ab, layout_id, lbl, MODE);
-  if (ret != PIDX_success) report_error(PIDX_err_agg, __FILE__, __LINE__);
+  if (one_sided_data_com(id, ab, layout_id, lbl, MODE) != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
 
 #if PIDX_HAVE_MPI
 #ifdef PIDX_ACTIVE_TARGET
-  ret = MPI_Win_fence(0, id->win);
-  if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+  if (MPI_Win_fence(0, id->win) != MPI_SUCCESS)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
+#endif
+  if (MPI_Win_free(&(id->win)) != MPI_SUCCESS)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_agg;
+  }
 #endif
 
-  ret = MPI_Win_free(&(id->win));
-  if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
-#endif
 
   if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
   {
-    //ret = decompress_aggregation_buffer(id, ab);
-    //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
-
-    //ret = block_decompress_aggregation_buffer(id, ab);
-    //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
-
-    ret = squeeze_aggregation_buffer(id, ab);
-    if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
-
-    //ret = block_wise_compression(id, ab, lbl);
-    //if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+    if (squeeze_aggregation_buffer(id, ab) != MPI_SUCCESS)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
   }
 
   return PIDX_success;
@@ -693,16 +702,25 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
     int bpdt = tcs * (var->bpv/8) / (id->idx->compression_factor);
 
     ret = MPI_Win_create(ab->buffer, ab->buffer_size, bpdt, MPI_INFO_NULL, id->idx_c->local_comm, &(id->win));
-    if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+    if (ret != MPI_SUCCESS)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
   }
   else
   {
     ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->local_comm, &(id->win));
-    if (ret != MPI_SUCCESS) report_error(PIDX_err_agg, __FILE__, __LINE__);
+    if (ret != MPI_SUCCESS)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
   }
 
   return PIDX_success;
 }
+
 
 
 static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab)
@@ -831,7 +849,9 @@ static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab
 {
   int start_block_index = pow(2, id->idx->compression_start_level - 1) / id->idx_d->samples_per_block;
   assert(start_block_index / id->idx->blocks_per_file == 0);
-  //printf("Decompression starts at block %d\n", start_block_index);
+
+  if (id->idx_c->grank == 0 && ab->file_number == 0)
+    printf("Decompression starts at block %d\n", start_block_index);
 
   if (ab->buffer_size != 0)
   {
@@ -883,7 +903,7 @@ static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab
     ab->buffer_size = agg_offset;
     free(temp_agg_buffer);
 
-    printf("total compressed block = %d\n", agg_offset);
+    //printf("total compressed block = %d\n", agg_offset);
   }
   return PIDX_success;
 }
@@ -1519,12 +1539,6 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
   return PIDX_success;
 }
 
-
-static PIDX_return_code report_error(PIDX_return_code ret, char* file, int line)
-{
-  fprintf(stdout,"File %s Line %d\n", file, line);
-  return ret;
-}
 
 
 /// Function to check if NDimensional data chunks A and B intersects

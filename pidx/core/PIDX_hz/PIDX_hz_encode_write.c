@@ -243,7 +243,7 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
   Point3D* intra_stride = malloc(sizeof(*intra_stride) * maxH);
   memset(intra_stride, 0, sizeof(*intra_stride) * maxH);
 
-#if 1
+#if 0
   Point3D* block_from = malloc(sizeof(*block_from) * maxH);
   memset(block_from, 0, sizeof(*block_from) * maxH);
   Point3D* block_to = malloc(sizeof(*block_to) * maxH);
@@ -260,12 +260,15 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
 
 #endif
 
+  int* samples_in_level = malloc(id->idx_d->maxh * sizeof(*samples_in_level));
+  memset(samples_in_level, 0, (id->idx_d->maxh * sizeof(*samples_in_level)));
   for (j = 0; j < maxH; j++)
   {
     block_nsamples[j] = get_num_samples_per_block(bit_string, bs_len, j, bits_per_block);
     intra_stride[j] = get_intra_block_strides(bit_string, bs_len, j);
+    samples_in_level[j] = var0->hz_buffer[0]->nsamples_per_level[j][0] * var0->hz_buffer[0]->nsamples_per_level[j][1] * var0->hz_buffer[0]->nsamples_per_level[j][2];
 
-#if 1
+#if 0
     if (j > id->idx->bits_per_block)
     {
       Point3D stride;
@@ -337,7 +340,7 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
 
               block_index = hz_order / id->idx_d->samples_per_block;
 
-              if (var0->hz_buffer[y]->nsamples_per_level[level][0] * var0->hz_buffer[y]->nsamples_per_level[level][1] * var0->hz_buffer[y]->nsamples_per_level[level][2] >= (int)pow(2, id->idx->bits_per_block))
+              if (samples_in_level[level] >= (int)pow(2, id->idx->bits_per_block))
               {
                 if (hz_order % id->idx_d->samples_per_block == 0)
                 {
@@ -368,9 +371,20 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
                        var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype),
                        bytes_for_datatype);
                 }
-                continue;
+              }
+              else
+              {
+                for(v1 = id->first_index; v1 <= id->last_index; v1++)
+                {
+                  hz_index = hz_order - var_grp->variable[v1]->hz_buffer[y]->start_hz_index[level];
+                  bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
+                  memcpy(var_grp->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype),
+                       var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype),
+                       bytes_for_datatype);
+                }
               }
 
+#if 0
               if (var0->hz_buffer[y]->nsamples_per_level[level][0] * var0->hz_buffer[y]->nsamples_per_level[level][1] * var0->hz_buffer[y]->nsamples_per_level[level][2] < (int)pow(2, id->idx->bits_per_block) && level > id->idx->bits_per_block)
               {
                 inter_block_index.x = (i - block_from[level].x) / intra_stride[level].x;
@@ -395,27 +409,21 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
                 }
                 continue;
               }
-
-              for(v1 = id->first_index; v1 <= id->last_index; v1++)
-              {
-                hz_index = hz_order - var_grp->variable[v1]->hz_buffer[y]->start_hz_index[level];
-                bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
-                memcpy(var_grp->variable[v1]->hz_buffer[y]->buffer[level] + (hz_index * bytes_for_datatype),
-                     var_grp->variable[v1]->chunk_patch_group[y]->patch[b]->buffer + (index * bytes_for_datatype),
-                     bytes_for_datatype);
-              }
+#endif
             }
       }
     }
   }
 
+  free(samples_in_level);
   free(intra_stride);
   free(block_nsamples);
   free(block_offset);
+#if 0
   free(block_from);
   free(block_to);
   free(interleaved_block_nsamples);
-
+#endif
   return PIDX_success;
 }
 

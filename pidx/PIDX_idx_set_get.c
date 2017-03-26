@@ -345,6 +345,16 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, float precisison)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  if (file->idx->compression_type != PIDX_ZFP_COMPRESSION)
+    return PIDX_err_file;
+
+  file->idx->zfp_precisison = precisison;
+}
 
 
 PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type)

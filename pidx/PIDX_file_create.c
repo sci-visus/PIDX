@@ -102,6 +102,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx->agg_counter = 0;
 
+  (*file)->idx->zfp_precisison = 0;
+
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
 
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
