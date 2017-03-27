@@ -58,7 +58,8 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
   }
 
   bcast:
-  MPI_Allreduce(&c, &(id->idx->compression_start_level), 1, MPI_INT, MPI_MAX, id->idx_c->global_comm);
+  id->idx->compression_start_level = c;
+  //MPI_Allreduce(&c, &(id->idx->compression_start_level), 1, MPI_INT, MPI_MAX, id->idx_c->global_comm);
 
   for (v = id->first_index; v <= id->last_index; v++)
   {

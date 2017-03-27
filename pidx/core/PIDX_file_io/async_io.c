@@ -24,7 +24,7 @@ PIDX_return_code PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer a
     }
 
     data_offset = 0;
-    data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
+    //data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
     PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
 
     for (k = 0; k < agg_buf->var_number; k++)
@@ -80,7 +80,7 @@ PIDX_return_code PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer a
         printf("FOT %f %f\n", x1, x2);
     }
     */
-    printf("%d Agg offset %d Agg size %d\n", agg_buf->file_number, data_offset, agg_buf->buffer_size);
+    printf("%d Agg offset %d (%d x %d) Agg size %d\n", agg_buf->file_number, data_offset, io_id->idx_d->start_fs_block, io_id->idx_d->fs_block_size, agg_buf->buffer_size);
     ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size, MPI_BYTE, request);
     if (ret != MPI_SUCCESS)
     {

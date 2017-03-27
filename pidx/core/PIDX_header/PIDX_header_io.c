@@ -721,6 +721,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
   int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
   memset(headers, 0, total_header_size);
 
+#if 0
   for (i = 0; i < header_io_id->idx->blocks_per_file; i++)
   {
     if (PIDX_blocks_is_block_present((i + (header_io_id->idx->blocks_per_file * file_number)), block_layout))
@@ -759,6 +760,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
       }
     }
   }
+#endif
 #if 1
   if (mode == 1)
   {
@@ -788,12 +790,14 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
       }
       */
 
+      /*
       ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {
         fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
+      */
 
       ret = MPI_File_close(&fh);
       if (ret != MPI_SUCCESS)
