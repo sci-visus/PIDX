@@ -18,6 +18,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 {
   int i = 0;
   unsigned long long cb[PIDX_MAX_DIMENSIONS];
+  unsigned long long* cs = file->idx->chunk_size;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
@@ -37,9 +38,9 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
     // First part of the bitstring
     Point3D rpp;
-    rpp.x = (int) file->idx->reg_patch_size[0];
-    rpp.y = (int) file->idx->reg_patch_size[1];
-    rpp.z = (int) file->idx->reg_patch_size[2];
+    rpp.x = (int) file->idx->reg_patch_size[0] / cs[0];
+    rpp.y = (int) file->idx->reg_patch_size[1] / cs[1];
+    rpp.z = (int) file->idx->reg_patch_size[2] / cs[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);

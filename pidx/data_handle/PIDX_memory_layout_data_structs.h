@@ -65,7 +65,7 @@ typedef struct PIDX_Ndim_patch_struct* Ndim_patch;
 /// Struct to store a group of Ndim_buffer
 struct PIDX_Ndim_patch_group_struct
 {
-  int data_source;
+  //int data_source;
   int type;                                             ///< decide the type of the group
   int count;                                            ///< how many Ndim_buffer are there in the group
   Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer

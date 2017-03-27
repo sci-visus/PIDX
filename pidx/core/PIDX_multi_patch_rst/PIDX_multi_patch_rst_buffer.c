@@ -47,7 +47,6 @@ PIDX_return_code PIDX_multi_patch_rst_buf_create(PIDX_multi_patch_rst_id rst_id)
         if (rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
         {
           Ndim_patch_group patch_group = var->rst_patch_group[cnt]; // here use patch_group
-          patch_group->data_source = 0;
 
           for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
           {
@@ -131,7 +130,6 @@ PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_create(PIDX_multi_patch_rst_
       int ny = out_patch->size[1];
       int nz = out_patch->size[2];
 
-      patch_group->data_source = 1;
       var->rst_patch_group[g]->reg_patch->buffer = malloc(nx * ny * nz * (var->bpv/8) * var->vps);
       memset(var->rst_patch_group[g]->reg_patch->buffer, 0, nx * ny * nz * (var->bpv/8) * var->vps);
 
@@ -188,9 +186,6 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate(PIDX_multi_patch_rst_id rst_
       int nx = out_patch->size[0];
       int ny = out_patch->size[1];
       //int nz = out_patch->size[2];
-
-      patch_group->data_source = 1;
-
 
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
       for (r = 0; r < var->rst_patch_group[g]->count; r++)

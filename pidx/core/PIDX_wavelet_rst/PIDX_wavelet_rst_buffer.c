@@ -39,7 +39,6 @@ PIDX_return_code PIDX_wavelet_rst_buf_create(PIDX_wavelet_rst_id wavelet_rst_id)
         {
           //printf("Buffer create rank %d\n", wavelet_rst_id->idx_c->grank);
           Ndim_patch_group patch_group = var->rst_patch_group[cnt];
-          patch_group->data_source = 0;
           for(j = 0; j < wavelet_rst_id->reg_patch_grp[i]->count; j++)
           {
             patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * var->vps * var->bpv/8);
@@ -123,7 +122,6 @@ PIDX_return_code PIDX_wavelet_rst_aggregate_buf_create(PIDX_wavelet_rst_id wavel
       int ny = out_patch->size[1];
       int nz = out_patch->size[2];
 
-      patch_group->data_source = 1;
       var->rst_patch_group[g]->reg_patch->buffer = malloc(nx * ny * nz * (var->bpv/8) * var->vps);
       memset(var->rst_patch_group[g]->reg_patch->buffer, 0, nx * ny * nz * (var->bpv/8) * var->vps);
 
@@ -179,7 +177,6 @@ PIDX_return_code PIDX_wavelet_rst_buf_aggregate(PIDX_wavelet_rst_id wavelet_rst_
       int nx = out_patch->size[0];
       int ny = out_patch->size[1];
 
-      patch_group->data_source = 1;
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
       for (r = 0; r < var->rst_patch_group[g]->count; r++)
       {

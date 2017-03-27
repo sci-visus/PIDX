@@ -91,13 +91,10 @@ PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
       Ndim_patch_group out_patch = var->chunk_patch_group[p];
       Ndim_patch_group in_patch = var->rst_patch_group[p];
 
-      if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP || in_patch->data_source == 1)
-        out_patch->count = 1;
-      else
-        out_patch->count = in_patch->count;
-
-      if (in_patch->data_source == 1)
-        out_patch->count = 1;
+      //if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
+      out_patch->count = 1;
+      //else
+      //  out_patch->count = in_patch->count;
 
       out_patch->type = in_patch->type;
 
@@ -112,16 +109,16 @@ PIDX_return_code PIDX_chunk_meta_data_create(PIDX_chunk_id chunk_id)
         out_patch->patch[j] = malloc(sizeof(*(out_patch->patch[j])));
         memset(out_patch->patch[j], 0, sizeof(*(out_patch->patch[j])));
 
-        if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP || in_patch->data_source == 1)
-        {
-          memcpy(out_patch->patch[j]->size, in_patch->reg_patch->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
-          memcpy(out_patch->patch[j]->offset, in_patch->reg_patch->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
-        }
-        else if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
-        {
-          memcpy(out_patch->patch[j]->offset, in_patch->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
-          memcpy(out_patch->patch[j]->size, in_patch->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
-        }
+        //if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
+        //{
+        memcpy(out_patch->patch[j]->size, in_patch->reg_patch->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+        memcpy(out_patch->patch[j]->offset, in_patch->reg_patch->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+        //}
+        //else if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
+        //{
+        //  memcpy(out_patch->patch[j]->offset, in_patch->patch[j]->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+        //  memcpy(out_patch->patch[j]->size, in_patch->patch[j]->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+        //}
       }
       memcpy(out_patch->reg_patch->offset, in_patch->reg_patch->offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
       memcpy(out_patch->reg_patch->size, in_patch->reg_patch->size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
@@ -152,8 +149,8 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
       for(j = 0; j < out_patch->count; j++)
       {
 
-        if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP || in_patch->data_source == 1)
-        {
+        //if (chunk_id->idx->compression_type == PIDX_CHUNKING_ONLY || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP || chunk_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
+        //{
           // compute the number of elements in the group
           unsigned long long num_elems_group = 1; // number of elements in the group
           int d;
@@ -168,12 +165,12 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
           // malloc the storage for all elements in the output array
           out_patch->patch[j]->buffer = malloc(bytes_per_value * num_elems_group);
           memset(out_patch->patch[j]->buffer, 0, bytes_per_value * num_elems_group);
-        }
-        else if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
-        {
-          out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
-          memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
-        }
+        //}
+        //else if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
+        //{
+        //  out_patch->patch[j]->buffer = malloc(out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
+        //  memset(out_patch->patch[j]->buffer, 0, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
+        //}
       }
     }
   }
@@ -199,27 +196,29 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
 
         for(j = 0; j < out_patch->count; j++)
         {
-          if (in_patch->data_source == 0)
-          {
-            if (MODE == PIDX_WRITE)
-              memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
-            else
-              memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
-          }
-          else
-          {
+          //if (in_patch->data_source == 0)
+          //{
+          //  if (MODE == PIDX_WRITE)
+          //    memcpy(out_patch->patch[j]->buffer, in_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
+          //  else
+          //    memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
+          //}
+          //else
+          //{
             if (MODE == PIDX_WRITE)
               memcpy(out_patch->patch[j]->buffer, in_patch->reg_patch->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->vps);
             else
               memcpy(in_patch->reg_patch->buffer, out_patch->patch[j]->buffer, out_patch->reg_patch->size[0] * out_patch->reg_patch->size[1] * out_patch->reg_patch->size[2] * bytes_per_value * var->vps);
               //memcpy(in_patch->patch[j]->buffer, out_patch->patch[j]->buffer, out_patch->patch[j]->size[0] * out_patch->patch[j]->size[1] * out_patch->patch[j]->size[2] * bytes_per_value * var->vps);
-          }
+          //}
         }
       }
     }
     return PIDX_success;
   }
 
+  //if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION || chunk_id->idx->compression_type == PIDX_ZFP_COMPRESSION)
+  //  return PIDX_success;
 
   // compute the intra compression block strides
   unsigned long long *chunk_size = chunk_id->idx->chunk_size;
@@ -241,7 +240,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
     for (g = 0; g < var->patch_group_count; ++g)
     {
       // copy the size and offset to output
-      Ndim_patch_group patch_group = var->rst_patch_group[g];
+      Ndim_patch_group in_patch = var->rst_patch_group[g];
       Ndim_patch_group out_patch = var->chunk_patch_group[g];
 
       int nx=(int)out_patch->patch[0]->size[0];
@@ -260,8 +259,13 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       if (temp_buffer == NULL)
         return PIDX_err_chunk;
 
+      if (MODE == PIDX_WRITE)
+         memcpy(temp_buffer, in_patch->reg_patch->buffer, nx * ny * nz * var->bpv/8 * var->vps);
+
+
 
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
+      /*
       for (r = 0; r < var->rst_patch_group[g]->count; r++)
       {
         for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
@@ -280,8 +284,9 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
         }
       }
+      */
 
-      double* p=(double*)temp_buffer;
+      float* p=(float*)temp_buffer;
       int dz=4*nx*(ny-(ny/4)*4);
       int dy=4*(nx-(nx/4)*4);
       int dx=4;      
@@ -293,13 +298,13 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       {
         for (z=0;z<nz;z+=4)
         {
-          double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bpv/8)*cbz) + nx*ny*nz*s1;
+          float* s = (float*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bpv/8)*cbz) + nx*ny*nz*s1;
           for (y=0;y<ny;y+=4)
           {
             for (x=0;x<nx;x+=4)
             {
               unsigned long long diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
-              double* q=p+var->vps*diff+s1;
+              float* q=p+var->vps*diff+s1;
 
               for (zz = 0; zz < 4; ++zz)
               {
@@ -323,6 +328,10 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
         }
       }
 
+      if (MODE == PIDX_READ)
+         memcpy(in_patch->reg_patch->buffer, temp_buffer, nx * ny * nz * var->bpv/8 * var->vps);
+
+#if 0
       for (r = 0; r < var->rst_patch_group[g]->count; r++)
       {
         for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
@@ -341,6 +350,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
         }
       }
+#endif
 
       free(temp_buffer);
     }

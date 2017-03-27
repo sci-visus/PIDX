@@ -12,6 +12,8 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file);
 static PIDX_return_code hz_cleanup(PIDX_io file);
 static PIDX_return_code chunk_cleanup(PIDX_io file);
 
+
+
 PIDX_return_code hz_encode_setup(PIDX_io file, int gi, int svi, int evi)
 {
   cvi = svi;
@@ -40,6 +42,7 @@ PIDX_return_code hz_encode_setup(PIDX_io file, int gi, int svi, int evi)
 
   return PIDX_success;
 }
+
 
 
 PIDX_return_code hz_encode(PIDX_io file, int mode)
@@ -281,8 +284,8 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   if (file->idx_dbg->debug_do_hz == 1)
   {
     time->hz_start[lgi][cvi] = PIDX_get_time();
-    //ret = PIDX_hz_encode_write(file->hz_id);
-    ret = PIDX_hz_encode_row_major_write(file->hz_id);
+    ret = PIDX_hz_encode_write(file->hz_id);
+    //ret = PIDX_hz_encode_row_major_write(file->hz_id);
     if (ret != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -337,7 +340,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
 
   time->hz_start[lgi][cvi] = PIDX_get_time();
   // Verify the HZ encoding
-  if(file->idx_dbg->debug_hz == 1)
+  //if(file->idx_dbg->debug_hz == 1)
   {
     ret = HELPER_Hz_encode(file->hz_id);
     if (ret != PIDX_success)

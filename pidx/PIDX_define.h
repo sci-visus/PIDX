@@ -73,6 +73,7 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 #define PIDX_CHUNKING_ZFP 2
 #define PIDX_CHUNKING_ZFP_ACCURACY 3
 #define PIDX_ZFP_COMPRESSION 4
+#define PIDX_CHUNKING_ZFP_WAVELET 5
 
 // Data in buffer is in row order
 #define PIDX_row_major                           0
@@ -98,6 +99,8 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 
 // Calls wavelet computation code
 #define PIDX_WAVELET_IO                               6
+
+#define PIDX_WAVELET_ZFP_IO                           7
 
 
 #define PIDX_default_bits_per_block              15

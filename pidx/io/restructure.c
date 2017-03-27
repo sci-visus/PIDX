@@ -234,7 +234,7 @@ PIDX_return_code restructure(PIDX_io file, int mode)
         if (file->idx_dbg->debug_rst == 1)
         {
           ret = HELPER_rst(file->rst_id);
-          //if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
         }
         ret = PIDX_rst_read(file->rst_id);
         if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}

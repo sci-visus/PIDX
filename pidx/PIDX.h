@@ -373,7 +373,7 @@ PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type
 /// \param precisison
 /// \return
 ///
-PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, double precisison);
+PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, float precisison);
 
 
 

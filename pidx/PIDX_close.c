@@ -40,7 +40,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
   int block_layout_count = approx_maxh(file);
 
-  PIDX_init_timming_buffers1(time, vgc, file->idx->variable_count, block_layout_count, file->idx_d->wavelet_levels);
+  PIDX_init_timming_buffers1(time, vgc, file->idx->variable_count + 1, block_layout_count, file->idx_d->wavelet_levels);
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
