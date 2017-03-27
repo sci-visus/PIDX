@@ -862,16 +862,18 @@ static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab
     unsigned char* buf = ab->buffer;
     size_t offset = 0;
     size_t initial_offset = 0;
+    int agg_offset = 0;
     if (ab->file_number == 0)
     {
       offset = start_block_index * id->idx_d->samples_per_block * dtype_bytes;
       initial_offset = start_block_index * id->idx_d->samples_per_block * dtype_bytes;
+      agg_offset = initial_offset;
     }
 
     unsigned char* temp_agg_buffer = malloc(ab->buffer_size - offset);
     memset(temp_agg_buffer, 0, ab->buffer_size - offset);
 
-    int agg_offset = 0;
+
     while (offset < ab->buffer_size)
     {
       int ldim_x = ((int*)(buf + offset))[0];

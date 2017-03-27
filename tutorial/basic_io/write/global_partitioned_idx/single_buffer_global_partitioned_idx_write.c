@@ -103,6 +103,7 @@ int main(int argc, char **argv)
 #if 1
   //rank_0_print("Simulation Data Created\n");
 
+  MPI_Barrier(MPI_COMM_WORLD);
   create_pidx_var_point_and_access();
   for (ts = 0; ts < time_step_count; ts++)
   {
