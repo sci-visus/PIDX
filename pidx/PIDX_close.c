@@ -196,6 +196,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       fprintf(stdout, "Box set automatic for box per process case (PIDX_BOX_PER_PROCESS) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
       fprintf(stdout, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+    fprintf(stdout, "Compression Precision set to %f\n", file->idx->zfp_precisison);
 
     if (file->idx->endian == 1)
       fprintf(stdout, "Little Endian | ");
@@ -234,7 +235,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       double group_block_layout = time->layout_end - time->layout_start;
       double header_io = time->header_io_end - time->header_io_start;
       double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
-      printf("\n[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
+      //printf("\n[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
       double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0;
       double hz_init = 0, hz_meta_data = 0, hz_buffer = 0, hz = 0, hz_compress = 0, hz_buffer_free = 0, hz_cleanup = 0, hz_total = 0, hz_all = 0;
