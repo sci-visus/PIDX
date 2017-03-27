@@ -59,7 +59,7 @@ static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
-static float precisison = 0;
+static double precisison = 0;
 static int wavelet_type = 0;
 static int wavelet_level = WAVELET_STENCIL;
 
