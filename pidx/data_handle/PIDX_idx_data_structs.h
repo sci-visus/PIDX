@@ -231,7 +231,7 @@ struct idx_file_struct
   Ndim_empty_patch* new_box_set;
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
 
-  float zfp_precisison;
+  double zfp_precisison;
   int compression_type;
   int enable_rst;
 

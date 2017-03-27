@@ -196,6 +196,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       fprintf(stdout, "Box set automatic for box per process case (PIDX_BOX_PER_PROCESS) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
     else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
       fprintf(stdout, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+
     fprintf(stdout, "Compression Precision set to %f\n", file->idx->zfp_precisison);
 
     if (file->idx->endian == 1)
