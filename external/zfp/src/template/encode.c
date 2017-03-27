@@ -24,6 +24,8 @@ static int
 _t1(exponent_block, Scalar)(const Scalar* p, uint n)
 {
   Scalar max = 0;
+  n--;
+  p++;
   do {
     Scalar f = FABS(*p++);
     if (max < f)
@@ -134,8 +136,8 @@ _t1(encode_ints, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec, 
   for (k = intprec, n = 0; bits && k-- > kmin;) {
     /* step 1: extract bit plane #k to x */
     x = 0;
-    for (i = 0; i < size; i++)
-      x += (uint64)((data[i] >> k) & 1u) << i;
+    for (i = 1; i < size; i++)
+      x += (uint64)((data[i] >> k) & 1u) << (i-1);
     /* step 2: encode first n bits of bit plane */
     m = MIN(n, bits);
     bits -= m;

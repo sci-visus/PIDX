@@ -95,8 +95,8 @@ _t1(decode_ints, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec, 
     for (; n < size && bits && (bits--, stream_read_bit(&s)); x += (uint64)1 << n++)
       for (; n < size - 1 && bits && (bits--, !stream_read_bit(&s)); n++)
         ;
-    /* deposit bit plane from x */
-    for (i = 0; x; i++, x >>= 1)
+    /* deposit bit plane from x */    
+    for (i = 1; x; i++, x >>= 1)
       data[i] += (UInt)(x & 1u) << k;
   }
 

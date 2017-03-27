@@ -22,12 +22,13 @@
  * \author Sidharth Kumar
  * \date   10/09/14
  *
- * Implementation of all the functions 
+ * Implementation of all the functions
  * declared in PIDX_compression.h
  *
  */
 
 #include "../../PIDX_inc.h"
+#include <zfp.h>
 
 ///Struct for restructuring ID
 struct PIDX_comp_id_struct
@@ -36,173 +37,111 @@ struct PIDX_comp_id_struct
   /// Passed by PIDX API
   MPI_Comm comm;
 #endif
-  
+
   /// Contains all relevant IDX file info
   /// Blocks per file, samples per block, bitmask, box, file name template and more
   idx_dataset idx;
-  
+
   /// Contains all derieved IDX file info
   /// number of files, files that are ging to be populated
   idx_dataset_derived_metadata idx_derived;
 
 
   idx_comm idx_c;
-  
+
   int first_index;
   int last_index;
 
 };
 
-#if PIDX_HAVE_ZFP
-int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int bytes_per_sample, int bit_rate)
-{
-  int total_size = 0;
-  int i = 0;
-  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2];
 
+int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
+                    int nx, int ny, int nz, int bytes_per_sample, int bit_rate)
+{
+  size_t total_bytes = 0;
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-    size_t typesize, outsize;
-    typesize = bytes_per_sample;//sizeof(double);
-    zfp_params params;
-    params.type = ZFP_TYPE_DOUBLE;
-    //params.type = ZFP_TYPE_FLOAT;
-    params.nx = comp_id->idx->chunk_size[0];
-    params.ny = comp_id->idx->chunk_size[1];
-    params.nz = comp_id->idx->chunk_size[2];
-    total_size = 0;
-    zfp_set_rate(&params, bit_rate);
-    outsize = zfp_estimate_compressed_size(&params);
-
-    unsigned char* zip = malloc(outsize);
-    memset(zip, 0, outsize);
-
-    for ( i = 0; i < length * typesize; i = i + total_chunk_size * typesize)
+    unsigned long long* chunk_dim = comp_id->idx->chunk_size;
+    assert(chunk_dim[0] == 4 && chunk_dim[1] == 4 && chunk_dim[2] == 4);
+    size_t total_chunk_dim = (size_t)chunk_dim[0] * (size_t)chunk_dim[1] * (size_t)chunk_dim[2];
+    size_t chunk_bytes = total_chunk_dim * bytes_per_sample;
+    zfp_type type = (bytes_per_sample == 4) ? zfp_type_float : zfp_type_double;
+    zfp_field* field = zfp_field_3d(NULL, type, nx, ny, nz);
+    zfp_stream* zfp = zfp_stream_open(NULL);
+    zfp_stream_set_rate(zfp, bit_rate, type, 3, 1);
+    size_t bytes_max = zfp_stream_maximum_size(zfp, field);
+    unsigned char* output = malloc(bytes_max);
+    bitstream* stream = stream_open(output, bytes_max);
+    zfp_stream_set_bit_stream(zfp, stream);
+    size_t i = 0;
+    size_t length = (size_t)nx * (size_t)ny * (size_t)nz;
+    for (i = 0; i < length * bytes_per_sample; i += chunk_bytes)
     {
-
-      /*
-      char filename[100];
-      sprintf(filename, "%d", i/(total_chunk_size * typesize));
-      FILE *fp = fopen (filename, "w");
-      float dv = 0;
-      int i1 = 0;
-      for (i1 = 0; i1 < total_chunk_size; i1++)
-      {
-        dv = 0;
-        memcpy(&dv, buffer + (i + i1*typesize), typesize);
-        fprintf(fp, "%f\n", dv);
-      }
-      fclose(fp);
-      printf("filename = %s %d %d %d\n", filename, length, total_chunk_size, typesize);
-      */
-
-      memset(zip, 0, outsize);
-      outsize = zfp_compress(&params, buffer + i , zip, outsize);
-      if (outsize == 0)
-      {
-        printf("compression failed\n");
-        return -1;
-      }
-      memcpy(buffer + total_size, zip, outsize);
-      total_size = total_size + outsize;
+      size_t bits = 0;
+      if (type == zfp_type_float)
+        bits = zfp_encode_block_float_3(zfp, (float*)(buffer + i));
+      else if (type == zfp_type_double)
+        bits = zfp_encode_block_double_3(zfp, (double*)(buffer + i));
+      memcpy(buffer + total_bytes, output, bits);
+      assert(bits % CHAR_BIT == 0);
+      total_bytes += bits / CHAR_BIT;
     }
-    free(zip);
+    free(output);
+    zfp_stream_close(zfp);
+    stream_close(stream);
+    zfp_field_free(field);
   }
-  return total_size;
+  return total_bytes;
 }
 
 
-int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length, int bytes_per_sample, int bit_rate)
+int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length,
+                      int bytes_per_sample, int bit_rate)
 {
-  int i = 0;
-  unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2];
+  // int i = 0;
+  // unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2];
 
-  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
-  {
-    size_t typesize;
-    typesize = bytes_per_sample;
-    zfp_params params;
-    if (bytes_per_sample == sizeof(double))
-      params.type = ZFP_TYPE_DOUBLE;
-    else if (bytes_per_sample == sizeof(float))
-       params.type = ZFP_TYPE_FLOAT;
+  // if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
+  // {
+  //   size_t typesize;
+  //   typesize = bytes_per_sample;
+  //   zfp_params params;
+  //   if (bytes_per_sample == sizeof(double))
+  //     params.type = ZFP_TYPE_DOUBLE;
+  //   else if (bytes_per_sample == sizeof(float))
+  //      params.type = ZFP_TYPE_FLOAT;
 
-    params.nx = comp_id->idx->chunk_size[0];
-    params.ny = comp_id->idx->chunk_size[1];
-    params.nz = comp_id->idx->chunk_size[2];
-    zfp_set_rate(&params, bit_rate);
+  //   params.nx = comp_id->idx->chunk_size[0];
+  //   params.ny = comp_id->idx->chunk_size[1];
+  //   params.nz = comp_id->idx->chunk_size[2];
+  //   zfp_set_rate(&params, bit_rate);
 
-    unsigned char* temp_buffer = malloc(length * bytes_per_sample);
-    memset(temp_buffer, 0,length * bytes_per_sample);
+  //   unsigned char* temp_buffer = malloc(length * bytes_per_sample);
+  //   memset(temp_buffer, 0,length * bytes_per_sample);
 
-    for ( i = 0; i < length * typesize; i = i + total_chunk_size * typesize)
-    {
-      int success = zfp_decompress(&params, temp_buffer + i , buffer + (i / ((typesize * 8) / bit_rate)), total_chunk_size * (bit_rate / 8));
-      if (success == 0) // failure
-      {
-        free(temp_buffer);
-        return -1;
-      }
-    }
+  //   for ( i = 0; i < length * typesize; i = i + total_chunk_size * typesize)
+  //   {
+  //     int success = zfp_decompress(&params, temp_buffer + i , buffer + (i / ((typesize * 8) / bit_rate)), total_chunk_size * (bit_rate / 8));
+  //     if (success == 0) // failure
+  //     {
+  //       free(temp_buffer);
+  //       return -1;
+  //     }
+  //   }
 
-    unsigned char* temp_buffer1 = realloc(buffer, length * bytes_per_sample);
-    if (temp_buffer1 == NULL)
-      return PIDX_err_compress;
-    else
-      memcpy(buffer, temp_buffer, length * bytes_per_sample);
+  //   unsigned char* temp_buffer1 = realloc(buffer, length * bytes_per_sample);
+  //   if (temp_buffer1 == NULL)
+  //     return PIDX_err_compress;
+  //   else
+  //     memcpy(buffer, temp_buffer, length * bytes_per_sample);
 
-  }
+  // }
   return 0;
 }
 
-/*
-int decompress_buffer(PIDX_comp_id comp_id, void* buffer, int length)
-{
-  unsigned long long compression_block_num_elems = comp_id->idx->chunk_size[0] *
-                                        comp_id->idx->chunk_size[1] *
-                                        comp_id->idx->chunk_size[2];
-  unsigned int type_size = sizeof(double); // DUONG_HARDCODE
-  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP) // zfp lossy compression
-  {
-    zfp_params zfp;
-    zfp.type = ZFP_TYPE_DOUBLE; // DUONG_HARDCODE
-    zfp.nx = comp_id->idx->chunk_size[0];
-    zfp.ny = comp_id->idx->chunk_size[1];
-    zfp.nz = comp_id->idx->chunk_size[2];
-    unsigned int bit_rate = (unsigned int) comp_id->idx->compression_bit_rate;
-    zfp_set_rate(&zfp, bit_rate);
-    unsigned int input_offset = 0;
-    unsigned int output_offset = 0;
-    unsigned int input_buffer_size = (unsigned int) length;
-    unsigned int output_buffer_size = (length / (bit_rate / 8.0)) * type_size; // DUONG_HARDCODE
-    unsigned char* srcPtr = buffer;
-    unsigned char* dstPtr = (unsigned char*) malloc(output_buffer_size);
-    memset(dstPtr, 0, output_buffer_size);
-    unsigned int compressed_block_size = compression_block_num_elems * (bit_rate / 8.0);
-    unsigned int uncompressed_block_size = compression_block_num_elems * type_size;
-    while (input_offset < input_buffer_size) // decompress one compression block at a time
-    {
-      int success = zfp_decompress(&zfp, dstPtr + output_offset, srcPtr + input_offset, compressed_block_size);
-      if (success == 0) // failure
-      {
-        free(dstPtr);
-        return -1;
-      }
-      input_offset += compressed_block_size;
-      output_offset += uncompressed_block_size;
-      assert(output_offset <= output_buffer_size);
-    }
-    memcpy(buffer, dstPtr, output_buffer_size);
-    free(dstPtr);
-    return 0;
-  }
-  return 0;
-}
-*/
-
-#endif
-
-PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, int start_var_index, int end_var_index)
+PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data,
+                                   idx_dataset_derived_metadata idx_derived,
+                                   idx_comm idx_c, int start_var_index, int end_var_index)
 {
   PIDX_comp_id comp_id;
 
@@ -215,48 +154,37 @@ PIDX_comp_id PIDX_compression_init(idx_dataset idx_meta_data, idx_dataset_derive
 
   comp_id->first_index = start_var_index;
   comp_id->last_index = end_var_index;
-  
+
   return comp_id;
 }
 
-
-
 PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 {
-#if 0
-  if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION || comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
+  if (comp_id->idx->compression_type == PIDX_NO_COMPRESSION ||
+      comp_id->idx->compression_type == PIDX_CHUNKING_ONLY)
+  {
     return PIDX_success;
+  }
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-#if PIDX_HAVE_ZFP
     int v, p, b;
-    PIDX_variable var0 = comp_id->idx->variable[comp_id->first_index];
-
+    PIDX_variable_group var_grp = comp_id->idx->variable_grp[0];
     for (v = comp_id->first_index; v <= comp_id->last_index; v++)
     {
-      PIDX_variable var = comp_id->idx->variable[v];
-      for (p = 0; p < var0->patch_group_count; p++)
+      PIDX_variable var = var_grp->variable[v];
+      for (p = 0; p < var->patch_group_count; p++)
       {
-        for (b = 0; b < var0->chunk_patch_group[p]->count; b++)
+        for (b = 0; b < var->chunk_patch_group[p]->count; b++)
         {
           Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
           unsigned char* buffer = patch->buffer;
-          int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->vps;
-
-          //if (rank == 0)
-          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bpv/8, var->bpv/8, comp_id->idx->compression_bit_rate);
-
-          int compressed_element_count = 0;
-          compressed_element_count = compress_buffer(comp_id, buffer, element_count, var->bpv/8, comp_id->idx->compression_bit_rate);
-
-          //if (rank == 0)
-          //printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);
-
-          if (compressed_element_count <= 0)
-            return PIDX_err_compress;
-
-          unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
+          int nx = patch->size[0];
+          int ny = patch->size[1];
+          int nz = patch->size[2];
+          int bit_rate = comp_id->idx->compression_bit_rate;
+          int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
+          unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
           if (temp_buffer == NULL)
             return PIDX_err_compress;
           else
@@ -264,13 +192,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
         }
       }
     }
-#else
-    //printf("Compression Library not found.\n");
-    return PIDX_err_compress;
-#endif
   }
-
-#endif
   return PIDX_success;
 }
 
