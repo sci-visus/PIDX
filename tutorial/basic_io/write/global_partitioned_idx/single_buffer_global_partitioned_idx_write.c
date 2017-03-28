@@ -338,7 +338,7 @@ static void create_synthetic_simulation_data()
 
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
 
-#if 1
+#if 0
     float fvalue = 0;
     double dvalue = 0;
     for (k = 0; k < local_box_size[Z]; k++)
@@ -359,7 +359,7 @@ static void create_synthetic_simulation_data()
 
             else if ((bpv[var]) == 64)
             {
-              dvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              dvalue = rank;// 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
             }
 
@@ -372,10 +372,17 @@ static void create_synthetic_simulation_data()
         }
 #else
 #if 1
-    int fp = open("magnetic-512-volume.raw", O_RDONLY);
+    //float* temp_buffer = malloc(local_box_size[0] * sizeof(*temp_buffer));
+    //memset(temp_buffer, 0, local_box_size[0] * sizeof(*temp_buffer));
+
+    //
+    //int fp = open("magnetic-512-volume.raw", O_RDONLY);
+    int fp = open("miranda.raw", O_RDONLY);
     int send_o = 0;
     int send_c = 0;
     int recv_o = 0;
+    int it = 0;
+
     for (k1 = local_box_offset[Z]; k1 < local_box_offset[Z] + local_box_size[Z]; k1++)
     {
       for (j1 = local_box_offset[Y]; j1 < local_box_offset[Y] + local_box_size[Y]; j1++)
@@ -388,13 +395,22 @@ static void create_synthetic_simulation_data()
           send_o = index;
           send_c = local_box_size[0];
           recv_o = (global_box_size[X] * global_box_size[Y] * k1) + (global_box_size[X] * j1) + i1;
+#if 0
+          pread(fp, temp_buffer, send_c * sizeof(float), recv_o * sizeof(float));
+          for (it = 0; it < local_box_size[0]; it++)
+          {
+            double x =  (double)temp_buffer[it];
+            ((double*)data[0])[send_o + it] = (double)rank;//x;
 
-          //printf("[%d] : read offset %d write offset %d Count %d\n", rank, send_o, recv_o, send_c);
+            memcpy(data[0] + send_o * sizeof(double) + it * sizeof(double), &x, sizeof(double));
+          }
+#endif
           pread(fp, data[0] + send_o * sizeof(float), send_c * sizeof(float), recv_o * sizeof(float));
         }
       }
     }
     close(fp);
+    //free(temp_buffer);
 #endif
 #if 0
     for (k1 = 0; k1 < local_box_size[Z]; k1++)
@@ -495,7 +511,7 @@ static void set_pidx_file(int ts)
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);
-  PIDX_set_block_size(file, 15);
+  PIDX_set_block_size(file, 12);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
@@ -504,7 +520,8 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_implementation_type(file, wavelet_type);
   PIDX_set_wavelet_level(file, wavelet_level);
 
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_WAVELET);
+  PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_WAVELET);
+  PIDX_set_lossy_compression_bit_rate(file, 0.5);
   //PIDX_set_zfp_precisison(file, precisison);
 
 

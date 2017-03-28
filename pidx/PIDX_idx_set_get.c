@@ -369,13 +369,13 @@ PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type
 
 
 
-PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compression_bit_rate)
+PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compression_bit_rate)
 {
   if (!file)
     return PIDX_err_file;
 
-  if (file->idx->compression_type != PIDX_CHUNKING_ZFP)
-    return PIDX_err_unsupported_compression_type;
+  //if (file->idx->compression_type != PIDX_CHUNKING_ZFP)
+  //  return PIDX_err_unsupported_compression_type;
 
   file->idx->compression_bit_rate = compression_bit_rate;
 
@@ -413,7 +413,17 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compres
 
     file->idx->compression_factor = 32;
   }
+
+  // TODO : major hack here
   if (file->idx->compression_bit_rate == 1)
+  {
+    file->idx->bits_per_block = file->idx->bits_per_block + 6;
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
+
+    file->idx->compression_factor = 64;
+  }
+
+  if (file->idx->compression_bit_rate == 0.5)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 6;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);

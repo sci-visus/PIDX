@@ -1,6 +1,7 @@
 #include "../PIDX_inc.h"
 
 static int cvi = 0;
+static int levi = 0;
 static int lgi = 0;
 static PIDX_return_code hz_init(PIDX_io file, int svi, int evi);
 static PIDX_return_code chunk_init(PIDX_io file, int svi, int evi);
@@ -18,6 +19,7 @@ PIDX_return_code hz_encode_setup(PIDX_io file, int gi, int svi, int evi)
 {
   cvi = svi;
   lgi = gi;
+  levi = evi;
 
   // Init
   if ( hz_init(file, svi, evi) || chunk_init(file, svi, evi) || compression_init(file, svi, evi) != PIDX_success )
@@ -274,6 +276,21 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_compress;
+    }
+  }
+
+  if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
+  {
+    if (compute_average(file, lgi, cvi, levi - 1, PIDX_WRITE) != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    if (idx_stencil_wavelet(file, lgi, cvi, levi - 1, PIDX_WRITE) != PIDX_success)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
     }
   }
   time->compression_end[lgi][cvi] = PIDX_get_time();

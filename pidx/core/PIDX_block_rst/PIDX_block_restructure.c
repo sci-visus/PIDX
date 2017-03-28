@@ -262,8 +262,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       if (MODE == PIDX_WRITE)
          memcpy(temp_buffer, in_patch->reg_patch->buffer, nx * ny * nz * var->bpv/8 * var->vps);
 
-
-
       int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
       /*
       for (r = 0; r < var->rst_patch_group[g]->count; r++)

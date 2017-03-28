@@ -198,10 +198,11 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
 
           int bpdt = 0;
           bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
+          printf("CS %d bpv %d CF %d\n", chunk_size, var_grp->variable[ab->var_number]->bpv/8,  id->idx->compression_factor);
 
           ab->buffer_size = sample_count * bpdt;
 
-          if (i == 0)
+          //if (i == 0)
             printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [Interval %d - %d / (%d * %d)] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
                  agg_offset, id->idx_d->color,
                  id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,

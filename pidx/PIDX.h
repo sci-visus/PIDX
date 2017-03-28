@@ -383,7 +383,7 @@ PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, float precisison);
 /// \param compression_bit_rate
 /// \return
 ///
-PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, int compression_bit_rate);
+PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compression_bit_rate);
 
 
 

@@ -59,7 +59,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
                     int nx, int ny, int nz, int bytes_per_sample, int bit_rate)
 {
   size_t total_bytes = 0;
-  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
+  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
   {
     unsigned long long* chunk_dim = comp_id->idx->chunk_size;
     assert(chunk_dim[0] == 4 && chunk_dim[1] == 4 && chunk_dim[2] == 4);
@@ -166,11 +166,12 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
     return PIDX_success;
   }
 
-  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
+  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
   {
     int v, p, b;
     PIDX_variable_group var_grp = comp_id->idx->variable_grp[0];
-    for (v = comp_id->first_index; v <= comp_id->last_index; v++)
+    //for (v = comp_id->first_index; v <= comp_id->last_index; v++)
+    for (v = 0; v < 1; v++)
     {
       PIDX_variable var = var_grp->variable[v];
       for (p = 0; p < var->patch_group_count; p++)
@@ -184,6 +185,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
           int nz = patch->size[2];
           int bit_rate = comp_id->idx->compression_bit_rate;
           int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
+          printf("%d %d %d %d %d CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
           unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
           if (temp_buffer == NULL)
             return PIDX_err_compress;
@@ -193,6 +195,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
       }
     }
   }
+
   return PIDX_success;
 }
 

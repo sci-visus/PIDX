@@ -14,6 +14,17 @@ PIDX_return_code idx_stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int
 
 
 
+///
+/// \brief compute_average
+/// \param file
+/// \param gi
+/// \param svi
+/// \param evi
+/// \param mode
+/// \return
+///
+PIDX_return_code compute_average(PIDX_io file, int gi, int svi, int evi, int mode);
+
 
 #endif
 
