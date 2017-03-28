@@ -7,14 +7,18 @@
 #include "template/template.h"
 
 #define Scalar float
+#define Int int
 #include "template/compress.c"
 #include "template/decompress.c"
 #undef Scalar
+#undef Int
 
 #define Scalar double
+#define Int int64
 #include "template/compress.c"
 #include "template/decompress.c"
 #undef Scalar
+#undef Int
 
 /* private functions ------------------------------------------------------- */
 
@@ -629,6 +633,35 @@ zfp_compress(zfp_stream* zfp, const zfp_field* field)
   return stream_size(zfp->stream);
 }
 
+size_t
+zfp_compress2(zfp_stream* zfp, const zfp_field* field)
+{
+  void (*compress[2][3][2])(zfp_stream*, const zfp_field*) = {
+    {{ compress_float_1,         compress_double_1 },
+     { compress_strided_float_2, compress_strided_double_2 },
+     { compress_strided2_float_3, compress_strided2_double_3 }},
+    {{ compress_strided_float_1, compress_strided_double_1 },
+     { compress_strided_float_2, compress_strided_double_2 },
+     { compress_strided2_float_3, compress_strided2_double_3 }},
+  };
+  uint dims = zfp_field_dimensionality(field);
+  uint type = field->type;
+  uint strided = zfp_field_stride(field, NULL);
+
+  switch (type) {
+    case zfp_type_float:
+    case zfp_type_double:
+      break;
+    default:
+      return 0;
+  }
+
+  compress[strided][dims - 1][type - zfp_type_float](zfp, field);
+  stream_flush(zfp->stream);
+
+  return stream_size(zfp->stream);
+}
+
 int
 zfp_decompress(zfp_stream* zfp, zfp_field* field)
 {
@@ -653,6 +686,46 @@ zfp_decompress(zfp_stream* zfp, zfp_field* field)
   }
 
   decompress[strided][dims - 1][type - zfp_type_float](zfp, field);
+  stream_align(zfp->stream);
+
+  return 1;
+}
+
+int
+zfp_decompress2_float(zfp_stream* zfp, zfp_field* field, int* data, int* emax)
+{
+  uint dims = zfp_field_dimensionality(field);
+  uint type = field->type;
+  uint strided = zfp_field_stride(field, NULL);
+
+  switch (type) {
+    case zfp_type_float:
+      break;
+    default:
+      return 0;
+  }
+
+  decompress_strided2_float_3(zfp, field, data, emax);
+  stream_align(zfp->stream);
+
+  return 1;
+}
+
+int
+zfp_decompress2_double(zfp_stream* zfp, zfp_field* field, int64* data, int* emax)
+{
+  uint dims = zfp_field_dimensionality(field);
+  uint type = field->type;
+  uint strided = zfp_field_stride(field, NULL);
+
+  switch (type) {
+    case zfp_type_double:
+      break;
+    default:
+      return 0;
+  }
+
+  decompress_strided2_double_3(zfp, field, data, emax);
   stream_align(zfp->stream);
 
   return 1;

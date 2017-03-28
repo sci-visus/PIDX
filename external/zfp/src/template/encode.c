@@ -24,8 +24,6 @@ static int
 _t1(exponent_block, Scalar)(const Scalar* p, uint n)
 {
   Scalar max = 0;
-  n--;
-  p++;
   do {
     Scalar f = FABS(*p++);
     if (max < f)
@@ -136,6 +134,38 @@ _t1(encode_ints, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec, 
   for (k = intprec, n = 0; bits && k-- > kmin;) {
     /* step 1: extract bit plane #k to x */
     x = 0;
+    for (i = 0; i < size; i++)
+      x += (uint64)((data[i] >> k) & 1u) << i;
+    /* step 2: encode first n bits of bit plane */
+    m = MIN(n, bits);
+    bits -= m;
+    x = stream_write_bits(&s, x, m);
+    /* step 3: unary run-length encode remainder of bit plane */
+    for (; n < size && bits && (bits--, stream_write_bit(&s, !!x)); x >>= 1, n++)
+      for (; n < size - 1 && bits && (bits--, !stream_write_bit(&s, x & 1u)); x >>= 1, n++)
+        ;
+  }
+
+  *stream = s;
+  return maxbits - bits;
+}
+
+/* compress sequence of size unsigned integers */
+static uint
+_t1(encode_ints2, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec, const UInt* _restrict data, uint size)
+{
+  /* make a copy of bit stream to avoid aliasing */
+  bitstream s = *stream;
+  uint intprec = CHAR_BIT * (uint)sizeof(UInt);
+  uint kmin = intprec > maxprec ? intprec - maxprec : 0;
+  uint bits = maxbits;
+  uint i, k, m, n;
+  uint64 x;
+
+  /* encode one bit plane at a time from MSB to LSB */
+  for (k = intprec, n = 0; bits && k-- > kmin;) {
+    /* step 1: extract bit plane #k to x */
+    x = 0;
     for (i = 1; i < size; i++)
       x += (uint64)((data[i] >> k) & 1u) << (i-1);
     /* step 2: encode first n bits of bit plane */
@@ -172,6 +202,25 @@ _t2(encode_block, Int, DIMS)(bitstream* stream, int minbits, int maxbits, int ma
   return bits;
 }
 
+static uint
+_t2(encode_block2, Int, DIMS)(bitstream* stream, int minbits, int maxbits, int maxprec, Int* iblock)
+{
+  int bits;
+  _cache_align(UInt ublock[BLOCK_SIZE]);
+  /* perform decorrelating transform */
+  _t2(fwd_xform, Int, DIMS)(iblock);
+  /* reorder signed coefficients and convert to unsigned integer */
+  _t1(fwd_order, Int)(ublock, iblock, PERM, BLOCK_SIZE);
+  /* encode integer coefficients */
+  bits = _t1(encode_ints2, UInt)(stream, maxbits, maxprec, ublock, BLOCK_SIZE);
+  /* write at least minbits bits by padding with zeros */
+  if (bits < minbits) {
+    stream_pad(stream, minbits - bits);
+    bits = minbits;
+  }
+  return bits;
+}
+
 /* public functions -------------------------------------------------------- */
 
 /* encode contiguous integer block */
@@ -186,7 +235,18 @@ _t2(zfp_encode_block, Int, DIMS)(zfp_stream* zfp, const Int* iblock)
   return _t2(encode_block, Int, DIMS)(zfp->stream, zfp->minbits, zfp->maxbits, zfp->maxprec, block);
 }
 
+uint
+_t2(zfp_encode_block2, Int, DIMS)(zfp_stream* zfp, const Int* iblock)
+{
+  _cache_align(Int block[BLOCK_SIZE]);
+  uint i;
+  /* copy block */
+  for (i = 0; i < BLOCK_SIZE; i++)
+    block[i] = iblock[i];
+  return _t2(encode_block2, Int, DIMS)(zfp->stream, zfp->minbits, zfp->maxbits, zfp->maxprec, block);
+}
 /* encode contiguous floating-point block */
+
 uint
 _t2(zfp_encode_block, Scalar, DIMS)(zfp_stream* zfp, const Scalar* fblock)
 {
@@ -204,6 +264,36 @@ _t2(zfp_encode_block, Scalar, DIMS)(zfp_stream* zfp, const Scalar* fblock)
     _t1(fwd_cast, Scalar)(iblock, fblock, BLOCK_SIZE, emax);
     /* encode integer block */
     return ebits + _t2(encode_block, Int, DIMS)(zfp->stream, zfp->minbits - ebits, zfp->maxbits - ebits, maxprec, iblock);
+  }
+  else {
+    /* write single zero-bit to indicate that all values are zero */
+    stream_write_bit(zfp->stream, 0);
+    if (zfp->minbits > 1) {
+      stream_pad(zfp->stream, zfp->minbits - 1);
+      return zfp->minbits;
+    }
+    else
+      return 1;
+  }
+}
+
+uint
+_t2(zfp_encode_block2, Scalar, DIMS)(zfp_stream* zfp, const Scalar* fblock)
+{  
+  /* compute maximum exponent */
+  int emax = _t1(exponent_block, Scalar)(fblock, BLOCK_SIZE);
+  int maxprec = _t2(precision, Scalar, DIMS)(emax, zfp->maxprec, zfp->minexp);
+  uint e = maxprec ? emax + EBIAS : 0;
+  /* encode block only if biased exponent is nonzero */
+  if (e) {
+    _cache_align(Int iblock[BLOCK_SIZE]);
+    /* encode common exponent; LSB indicates that exponent is nonzero */
+    int ebits = EBITS + 1;
+    stream_write_bits(zfp->stream, 2 * e + 1, ebits);
+    /* perform forward block-floating-point transform */
+    _t1(fwd_cast, Scalar)(iblock, fblock, BLOCK_SIZE, emax);
+    /* encode integer block */
+    return ebits + _t2(encode_block2, Int, DIMS)(zfp->stream, zfp->minbits - ebits, zfp->maxbits - ebits, maxprec, iblock);
   }
   else {
     /* write single zero-bit to indicate that all values are zero */

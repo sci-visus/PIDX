@@ -393,11 +393,35 @@ zfp_compress(
   const zfp_field* field /* field metadata */
 );
 
+size_t                   /* actual number of bytes of compressed storage */
+zfp_compress2(
+  zfp_stream* stream,    /* compressed stream */
+  const zfp_field* field /* field metadata */
+);
+
 /* decompress entire field (nonzero return value upon success) */
 int                   /* nonzero upon success */
 zfp_decompress(
   zfp_stream* stream, /* compressed stream */
-  zfp_field* field    /* field metadata */
+  zfp_field* field    /* field metadata */  
+);
+
+/* decompress entire field (nonzero return value upon success) */
+int                   /* nonzero upon success */
+zfp_decompress2_float(
+  zfp_stream* stream, /* compressed stream */
+  zfp_field* field,    /* field metadata */
+  int* data,
+  int* emax
+);
+
+/* decompress entire field (nonzero return value upon success) */
+int                   /* nonzero upon success */
+zfp_decompress2_double(
+  zfp_stream* stream, /* compressed stream */
+  zfp_field* field,    /* field metadata */
+  int64* data,
+  int* emax
 );
 
 /* write compression parameters and field metadata (optional) */

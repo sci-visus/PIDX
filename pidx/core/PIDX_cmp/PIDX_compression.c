@@ -56,7 +56,7 @@ struct PIDX_comp_id_struct
 
 
 int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
-                    int nx, int ny, int nz, int bytes_per_sample, int bit_rate)
+                    int nx, int ny, int nz, int bytes_per_sample, float bit_rate)
 {
   size_t total_bytes = 0;
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
@@ -79,9 +79,9 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
     {
       size_t bits = 0;
       if (type == zfp_type_float)
-        bits = zfp_encode_block_float_3(zfp, (float*)(buffer + i));
+        bits = zfp_encode_block2_float_3(zfp, (float*)(buffer + i));
       else if (type == zfp_type_double)
-        bits = zfp_encode_block_double_3(zfp, (double*)(buffer + i));
+        bits = zfp_encode_block2_double_3(zfp, (double*)(buffer + i));
       memcpy(buffer + total_bytes, output, bits);
       assert(bits % CHAR_BIT == 0);
       total_bytes += bits / CHAR_BIT;
@@ -96,7 +96,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
 
 
 int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int length,
-                      int bytes_per_sample, int bit_rate)
+                      int bytes_per_sample, float bit_rate)
 {
   // int i = 0;
   // unsigned long long total_chunk_size = comp_id->idx->chunk_size[0] * comp_id->idx->chunk_size[1] * comp_id->idx->chunk_size[2];
@@ -183,7 +183,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
           int nx = patch->size[0];
           int ny = patch->size[1];
           int nz = patch->size[2];
-          int bit_rate = comp_id->idx->compression_bit_rate;
+          float bit_rate = comp_id->idx->compression_bit_rate;
           int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
           printf("%d %d %d %d %d CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
           unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);

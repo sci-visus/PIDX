@@ -393,11 +393,35 @@ zfp_compress(
   const zfp_field* field /* field metadata */
 );
 
+size_t                   /* actual number of bytes of compressed storage */
+zfp_compress2(
+  zfp_stream* stream,    /* compressed stream */
+  const zfp_field* field /* field metadata */
+);
+
 /* decompress entire field (nonzero return value upon success) */
 int                   /* nonzero upon success */
 zfp_decompress(
   zfp_stream* stream, /* compressed stream */
   zfp_field* field    /* field metadata */
+);
+
+/* decompress entire field (nonzero return value upon success) */
+int                   /* nonzero upon success */
+zfp_decompress2_float(
+  zfp_stream* stream, /* compressed stream */
+  zfp_field* field,    /* field metadata */
+  int* data,
+  int* emax
+);
+
+/* decompress entire field (nonzero return value upon success) */
+int                   /* nonzero upon success */
+zfp_decompress2_double(
+  zfp_stream* stream, /* compressed stream */
+  zfp_field* field,    /* field metadata */
+  int64* data,
+  int* emax
 );
 
 /* write compression parameters and field metadata (optional) */
@@ -476,13 +500,19 @@ uint zfp_encode_block_strided_double_2(zfp_stream* stream, const double* p, int 
 uint zfp_encode_block_int32_3(zfp_stream* stream, const int32* block);
 uint zfp_encode_block_int64_3(zfp_stream* stream, const int64* block);
 uint zfp_encode_block_float_3(zfp_stream* stream, const float* block);
+uint zfp_encode_block2_float_3(zfp_stream* stream, const float* block);
 uint zfp_encode_block_double_3(zfp_stream* stream, const double* block);
+uint zfp_encode_block2_double_3(zfp_stream* stream, const double* block);
 
 /* encode 3D complete or partial block from strided array */
 uint zfp_encode_block_strided_float_3(zfp_stream* stream, const float* p, int sx, int sy, int sz);
+uint zfp_encode_block_strided2_float_3(zfp_stream* stream, const float* p, int sx, int sy, int sz);
 uint zfp_encode_block_strided_double_3(zfp_stream* stream, const double* p, int sx, int sy, int sz);
+uint zfp_encode_block_strided2_double_3(zfp_stream* stream, const double* p, int sx, int sy, int sz);
 uint zfp_encode_partial_block_strided_float_3(zfp_stream* stream, const float* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
+uint zfp_encode_partial_block_strided2_float_3(zfp_stream* stream, const float* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
 uint zfp_encode_partial_block_strided_double_3(zfp_stream* stream, const double* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
+uint zfp_encode_partial_block_strided2_double_3(zfp_stream* stream, const double* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
 
 /* low-level API: decoder -------------------------------------------------- */
 
@@ -520,13 +550,19 @@ uint zfp_decode_partial_block_strided_double_2(zfp_stream* stream, double* p, ui
 uint zfp_decode_block_int32_3(zfp_stream* stream, int32* block);
 uint zfp_decode_block_int64_3(zfp_stream* stream, int64* block);
 uint zfp_decode_block_float_3(zfp_stream* stream, float* block);
+uint zfp_decode_block2_float_3(zfp_stream* stream, int* block, int* emax);
 uint zfp_decode_block_double_3(zfp_stream* stream, double* block);
+uint zfp_decode_block2_double_3(zfp_stream* stream, int64* block, int* emax);
 
 /* decode 3D complete or partial block from strided array */
 uint zfp_decode_block_strided_float_3(zfp_stream* stream, float* p, int sx, int sy, int sz);
+uint zfp_decode_block_strided2_float_3(zfp_stream* stream, int* p, int sx, int sy, int sz, int* emax);
 uint zfp_decode_block_strided_double_3(zfp_stream* stream, double* p, int sx, int sy, int sz);
+uint zfp_decode_block_strided2_double_3(zfp_stream* stream, int64* p, int sx, int sy, int sz, int* emax);
 uint zfp_decode_partial_block_strided_float_3(zfp_stream* stream, float* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
+uint zfp_decode_partial_block_strided2_float_3(zfp_stream* stream, int* p, uint nx, uint ny, uint nz, int sx, int sy, int sz, int* emax);
 uint zfp_decode_partial_block_strided_double_3(zfp_stream* stream, double* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
+uint zfp_decode_partial_block_strided2_double_3(zfp_stream* stream, int64* p, uint nx, uint ny, uint nz, int sx, int sy, int sz, int* emax);
 
 /* low-level API: utility functions ---------------------------------------- */
 

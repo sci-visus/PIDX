@@ -13,9 +13,30 @@ _t2(scatter, Scalar, 3)(const Scalar* q, Scalar* p, int sx, int sy, int sz)
         *p = *q++;
 }
 
+static void
+_t2(scatter, Int, 3)(const Int* q, Int* p, int sx, int sy, int sz)
+{
+  uint x, y, z;
+  for (z = 0; z < 4; z++, p += sz - 4 * sy)
+    for (y = 0; y < 4; y++, p += sy - 4 * sx)
+      for (x = 0; x < 4; x++, p += sx)
+        *p = *q++;
+}
+
 /* scatter nx*ny*nz block to strided array */
 static void
 _t2(scatter_partial, Scalar, 3)(const Scalar* q, Scalar* p, uint nx, uint ny, uint nz, int sx, int sy, int sz)
+{
+  uint x, y, z;
+  for (z = 0; z < nz; z++, p += sz - ny * sy, q += 4 * (4 - ny))
+    for (y = 0; y < ny; y++, p += sy - nx * sx, q += 4 - nx)
+      for (x = 0; x < nx; x++, p += sx, q++)
+        *p = *q;
+}
+
+/* scatter nx*ny*nz block to strided array */
+static void
+_t2(scatter_partial, Int, 3)(const Int* q, Int* p, uint nx, uint ny, uint nz, int sx, int sy, int sz)
 {
   uint x, y, z;
   for (z = 0; z < nz; z++, p += sz - ny * sy, q += 4 * (4 - ny))
@@ -57,6 +78,20 @@ _t2(zfp_decode_block_strided, Scalar, 3)(zfp_stream* stream, Scalar* p, int sx, 
   return bits;
 }
 
+/* decode 4*4*4 floating-point block and store at p using strides (sx, sy, sz) */
+uint
+_t2(zfp_decode_block_strided2, Scalar, 3)(zfp_stream* stream, /*Scalar* p,*/ Int* p, int sx, int sy, int sz, int* emax)
+{
+  /* decode contiguous block */
+  //_cache_align(Scalar fblock[64]);
+  _cache_align(Int iblock[64]);
+  uint bits = _t2(zfp_decode_block2, Scalar, 3)(stream, iblock, emax);
+  /* scatter block to strided array */
+  //_t2(scatter, Scalar, 3)(fblock, p, sx, sy, sz);
+  _t2(scatter, Int, 3)(iblock, p, sx, sy, sz);
+  return bits;
+}
+
 /* decode nx*ny*nz floating-point block and store at p using strides (sx, sy, sz) */
 uint
 _t2(zfp_decode_partial_block_strided, Scalar, 3)(zfp_stream* stream, Scalar* p, uint nx, uint ny, uint nz, int sx, int sy, int sz)
@@ -66,5 +101,20 @@ _t2(zfp_decode_partial_block_strided, Scalar, 3)(zfp_stream* stream, Scalar* p, 
   uint bits = _t2(zfp_decode_block, Scalar, 3)(stream, fblock);
   /* scatter block to strided array */
   _t2(scatter_partial, Scalar, 3)(fblock, p, nx, ny, nz, sx, sy, sz);
+  return bits;
+}
+
+/* decode nx*ny*nz floating-point block and store at p using strides (sx, sy, sz) */
+uint
+_t2(zfp_decode_partial_block_strided2, Scalar, 3)(zfp_stream* stream, /*Scalar* p,*/ Int* p, uint nx, uint ny, uint nz, int sx, int sy, int sz, int* emax)
+{
+  /* decode contiguous block */
+  //_cache_align(Scalar fblock[64]);
+  _cache_align(Int iblock[64]);
+  /* scatter block to strided array */
+  //uint bits = _t2(zfp_decode_block2, Scalar, 3)(stream, fblock);
+  uint bits = _t2(zfp_decode_block2, Scalar, 3)(stream, iblock, emax);
+  //_t2(scatter_partial, Scalar, 3)(fblock, p, nx, ny, nz, sx, sy, sz);
+  _t2(scatter_partial, Int, 3)(iblock, p, nx, ny, nz, sx, sy, sz);
   return bits;
 }
