@@ -71,6 +71,8 @@ PIDX_return_code PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
 PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout, int PIDX_MODE);
 
 
+PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl,  int MODE);
+
 ///
 PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
 

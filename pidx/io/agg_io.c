@@ -249,6 +249,16 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
           return PIDX_err_rst;
         }
         time->agg_end[lgi][svi][j] = PIDX_get_time();
+
+        time->agg_compress_start[lgi][svi][j] = PIDX_get_time();
+        ret = PIDX_agg_buffer_compress(agg_id[svi][j_1], agg_buffer[svi][j_1], j, block_layout_by_level[j_1], mode);
+        if (ret != PIDX_success)
+        {
+          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_rst;
+        }
+        time->agg_compress_end[lgi][svi][j] = PIDX_get_time();
+
       }
 
 

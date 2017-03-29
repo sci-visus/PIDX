@@ -242,6 +242,11 @@ void PIDX_init_timming_buffers1(PIDX_time time, int group_count, int variable_co
   time->agg_end = malloc (sizeof(double**) * group_count);
   memset(time->agg_end, 0, sizeof(double**) * group_count);
 
+  time->agg_compress_start = malloc (sizeof(double**) * group_count);
+  memset(time->agg_compress_start, 0, sizeof(double**) * group_count);
+  time->agg_compress_end = malloc (sizeof(double**) * group_count);
+  memset(time->agg_compress_end, 0, sizeof(double**) * group_count);
+
   time->agg_meta_cleanup_start = malloc (sizeof(double**) * group_count);
   memset(time->agg_meta_cleanup_start, 0, sizeof(double**) * group_count);
   time->agg_meta_cleanup_end = malloc (sizeof(double**) * group_count);
@@ -504,6 +509,11 @@ void PIDX_init_timming_buffers1(PIDX_time time, int group_count, int variable_co
     time->agg_end[g] = malloc (sizeof(double*) * variable_count);
     memset(time->agg_end[g], 0, sizeof(double*) * variable_count);
 
+    time->agg_compress_start[g] = malloc (sizeof(double*) * variable_count);
+    memset(time->agg_compress_start[g], 0, sizeof(double*) * variable_count);
+    time->agg_compress_end[g] = malloc (sizeof(double*) * variable_count);
+    memset(time->agg_compress_end[g], 0, sizeof(double*) * variable_count);
+
     time->agg_meta_cleanup_start[g] = malloc (sizeof(double*) * variable_count);
     memset(time->agg_meta_cleanup_start[g], 0, sizeof(double*) * variable_count);
     time->agg_meta_cleanup_end[g] = malloc (sizeof(double*) * variable_count);
@@ -618,6 +628,11 @@ void PIDX_init_timming_buffers1(PIDX_time time, int group_count, int variable_co
       time->agg_end[g][i] = malloc (sizeof(double) * layout_count);
       memset(time->agg_end[g][i], 0, sizeof(double) * layout_count);
 
+      time->agg_compress_start[g][i] = malloc (sizeof(double) * layout_count);
+      memset(time->agg_compress_start[g][i], 0, sizeof(double) * layout_count);
+      time->agg_compress_end[g][i] = malloc (sizeof(double) * layout_count);
+      memset(time->agg_compress_end[g][i], 0, sizeof(double) * layout_count);
+
       time->agg_meta_cleanup_start[g][i] = malloc (sizeof(double) * layout_count);
       memset(time->agg_meta_cleanup_start[g][i], 0, sizeof(double) * layout_count);
       time->agg_meta_cleanup_end[g][i] = malloc (sizeof(double) * layout_count);
@@ -684,6 +699,8 @@ void PIDX_delete_timming_buffers1(PIDX_time time, int group_count, int variable_
       free(time->agg_buf_end[g][i]);
       free(time->agg_start[g][i]);
       free(time->agg_end[g][i]);
+      free(time->agg_compress_start[g][i]);
+      free(time->agg_compress_end[g][i]);
       free(time->agg_meta_cleanup_start[g][i]);
       free(time->agg_meta_cleanup_end[g][i]);
       free(time->hz_io_start[g][i]);
@@ -788,6 +805,8 @@ void PIDX_delete_timming_buffers1(PIDX_time time, int group_count, int variable_
     free(time->agg_buf_end[g]);
     free(time->agg_start[g]);
     free(time->agg_end[g]);
+    free(time->agg_compress_start[g]);
+    free(time->agg_compress_end[g]);
     free(time->agg_meta_cleanup_start[g]);
     free(time->agg_meta_cleanup_end[g]);
   }
@@ -887,6 +906,8 @@ void PIDX_delete_timming_buffers1(PIDX_time time, int group_count, int variable_
   free(time->agg_buf_end);
   free(time->agg_start);
   free(time->agg_end);
+  free(time->agg_compress_start);
+  free(time->agg_compress_end);
   free(time->agg_meta_cleanup_start);
   free(time->agg_meta_cleanup_end);
 

@@ -101,6 +101,7 @@ struct PIDX_timming_struct
   double ***agg_meta_start, ***agg_meta_end;
   double ***agg_buf_start, ***agg_buf_end;
   double ***agg_start, ***agg_end;
+  double ***agg_compress_start, ***agg_compress_end;
   double ***agg_meta_cleanup_start, ***agg_meta_cleanup_end;
 
   double **io_start, **io_end;

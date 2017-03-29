@@ -59,7 +59,7 @@ static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
-static float precisison = 0;
+static float bit_rate = 0;
 static int wavelet_type = 0;
 static int wavelet_level = WAVELET_STENCIL;
 
@@ -196,8 +196,8 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('p'): // zfp precision
-      if (sscanf(optarg, "%f", &precisison) < 0)
+    case('p'): // zfp bit rate
+      if (sscanf(optarg, "%f", &bit_rate) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -376,8 +376,8 @@ static void create_synthetic_simulation_data()
     //memset(temp_buffer, 0, local_box_size[0] * sizeof(*temp_buffer));
 
     //
-    //int fp = open("magnetic-512-volume.raw", O_RDONLY);
-    int fp = open("miranda.raw", O_RDONLY);
+    int fp = open("magnetic-512-volume.raw", O_RDONLY);
+    //int fp = open("miranda.raw", O_RDONLY);
     int send_o = 0;
     int send_c = 0;
     int recv_o = 0;
@@ -511,7 +511,7 @@ static void set_pidx_file(int ts)
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);
-  PIDX_set_block_size(file, 12);
+  PIDX_set_block_size(file, 15);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
@@ -521,7 +521,7 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_level(file, wavelet_level);
 
   PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_WAVELET);
-  PIDX_set_lossy_compression_bit_rate(file, 0.5);
+  PIDX_set_lossy_compression_bit_rate(file, bit_rate);
   //PIDX_set_zfp_precisison(file, precisison);
 
 

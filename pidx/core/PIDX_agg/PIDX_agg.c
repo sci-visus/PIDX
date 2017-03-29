@@ -198,7 +198,7 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
 
           int bpdt = 0;
           bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
-          printf("CS %d bpv %d CF %d\n", chunk_size, var_grp->variable[ab->var_number]->bpv/8,  id->idx->compression_factor);
+          //printf("CS %d bpv %d CF %d\n", chunk_size, var_grp->variable[ab->var_number]->bpv/8,  id->idx->compression_factor);
 
           ab->buffer_size = sample_count * bpdt;
 
@@ -636,6 +636,20 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
   }
 #endif
 
+  return PIDX_success;
+}
+
+
+PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl,  int MODE)
+{
+  if (id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET && ab->var_number == 1)
+  {
+    if (block_wise_compression(id, ab, lbl) != MPI_SUCCESS)
+    {
+      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
+  }
 
   if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
   {
@@ -934,18 +948,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       offset = dtype_bytes * id->idx_d->samples_per_block; // we skip the first block
       i = 1; // skip the first block
     }
-#if 0
-    if (ab->file_number == 0)
-    {
-      int j = 0;
-      for (j = 0; j < 10; j++)
-      {
-        float x;
-        memcpy(&x, ab->buffer + (/*(i * id->idx_d->samples_per_block) +*/ j) * dtype_bytes, dtype_bytes);
-        printf("Value at %d = %f\n", j, x);
-      }
-    }
-#endif
+
     size_t original_bytes = id->idx_d->samples_per_block * dtype_bytes;
     unsigned char* temp = (unsigned char*)malloc(original_bytes);
     for (; i < lbl->bcpf[ab->file_number]; i++)
@@ -953,18 +956,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       if (ab->file_number == 0)
         if ((i & (i-1)) == 0)
           hz_level++;
-#if 0
-      if (ab->file_number == 0 && i == 1)
-      {
-        int j = 0;
-        for (j = 0; j < 10; j++)
-        {
-          float x;
-          memcpy(&x, ab->buffer + ((i * id->idx_d->samples_per_block) + j) * dtype_bytes, dtype_bytes);
-          printf("Value at %d = %f\n", j, x);
-        }
-      }
-#endif
+
       Point3D block_nsamples = get_num_samples_per_block(bit_string, bs_len, hz_level, bits_per_block);
       //printf("[%d %d %d] [%d] %s, %d, %d, %d\n", block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block);
       assert(block_nsamples.x * block_nsamples.y * block_nsamples.z == id->idx_d->samples_per_block);
@@ -975,7 +967,8 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
       zfp_field* field = zfp_field_3d(buf, type, block_nsamples.x, block_nsamples.y, block_nsamples.z);
       zfp_stream* zfp = zfp_stream_open(NULL);
-      zfp_stream_set_accuracy(zfp, 0, type);
+      //zfp_stream_set_accuracy(zfp, 0, type);
+      zfp_stream_set_rate(zfp, id->idx->compression_bit_rate, type, 3, 0);
       size_t max_compressed_bytes = zfp_stream_maximum_size(zfp, field);
       //if (max_compressed_bytes > original_bytes)
       //  puts("WARNING: compressed size potentially > original size\n");
@@ -996,6 +989,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
     if (offset > ab->buffer_size)
         puts("WARNING: compressed buffer size > original buffer size\n");
     ab->buffer_size = ab->compressed_buffer_size = offset;
+    //printf("[%d %d] Compressed buffer %d\n", ab->file_number, ab->var_number, offset);
   }
   return PIDX_success;
 }

@@ -197,7 +197,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
     else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
       fprintf(stdout, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
 
-    fprintf(stdout, "Compression Precision set to %f\n", file->idx->zfp_precisison);
+    fprintf(stdout, "Compression Bit rate set to %f\n", file->idx->compression_bit_rate);
 
     if (file->idx->endian == 1)
       fprintf(stdout, "Little Endian | ");
@@ -379,20 +379,21 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           }
         }
 
-        double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total = 0;
+        double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total = 0, agg_cmp = 0;
         for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->agg_l_shared ; i++)
         {
           agg_init = time->agg_init_end[gi][si][i] - time->agg_init_start[gi][si][i];
           agg_meta = time->agg_meta_end[gi][si][i] - time->agg_meta_start[gi][si][i];
           agg_buf = time->agg_buf_end[gi][si][i] - time->agg_buf_start[gi][si][i];
           agg = time->agg_end[gi][si][i] - time->agg_start[gi][si][i];
+          agg_cmp = time->agg_compress_end[gi][si][i] - time->agg_compress_start[gi][si][i];
           agg_meta_cleanup = time->agg_meta_cleanup_end[gi][si][i] - time->agg_meta_cleanup_start[gi][si][i];
-          agg_total = agg_init + agg_meta + agg_buf + agg + agg_meta_cleanup;
+          agg_total = agg_init + agg_meta + agg_buf + agg + agg_cmp + agg_meta_cleanup;
           agg_all = agg_all + agg_total;
 
           //printf("[S] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
 
-          printf("[AGG S %d %d]   :[%d] [%d] %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total, agg_all);
+          printf("[AGG S %d %d]   :[%d] [%d] %f + %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_cmp, agg_meta_cleanup, agg_total, agg_all);
         }
 
         for (i = file->idx->variable_grp[gi]->nshared_start_layout_index; i < file->idx->variable_grp[gi]->agg_l_nshared ; i++)

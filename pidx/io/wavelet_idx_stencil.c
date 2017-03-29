@@ -77,17 +77,20 @@ PIDX_return_code compute_average(PIDX_io file, int gi, int svi, int evi, int mod
         int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->vps;
         unsigned char* temp = malloc(element_count / 64 * sizeof (float));
         int count = 0;
+        float sum = 0;
+        float average = 0;
 
         for (i = 0; i < element_count; i = i + 64)
         {
-          float sum = 0;
+          sum = 0;
           for (j = 0; j < 64; j++)
           {
-            float value;
-            memcpy(&value, buffer + (i + j) * sizeof (float), sizeof(float));
-            sum = sum + value;
+            //float value;
+            //value = ((float*) buffer)[i + j];
+            //memcpy(&value, buffer + (i + j) * sizeof (float), sizeof(float));
+            sum = sum + ((float*) buffer)[i + j];
           }
-          float average = sum / 64;
+          average = sum / 64;
           //printf("Average = %f\n", average);
           memcpy(temp + count * sizeof (float), &average, sizeof (float));
           count++;

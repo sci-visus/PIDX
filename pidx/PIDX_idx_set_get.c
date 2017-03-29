@@ -381,46 +381,46 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
 
   if (file->idx->compression_bit_rate == 32)
   {
-    file->idx->bits_per_block = file->idx->bits_per_block + 1;
+    file->idx->bits_per_block = file->idx->bits_per_block;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
-    file->idx->compression_factor = 2;
+    file->idx->compression_factor = 1;
   }
   if (file->idx->compression_bit_rate == 16)
+  {
+    file->idx->bits_per_block = file->idx->bits_per_block + 1;
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
+
+    file->idx->compression_factor = 2;
+  }
+  if (file->idx->compression_bit_rate == 8)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 2;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
 
     file->idx->compression_factor = 4;
   }
-  if (file->idx->compression_bit_rate == 8)
+  if (file->idx->compression_bit_rate == 4)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 3;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
 
     file->idx->compression_factor = 8;
   }
-  if (file->idx->compression_bit_rate == 4)
+  if (file->idx->compression_bit_rate == 2)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 4;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
 
     file->idx->compression_factor = 16;
   }
-  if (file->idx->compression_bit_rate == 2)
+
+  // TODO : major hack here
+  if (file->idx->compression_bit_rate == 1)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 5;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
 
     file->idx->compression_factor = 32;
-  }
-
-  // TODO : major hack here
-  if (file->idx->compression_bit_rate == 1)
-  {
-    file->idx->bits_per_block = file->idx->bits_per_block + 6;
-    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
-
-    file->idx->compression_factor = 64;
   }
 
   if (file->idx->compression_bit_rate == 0.5)
@@ -429,6 +429,22 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
 
     file->idx->compression_factor = 64;
+  }
+
+  if (file->idx->compression_bit_rate == 0.25)
+  {
+    file->idx->bits_per_block = file->idx->bits_per_block + 7;
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
+
+    file->idx->compression_factor = 128;
+  }
+
+  if (file->idx->compression_bit_rate == 0.125)
+  {
+    file->idx->bits_per_block = file->idx->bits_per_block + 8;
+    file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
+
+    file->idx->compression_factor = 256;
   }
 
   return PIDX_success;

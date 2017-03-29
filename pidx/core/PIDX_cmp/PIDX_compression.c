@@ -185,7 +185,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
           int nz = patch->size[2];
           float bit_rate = comp_id->idx->compression_bit_rate;
           int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
-          printf("%d %d %d %d %d CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
+          //printf("%d %d %d %d %f CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
           unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
           if (temp_buffer == NULL)
             return PIDX_err_compress;
