@@ -68,7 +68,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
     zfp_type type = (bytes_per_sample == 4) ? zfp_type_float : zfp_type_double;
     zfp_field* field = zfp_field_3d(NULL, type, nx, ny, nz);
     zfp_stream* zfp = zfp_stream_open(NULL);
-    zfp_stream_set_rate(zfp, bit_rate, type, 3, 1);
+    zfp_stream_set_rate(zfp, bit_rate, type, 3, 0);
     size_t bytes_max = zfp_stream_maximum_size(zfp, field);
     unsigned char* output = malloc(bytes_max);
     bitstream* stream = stream_open(output, bytes_max);
