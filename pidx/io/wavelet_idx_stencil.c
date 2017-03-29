@@ -62,9 +62,8 @@ PIDX_return_code compute_average(PIDX_io file, int gi, int svi, int evi, int mod
   int v = 0, p = 0, b = 0, i = 0, j = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-
-  //for (v = svi; v <= evi; v++)
-  for (v = 1; v < 2; v++)
+  for (v = svi; v <= evi; v++)
+  //for (v = 1; v < 2; v++)
   {
     PIDX_variable var = var_grp->variable[v];
 
@@ -85,13 +84,17 @@ PIDX_return_code compute_average(PIDX_io file, int gi, int svi, int evi, int mod
           sum = 0;
           for (j = 0; j < 64; j++)
           {
-            //float value;
+            float value;
             //value = ((float*) buffer)[i + j];
-            //memcpy(&value, buffer + (i + j) * sizeof (float), sizeof(float));
-            sum = sum + ((float*) buffer)[i + j];
+            memcpy(&value, buffer + (i + j) * sizeof (float), sizeof(float));
+            sum = sum + value;
+            //sum = sum + ((float*) buffer)[i + j];
           }
           average = sum / 64;
-          //printf("Average = %f\n", average);
+
+          //if (file->idx_c->grank == 1)
+          //  printf("Average = %f\n", average);
+
           memcpy(temp + count * sizeof (float), &average, sizeof (float));
           count++;
         }

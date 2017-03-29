@@ -59,7 +59,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
                     int nx, int ny, int nz, int bytes_per_sample, float bit_rate)
 {
   size_t total_bytes = 0;
-  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
+  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
   {
     unsigned long long* chunk_dim = comp_id->idx->chunk_size;
     assert(chunk_dim[0] == 4 && chunk_dim[1] == 4 && chunk_dim[2] == 4);
@@ -82,7 +82,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
         bits = zfp_encode_block2_float_3(zfp, (float*)(buffer + i));
       else if (type == zfp_type_double)
         bits = zfp_encode_block2_double_3(zfp, (double*)(buffer + i));
-      memcpy(buffer + total_bytes, output, bits);
+      memcpy(buffer + total_bytes, output, bits / CHAR_BIT);
       assert(bits % CHAR_BIT == 0);
       total_bytes += bits / CHAR_BIT;
     }
@@ -166,7 +166,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
     return PIDX_success;
   }
 
-  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
+  if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
   {
     int v, p, b;
     PIDX_variable_group var_grp = comp_id->idx->variable_grp[0];

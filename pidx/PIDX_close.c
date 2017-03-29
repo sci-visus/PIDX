@@ -236,7 +236,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       double group_block_layout = time->layout_end - time->layout_start;
       double header_io = time->header_io_end - time->header_io_start;
       double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
-      //printf("\n[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
+      printf("\n[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
       double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0;
       double hz_init = 0, hz_meta_data = 0, hz_buffer = 0, hz = 0, hz_compress = 0, hz_buffer_free = 0, hz_cleanup = 0, hz_total = 0, hz_all = 0;

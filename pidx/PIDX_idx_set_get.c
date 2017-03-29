@@ -308,14 +308,14 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   if(!file)
     return PIDX_err_file;
 
-  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP&& compression_type != PIDX_ZFP_COMPRESSION && compression_type != PIDX_CHUNKING_ZFP_WAVELET)
+  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP&& compression_type != PIDX_ZFP_COMPRESSION && compression_type != PIDX_CHUNKING_ZFP_63_COEFFICIENT && compression_type != PIDX_CHUNKING_AVERAGE)
     return PIDX_err_unsupported_compression_type;
 
   file->idx->compression_type = compression_type;
 
   if (file->idx->compression_type == PIDX_NO_COMPRESSION)
     return PIDX_success;
-  else if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP || file->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET)
+  else if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP || file->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT || file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
     PIDX_point chunk_size;
 
@@ -367,6 +367,20 @@ PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type
   return PIDX_success;
 }
 
+
+PIDX_return_code PIDX_set_average_compression_factor(PIDX_file file, int compression_factor, float bit_rate)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  file->idx->compression_factor = compression_factor;
+  file->idx->compression_bit_rate = bit_rate;
+
+  file->idx->bits_per_block = file->idx->bits_per_block + 6;
+  file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
+
+  return PIDX_success;
+}
 
 
 PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compression_bit_rate)

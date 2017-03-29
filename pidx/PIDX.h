@@ -388,6 +388,16 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
 
 
 ///
+/// \brief PIDX_set_average_compression_factor
+/// \param file
+/// \param compression_factor
+/// \return
+///
+PIDX_return_code PIDX_set_average_compression_factor(PIDX_file file, int compression_factor, float bit_rate);
+
+
+
+///
 /// \brief PIDX_get_lossy_compression_bit_rate
 /// \param file
 /// \param compression_bit_rate

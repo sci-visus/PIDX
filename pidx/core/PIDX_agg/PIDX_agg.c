@@ -646,13 +646,15 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
 
 PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl,  int MODE)
 {
-  if (id->idx->compression_type == PIDX_CHUNKING_ZFP_WAVELET && ab->var_number == 1)
+  if (id->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
+    //
     if (block_wise_compression(id, ab, lbl) != MPI_SUCCESS)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
+    //
   }
 
   if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
