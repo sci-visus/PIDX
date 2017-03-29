@@ -102,10 +102,13 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   int *agg_list;
 
-  agg_list = malloc(sizeof(*agg_list) * id->idx_d->max_file_count * id->idx->variable_count);
-  memset(agg_list, 0, sizeof(*agg_list) * id->idx_d->max_file_count * id->idx->variable_count);
+  if (agg_offset == 0)
+    id->idx->agg_counter = 0;
 
-  int M = id->idx_d->max_file_count * id->idx->variable_count;
+  agg_list = malloc(sizeof(*agg_list) * id->idx_d->max_file_count /* id->idx->variable_count*/);
+  memset(agg_list, 0, sizeof(*agg_list) * id->idx_d->max_file_count /* id->idx->variable_count*/);
+
+  int M = id->idx_d->max_file_count /* id->idx->variable_count*/;
   int N = id->idx_c->lnprocs;
   int interval = (N / M);
 
@@ -161,6 +164,7 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
     printf("\n");
   }
 #endif
+
 
   for (k = 0; k < lbl->efc; k++)
   {

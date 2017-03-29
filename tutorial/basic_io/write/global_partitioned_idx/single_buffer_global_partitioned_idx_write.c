@@ -515,13 +515,13 @@ static void set_pidx_file(int ts)
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
-  //PIDX_set_io_mode(file, PIDX_WAVELET_ZFP_IO);
-  PIDX_set_io_mode(file, PIDX_WAVELET_IO);
+  PIDX_set_io_mode(file, PIDX_WAVELET_ZFP_IO);
+  //PIDX_set_io_mode(file, PIDX_WAVELET_IO);
   PIDX_set_wavelet_implementation_type(file, wavelet_type);
   PIDX_set_wavelet_level(file, wavelet_level);
 
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_WAVELET);
-  //PIDX_set_lossy_compression_bit_rate(file, bit_rate);
+  PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_WAVELET);
+  PIDX_set_lossy_compression_bit_rate(file, bit_rate);
   //PIDX_set_zfp_precisison(file, precisison);
 
 

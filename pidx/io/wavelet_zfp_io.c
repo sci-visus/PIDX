@@ -180,11 +180,11 @@ PIDX_return_code PIDX_wavelet_zfp_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-    }
+    //}
 
     // Setup 9: Performs actual file io
-    for (li = si; li <= ei; li = li + 1)
-    {
+    //for (li = si; li <= ei; li = li + 1)
+    //{
       time->io_start[gi][li] = PIDX_get_time();
       create_async_buffers(file, gi);
 
