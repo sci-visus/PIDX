@@ -24,7 +24,7 @@ PIDX_return_code PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer a
     }
 
     data_offset = 0;
-    data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
+    //data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
     PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
 
     for (k = 0; k < agg_buf->var_number; k++)

@@ -593,6 +593,7 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
 
 PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, char* file_name, char* filename_template, int mode)
 {
+#if 0
   int i = 0, ret;
   char bin_file[PATH_MAX];
 
@@ -692,6 +693,7 @@ PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, P
     free(data_set_path);
   }
 
+#endif
   return PIDX_success;
 }
 

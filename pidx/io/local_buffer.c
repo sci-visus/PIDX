@@ -221,8 +221,6 @@ PIDX_return_code create_agg_io_buffer(PIDX_io file, int gi, int svi, int evi)
   idx_dataset_derived_metadata idx = file->idx_d;
 
   file->shared_block_agg_id = malloc(sizeof(*(file->shared_block_agg_id)) * vc);
-  file->shared_block_agg_id = malloc(sizeof(*(file->shared_block_agg_id)) * vc);
-  memset(file->shared_block_agg_id, 0, sizeof(*(file->shared_block_agg_id)) * vc);
   memset(file->shared_block_agg_id, 0, sizeof(*(file->shared_block_agg_id)) * vc);
 
   file->f0_agg_id = malloc(sizeof(*(file->f0_agg_id)) * vc);

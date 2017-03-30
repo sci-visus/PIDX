@@ -105,6 +105,8 @@ PIDX_return_code compute_average(PIDX_io file, int gi, int svi, int evi, int mod
           return PIDX_err_compress;
         else
           patch->buffer = temp_buffer;
+
+        free(temp);
       }
     }
   }

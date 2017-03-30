@@ -176,6 +176,9 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
       free(var->hz_buffer[p]->buffer);
       var->hz_buffer[p]->buffer = 0;
 
+      free(var->hz_buffer[p]->compressed_buffer_size);
+      var->hz_buffer[p]->compressed_buffer_size = 0;
+
       free(var->hz_buffer[p]);
       var->hz_buffer[p] = 0;
     }
