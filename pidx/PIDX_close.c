@@ -231,23 +231,24 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
     {
       int si = 0;
       double group_init = time->init_end - time->init_start;
-      double group_bitstring = time->bit_string_end - time->bit_string_start;
       double group_reg_box = time->set_reg_box_end - time->set_reg_box_start;
+      double group_bitstring = time->bit_string_end - time->bit_string_start;
       double group_block_layout = time->layout_end - time->layout_start;
       double header_io = time->header_io_end - time->header_io_start;
-      double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
-      printf("\n[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
+
+      double pre_group_total = group_init + group_reg_box;
+      double post_group_total = group_bitstring + group_block_layout + header_io;
+
+      printf("\n[T %d R %d N %d G %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable);
+      printf("PRE INIT          :[%.4f + %.4f] = %.4f\n\n", group_init, group_reg_box, pre_group_total);
+
+      printf("POST INIT         :[%.4f + %.4f + %.4f] = %.4f\n\n", group_bitstring, group_block_layout, header_io, post_group_total);
 
       double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0;
       double hz_init = 0, hz_meta_data = 0, hz_buffer = 0, hz = 0, hz_compress = 0, hz_buffer_free = 0, hz_cleanup = 0, hz_total = 0, hz_all = 0;
       double chunk_init = 0, chunk_meta = 0, chunk_buffer = 0, chunk = 0, chunk_buffer_free = 0, chunk_cleanup = 0, chunk_total = 0, chunk_all = 0;
       double compression_init = 0, compression = 0, compression_total = 0, compression_all = 0;
       double io = 0, io_all = 0;
-
-      double grp_rst_hz_chunk_agg_io = group_total;
-      double agg_all = 0;
-      double hz_io_all = 0;
-      double w_all = 0;
 
       for (si = svi; si < evi; si++)
       {
@@ -265,6 +266,14 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
         printf("RST                         :[%d] [%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
       }
+
+      double partition_time = time->partition_end - time->partition_start;
+      printf("Partition time %f\n", partition_time);
+
+      double grp_rst_hz_chunk_agg_io = pre_group_total + post_group_total + partition_time;
+      double agg_all = 0;
+      double hz_io_all = 0;
+      double w_all = 0;
 
       for (si = svi; si < evi; si++)
       {
@@ -420,7 +429,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
       grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + w_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
 
-      printf("IRWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f] \n", group_total, rst_all, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      printf("IRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f] %f %f\n", pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time, (time->a2 - time->a1), (time->a4 - time->a3));
 
     }
   }

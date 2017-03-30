@@ -270,22 +270,20 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   time->compression_start[lgi][cvi] = PIDX_get_time();
   if (file->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
   {
-  // Perform Compression
-  if (file->idx_dbg->debug_do_compress == 1)
-  {
-    ret = PIDX_compression(file->comp_id);
-    if (ret != PIDX_success)
+    // Perform Compression
+    if (file->idx_dbg->debug_do_compress == 1)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_compress;
+      ret = PIDX_compression(file->comp_id);
+      if (ret != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_compress;
+      }
     }
   }
-  }
-
 
   if (file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
-
     if (compute_average(file, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -294,11 +292,11 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
 
     if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
     {
-    if (idx_stencil_wavelet(file, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
-    {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
+      if (idx_stencil_wavelet(file, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
+      {
+        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
     }
   }
   time->compression_end[lgi][cvi] = PIDX_get_time();
