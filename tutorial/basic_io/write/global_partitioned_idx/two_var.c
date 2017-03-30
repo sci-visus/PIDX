@@ -395,8 +395,8 @@ static void create_synthetic_simulation_data()
     //memset(temp_buffer, 0, local_box_size[0] * sizeof(*temp_buffer));
 
     //
-    int fp = open("magnetic-512-volume.raw", O_RDONLY);
-    //int fp = open("miranda.raw", O_RDONLY);
+    //int fp = open("magnetic-512-volume.raw", O_RDONLY);
+    int fp = open("miranda.raw", O_RDONLY);
     int send_o = 0;
     int send_c = 0;
     int recv_o = 0;

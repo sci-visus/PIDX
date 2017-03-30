@@ -206,6 +206,7 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
 
           ab->buffer_size = sample_count * bpdt;
 
+#if 0
           //if (i == 0)
             printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [Interval %d - %d / (%d * %d)] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
                  agg_offset, id->idx_d->color,
@@ -216,7 +217,7 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
                  j,
                  file_status,
                  ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
-
+#endif
 
 #if 0
           if (id->idx->cached_ts == id->idx->current_time_step)
@@ -272,6 +273,7 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
 
           ab->buffer_size = sample_count * bpdt;
 
+#if 0
           if (i == 0)
             printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [Interval %d - %d / (%d * %d)] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
                  agg_offset, id->idx_d->color,
@@ -282,6 +284,7 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
                  j,
                  file_status,
                  ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
+#endif
 
 
 #if 0
@@ -648,13 +651,13 @@ PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int lay
 {
   if (id->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
-    //
+    /*
     if (block_wise_compression(id, ab, lbl) != MPI_SUCCESS)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
-    //
+    */
   }
 
   if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
