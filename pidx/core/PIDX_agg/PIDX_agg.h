@@ -65,6 +65,9 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
 PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int i1, int j1, int file_status);
 
 
+PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status);
+
+
 PIDX_return_code PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
 
 ///

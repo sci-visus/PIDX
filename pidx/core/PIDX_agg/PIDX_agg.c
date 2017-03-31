@@ -308,6 +308,105 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
 
 
 
+
+PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
+{
+  PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
+  int i = 0, j = 0, k = 0;
+  for (k = 0; k < lbl->efc; k++)
+  {
+    for (i = id->fi; i <= id->li; i++)
+    {
+      for (j = 0; j < var_grp->variable[i]->vps * ab->agg_f; j++)
+      {
+        unsigned long long file_index = 0;
+
+        int *first;
+        first = malloc(sizeof(*first) * PIDX_MAX_DIMENSIONS);
+        memset(first, 0, sizeof(*first) * PIDX_MAX_DIMENSIONS);
+
+        int file_count = 1;
+
+        int negative_file_index = 0;
+        if (agg_offset == 0 || agg_offset == 1)
+        {
+          file_count = 1;
+          file_index = 0 * ab->agg_f + j;
+        }
+        else
+        {
+          file_count = (int)pow(2, agg_offset - 1);
+          negative_file_index = (int)pow(2, agg_offset - 1);
+          file_index = (lbl->existing_file_index[k] - negative_file_index) * ab->agg_f + j;
+        }
+
+        int bits = (id->idx_d->maxh - 1 - (int)log2(file_count * ab->agg_f));
+        file_index = file_index << bits;
+
+        Deinterleave(id->idx->bitPattern, (id->idx_d->maxh - 1), file_index, first);
+
+        int calculated_rank = 0;
+        int rank_x = first[0] / (id->idx->reg_patch_size[0] / id->idx->chunk_size[0]);
+        int rank_y = first[1] / (id->idx->reg_patch_size[1] / id->idx->chunk_size[1]);
+        int rank_z = first[2] / (id->idx->reg_patch_size[2] / id->idx->chunk_size[2]);
+        int nrank_x = ((id->idx_d->partition_size[0] * id->idx_d->partition_count[0]) / id->idx->reg_patch_size[0]);
+        int nrank_y = ((id->idx_d->partition_size[1] * id->idx_d->partition_count[1]) / id->idx->reg_patch_size[1]);
+
+        calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
+
+        //var_offset = 0;
+        int trank = 0;
+        int interval = (id->idx_c->lnprocs/ (lbl->efc * ab->agg_f * id->idx->variable_count));
+
+        if (file_status == 1)
+          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
+        else if (file_status == 0)
+          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval];
+        else if (file_status == 2)
+          trank = id->idx_c->gnprocs - 1;
+
+        //if (id->idx_c->grank == 0)
+        //  printf("%d FC %d Bits %d FI %d :: %d %d [%d(%d) %d %d] CR %d [%d %d %d : %d %d %d : %d %d] AI %d trank %d\n", interval, file_count, bits, file_index, file_status, interval, k, lbl->efc, i, j, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, nrank_x, nrank_y, calculated_rank + var_offset * interval + (interval/2), trank);
+
+        id->agg_r[k][i - id->fi][j] = trank;
+
+        if(id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
+        {
+          ab->file_number = lbl->existing_file_index[k];
+          ab->var_number = i;
+          ab->sample_number = j;
+
+          unsigned long long sample_count = lbl->bcpf[ab->file_number] * id->idx_d->samples_per_block / ab->agg_f;
+
+          int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
+
+          int bpdt = 0;
+          bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
+
+          ab->buffer_size = sample_count * bpdt;
+
+          //if (i == 0)// || i == id->idx->variable_count - 1)
+          printf("[G %d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx_c->lrank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+
+          ab->buffer = malloc(ab->buffer_size);
+          memset(ab->buffer, 0, ab->buffer_size);
+          if (ab->buffer == NULL)
+          {
+            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) ab->buffer_size, __LINE__, __FILE__);
+            return PIDX_err_agg;
+          }
+        }
+        free(first);
+      }
+    }
+  }
+
+  return PIDX_success;
+}
+
+
+
+
 PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
 {
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];

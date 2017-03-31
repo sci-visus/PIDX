@@ -367,6 +367,9 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
     return PIDX_err_file;
   }
 
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  free(var_grp->rank_buffer);
+
   return PIDX_success;
 }
 

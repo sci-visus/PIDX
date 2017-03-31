@@ -147,6 +147,10 @@ PIDX_return_code create_local_comm(PIDX_io file)
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
 
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+  memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
+  MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
+
   return PIDX_success;
 }
 

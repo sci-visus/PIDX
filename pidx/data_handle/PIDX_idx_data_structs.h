@@ -160,6 +160,8 @@ struct PIDX_variable_group_struct
   int nshared_end_layout_index;
   int nshared_layout_count;
 
+  int *rank_buffer;
+
   // Block level layout
   PIDX_block_layout f0_block_layout;
   PIDX_block_layout* f0_block_layout_by_level;
