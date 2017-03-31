@@ -374,7 +374,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   };
 #if 1
   int lvi = start_var_index;//file->local_variable_index;
-  if (file->idx_d->parallel_mode == 1 && file->idx->compression_type == PIDX_NO_COMPRESSION)
+  if (file->idx_d->parallel_mode == 1 /*&& file->idx->compression_type == PIDX_NO_COMPRESSION*/)
   {
     PIDX_block_layout all_patch_local_block_layout = malloc(sizeof (*all_patch_local_block_layout));
     memset(all_patch_local_block_layout, 0, sizeof (*all_patch_local_block_layout));
@@ -642,6 +642,8 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       bounding_box[0][i] = 0;
       bounding_box[1][i] = cb[i];
     }
+
+    printf("BB %d %d %d\n", cb[0], cb[1], cb[2]);
 
     ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
     if (ret_code != PIDX_success)

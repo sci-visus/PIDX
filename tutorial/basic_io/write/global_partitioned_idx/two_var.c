@@ -123,7 +123,9 @@ int main(int argc, char **argv)
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
     PIDX_close(file);
-    MPI_Barrier(MPI_COMM_WORLD);
+
+    //MPI_Barrier(MPI_COMM_WORLD);
+
     set_pidx_file2(ts);
     for (var = 0; var < variable_count; var++)
       set_pidx_variable2(var);
