@@ -750,13 +750,13 @@ PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int lay
 {
   if (id->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
-    /*
+    //
     if (block_wise_compression(id, ab, lbl) != MPI_SUCCESS)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
-    */
+    //
   }
 
   if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
@@ -1035,6 +1035,8 @@ static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab
 
 static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)
 {
+  double init1 = MPI_Wtime();
+
   int hz_level;
   if (ab->file_number == 0)
     hz_level = id->idx->bits_per_block;
@@ -1059,18 +1061,21 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
 
     size_t original_bytes = id->idx_d->samples_per_block * dtype_bytes;
     unsigned char* temp = (unsigned char*)malloc(original_bytes);
+    double sum = 0;
     for (; i < lbl->bcpf[ab->file_number]; i++)
     {
+      double a1 = MPI_Wtime();
       if (ab->file_number == 0)
         if ((i & (i-1)) == 0)
           hz_level++;
 
       Point3D block_nsamples = get_num_samples_per_block(bit_string, bs_len, hz_level, bits_per_block);
-      //printf("[%d %d %d] [%d] %s, %d, %d, %d\n", block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block);
+
       assert(block_nsamples.x * block_nsamples.y * block_nsamples.z == id->idx_d->samples_per_block);
       if (block_nsamples.x * block_nsamples.y * block_nsamples.z != id->idx_d->samples_per_block)
         puts("ERROR: Wrong number of samples per block\n");
 
+      double a2 = MPI_Wtime();
       void* buf = ab->buffer + i * dtype_bytes * id->idx_d->samples_per_block;
       zfp_type type = (dtype_bytes == 4) ? zfp_type_float : zfp_type_double;
       zfp_field* field = zfp_field_3d(buf, type, block_nsamples.x, block_nsamples.y, block_nsamples.z);
@@ -1083,6 +1088,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       bitstream* stream = stream_open(temp, original_bytes);
       zfp_stream_set_bit_stream(zfp, stream);
       size_t compressed_bytes = zfp_compress(zfp, field);
+      double a3 = MPI_Wtime();
       if (compressed_bytes == 0)
         puts("ERROR: Something wrong happened during compression\n");
       if (compressed_bytes > original_bytes)
@@ -1092,13 +1098,26 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       zfp_field_free(field);
       zfp_stream_close(zfp);
       stream_close(stream);
+      double a4 = MPI_Wtime();
+      sum = sum + ((a2 - a1) + (a3 - a2) + (a4 - a3));
+
+      printf("[%d] [%d %d %d] [%d] %s, %d, %d, %d HZ : CMP : MC %f %f %f = %f [%f]\n", i, block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block, (a2 - a1), (a3 - a2), (a4 - a3), ((a2 - a1) + (a3 - a2) + (a4 - a3)), sum);
+
     }
+
     free(temp);
     if (offset > ab->buffer_size)
         puts("WARNING: compressed buffer size > original buffer size\n");
     ab->buffer_size = ab->compressed_buffer_size = offset;
     //printf("[%d %d] Compressed buffer %d\n", ab->file_number, ab->var_number, offset);
   }
+
+  double init2 = MPI_Wtime();
+
+
+  if (id->idx_c->grank == 0)
+    printf("Total time = %f\n", init2 - init1);
+
   return PIDX_success;
 }
 
