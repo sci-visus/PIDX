@@ -126,7 +126,7 @@ int main(int argc, char **argv)
       set_pidx_variable(var);
     PIDX_close(file);
 
-    //MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
 
     set_pidx_file2(ts);
     for (var = 0; var < variable_count; var++)
@@ -590,7 +590,7 @@ static void set_pidx_file2(int ts)
   //printf("XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
   PIDX_set_partition_size(file2, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
-  PIDX_set_block_count(file2, 16);
+  PIDX_set_block_count(file2, blocks_per_file);
   PIDX_set_block_size(file2, 15);
   PIDX_set_bit_string_type(file2, bit_string_type);
 
