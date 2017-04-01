@@ -361,7 +361,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         if (file_status == 1)
           trank = var_grp->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
         else if (file_status == 0)
-          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval];
+          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval] + agg_offset;
         else if (file_status == 2)
           trank = id->idx_c->gnprocs - 1;
 
@@ -751,13 +751,11 @@ PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int lay
 {
   if (id->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
-    /*
     if (block_wise_compression(id, ab, lbl) != MPI_SUCCESS)
     {
       fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
-    */
   }
 
   if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
@@ -1102,7 +1100,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
       double a4 = MPI_Wtime();
       sum = sum + ((a2 - a1) + (a3 - a2) + (a4 - a3));
 
-      printf("[%d] [%d %d %d] [%d] %s, %d, %d, %d HZ : CMP : MC %f %f %f = %f [%f]\n", i, block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block, (a2 - a1), (a3 - a2), (a4 - a3), ((a2 - a1) + (a3 - a2) + (a4 - a3)), sum);
+      //printf("[%d] [%d %d %d] [%d] %s, %d, %d, %d HZ : CMP : MC %f %f %f = %f [%f]\n", i, block_nsamples.x, block_nsamples.y, block_nsamples.z, id->idx_d->samples_per_block, bit_string, bs_len, hz_level, bits_per_block, (a2 - a1), (a3 - a2), (a4 - a3), ((a2 - a1) + (a3 - a2) + (a4 - a3)), sum);
 
     }
 
@@ -1116,8 +1114,8 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
   double init2 = MPI_Wtime();
 
 
-  if (id->idx_c->grank == 0)
-    printf("Total time = %f\n", init2 - init1);
+  //if (id->idx_c->grank == 0)
+  //  printf("Total time = %f\n", init2 - init1);
 
   return PIDX_success;
 }

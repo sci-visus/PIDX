@@ -51,6 +51,7 @@ static int variable_count = 1;
 static int bit_string_type = 0;
 static int blocks_per_file = 256;
 static char output_file_template[512];
+static char raw_file_name[512];
 static char var_list[512];
 static unsigned char **data;
 static char output_file_name[512];
@@ -60,7 +61,8 @@ static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
-static float bit_rate = 0;
+static float bit_rate1 = 0;
+static float bit_rate2 = 0;
 static int wavelet_type = 0;
 static int wavelet_level = WAVELET_STENCIL;
 
@@ -156,7 +158,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:c:f:t:v:b:a:w:x:p:";
+  char flags[] = "g:l:c:f:t:v:b:a:w:x:p:q:r:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -218,8 +220,18 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('p'): // zfp bit rate
-      if (sscanf(optarg, "%f", &bit_rate) < 0)
+      if (sscanf(optarg, "%f", &bit_rate1) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('q'): // zfp bit rate
+      if (sscanf(optarg, "%f", &bit_rate2) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('r'): // output file name
+      if (sprintf(raw_file_name, "%s", optarg) < 0)
+        terminate_with_error_msg("Invalid output file name template\n%s", usage);
       break;
 
     default:
@@ -398,65 +410,58 @@ static void create_synthetic_simulation_data()
 
     //
     //int fp = open("magnetic-512-volume.raw", O_RDONLY);
-    int fp = open("miranda.raw", O_RDONLY);
-    int send_o = 0;
-    int send_c = 0;
-    int recv_o = 0;
-    int it = 0;
-
-    for (k1 = local_box_offset[Z]; k1 < local_box_offset[Z] + local_box_size[Z]; k1++)
+    if (strcmp(raw_file_name, "sine") == 0)
     {
-      for (j1 = local_box_offset[Y]; j1 < local_box_offset[Y] + local_box_size[Y]; j1++)
+      for (k1 = 0; k1 < local_box_size[Z]; k1++)
       {
-        for (i1 = local_box_offset[X]; i1 < local_box_offset[X] + local_box_size[X]; i1 = i1 + local_box_size[X])
+        for (j1 = 0; j1 < local_box_size[Y]; j1++)
         {
-          index = (local_box_size[0]* local_box_size[1] * (k1 - local_box_offset[2])) +
-                  (local_box_size[0] * (j1 - local_box_offset[1])) +
-                  (i1 - local_box_offset[0]);
-          send_o = index;
-          send_c = local_box_size[0];
-          recv_o = (global_box_size[X] * global_box_size[Y] * k1) + (global_box_size[X] * j1) + i1;
-#if 0
-          pread(fp, temp_buffer, send_c * sizeof(float), recv_o * sizeof(float));
-          for (it = 0; it < local_box_size[0]; it++)
+          for (i1 = 0; i1 < local_box_size[X]; i1 ++)
           {
-            double x =  (double)temp_buffer[it];
-            ((double*)data[0])[send_o + it] = (double)rank;//x;
+            index = (local_box_size[0]* local_box_size[1] * k1) +
+                    (local_box_size[0] * j1) +
+                     i1;
+            float i = (float) i1;
+            float j = (float) j1;
+            float k = (float) k1;
+            const float PI = 3.1415926535897932384;
+            float PI_2 = 2 * PI;
+            float xx = i == -1 ? 1 : sin(PI_2 * i / 256);
+            float yy = j == -1 ? 1 : sin(PI_2 * j / 256);
+            float zz = k == -1 ? 1 : sin(PI_2 * k / 256);
+            //return xx * yy * zz;
 
-            memcpy(data[0] + send_o * sizeof(double) + it * sizeof(double), &x, sizeof(double));
+            float x = xx * yy * zz;
+            memcpy(data[0] + index * sizeof(float), &x, sizeof (float));
           }
-#endif
-          pread(fp, data[0] + send_o * sizeof(float), send_c * sizeof(float), recv_o * sizeof(float));
         }
       }
     }
-    close(fp);
-    //free(temp_buffer);
-#endif
-#if 0
-    for (k1 = 0; k1 < local_box_size[Z]; k1++)
+    else
     {
-      for (j1 = 0; j1 < local_box_size[Y]; j1++)
-      {
-        for (i1 = 0; i1 < local_box_size[X]; i1 ++)
-        {
-          index = (local_box_size[0]* local_box_size[1] * k1) +
-                  (local_box_size[0] * j1) +
-                   i1;
-          float i = (float) i1;
-          float j = (float) j1;
-          float k = (float) k1;
-          const float PI = 3.1415926535897932384;
-          float PI_2 = 2 * PI;
-          float xx = i == -1 ? 1 : sin(PI_2 * i / 256);
-          float yy = j == -1 ? 1 : sin(PI_2 * j / 256);
-          float zz = k == -1 ? 1 : sin(PI_2 * k / 256);
-          //return xx * yy * zz;
+      int fp = open(raw_file_name, O_RDONLY);
+      int send_o = 0;
+      int send_c = 0;
+      int recv_o = 0;
 
-          float x = xx * yy * zz;
-          memcpy(data[0] + index * sizeof(float), &x, sizeof (float));
+      for (k1 = local_box_offset[Z]; k1 < local_box_offset[Z] + local_box_size[Z]; k1++)
+      {
+        for (j1 = local_box_offset[Y]; j1 < local_box_offset[Y] + local_box_size[Y]; j1++)
+        {
+          for (i1 = local_box_offset[X]; i1 < local_box_offset[X] + local_box_size[X]; i1 = i1 + local_box_size[X])
+          {
+            index = (local_box_size[0]* local_box_size[1] * (k1 - local_box_offset[2])) +
+                    (local_box_size[0] * (j1 - local_box_offset[1])) +
+                    (i1 - local_box_offset[0]);
+            send_o = index;
+            send_c = local_box_size[0];
+            recv_o = (global_box_size[X] * global_box_size[Y] * k1) + (global_box_size[X] * j1) + i1;
+
+            pread(fp, data[0] + send_o * sizeof(float), send_c * sizeof(float), recv_o * sizeof(float));
+          }
         }
       }
+      close(fp);
     }
 #endif
 #endif
@@ -558,7 +563,7 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_level(file, wavelet_level);
 
   PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_63_COEFFICIENT);
-  PIDX_set_lossy_compression_bit_rate(file, bit_rate);
+  PIDX_set_lossy_compression_bit_rate(file, bit_rate1);
   //PIDX_set_zfp_precisison(file, precisison);
 
 
@@ -585,7 +590,7 @@ static void set_pidx_file2(int ts)
   //printf("XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
   PIDX_set_partition_size(file2, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
-  PIDX_set_block_count(file2, blocks_per_file);
+  PIDX_set_block_count(file2, 16);
   PIDX_set_block_size(file2, 15);
   PIDX_set_bit_string_type(file2, bit_string_type);
 
@@ -596,7 +601,7 @@ static void set_pidx_file2(int ts)
   PIDX_set_wavelet_level(file2, wavelet_level);
 
   PIDX_set_compression_type(file2, PIDX_CHUNKING_AVERAGE);
-  PIDX_set_average_compression_factor(file2, 64, bit_rate);
+  PIDX_set_average_compression_factor(file2, 64, bit_rate2);
   //PIDX_set_zfp_precisison(file, precisison);
 
   return;
