@@ -361,7 +361,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         if (file_status == 1)
           trank = var_grp->rank_buffer[calculated_rank + var_offset * interval + (interval/2)];
         else if (file_status == 0)
-          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval] + agg_offset;
+          trank = var_grp->rank_buffer[calculated_rank + var_offset * interval];
         else if (file_status == 2)
           trank = id->idx_c->gnprocs - 1;
 
