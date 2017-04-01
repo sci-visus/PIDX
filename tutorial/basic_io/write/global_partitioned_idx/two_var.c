@@ -118,7 +118,7 @@ int main(int argc, char **argv)
   MPI_Barrier(MPI_COMM_WORLD);
 
   create_pidx_var_point_and_access();
-  create_pidx_var_point_and_access2();
+  //create_pidx_var_point_and_access2();
   for (ts = 0; ts < time_step_count; ts++)
   {
     set_pidx_file(ts);
@@ -126,15 +126,15 @@ int main(int argc, char **argv)
       set_pidx_variable(var);
     PIDX_close(file);
 
-    MPI_Barrier(MPI_COMM_WORLD);
+    //MPI_Barrier(MPI_COMM_WORLD);
 
-    set_pidx_file2(ts);
-    for (var = 0; var < variable_count; var++)
-      set_pidx_variable2(var);
-    PIDX_close(file2);
+    //set_pidx_file2(ts);
+    //for (var = 0; var < variable_count; var++)
+    //  set_pidx_variable2(var);
+    //PIDX_close(file2);
   }
   destroy_pidx_var_point_and_access();
-  destroy_pidx_var_point_and_access2();
+  //destroy_pidx_var_point_and_access2();
 #endif
   destroy_synthetic_simulation_data();
   shutdown_mpi();
@@ -562,8 +562,8 @@ static void set_pidx_file(int ts)
   PIDX_set_wavelet_implementation_type(file, wavelet_type);
   PIDX_set_wavelet_level(file, wavelet_level);
 
-  PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_63_COEFFICIENT);
-  PIDX_set_lossy_compression_bit_rate(file, bit_rate1);
+  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_63_COEFFICIENT);
+  //PIDX_set_lossy_compression_bit_rate(file, bit_rate1);
   //PIDX_set_zfp_precisison(file, precisison);
 
 
