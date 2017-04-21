@@ -116,6 +116,7 @@ int main(int argc, char **argv)
   create_synthetic_simulation_data();
   double s_time = 0, e_time = 0;
 
+  MPI_Barrier(MPI_COMM_WORLD);
 
 #if 1
   double sampling_start = MPI_Wtime();
@@ -212,6 +213,21 @@ int main(int argc, char **argv)
     local_box_size[1] = nsamples_per_level[level][1];
     local_box_size[2] = nsamples_per_level[level][2];
   }
+
+  free(tpatch[0]);
+  free(tpatch[1]);
+  free(tpatch);
+
+  for (j = 0; j < maxh; j++)
+  {
+    free(allign_offset[j]);
+    free(allign_count[j]);
+    free(nsamples_per_level[j]);
+  }
+  free(allign_offset);
+  free(allign_count);
+  free(nsamples_per_level);
+
   double sampling_end = MPI_Wtime();
 
 #endif
@@ -248,7 +264,7 @@ int main(int argc, char **argv)
   destroy_pidx_var_point_and_access();
   //destroy_pidx_var_point_and_access2();
 
-
+  free(sub_sampled_buffer);
 #endif
   destroy_synthetic_simulation_data();
   shutdown_mpi();
