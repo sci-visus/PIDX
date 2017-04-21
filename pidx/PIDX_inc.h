@@ -70,7 +70,6 @@ extern "C" {
 #include "./io/PIDX_io.h"
 #include "./io/idx_insitu.h"
 #include "./io/wavelet_io.h"
-#include "./io/wavelet_zfp_io.h"
 #include "./io/idx_io.h"
 #include "./io/local_partition_idx_io.h"
 #include "./io/global_partition_idx_io.h"

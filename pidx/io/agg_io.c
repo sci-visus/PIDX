@@ -177,9 +177,7 @@ static PIDX_return_code PIDX_shared_block_aggregate(PIDX_io file, PIDX_shared_bl
 
   agg_id[svi] = PIDX_shared_block_agg_init(file->idx, file->idx_d, file->idx_c, svi, svi);
   PIDX_shared_block_agg_buf_create(agg_id[svi], agg_buffer[svi][0]);
-
   PIDX_shared_block_agg_global_and_local(agg_id[svi], agg_buffer[svi][0], block_layout_by_level[0],  mode);
-
   PIDX_shared_block_agg_buf_destroy(agg_id[svi], agg_buffer[svi][0]);
   PIDX_shared_block_agg_finalize(agg_id[svi]);
 

@@ -78,7 +78,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       memset(hz_buf->compressed_buffer_size, 0, sizeof (unsigned long long) * maxH);
 
       hz_buf->nsamples_per_level = malloc(sizeof (int*) * maxH);
-      if (hz_buf->nsamples_per_level == NULL)
       memset(hz_buf->nsamples_per_level, 0, sizeof (int*) * maxH);
 
       allign_offset = malloc(sizeof (int*) * maxH);

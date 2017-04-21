@@ -100,6 +100,8 @@ int main(int argc, char **argv)
   check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
+
+
 #if 1
   //rank_0_print("Simulation Data Created\n");
 
@@ -338,7 +340,7 @@ static void create_synthetic_simulation_data()
 
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
 
-#if 0
+#if 1
     float fvalue = 0;
     double dvalue = 0;
     for (k = 0; k < local_box_size[Z]; k++)
@@ -503,7 +505,8 @@ static void set_pidx_file(int ts)
   //PIDX_debug_disable_agg(file);
 
   PIDX_point reg_size;
-  PIDX_set_point(reg_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
+  PIDX_set_point(reg_size, /*local_box_size[X], local_box_size[Y], local_box_size[Z]*/64, 64, 64);
+  //PIDX_set_point(reg_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
   PIDX_set_restructuring_box(file, reg_size);
 
   PIDX_set_process_decomposition(file, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
@@ -515,10 +518,11 @@ static void set_pidx_file(int ts)
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
-  PIDX_set_io_mode(file, PIDX_WAVELET_ZFP_IO);
+  PIDX_set_io_mode(file, PIDX_IDX_IO);
+  //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
   //PIDX_set_io_mode(file, PIDX_WAVELET_IO);
-  PIDX_set_wavelet_implementation_type(file, wavelet_type);
-  PIDX_set_wavelet_level(file, wavelet_level);
+  //PIDX_set_wavelet_implementation_type(file, wavelet_type);
+  //PIDX_set_wavelet_level(file, wavelet_level);
 
   //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_WAVELET);
   //PIDX_set_lossy_compression_bit_rate(file, bit_rate);

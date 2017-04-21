@@ -10,7 +10,7 @@ extern "C" {
 
 #define PIDX_HAVE_MPI 1
 #define PIDX_HAVE_ZFP 0
-#define PIDX_HAVE_PMT 0
+#define PIDX_HAVE_PMT 1
 #define PIDX_HAVE_VTK 0
 #define PIDX_HAVE_PNETCDF 0
 #define PIDX_HAVE_NETCDF 0
@@ -101,7 +101,6 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 // Calls wavelet computation code
 #define PIDX_WAVELET_IO                               6
 
-#define PIDX_WAVELET_ZFP_IO                           7
 
 
 #define PIDX_default_bits_per_block              15
@@ -123,6 +122,7 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 #define PIDX_MODE_APPEND            128  /* ADIO_APPEND */
 #define PIDX_MODE_SEQUENTIAL        256  /* ADIO_SEQUENTIAL */
 
+double pa1, pa2, pa3, pa4, pa5, pa6;
 
 /// IDX specifies generic types using simple strings consisting of an unambiguous data type and
 /// C array syntax, e.g. "float32[3]".  In the PIDX library, we declare types using strings so

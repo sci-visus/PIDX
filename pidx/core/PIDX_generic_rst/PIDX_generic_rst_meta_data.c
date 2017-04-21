@@ -91,9 +91,9 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
       reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0];// i;
       reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1];// j;
       reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2];// k;
-      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0]; //rst_id->reg_patch_size[0];
-      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1]; //rst_id->reg_patch_size[1];
-      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2]; //rst_id->reg_patch_size[2];
+      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0];// + rst_id->idx->shared_face; //rst_id->reg_patch_size[0];
+      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1];// + rst_id->idx->shared_face; //rst_id->reg_patch_size[1];
+      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2];// + rst_id->idx->shared_face; //rst_id->reg_patch_size[2];
 
       if (intersectNDChunk(reg_patch, local_proc_patch))
       {
@@ -135,9 +135,9 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
       reg_patch->offset[0] = rst_id->idx->new_box_set[i]->offset[0];// i;
       reg_patch->offset[1] = rst_id->idx->new_box_set[i]->offset[1];// j;
       reg_patch->offset[2] = rst_id->idx->new_box_set[i]->offset[2];// k;
-      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0]; //rst_id->reg_patch_size[0];
-      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1]; //rst_id->reg_patch_size[1];
-      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2]; //rst_id->reg_patch_size[2];
+      reg_patch->size[0] = rst_id->idx->new_box_set[i]->size[0];// + rst_id->idx->shared_face; //rst_id->reg_patch_size[0];
+      reg_patch->size[1] = rst_id->idx->new_box_set[i]->size[1];// + rst_id->idx->shared_face; //rst_id->reg_patch_size[1];
+      reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2];// + rst_id->idx->shared_face; //rst_id->reg_patch_size[2];
 
       //if (rst_id->idx_c->grank == 8)
       //  printf("OS: %d %d %d - %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2]);

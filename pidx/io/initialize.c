@@ -95,26 +95,26 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
           file->idx->new_box_set[index]->offset[1] = j;
           file->idx->new_box_set[index]->offset[2] = k;
 
-          file->idx->new_box_set[index]->size[0] = file->idx->reg_patch_size[0];
-          file->idx->new_box_set[index]->size[1] = file->idx->reg_patch_size[1];
-          file->idx->new_box_set[index]->size[2] = file->idx->reg_patch_size[2];
+          file->idx->new_box_set[index]->size[0] = file->idx->reg_patch_size[0] + file->idx->shared_face;
+          file->idx->new_box_set[index]->size[1] = file->idx->reg_patch_size[1] + file->idx->shared_face;
+          file->idx->new_box_set[index]->size[2] = file->idx->reg_patch_size[2] + file->idx->shared_face;
 
           file->idx->new_box_set[index]->edge = 1;
 
           //Edge regular patches
-          if ((i + file->idx->reg_patch_size[0] /*+ 1*/) > file->idx->box_bounds[0])
+          if ((i + file->idx->reg_patch_size[0] + 1) > file->idx->box_bounds[0])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[0] = file->idx->box_bounds[0] - i;
           }
 
-          if ((j + file->idx->reg_patch_size[1] /*+ 1*/) > file->idx->box_bounds[1])
+          if ((j + file->idx->reg_patch_size[1] + 1) > file->idx->box_bounds[1])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[1] = file->idx->box_bounds[1] - j;
           }
 
-          if ((k + file->idx->reg_patch_size[2] /*+ 1*/) > file->idx->box_bounds[2])
+          if ((k + file->idx->reg_patch_size[2] + 1) > file->idx->box_bounds[2])
           {
             file->idx->new_box_set[index]->edge = 2;
             file->idx->new_box_set[index]->size[2] = file->idx->box_bounds[2] - k;
@@ -130,6 +130,9 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
     if (file->idx_c->gnproc_x != -1 && file->idx_c->gnproc_y != -1 && file->idx_c->gnproc_z != -1)
     {
+      //if (file->idx_c->grank == 0)
+      //  printf("interval %d %d %d nproc %d %d %d\n", int_x, int_y, int_z, file->idx_c->gnproc_x, file->idx_c->gnproc_y, file->idx_c->gnproc_z);
+
       for (nz = 0; nz < file->idx_c->gnproc_z; nz = nz + int_z)
         for (ny = 0; ny < file->idx_c->gnproc_y; ny = ny + int_y)
           for (nx = 0; nx < file->idx_c->gnproc_x; nx = nx + int_x)
@@ -138,11 +141,13 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
             //file->idx->new_box_set[index]->rank = (nz * file->idx->number_processes[0] * file->idx->number_processes[1]) + (ny * file->idx->number_processes[0]) + nx;
             file->idx->new_box_set[index]->rank = (nz * file->idx_c->gnproc_x * file->idx_c->gnproc_y) + (ny * file->idx_c->gnproc_x) + nx;
+
             if (file->idx_c->grank == file->idx->new_box_set[index]->rank)
             {
               file->idx_c->grank_x = nx;
               file->idx_c->grank_y = ny;
               file->idx_c->grank_z = nz;
+              //printf("file->idx->new_box_set[index]->rank %d [%d %d %d]\n", file->idx->new_box_set[index]->rank, nx, ny, nz);
             }
           }
     }

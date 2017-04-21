@@ -489,7 +489,10 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
   //  file->idx->reg_box_set = PIDX_CLOSEST_POWER_TWO;
 
   if (file->idx->io_type == PIDX_MERGE_TREE_ANALYSIS)
+  {
     file->idx->shared_face = 1;
+    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
+  }
 
   return PIDX_success;
 }

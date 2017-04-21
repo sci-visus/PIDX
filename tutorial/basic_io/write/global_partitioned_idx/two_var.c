@@ -54,6 +54,7 @@ static char output_file_template[512];
 static char raw_file_name[512];
 static char var_list[512];
 static unsigned char **data;
+static unsigned char* sub_sampled_buffer;
 static char output_file_name[512];
 static char output_file_name2[512];
 static char var_name[MAX_VAR_COUNT][512];
@@ -61,6 +62,7 @@ static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
+static int sf = 1;
 static float bit_rate1 = 0;
 static float bit_rate2 = 0;
 static int wavelet_type = 0;
@@ -112,15 +114,118 @@ int main(int argc, char **argv)
   check_args();
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
+  double s_time = 0, e_time = 0;
+
+
+#if 1
+  double sampling_start = MPI_Wtime();
+  int **tpatch;
+  int **allign_offset;
+  int **allign_count;
+  int **nsamples_per_level;
+  tpatch = (int**) malloc(2 * sizeof (int*));
+  memset(tpatch, 0, 2 * sizeof (int*));
+  tpatch[0] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
+  tpatch[1] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
+  memset(tpatch[0], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
+  memset(tpatch[1], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
+
+  int maxh = 28;
+  allign_offset = malloc(sizeof (int*) * maxh);
+  allign_count = malloc(sizeof (int*) * maxh);
+  memset(allign_offset, 0, sizeof (int*) * maxh);
+  memset(allign_count, 0, sizeof (int*) * maxh);
+
+  nsamples_per_level = malloc(sizeof (int*) * maxh);
+  memset(nsamples_per_level, 0, sizeof (int*) * maxh);
+
+  int j = 0, p = 0;
+  for (j = 0; j < maxh; j++)
+  {
+    allign_offset[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
+    memset(allign_offset[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
+
+    allign_count[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
+    memset(allign_count[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
+
+    nsamples_per_level[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
+    memset(nsamples_per_level[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
+  }
+
+  tpatch[0][0] = local_box_offset[0];
+  tpatch[0][1] = local_box_offset[1];
+  tpatch[0][2] = local_box_offset[2];
+
+  tpatch[1][0] = local_box_offset[0] + local_box_size[0] - 1;
+  tpatch[1][1] = local_box_offset[1] + local_box_size[1] - 1;
+  tpatch[1][2] = local_box_offset[2] + local_box_size[2] - 1;
+
+  int i1 = 0, j1 = 0, k1 = 0;
+  int count = 0;
+
+  if (sf == 1)
+  {
+    sub_sampled_buffer = malloc(sizeof(float) * local_box_size[X] * local_box_size[Y] * local_box_size[Z]);
+    memcpy(sub_sampled_buffer, data[0], sizeof(float) * local_box_size[X] * local_box_size[Y] * local_box_size[Z]);
+  }
+  else
+  {
+    char bitSequence[512] = "V221100210210210210210210210";
+    char bitPattern[512];
+    int level = maxh - (int)log2(sf) * 3;
+    int i = 0;
+
+    for (i = 0; i <= maxh; i++)
+      bitPattern[i] = RegExBitmaskBit(bitSequence, i);
+    Align((maxh - 1), level, bitPattern, tpatch, allign_offset, allign_count, nsamples_per_level);
+    //if (rank == 0)
+    //  printf("[%s %d] [%d %d %d] XXXXX %d %d %d\n", bitSequence, maxh, allign_offset[level][0], allign_offset[level][1], allign_offset[level][2], nsamples_per_level[level][0], nsamples_per_level[level][1], nsamples_per_level[level][2]);
+
+    sub_sampled_buffer = malloc(sizeof(float) * nsamples_per_level[level][0] * nsamples_per_level[level][1] * nsamples_per_level[level][2]);
+    for (k1 = allign_offset[level][2] - local_box_offset[2]; k1 < local_box_size[2]; k1 = k1 + sf)
+    {
+      for (j1 = allign_offset[level][1] -  local_box_offset[1]; j1 < local_box_size[1]; j1 = j1 + sf)
+      {
+        for (i1 = allign_offset[level][0] - local_box_offset[0]; i1 < local_box_size[0]; i1 = i1 + sf)
+        {
+          // (r_p->size[0] * r_p->size[1] * k1) + (r_p->size[0] * j1) + i1
+          ((float*)sub_sampled_buffer)[count] = ((float*)data[0])[(local_box_size[0] * local_box_size[1] * k1) + (local_box_size[0] * j1) + i1];
+          assert (count < nsamples_per_level[level][0] * nsamples_per_level[level][1] * nsamples_per_level[level][2]);
+          count++;
+        }
+      }
+    }
+
+    global_box_size[0] = global_box_size[0] / sf;
+    global_box_size[1] = global_box_size[1] / sf;
+    global_box_size[2] = global_box_size[2] / sf;
+
+    //partition_box_size[0] = global_box_size[0];
+    //partition_box_size[1] = global_box_size[1];
+    //partition_box_size[2] = global_box_size[2];
+
+    local_box_offset[0] = local_box_offset[0] / sf;
+    local_box_offset[1] = local_box_offset[1] / sf;
+    local_box_offset[2] = local_box_offset[2] / sf;
+
+    local_box_size[0] = nsamples_per_level[level][0];
+    local_box_size[1] = nsamples_per_level[level][1];
+    local_box_size[2] = nsamples_per_level[level][2];
+  }
+  double sampling_end = MPI_Wtime();
+
+#endif
+
+
 #if 1
   //rank_0_print("Simulation Data Created\n");
 
-  MPI_Barrier(MPI_COMM_WORLD);
 
   create_pidx_var_point_and_access();
   //create_pidx_var_point_and_access2();
   for (ts = 0; ts < time_step_count; ts++)
   {
+    s_time = MPI_Wtime();
     set_pidx_file(ts);
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
@@ -132,9 +237,18 @@ int main(int argc, char **argv)
     //for (var = 0; var < variable_count; var++)
     //  set_pidx_variable2(var);
     //PIDX_close(file2);
+
+    e_time = MPI_Wtime();
+    double max_time;
+    double t_time = e_time - s_time;
+    MPI_Allreduce(&t_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
+    if (max_time == t_time)
+      printf("[%d] [%d] [%d] [%d %d %d | %d %d %d] SAMPLING %f BOX %f SETUP %f RST %f INSITU %f CLEANUP %f TOTAL TIME %f [%f] = [%f]\n", ts, rank, sf, global_box_size[0], global_box_size[1], global_box_size[2], partition_box_size[0] * local_box_size[0], partition_box_size[1] * local_box_size[1], partition_box_size[2] * local_box_size[2], (sampling_end - sampling_start), (pa2 - pa1), (pa3 - pa2), (pa4 - pa3), (pa5 - pa4), (pa6 - pa5), max_time, ((pa2 - pa1) + (pa3 - pa2) + (pa4 - pa3) + (pa5 - pa4) + (pa6 - pa5)), max_time + (sampling_end - sampling_start));
   }
   destroy_pidx_var_point_and_access();
   //destroy_pidx_var_point_and_access2();
+
+
 #endif
   destroy_synthetic_simulation_data();
   shutdown_mpi();
@@ -158,7 +272,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:c:f:t:v:b:a:w:x:p:q:r:";
+  char flags[] = "g:l:c:f:t:v:b:a:w:x:p:q:r:s:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -231,6 +345,11 @@ static void parse_args(int argc, char **argv)
 
     case('r'): // output file name
       if (sprintf(raw_file_name, "%s", optarg) < 0)
+        terminate_with_error_msg("Invalid output file name template\n%s", usage);
+      break;
+
+    case('s'): // output file name
+      if (sscanf(optarg, "%d", &sf) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
       break;
 
@@ -392,7 +511,7 @@ static void create_synthetic_simulation_data()
 
             else if ((bpv[var]) == 64)
             {
-              dvalue = rank;// 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              dvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
             }
 
@@ -550,17 +669,19 @@ static void set_pidx_file(int ts)
 
   PIDX_set_process_decomposition(file, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
   //printf("XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
-  PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
+  //PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
+  PIDX_set_partition_size(file, global_box_size[0], global_box_size[1], global_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);
   PIDX_set_block_size(file, 15);
   PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
-  //PIDX_set_io_mode(file, PIDX_WAVELET_ZFP_IO);
-  PIDX_set_io_mode(file, PIDX_WAVELET_IO);
-  PIDX_set_wavelet_implementation_type(file, wavelet_type);
-  PIDX_set_wavelet_level(file, wavelet_level);
+  //PIDX_set_io_mode(file, PIDX_WAVELET_IO);
+  PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
+
+  //PIDX_set_wavelet_implementation_type(file, wavelet_type);
+  //PIDX_set_wavelet_level(file, wavelet_level);
 
   //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP_63_COEFFICIENT);
   //PIDX_set_lossy_compression_bit_rate(file, bit_rate1);
@@ -583,7 +704,8 @@ static void set_pidx_file2(int ts)
   //PIDX_debug_disable_agg(file);
 
   PIDX_point reg_size;
-  PIDX_set_point(reg_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
+  //PIDX_set_point(reg_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
+  PIDX_set_point(reg_size, partition_box_size[X] * local_box_size[0], partition_box_size[Y] * local_box_size[1], partition_box_size[Z] * local_box_size[2]);
   PIDX_set_restructuring_box(file2, reg_size);
 
   PIDX_set_process_decomposition(file2, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
@@ -616,7 +738,8 @@ static void set_pidx_variable(int var)
   ret = PIDX_variable_create(var_name[var],  bpv[var], type_name[var], &variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
-  ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+  ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, /*data[var]*/sub_sampled_buffer, PIDX_row_major);
+  //ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_write_data_layout");
 
   ret = PIDX_append_and_write_variable(file, variable[var]);
