@@ -237,7 +237,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
                 high,
                 bound,
                 (uint32_t*) id->idx->number_processes,
-                2, 2.9, "koriginal_16", 2,  insitu_comm);
+                2, 2.9, "FINAL", 2,  insitu_comm);
     //
 
     //
@@ -245,7 +245,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
     //printf("PIDX %d Time %f\n", id->idx_c->grank, e_t - s_t);
     //
 
-    //
+    /*
     int local_bounds[6] = {(int)r_p->offset[0], (int)r_p->offset[0] + (int) r_p->size[0] - 1,
                            (int)r_p->offset[1], (int)r_p->offset[1] + (int) r_p->size[1] - 1,
                            (int)r_p->offset[2], (int)r_p->offset[2] + (int) r_p->size[2] - 1};
@@ -263,7 +263,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
     memset(zbuf, 0, sizeof(*zbuf) * 512 * 512);
 
     volume_render(local_bounds, (char*)r_p->buffer, 512, 512, bound, image, zbuf, rank);
-    //
+    */
   }
 
   MPI_Comm_free(&insitu_comm);
