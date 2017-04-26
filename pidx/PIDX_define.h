@@ -10,7 +10,7 @@ extern "C" {
 
 #define PIDX_HAVE_MPI 1
 #define PIDX_HAVE_ZFP 0
-#define PIDX_HAVE_PMT 1
+#define PIDX_HAVE_PMT 0
 #define PIDX_HAVE_VTK 0
 #define PIDX_HAVE_PNETCDF 0
 #define PIDX_HAVE_NETCDF 0

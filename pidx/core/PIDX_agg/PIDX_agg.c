@@ -1,5 +1,5 @@
 #include "../../PIDX_inc.h"
-#include <zfp.h>
+
 
 #define PIDX_MIN(a,b) (((a)<(b))?(a):(b))
 
@@ -9,11 +9,12 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode);
 static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id);
 static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index, unsigned long long hz_start, unsigned long long hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE);
+
+//static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
+//static PIDX_return_code block_decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
+//static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl);
+//static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
-static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
-static PIDX_return_code block_decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
-static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl);
-static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
 
 struct PIDX_agg_struct
 {
@@ -749,6 +750,7 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
 
 PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl,  int MODE)
 {
+#if 0
   if (id->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
     if (block_wise_compression(id, ab, lbl) != MPI_SUCCESS)
@@ -766,7 +768,7 @@ PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int lay
       return PIDX_err_agg;
     }
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -844,7 +846,7 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
 }
 
 
-
+#if 0
 static PIDX_return_code decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab)
 {
   int start_block_index = pow(2, id->idx->compression_start_level - 1) / id->idx_d->samples_per_block;
@@ -1119,6 +1121,7 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
 
   return PIDX_success;
 }
+#endif
 
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode)
 {

@@ -28,7 +28,7 @@
  */
 
 #include "../../PIDX_inc.h"
-#include <zfp.h>
+
 
 ///Struct for restructuring ID
 struct PIDX_comp_id_struct
@@ -59,6 +59,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
                     int nx, int ny, int nz, int bytes_per_sample, float bit_rate)
 {
   size_t total_bytes = 0;
+#if PIDX_HAVE_ZFP
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
   {
     unsigned long long* chunk_dim = comp_id->idx->chunk_size;
@@ -91,6 +92,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
     stream_close(stream);
     zfp_field_free(field);
   }
+#endif
   return total_bytes;
 }
 

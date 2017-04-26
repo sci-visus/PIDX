@@ -18,11 +18,12 @@
 
 
 #include "../../PIDX_inc.h"
-#include <zfp.h>
+
 
 
 PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
 {
+#if PIDX_HAVE_ZFP
   int block_offset = 0;
   int b = 0, p = 0, c = 0, v = 0, bytes_for_datatype = 0;
   int maxH = id->idx_d->maxh;
@@ -160,13 +161,14 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
     }
   }
 #endif
-
+#endif
   return PIDX_success;
 }
 
 
 PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
 {
+#if PIDX_HAVE_ZFP
   int p = 0, c = 0, v = 0, bytes_for_datatype = 0;
   int maxH = id->idx_d->maxh;
   int samples_per_level = 0;
@@ -230,6 +232,6 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
       }
     }
   }
-
+#endif
   return PIDX_success;
 }

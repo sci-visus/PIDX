@@ -83,8 +83,8 @@ IF (PIDX_BUILD_TUTORIAL)
 #  PIDX_ADD_CEXECUTABLE(multi_buffer_raw_write "basic_io/write/raw/multi_buffer_raw_write.c")
 #  TARGET_LINK_LIBRARIES(multi_buffer_raw_write ${TUTORIAL_LINK_LIBS})
 
-#  PIDX_ADD_CEXECUTABLE(single_buffer_raw_write "basic_io/write/raw/single_buffer_raw_write.c")
-#  TARGET_LINK_LIBRARIES(single_buffer_raw_write ${TUTORIAL_LINK_LIBS})
+  PIDX_ADD_CEXECUTABLE(single_buffer_raw_write "basic_io/write/raw/single_buffer_raw_write.c")
+  TARGET_LINK_LIBRARIES(single_buffer_raw_write ${TUTORIAL_LINK_LIBS})
 
 
 
