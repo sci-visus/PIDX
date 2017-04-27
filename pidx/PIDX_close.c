@@ -483,7 +483,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       }
 
       //grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all;
-      printf("[%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
+      fprintf(stdout, "[%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
              group_total,
              rst_all,
              r1 + r2 + r3,
