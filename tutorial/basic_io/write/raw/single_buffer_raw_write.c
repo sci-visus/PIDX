@@ -125,7 +125,7 @@ int main(int argc, char **argv)
   calculate_per_process_offsets();
   create_synthetic_simulation_data();
 
-  rank_0_print("Simulation Data Created\n");
+  //rank_0_print("Simulation Data Created\n");
 
   create_pidx_var_point_and_access();
   for (ts = 0; ts < time_step_count; ts++)
@@ -274,6 +274,7 @@ static int parse_var_list()
   }
   fclose(fp);
 
+  /*
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank == 0)
@@ -282,6 +283,7 @@ static int parse_var_list()
     for(v = 0; v < variable_count; v++)
       printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
+  */
 
   return PIDX_success;
 }
@@ -429,7 +431,7 @@ static void set_pidx_file(int ts)
   PIDX_set_restructuring_box(file, reg_size);
 
   // Selecting raw I/O mode
-  PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
+  PIDX_set_io_mode(file, PIDX_RAW_IO);
   //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
   PIDX_set_cache_time_step(file, 0);

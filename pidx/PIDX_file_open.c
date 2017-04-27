@@ -102,6 +102,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
+  (*file)->idx_d->wavelet_levels = 0;
+  (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
 
   //initialize logic_to_physic transform to identity
   (*file)->idx->transform[0]  = 1.0;

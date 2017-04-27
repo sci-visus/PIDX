@@ -65,7 +65,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
     int lvi = var_grp->local_variable_index;
     int lvc = var_grp->local_variable_count;
-    //PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
+    PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
   }
   PIDX_delete_timming_buffers1(time, vgc, file->idx->variable_count);
 
@@ -175,7 +175,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 {
   int i = 0;
   pidx_global_variable++;
-  if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+  if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step && io_type != PIDX_RAW_IO)
   {
     if (file->idx->io_type == PIDX_RAW_IO)
       fprintf(stdout, "PIDX_RAW_IO %s\n", file->idx->filename);
@@ -449,12 +449,12 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       double header_io = time->header_io_end - time->header_io_start;
       double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
 
-      printf("[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
+      //printf("[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
       //printf("INIT      :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
-      double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0;
-      double grp_rst_hz_chunk_agg_io = group_total;
+      double rst_init = 0, rst_meta_data_create = 0, rst_meta_data_io = 0, rst_buffer = 0, rst_write_read = 0, rst_buff_agg = 0, rst_buff_agg_free = 0, rst_buff_agg_io = 0, rst_cleanup = 0, rst_total = 0, rst_all = 0, r1 = 0, r2 = 0, r3 = 0;
+      //double grp_rst_hz_chunk_agg_io = group_total;
 
       for (si = svi; si < evi; si++)
       {
@@ -464,21 +464,33 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           rst_meta_data_create = time->rst_meta_data_create_end[gi][si] - time->rst_meta_data_create_start[gi][si];
           rst_meta_data_io = time->rst_meta_data_io_end[gi][si] - time->rst_meta_data_io_start[gi][si];
           rst_buffer = time->rst_buffer_end[gi][si] - time->rst_buffer_start[gi][si];
+          r1 = r1 + rst_init + rst_meta_data_create + rst_meta_data_io + rst_buffer;
+
           rst_write_read = time->rst_write_read_end[gi][si] - time->rst_write_read_start[gi][si];
           rst_buff_agg = time->rst_buff_agg_end[gi][si] - time->rst_buff_agg_start[gi][si];
           rst_buff_agg_free = time->rst_buff_agg_free_end[gi][si] - time->rst_buff_agg_free_start[gi][si];
+          r2 = r2 + rst_write_read + rst_buff_agg + rst_buff_agg_free;
+
           rst_buff_agg_io = time->rst_buff_agg_io_end[gi][si] - time->rst_buff_agg_io_start[gi][si];
           rst_cleanup = time->rst_cleanup_end[gi][si] - time->rst_cleanup_start[gi][si];
+          r3 = r3 + rst_buff_agg_io + rst_cleanup;
+
           rst_total = rst_init + rst_meta_data_create + rst_meta_data_io + rst_buffer + rst_write_read + rst_buff_agg + rst_buff_agg_free + rst_buff_agg_io + rst_cleanup;
           rst_all = rst_all + rst_total;
 
-          printf("RST       :[%d] [%.4f + [MD] %.4f + %.4f + [B] %.4f + [R] %.4f + [MC] %.4f + %.4f + [IO] %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
-
+          //printf("RST       :[%d] [%.4f + [MD] %.4f + %.4f + [B] %.4f + [R] %.4f + [MC] %.4f + %.4f + [IO] %.4f + %.4f] = %.4f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
         }
       }
 
-      grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all;
-      printf("TOT       :[%.4f + %.4f = %.4f] + %.4f [%.4f %.4f] \n\n", group_total, rst_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      //grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all;
+      printf("[%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
+             group_total,
+             rst_all,
+             r1 + r2 + r3,
+             r1, r2, r3,
+             (group_total + rst_all),
+             (time->SX - time->sim_start),
+             (group_total + rst_all) + (time->SX - time->sim_start), max_time);
     }
   }
 }
