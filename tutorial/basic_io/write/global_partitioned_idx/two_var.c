@@ -258,8 +258,8 @@ int main(int argc, char **argv)
     double max_time;
     double t_time = e_time - s_time;
     MPI_Allreduce(&t_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-    if (max_time == t_time)
-      printf("[%d] [%d] [%d] [%d %d %d | %d %d %d] SAMPLING %f BOX %f SETUP %f RST %f INSITU %f CLEANUP %f TOTAL TIME %f [%f] = [%f]\n", ts, rank, sf, global_box_size[0], global_box_size[1], global_box_size[2], partition_box_size[0] * local_box_size[0], partition_box_size[1] * local_box_size[1], partition_box_size[2] * local_box_size[2], (sampling_end - sampling_start), (pa2 - pa1), (pa3 - pa2), (pa4 - pa3), (pa5 - pa4), (pa6 - pa5), max_time, ((pa2 - pa1) + (pa3 - pa2) + (pa4 - pa3) + (pa5 - pa4) + (pa6 - pa5)), max_time + (sampling_end - sampling_start));
+    //if (max_time == t_time)
+    //  printf("[%d] [%d] [%d] [%d %d %d | %d %d %d] SAMPLING %f BOX %f SETUP %f RST %f INSITU %f CLEANUP %f TOTAL TIME %f [%f] = [%f]\n", ts, rank, sf, global_box_size[0], global_box_size[1], global_box_size[2], partition_box_size[0] * local_box_size[0], partition_box_size[1] * local_box_size[1], partition_box_size[2] * local_box_size[2], (sampling_end - sampling_start), (pa2 - pa1), (pa3 - pa2), (pa4 - pa3), (pa5 - pa4), (pa6 - pa5), max_time, ((pa2 - pa1) + (pa3 - pa2) + (pa4 - pa3) + (pa5 - pa4) + (pa6 - pa5)), max_time + (sampling_end - sampling_start));
   }
   destroy_pidx_var_point_and_access();
   //destroy_pidx_var_point_and_access2();

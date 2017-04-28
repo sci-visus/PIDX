@@ -122,7 +122,7 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 #define PIDX_MODE_APPEND            128  /* ADIO_APPEND */
 #define PIDX_MODE_SEQUENTIAL        256  /* ADIO_SEQUENTIAL */
 
-double pa1, pa2, pa3, pa4, pa5, pa6;
+//double pa1, pa2, pa3, pa4, pa5, pa6;
 
 /// IDX specifies generic types using simple strings consisting of an unambiguous data type and
 /// C array syntax, e.g. "float32[3]".  In the PIDX library, we declare types using strings so

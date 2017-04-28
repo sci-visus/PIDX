@@ -110,6 +110,9 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int agg_m
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   idx_dataset_derived_metadata idx = file->idx_d;
 
+  //printf("SHARED %d %d\n", var_grp->shared_start_layout_index, var_grp->agg_l_shared);
+  //printf("NON - SHARED %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
+
   ret = PIDX_global_aggregate(file, file->f0_agg_id,
                               idx->f0_agg_buffer,
                               var_grp->f0_block_layout_by_level,

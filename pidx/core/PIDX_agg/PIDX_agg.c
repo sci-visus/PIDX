@@ -673,7 +673,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
           ab->buffer_size = sample_count * bpdt;
 
-          if (i == 0)
+          //if (i == 0)
             printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %d] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
                  agg_offset, id->idx_d->color,
                  id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,

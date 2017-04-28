@@ -792,7 +792,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
       }
       */
 
-      printf("writing the header\n");
+      printf("writing the header %d\n", header_io_id->idx_c->grank);
       ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {

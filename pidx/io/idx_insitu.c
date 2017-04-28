@@ -20,7 +20,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 
 PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
 {
-  pa1 = MPI_Wtime();
+  //pa1 = MPI_Wtime();
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
 
@@ -35,7 +35,7 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
   time->set_reg_box_end = MPI_Wtime();
 
 
-  pa2 = MPI_Wtime();
+  //pa2 = MPI_Wtime();
   // Step 1: Setup restructuring buffers
   ret = restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE);
   if (ret != PIDX_success)
@@ -45,7 +45,7 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
   }
 
 
-  pa3 = MPI_Wtime();
+  //pa3 = MPI_Wtime();
   // Step 2: Perform data restructuring
   ret = restructure(file, PIDX_WRITE);
   if (ret != PIDX_success)
@@ -54,7 +54,7 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  pa4 = MPI_Wtime();
+  //pa4 = MPI_Wtime();
   int si = 0, ei = 0;
   file->idx->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
@@ -68,14 +68,14 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
   }
 
 
-  pa5 = MPI_Wtime();
+  //pa5 = MPI_Wtime();
   ret = restructure_cleanup(file);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  pa6 = MPI_Wtime();
+  //pa6 = MPI_Wtime();
 
   //printf("[%d] BOX %f SETUP %f RST %f INSITU %f CLEANUP %f\n", file->idx_c->grank, (a2 - a1), (a3 - a2), (a4 - a3), (a5 - a4), (a6 - a5));
 
