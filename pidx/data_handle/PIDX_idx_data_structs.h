@@ -139,8 +139,8 @@ struct PIDX_variable_group_struct
 {
   int variable_index_tracker;
   int variable_count;
-  int variable_tracker[128];
-  PIDX_variable variable[128];
+  int variable_tracker[256];
+  PIDX_variable variable[256];
 
   int local_variable_index;
   int local_variable_count;

@@ -66,7 +66,7 @@
 #include <stdint.h>
 #include <PIDX.h>
 
-#define MAX_VAR_COUNT 128
+#define MAX_VAR_COUNT 256
 enum { X, Y, Z, NUM_DIMS };
 
 static int process_count = 1, rank = 0;
