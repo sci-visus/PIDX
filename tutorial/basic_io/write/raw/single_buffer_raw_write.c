@@ -435,8 +435,8 @@ static void set_pidx_file(int ts)
   //PIDX_debug_hz(file, 1);
 
   // Selecting raw I/O mode
+  //PIDX_set_io_mode(file, PIDX_RAW_IO);
   PIDX_set_io_mode(file, PIDX_IDX_IO);
-  //PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
   //PIDX_set_block_count(file, 512);
