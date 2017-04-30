@@ -54,11 +54,19 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  file->idx->variable_pipe_length = file->idx->variable_count;
+  file->idx->variable_pipe_length = 7;//file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
-    ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    //ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+
+    if ((si + file->idx->variable_pipe_length) >= evi)
+      file->idx->variable_pipe_length = evi - (si + 1);
+
+    ei = si + file->idx->variable_pipe_length;
+
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+
+    //printf("[%d %d] ---- %d %d\n", svi, evi, si, ei);
 
     // Step 3: Setup HZ buffers
     ret = hz_encode_setup(file, gi, si, ei);
@@ -85,18 +93,18 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     // Step 5: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
-
+#if 1
     // Step 6: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -121,7 +129,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       finalize_aggregation(file, gi, li);
       time->io_end[gi][li] = PIDX_get_time();
     }
-
+#endif
     // Step 8: Cleanup all buffers and ids
     ret = hz_encode_cleanup(file);
     if (ret != PIDX_success)
@@ -213,7 +221,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     // Step 3: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_READ);
+      ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -237,7 +245,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     // Step 5: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_READ);
+      ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -517,6 +525,13 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
   }
 
   ret = delete_block_layout(file, gi, 0, 0, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
+  if (ret != PIDX_success)
+  {
+    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  ret = idx_finalize(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

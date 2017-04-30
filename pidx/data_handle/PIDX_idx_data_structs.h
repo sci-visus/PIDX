@@ -36,7 +36,7 @@
 
 struct PIDX_timming_struct
 {
-  double a1, a2, a3, a4, a5;
+  //double a1, a2, a3, a4, a5;
   double SX, EX;
   double sim_start, sim_end;
 

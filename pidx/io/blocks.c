@@ -42,8 +42,11 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     rpp.y = (int) file->idx->reg_patch_size[1] / cs[1];
     rpp.z = (int) file->idx->reg_patch_size[2] / cs[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
+
+#if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+#endif
 
     // Middle part of the bitstring
     Point3D prcp;
@@ -66,9 +69,10 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     else if (file->idx->bitsequence_type == 5)
       guess_bit_string_ZYX(process_bs, prcp);
 
+#if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
-
+#endif
 
     // Last part of the bitstring
     Point3D pcp;
@@ -76,8 +80,11 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     pcp.y = (int) file->idx_d->partition_count[1];
     pcp.z = (int) file->idx_d->partition_count[2];
     guess_bit_string(partition_bs, pcp);
+
+#if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
+#endif
 
     // Concatenating the three components to get the final bit string
     strcpy(temp_bs, process_bs);
@@ -102,8 +109,10 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
+#if DETAIL_OUTPUT
   if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
     printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
+#endif
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
   if (total_reg_sample_count <= 0)

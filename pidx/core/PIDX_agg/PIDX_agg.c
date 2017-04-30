@@ -35,13 +35,14 @@ struct PIDX_agg_struct
   int gi;
   int fi;
   int li;
+  int lvi;
 
   int ***agg_r;
 };
 
 
 
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int fi, int li)
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int fi, int li, int lvi)
 {
   PIDX_agg_id id;
 
@@ -55,6 +56,7 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   id->gi = 0;
   id->fi = fi;
   id->li = li;
+  id->lvi = lvi;
 
   return id;
 }
@@ -641,14 +643,18 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         free(rank_r_patch);
         free(global_end_point);
 
-        int range = (end_rank - start_rank + 1) / id->idx->variable_count;
+        //int range = (end_rank - start_rank + 1) / id->idx->variable_count;
+        float range = (float)(end_rank - start_rank + 1) / (id->idx->variable_pipe_length + 1);
+
         if (file_status == 1)
-          id->agg_r[k][i - id->fi][j] = start_rank + (i * range) + (range/2);
+          id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range) + (range/2);
         else if (file_status == 0)
-          id->agg_r[k][i - id->fi][j] = start_rank + (i * range);
+          id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else if (file_status == 2)
           id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
 #if 0
+        if (id->idx_c->grank == 0)
+        {
         printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
         printf("XX: [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%d : %d %d %d) - %d (%d (%d %d) : %d %d %d) %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
              agg_offset, id->idx_d->color,
@@ -660,6 +666,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
              k, lbl->existing_file_index[k],
              j,
              file_status);
+        }
 #endif
         if (id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
         {
@@ -673,8 +680,9 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
           ab->buffer_size = sample_count * bpdt;
 
+#if DETAIL_OUTPUT
           //if (i == 0)
-            printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %d] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
+            printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %f] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
                  agg_offset, id->idx_d->color,
                  id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
                  start_rank, end_rank, range,
@@ -687,6 +695,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
                  j,
                  file_status,
                  ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
+#endif
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);

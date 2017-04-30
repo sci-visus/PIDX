@@ -513,7 +513,6 @@ PIDX_return_code PIDX_header_io_file_write(PIDX_header_io_id header_io_id, PIDX_
           return 1;
         }
 
-        printf("2: ");
         ret = populate_meta_data(header_io_id, block_layout, i, bin_file, mode);
         if (ret != PIDX_success) return PIDX_err_header;
       }
@@ -622,7 +621,6 @@ PIDX_return_code PIDX_header_io_filename_write(PIDX_header_io_id header_io_id, P
           return 1;
         }
 
-        printf("1: ");
         ret = populate_meta_data(header_io_id, block_layout, i, bin_file, mode);
         if (ret != PIDX_success) return PIDX_err_header;
       }
@@ -791,8 +789,9 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
         }
       }
       */
-
+#if DETAIL_OUTPUT
       printf("writing the header %d\n", header_io_id->idx_c->grank);
+#endif
       ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {

@@ -63,6 +63,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
+  (*file)->idx->bitsequence_type = 0;
+
   (*file)->local_group_index = 0;
   (*file)->local_group_count = 1;
   (*file)->flush_used = 0;

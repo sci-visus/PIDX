@@ -120,7 +120,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     // Setup 8: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -131,7 +131,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     // Setup 9: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_WRITE);
+      ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -290,7 +290,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     // Setup 6: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_SETUP, PIDX_READ);
+      ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
@@ -316,7 +316,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     // Setup 8: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, AGG_PERFORM, PIDX_READ);
+      ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);

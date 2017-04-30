@@ -431,10 +431,16 @@ static void set_pidx_file(int ts)
   // Seting the restructuring box size
   PIDX_set_restructuring_box(file, reg_size);
 
+  //PIDX_debug_rst(file, 1);
+  //PIDX_debug_hz(file, 1);
+
   // Selecting raw I/O mode
-  PIDX_set_io_mode(file, PIDX_RAW_IO);
+  PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
+
+  //PIDX_set_block_count(file, 512);
+  //PIDX_set_block_size(file, 16);
 
   PIDX_set_cache_time_step(file, 0);
 

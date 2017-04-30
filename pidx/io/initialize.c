@@ -1004,6 +1004,15 @@ PIDX_return_code idx_init(PIDX_io file, int gi, int svi)
 }
 
 
+PIDX_return_code idx_finalize(PIDX_io file, int gi, int svi)
+{
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  free(var_grp->rank_buffer);
+
+  return PIDX_success;
+}
+
+
 
 /// Function to find the power of 2 of an integer value (example 5->8)
 static int getPowerOftwo(int x)
