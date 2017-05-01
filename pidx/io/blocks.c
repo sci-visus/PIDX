@@ -383,7 +383,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   };
 #if 1
   int lvi = start_var_index;//file->local_variable_index;
-#if 0
+#if 1
   if (file->idx_d->parallel_mode == 1 /*&& file->idx->compression_type == PIDX_NO_COMPRESSION*/)
   {
     PIDX_block_layout all_patch_local_block_layout = malloc(sizeof (*all_patch_local_block_layout));
