@@ -660,11 +660,13 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         if (id->idx_c->grank == 0)
         {
         printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
-        printf("XXYY: [%d %d] [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%d : %d %d %d) - %d (%d (%d %d) : %d %d %d) %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+        printf("XXYY: [%d %d] [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%d : %d %d %d) (%lld %lld %lld - %lld %lld %lld) - %d (%d (%d %d) : %d %d %d) %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
              max_patch_count, start_rank_count,
              agg_offset, id->idx_d->color,
              id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
              start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
+             global_patch_offset[0], global_patch_offset[1], global_patch_offset[2],
+             global_patch_size[0], global_patch_size[1], global_patch_size[2],
              end_rank, global_end_hz, global_file_index, lbl->lbi[global_file_index], global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
              range,
              i,
