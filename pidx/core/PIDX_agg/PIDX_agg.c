@@ -1,6 +1,6 @@
 #include "../../PIDX_inc.h"
 
-
+#define MULTI_BOX 1
 #define PIDX_MIN(a,b) (((a)<(b))?(a):(b))
 
 #define PIDX_ACTIVE_TARGET 1
@@ -415,7 +415,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 {
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   PIDX_variable var0 = var_grp->variable[id->fi];
-  int i = 0, j = 0, k = 0;
+  int i = 0, j = 0, k = 0, i1 = 0;
 
   int max_patch_count;
   int patch_count =var0->patch_group_count;
@@ -452,11 +452,11 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
   free(local_patch_offset);
   free(local_patch_size);
 
-  if (id->idx_c->grank == 0 && agg_offset == 0)
-  {
-    for (i = 0; i < id->idx_c->lnprocs * max_patch_count; i++)
-      printf("[%d] (%d %d) -----> %d %d %d - %d %d %d\n", i, id->idx_c->lnprocs, max_patch_count, global_patch_offset[PIDX_MAX_DIMENSIONS * i + 0], global_patch_offset[PIDX_MAX_DIMENSIONS * i + 1], global_patch_offset[PIDX_MAX_DIMENSIONS * i + 2], global_patch_size[PIDX_MAX_DIMENSIONS * i + 0], global_patch_size[PIDX_MAX_DIMENSIONS * i + 1], global_patch_size[PIDX_MAX_DIMENSIONS * i + 2]);
-  }
+  //if (id->idx_c->grank == 0 && agg_offset == 0)
+  //{
+    //for (i = 0; i < id->idx_c->lnprocs * max_patch_count; i++)
+    //  printf("[%d] (%d %d) -----> %d %d %d - %d %d %d\n", i, id->idx_c->lnprocs, max_patch_count, global_patch_offset[PIDX_MAX_DIMENSIONS * i + 0], global_patch_offset[PIDX_MAX_DIMENSIONS * i + 1], global_patch_offset[PIDX_MAX_DIMENSIONS * i + 2], global_patch_size[PIDX_MAX_DIMENSIONS * i + 0], global_patch_size[PIDX_MAX_DIMENSIONS * i + 1], global_patch_size[PIDX_MAX_DIMENSIONS * i + 2]);
+  //}
 
   for (k = 0; k < lbl->efc; k++)
   {
@@ -496,6 +496,31 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
         if (id->idx_d->io_mode == 0)
         {
+#if MULTI_BOX
+          int break_counter1 = 0;
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+            // HZ index of last sample of the block.
+            last_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (lbl->lbi[global_file_index] + 1) * id->idx_d->samples_per_block - 1 - s;
+
+            // xyz index of the last sample of the block.
+            Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
+
+            // check to see if the sample is within bounds.
+            for (i1 = 0; i1 < id->idx_c->lnprocs * max_patch_count; i1++)
+            {
+              if (ZYX[0] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] && ZYX[0] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 0]) &&
+                  ZYX[1] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] && ZYX[1] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 1]) &&
+                  ZYX[2] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 2] && ZYX[2] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 2] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 2]))
+              {
+                break_counter1 = 1;
+                break;
+              }
+            }
+            if (break_counter1 == 1)
+              break;
+          }
+#else
           for (s = 0; s < id->idx_d->samples_per_block; s++)
           {
             // HZ index of last sample of the block.
@@ -510,7 +535,33 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
                 ZYX[2] < PIDX_MIN(id->idx->box_bounds[2], id->idx_d->partition_offset[2] + id->idx_d->partition_size[2]))
               break;
           }
+#endif
 
+#if MULTI_BOX
+          int break_counter2 = 0;
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+             // HZ index of first sample of the block.
+            first_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (first_block) * id->idx_d->samples_per_block + s;
+
+            // xyz index of the first sample of the block.
+            Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, first_index, ZYX);
+
+            // check to see if the sample is within bounds.
+            for (i1 = 0; i1 < id->idx_c->lnprocs * max_patch_count; i1++)
+            {
+              if (ZYX[0] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] && ZYX[0] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 0]) &&
+                  ZYX[1] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] && ZYX[1] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 1]) &&
+                  ZYX[2] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 2] && ZYX[2] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 2] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 2]))
+              {
+                break_counter2 = 1;
+                break;
+              }
+            }
+            if (break_counter2 == 1)
+              break;
+          }
+#else
           for (s = 0; s < id->idx_d->samples_per_block; s++)
           {
              // HZ index of first sample of the block.
@@ -525,6 +576,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
                 ZYX[2] >= id->idx_d->partition_offset[2] && ZYX[2] < PIDX_MIN(id->idx->box_bounds[2], id->idx_d->partition_offset[2] + id->idx_d->partition_size[2]))
               break;
           }
+#endif
         }
         else
         {
@@ -662,7 +714,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else if (file_status == 2)
           id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
-#if 1
+#if 0
         if (id->idx_c->grank == 0)
         {
         printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);

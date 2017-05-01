@@ -263,6 +263,9 @@ struct idx_file_struct
   int cached_ts;
 
   int shared_face;
+
+  unsigned long long* all_offset;
+  unsigned long long* all_size;
 };
 typedef struct idx_file_struct* idx_dataset;
 
