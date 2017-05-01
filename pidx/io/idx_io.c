@@ -66,7 +66,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
 
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
-    printf("[%d %d] ---- %d %d\n", svi, evi, si, ei);
+    //printf("[%d %d] ---- %d %d\n", svi, evi, si, ei);
 
     // Step 3: Setup HZ buffers
     ret = hz_encode_setup(file, gi, si, ei);

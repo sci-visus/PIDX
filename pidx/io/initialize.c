@@ -14,6 +14,8 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
+  file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
+
   if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
   {
     file->idx->reg_patch_size[0] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[0]);
@@ -60,9 +62,9 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
   else if (file->idx->reg_box_set == PIDX_UNIFORMLY_DISTRIBUTED_BOX)
   {
-    file->idx->number_processes[0] = ceil(file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
-    file->idx->number_processes[1] = ceil(file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
-    file->idx->number_processes[2] = ceil(file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
+    file->idx->number_processes[0] = ceil((float)file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
+    file->idx->number_processes[1] = ceil((float)file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
+    file->idx->number_processes[2] = ceil((float)file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
 
     file->idx->new_box_set = malloc(file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set));
     memset(file->idx->new_box_set, 0, (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set)));
@@ -90,6 +92,13 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
         {
           //Interior regular patches
           index = ((k / file->idx->reg_patch_size[2]) * file->idx->number_processes[0] * file->idx->number_processes[1]) + ((j / file->idx->reg_patch_size[1]) * file->idx->number_processes[0]) + (i / file->idx->reg_patch_size[0]);
+
+          if (index >= file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2])
+          {
+            printf("[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", file->idx->number_processes[2], file->idx->number_processes[1], file->idx->number_processes[0], index, i, j, k, (k / file->idx->reg_patch_size[2]), (j / file->idx->reg_patch_size[1]), (i / file->idx->reg_patch_size[0]));
+          }
+
+          assert(index < file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]);
 
           file->idx->new_box_set[index]->offset[0] = i;
           file->idx->new_box_set[index]->offset[1] = j;
@@ -173,9 +182,9 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
   else if (file->idx->reg_box_set == PIDX_WAVELET_BOX)
   {
-    file->idx->number_processes[0] = ceil(file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
-    file->idx->number_processes[1] = ceil(file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
-    file->idx->number_processes[2] = ceil(file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
+    file->idx->number_processes[0] = ceil((float)file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
+    file->idx->number_processes[1] = ceil((float)file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
+    file->idx->number_processes[2] = ceil((float)file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
 
     file->idx->new_box_set = malloc(file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set));
     memset(file->idx->new_box_set, 0, (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set)));

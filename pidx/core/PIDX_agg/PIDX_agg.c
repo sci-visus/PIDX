@@ -652,7 +652,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else if (file_status == 2)
           id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
-#if 1
+#if 0
         if (id->idx_c->grank == 0)
         {
         printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
@@ -683,7 +683,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
 #if DETAIL_OUTPUT
           //if (i == 0)
-            printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %f] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
+            printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %f] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)] [%d]\n",
                  agg_offset, id->idx_d->color,
                  id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
                  start_rank, end_rank, range,
@@ -695,7 +695,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
                  k, lbl->existing_file_index[k],
                  j,
                  file_status,
-                 ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
+                 ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt, max_patch_count);
 #endif
 
           ab->buffer = malloc(ab->buffer_size);

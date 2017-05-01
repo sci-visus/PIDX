@@ -439,8 +439,8 @@ static void set_pidx_file(int ts)
   PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
-  PIDX_set_block_count(file, 64);
-  PIDX_set_block_size(file, 14);
+  PIDX_set_block_count(file, 256);
+  PIDX_set_block_size(file, 15);
 
   PIDX_set_cache_time_step(file, 0);
 

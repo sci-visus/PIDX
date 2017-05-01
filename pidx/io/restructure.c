@@ -2,7 +2,7 @@
 #include "../PIDX_inc.h"
 
  // 0 for patch per process and 1 for multi patch per process
-static int rst_case_type = 0;
+static int rst_case_type = 2;
 static int cvi = 0;
 static int lgi = 0;
 
@@ -321,8 +321,8 @@ PIDX_return_code restructure(PIDX_io file, int mode)
 
         //if (file->idx_dbg->debug_rst == 1)
         //{
-        // ret = HELPER_rst(file->rst_id);
-          //if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        //  ret = HELPER_generic_rst(file->generic_rst_id);
+        //  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
         //}
         time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
       }
