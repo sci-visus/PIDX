@@ -347,20 +347,20 @@ static void create_synthetic_simulation_data()
           {
             if ((bpv[var]) == 32)
             {
-              fvalue = ((float)(100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));// / (512.0 * 512.0 * 512.0)) * 255.0;
+              fvalue = ((float)(100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));// / (512.0 * 512.0 * 512.0)) * 255.0;
               memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
               //printf("value = %f\n", fvalue);
             }
 
             else if ((bpv[var]) == 64)
             {
-              dvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              dvalue = 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
             }
 
             else if ((bpv[var]) == 192)
             {
-              dvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              dvalue = 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
             }
 
@@ -439,8 +439,8 @@ static void set_pidx_file(int ts)
   PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
-  //PIDX_set_block_count(file, 512);
-  //PIDX_set_block_size(file, 16);
+  PIDX_set_block_count(file, 64);
+  PIDX_set_block_size(file, 14);
 
   PIDX_set_cache_time_step(file, 0);
 

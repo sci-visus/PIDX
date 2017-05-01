@@ -461,7 +461,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         int start_rank = -1, end_rank = -1;
         unsigned long long global_file_index = lbl->existing_file_index[k];
 
-        int first_block = 0, last_block = 0;
+        int first_block = -1, last_block = -1;
         int b = 0;
         for (b = 0; b < id->idx->blocks_per_file; b++)
         {
@@ -484,8 +484,8 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         //printf("[%d] first last block %d %d [%d %d %d - %d %d %d]\n", id->idx_d->color, first_block, last_block, id->idx_d->partition_offset[0], id->idx_d->partition_offset[1], id->idx_d->partition_offset[2], (id->idx_d->partition_offset[0] + id->idx_d->partition_size[0] - 1), (id->idx_d->partition_offset[1] + id->idx_d->partition_size[1] - 1), (id->idx_d->partition_offset[2] + id->idx_d->partition_size[2] - 1));
 
         int s = 0;
-        int last_index = 0;
-        int first_index = 0;
+        int last_index = -1;
+        int first_index = -1;
         unsigned long long ZYX[PIDX_MAX_DIMENSIONS];
 
         if (id->idx_d->io_mode == 0)
@@ -652,11 +652,12 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else if (file_status == 2)
           id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
-#if 0
+#if 1
         if (id->idx_c->grank == 0)
         {
         printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
-        printf("XX: [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%d : %d %d %d) - %d (%d (%d %d) : %d %d %d) %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+        printf("XX: [%d] [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%d : %d %d %d) - %d (%d (%d %d) : %d %d %d) %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+             max_patch_count,
              agg_offset, id->idx_d->color,
              id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
              start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
@@ -680,7 +681,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
           ab->buffer_size = sample_count * bpdt;
 
-#if DETAIL_OUTPUT
+#if 0//DETAIL_OUTPUT
           //if (i == 0)
             printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %f] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)]\n",
                  agg_offset, id->idx_d->color,

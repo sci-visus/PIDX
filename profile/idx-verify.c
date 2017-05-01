@@ -682,7 +682,7 @@ int main(int argc, char **argv)
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
 
-                          drhs =  100 + var + s + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x);
+                          drhs =  100 + var + ((global_bounds[0] * global_bounds[1] * index_z)+(global_bounds[0]*index_y) + index_x);
                           if (compression_type == 0 || compression_type == 1)
                             dlhs = double_buffer[((hz_val * total_compression_block_size) + index) * vps[var] + s];
                           else
