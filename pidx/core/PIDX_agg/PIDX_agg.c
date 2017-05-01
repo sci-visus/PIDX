@@ -452,6 +452,12 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
   free(local_patch_offset);
   free(local_patch_size);
 
+  if (id->idx_c->grank == 0 && agg_offset == 0)
+  {
+    for (i = 0; i < id->idx_c->lnprocs * max_patch_count; i++)
+      printf("[%d] (%d %d) -----> %d %d %d - %d %d %d\n", i, id->idx_c->lnprocs, max_patch_count, global_patch_offset[PIDX_MAX_DIMENSIONS * i + 0], global_patch_offset[PIDX_MAX_DIMENSIONS * i + 1], global_patch_offset[PIDX_MAX_DIMENSIONS * i + 2], global_patch_size[PIDX_MAX_DIMENSIONS * i + 0], global_patch_size[PIDX_MAX_DIMENSIONS * i + 1], global_patch_size[PIDX_MAX_DIMENSIONS * i + 2]);
+  }
+
   for (k = 0; k < lbl->efc; k++)
   {
     for (i = id->fi; i <= id->li; i++)
