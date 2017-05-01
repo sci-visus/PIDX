@@ -14,7 +14,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
-  file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
+  //file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
 
   if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
   {

@@ -2,7 +2,7 @@
 #include "../PIDX_inc.h"
 
  // 0 for patch per process and 1 for multi patch per process
-static int rst_case_type = 2;
+static int rst_case_type = 0;
 static int cvi = 0;
 static int lgi = 0;
 

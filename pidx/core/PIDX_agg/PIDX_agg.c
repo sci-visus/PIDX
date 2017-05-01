@@ -421,33 +421,33 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
   int patch_count =var0->patch_group_count;
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, id->idx_c->local_comm);
 
-  int *local_patch_offset = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS));
-  memset(local_patch_offset, 0, sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS));
+  unsigned long long *local_patch_offset = malloc(sizeof(*local_patch_offset) * (max_patch_count * PIDX_MAX_DIMENSIONS));
+  memset(local_patch_offset, 0, sizeof(*local_patch_offset) * (max_patch_count * PIDX_MAX_DIMENSIONS));
 
-  int *local_patch_size = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
-  memset(local_patch_size, 0, sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS));
+  unsigned long long *local_patch_size = malloc(sizeof(*local_patch_size) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
+  memset(local_patch_size, 0, sizeof(*local_patch_size) * (max_patch_count * PIDX_MAX_DIMENSIONS));
 
   int d = 0;
   for (i = 0; i < patch_count; i++)
   {
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_patch_offset[i * PIDX_MAX_DIMENSIONS + d] = (uint32_t)var0->rst_patch_group[i]->reg_patch->offset[d];
-      local_patch_size[i * PIDX_MAX_DIMENSIONS + d] = (uint32_t)var0->rst_patch_group[i]->reg_patch->size[d];
+      local_patch_offset[i * PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group[i]->reg_patch->offset[d];
+      local_patch_size[i * PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group[i]->reg_patch->size[d];
     }
   }
 
   int wc = id->idx_c->lnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS);
 
-  int* global_patch_offset = malloc(wc * sizeof(uint32_t));
-  memset(global_patch_offset, 0,wc * sizeof(uint32_t));
+  unsigned long long* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
+  memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
 
-  int* global_patch_size = malloc(wc * sizeof(uint32_t));
-  memset(global_patch_size, 0, wc * sizeof(uint32_t));
+  unsigned long long* global_patch_size = malloc(wc * sizeof(*global_patch_size));
+  memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
 
-  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_INT, global_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_INT, id->idx_c->local_comm);
+  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
 
-  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_INT, global_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_INT, id->idx_c->local_comm);
+  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
 
   free(local_patch_offset);
   free(local_patch_size);
@@ -652,7 +652,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else if (file_status == 2)
           id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
-#if 0
+#if 1
         if (id->idx_c->grank == 0)
         {
         printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
