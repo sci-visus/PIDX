@@ -149,6 +149,62 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
   if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
     file->idx_d->total_partiton_level = file->idx_d->maxh;
 
+
+
+  file->idx->random_agg_list = malloc(sizeof(*file->idx->random_agg_list) * file->idx_d->max_file_count * file->idx->variable_count);
+  memset(file->idx->random_agg_list, 0, sizeof(*file->idx->random_agg_list) * file->idx_d->max_file_count * file->idx->variable_count);
+
+  file->idx->random_agg_counter = 0;
+
+  if (file->idx_c->grank == 0)
+  {
+    //time_t t;
+    //srand((unsigned) time(&t));
+
+
+    int M = file->idx_d->max_file_count * file->idx->variable_count;
+    int N = file->idx_c->gnprocs - 1;
+
+    //
+    unsigned char *is_used;
+    is_used = malloc(sizeof(*is_used) * N);
+    memset(is_used, 0, sizeof(*is_used) * N);
+
+    int in, im;
+    im = 0;
+
+    for (in = N - M; in < N && im < M; ++in)
+    {
+      int r = rand() % (in + 1);
+      if (is_used[r])
+      {
+        //printf("RANDOM %d %d ", r, in);
+        r = in;
+      }
+
+      assert(!is_used[r]);
+      file->idx->random_agg_list[im++] = r;
+        is_used[r] = 1;
+    }
+
+    assert(im == M);
+    //
+
+    /*
+    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+      file->idx->random_agg_list[i] = rand();
+    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+      file->idx->random_agg_list[i] = file->idx->random_agg_list[i] % file->idx_c->gnprocs;
+    */
+
+    printf("\nAggs: ");
+    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+      printf ("%d ", file->idx->random_agg_list[i]);
+    printf("\n");
+  }
+  MPI_Bcast(file->idx->random_agg_list, (file->idx_d->max_file_count * file->idx->variable_count), MPI_INT, 0, file->idx_c->global_comm);
+
+
   if (cb[0] == 0 && cb[1] == 0 && cb[2] == 0)
   {
     file->idx_d->maxh = 0;

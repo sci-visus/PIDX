@@ -266,6 +266,9 @@ struct idx_file_struct
 
   unsigned long long* all_offset;
   unsigned long long* all_size;
+
+  int random_agg_counter;
+  int *random_agg_list;
 };
 typedef struct idx_file_struct* idx_dataset;
 

@@ -97,6 +97,63 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
 }
 
 
+PIDX_return_code PIDX_agg_random_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
+{
+#if 1
+  int i = 0, j = 0, k = 0;
+  PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
+
+  for (k = 0; k < lbl->efc; k++)
+  {
+    for (i = id->fi; i <= id->li; i++)
+    {
+      for (j = 0; j < var_grp->variable[i]->vps * ab->agg_f; j++)
+      {
+        id->agg_r[k][i - id->fi][j] = id->idx->random_agg_list[id->idx->random_agg_counter];
+        id->idx->random_agg_counter++;
+      }
+    }
+  }
+
+  for (k = 0; k < lbl->efc; k++)
+  {
+    for (i = id->fi; i <= id->li; i++)
+    {
+      for (j = 0; j < var_grp->variable[i]->vps * ab->agg_f; j++)
+      {
+        if(id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
+        {
+          ab->file_number = lbl->existing_file_index[k];
+          ab->var_number = i;
+          ab->sample_number = j;
+
+          unsigned long long sample_count = lbl->bcpf[ab->file_number] * id->idx_d->samples_per_block / ab->agg_f;
+
+          int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
+
+          int bpdt = 0;
+          bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
+
+          ab->buffer_size = sample_count * bpdt;
+
+          //if (i == 0)// || i == id->idx->variable_count - 1)
+          printf("[G %d] [%d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] -> [[CR %d]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx->random_agg_counter, id->idx_c->lrank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, id->agg_r[k][i - id->fi][j], ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+
+          ab->buffer = malloc(ab->buffer_size);
+          memset(ab->buffer, 0, ab->buffer_size);
+          if (ab->buffer == NULL)
+          {
+            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) ab->buffer_size, __LINE__, __FILE__);
+            return PIDX_err_agg;
+          }
+        }
+      }
+    }
+  }
+#endif
+  return PIDX_success;
+}
+
 
 PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
 {
