@@ -719,10 +719,10 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         {
         //printf("[P %d] [%d] %d %d -> %d\n", id->idx->variable_pipe_length, file_status, id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
         //26
-        printf("XXYY: [%d] [%d] [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+        printf("A: [Lid %d] [%d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+             agg_offset,
              id->agg_r[k][i - id->fi][j],
              max_patch_count,
-             agg_offset,
              id->idx_d->color,
              id->idx_c->grank, id->idx_c->gnprocs,
              id->idx_c->lrank, id->idx_c->lnprocs,
@@ -750,19 +750,22 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
 #if DETAIL_OUTPUT
           //if (i == 0)
-            printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %f] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)] [%d]\n",
-                 agg_offset, id->idx_d->color,
-                 id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
-                 start_rank, end_rank, range,
-                 first_block, last_block,
-                 global_start_hz, global_end_hz,
-                 global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
-                 global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
-                 i,
-                 k, lbl->existing_file_index[k],
-                 j,
-                 file_status,
-                 ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt, max_patch_count);
+          printf("B: [Lid %d] [%d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [Buffer %lld (%d x %d x %d)]\n",
+               agg_offset,
+               id->agg_r[k][i - id->fi][j],
+               max_patch_count,
+               id->idx_d->color,
+               id->idx_c->grank, id->idx_c->gnprocs,
+               id->idx_c->lrank, id->idx_c->lnprocs,
+               start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
+               end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
+               range,
+               i, (id->idx->variable_pipe_length + 1),
+               k,
+               lbl->existing_file_index[k],
+               j,
+               file_status,
+               ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 #endif
 
           ab->buffer = malloc(ab->buffer_size);
