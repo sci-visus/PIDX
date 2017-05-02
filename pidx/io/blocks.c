@@ -158,8 +158,8 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
   if (file->idx_c->grank == 0)
   {
-    //time_t t;
-    //srand((unsigned) time(&t));
+    time_t t;
+    srand((unsigned) time(&t));
 
 
     int M = file->idx_d->max_file_count * file->idx->variable_count;
