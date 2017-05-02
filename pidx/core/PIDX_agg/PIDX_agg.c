@@ -714,7 +714,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
           id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
         else
           id->agg_r[k][i - id->fi][j] = -1;
-#if 1
+#if DETAIL_OUTPUT
         if (id->idx_c->grank == 0)
         {
         //printf("[P %d] [%d] %d %d -> %d\n", id->idx->variable_pipe_length, file_status, id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
