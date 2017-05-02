@@ -632,7 +632,6 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         Ndim_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
         memset(rank_r_patch, 0, sizeof (*rank_r_patch));
 
-        int start_rank_count = 0;
         int r = 0, d = 0, m = 0;
         int break_counter = 0;
         for (r = 0; r < id->idx_c->lnprocs; r++)
@@ -643,7 +642,6 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
                 global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
                 global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 2] == 0)
             {
-              start_rank_count++;
               continue;
             }
 
@@ -714,21 +712,26 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else if (file_status == 2)
           id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
+        else
+          id->agg_r[k][i - id->fi][j] = -1;
 #if 1
         if (id->idx_c->grank == 0)
         {
-        printf("%d %d -> %d\n", id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
-        printf("XXYY: [%d %d] [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%d : %d %d %d) (%lld %lld %lld - %lld %lld %lld) - %d (%d (%d %d) : %d %d %d) %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
-             max_patch_count, start_rank_count,
-             agg_offset, id->idx_d->color,
-             id->idx_c->grank, id->idx_c->gnprocs, id->idx_c->lrank, id->idx_c->lnprocs,
+        //printf("[P %d] [%d] %d %d -> %d\n", id->idx->variable_pipe_length, file_status, id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
+        //26
+        printf("XXYY: [%d] [%d] [Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+             id->agg_r[k][i - id->fi][j],
+             max_patch_count,
+             agg_offset,
+             id->idx_d->color,
+             id->idx_c->grank, id->idx_c->gnprocs,
+             id->idx_c->lrank, id->idx_c->lnprocs,
              start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
-             global_patch_offset[0], global_patch_offset[1], global_patch_offset[2],
-             global_patch_size[0], global_patch_size[1], global_patch_size[2],
-             end_rank, global_end_hz, global_file_index, lbl->lbi[global_file_index], global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
+             end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
              range,
-             i,
-             k, lbl->existing_file_index[k],
+             i, (id->idx->variable_pipe_length + 1),
+             k,
+             lbl->existing_file_index[k],
              j,
              file_status);
         }
@@ -745,7 +748,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
           ab->buffer_size = sample_count * bpdt;
 
-#if DETAIL_OUTPUT
+#if 0//DETAIL_OUTPUT
           //if (i == 0)
             printf("[Lid %d] [C %d] [G %d %d] [L %d %d] [S E R %d - %d : %f] [BL %d %d] [HZ %lld %lld] [%lld %lld %lld : %lld %lld %lld] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]  [Buffer %lld (%d x %d x %d)] [%d]\n",
                  agg_offset, id->idx_d->color,
