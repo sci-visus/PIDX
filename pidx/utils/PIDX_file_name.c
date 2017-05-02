@@ -22,25 +22,25 @@ void mira_create_folder_name(char* bin_file, char* folder_name)
 {
   char *ch_dot;
   ch_dot=strrchr(bin_file,'.');
-  //printf ("Last occurence of '.' found at %d \n", (ch_dot - bin_file + 1) );
+  //fprintf(stderr, "Last occurence of '.' found at %d \n", (ch_dot - bin_file + 1) );
   
   char *ch_slash;
   ch_slash=strrchr(bin_file,'/');
-  //printf ("Last occurence of '/' found at %d \n", (ch_slash - bin_file + 1) );
+  //fprintf(stderr, "Last occurence of '/' found at %d \n", (ch_slash - bin_file + 1) );
   
-  //printf("Name length = %d\n", (ch_dot - ch_slash));
+  //fprintf(stderr, "Name length = %d\n", (ch_dot - ch_slash));
   
   char file_name[1024];
   memset(file_name, 0, (ch_dot - ch_slash));
   strncpy(file_name, bin_file + (ch_slash - bin_file + 1), (ch_dot - ch_slash - 1));
-  //printf("File name = %s\n", file_name);
+  //fprintf(stderr, "File name = %s\n", file_name);
   
   char bin_file_first_part[1024];
   strncpy(bin_file_first_part, bin_file, (ch_slash - bin_file));
-  //printf("File name copy %s\n", bin_file_first_part);
+  //fprintf(stderr, "File name copy %s\n", bin_file_first_part);
   
   sprintf(folder_name, "%s/%s", bin_file_first_part, file_name);
-  //printf("Final File name = %s\n", folder_name);
+  //fprintf(stderr, "Final File name = %s\n", folder_name);
     
   return;
 }
@@ -49,25 +49,25 @@ void adjust_file_name(char* bin_file, char* adjusted_name)
 {
   char *ch_dot;
   ch_dot=strrchr(bin_file,'.');
-  //printf ("Last occurence of '.' found at %d \n", (ch_dot - bin_file + 1) );
+  //fprintf(stderr, "Last occurence of '.' found at %d \n", (ch_dot - bin_file + 1) );
   
   char *ch_slash;
   ch_slash=strrchr(bin_file,'/');
-  //printf ("Last occurence of '/' found at %d \n", (ch_slash - bin_file + 1) );
+  //fprintf(stderr, "Last occurence of '/' found at %d \n", (ch_slash - bin_file + 1) );
   
-  //printf("Name length = %d\n", (ch_dot - ch_slash));
+  //fprintf(stderr, "Name length = %d\n", (ch_dot - ch_slash));
   
   char file_name[1024];
   memset(file_name, 0, (ch_dot - ch_slash));
   strncpy(file_name, bin_file + (ch_slash - bin_file + 1), (ch_dot - ch_slash - 1));
-  //printf("File name = %s\n", file_name);
+  //fprintf(stderr, "File name = %s\n", file_name);
   
   char bin_file_first_part[1024];
   strncpy(bin_file_first_part, bin_file, (ch_slash - bin_file));
-  //printf("File name copy %s\n", bin_file_first_part);
+  //fprintf(stderr, "File name copy %s\n", bin_file_first_part);
   
   sprintf(adjusted_name, "%s/%s/%s.bin", bin_file_first_part, file_name, file_name);
-  //printf("Final File name = %s\n", adjusted_name);
+  //fprintf(stderr, "Final File name = %s\n", adjusted_name);
     
   return;
 }
@@ -80,7 +80,7 @@ int generate_file_name(int blocks_per_file, char* filename_template, int file_nu
   char* pos;
   int ret;
 
-  //printf("[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
+  //fprintf(stderr, "[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
   // determine the first HZ address for the file in question 
   address = file_number * blocks_per_file;
 

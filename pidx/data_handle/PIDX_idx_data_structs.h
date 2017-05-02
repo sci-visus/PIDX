@@ -209,6 +209,8 @@ struct idx_file_struct
   int group_index_tracker;
   PIDX_variable_group variable_grp[16];
   
+  char agg_list_filename[1024];
+
   char filename[1024];
   char filename_global[1024];
   char filename_partition[1024];

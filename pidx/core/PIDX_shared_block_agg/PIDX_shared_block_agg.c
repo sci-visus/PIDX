@@ -59,24 +59,24 @@ PIDX_return_code PIDX_shared_block_agg_global_and_local(PIDX_shared_block_agg_id
 {
   if (create_shared_block_window(id, ab) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
 
 #ifdef PIDX_ACTIVE_TARGET
   if (MPI_Win_fence(0, id->shared_block_win) != MPI_SUCCESS)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
 #endif
 
   if (ab->buffer_size != 0 && ab->file_number == 0)
   {
-    printf("Rank is %d %d\n", id->idx_c->grank, ab->buffer_size);
+    fprintf(stderr, "Rank is %d %d\n", id->idx_c->grank, ab->buffer_size);
     if (one_sided_data_com(id, ab, lbl, MODE) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
   }
@@ -85,13 +85,13 @@ PIDX_return_code PIDX_shared_block_agg_global_and_local(PIDX_shared_block_agg_id
 #ifdef PIDX_ACTIVE_TARGET
   if (MPI_Win_fence(0, id->shared_block_win) != MPI_SUCCESS)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
 #endif
   if (MPI_Win_free(&(id->shared_block_win)) != MPI_SUCCESS)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
 #endif
@@ -108,9 +108,9 @@ PIDX_return_code PIDX_shared_block_agg_global_and_local(PIDX_shared_block_agg_id
       value = ((double*)id->idx_d->shared_block_agg_buffer)[i];
       if (value != 0)
         count++;
-      //printf("[%d] %f\n", i, value);
+      //fprintf(stderr, "[%d] %f\n", i, value);
     }
-    printf("Non zeroes = %d\n", count);
+    fprintf(stderr, "Non zeroes = %d\n", count);
   }
 #endif
 
@@ -169,11 +169,11 @@ static PIDX_return_code create_shared_block_window(PIDX_shared_block_agg_id id, 
     int tcs = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
     int bpdt = tcs * (var->bpv/8) / (id->idx->compression_factor);
 
-    printf("Agg buffer size %d stride %d\n", (shared_block_count * id->idx_d->samples_per_block * bpdt), bpdt);
+    fprintf(stderr, "Agg buffer size %d stride %d\n", (shared_block_count * id->idx_d->samples_per_block * bpdt), bpdt);
     ret = MPI_Win_create(id->idx_d->shared_block_agg_buffer, (shared_block_count * id->idx_d->samples_per_block * bpdt), bpdt, MPI_INFO_NULL, id->idx_c->global_comm, &(id->shared_block_win));
     if (ret != MPI_SUCCESS)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
   }
@@ -182,7 +182,7 @@ static PIDX_return_code create_shared_block_window(PIDX_shared_block_agg_id id, 
     ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->global_comm, &(id->shared_block_win));
     if (ret != MPI_SUCCESS)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
   }
@@ -225,7 +225,7 @@ static PIDX_return_code one_sided_data_com(PIDX_shared_block_agg_id id, Agg_buff
             if (count == 0)
               send_index = bl_count * id->idx_d->samples_per_block + i;
             //if (id->idx_c->grank == 1)
-            //  printf("[%d -- %d] [%d] %f\n", id->idx_c->grank, bl, count, value);
+            //  fprintf(stderr, "[%d -- %d] [%d] %f\n", id->idx_c->grank, bl, count, value);
             count++;
             total_count++;
           }
@@ -235,7 +235,7 @@ static PIDX_return_code one_sided_data_com(PIDX_shared_block_agg_id id, Agg_buff
               continue;
 
             if (id->idx_c->grank == 1)
-              printf("[%d] from to %d - %d\n", id->idx_c->grank, (bl * id->idx_d->samples_per_block + send_index) * sizeof(double), (bl * id->idx_d->samples_per_block + send_index) * sizeof(double) +  (count * sizeof(double)));
+              fprintf(stderr, "[%d] from to %d - %d\n", id->idx_c->grank, (bl * id->idx_d->samples_per_block + send_index) * sizeof(double), (bl * id->idx_d->samples_per_block + send_index) * sizeof(double) +  (count * sizeof(double)));
 
             if (id->idx_c->grank != 0)
               MPI_Put(ab->buffer + (bl * id->idx_d->samples_per_block + send_index) * sizeof(double), count * sizeof(double), MPI_BYTE, 0, (bl * id->idx_d->samples_per_block + send_index), count * sizeof(double), MPI_BYTE, id->shared_block_win);
@@ -249,7 +249,7 @@ static PIDX_return_code one_sided_data_com(PIDX_shared_block_agg_id id, Agg_buff
         if (value != 0)
         {
           if (id->idx_c->grank == 0)
-            printf("[%d] from to %d - %d\n", id->idx_c->grank, (bl * id->idx_d->samples_per_block + send_index) * sizeof(double), (bl * id->idx_d->samples_per_block + send_index) * sizeof(double) +  (count * sizeof(double)));
+            fprintf(stderr, "[%d] from to %d - %d\n", id->idx_c->grank, (bl * id->idx_d->samples_per_block + send_index) * sizeof(double), (bl * id->idx_d->samples_per_block + send_index) * sizeof(double) +  (count * sizeof(double)));
 
           if (id->idx_c->grank != 0)
             MPI_Put(ab->buffer + (bl * id->idx_d->samples_per_block + send_index) * sizeof(double), count * sizeof(double), MPI_BYTE, 0, (bl * id->idx_d->samples_per_block + send_index), count * sizeof(double), MPI_BYTE, id->shared_block_win);
@@ -262,7 +262,7 @@ static PIDX_return_code one_sided_data_com(PIDX_shared_block_agg_id id, Agg_buff
     }
 
     if (id->idx_c->grank == 0)
-      printf("[%d] Non zero %d\n", id->idx_c->grank, total_count);
+      fprintf(stderr, "[%d] Non zero %d\n", id->idx_c->grank, total_count);
 
   //}
 #endif

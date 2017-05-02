@@ -102,7 +102,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
     free(reg_patch);
   }
   else if (var->patch_group_count > 1)
-    printf("RST artifact %d\n", var->patch_group_count);
+    fprintf(stderr, "RST artifact %d\n", var->patch_group_count);
 
   free(colors);
 
@@ -137,7 +137,7 @@ PIDX_return_code create_local_comm(PIDX_io file)
   ret = MPI_Comm_split(file->idx_c->global_comm, file->idx_d->color, file->idx_c->grank, &(file->idx_c->local_comm));
   if (ret != MPI_SUCCESS)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -161,7 +161,7 @@ PIDX_return_code destroy_local_comm(PIDX_io file)
   ret = MPI_Comm_free(&(file->idx_c->local_comm));
   if (ret != MPI_SUCCESS)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   return PIDX_success;

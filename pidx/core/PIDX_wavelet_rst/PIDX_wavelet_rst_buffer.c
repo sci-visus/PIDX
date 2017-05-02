@@ -37,7 +37,7 @@ PIDX_return_code PIDX_wavelet_rst_buf_create(PIDX_wavelet_rst_id wavelet_rst_id)
       {
         if (wavelet_rst_id->idx_c->grank == wavelet_rst_id->reg_patch_grp[i]->max_patch_rank)
         {
-          //printf("Buffer create rank %d\n", wavelet_rst_id->idx_c->grank);
+          //fprintf(stderr, "Buffer create rank %d\n", wavelet_rst_id->idx_c->grank);
           Ndim_patch_group patch_group = var->rst_patch_group[cnt];
           for(j = 0; j < wavelet_rst_id->reg_patch_grp[i]->count; j++)
           {

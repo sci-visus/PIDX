@@ -45,7 +45,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
 #if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
-      printf("[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+      fprintf(stderr, "[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 #endif
 
     // Middle part of the bitstring
@@ -71,7 +71,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
 #if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
-      printf("[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
+      fprintf(stderr, "[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 #endif
 
     // Last part of the bitstring
@@ -83,7 +83,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
 #if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
-      printf("[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
+      fprintf(stderr, "[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 #endif
 
     // Concatenating the three components to get the final bit string
@@ -100,7 +100,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     GuessBitmaskPattern(file->idx->bitSequence, pcp);
     //guess_bit_string(file->idx->bitSequence, pcp);
     //if (file->idx_c->grank == 0)
-    //  printf("[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
+    //  fprintf(stderr, "[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
 #endif
   }
 
@@ -111,7 +111,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
 #if DETAIL_OUTPUT
   if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
-    printf("Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
+    fprintf(stderr, "Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 #endif
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
@@ -149,60 +149,98 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
   if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
     file->idx_d->total_partiton_level = file->idx_d->maxh;
 
-
-
-  file->idx->random_agg_list = malloc(sizeof(*file->idx->random_agg_list) * file->idx_d->max_file_count * file->idx->variable_count);
-  memset(file->idx->random_agg_list, 0, sizeof(*file->idx->random_agg_list) * file->idx_d->max_file_count * file->idx->variable_count);
-
+  file->idx->random_agg_list = malloc(sizeof(*file->idx->random_agg_list) * file->idx->variable_count * file->idx_d->max_file_count);
+  memset(file->idx->random_agg_list, 0, sizeof(*file->idx->random_agg_list) * file->idx->variable_count * file->idx_d->max_file_count);
   file->idx->random_agg_counter = 0;
 
+#if 1
   if (file->idx_c->grank == 0)
   {
-    time_t t;
-    srand((unsigned) time(&t));
-
-
-    int M = file->idx_d->max_file_count * file->idx->variable_count;
-    int N = file->idx_c->gnprocs - 1;
-
-    //
-    unsigned char *is_used;
-    is_used = malloc(sizeof(*is_used) * N);
-    memset(is_used, 0, sizeof(*is_used) * N);
-
-    int in, im;
-    im = 0;
-
-    for (in = N - M; in < N && im < M; ++in)
+    if (file->idx->current_time_step == file->idx->cached_ts)
     {
-      int r = rand() % (in + 1);
-      if (is_used[r])
+      time_t t;
+      srand((unsigned) time(&t));
+
+      int M = file->idx_d->max_file_count * file->idx->variable_count;
+      int N = file->idx_c->gnprocs - 1;
+
+      unsigned char *is_used;
+      is_used = malloc(sizeof(*is_used) * N);
+      memset(is_used, 0, sizeof(*is_used) * N);
+
+      int in, im;
+      im = 0;
+
+      for (in = N - M; in < N && im < M; ++in)
       {
-        //printf("RANDOM %d %d ", r, in);
-        r = in;
+        int r = rand() % (in + 1);
+        if (is_used[r])
+        {
+          //fprintf(stderr, "RANDOM %d %d ", r, in);
+          r = in;
+        }
+
+        assert(!is_used[r]);
+        file->idx->random_agg_list[im++] = r;
+          is_used[r] = 1;
       }
 
-      assert(!is_used[r]);
-      file->idx->random_agg_list[im++] = r;
-        is_used[r] = 1;
+      assert(im == M);
+
+      /*
+      for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+        file->idx->random_agg_list[i] = rand();
+      for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+        file->idx->random_agg_list[i] = file->idx->random_agg_list[i] % file->idx_c->gnprocs;
+      */
+
+      printf("Agg file name %s\n", file->idx->agg_list_filename);
+      FILE* agg_file;
+      agg_file = fopen(file->idx->agg_list_filename, "w");
+      if (!agg_file)
+      {
+        fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      fprintf(agg_file, "\nAggs: ");
+      for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+        fprintf(agg_file, "%d ", file->idx->random_agg_list[i]);
+      fprintf(agg_file, "\n");
+
+      fclose(agg_file);
+
+      fprintf(stderr, "\nAggs: ");
+      for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+        fprintf(stderr, "%d ", file->idx->random_agg_list[i]);
+      fprintf(stderr, "\n");
     }
+    else
+    {
 
-    assert(im == M);
-    //
+      FILE* agg_file;
+      agg_file = fopen(file->idx->agg_list_filename, "r");
+      if (!agg_file)
+      {
+        fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
 
-    /*
-    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
-      file->idx->random_agg_list[i] = rand();
-    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
-      file->idx->random_agg_list[i] = file->idx->random_agg_list[i] % file->idx_c->gnprocs;
-    */
+      fscanf(agg_file, "\nAggs: ");
+      for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+        fscanf(agg_file, "%d ", &(file->idx->random_agg_list[i]));
+      fscanf(agg_file, "\n");
 
-    printf("\nAggs: ");
-    for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
-      printf ("%d ", file->idx->random_agg_list[i]);
-    printf("\n");
+      fclose(agg_file);
+
+      fprintf(stderr, "\nAggs: ");
+      for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
+        fprintf(stderr, "%d ", file->idx->random_agg_list[i]);
+      fprintf(stderr, "\n");
+    }
   }
   MPI_Bcast(file->idx->random_agg_list, (file->idx_d->max_file_count * file->idx->variable_count), MPI_INT, 0, file->idx_c->global_comm);
+#endif
 
 
   if (cb[0] == 0 && cb[1] == 0 && cb[2] == 0)
@@ -241,7 +279,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     rpp.z = (int) file->idx->reg_patch_size[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
     //if (file->idx_c->lrank == 0)
-    //  printf("[1X %d] %s : %d %d %d\n", file->idx_d->color, reg_patch_bs, rpp.x, rpp.y, rpp.z);
+    //  fprintf(stderr, "[1X %d] %s : %d %d %d\n", file->idx_d->color, reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
     Point3D prcp;
@@ -256,7 +294,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     if (prcp.z == 0)  prcp.z = 1;
     guess_bit_string_Z(process_bs, prcp);
     //if (file->idx_c->lrank == 0)
-    //  printf("[2Y %d] %s : %d %d %d\n", file->idx_d->color, process_bs, prcp.x, prcp.y, prcp.z);
+    //  fprintf(stderr, "[2Y %d] %s : %d %d %d\n", file->idx_d->color, process_bs, prcp.x, prcp.y, prcp.z);
 
 
     // Concatenating the three components to get the final bit string
@@ -274,7 +312,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     GuessBitmaskPattern(file->idx->bitSequence, pcp);
     //guess_bit_string(file->idx->bitSequence, pcp);
     //if (file->idx_c->grank == 0)
-    //  printf("[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
+    //  fprintf(stderr, "[BS] %s : %d %d %d\n", file->idx->bitSequence, pcp.x, pcp.y, pcp.z);
 #endif
   }
 
@@ -284,7 +322,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
   //if (file->idx_c->lrank == 0)
-  //  printf("%d Bitstring %s maxh %d\n", file->idx_d->color, file->idx->bitSequence, file->idx_d->maxh);
+  //  fprintf(stderr, "%d Bitstring %s maxh %d\n", file->idx_d->color, file->idx->bitSequence, file->idx_d->maxh);
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
   if (total_reg_sample_count <= 0)
@@ -305,7 +343,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     file->idx_d->max_file_count++;
 
   //if (file->idx_c->lrank == 0)
-  //printf("[%d] MFC %d : %d %d %d (%d %d %d)\n", file->idx_d->color, file->idx_d->max_file_count, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
+  //fprintf(stderr, "[%d] MFC %d : %d %d %d (%d %d %d)\n", file->idx_d->color, file->idx_d->max_file_count, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
   file->idx_d->block_bitmap = malloc(file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
   memset(file->idx_d->block_bitmap, 0, file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
   for (i = 0; i < file->idx_d->max_file_count; i++)
@@ -364,7 +402,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
                                io_type);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -388,7 +426,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
                                io_type);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -396,7 +434,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
 #if 1
 
   //if (file->idx_c->grank == 32)
-  //  printf("HZ %d %d -- %d %d\n", hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
+  //  fprintf(stderr, "HZ %d %d -- %d %d\n", hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
 
   if (hz_from_non_shared == hz_to_non_shared)
   {
@@ -417,7 +455,7 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
                                io_type);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     } 
   }
@@ -475,7 +513,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
           else
             bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
         }
-        //printf("BB ---- [%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
+        //fprintf(stderr, "BB ---- [%d %d]: %d %d %d - %d %d %d\n", rank, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
 
         PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
         memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
@@ -560,7 +598,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
             bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
         }
         //if (file->idx_d->color == 1)
-        //  printf("A: [%d %d]: %d %d %d - %d %d %d\n", file->idx_d->color, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
+        //  fprintf(stderr, "A: [%d %d]: %d %d %d - %d %d %d\n", file->idx_d->color, var->sim_patch_count, bounding_box[0][0], bounding_box[0][1], bounding_box[0][2], bounding_box[1][0], bounding_box[1][1], bounding_box[1][2]);
 
         PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
         memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
@@ -664,7 +702,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
           //{
           //  int k = 0;
           //  for (k = 0; k < level_count; k++)
-          //    printf("i = %d %d\n", i, block_layout->hz_block_number_array[i][k], all_patch_local_block_layout->hz_block_number_array[i][k]);
+          //    fprintf(stderr, "i = %d %d\n", i, block_layout->hz_block_number_array[i][k], all_patch_local_block_layout->hz_block_number_array[i][k]);
           //}
           if (file->idx_d->parallel_mode == 1)
             MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
@@ -682,7 +720,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     /*
     if (rank == 4)
     {
-      printf("[XXXX] Final Block Bitmap\n");
+      fprintf(stderr, "[XXXX] Final Block Bitmap\n");
       PIDX_blocks_print_layout(all_patch_local_block_layout);
     }
     */
@@ -711,7 +749,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     }
 
     if (file->idx_c->grank == 0)
-      printf("BB %d %d %d\n", cb[0], cb[1], cb[2]);
+      fprintf(stderr, "BB %d %d %d\n", cb[0], cb[1], cb[2]);
 
     ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
     if (ret_code != PIDX_success)
@@ -735,7 +773,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   memset(block_layout->lbi, 0, sizeof(int) * (file->idx_d->max_file_count));
 
   int file_number = 0;
-  //printf("[AAAA] RES from TO to : %d %d\n", block_layout->resolution_from, block_layout->resolution_to);
+  //fprintf(stderr, "[AAAA] RES from TO to : %d %d\n", block_layout->resolution_from, block_layout->resolution_to);
   if (block_layout->resolution_from <= block_layout->bits_per_block)
   {
     for (i = block_layout->resolution_from ; i <= file->idx->bits_per_block ; i++)
@@ -771,7 +809,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     /*
     if (file->idx_c->lnprocsrank == 4)
     {
-      printf("[XXXX] Final Block Bitmap\n");
+      fprintf(stderr, "[XXXX] Final Block Bitmap\n");
       PIDX_blocks_print_layout(block_layout);
     }
     */
@@ -1110,13 +1148,13 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
         for (j = 0; j < ctr; j++)
         {
           //if (rank == 0)
-          //  printf("ctr = %d %d\n", ctr, block_layout->hz_block_number_array[i][j]);
+          //  fprintf(stderr, "ctr = %d %d\n", ctr, block_layout->hz_block_number_array[i][j]);
           if (block_layout->hz_block_number_array[i][j] != 0)
           {
             file_number = block_layout->hz_block_number_array[i][j] / file->idx->blocks_per_file;
             block_layout->file_bitmap[file_number] = 1;
             //if (file->idx_c->lrank == 0)
-            //  printf("%d file number %d %d \n", file->idx_c->grank, block_layout->hz_block_number_array[i][j], file_number);
+            //  fprintf(stderr, "%d file number %d %d \n", file->idx_c->grank, block_layout->hz_block_number_array[i][j], file_number);
             file->idx_d->block_bitmap[file_number][block_layout->hz_block_number_array[i][j] % file->idx->blocks_per_file] = 1;
             block_layout->file_index[file_number] = 1;
             block_layout->bcpf[file_number]++;
@@ -1146,7 +1184,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
     if (block_layout->file_index[i] == 1)
     {
       //if (rank == 0)
-      //  printf("[%d %d] BPF %d = %d %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->bcpf[i], count);
+      //  fprintf(stderr, "[%d %d] BPF %d = %d %d\n", block_layout->resolution_from, block_layout->resolution_to, i, block_layout->bcpf[i], count);
       block_layout->existing_file_index[count] = i;
       block_layout->inverse_existing_file_index[i] = count;
       count++;

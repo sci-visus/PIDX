@@ -28,7 +28,7 @@ PIDX_return_code data_io(PIDX_io file, int gi, int start_index, int mode)
                              var_grp->agg_l_f0, 0, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 #if 1
@@ -42,7 +42,7 @@ PIDX_return_code data_io(PIDX_io file, int gi, int start_index, int mode)
                              var_grp->agg_l_shared, 1, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 #endif
@@ -56,7 +56,7 @@ PIDX_return_code data_io(PIDX_io file, int gi, int start_index, int mode)
                              var_grp->agg_l_nshared, 2, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -98,7 +98,7 @@ static PIDX_return_code PIDX_global_async_io(PIDX_io file, PIDX_file_io_id **io_
       }
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
     }
@@ -116,8 +116,8 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int local
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   idx_dataset_derived_metadata idx = file->idx_d;
 
-  //printf("SHARED %d %d\n", var_grp->shared_start_layout_index, var_grp->agg_l_shared);
-  //printf("NON - SHARED %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
+  //fprintf(stderr, "SHARED %d %d\n", var_grp->shared_start_layout_index, var_grp->agg_l_shared);
+  //fprintf(stderr, "NON - SHARED %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
 
   ret = PIDX_global_aggregate(file, file->f0_agg_id,
                               idx->f0_agg_buffer,
@@ -128,7 +128,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int local
                               var_grp->agg_l_f0, 2, agg_mode, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -142,7 +142,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int local
                               var_grp->agg_l_shared, 0, agg_mode, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 #endif
@@ -156,7 +156,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int local
                               var_grp->agg_l_nshared, 1, agg_mode, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -170,7 +170,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int start_index, int local
                                 start_index, mode);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -234,7 +234,7 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
       ret = PIDX_agg_meta_data_create(agg_id[svi][j_1], agg_buffer[svi][j_1], block_layout_by_level[j_1]);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_rst;
       }
       time->agg_meta_end[lgi][svi][j] = PIDX_get_time();
@@ -252,7 +252,7 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
       //ret = PIDX_agg_buf_create_multiple_level(agg_id[svi][j_1], agg_buffer[svi][j_1], block_layout_by_level[j_1], j, svi, file_status);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_rst;
       }
       time->agg_buf_end[lgi][svi][j] = PIDX_get_time();
@@ -266,7 +266,7 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
         ret = PIDX_agg_global_and_local(agg_id[svi][j_1], agg_buffer[svi][j_1], j, block_layout_by_level[j_1], mode);
         if (ret != PIDX_success)
         {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
         time->agg_end[lgi][svi][j] = PIDX_get_time();
@@ -275,7 +275,7 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
         ret = PIDX_agg_buffer_compress(agg_id[svi][j_1], agg_buffer[svi][j_1], j, block_layout_by_level[j_1], mode);
         if (ret != PIDX_success)
         {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
         time->agg_compress_end[lgi][svi][j] = PIDX_get_time();
@@ -287,7 +287,7 @@ static PIDX_return_code PIDX_global_aggregate(PIDX_io file, PIDX_agg_id** agg_id
       ret = PIDX_agg_meta_data_destroy(agg_id[svi][j_1], block_layout_by_level[j_1]);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_rst;
       }
       time->agg_meta_cleanup_end[lgi][svi][j] = PIDX_get_time();

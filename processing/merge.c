@@ -218,13 +218,13 @@ static PIDX_return_code IDX_file_open(const char* filename)
     FILE *fp = fopen(filename, "r");
     if (fp == NULL)
     {
-      fprintf(stdout, "Error Opening %s\n", filename);
+      fprintf(stderr, "Error Opening %s\n", filename);
       return PIDX_err_file;
     }
 
     while (fgets(line, sizeof (line), fp) != NULL)
     {
-      //printf("%s", line);
+      //fprintf(stderr, "%s", line);
       line[strcspn(line, "\r\n")] = 0;
 
       if (strcmp(line, "(box)") == 0)
@@ -432,7 +432,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
     fclose(fp);
   }
 
-  printf("Start time step %d End time step %d\n", start_time_step, end_time_step);
+  fprintf(stderr, "Start time step %d End time step %d\n", start_time_step, end_time_step);
 
 #if PIDX_HAVE_MPI
 
@@ -506,7 +506,7 @@ static PIDX_return_code IDX_file_open(const char* filename)
   if (total_reg_sample_count % max_sample_per_file)
     max_file_count++;
 
-  //printf("%d %d %d %d %d\n", chunk_size[0], chunk_size[1], chunk_size[2]);
+  //fprintf(stderr, "%d %d %d %d %d\n", chunk_size[0], chunk_size[1], chunk_size[2]);
 
   if (rank == 0)
   {
@@ -622,7 +622,7 @@ int main(int argc, char **argv)
 
   maxh = strlen(bitSequence);
 
-  printf("Partition size and count: %d %d %d :: %d %d %d maxh = %d\n", idx_count[0], idx_count[1], idx_count[2], idx_size[0], idx_size[1], idx_size[2], maxh);
+  fprintf(stderr, "Partition size and count: %d %d %d :: %d %d %d maxh = %d\n", idx_count[0], idx_count[1], idx_count[2], idx_size[0], idx_size[1], idx_size[2], maxh);
 
   int shared_block_level = (int)log2(idx_count[0] * idx_count[1] * idx_count[2]) + bits_per_block + 1;
   if (shared_block_level >= maxh)
@@ -650,7 +650,7 @@ int main(int argc, char **argv)
       else
         file_count = (int)pow(2, level - (bits_per_block + log2(blocks_per_file) + 1));
 
-      printf("File Index and Count at %d = %d %d\n", level, file_no, file_count);
+      fprintf(stderr, "File Index and Count at %d = %d %d\n", level, file_no, file_count);
 
       int fc = 0;
       for (fc = file_no; fc < file_no + file_count; fc++)
@@ -694,7 +694,7 @@ int main(int argc, char **argv)
             file_initialize_time_step(ts, partition_file_name, partition_file_template);
             generate_file_name(blocks_per_file, partition_file_template, fc, existing_file_name, PATH_MAX);
 
-            printf("[%d] OLD File name %s NEW File name %s\n", ic, existing_file_name, new_file_name);
+            fprintf(stderr, "[%d] OLD File name %s NEW File name %s\n", ic, existing_file_name, new_file_name);
 
             if ( access( partition_file_name, F_OK ) != -1 )
             {
@@ -746,11 +746,11 @@ int main(int argc, char **argv)
               {
                 data_offset = ntohl(read_binheader[(bpf + var * blocks_per_file)*10 + 12]);
                 data_size = ntohl(read_binheader[(bpf + var * blocks_per_file)*10 + 14]);
-                printf("[%s] [%d %d %d] --> %d %d\n", partition_file_name, bpf, var, blocks_per_file, (int)data_offset, (int)data_size);
+                fprintf(stderr, "[%s] [%d %d %d] --> %d %d\n", partition_file_name, bpf, var, blocks_per_file, (int)data_offset, (int)data_size);
 
                 if (data_offset != 0 && data_size != 0)
                 {
-                  //printf("[%d] --> %d %d\n", bpf, (int)data_offset, (int)data_size);
+                  //fprintf(stderr, "[%d] --> %d %d\n", bpf, (int)data_offset, (int)data_size);
                   pread(fd, read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), data_size, data_offset);
 
                   adjusted_offset = data_offset + previous_block_offset;
@@ -758,7 +758,7 @@ int main(int argc, char **argv)
                   write_binheader[((bpf + var * blocks_per_file)*10 + 12)] = htonl(adjusted_offset);
                   write_binheader[((bpf + var * blocks_per_file)*10 + 14)] = htonl(data_size);
 
-                  printf("IC %d RBC %d WBC %d RO %d WO %d AO %d [%d + %d]\n", ic, read_block_counter, write_block_counter, (read_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), (write_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), adjusted_offset, (int)data_offset, previous_block_offset);
+                  fprintf(stderr, "IC %d RBC %d WBC %d RO %d WO %d AO %d [%d + %d]\n", ic, read_block_counter, write_block_counter, (read_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), (write_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), adjusted_offset, (int)data_offset, previous_block_offset);
                   memcpy(write_data_buffer + (write_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), read_data_buffer + (read_block_counter * (int)pow(2, bits_per_block) * (bpv[var] / 8)), (int)pow(2, bits_per_block) * (bpv[var] / 8));
 
                   read_block_counter++;
@@ -779,7 +779,7 @@ int main(int argc, char **argv)
               continue;
           }
 
-          printf("Write Filename %s\n", new_file_name);
+          fprintf(stderr, "Write Filename %s\n", new_file_name);
           if ( access( new_file_name, F_OK ) != -1 )
           {
             // file exists
@@ -812,7 +812,7 @@ int main(int argc, char **argv)
             // file doesn't exist
             int fd;
             fd = open(new_file_name, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
-            printf("Write File %s Offset %d Count %d\n", new_file_name, (int)first_offset, (int)totl_data_size);
+            fprintf(stderr, "Write File %s Offset %d Count %d\n", new_file_name, (int)first_offset, (int)totl_data_size);
 
             pwrite(fd, write_binheader, sizeof (*write_binheader)*(write_binheader_count), 0);
             pwrite(fd, write_data_buffer, totl_data_size, first_offset);

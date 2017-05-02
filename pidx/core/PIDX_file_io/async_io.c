@@ -71,16 +71,16 @@ PIDX_return_code PIDX_async_aggregated_write(PIDX_file_io_id io_id, Agg_buffer a
     }
 
     /*
-    printf("[W] Offset %d Size %d File %s\n", data_offset, agg_buf->buffer_size, file_name);
+    fprintf(stderr, "[W] Offset %d Size %d File %s\n", data_offset, agg_buf->buffer_size, file_name);
     if (io_id->idx_c->grank == 1)
     {
         float x1, x2;
         memcpy(&x1, agg_buf->buffer, sizeof(float));
         memcpy(&x2, agg_buf->buffer + sizeof(float), sizeof(float));
-        printf("FOT %f %f\n", x1, x2);
+        fprintf(stderr, "FOT %f %f\n", x1, x2);
     }
     */
-    //printf("%d Agg offset %d (%d x %d) Agg size %d\n", agg_buf->file_number, data_offset, io_id->idx_d->start_fs_block, io_id->idx_d->fs_block_size, agg_buf->buffer_size);
+    //fprintf(stderr, "%d Agg offset %d (%d x %d) Agg size %d\n", agg_buf->file_number, data_offset, io_id->idx_d->start_fs_block, io_id->idx_d->fs_block_size, agg_buf->buffer_size);
     ret = MPI_File_iwrite_at(*fh, data_offset, agg_buf->buffer, agg_buf->buffer_size, MPI_BYTE, request);
     if (ret != MPI_SUCCESS)
     {
@@ -148,7 +148,7 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
 
         int buffer_index = (block_count * io_id->idx_d->samples_per_block * (var_grp->variable[agg_buf->var_number]->bpv/8) * var_grp->variable[agg_buf->var_number]->vps * tck) / io_id->idx->compression_factor;
 
-        //printf("[R] Offset %d Size %d File %s\n", data_offset, data_size, file_name);
+        //fprintf(stderr, "[R] Offset %d Size %d File %s\n", data_offset, data_size, file_name);
         ret = MPI_File_read_at(fp, data_offset, agg_buf->buffer + buffer_index, data_size, MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
         {
@@ -161,7 +161,7 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
             float x1, x2;
             memcpy(&x1, agg_buf->buffer + buffer_index, sizeof(float));
             memcpy(&x2, agg_buf->buffer + buffer_index + sizeof(float), sizeof(float));
-            printf("FOT %f %f\n", x1, x2);
+            fprintf(stderr, "FOT %f %f\n", x1, x2);
         }
         */
 

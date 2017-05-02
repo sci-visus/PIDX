@@ -123,12 +123,12 @@ static int decompress(float* input_buffer, float* output_buffer, size_t buffer_s
   zfp_set_rate(&params, compression_bit_rate);
   
   outsize = compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize;
-  //printf("(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
+  //fprintf(stderr, "(Buffer size %ld) (outsize %ld) (compression_bit_rate %d)\n", buffer_size, outsize, compression_bit_rate);
 
   unsigned char* zip = (unsigned char*)malloc(outsize);
   for (i = 0; i < buffer_size; i = i + (compression_block_size[0] * compression_block_size[1] * compression_block_size[2] * typesize)/(32/compression_bit_rate))
   {
-    //printf("%d \n", (i*(32/compression_bit_rate)));
+    //fprintf(stderr, "%d \n", (i*(32/compression_bit_rate)));
     zfp_decompress(&params, zip, (unsigned char*)input_buffer + (i), outsize/(32/compression_bit_rate));
     memcpy((unsigned char*)output_buffer + (i*(32/compression_bit_rate)), zip, outsize);
   }
@@ -170,7 +170,7 @@ int main(int argc, char **argv)
   FILE *fp = fopen(argv[1], "r");
   while (fgets(line, sizeof (line), fp) != NULL)
   {
-    //printf("%s", line);
+    //fprintf(stderr, "%s", line);
     len = strlen(line) - 1;
     if (line[len] == '\n')
       line[len] = 0;
@@ -221,7 +221,7 @@ int main(int argc, char **argv)
           if (count == 1)
           {
             vps[variable_count] = atoi(pch1);
-            printf("vps[variable_count] = %d\n", vps[variable_count]);
+            fprintf(stderr, "vps[variable_count] = %d\n", vps[variable_count]);
           }
 
           if (count == 2)
@@ -277,7 +277,7 @@ int main(int argc, char **argv)
       {
         //if (count % 2 == 1)
         compression_block_size[count]/*global_bounds[count / 2]*/ = atoi(pch);
-        //printf("compressed box size %d %d\n", comp, count);
+        //fprintf(stderr, "compressed box size %d %d\n", comp, count);
         count++;
         pch = strtok(NULL, " ");
       }
@@ -375,7 +375,7 @@ int main(int argc, char **argv)
       count = 0;
       while (pch1 != NULL)
       {
-        //printf("");
+        //fprintf(stderr, "");
         if (count == 0)
           start_time_step = atoi(pch1);
 
@@ -390,21 +390,21 @@ int main(int argc, char **argv)
   }
   fclose(fp);
 
-  printf("Finished Parsing %s\n", argv[1]);
-  printf("Starting time step %d and Ending time step %d\n", start_time_step, end_time_step);
-  printf("(box)\n0 %d 0 %d 0 %d 0 %d 0 %d\n", global_bounds[0], global_bounds[1], global_bounds[2], global_bounds[3], global_bounds[4]);
-  printf("compressed box size %d %d %d %d %d\n", compression_block_size[0], compression_block_size[1], compression_block_size[2], compression_block_size[3], compression_block_size[4]);
-  printf("compressed bit rate %d\n", compression_bit_rate);
-  printf("(fields)\n");
+  fprintf(stderr, "Finished Parsing %s\n", argv[1]);
+  fprintf(stderr, "Starting time step %d and Ending time step %d\n", start_time_step, end_time_step);
+  fprintf(stderr, "(box)\n0 %d 0 %d 0 %d 0 %d 0 %d\n", global_bounds[0], global_bounds[1], global_bounds[2], global_bounds[3], global_bounds[4]);
+  fprintf(stderr, "compressed box size %d %d %d %d %d\n", compression_block_size[0], compression_block_size[1], compression_block_size[2], compression_block_size[3], compression_block_size[4]);
+  fprintf(stderr, "compressed bit rate %d\n", compression_bit_rate);
+  fprintf(stderr, "(fields)\n");
   for(var = 0 ; var < variable_count ; var++)
   {
-      printf("%s %d*", variable_name[var], vps[var]);
-      printf("float64 ");
+      fprintf(stderr, "%s %d*", variable_name[var], vps[var]);
+      fprintf(stderr, "float64 ");
       if(var != variable_count - 1)
-        printf(" + \n");
+        fprintf(stderr, " + \n");
   }
-  printf("\n(bitsperblock)\n%d\n(blocksperfile)\n%d\n", bits_per_block, blocks_per_file);
-  printf("(filename)\n%s\n", argv[1]);
+  fprintf(stderr, "\n(bitsperblock)\n%d\n(blocksperfile)\n%d\n", bits_per_block, blocks_per_file);
+  fprintf(stderr, "(filename)\n%s\n", argv[1]);
   
   if (global_bounds[0] % compression_block_size[0] == 0)
     compressed_global_bounds[0] = (int) global_bounds[0] / compression_block_size[0];
@@ -458,7 +458,7 @@ int main(int argc, char **argv)
 
   maxh = strlen(bitSequence);
 
-  printf("bitsequence = %s [%d]\n", bitSequence, maxh);
+  fprintf(stderr, "bitsequence = %s [%d]\n", bitSequence, maxh);
   for (i1 = 0; i1 <= maxh; i1++)
     bitPattern[i1] = RegExBitmaskBit(bitSequence, i1);
 
@@ -530,7 +530,7 @@ int main(int argc, char **argv)
           return 0;
         }
 
-        printf("Parsing File : %s\n", bin_file);
+        fprintf(stderr, "Parsing File : %s\n", bin_file);
 
         fd = open(bin_file, O_RDONLY);
         if (fd < 0)
@@ -577,7 +577,7 @@ int main(int argc, char **argv)
               data_offset = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 12]);
               data_size = ntohl(binheader[(bpf + var * blocks_per_file)*10 + 14]);
 
-              printf("[F %d %s] [V %d] [B %d] Offset %lld Count %ld\n", fi, bin_file, var, bpf, (long long)data_offset, (long)data_size);
+              fprintf(stderr, "[F %d %s] [V %d] [B %d] Offset %lld Count %ld\n", fi, bin_file, var, bpf, (long long)data_offset, (long)data_size);
 
               int sample_size = 0;
               if (strcmp(variable_type[var], "float64") == 0)
@@ -625,10 +625,10 @@ int main(int argc, char **argv)
 
                 if (compression_type == 2)
                 {
-                  //printf("buffer size = %d x %d - %d\n", data_size, (32/compression_bit_rate), data_size * (32/compression_bit_rate));
+                  //fprintf(stderr, "buffer size = %d x %d - %d\n", data_size, (32/compression_bit_rate), data_size * (32/compression_bit_rate));
                   decompressed_float_buffer = (float*) malloc(data_size * (32/compression_bit_rate));
                   if (decompressed_float_buffer == NULL)
-                    printf("Error!!!!\n");
+                    fprintf(stderr, "Error!!!!\n");
 
                   decompress(float_buffer, decompressed_float_buffer, data_size);
                   free(float_buffer);
@@ -638,7 +638,7 @@ int main(int argc, char **argv)
               }
 
 
-              //printf("Block %d - %d\n", bpf, data_size/(sample_size * vps[var] * total_compression_block_size));
+              //fprintf(stderr, "Block %d - %d\n", bpf, data_size/(sample_size * vps[var] * total_compression_block_size));
               for (hz_val = 0; hz_val < data_size/(sample_size * vps[var] * total_compression_block_size); hz_val++)
               {
                 hz_index = (blocks_per_file * fi * samples_per_block) + (bpf * samples_per_block) + hz_val;
@@ -678,7 +678,7 @@ int main(int argc, char **argv)
                         if (index_x >= global_bounds[0] || index_y >= global_bounds[1] || index_z >= global_bounds[2])
                           continue;
 
-                        //printf("compression_type = %d\n", compression_type);
+                        //fprintf(stderr, "compression_type = %d\n", compression_type);
                         if (strcmp(variable_type[var], "float64") == 0)
                         {
 
@@ -690,15 +690,15 @@ int main(int argc, char **argv)
 
                           check_bit = check_bit && (dlhs == drhs);
 
-                          //printf("%d:  %f %f\n", var, dlhs, drhs);
-                          //printf("[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
+                          //fprintf(stderr, "%d:  %f %f\n", var, dlhs, drhs);
+                          //fprintf(stderr, "[value at %d %d %d] is %f\n", (int)ZYX[0], (int)ZYX[1], (int)ZYX[2], dlhs);
                           if (dlhs == drhs)
                           {
-                            //printf("[C] Expected %f Found %f\n", drhs, dlhs);
+                            //fprintf(stderr, "[C] Expected %f Found %f\n", drhs, dlhs);
                             element_count1++;
                           }
                           //else
-                            //printf("[W] [F %d %s] [B %d] Expected %f Found %f\n", fi, bin_file, bpf, drhs, dlhs);
+                            //fprintf(stderr, "[W] [F %d %s] [B %d] Expected %f Found %f\n", fi, bin_file, bpf, drhs, dlhs);
                         }
                         else if (strcmp(variable_type[var], "uint64") == 0)
                         {
@@ -716,7 +716,7 @@ int main(int argc, char **argv)
                           iilhs = iint_buffer[((hz_val * total_compression_block_size) + index) * vps[var] + s];
                           check_bit = check_bit && (iilhs == iirhs);
 
-                          //printf("%d:  %d %d\n", var, iilhs, iirhs);
+                          //fprintf(stderr, "%d:  %d %d\n", var, iilhs, iirhs);
                           if (iilhs == iirhs)
                             element_count1++;
                         }
@@ -733,12 +733,12 @@ int main(int argc, char **argv)
                           if (flhs == frhs)
                           {
                             element_count1++;
-                            //printf("A [%d]: %f %f\n", bpf, flhs, frhs);
+                            //fprintf(stderr, "A [%d]: %f %f\n", bpf, flhs, frhs);
                           }
                           else
                           {
                             lost_element_count1++;
-                            //printf("B [%d]: %f %f\n", bpf, flhs, frhs);
+                            //fprintf(stderr, "B [%d]: %f %f\n", bpf, flhs, frhs);
                           }
                         }
                       }
@@ -750,12 +750,12 @@ int main(int argc, char **argv)
                 {
                   //
                   //if (strcmp(variable_type[var], "float64") == 0)
-                  //  printf("%f %f\n", dlhs, drhs);
+                  //  fprintf(stderr, "%f %f\n", dlhs, drhs);
                   //else if (strcmp(variable_type[var], "uint64") == 0)
-                  //    printf("%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
+                  //    fprintf(stderr, "%lld %lld\n", (unsigned long long)llhs, (unsigned long long)lrhs);
                    //
                   //if (strcmp(variable_type[var], "float32") == 0)
-                  //  printf("%f %f\n", flhs, frhs);
+                  //  fprintf(stderr, "%f %f\n", flhs, frhs);
                   lost_element_count++;
                   //break;
                 }
@@ -804,7 +804,7 @@ int main(int argc, char **argv)
       }
     }
 
-    printf("[=]%lld (%lld) + [!=]%lld (%lld) [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long)lost_element_count1, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
+    fprintf(stderr, "[=]%lld (%lld) + [!=]%lld (%lld) [%lld : %lld]\n", (long long) (element_count), (long long) (element_count1), (long long)lost_element_count, (long long)lost_element_count1, (long long) element_count + lost_element_count, (long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / (long long)pow(2, resolution));
 
     assert(element_count == (unsigned long long) compressed_global_bounds[0] * compressed_global_bounds[1] * compressed_global_bounds[2] * compressed_global_bounds[3] * compressed_global_bounds[4] * variable_count / pow(2, resolution));
 
@@ -825,7 +825,7 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
   char* pos;
   int ret;
 
-  //printf("[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
+  //fprintf(stderr, "[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
   // determine the first HZ address for the file in question
   address = file_number * blocks_per_file;
 

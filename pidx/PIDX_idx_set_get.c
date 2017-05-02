@@ -27,6 +27,19 @@
 static PIDX_return_code PIDX_validate(PIDX_file file);
 
 
+PIDX_return_code PIDX_randomized_aggregators(PIDX_file file, int* agg_list, int agg_count)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  file->idx->random_agg_list = malloc(sizeof(*file->idx->random_agg_list) * agg_count);
+  memset(file->idx->random_agg_list, 0, sizeof(*file->idx->random_agg_list) * agg_count);
+  file->idx->random_agg_counter = 0;
+
+  memcpy(file->idx->random_agg_list, agg_list, agg_count * sizeof (int));
+}
+
+
 PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
 {
   if(!file)

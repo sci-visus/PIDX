@@ -188,21 +188,21 @@ PIDX_return_code PIDX_rst_buf_read_and_aggregate(PIDX_rst_id rst_id)
       ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
       if (ret != MPI_SUCCESS)
       {
-        fprintf(stdout, "Line %d File %s File opening %s\n", __LINE__, __FILE__, file_name);
+        fprintf(stderr, "Line %d File %s File opening %s\n", __LINE__, __FILE__, file_name);
         return PIDX_err_rst;
       }
 
       ret = MPI_File_read_at(fh, data_offset, out_patch->buffer, (buffer_size), MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        fprintf(stderr, "Line %d File %s\n", __LINE__, __FILE__);
         return PIDX_err_rst;
       }
 
       ret = MPI_File_close(&fh);
       if (ret != MPI_SUCCESS)
       {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        fprintf(stderr, "Line %d File %s\n", __LINE__, __FILE__);
         return PIDX_err_rst;
       }
 
@@ -613,13 +613,13 @@ PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
           }
           patch_grp->source_patch_rank[patch_count] = n;
           source_patch_id[patch_count] = m;
-          //printf("patch_count %d -> %d %d %d\n", patch_count, patch_grp->patch[patch_count]->size[0], patch_grp->patch[patch_count]->size[1], patch_grp->patch[patch_count]->size[2]);
+          //fprintf(stderr, "patch_count %d -> %d %d %d\n", patch_count, patch_grp->patch[patch_count]->size[0], patch_grp->patch[patch_count]->size[1], patch_grp->patch[patch_count]->size[2]);
 
           patch_count++;
           if (patch_count >= maximum_neighbor_count)
           {
             maximum_neighbor_count = maximum_neighbor_count * 2;
-            //printf("patch_count = %d maximum_neighbor_count = %d\n", patch_count, maximum_neighbor_count);
+            //fprintf(stderr, "patch_count = %d maximum_neighbor_count = %d\n", patch_count, maximum_neighbor_count);
 
             int *temp_buffer1 = realloc(source_patch_id, sizeof(int) * maximum_neighbor_count);
             if (temp_buffer1 == NULL)

@@ -68,7 +68,7 @@ static PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_io file, 
       ret = MPI_Wait(&(file->idx_d->request_non_shared[i - start_layout_index_non_shared]), &(file->idx_d->status_non_shared[i - start_layout_index_non_shared]));
       if (ret != MPI_SUCCESS)
       {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_file;
       }
 
@@ -95,7 +95,7 @@ static PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_io file, int 
       ret = MPI_Wait(&(file->idx_d->request_shared[i - start_layout_index_shared]), &(file->idx_d->status_shared[i - start_layout_index_shared]));
       if (ret != MPI_SUCCESS)
       {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_file;
       }
       MPI_File_close(&(file->idx_d->fp_shared[i - start_layout_index_shared]));
@@ -121,7 +121,7 @@ static PIDX_return_code wait_and_destroy_file_zero_async_buffers(PIDX_io file, i
       ret = MPI_Wait(&(file->idx_d->request_file_zero[i - start_layout_index_file_zero]), &(file->idx_d->status_file_zero[i - start_layout_index_file_zero]));
       if (ret != MPI_SUCCESS)
       {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_file;
       }
       MPI_File_close(&(file->idx_d->fp_file_zero[i - start_layout_index_file_zero]));
@@ -146,7 +146,7 @@ static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int sta
     ret = PIDX_agg_buf_destroy(file->idx_d->nshared_agg_buffer[start_index][i_1]);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
 
@@ -170,7 +170,7 @@ static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_i
     ret = PIDX_agg_buf_destroy(file->idx_d->shared_agg_buffer[start_index][i_1]);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
 
@@ -194,7 +194,7 @@ static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_io file, int star
     ret = PIDX_agg_buf_destroy(file->idx_d->f0_agg_buffer[start_index][i_1]);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_agg;
     }
 
@@ -214,7 +214,7 @@ PIDX_return_code create_agg_io_buffer(PIDX_io file, int gi, int svi, int evi)
   int vc = (evi - svi);
   if (vc <= 0)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 

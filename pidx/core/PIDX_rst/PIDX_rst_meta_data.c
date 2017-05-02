@@ -244,7 +244,7 @@ PIDX_return_code PIDX_rst_meta_data_create(PIDX_rst_id rst_id)
                     patch_grp->patch = temp_buffer3;
 
                   if (rst_id->idx_c->grank == 0)
-                    printf("maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
+                    fprintf(stderr, "maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
                   //return PIDX_err_rst;
                 }
 

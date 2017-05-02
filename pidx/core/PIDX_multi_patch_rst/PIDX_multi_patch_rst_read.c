@@ -63,7 +63,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
   MPI_Datatype *chunk_data_type;
 
 
-  //printf("rst_id->reg_multi_patch_grp_count = %d\n", rst_id->reg_multi_patch_grp_count);
+  //fprintf(stderr, "rst_id->reg_multi_patch_grp_count = %d\n", rst_id->reg_multi_patch_grp_count);
   for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
     for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
       req_count++;

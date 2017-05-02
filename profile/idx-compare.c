@@ -93,14 +93,14 @@ int main(int argc, char **argv)
   rc = read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
   if (rc != (sizeof(*binheader1) * binheader_count))
   {
-    //printf("Error reading header %d %d\n", rc, (sizeof(*binheader1) * binheader_count));
+    //fprintf(stderr, "Error reading header %d %d\n", rc, (sizeof(*binheader1) * binheader_count));
     exit(0);
   }
 
   rc = read(fd2, binheader2, (sizeof(*binheader2) * binheader_count));
   if (rc != (sizeof(*binheader2) * binheader_count))
   {
-    //printf("Error reading header %d %d\n", rc, (sizeof(*binheader2) * binheader_count));
+    //fprintf(stderr, "Error reading header %d %d\n", rc, (sizeof(*binheader2) * binheader_count));
     exit(0);
   }
   
@@ -120,15 +120,15 @@ int main(int argc, char **argv)
       memset(data_buffer2, 0, data_length2);
       assert(data_buffer2 != NULL);
 
-      //printf("%ld %ld :: %ld %ld\n", data_length1, data_offset1, data_length2, data_offset2);
+      //fprintf(stderr, "%ld %ld :: %ld %ld\n", data_length1, data_offset1, data_length2, data_offset2);
       
       int ret2;
       ret2 = pread(fd1, data_buffer1, data_length1, data_offset1);
-      //printf("I O %d %d\n", ret2, data_length);
+      //fprintf(stderr, "I O %d %d\n", ret2, data_length);
       assert(ret2 == data_length1);
 
       ret2 = pread(fd2, data_buffer2, data_length2, data_offset2);
-      //printf("I O %d %d\n", ret2, data_length2);
+      //fprintf(stderr, "I O %d %d\n", ret2, data_length2);
       assert(ret2 == data_length2);
       
       if(data_length1 != ret2)
@@ -146,12 +146,12 @@ int main(int argc, char **argv)
           if (data_buffer1[i] == data_buffer2[i])
           {
             non_zero_equal_count[var]++;
-            //printf("[R] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+            //fprintf(stderr, "[R] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
           }
           else
           {
             non_zero_unequal_count[var]++;
-            //printf("[W] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
+            //fprintf(stderr, "[W] Values in Block %d at index %d = %f %f\n", j, i, data_buffer1[i], data_buffer2[i]);
           }
         }
       }
@@ -168,7 +168,7 @@ int main(int argc, char **argv)
   close(fd2);
 
   for (var = 0; var < variable_count; var++ )
-    printf("[%d] Zero Equal %lld Non-Zero Equal %lld Non-Zero Non Equal %lld\n", var, (long long)zero_count[var], (long long)non_zero_equal_count[var], (long long)non_zero_unequal_count[var]);
+    fprintf(stderr, "[%d] Zero Equal %lld Non-Zero Equal %lld Non-Zero Non Equal %lld\n", var, (long long)zero_count[var], (long long)non_zero_equal_count[var], (long long)non_zero_unequal_count[var]);
   
   return(0);
 }

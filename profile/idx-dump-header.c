@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   rc = read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
   if (rc != (sizeof(*binheader1) * binheader_count))
   {
-    printf("Error reading header 1\n");
+    fprintf(stderr, "Error reading header 1\n");
     exit(0);
   }
   
@@ -87,18 +87,18 @@ int main(int argc, char **argv)
       data_offset1 = 0;
       data_length1 = ntohl(binheader1[(j + blocks_per_file * var) * 10 + 14]);
       data_offset1 = ntohl(binheader1[(j + blocks_per_file * var) * 10 + 12]);
-      printf("[%d] Block %d: Offset %lld Count %lld\n", var, j, (unsigned long long)data_offset1, (unsigned long long)data_length1);
+      fprintf(stderr, "[%d] Block %d: Offset %lld Count %lld\n", var, j, (unsigned long long)data_offset1, (unsigned long long)data_length1);
 
       double *data_buffer = malloc(data_length1);
       rc = pread(fd1, data_buffer, data_length1, data_offset1);
       //if (rc != data_length1)
       //{
-      //  printf("Error reading header 2 %d %d\n", (int)rc, (int)data_length1);
+      //  fprintf(stderr, "Error reading header 2 %d %d\n", (int)rc, (int)data_length1);
       //  exit(0);
       //}
       int k = 0;
       for (k = 0; k < data_length1/sizeof(double); k++)
-        printf("Value at %d = %f\n", k, data_buffer[k]);
+        fprintf(stderr, "Value at %d = %f\n", k, data_buffer[k]);
       
     }
   }

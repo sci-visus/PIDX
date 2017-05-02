@@ -47,7 +47,7 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
         int dim_z = var->hz_buffer[p]->nsamples_per_level[c][2];
         samples_per_level = dim_x * dim_y * dim_z;
         //if (id->idx_c->grank == 0)
-        //  printf("[%d] -----> %d %d %d\n", c, dim_x, dim_y, dim_z);
+        //  fprintf(stderr, "[%d] -----> %d %d %d\n", c, dim_x, dim_y, dim_z);
 
         // only compress from the second block onwards
         if (samples_per_level >= id->idx_d->samples_per_block)
@@ -103,7 +103,7 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
             puts("WARNING: compressed size does not fit in an int");
           *((unsigned int*)output) = (unsigned int)compressed_bytes; // first 4 bytes = size of compressed stream
 
-          //printf("[%d] size %d %d %d CMP Offset %d CMP Bytes %d\n", b, block_nsamples.x, block_nsamples.y, block_nsamples.z, block_offset, compressed_bytes);
+          //fprintf(stderr, "[%d] size %d %d %d CMP Offset %d CMP Bytes %d\n", b, block_nsamples.x, block_nsamples.y, block_nsamples.z, block_offset, compressed_bytes);
           memcpy(var->hz_buffer[p]->buffer[c] + block_offset, output,  (compressed_bytes + 4));
           free(output);
           zfp_field_free(field);
@@ -146,14 +146,14 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
         int bdimy = ((int*)var->hz_buffer[p]->buffer[c])[4];
         int bdimz = ((int*)var->hz_buffer[p]->buffer[c])[5];
 
-        printf("[%d] ldim: %d %d %d bdim %d %d %d\n", c, ldimx, ldimy, ldimz, bdimx, bdimy, bdimz);
+        fprintf(stderr, "[%d] ldim: %d %d %d bdim %d %d %d\n", c, ldimx, ldimy, ldimz, bdimx, bdimy, bdimz);
 
         int bc = 0;
         int offset = 0;
         while(bc != (ldimx/bdimx) * (ldimy/bdimy) * (ldimz/bdimz))
         {
           unsigned int compressed_bytes = *(unsigned int*)(var->hz_buffer[p]->buffer[c] + 24 + offset);
-          printf("[Block %d] Compressed size %d\n", bc, compressed_bytes);
+          fprintf(stderr, "[Block %d] Compressed size %d\n", bc, compressed_bytes);
           offset = offset + compressed_bytes + 4;
           bc++;
         }
@@ -206,7 +206,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
         unsigned char* output = (unsigned char*)malloc(max_compressed_bytes + 16);
         bitstream* stream = stream_open(output + 16, max_compressed_bytes);
         zfp_stream_set_bit_stream(zfp, stream);
-        //printf("[%d] [Dim %d %d %d] [BD %d] MCB %d\n", c, dim_x, dim_y, dim_z, type, max_compressed_bytes);
+        //fprintf(stderr, "[%d] [Dim %d %d %d] [BD %d] MCB %d\n", c, dim_x, dim_y, dim_z, type, max_compressed_bytes);
         size_t compressed_bytes = zfp_compress(zfp, field);
         if (compressed_bytes == 0)
           puts("ERROR: Something wrong happened during compression\n");
@@ -228,7 +228,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
 
 
         //if (c == maxH - id->resolution_to - 1)
-        //  printf("Compressed %d Original %d\n", var->hz_buffer[p]->compressed_buffer_size[c], dim_x * dim_y * dim_z * bytes_for_datatype);
+        //  fprintf(stderr, "Compressed %d Original %d\n", var->hz_buffer[p]->compressed_buffer_size[c], dim_x * dim_y * dim_z * bytes_for_datatype);
       }
     }
   }

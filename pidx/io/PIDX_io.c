@@ -63,7 +63,7 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
     ret = PIDX_wavelet_write(file, gi, svi, evi);
   }
 
-  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
+  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   file->idx_d->time->EX = PIDX_get_time();
 
@@ -98,7 +98,7 @@ PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
   else if (MODE == PIDX_RAW_IO)
     ret = PIDX_raw_read(file, gi, svi, evi);
 
-  if (ret != PIDX_success) {fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
+  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   file->idx_d->time->EX = PIDX_get_time();
 

@@ -34,7 +34,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   ret = group_meta_data_init(file, gi, svi, evi, PIDX_WRITE);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -42,7 +42,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   ret = restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -50,7 +50,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   ret = restructure(file, PIDX_WRITE);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -66,13 +66,13 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
 
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
-    //printf("[%d %d] ---- %d %d pipe %d\n", svi, evi, si, ei, file->idx->variable_pipe_length);
+    //fprintf(stderr, "[%d %d] ---- %d %d pipe %d\n", svi, evi, si, ei, file->idx->variable_pipe_length);
 
     // Step 3: Setup HZ buffers
     ret = hz_encode_setup(file, gi, si, ei);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -80,13 +80,13 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     ret = hz_encode(file, PIDX_WRITE);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
     if (hz_io(file, gi, PIDX_WRITE) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -96,7 +96,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
@@ -107,7 +107,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
@@ -121,7 +121,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       ret = data_io(file, gi, li, PIDX_WRITE);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
@@ -134,7 +134,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     ret = hz_encode_cleanup(file);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -142,7 +142,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   ret = restructure_cleanup(file);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -150,7 +150,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   ret = group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -186,7 +186,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   ret = group_meta_data_init(file, gi, svi, evi, PIDX_READ);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -200,7 +200,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     ret = restructure_setup(file, gi, si, ei, PIDX_READ);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -208,13 +208,13 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     ret = hz_encode_setup(file, gi, si, ei);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
     if (hz_io(file, gi, PIDX_READ) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -224,7 +224,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_READ);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
@@ -236,7 +236,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       ret = data_io(file, gi, li, PIDX_READ);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
       time->io_end[gi][li] = PIDX_get_time();
@@ -248,7 +248,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_READ);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
@@ -259,7 +259,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     ret = hz_encode(file, PIDX_READ);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -267,7 +267,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     ret = restructure(file, PIDX_READ);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -275,14 +275,14 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     ret = hz_encode_cleanup(file);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
     ret = restructure_cleanup(file);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -291,7 +291,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   ret = group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -318,7 +318,7 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
   }
 
   if (file->idx_c->grank == 0)
-    printf("%d - %d %d %d\n", var_grp->agg_l_nshared, var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index, var_grp->nshared_layout_count);
+    fprintf(stderr, "%d - %d %d %d\n", var_grp->agg_l_nshared, var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index, var_grp->nshared_layout_count);
 
   return PIDX_success;
 }
@@ -438,7 +438,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = idx_init(file, gi, svi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->init_end = PIDX_get_time();
@@ -447,7 +447,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = set_rst_box_size(file, gi, svi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->set_reg_box_end = MPI_Wtime();
@@ -458,7 +458,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = populate_global_bit_string(file, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -471,7 +471,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = populate_block_layouts(file, gi, svi, 0, 0, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_IDX_IO);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -479,7 +479,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = find_agg_level(file, gi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -487,7 +487,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = create_agg_io_buffer(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->layout_end = PIDX_get_time();
@@ -500,7 +500,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
     ret = write_headers(file, gi, svi, evi, PIDX_IDX_IO);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
     time->header_io_end = PIDX_get_time();
@@ -520,21 +520,21 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
   ret = destroy_agg_io_buffer(file, svi, evi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   ret = delete_block_layout(file, gi, 0, 0, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   ret = idx_finalize(file, gi, svi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 

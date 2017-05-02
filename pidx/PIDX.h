@@ -140,6 +140,11 @@ PIDX_return_code PIDX_close(PIDX_file file);
 /*
  * Implementation in PIDX_idx_set_get.c
  */
+
+
+PIDX_return_code PIDX_randomized_aggregators(PIDX_file file, int* agg_list, int agg_count);
+
+
 ///
 /// Sets the number of variables in the IDX file.
 /// \param file The IDX file handler.

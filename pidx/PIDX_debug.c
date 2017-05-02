@@ -182,8 +182,8 @@ static PIDX_return_code dump_debug_data_init(PIDX_file file)
       sprintf(mkdir_line2, "mkdir -p %s", local_state_dump_dir_name);
       system(mkdir_line1);
       system(mkdir_line2);
-      printf("mkdir 1: %s\n", mkdir_line1);
-      printf("mkdir 2: %s\n", mkdir_line2);
+      fprintf(stderr, "mkdir 1: %s\n", mkdir_line1);
+      fprintf(stderr, "mkdir 2: %s\n", mkdir_line2);
 #else
       int ret;
       ret = mkdir(mpi_state_dump_dir_name, S_IRWXU | S_IRWXG | S_IRWXO);

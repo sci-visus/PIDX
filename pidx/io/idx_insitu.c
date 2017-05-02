@@ -29,7 +29,7 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
   ret = set_rst_box_size(file, gi, svi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->set_reg_box_end = MPI_Wtime();
@@ -40,7 +40,7 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
   ret = restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -50,7 +50,7 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
   ret = restructure(file, PIDX_WRITE);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -72,12 +72,12 @@ PIDX_return_code PIDX_idx_insitu(PIDX_io file, int gi, int svi, int evi)
   ret = restructure_cleanup(file);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   //pa6 = MPI_Wtime();
 
-  //printf("[%d] BOX %f SETUP %f RST %f INSITU %f CLEANUP %f\n", file->idx_c->grank, (a2 - a1), (a3 - a2), (a4 - a3), (a5 - a4), (a6 - a5));
+  //fprintf(stderr, "[%d] BOX %f SETUP %f RST %f INSITU %f CLEANUP %f\n", file->idx_c->grank, (a2 - a1), (a3 - a2), (a4 - a3), (a5 - a4), (a6 - a5));
 
   return PIDX_success;
 }

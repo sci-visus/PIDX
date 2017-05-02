@@ -116,7 +116,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
     }
 
 
-    //printf("Max Box Count %d\n", rst_id->reg_patch_grp_count);
+    //fprintf(stderr, "Max Box Count %d\n", rst_id->reg_patch_grp_count);
 
     rst_id->reg_patch_grp = (Ndim_patch_group*)malloc(sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
     memset(rst_id->reg_patch_grp, 0, sizeof(*rst_id->reg_patch_grp) * rst_id->reg_patch_grp_count);
@@ -125,7 +125,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
     /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
 
     //if (rst_id->idx_c->grank == 8)
-    //printf("NP %d %d %d\n", rst_id->idx->number_processes[0], rst_id->idx->number_processes[1], rst_id->idx->number_processes[2]);
+    //fprintf(stderr, "NP %d %d %d\n", rst_id->idx->number_processes[0], rst_id->idx->number_processes[1], rst_id->idx->number_processes[2]);
     for (i = 0; i < rst_id->idx->number_processes[0] * rst_id->idx->number_processes[1] * rst_id->idx->number_processes[2]; i++)
     {
       Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
@@ -140,7 +140,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
       reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2];// + rst_id->idx->shared_face; //rst_id->reg_patch_size[2];
 
       //if (rst_id->idx_c->grank == 8)
-      //  printf("OS: %d %d %d - %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2]);
+      //  fprintf(stderr, "OS: %d %d %d - %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2]);
 
 
       /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
@@ -217,7 +217,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
             }
 
             //if (rst_id->idx_c->grank == 8)
-            //  printf("[%d] [%d %d %d - %d %d %d] - [%d %d %d - %d %d %d] Source rank %d\n", i, reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], rank_r_patch->offset[0], rank_r_patch->offset[1], rank_r_patch->offset[2], rank_r_patch->size[0], rank_r_patch->size[1], rank_r_patch->size[2],  r);
+            //  fprintf(stderr, "[%d] [%d %d %d - %d %d %d] - [%d %d %d - %d %d %d] Source rank %d\n", i, reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], rank_r_patch->offset[0], rank_r_patch->offset[1], rank_r_patch->offset[2], rank_r_patch->size[0], rank_r_patch->size[1], rank_r_patch->size[2],  r);
 
             patch_grp->source_patch_rank[patch_count] = r;
             patch_count++;
@@ -245,7 +245,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
                 patch_grp->patch = temp_buffer3;
 
               //if (rst_id->idx_c->grank == 8)
-              //  printf("maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
+              //  fprintf(stderr, "maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
               //return PIDX_err_rst;
             }
 
@@ -275,7 +275,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
 
         patch_grp->max_patch_rank = rst_id->idx->new_box_set[i]->rank;
         //if (rst_id->idx_c->grank == 63)
-        //  printf("Max patch rank %d\n", patch_grp->max_patch_rank);
+        //  fprintf(stderr, "Max patch rank %d\n", patch_grp->max_patch_rank);
 
         if(rst_id->idx_c->grank == patch_grp->max_patch_rank)
         {
@@ -303,7 +303,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
       reg_patch->size[2] = rst_id->idx->new_box_set[i]->size[2]; //rst_id->reg_patch_size[2];
 
       //if (rst_id->idx_c->grank == 8)
-      //  printf("OS: %d %d %d - %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2]);
+      //  fprintf(stderr, "OS: %d %d %d - %d %d %d\n", reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2]);
 
 
       /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
@@ -374,7 +374,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
             }
 
             //if (rst_id->idx_c->grank == 8)
-            //  printf("[%d] [%d %d %d - %d %d %d] - [%d %d %d - %d %d %d] Source rank %d\n", i, reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], rank_r_patch->offset[0], rank_r_patch->offset[1], rank_r_patch->offset[2], rank_r_patch->size[0], rank_r_patch->size[1], rank_r_patch->size[2],  r);
+            //  fprintf(stderr, "[%d] [%d %d %d - %d %d %d] - [%d %d %d - %d %d %d] Source rank %d\n", i, reg_patch->offset[0], reg_patch->offset[1], reg_patch->offset[2], reg_patch->size[0], reg_patch->size[1], reg_patch->size[2], rank_r_patch->offset[0], rank_r_patch->offset[1], rank_r_patch->offset[2], rank_r_patch->size[0], rank_r_patch->size[1], rank_r_patch->size[2],  r);
 
             patch_grp->source_patch_rank[patch_count] = r;
             patch_count++;
@@ -402,7 +402,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
                 patch_grp->patch = temp_buffer3;
 
               //if (rst_id->idx_c->grank == 8)
-              //  printf("maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
+              //  fprintf(stderr, "maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
               //return PIDX_err_rst;
             }
 
@@ -432,7 +432,7 @@ PIDX_return_code PIDX_generic_rst_meta_data_create(PIDX_generic_rst_id rst_id)
 
         patch_grp->max_patch_rank = rst_id->idx->new_box_set[i]->rank;
         //if (rst_id->idx_c->grank == 63)
-        //  printf("Max patch rank %d\n", patch_grp->max_patch_rank);
+        //  fprintf(stderr, "Max patch rank %d\n", patch_grp->max_patch_rank);
 
         if(rst_id->idx_c->grank == patch_grp->max_patch_rank)
         {

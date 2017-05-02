@@ -93,7 +93,7 @@ PIDX_return_code compute_average(PIDX_io file, int gi, int svi, int evi, int mod
           average = sum / 64;
 
           //if (file->idx_c->grank == 1)
-          //  printf("Average = %f\n", average);
+          //  fprintf(stderr, "Average = %f\n", average);
 
           memcpy(temp + count * sizeof (float), &average, sizeof (float));
           count++;
@@ -152,7 +152,7 @@ PIDX_return_code idx_stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int
 
 #if SORIGINAL
     if (file->idx_c->grank == 0)
-      printf("SORIGINAL");
+      fprintf(stderr, "SORIGINAL");
 
     ret = print_global_data(file, gi, v);
     if (ret != PIDX_success)
@@ -256,10 +256,10 @@ PIDX_return_code idx_stencil_wavelet(PIDX_io file, int gi, int svi, int evi, int
         MPI_Allreduce(&local_sent, &total_sent, 1, MPI_INT, MPI_SUM, verifyComm);
 
         if (vrank == 0)
-          printf("[%d] Total Data sent %d Total Data received %d\n", l, total_sent, total_receive);
+          fprintf(stderr, "[%d] Total Data sent %d Total Data received %d\n", l, total_sent, total_receive);
       }
 #endif
-      //printf("[%d] Rank %d Sent %d [%d %d %d] Receive %d [%d %d %d]\n", l, file->idx_c->grank, sent_x + sent_y + sent_z, sent_x, sent_y, sent_z, receive_x + receive_y + receive_z, receive_x, receive_y, receive_z);
+      //fprintf(stderr, "[%d] Rank %d Sent %d [%d %d %d] Receive %d [%d %d %d]\n", l, file->idx_c->grank, sent_x + sent_y + sent_z, sent_x, sent_y, sent_z, receive_x + receive_y + receive_z, receive_x, receive_y, receive_z);
       destroy_stencil_buffers();
     }
 #endif
@@ -427,7 +427,7 @@ static PIDX_return_code calculate_neighbor_ranks_y (PIDX_io file)
     negative_rank_y = -1;
 
   //if (file->idx_c->grank == 0)
-  //printf("My Rank %d My Up rank = %d My Down rank %d\n", file->idx_c->grank, positive_rank_y, negative_rank_y);
+  //fprintf(stderr, "My Rank %d My Up rank = %d My Down rank %d\n", file->idx_c->grank, positive_rank_y, negative_rank_y);
 
   return PIDX_success;
 }
@@ -536,7 +536,7 @@ static PIDX_return_code wavelet_odd_x (PIDX_io file, int gi, int v, int l, int x
 
 #if SINTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
-    printf("[%d] Wavelet XXXX ---- 1", l);
+    fprintf(stderr, "[%d] Wavelet XXXX ---- 1", l);
 
   if (print_global_data(file, gi, v) != PIDX_success)
   {
@@ -572,7 +572,7 @@ static PIDX_return_code wavelet_even_x (PIDX_io file, int gi, int v, int l, int 
 
 #if SINTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
-    printf("[%d] Wavelet XXXX ---- 2", l);
+    fprintf(stderr, "[%d] Wavelet XXXX ---- 2", l);
 
   if (print_global_data(file, gi, v) != PIDX_success)
   {
@@ -607,7 +607,7 @@ static PIDX_return_code wavelet_odd_y (PIDX_io file, int gi, int v, int l, int y
 
 #if SINTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
-    printf("[%d] Wavelet YYYY ---- 1", l);
+    fprintf(stderr, "[%d] Wavelet YYYY ---- 1", l);
 
   if (print_global_data(file, gi, v) != PIDX_success)
   {
@@ -642,7 +642,7 @@ static PIDX_return_code wavelet_even_y (PIDX_io file, int gi, int v, int l, int 
 
 #if SINTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
-    printf("[%d] Wavelet YYYY ---- 2", l);
+    fprintf(stderr, "[%d] Wavelet YYYY ---- 2", l);
 
   if (print_global_data(file, gi, v) != PIDX_success)
   {
@@ -677,7 +677,7 @@ static PIDX_return_code wavelet_odd_z (PIDX_io file, int gi, int v, int l, int s
 
 #if SINTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
-    printf("[%d] Wavelet ZZZZ ---- 1", l);
+    fprintf(stderr, "[%d] Wavelet ZZZZ ---- 1", l);
 
   if (print_global_data(file, gi, v) != PIDX_success)
   {
@@ -712,7 +712,7 @@ static PIDX_return_code wavelet_even_z (PIDX_io file, int gi, int v, int l, int 
 
 #if SINTERMEDIATE_RESULT
   if (file->idx_c->grank == 0)
-    printf("[%d] Wavelet ZZZZ ---- 2", l);
+    fprintf(stderr, "[%d] Wavelet ZZZZ ---- 2", l);
 
   if (print_global_data(file, gi, v) != PIDX_success)
   {
@@ -740,7 +740,7 @@ static PIDX_return_code wavelet_comm_p2p_odd_x (PIDX_io file, int gi, int v, int
   int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2] / file->idx->chunk_size[2];
   unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
-  //printf("My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
+  //fprintf(stderr, "My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
 
   int req_count = 0;
   if (positive_rank_x != -1)
@@ -841,7 +841,7 @@ static PIDX_return_code wavelet_comp_odd_x (PIDX_io file, int gi, int v, int l, 
         memcpy (&new_val, wb + last_index * bytes_for_datatype, bytes_for_datatype);
 
         //if (file->idx_c->grank == 1)
-        //  printf("%f %f %f\n", left, new_val, right);
+        //  fprintf(stderr, "%f %f %f\n", left, new_val, right);
 
         // new value
         new_val = new_val - 0.5 * (left + right);
@@ -973,7 +973,7 @@ static PIDX_return_code wavelet_comp_even_x (PIDX_io file, int gi, int v, int l,
         new_val = new_val + 0.25 * (left + right);
 
         //if (file->idx_c->grank == 1)
-        //  printf("%f %f %f\n", left, new_val, right);
+        //  fprintf(stderr, "%f %f %f\n", left, new_val, right);
 
         // new value
         memcpy(wb + first_index * bytes_for_datatype, &new_val, bytes_for_datatype);
@@ -1000,7 +1000,7 @@ static PIDX_return_code wavelet_comm_p2p_odd_y (PIDX_io file, int gi, int v, int
   int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2] / file->idx->chunk_size[2];
   unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
-  //printf("My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
+  //fprintf(stderr, "My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
 
   int req_count = 0;
   if (positive_rank_y != -1)
@@ -1219,7 +1219,7 @@ static PIDX_return_code wavelet_comp_even_y (PIDX_io file, int gi, int v, int l,
            memcpy (&right, wb + down_index * bytes_for_datatype, bytes_for_datatype);
            memcpy (&new_val, wb + index * bytes_for_datatype, bytes_for_datatype);
            //if (file->idx_c->grank == 0)
-           //  printf("[%d %d] -> %f %f %f\n", i, j, left, right, new_val);
+           //  fprintf(stderr, "[%d %d] -> %f %f %f\n", i, j, left, right, new_val);
            new_val = new_val + 0.25 * (left + right);
            memcpy(wb + index * bytes_for_datatype, &new_val, bytes_for_datatype);
          }
@@ -1245,7 +1245,7 @@ static PIDX_return_code wavelet_comp_even_y (PIDX_io file, int gi, int v, int l,
         memcpy (&new_val, wb + first_index * bytes_for_datatype, bytes_for_datatype);
 
         //if (file->idx_c->grank == 2)
-        //  printf("%f %f %f\n", left, new_val, right);
+        //  fprintf(stderr, "%f %f %f\n", left, new_val, right);
 
         // wavlet transformation
         new_val = new_val + 0.25 * (left + right);
@@ -1275,7 +1275,7 @@ static PIDX_return_code wavelet_comm_p2p_odd_z (PIDX_io file, int gi, int v, int
   //int s_z = (int) var->rst_patch_group[0]->reg_patch->size[2];
   unsigned char* wb = var->rst_patch_group[0]->reg_patch->buffer;
 
-  //printf("My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
+  //fprintf(stderr, "My rank %d [%d + (%d/%d)] Rank I get data from %d Rank I send data to %d\n", file->idx_c->grank, file->idx_c->grank_x, file->idx_c->gnproc_x, file->idx->number_processes[0], positive_rank_x, negative_rank_x);
 
   int req_count = 0;
   if (positive_rank_z != -1)
@@ -1357,7 +1357,7 @@ static PIDX_return_code wavelet_comp_odd_z (PIDX_io file, int gi, int v, int l, 
          if (bytes_for_datatype == 4)
          {
            //if (file->idx_c->grank == 0)
-           //  printf ("[%d %d] -> %d %d %d\n", i, j, index, up_index, down_index);
+           //  fprintf(stderr, "[%d %d] -> %d %d %d\n", i, j, index, up_index, down_index);
            float left, right, new_val;
            memcpy (&left, wb + up_index * bytes_for_datatype, bytes_for_datatype);
            memcpy (&right, wb + down_index * bytes_for_datatype, bytes_for_datatype);
@@ -1390,7 +1390,7 @@ static PIDX_return_code wavelet_comp_odd_z (PIDX_io file, int gi, int v, int l, 
 
         // new value
         //if (file->idx_c->grank == 0)
-        //  printf ("[%d %d] -> %f %f %f\n", i, j, new_val, left, right);
+        //  fprintf(stderr, "[%d %d] -> %f %f %f\n", i, j, new_val, left, right);
         new_val = new_val - 0.5 * (left + right);
 
         memcpy(wb + last_index * bytes_for_datatype, &new_val, bytes_for_datatype);
@@ -1501,7 +1501,7 @@ static PIDX_return_code wavelet_comp_even_z (PIDX_io file, int gi, int v, int l,
            memcpy (&right, wb + down_index * bytes_for_datatype, bytes_for_datatype);
            memcpy (&new_val, wb + index * bytes_for_datatype, bytes_for_datatype);
            //if (file->idx_c->grank == 0)
-           //  printf("[%d %d] -> %f %f %f\n", i, j, left, right, new_val);
+           //  fprintf(stderr, "[%d %d] -> %f %f %f\n", i, j, left, right, new_val);
            new_val = new_val + 0.25 * (left + right);
            memcpy(wb + index * bytes_for_datatype, &new_val, bytes_for_datatype);
          }
@@ -1634,7 +1634,7 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
 
   if (file->idx_c->grank == 0)
   {
-    printf("STENCIL\n");
+    fprintf(stderr, "STENCIL\n");
     for (k = 0; k < file->idx->bounds[2]; k++)
     {
       for (j = 0; j < file->idx->bounds[1]; j++)
@@ -1645,15 +1645,15 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
           int index = (file->idx->bounds[0] * file->idx->bounds[1] * k) + (file->idx->bounds[0] * j) + i;
           float v;
           memcpy(&v, global_buffer + index * bytes_for_datatype, bytes_for_datatype);
-          //printf("%f\t", v);
+          //fprintf(stderr, "%f\t", v);
           if (v != 0)
-            printf("%d %d %d - %f\n", i, j, k, v);
+            fprintf(stderr, "%d %d %d - %f\n", i, j, k, v);
         }
-        //printf("\n");
+        //fprintf(stderr, "\n");
       }
-      //printf("\n");
+      //fprintf(stderr, "\n");
     }
-    printf("\n");
+    fprintf(stderr, "\n");
   }
 
   if (file->idx_c->grank == 0)

@@ -180,7 +180,7 @@ int main(int argc, char **argv)
       bitPattern[i] = RegExBitmaskBit(bitSequence, i);
     Align((maxh - 1), level, bitPattern, tpatch, allign_offset, allign_count, nsamples_per_level);
     //if (rank == 0)
-    //  printf("[%s %d] [%d %d %d] XXXXX %d %d %d\n", bitSequence, maxh, allign_offset[level][0], allign_offset[level][1], allign_offset[level][2], nsamples_per_level[level][0], nsamples_per_level[level][1], nsamples_per_level[level][2]);
+    //  fprintf(stderr, "[%s %d] [%d %d %d] XXXXX %d %d %d\n", bitSequence, maxh, allign_offset[level][0], allign_offset[level][1], allign_offset[level][2], nsamples_per_level[level][0], nsamples_per_level[level][1], nsamples_per_level[level][2]);
 
     sub_sampled_buffer = malloc(sizeof(float) * nsamples_per_level[level][0] * nsamples_per_level[level][1] * nsamples_per_level[level][2]);
     for (k1 = allign_offset[level][2] - local_box_offset[2]; k1 < local_box_size[2]; k1 = k1 + sf)
@@ -259,7 +259,7 @@ int main(int argc, char **argv)
     double t_time = e_time - s_time;
     MPI_Allreduce(&t_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
     //if (max_time == t_time)
-    //  printf("[%d] [%d] [%d] [%d %d %d | %d %d %d] SAMPLING %f BOX %f SETUP %f RST %f INSITU %f CLEANUP %f TOTAL TIME %f [%f] = [%f]\n", ts, rank, sf, global_box_size[0], global_box_size[1], global_box_size[2], partition_box_size[0] * local_box_size[0], partition_box_size[1] * local_box_size[1], partition_box_size[2] * local_box_size[2], (sampling_end - sampling_start), (pa2 - pa1), (pa3 - pa2), (pa4 - pa3), (pa5 - pa4), (pa6 - pa5), max_time, ((pa2 - pa1) + (pa3 - pa2) + (pa4 - pa3) + (pa5 - pa4) + (pa6 - pa5)), max_time + (sampling_end - sampling_start));
+    //  fprintf(stderr, "[%d] [%d] [%d] [%d %d %d | %d %d %d] SAMPLING %f BOX %f SETUP %f RST %f INSITU %f CLEANUP %f TOTAL TIME %f [%f] = [%f]\n", ts, rank, sf, global_box_size[0], global_box_size[1], global_box_size[2], partition_box_size[0] * local_box_size[0], partition_box_size[1] * local_box_size[1], partition_box_size[2] * local_box_size[2], (sampling_end - sampling_start), (pa2 - pa1), (pa3 - pa2), (pa4 - pa3), (pa5 - pa4), (pa6 - pa5), max_time, ((pa2 - pa1) + (pa3 - pa2) + (pa4 - pa3) + (pa5 - pa4) + (pa6 - pa5)), max_time + (sampling_end - sampling_start));
   }
   destroy_pidx_var_point_and_access();
   //destroy_pidx_var_point_and_access2();
@@ -381,7 +381,7 @@ static int parse_var_list()
   FILE *fp = fopen(var_list, "r");
   if (fp == NULL)
   {
-    fprintf(stdout, "Error Opening %s\n", var_list);
+    fprintf(stderr, "Error Opening %s\n", var_list);
     return PIDX_err_file;
   }
 
@@ -450,7 +450,7 @@ static int parse_var_list()
   {
     int v = 0;
     for(v = 0; v < variable_count; v++)
-      printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
+      fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
   */
 
@@ -684,7 +684,7 @@ static void set_pidx_file(int ts)
   PIDX_set_restructuring_box(file, reg_size);
 
   PIDX_set_process_decomposition(file, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
-  //printf("XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
+  //fprintf(stderr, "XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
   //PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
   PIDX_set_partition_size(file, global_box_size[0], global_box_size[1], global_box_size[2]);
 
@@ -725,7 +725,7 @@ static void set_pidx_file2(int ts)
   PIDX_set_restructuring_box(file2, reg_size);
 
   PIDX_set_process_decomposition(file2, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
-  //printf("XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
+  //fprintf(stderr, "XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
   PIDX_set_partition_size(file2, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file2, blocks_per_file);

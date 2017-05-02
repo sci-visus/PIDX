@@ -78,7 +78,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   }
 
   //if (color == 1)
-  //  printf("[INSITU] [%d] --> %d (%d / %d) %d (%d / %d) %d (%d / %d) : %d\n", id->idx_c->grank, id->idx->number_processes[0], id->idx->bounds[0], id->idx->reg_patch_size[0],  id->idx->number_processes[1], id->idx->bounds[1], id->idx->reg_patch_size[1], id->idx->number_processes[2], id->idx->bounds[2], id->idx->reg_patch_size[2], color);
+  //  fprintf(stderr, "[INSITU] [%d] --> %d (%d / %d) %d (%d / %d) %d (%d / %d) : %d\n", id->idx_c->grank, id->idx->number_processes[0], id->idx->bounds[0], id->idx->reg_patch_size[0],  id->idx->number_processes[1], id->idx->bounds[1], id->idx->reg_patch_size[1], id->idx->number_processes[2], id->idx->bounds[2], id->idx->reg_patch_size[2], color);
 
 
 
@@ -89,7 +89,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   ret = MPI_Comm_split(id->idx_c->global_comm, color, id->idx_c->grank, &(insitu_comm));
   if (ret != MPI_SUCCESS)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -172,7 +172,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
     unsigned long long level_start_address = (unsigned long long)pow(2, 24);
     unsigned long long ZYX[PIDX_MAX_DIMENSIONS];
     Hz_to_xyz(id->idx->bitPattern, id->idx_derived->maxh - 1, level_start_address, ZYX);
-    printf("[%d %s] start %lld %lld %lld [%d %d %d]\n", id->idx->bitSequence, id->idx_derived->maxh, ZYX[0], ZYX[1], ZYX[2], r_p->size[0], r_p->size[1], r_p->size[2]);
+    fprintf(stderr, "[%d %s] start %lld %lld %lld [%d %d %d]\n", id->idx->bitSequence, id->idx_derived->maxh, ZYX[0], ZYX[1], ZYX[2], r_p->size[0], r_p->size[1], r_p->size[2]);
 
     int i1 = 0, j1 = 0, k1 = 0;
     int count = 0;
@@ -222,14 +222,14 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
 
     //if (id->idx_c->grank == 0)
     //{
-    //  printf("[xxxx %d] Low: %d %d %d High %d %d %d\n", id->idx_c->grank, (int)r_p->offset[0], (int)r_p->offset[1], (int)r_p->offset[2], (int) r_p->size[0], (int) r_p->size[1], (int) r_p->size[2]);
-    //  printf("PIDX %d %d %d\n", (int)id->idx->bounds[0], (int)id->idx->bounds[1], (int)id->idx->bounds[2]);
+    //  fprintf(stderr, "[xxxx %d] Low: %d %d %d High %d %d %d\n", id->idx_c->grank, (int)r_p->offset[0], (int)r_p->offset[1], (int)r_p->offset[2], (int) r_p->size[0], (int) r_p->size[1], (int) r_p->size[2]);
+    //  fprintf(stderr, "PIDX %d %d %d\n", (int)id->idx->bounds[0], (int)id->idx->bounds[1], (int)id->idx->bounds[2]);
     //}
 
     //
     //float x1;
     //memcpy(&x1, r_p->buffer, sizeof(float));
-    //printf("x1 = %f\n", x1);
+    //fprintf(stderr, "x1 = %f\n", x1);
 
     //
     execute_pmt((char*)r_p->buffer,
@@ -242,7 +242,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
 
     //
     //double e_t = MPI_Wtime();
-    //printf("PIDX %d Time %f\n", id->idx_c->grank, e_t - s_t);
+    //fprintf(stderr, "PIDX %d Time %f\n", id->idx_c->grank, e_t - s_t);
     //
 
     /*

@@ -52,7 +52,7 @@ PIDX_return_code idx_rst_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
 
 #if INTERMEDIATE_RESULT
     if (file->idx_c->grank == 1)
-      printf("ORIGINAL [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
+      fprintf(stderr, "ORIGINAL [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
 
     for (k1 = 0; k1 < s_z - 0; k1++)
     {
@@ -66,11 +66,11 @@ PIDX_return_code idx_rst_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
             int index = (s_x * s_y * k1) + (s_x * j1) + i1;
             memcpy(&x, patch_group->reg_patch->buffer + index * var->bpv/8, var->bpv/8);
             if (file->idx_c->grank == 2)
-              printf("%f\t", x);
+              fprintf(stderr, "%f\t", x);
           }
         }
         if (file->idx_c->grank == 2)
-          printf("\n");
+          fprintf(stderr, "\n");
       }
     }
 #endif
@@ -155,7 +155,7 @@ PIDX_return_code idx_rst_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
 
   /*
   if (file->idx_c->grank == 1)
-    printf("SIZE %d (%d - %d - %d) %d (%d - %d - %d) %d (%d - %d - %d)\n", patch_group->reg_patch->size[0], s_x, px, nx ,patch_group->reg_patch->size[1], s_y, py, ny, patch_group->reg_patch->size[2], s_z, pz, nz);
+    fprintf(stderr, "SIZE %d (%d - %d - %d) %d (%d - %d - %d) %d (%d - %d - %d)\n", patch_group->reg_patch->size[0], s_x, px, nx ,patch_group->reg_patch->size[1], s_y, py, ny, patch_group->reg_patch->size[2], s_z, pz, nz);
 
   for (k1 = 0; k1 < patch_group->reg_patch->size[2]; k1++)
   {
@@ -167,10 +167,10 @@ PIDX_return_code idx_rst_wavelet(PIDX_io file, int gi, int svi, int evi, int mod
         float x;
         memcpy (&x, temp_buffer + index * var->bpv/8, var->bpv/8);
         if (file->idx_c->grank == 1)
-        printf("%f\t", x);
+        fprintf(stderr, "%f\t", x);
       }
       if (file->idx_c->grank == 1)
-      printf("\n");
+      fprintf(stderr, "\n");
     }
   }
   */
@@ -255,7 +255,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[0])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
       odd_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[0];
       break;
     }
@@ -266,7 +266,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[0])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("EVEN start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
+      //  fprintf(stderr, "EVEN start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
       even_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[0];
       break;
     }
@@ -278,7 +278,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[1])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
       y_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[1];
       break;
     }
@@ -289,7 +289,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[2])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[2]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[2]);
       z_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[2];
       break;
     }
@@ -325,7 +325,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
            memcpy (&new_val, wb + index * bytes_for_datatype, bytes_for_datatype);
 
            //if (file->idx_c->grank == 1)
-           //  printf("[O] %f - %f - %f\n", left, new_val, right);
+           //  fprintf(stderr, "[O] %f - %f - %f\n", left, new_val, right);
 
            new_val = new_val - 0.5 * (left + right);
            memcpy(wb + index * bytes_for_datatype, &new_val, bytes_for_datatype);
@@ -337,7 +337,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
 #if INTERMEDIATE_RESULT
   int i1 = 0, j1 = 0, k1 = 0;
   if (file->idx_c->grank == 2)
-    printf("X ODD [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
+    fprintf(stderr, "X ODD [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
 
   Ndim_patch_group patch_group = var->rst_patch_group[0];
   for (k1 = 0; k1 < s_z - 0; k1++)
@@ -352,11 +352,11 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
           int index = (s_x * s_y * k1) + (s_x * j1) + i1;
           memcpy(&x, patch_group->reg_patch->buffer + index * var->bpv/8, var->bpv/8);
           if (file->idx_c->grank == 2)
-            printf("%f\t", x);
+            fprintf(stderr, "%f\t", x);
         }
       }
       if (file->idx_c->grank == 2)
-        printf("\n");
+        fprintf(stderr, "\n");
     }
   }
 #endif
@@ -364,7 +364,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
 
 
   //
-  //printf("Size = %d %d %d\n", s_x, s_y, s_z);
+  //fprintf(stderr, "Size = %d %d %d\n", s_x, s_y, s_z);
   for (k = z_start_offset; k < s_z - 0; k = k + stride_z)
   {
     for (j = y_start_offset; j < s_y - 0; j =  j + stride_y)
@@ -381,7 +381,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
          {
            float left, right, new_val;
 
-           //printf("[%d] [%d %d %d] index %d interval %d\n", file->idx_c->grank, i, j, k, index, interval);
+           //fprintf(stderr, "[%d] [%d %d %d] index %d interval %d\n", file->idx_c->grank, i, j, k, index, interval);
            memcpy (&right, wb + (index + interval) * bytes_for_datatype, bytes_for_datatype);
 
            if (i - interval < 0)
@@ -392,7 +392,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
            memcpy (&new_val, wb + index * bytes_for_datatype, bytes_for_datatype);
 
            //if (file->idx_c->grank == 1 && l == 1)
-           //  printf("[E index %d interval %d i %d] %f - %f - %f\n", index, interval, i, left, new_val, right);
+           //  fprintf(stderr, "[E index %d interval %d i %d] %f - %f - %f\n", index, interval, i, left, new_val, right);
            new_val = new_val + 0.25 * (left + right);
            memcpy(wb + index * bytes_for_datatype, &new_val, bytes_for_datatype);
          }
@@ -402,7 +402,7 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
 
 #if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 2)
-    printf("X EVEN ORIGINAL [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
+    fprintf(stderr, "X EVEN ORIGINAL [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
 
   for (k1 = 0; k1 < s_z - 0; k1++)
   {
@@ -416,11 +416,11 @@ static PIDX_return_code wavelet_rst_x (PIDX_io file, int gi, int v, int l, int s
           int index = (s_x * s_y * k1) + (s_x * j1) + i1;
           memcpy(&x, patch_group->reg_patch->buffer + index * var->bpv/8, var->bpv/8);
           if (file->idx_c->grank == 2)
-            printf("%f\t", x);
+            fprintf(stderr, "%f\t", x);
         }
       }
       if (file->idx_c->grank == 2)
-        printf("\n");
+        fprintf(stderr, "\n");
     }
   }
 #endif
@@ -448,7 +448,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[1])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
       odd_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[1];
       break;
     }
@@ -459,7 +459,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[1])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("EVEN start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
+      //  fprintf(stderr, "EVEN start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
       even_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[1];
       break;
     }
@@ -471,7 +471,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[0])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
       x_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[0];
       break;
     }
@@ -483,7 +483,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[2])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[2]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[2]);
       z_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[2];
       break;
     }
@@ -521,7 +521,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
            memcpy (&new_val, wb + index * bytes_for_datatype, bytes_for_datatype);
 
            //if (file->idx_c->grank == 1)
-           //  printf("%f -- %f -- %f\n", left, new_val, right);
+           //  fprintf(stderr, "%f -- %f -- %f\n", left, new_val, right);
 
            new_val = new_val - 0.5 * (left + right);
            memcpy(wb + index * bytes_for_datatype, &new_val, bytes_for_datatype);
@@ -533,7 +533,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
 #if INTERMEDIATE_RESULT
   int i1 = 0, j1 = 0, k1 = 0;
   if (file->idx_c->grank == 2)
-    printf("Y ODD [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
+    fprintf(stderr, "Y ODD [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
 
   Ndim_patch_group patch_group = var->rst_patch_group[0];
   for (k1 = 0; k1 < s_z - 0; k1++)
@@ -548,11 +548,11 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
           int index = (s_x * s_y * k1) + (s_x * j1) + i1;
           memcpy(&x, patch_group->reg_patch->buffer + index * var->bpv/8, var->bpv/8);
           if (file->idx_c->grank == 2)
-            printf("%f\t", x);
+            fprintf(stderr, "%f\t", x);
         }
       }
       if (file->idx_c->grank == 2)
-        printf("\n");
+        fprintf(stderr, "\n");
     }
   }
 #endif
@@ -585,7 +585,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
            memcpy (&new_val, wb + index * bytes_for_datatype, bytes_for_datatype);
 
            //if (file->idx_c->grank == 1 && l == 2)
-           //  printf("[E index %d interval %d i %d] %f - %f - %f\n", index, interval, j, left, new_val, right);
+           //  fprintf(stderr, "[E index %d interval %d i %d] %f - %f - %f\n", index, interval, j, left, new_val, right);
 
            new_val = new_val + 0.25 * (left + right);
            memcpy(wb + index * bytes_for_datatype, &new_val, bytes_for_datatype);
@@ -596,7 +596,7 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
 
 #if INTERMEDIATE_RESULT
   if (file->idx_c->grank == 2)
-    printf("Y EVEN [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
+    fprintf(stderr, "Y EVEN [%d] SIZE %d %d %d\n", file->idx_c->grank, s_x, s_y, s_z);
 
   if (file->idx_c->grank == 2)
   {
@@ -612,11 +612,11 @@ static PIDX_return_code wavelet_rst_y (PIDX_io file, int gi, int v, int l, int s
           int index = (s_x * s_y * k1) + (s_x * j1) + i1;
           memcpy(&x, patch_group->reg_patch->buffer + index * var->bpv/8, var->bpv/8);
 
-            printf("%f\t", x);
+            fprintf(stderr, "%f\t", x);
         }
       }
       if (file->idx_c->grank == 2)
-        printf("\n");
+        fprintf(stderr, "\n");
     }
   }
   }
@@ -644,7 +644,7 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[2])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
       odd_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[2];
       break;
     }
@@ -655,7 +655,7 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[2])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("EVEN start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
+      //  fprintf(stderr, "EVEN start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[0]);
       even_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[2];
       break;
     }
@@ -667,7 +667,7 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[0])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
       x_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[0];
       break;
     }
@@ -679,7 +679,7 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int s
     if (i >= (int) var->rst_patch_group[0]->reg_patch->offset[1])
     {
       //if (file->idx_c->grank == 1)
-      //  printf("ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
+      //  fprintf(stderr, "ODD start index at level %d = %d - %d\n", l, i, (int)var->rst_patch_group[0]->reg_patch->offset[1]);
       y_start_offset = i - (int)var->rst_patch_group[0]->reg_patch->offset[1];
       break;
     }
@@ -716,7 +716,7 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int s
          if (bytes_for_datatype == 4)
          {
            //if (file->idx_c->grank == 1)
-           //  printf ("[%d %d] -> %d %d %d\n", i, j, index, up_index, down_index);
+           //  fprintf(stderr, "[%d %d] -> %d %d %d\n", i, j, index, up_index, down_index);
            float left, right, new_val;
            memcpy (&left, wb + down_index * bytes_for_datatype, bytes_for_datatype);
 
@@ -749,7 +749,7 @@ static PIDX_return_code wavelet_rst_z (PIDX_io file, int gi, int v, int l, int s
          if (bytes_for_datatype == 4)
          {
            //if (file->idx_c->grank == 1)
-           //  printf ("[%d %d] -> %d %d %d\n", i, j, index, up_index, down_index);
+           //  fprintf(stderr, "[%d %d] -> %d %d %d\n", i, j, index, up_index, down_index);
            float left, right, new_val;
            memcpy (&right, wb + up_index * bytes_for_datatype, bytes_for_datatype);
 
@@ -867,7 +867,7 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
 #if 1
   if (file->idx_c->grank == 0)
   {
-    printf("RST\n");
+    fprintf(stderr, "RST\n");
     for (k = 0; k < file->idx->bounds[2]; k++)
     {
       for (j = 0; j < file->idx->bounds[1]; j++)
@@ -878,13 +878,13 @@ static PIDX_return_code print_global_data (PIDX_io file, int gi, int v)
           int index = (file->idx->bounds[0] * file->idx->bounds[1] * k) + (file->idx->bounds[0] * j) + i;
           float v;
           memcpy(&v, global_buffer + index * bytes_for_datatype, bytes_for_datatype);
-          printf("%f\t", v);
+          fprintf(stderr, "%f\t", v);
         }
-        printf("\n");
+        fprintf(stderr, "\n");
       }
-      printf("\n");
+      fprintf(stderr, "\n");
     }
-    printf("\n");
+    fprintf(stderr, "\n");
   }
 #endif
 

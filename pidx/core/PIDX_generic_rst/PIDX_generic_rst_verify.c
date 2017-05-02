@@ -69,7 +69,7 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
                 {
                   fvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i;
                   memcpy(&fvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
-                  //printf("VAL: %f %f\n", fvalue_1, fvalue_2);
+                  //fprintf(stderr, "VAL: %f %f\n", fvalue_1, fvalue_2);
                   check_bit = check_bit && (fvalue_1 == fvalue_2);
                 }
                 else if (strcmp(var->type_name, FLOAT64) == 0)
@@ -128,7 +128,7 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
       fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_d->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
 
     if (rst_id->idx_c->grank == 0)
-      printf("[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rst_id->idx_c->grank,  rst_id->idx_d->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2]) * (rst_id->last_index - rst_id->first_index + 1), vol);
+      fprintf(stderr, "[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rst_id->idx_c->grank,  rst_id->idx_d->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2]) * (rst_id->last_index - rst_id->first_index + 1), vol);
 
     return PIDX_err_rst;
   }

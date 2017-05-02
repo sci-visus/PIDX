@@ -24,21 +24,21 @@ PIDX_return_code hz_encode_setup(PIDX_io file, int gi, int svi, int evi)
   // Init
   if ( hz_init(file, svi, evi) || chunk_init(file, svi, evi) || compression_init(file, svi, evi) != PIDX_success )
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 
   // Meta data
   if (meta_data_create(file) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 
   // Buffer create
   if (buffer_create(file) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 
@@ -54,7 +54,7 @@ PIDX_return_code hz_encode(PIDX_io file, int mode)
     // encode, decompress, unchunk
     if (encode_and_uncompress(file) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
   }
@@ -63,7 +63,7 @@ PIDX_return_code hz_encode(PIDX_io file, int mode)
     // chunk, compress and encode
     if (compress_and_encode(file) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
   }
@@ -86,7 +86,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
       ret = PIDX_file_io_per_process(file->hz_id, var_grp->f0_block_layout_by_level[j /*- var_grp->agg_l_f0*/], mode);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
     }
@@ -97,7 +97,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
       ret = PIDX_file_io_per_process(file->hz_id, var_grp->shared_block_layout_by_level[j /*- var_grp->agg_l_shared*/], mode);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
       file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
@@ -109,7 +109,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
       ret = PIDX_file_io_per_process(file->hz_id, var_grp->nshared_block_layout_by_level[j /*- var_grp->agg_l_nshared*/], mode);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
       file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
@@ -126,14 +126,14 @@ PIDX_return_code hz_encode_cleanup(PIDX_io file)
   // meta data and buffer cleanup
   if (hz_cleanup(file) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 
   // meta data and buffer cleanup
   if (chunk_cleanup(file) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 
@@ -154,7 +154,7 @@ static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
   ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
   time->hz_init_end[lgi][cvi] = PIDX_get_time();
@@ -199,7 +199,7 @@ static PIDX_return_code meta_data_create(PIDX_io file)
   ret = PIDX_chunk_meta_data_create(file->chunk_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
   time->chunk_meta_end[lgi][cvi] = PIDX_get_time();
@@ -210,7 +210,7 @@ static PIDX_return_code meta_data_create(PIDX_io file)
   ret = PIDX_hz_encode_meta_data_create(file->hz_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
   time->hz_meta_end[lgi][cvi] = PIDX_get_time();
@@ -229,7 +229,7 @@ static PIDX_return_code buffer_create(PIDX_io file)
   ret = PIDX_chunk_buf_create(file->chunk_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_chunk;
   }
   time->chunk_buffer_end[lgi][cvi] = PIDX_get_time();
@@ -239,7 +239,7 @@ static PIDX_return_code buffer_create(PIDX_io file)
   ret = PIDX_hz_encode_buf_create(file->hz_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_hz;
   }
   time->hz_buffer_end[lgi][cvi] = PIDX_get_time();
@@ -260,7 +260,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
     ret = PIDX_chunk(file->chunk_id, PIDX_WRITE);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_chunk;
     }
   }
@@ -276,7 +276,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       ret = PIDX_compression(file->comp_id);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_compress;
       }
     }
@@ -286,7 +286,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   {
     if (compute_average(file, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -294,7 +294,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
     {
       if (idx_stencil_wavelet(file, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
@@ -312,7 +312,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
     //ret = PIDX_hz_encode_row_major_write(file->hz_id);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_hz;
     }
 
@@ -322,7 +322,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       ret = HELPER_Hz_encode(file->hz_id);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         //return PIDX_err_hz;
       }
     }
@@ -335,7 +335,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       //if (PIDX_hz_encode_compress(file->hz_id) != PIDX_success)
       if (PIDX_hz_encode_block_wise_compress(file->hz_id) != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_hz;
       }
     }
@@ -349,7 +349,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   // Destroy buffers allocated during chunking phase
   if (PIDX_chunk_buf_destroy(file->chunk_id) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_chunk;
   }
   time->chunk_buffer_free_end[lgi][cvi] = PIDX_get_time();
@@ -369,7 +369,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     ret = HELPER_Hz_encode(file->hz_id);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       //return PIDX_err_hz;
     }
   }
@@ -380,7 +380,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     ret = PIDX_hz_encode_read(file->hz_id);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_hz;
     }
   }
@@ -394,7 +394,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     ret = PIDX_decompression(file->comp_id);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_compress;
     }
   }
@@ -408,7 +408,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     ret = PIDX_chunk(file->chunk_id, PIDX_READ);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_chunk;
     }
   }
@@ -420,7 +420,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
   ret = PIDX_chunk_buf_destroy(file->chunk_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_chunk;
   }
   time->chunk_buffer_free_end[lgi][cvi] = PIDX_get_time();
@@ -438,7 +438,7 @@ static PIDX_return_code hz_cleanup(PIDX_io file)
   ret = PIDX_hz_encode_buf_destroy(file->hz_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_hz;
   }
   time->hz_buffer_free_end[lgi][cvi] = PIDX_get_time();
@@ -448,7 +448,7 @@ static PIDX_return_code hz_cleanup(PIDX_io file)
   ret = PIDX_hz_encode_meta_data_destroy(file->hz_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 
@@ -468,7 +468,7 @@ static PIDX_return_code chunk_cleanup(PIDX_io file)
   ret = PIDX_chunk_meta_data_destroy(file->chunk_id);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 

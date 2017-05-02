@@ -54,7 +54,7 @@ int isValidBox(int** box)
   int D;
   for(D = 0 ; D < PIDX_MAX_DIMENSIONS ; D++)
   {
-    //printf("VFY: %d %d\n", box[0][D], box[1][D]);
+    //fprintf(stderr, "VFY: %d %d\n", box[0][D], box[1][D]);
     if (! (box[0][D]>=0 && box[0][D]<=box[1][D]))
       return 0;
   }

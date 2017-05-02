@@ -194,21 +194,21 @@ PIDX_return_code PIDX_multi_patch_rst_buf_read_and_aggregate(PIDX_multi_patch_rs
       ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fh);
       if (ret != MPI_SUCCESS)
       {
-        fprintf(stdout, "Line %d File %s File opening %s\n", __LINE__, __FILE__, file_name);
+        fprintf(stderr, "Line %d File %s File opening %s\n", __LINE__, __FILE__, file_name);
         return PIDX_err_rst;
       }
 
       ret = MPI_File_read_at(fh, data_offset, out_patch->buffer, (buffer_size), MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        fprintf(stderr, "Line %d File %s\n", __LINE__, __FILE__);
         return PIDX_err_rst;
       }
 
       ret = MPI_File_close(&fh);
       if (ret != MPI_SUCCESS)
       {
-        fprintf(stdout, "Line %d File %s\n", __LINE__, __FILE__);
+        fprintf(stderr, "Line %d File %s\n", __LINE__, __FILE__);
         return PIDX_err_rst;
       }
 

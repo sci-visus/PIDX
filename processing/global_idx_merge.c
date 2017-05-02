@@ -224,13 +224,13 @@ static int IDX_file_open(const char* filename)
     FILE *fp = fopen(filename, "r");
     if (fp == NULL)
     {
-      fprintf(stdout, "Error Opening %s\n", filename);
+      fprintf(stderr, "Error Opening %s\n", filename);
       return (-1);
     }
 
     while (fgets(line, sizeof (line), fp) != NULL)
     {
-      //printf("%s", line);
+      //fprintf(stderr, "%s", line);
       line[strcspn(line, "\r\n")] = 0;
 
       if (strcmp(line, "(box)") == 0)
@@ -438,7 +438,7 @@ static int IDX_file_open(const char* filename)
     fclose(fp);
   }
 
-  printf("Start time step %d End time step %d\n", start_time_step, end_time_step);
+  fprintf(stderr, "Start time step %d End time step %d\n", start_time_step, end_time_step);
 
 #if 0
 
@@ -512,7 +512,7 @@ static int IDX_file_open(const char* filename)
   if (total_reg_sample_count % max_sample_per_file)
     max_file_count++;
 
-  //printf("%d %d %d\n", chunk_size[0], chunk_size[1], chunk_size[2]);
+  //fprintf(stderr, "%d %d %d\n", chunk_size[0], chunk_size[1], chunk_size[2]);
 
   if (rank == 0)
   {
@@ -658,8 +658,8 @@ int main(int argc, char **argv)
 
   maxh = strlen(bitSequence);
 
-  printf("Partition size :: and count %d %d %d :: %d %d %d\n", idx_count[0], idx_count[1], idx_count[2], idx_size[0], idx_size[1], idx_size[2]);
-  printf("bitstring %s maxh = %d\n", bitSequence, maxh);
+  fprintf(stderr, "Partition size :: and count %d %d %d :: %d %d %d\n", idx_count[0], idx_count[1], idx_count[2], idx_size[0], idx_size[1], idx_size[2]);
+  fprintf(stderr, "bitstring %s maxh = %d\n", bitSequence, maxh);
 
   // shared_block_level is the level upto which the idx blocks are shared
   int shared_block_level = (int)log2(idx_count[0] * idx_count[1] * idx_count[2]) + bits_per_block + 1;
@@ -667,7 +667,7 @@ int main(int argc, char **argv)
     shared_block_level = maxh;
 
   int shared_block_count = pow(2, shared_block_level - 1) / samples_per_block;
-  printf("Shared block level = %d Shared block count = %d\n", shared_block_level, shared_block_count);
+  fprintf(stderr, "Shared block level = %d Shared block count = %d\n", shared_block_level, shared_block_count);
 
   int level = 0;
   int ts = 0;
@@ -691,7 +691,7 @@ int main(int argc, char **argv)
 
       // file_no is the index of the file that needs to be opened to read from all the partitions
       // they contain the shared blocks
-      printf("Opening file %d\n", file_no);
+      fprintf(stderr, "Opening file %d\n", file_no);
 
 #if 1
       // iterate throuh all the files that contains the shared blocks
@@ -715,7 +715,7 @@ int main(int argc, char **argv)
         {
           unsigned char *write_data_buffer = malloc(samples_per_block * shared_block_count * bpv[var]/8);
           memset(write_data_buffer, 0, samples_per_block * shared_block_count * bpv[var]/8);
-          //printf("Write bufer size = %d [%d x %d x %d]\n", samples_per_block * shared_block_count * bpv[var]/8, (int)pow(2, bits_per_block), shared_block_count, bpv[var]/8);
+          //fprintf(stderr, "Write bufer size = %d [%d x %d x %d]\n", samples_per_block * shared_block_count * bpv[var]/8, (int)pow(2, bits_per_block), shared_block_count, bpv[var]/8);
 
           // shared block data
           // doube pointer (number o fpartitions x number of shared blocks)
@@ -729,7 +729,7 @@ int main(int argc, char **argv)
 
           file_initialize_time_step(ts, output_file_name, output_file_template);
           generate_file_name(blocks_per_file, output_file_template, fc, new_file_name, PATH_MAX);
-          //printf("Merged blocks to be written in %s\n", new_file_name);
+          //fprintf(stderr, "Merged blocks to be written in %s\n", new_file_name);
 
           // iterate through all the parttions
           for (ic = 0; ic < idx_count[0] * idx_count[1] * idx_count[2]; ic++)
@@ -751,7 +751,7 @@ int main(int argc, char **argv)
             read_binheader[ic] = (uint32_t*) malloc(sizeof (*read_binheader[ic])*(read_binheader_count));
             memset(read_binheader[ic], 0, sizeof (*(read_binheader[ic]))*(read_binheader_count));
 
-            printf("[%d] Partition File name %s\n", ic, existing_file_name);
+            fprintf(stderr, "[%d] Partition File name %s\n", ic, existing_file_name);
             // file exists
             if ( access( partition_file_name, F_OK ) != -1 )
             {
@@ -789,7 +789,7 @@ int main(int argc, char **argv)
               {
                 data_offset = ntohl(read_binheader[ic][(bpf + var * blocks_per_file)*10 + 12]);
                 data_size = ntohl(read_binheader[ic][(bpf + var * blocks_per_file)*10 + 14]);
-                printf("[%s] [Partition %d Block %d Variable %d] --> Offset %d Count %d\n", partition_file_name, ic, bpf, var, (int)data_offset, (int)data_size);
+                fprintf(stderr, "[%s] [Partition %d Block %d Variable %d] --> Offset %d Count %d\n", partition_file_name, ic, bpf, var, (int)data_offset, (int)data_size);
 
                 if (data_offset != 0 && data_size != 0)
                 {
@@ -843,7 +843,7 @@ int main(int argc, char **argv)
             {
               double dval;
               memcpy(&dval, write_data_buffer + r * sizeof(double), sizeof(double));
-              printf("value at %d = %f\n", r, dval);
+              fprintf(stderr, "value at %d = %f\n", r, dval);
             }
             */
 
@@ -863,7 +863,7 @@ int main(int argc, char **argv)
   shutdown_mpi();
 
   end_time = get_time();
-  printf("Total time taken = %f %f\n", end_time, start_time);
+  fprintf(stderr, "Total time taken = %f %f\n", end_time, start_time);
 
   return 0;
 }
@@ -901,7 +901,7 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
   char* pos;
   int ret;
 
-  //printf("[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
+  //fprintf(stderr, "[generate_file_name]: %d %s %d :: %s\n", file_number, filename, maxlen, filename_template);
   // determine the first HZ address for the file in question
   address = file_number * blocks_per_file;
 

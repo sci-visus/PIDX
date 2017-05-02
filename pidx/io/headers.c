@@ -10,16 +10,16 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
-  //printf("F0: %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
-  //printf("SL: %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
-  //printf("NS: %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);
+  //fprintf(stderr, "F0: %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
+  //fprintf(stderr, "SL: %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
+  //fprintf(stderr, "NS: %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);
 
   if (var_grp->shared_start_layout_index != var_grp->shared_end_layout_index)
   {
     ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, var_grp->shared_block_layout);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -31,7 +31,7 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
       ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename, file->idx->filename_template, var_grp->nshared_block_layout);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
@@ -42,17 +42,17 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
         ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, var_grp->nshared_block_layout);
         if (ret != PIDX_success)
         {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_file;
         }
       }
       else
       {
-        //printf("Filename %s\n", file->idx->filename_global);
+        //fprintf(stderr, "Filename %s\n", file->idx->filename_global);
         ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_global, file->idx->filename_template_global, var_grp->nshared_block_layout);
         if (ret != PIDX_success)
         {
-          fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_file;
         }
       }
@@ -64,7 +64,7 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
     ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_file_zero, file->idx->filename_template_file_zero, var_grp->f0_block_layout);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }

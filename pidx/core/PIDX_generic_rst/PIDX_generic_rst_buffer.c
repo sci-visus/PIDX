@@ -37,7 +37,7 @@ PIDX_return_code PIDX_generic_rst_buf_create(PIDX_generic_rst_id generic_rst_id)
       {
         if (generic_rst_id->idx_c->grank == generic_rst_id->reg_patch_grp[i]->max_patch_rank)
         {
-          //printf("Buffer create rank %d\n", generic_rst_id->idx_c->grank);
+          //fprintf(stderr, "Buffer create rank %d\n", generic_rst_id->idx_c->grank);
           Ndim_patch_group patch_group = var->rst_patch_group[cnt];
           for(j = 0; j < generic_rst_id->reg_patch_grp[i]->count; j++)
           {

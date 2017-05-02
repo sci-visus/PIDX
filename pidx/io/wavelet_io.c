@@ -45,21 +45,21 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   // Step 0:  group and IDX related meta data
   if (group_meta_data_init(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   // Step 1:  Restrucure setup
   if (restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   // Step 2:  Restrucure
   if (restructure(file, PIDX_WRITE) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -70,7 +70,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   {
     if (idx_stencil_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -78,7 +78,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   {
     if (idx_rst_wavelet(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -88,7 +88,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   // Step 3:  Partition
   if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -99,7 +99,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   ret = post_partition_group_meta_data_init(file, gi, svi, evi, PIDX_WRITE);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -112,20 +112,20 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     // Step 5:  Setup HZ encoding Phase
     if (hz_encode_setup(file, gi, si, ei) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
     // Step 6: Perform HZ encoding
     if (hz_encode(file, PIDX_WRITE) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
     if (hz_io(file, gi, PIDX_WRITE) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
@@ -135,7 +135,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
       ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
@@ -146,7 +146,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
       ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
     }
@@ -160,7 +160,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
       ret = data_io(file, gi, li, PIDX_WRITE);
       if (ret != PIDX_success)
       {
-        fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
@@ -172,7 +172,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     // Step 10: Cleanup for step 6
     if (hz_encode_cleanup(file) != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -181,7 +181,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   ret = post_partition_group_meta_data_finalize(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -190,7 +190,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   time->partition_cleanup_start = MPI_Wtime();
   if (destroy_local_comm(file) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->partition_cleanup_end = MPI_Wtime();
@@ -198,13 +198,13 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
   // Step 13: Restructuring cleanup
   if (restructure_cleanup(file) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   if (group_meta_data_finalize(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -306,7 +306,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
     ret = find_partition_count(file);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
@@ -315,7 +315,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
   ret = partition_setup(file, gi, svi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -323,7 +323,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
   ret = create_local_comm(file);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->partition_end = MPI_Wtime();
@@ -342,7 +342,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = idx_init(file, gi, svi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->init_end = MPI_Wtime();
@@ -351,7 +351,7 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   ret = set_rst_box_size(file, gi, svi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->set_reg_box_end = MPI_Wtime();
@@ -363,7 +363,7 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
 {
   if (free_rst_box_size(file) != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -384,7 +384,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   ret = populate_global_bit_string(file, mode);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -397,7 +397,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   ret = populate_block_layouts(file, gi, svi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared, PIDX_GLOBAL_PARTITION_IDX_IO);
   if (ret != PIDX_success)
   {
-     fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
      return PIDX_err_file;
   }
 
@@ -405,7 +405,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   ret = find_agg_level(file, gi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -413,7 +413,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   ret = create_agg_io_buffer(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->layout_end = PIDX_get_time();
@@ -426,7 +426,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
     ret = write_headers(file, gi, svi, evi, PIDX_GLOBAL_PARTITION_IDX_IO);
     if (ret != PIDX_success)
     {
-      fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
     time->header_io_end = PIDX_get_time();
@@ -445,14 +445,14 @@ static PIDX_return_code post_partition_group_meta_data_finalize(PIDX_io file, in
   ret = destroy_agg_io_buffer(file, svi, evi);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   ret = delete_block_layout(file, gi, hz_from_file_zero, hz_to_file_zero, hz_from_shared, hz_to_shared, hz_from_non_shared, hz_to_non_shared);
   if (ret != PIDX_success)
   {
-    fprintf(stdout,"File %s Line %d\n", __FILE__, __LINE__);
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->group_cleanup_end = PIDX_get_time();

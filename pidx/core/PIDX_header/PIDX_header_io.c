@@ -254,7 +254,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
           return 1;
         }
 
-        //printf("[COLOR %d] %d -> MAP [%d %d %d] L %d -> %d [%s (%s)]\n", header_io_id->idx_d->color, i, header_io_id->idx_d->partition_count[0], header_io_id->idx_d->partition_count[1], header_io_id->idx_d->partition_count[2], l, adjusted_file_index, bin_file, header_io_id->idx->filename_template);
+        //fprintf(stderr, "[COLOR %d] %d -> MAP [%d %d %d] L %d -> %d [%s (%s)]\n", header_io_id->idx_d->color, i, header_io_id->idx_d->partition_count[0], header_io_id->idx_d->partition_count[1], header_io_id->idx_d->partition_count[2], l, adjusted_file_index, bin_file, header_io_id->idx->filename_template);
 
         //TODO: the logic for creating the subdirectory hierarchy could
         //be made to be more efficient than this. This implementation
@@ -279,7 +279,7 @@ int PIDX_header_io_file_create(PIDX_header_io_id header_io_id, PIDX_block_layout
             {
               if (j > 0 && this_path[j] == '/')
               {
-                //printf("path = %s %s [T %s]\n", tmp_path, bin_file, header_io_id->idx->filename_template);
+                //fprintf(stderr, "path = %s %s [T %s]\n", tmp_path, bin_file, header_io_id->idx->filename_template);
                 ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
                 if (ret != 0 && errno != EEXIST)
                 {
@@ -367,7 +367,7 @@ int PIDX_header_io_filename_create(PIDX_header_io_id header_io_id, PIDX_block_la
             {
               if (j > 0 && this_path[j] == '/')
               {
-                //printf("path = %s %s [T %s]\n", tmp_path, bin_file, header_io_id->idx->filename_template);
+                //fprintf(stderr, "path = %s %s [T %s]\n", tmp_path, bin_file, header_io_id->idx->filename_template);
                 ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
                 if (ret != 0 && errno != EEXIST)
                 {
@@ -746,14 +746,14 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
 
         data_offset = (((i) - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps  / (header_io_id->idx->compression_factor);
 
-        //printf("BLOCK %d = %d + %d + %d (%d %d)\n", i, (int)base_offset, (int)data_offset, (int)(header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size), header_io_id->idx_d->start_fs_block, header_io_id->idx_d->fs_block_size);
+        //fprintf(stderr, "BLOCK %d = %d + %d + %d (%d %d)\n", i, (int)base_offset, (int)data_offset, (int)(header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size), header_io_id->idx_d->start_fs_block, header_io_id->idx_d->fs_block_size);
         data_offset = base_offset + data_offset + header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size;
 
         //TODO
-        //printf("%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bpv / 8), total_chunk_size, header_io_id->idx->variable[j]->vps);
+        //fprintf(stderr, "%d %d: %d (%d * %d * %d * %d)\n", i, j, header_io_id->idx_d->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps, header_io_id->idx_d->samples_per_block, (header_io_id->idx->variable[j]->bpv / 8), total_chunk_size, header_io_id->idx->variable[j]->vps);
         //if (file_number == 2)
         //if (nprocs == 1)
-        //printf("[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps));
+        //fprintf(stderr, "[%d] offset : count = %lld %lld\n", i, (unsigned long long)data_offset, (unsigned long long)(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps));
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps / (header_io_id->idx->compression_factor));
 
@@ -790,7 +790,7 @@ static int populate_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout 
       }
       */
 #if DETAIL_OUTPUT
-      printf("writing the header %d\n", header_io_id->idx_c->grank);
+      fprintf(stderr, "writing the header %d\n", header_io_id->idx_c->grank);
 #endif
       ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)

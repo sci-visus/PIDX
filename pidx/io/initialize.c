@@ -95,7 +95,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
           if (index >= file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2])
           {
-            printf("[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", file->idx->number_processes[2], file->idx->number_processes[1], file->idx->number_processes[0], index, i, j, k, (k / file->idx->reg_patch_size[2]), (j / file->idx->reg_patch_size[1]), (i / file->idx->reg_patch_size[0]));
+            fprintf(stderr, "[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", file->idx->number_processes[2], file->idx->number_processes[1], file->idx->number_processes[0], index, i, j, k, (k / file->idx->reg_patch_size[2]), (j / file->idx->reg_patch_size[1]), (i / file->idx->reg_patch_size[0]));
           }
 
           assert(index < file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]);
@@ -140,7 +140,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
     if (file->idx_c->gnproc_x != -1 && file->idx_c->gnproc_y != -1 && file->idx_c->gnproc_z != -1)
     {
       //if (file->idx_c->grank == 0)
-      //  printf("interval %d %d %d nproc %d %d %d\n", int_x, int_y, int_z, file->idx_c->gnproc_x, file->idx_c->gnproc_y, file->idx_c->gnproc_z);
+      //  fprintf(stderr, "interval %d %d %d nproc %d %d %d\n", int_x, int_y, int_z, file->idx_c->gnproc_x, file->idx_c->gnproc_y, file->idx_c->gnproc_z);
 
       for (nz = 0; nz < file->idx_c->gnproc_z; nz = nz + int_z)
         for (ny = 0; ny < file->idx_c->gnproc_y; ny = ny + int_y)
@@ -156,7 +156,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
               file->idx_c->grank_x = nx;
               file->idx_c->grank_y = ny;
               file->idx_c->grank_z = nz;
-              //printf("file->idx->new_box_set[index]->rank %d [%d %d %d]\n", file->idx->new_box_set[index]->rank, nx, ny, nz);
+              //fprintf(stderr, "file->idx->new_box_set[index]->rank %d [%d %d %d]\n", file->idx->new_box_set[index]->rank, nx, ny, nz);
             }
           }
     }
@@ -170,7 +170,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
           {
             index = (k * file->idx->number_processes[0] * file->idx->number_processes[1]) + (j * file->idx->number_processes[0]) + i;
 
-            printf("[%d %d %d] [%d %d %d] Rank %d\n", i, j, k, file->idx_c->grank_x, file->idx_c->grank_y, file->idx_c->grank_z, file->idx->new_box_set[index]->rank);
+            fprintf(stderr, "[%d %d %d] [%d %d %d] Rank %d\n", i, j, k, file->idx_c->grank_x, file->idx_c->grank_y, file->idx_c->grank_z, file->idx->new_box_set[index]->rank);
           }
     }
     */
@@ -284,7 +284,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
               file->idx->new_box_set[index]->size_pz = right;
 
             //if (file->idx_c->grank == 5)
-            //  printf("[INIT R %d] : %d %d -- %d %d -- %d %d\n", file->idx->new_box_set[index]->rank, file->idx->new_box_set[index]->size_nx, file->idx->new_box_set[index]->size_px, file->idx->new_box_set[index]->size_ny, file->idx->new_box_set[index]->size_py, file->idx->new_box_set[index]->size_nz, file->idx->new_box_set[index]->size_pz );
+            //  fprintf(stderr, "[INIT R %d] : %d %d -- %d %d -- %d %d\n", file->idx->new_box_set[index]->rank, file->idx->new_box_set[index]->size_nx, file->idx->new_box_set[index]->size_px, file->idx->new_box_set[index]->size_ny, file->idx->new_box_set[index]->size_py, file->idx->new_box_set[index]->size_nz, file->idx->new_box_set[index]->size_pz );
 
             if (file->idx_c->grank == file->idx->new_box_set[index]->rank)
             {
@@ -313,7 +313,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
           {
             index = (k * file->idx->number_processes[0] * file->idx->number_processes[1]) + (j * file->idx->number_processes[0]) + i;
 
-            printf("[%d %d %d] [%d %d %d] Rank %d\n", i, j, k, file->idx_c->grank_x, file->idx_c->grank_y, file->idx_c->grank_z, file->idx->new_box_set[index]->rank);
+            fprintf(stderr, "[%d %d %d] [%d %d %d] Rank %d\n", i, j, k, file->idx_c->grank_x, file->idx_c->grank_y, file->idx_c->grank_z, file->idx->new_box_set[index]->rank);
           }
     }
     */
@@ -637,7 +637,7 @@ static int calculate_patch_group_count_for_multi_patch_per_process(PIDX_io file,
                       patch_grp->patch = temp_buffer3;
 
                     if (file->idx_c->grank == 0)
-                      printf("[ERROR] maximum_neighbor_count needs to be increased\n");
+                      fprintf(stderr, "[ERROR] maximum_neighbor_count needs to be increased\n");
                   }
 
                   patch_grp->count = patch_count;
@@ -931,7 +931,7 @@ static int calculate_patch_group_count_for_patch_per_process(PIDX_io file, int g
                   patch_grp->patch = temp_buffer3;
 
                 if (file->idx_c->grank == 0)
-                  printf("maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
+                  fprintf(stderr, "maximum_neighbor_count needs to be increased to %d\n", maximum_neighbor_count);
               }
 
               patch_grp->count = patch_count;

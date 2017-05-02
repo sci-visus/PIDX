@@ -215,7 +215,7 @@ static int parse_var_list()
   FILE *fp = fopen(var_list, "r");
   if (fp == NULL)
   {
-    fprintf(stdout, "Error Opening %s\n", var_list);
+    fprintf(stderr, "Error Opening %s\n", var_list);
     return PIDX_err_file;
   }
 
@@ -284,7 +284,7 @@ static int parse_var_list()
   {
     int v = 0;
     for(v = 0; v < variable_count; v++)
-      printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
+      fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
   */
 
@@ -510,7 +510,7 @@ static void set_pidx_file(int ts)
   PIDX_set_restructuring_box(file, reg_size);
 
   PIDX_set_process_decomposition(file, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
-  //printf("XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
+  //fprintf(stderr, "XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
   PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);

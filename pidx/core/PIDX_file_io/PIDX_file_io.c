@@ -130,7 +130,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
 
       if (MODE == PIDX_WRITE)
       {
-        printf("%d Agg size %d Agg offset %d\n", agg_buf->file_number, data_offset, agg_buf->buffer_size);
+        fprintf(stderr, "%d Agg size %d Agg offset %d\n", agg_buf->file_number, data_offset, agg_buf->buffer_size);
         ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
         {
@@ -226,7 +226,7 @@ int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_lay
       for (i = 0; i < new_rank; i++)
         data_offset = data_offset + aggregator_process_offset[i];
 
-      printf("data offset = %lld and length = %lld\n", (long long)data_offset, (long long)agg_buf->compressed_buffer_size);
+      fprintf(stderr, "data offset = %lld and length = %lld\n", (long long)data_offset, (long long)agg_buf->compressed_buffer_size);
       ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->compressed_buffer_size , MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {

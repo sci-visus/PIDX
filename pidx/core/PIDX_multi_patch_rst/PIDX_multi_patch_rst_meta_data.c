@@ -292,7 +292,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                   if(curr_patch->size[0] == 0)
                   {
                     // not existing patch for current rank, skip
-                    //printf("%d: skipping not existing patch\n", rank);
+                    //fprintf(stderr, "%d: skipping not existing patch\n", rank);
                     free(curr_patch);
                     continue;
                   }
@@ -358,7 +358,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
                         patch_grp->patch = temp_buffer3;
 
                       if (rst_id->idx_c->grank == 0)
-                        printf("[ERROR] rst_id->maximum_neighbor_count needs to be increased\n");
+                        fprintf(stderr, "[ERROR] rst_id->maximum_neighbor_count needs to be increased\n");
                     }
 
                     patch_grp->count = patch_count;

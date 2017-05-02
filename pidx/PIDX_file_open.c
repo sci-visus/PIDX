@@ -149,13 +149,12 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     FILE *fp = fopen((*file)->idx->filename, "r");
     if (fp == NULL)
     {
-      fprintf(stdout, "Error Opening %s\n", (*file)->idx->filename);
+      fprintf(stderr, "Error Opening %s\n", (*file)->idx->filename);
       return PIDX_err_file;
     }
 
     while (fgets(line, sizeof (line), fp) != NULL)
     {
-      //printf("%s", line);
       line[strcspn(line, "\r\n")] = 0;
 
       if (strcmp(line, "(box)") == 0)
@@ -512,8 +511,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 #endif
     (*file)->idx->variable_grp[0]->variable[var]->sim_patch_count = 0;
   }
-
-  //printf("%d %d %d\n", (*file)->idx->chunk_size[0], (*file)->idx->chunk_size[1], (*file)->idx->chunk_size[2]);
 
   if ((*file)->idx_c->grank == 0)
   {

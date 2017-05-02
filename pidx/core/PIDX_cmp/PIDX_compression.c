@@ -187,7 +187,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
           int nz = patch->size[2];
           float bit_rate = comp_id->idx->compression_bit_rate;
           int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
-          //printf("%d %d %d %d %f CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
+          //fprintf(stderr, "%d %d %d %d %f CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
           unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
           if (temp_buffer == NULL)
             return PIDX_err_compress;
@@ -225,14 +225,14 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
           int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->vps;
 
           //if (rank == 0)
-          //printf("Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bpv/8, var->bpv/8, comp_id->idx->compression_bit_rate);
+          //fprintf(stderr, "Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bpv/8, var->bpv/8, comp_id->idx->compression_bit_rate);
 
           ret = decompress_buffer(comp_id, buffer, element_count, var->bpv/8, comp_id->idx->compression_bit_rate);
           if (ret == -1)
             return PIDX_err_compress;
 
           //if (rank == 0)
-          //printf("After [%d] Compressed element count = %d\n", rank, compressed_element_count);
+          //fprintf(stderr, "After [%d] Compressed element count = %d\n", rank, compressed_element_count);
 
           /*
           if (compressed_element_count <= 0)
@@ -248,7 +248,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
       }
     }
 #else
-    //printf("Compression Library not found.\n");
+    //fprintf(stderr, "Compression Library not found.\n");
     return PIDX_err_compress;
 #endif
   }
