@@ -163,7 +163,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
       int M = file->idx_d->max_file_count * file->idx->variable_count;
       if (M >= file->idx_c->gnprocs)
-        M = file->idx_c->gnprocs;
+        M = file->idx_c->gnprocs - 1;
 
       int N = file->idx_c->gnprocs - 1;
 
@@ -200,7 +200,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
       printf("Agg file name %s\n", file->idx->agg_list_filename);
       FILE* agg_file;
       //agg_file = fopen(file->idx->agg_list_filename, "w");
-      agg_file = fopen("agg_list", "w");
+      agg_file = fopen("agg_list1", "w");
       if (!agg_file)
       {
         fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
@@ -224,7 +224,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
       FILE* agg_file;
       //agg_file = fopen(file->idx->agg_list_filename, "r");
-      agg_file = fopen("agg_list", "r");
+      agg_file = fopen("agg_list1", "r");
       if (!agg_file)
       {
         fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
