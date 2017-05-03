@@ -162,6 +162,9 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
       srand((unsigned) time(&t));
 
       int M = file->idx_d->max_file_count * file->idx->variable_count;
+      if (M >= file->idx_c->gnprocs)
+        M = file->idx_c->gnprocs;
+
       int N = file->idx_c->gnprocs - 1;
 
       unsigned char *is_used;
