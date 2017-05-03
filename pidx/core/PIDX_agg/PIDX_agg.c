@@ -137,7 +137,9 @@ PIDX_return_code PIDX_agg_random_buf_create_multiple_level(PIDX_agg_id id, Agg_b
           ab->buffer_size = sample_count * bpdt;
 
           //if (i == 0)// || i == id->idx->variable_count - 1)
+#if DETAIL_OUTPUT
           fprintf(stderr, "[G %d] [%d] [L %d] [Lid %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] -> [[CR %d]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx->random_agg_counter, id->idx_c->lrank, agg_offset, i, k, lbl->existing_file_index[k], j, file_status, id->agg_r[k][i - id->fi][j], ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+#endif
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);

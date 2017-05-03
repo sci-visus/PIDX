@@ -163,9 +163,9 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
       int M = file->idx_d->max_file_count * file->idx->variable_count;
       if (M >= file->idx_c->gnprocs)
-        M = file->idx_c->gnprocs - 1;
+        M = file->idx_c->gnprocs;
 
-      int N = file->idx_c->gnprocs - 1;
+      int N = file->idx_c->gnprocs;
 
       unsigned char *is_used;
       is_used = malloc(sizeof(*is_used) * N);
@@ -197,7 +197,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
         file->idx->random_agg_list[i] = file->idx->random_agg_list[i] % file->idx_c->gnprocs;
       */
 
-      printf("Agg file name %s\n", file->idx->agg_list_filename);
+      //printf("Agg file name %s\n", file->idx->agg_list_filename);
       FILE* agg_file;
       //agg_file = fopen(file->idx->agg_list_filename, "w");
       agg_file = fopen("agg_list1", "w");
@@ -214,10 +214,12 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
       fclose(agg_file);
 
+#if DETAIL_OUTPUT
       fprintf(stderr, "\nAggs: ");
       for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
         fprintf(stderr, "%d ", file->idx->random_agg_list[i]);
       fprintf(stderr, "\n");
+#endif
     }
     else
     {
@@ -238,10 +240,12 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
       fclose(agg_file);
 
+#if DETAIL_OUTPUT
       fprintf(stderr, "\nAggs: ");
       for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
         fprintf(stderr, "%d ", file->idx->random_agg_list[i]);
       fprintf(stderr, "\n");
+#endif
     }
   }
   MPI_Bcast(file->idx->random_agg_list, (file->idx_d->max_file_count * file->idx->variable_count), MPI_INT, 0, file->idx_c->global_comm);
