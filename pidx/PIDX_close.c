@@ -147,6 +147,9 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d->block_bitmap);
   file->idx_d->block_bitmap = 0;
 
+  free(file->idx->random_agg_list);
+  file->idx->random_agg_list = 0;
+
   free(file->idx);                  file->idx = 0;
   free(file->idx_d->time);          file->idx_d->time = 0;
   free(file->idx_d);                file->idx_d = 0;
