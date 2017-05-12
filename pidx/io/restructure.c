@@ -135,6 +135,24 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     time->rst_meta_data_create_end[lgi][cvi] = PIDX_get_time();
 
 
+    if (file->idx->io_type == PIDX_RAW_IO)
+    {
+      if (file->idx->cached_ts == file->idx->current_time_step)
+      {
+        if (mode == PIDX_WRITE)
+        {
+          time->rst_meta_data_io_start[lgi][cvi] = PIDX_get_time();
+          // Saving the metadata info needed for reading back the data.
+          // Especially when number of cores is different from number of cores
+          // used to create the dataset
+          ret = PIDX_generic_rst_meta_data_write(file->generic_rst_id);
+          if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+          time->rst_meta_data_io_end[lgi][cvi] = PIDX_get_time();
+        }
+      }
+    }
+
+
     time->rst_buffer_start[lgi][cvi] = PIDX_get_time();
     // Creating the buffers required for restructurig
     ret = PIDX_generic_rst_buf_create(file->generic_rst_id);
@@ -183,7 +201,6 @@ PIDX_return_code restructure(PIDX_io file, int mode)
 {
   int ret = 0;
   PIDX_time time = file->idx_d->time;
-
   if (rst_case_type == 0)
   {
     if (mode == PIDX_WRITE)
@@ -319,11 +336,11 @@ PIDX_return_code restructure(PIDX_io file, int mode)
         ret = PIDX_generic_rst_staged_write(file->generic_rst_id);
         if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-        //if (file->idx_dbg->debug_rst == 1)
-        //{
-        //  ret = HELPER_generic_rst(file->generic_rst_id);
-        //  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-        //}
+        if (file->idx_dbg->debug_rst == 1)
+        {
+          ret = HELPER_generic_rst(file->generic_rst_id);
+          if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        }
         time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
       }
 
@@ -334,6 +351,35 @@ PIDX_return_code restructure(PIDX_io file, int mode)
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
 #endif
+
+      time->rst_buff_agg_free_start[lgi][cvi] = PIDX_get_time();
+      // Destroying the restructure buffers (as they are now combined into one large buffer)
+      ret = PIDX_generic_rst_buf_destroy(file->generic_rst_id);
+      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      time->rst_buff_agg_free_end[lgi][cvi] = PIDX_get_time();
+    }
+    else if (mode == PIDX_READ)
+    {
+      time->rst_buff_agg_start[lgi][cvi] = PIDX_get_time();
+      // Perform data restructuring
+      ret = PIDX_generic_rst_buf_aggregate(file->generic_rst_id, PIDX_READ);
+      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
+
+
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        time->rst_write_read_start[lgi][cvi] = PIDX_get_time();
+        if (file->idx_dbg->debug_rst == 1)
+        {
+          ret = HELPER_generic_rst(file->generic_rst_id);
+          if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        }
+        ret = PIDX_generic_rst_read(file->generic_rst_id);
+        if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
+      }
+
 
       time->rst_buff_agg_free_start[lgi][cvi] = PIDX_get_time();
       // Destroying the restructure buffers (as they are now combined into one large buffer)
@@ -454,6 +500,17 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
         time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
         // Write out restructured data
         ret = PIDX_generic_rst_buf_aggregated_write(file->generic_rst_id);
+        if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+        time->rst_buff_agg_io_end[lgi][cvi] = PIDX_get_time();
+      }
+    }
+    else if (mode == PIDX_READ)
+    {
+      if (file->idx_dbg->debug_do_rst == 1)
+      {
+        time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
+        // Read restructured data
+        ret = PIDX_generic_rst_buf_aggregated_read(file->generic_rst_id);
         if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
         time->rst_buff_agg_io_end[lgi][cvi] = PIDX_get_time();
       }

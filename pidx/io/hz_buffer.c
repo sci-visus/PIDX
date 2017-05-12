@@ -103,6 +103,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
       file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
     }
 
+    //printf("X %d %d %d Y %d %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared, var_grp->nshared_end_layout_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared, var_grp->shared_end_layout_index);
     for (j = var_grp->agg_l_nshared; j < var_grp->nshared_end_layout_index; j++)
     {
       file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
@@ -364,7 +365,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
 
   time->hz_start[lgi][cvi] = PIDX_get_time();
   // Verify the HZ encoding
-  //if(file->idx_dbg->debug_hz == 1)
+  if(file->idx_dbg->debug_hz == 1)
   {
     ret = HELPER_Hz_encode(file->hz_id);
     if (ret != PIDX_success)

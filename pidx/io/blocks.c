@@ -223,7 +223,6 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     }
     else
     {
-
       FILE* agg_file;
       //agg_file = fopen(file->idx->agg_list_filename, "r");
       agg_file = fopen("agg_list1", "r");
@@ -967,6 +966,7 @@ PIDX_return_code create_non_shared_block_layout(PIDX_io file, int gi, int hz_lev
   var_grp->nshared_block_layout = malloc(sizeof (*var_grp->nshared_block_layout));
   memset(var_grp->nshared_block_layout, 0, sizeof (*var_grp->nshared_block_layout));
 
+  //printf("var_grp->nshared_layout_count %d %d %d\n", var_grp->f0_layout_count, var_grp->shared_layout_count, var_grp->nshared_layout_count);
   var_grp->nshared_block_layout_by_level = malloc(sizeof (*var_grp->nshared_block_layout_by_level) * var_grp->nshared_layout_count);
   memset(var_grp->nshared_block_layout_by_level, 0, sizeof (*var_grp->nshared_block_layout_by_level) * var_grp->nshared_layout_count);
 

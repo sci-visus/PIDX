@@ -132,7 +132,11 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
-  memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  //memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  (*file)->idx->reg_patch_size[0] = -1;
+  (*file)->idx->reg_patch_size[1] = -1;
+  (*file)->idx->reg_patch_size[2] = -1;
+
 
   (*file)->idx->reg_box_set = PIDX_BOX_PER_PROCESS;
   (*file)->idx->compression_factor = 1;

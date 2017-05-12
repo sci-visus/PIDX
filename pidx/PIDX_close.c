@@ -191,31 +191,31 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
     else if (file->idx->io_type == PIDX_GLOBAL_PARTITION_IDX_IO)
       fprintf(stderr, "PIDX_GLOBAL_PARTITION_IDX_IO %s\n", file->idx->filename);
 
-    fprintf(stderr, "[%d : %d %d] [%d %d %d : %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count);
-
-    if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
-      fprintf(stderr, "Box set using PIDX_CLOSEST_POWER_TWO %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-    else if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
-      fprintf(stderr, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-    else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
-      fprintf(stderr, "Box set automatic for box per process case (PIDX_BOX_PER_PROCESS) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-    else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
-      fprintf(stderr, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-
-    fprintf(stderr, "Compression Bit rate set to %f\n", file->idx->compression_bit_rate);
-
-    if (file->idx->endian == 1)
-      fprintf(stderr, "Little Endian | ");
-    else if (file->idx->endian == 0)
-      fprintf(stderr, "Big Endian | ");
-
-    if (file->idx->flip_endian == 1)
-      fprintf(stderr, "Endian Flipping Done\n");
-    if (file->idx->flip_endian == 0)
-      fprintf(stderr, "Endian Flipping Not Done\n");
-
     if (file->idx->io_type != PIDX_RAW_IO)
     {
+      fprintf(stderr, "[%d : %d %d] [%d %d %d : %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count);
+
+      if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
+        fprintf(stderr, "Box set using PIDX_CLOSEST_POWER_TWO %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+      else if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
+        fprintf(stderr, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+      else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
+        fprintf(stderr, "Box set automatic for box per process case (PIDX_BOX_PER_PROCESS) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+      else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
+        fprintf(stderr, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+
+      fprintf(stderr, "Compression Bit rate set to %f\n", file->idx->compression_bit_rate);
+
+      if (file->idx->endian == 1)
+        fprintf(stderr, "Little Endian | ");
+      else if (file->idx->endian == 0)
+        fprintf(stderr, "Big Endian | ");
+
+      if (file->idx->flip_endian == 1)
+        fprintf(stderr, "Endian Flipping Done\n");
+      if (file->idx->flip_endian == 0)
+        fprintf(stderr, "Endian Flipping Not Done\n");
+
       fprintf(stderr, "Partition count %d = %d x %d x %d Partitio size = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
       fprintf(stderr, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
       fprintf(stderr, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
@@ -515,7 +515,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       }
 
       //grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all;
-      fprintf(stderr, "[%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
+      fprintf(stderr, "[RAW] [%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
              group_total,
              rst_all,
              r1 + r2 + r3,

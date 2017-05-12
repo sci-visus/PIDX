@@ -7,6 +7,157 @@ static int calculate_patch_group_count_for_multi_patch_per_process(PIDX_io file,
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file);
 static int contains_patch(Ndim_patch reg_patch, Ndim_patch* patches, int count);
+static PIDX_return_code calculate_rank_mapping(PIDX_io file, int gi, int svi);
+
+
+PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
+{
+  set_reg_patch_size_from_bit_string(file);
+  calculate_rank_mapping(file, gi, svi);
+}
+
+PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
+{
+  if (file->idx->reg_patch_size[0] == -1 || file->idx->reg_patch_size[1] == -1 || file->idx->reg_patch_size[2] == -1)
+  {
+    file->idx->reg_patch_size[0] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[0]);
+    file->idx->reg_patch_size[1] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[1]);
+    file->idx->reg_patch_size[2] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[2]);
+  }
+
+  calculate_rank_mapping(file, gi, svi);
+}
+
+static PIDX_return_code calculate_rank_mapping(PIDX_io file, int gi, int svi)
+{
+  file->idx->number_processes[0] = ceil((float)file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
+  file->idx->number_processes[1] = ceil((float)file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
+  file->idx->number_processes[2] = ceil((float)file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
+
+#if 0
+  if (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] > file->idx_c->gnprocs)
+  {
+    fprintf(stderr, "Error in line number %d file %s [%d %d %d > %d] Box size is %d %d %d\n", __LINE__, __FILE__, file->idx->number_processes[0], file->idx->number_processes[1], file->idx->number_processes[2], file->idx_c->gnprocs, file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
+    return PIDX_err_file;
+  }
+#endif
+
+  file->idx->new_box_set = malloc(file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set));
+  memset(file->idx->new_box_set, 0, (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] * sizeof(*file->idx->new_box_set)));
+
+  int i = 0, j = 0, k = 0;
+  for (i = 0; i < file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]; i++)
+  {
+    file->idx->new_box_set[i] = malloc(sizeof(*(file->idx->new_box_set[i])));
+    memset(file->idx->new_box_set[i], 0, sizeof(*(file->idx->new_box_set[i])));
+
+    file->idx->new_box_set[i]->rank = -1;
+  }
+
+  int rank_count = 0;
+  int index = 0;
+  //int color = 0;
+  int nx = 0, ny = 0, nz = 0;
+  int int_x = file->idx_c->gnproc_x / file->idx->number_processes[0];
+  int int_y = file->idx_c->gnproc_y / file->idx->number_processes[1];
+  int int_z = file->idx_c->gnproc_z / file->idx->number_processes[2];
+
+  for (k = 0; k < file->idx->box_bounds[2]; k = k + file->idx->reg_patch_size[2])
+    for (j = 0; j < file->idx->box_bounds[1]; j = j + file->idx->reg_patch_size[1])
+      for (i = 0; i < file->idx->box_bounds[0]; i = i + file->idx->reg_patch_size[0])
+      {
+        //Interior regular patches
+        index = ((k / file->idx->reg_patch_size[2]) * file->idx->number_processes[0] * file->idx->number_processes[1]) + ((j / file->idx->reg_patch_size[1]) * file->idx->number_processes[0]) + (i / file->idx->reg_patch_size[0]);
+
+        if (index >= file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2])
+        {
+          fprintf(stderr, "[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", file->idx->number_processes[2], file->idx->number_processes[1], file->idx->number_processes[0], index, i, j, k, (k / file->idx->reg_patch_size[2]), (j / file->idx->reg_patch_size[1]), (i / file->idx->reg_patch_size[0]));
+        }
+
+        assert(index < file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]);
+
+        file->idx->new_box_set[index]->offset[0] = i;
+        file->idx->new_box_set[index]->offset[1] = j;
+        file->idx->new_box_set[index]->offset[2] = k;
+
+        file->idx->new_box_set[index]->size[0] = file->idx->reg_patch_size[0] + file->idx->shared_face;
+        file->idx->new_box_set[index]->size[1] = file->idx->reg_patch_size[1] + file->idx->shared_face;
+        file->idx->new_box_set[index]->size[2] = file->idx->reg_patch_size[2] + file->idx->shared_face;
+
+        file->idx->new_box_set[index]->edge = 1;
+
+        //Edge regular patches
+        if ((i + file->idx->reg_patch_size[0] + 1) > file->idx->box_bounds[0])
+        {
+          file->idx->new_box_set[index]->edge = 2;
+          file->idx->new_box_set[index]->size[0] = file->idx->box_bounds[0] - i;
+        }
+
+        if ((j + file->idx->reg_patch_size[1] + 1) > file->idx->box_bounds[1])
+        {
+          file->idx->new_box_set[index]->edge = 2;
+          file->idx->new_box_set[index]->size[1] = file->idx->box_bounds[1] - j;
+        }
+
+        if ((k + file->idx->reg_patch_size[2] + 1) > file->idx->box_bounds[2])
+        {
+          file->idx->new_box_set[index]->edge = 2;
+          file->idx->new_box_set[index]->size[2] = file->idx->box_bounds[2] - k;
+        }
+
+        file->idx->new_box_set[index]->rank = rank_count * (file->idx_c->gnprocs / (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]));
+        rank_count++;
+
+        //if (file->idx_c->grank == file->idx->new_box_set[index]->rank)
+        //  color = 1;
+      }
+
+
+  if (file->idx_c->gnproc_x != -1 && file->idx_c->gnproc_y != -1 && file->idx_c->gnproc_z != -1)
+  {
+    //if (file->idx_c->grank == 0)
+    //  fprintf(stderr, "interval %d %d %d nproc %d %d %d\n", int_x, int_y, int_z, file->idx_c->gnproc_x, file->idx_c->gnproc_y, file->idx_c->gnproc_z);
+
+    for (nz = 0; nz < file->idx_c->gnproc_z; nz = nz + int_z)
+      for (ny = 0; ny < file->idx_c->gnproc_y; ny = ny + int_y)
+        for (nx = 0; nx < file->idx_c->gnproc_x; nx = nx + int_x)
+        {
+          index = ((nz / int_z) * file->idx->number_processes[0] * file->idx->number_processes[1]) + ((ny / int_y) * file->idx->number_processes[0]) + (nx / int_x);
+
+          //file->idx->new_box_set[index]->rank = (nz * file->idx->number_processes[0] * file->idx->number_processes[1]) + (ny * file->idx->number_processes[0]) + nx;
+          file->idx->new_box_set[index]->rank = (nz * file->idx_c->gnproc_x * file->idx_c->gnproc_y) + (ny * file->idx_c->gnproc_x) + nx;
+
+          if (file->idx_c->grank == file->idx->new_box_set[index]->rank)
+          {
+            file->idx_c->grank_x = nx;
+            file->idx_c->grank_y = ny;
+            file->idx_c->grank_z = nz;
+            //fprintf(stderr, "file->idx->new_box_set[index]->rank %d [%d %d %d]\n", file->idx->new_box_set[index]->rank, nx, ny, nz);
+          }
+        }
+  }
+
+  /*
+  if (file->idx_c->grank == 0)
+  {
+    for (k = 0; k < file->idx->number_processes[2]; k++)
+      for (j = 0; j < file->idx->number_processes[1]; j++)
+        for (i = 0; i < file->idx->number_processes[0]; i++)
+        {
+          index = (k * file->idx->number_processes[0] * file->idx->number_processes[1]) + (j * file->idx->number_processes[0]) + i;
+
+          fprintf(stderr, "[%d %d %d] [%d %d %d] Rank %d\n", i, j, k, file->idx_c->grank_x, file->idx_c->grank_y, file->idx_c->grank_z, file->idx->new_box_set[index]->rank);
+        }
+  }
+  */
+
+  //assert(rank_count == file->idx_c->gnprocs);
+  assert(rank_count == file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2]);
+
+  return PIDX_success;
+
+}
+
 
 PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 {
@@ -14,7 +165,8 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
-  file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
+  //file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
+  //printf("file->idx->reg_box_set = %d (%d %d %d)\n", file->idx->reg_box_set, file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
 
   if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
   {
@@ -27,6 +179,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
     assert(file->idx->reg_patch_size[0] != 0);
     assert(file->idx->reg_patch_size[1] != 0);
     assert(file->idx->reg_patch_size[2] != 0);
+    calculate_rank_mapping(file, gi, svi);
   }
   else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
   {
@@ -62,6 +215,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
   else if (file->idx->reg_box_set == PIDX_UNIFORMLY_DISTRIBUTED_BOX)
   {
+
     file->idx->number_processes[0] = ceil((float)file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
     file->idx->number_processes[1] = ceil((float)file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
     file->idx->number_processes[2] = ceil((float)file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
@@ -323,6 +477,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
 
   }
 
+  //printf("BS %d %d %d\n", file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
   return PIDX_success;
 }
 
@@ -1053,12 +1208,18 @@ static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
 {
-  int bits = log2(getPowerOf2(file->idx_c->gnprocs));
+  int core = log2(getPowerOf2(file->idx_c->gnprocs));
+  int bits;
   int counter = 1;
   unsigned long long power_two_bound[PIDX_MAX_DIMENSIONS];
   power_two_bound[0] = file->idx_d->partition_count[0] * file->idx_d->partition_size[0];
   power_two_bound[1] = file->idx_d->partition_count[1] * file->idx_d->partition_size[1];
   power_two_bound[2] = file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
+
+  increase_box_size:
+
+  bits = core;
+  counter = 1;
 
   memcpy(file->idx->reg_patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
@@ -1075,6 +1236,17 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
 
     counter++;
     bits--;
+  }
+
+  int np[3];
+  np[0] = ceil((float)file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
+  np[1] = ceil((float)file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
+  np[2] = ceil((float)file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
+
+  if (np[0] * np[1] * np[2] > file->idx_c->gnprocs)
+  {
+    core = core - 1;
+    goto increase_box_size;
   }
 
   return PIDX_success;

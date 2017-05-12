@@ -132,7 +132,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     // Setup 7: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_WRITE);
+      ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -143,7 +143,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
     // Setup 8: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_WRITE);
+      ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -157,7 +157,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
       time->io_start[gi][li] = PIDX_get_time();
       create_async_buffers(file, gi);
 
-      ret = data_io(file, gi, li, PIDX_WRITE);
+      ret = data_io(file, gi, si, li, li, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -165,7 +165,7 @@ PIDX_return_code PIDX_wavelet_write(PIDX_io file, int gi, int svi, int evi)
       }
 
       wait_and_destroy_async_buffers(file, gi);
-      finalize_aggregation(file, gi, li);
+      finalize_aggregation(file, gi, li, si);
       time->io_end[gi][li] = PIDX_get_time();
     }
 

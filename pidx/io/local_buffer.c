@@ -8,9 +8,9 @@ static PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_io file, 
 static PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_io file, int start_layout_index_shared, int agg_io_level_shared);
 static PIDX_return_code wait_and_destroy_file_zero_async_buffers(PIDX_io file, int start_layout_index_file_zero, int agg_io_level_file_zero);
 
-static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int start_index, int start_layout_index_non_shared, int agg_io_level_non_shared);
-static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_index, int start_layout_index_shared, int agg_io_level_shared);
-static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_io file, int start_index, int start_layout_index_file_zero, int agg_io_level_file_zero);
+static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_non_shared, int agg_io_level_non_shared);
+static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_shared, int agg_io_level_shared);
+static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_file_zero, int agg_io_level_file_zero);
 
 static PIDX_return_code create_non_shared_async_buffers(PIDX_io file, int start_layout_index_non_shared, int agg_io_level_non_shared)
 {
@@ -135,11 +135,12 @@ static PIDX_return_code wait_and_destroy_file_zero_async_buffers(PIDX_io file, i
   return PIDX_success;
 }
 
-static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int start_index, int start_layout_index_non_shared, int agg_io_level_non_shared)
+static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_non_shared, int agg_io_level_non_shared)
 {
   int ret;
   int i = 0;
   int i_1 = 0;
+  start_index = start_index - local_var_index;
   for (i = start_layout_index_non_shared; i < (agg_io_level_non_shared); i++)
   {
     i_1 = i - start_layout_index_non_shared;
@@ -159,11 +160,13 @@ static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int sta
 }
 
 
-static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_index, int start_layout_index_shared, int agg_io_level_shared)
+static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_shared, int agg_io_level_shared)
 {
   int i = 0;
   int i_1 = 0;
   int ret;
+  start_index = start_index - local_var_index;
+  //printf("START index %d\n", start_index);
   for (i = start_layout_index_shared; i < agg_io_level_shared; i++)
   {
     i_1 = i - start_layout_index_shared;
@@ -183,11 +186,12 @@ static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_i
 }
 
 
-static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_io file, int start_index, int start_layout_index_file_zero, int agg_io_level_file_zero)
+static PIDX_return_code destroy_file_zero_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_file_zero, int agg_io_level_file_zero)
 {
   int i = 0;
   int i_1 = 0;
   int ret;
+  start_index = start_index - local_var_index;
   for (i = start_layout_index_file_zero; i < (agg_io_level_file_zero); i++)
   {
     i_1 = i - start_layout_index_file_zero;
@@ -348,13 +352,13 @@ PIDX_return_code wait_and_destroy_async_buffers(PIDX_io file, int gi)
 }
 
 
-PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index)
+PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index, int local_var_index)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  destroy_file_zero_ids_and_buffers(file, start_index, var_grp->f0_start_layout_index, var_grp->agg_l_f0);
-  destroy_shared_ids_and_buffers(file, start_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared);
-  destroy_non_shared_ids_and_buffers(file, start_index, var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
+  destroy_file_zero_ids_and_buffers(file, start_index, local_var_index, var_grp->f0_start_layout_index, var_grp->agg_l_f0);
+  destroy_shared_ids_and_buffers(file, start_index, local_var_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared);
+  destroy_non_shared_ids_and_buffers(file, start_index, local_var_index, var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
 
   return PIDX_success;
 }

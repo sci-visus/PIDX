@@ -109,7 +109,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     // Setup 7: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_WRITE);
+      ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -120,7 +120,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     // Setup 8: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_WRITE);
+      ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -134,7 +134,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       time->io_start[gi][li] = PIDX_get_time();
       create_async_buffers(file, gi);
 
-      ret = data_io(file, gi, li, PIDX_WRITE);
+      ret = data_io(file, gi, si, li, li, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -142,7 +142,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
       }
 
       wait_and_destroy_async_buffers(file, gi);
-      finalize_aggregation(file, gi, li);
+      finalize_aggregation(file, gi, li, si);
       time->io_end[gi][li] = PIDX_get_time();
     }
 
@@ -271,7 +271,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
     // Setup 5: Setup aggregation buffers
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, si, AGG_SETUP, PIDX_READ);
+      ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -284,7 +284,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
     {
       time->io_start[gi][li] = PIDX_get_time();
 
-      ret = data_io(file, gi, li, PIDX_READ);
+      ret = data_io(file, gi, si, li, li, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -297,13 +297,13 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
     // Setup 7: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
-      ret = data_aggregate(file, gi, li, si, AGG_PERFORM, PIDX_READ);
+      ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      finalize_aggregation(file, gi, li);
+      finalize_aggregation(file, gi, li, si);
     }
     //
 

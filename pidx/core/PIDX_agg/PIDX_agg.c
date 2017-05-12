@@ -110,6 +110,10 @@ PIDX_return_code PIDX_agg_random_buf_create_multiple_level(PIDX_agg_id id, Agg_b
       for (j = 0; j < var_grp->variable[i]->vps * ab->agg_f; j++)
       {
         id->agg_r[k][i - id->fi][j] = id->idx->random_agg_list[id->idx->random_agg_counter];
+
+        if (id->idx->random_agg_counter >= id->idx_c->gnprocs)
+          id->idx->random_agg_counter = 0;
+
         id->idx->random_agg_counter++;
       }
     }

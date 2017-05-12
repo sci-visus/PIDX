@@ -60,8 +60,8 @@ IF (PIDX_BUILD_TUTORIAL)
 #  PIDX_ADD_CEXECUTABLE(multi_buffer_single_variable_read "basic_io/read/multi_buffer_single_variable_read.c")
 #  TARGET_LINK_LIBRARIES(multi_buffer_single_variable_read ${TUTORIAL_LINK_LIBS})
 
-#  PIDX_ADD_CEXECUTABLE(single_buffer_single_variable_read "basic_io/read/single_buffer_single_variable_read.c")
-#  TARGET_LINK_LIBRARIES(single_buffer_single_variable_read ${TUTORIAL_LINK_LIBS})
+  PIDX_ADD_CEXECUTABLE(single_buffer_single_variable_read "basic_io/read/single_buffer_single_variable_read.c")
+  TARGET_LINK_LIBRARIES(single_buffer_single_variable_read ${TUTORIAL_LINK_LIBS})
 
 #  PIDX_ADD_CEXECUTABLE(multi_buffer_all_variable_read "basic_io/read/multi_buffer_all_variable_read.c")
 #  TARGET_LINK_LIBRARIES(multi_buffer_all_variable_read ${TUTORIAL_LINK_LIBS})
