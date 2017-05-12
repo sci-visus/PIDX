@@ -125,14 +125,17 @@ int main(int argc, char **argv)
   int ts = 0, var = 0;
   init_mpi(argc, argv);
   parse_args(argc, argv);
+
   check_args();
   calculate_per_process_offsets();
+
   create_synthetic_simulation_data();
   //create_random_aggregators();
 
   //rank_0_print("Simulation Data Created\n");
 
   create_pidx_var_point_and_access();
+
   for (ts = 0; ts < time_step_count; ts++)
   {
     set_pidx_file(ts);
@@ -144,6 +147,7 @@ int main(int argc, char **argv)
   destroy_pidx_var_point_and_access();
 
   destroy_synthetic_simulation_data();
+
   shutdown_mpi();
 
   return 0;
@@ -258,11 +262,12 @@ static int parse_var_list()
             strcpy(type_name[variable_counter], pch1);
             int ret;
             int bits_per_sample = 0;
-            ret = PIDX_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
+            int sample_count = 0;
+            ret = PIDX_values_per_datatype(type_name[variable_counter], &sample_count, &bits_per_sample);
             if (ret != PIDX_success)  return PIDX_err_file;
 
             bpv[variable_counter] = bits_per_sample;
-            vps[variable_counter] = 1;
+            vps[variable_counter] = sample_count;
           }
           count++;
           pch1 = strtok(NULL, " +");
@@ -329,16 +334,10 @@ static void create_synthetic_simulation_data()
   // Synthetic simulation data
   for(var = 0; var < variable_count; var++)
   {
-    int sample_count = 1;
-    unsigned long long i, j, k, vps = 0;
-    if ((bpv[var]) == 32)
-      sample_count = 1;
-    else if ((bpv[var]) == 192)
-      sample_count = 3;
-    else if ((bpv[var]) == 64)
-      sample_count = 1;
+    //fprintf(stderr, "vps[var] %d - bpv[var] %d\n", vps[var], bpv[var]);
+    unsigned long long i, j, k, val_per_sample = 0;
 
-    data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
+    data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
 
     float fvalue = 0;
     double dvalue = 0;
@@ -348,25 +347,32 @@ static void create_synthetic_simulation_data()
         {
           unsigned long long index = (unsigned long long) (local_box_size[X] * local_box_size[Y] * k) + (local_box_size[X] * j) + i;
 
-          for (vps = 0; vps < sample_count; vps++)
+          for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
           {
-            if ((bpv[var]) == 32)
+            if ((bpv[var]) == 32 && vps[var] == 1)
             {
               fvalue = ((float)(100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));// / (512.0 * 512.0 * 512.0)) * 255.0;
-              memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
               //fprintf(stderr, "value = %f\n", fvalue);
             }
 
-            else if ((bpv[var]) == 64)
+            else if ((bpv[var]) == 32 && vps[var] == 2)
             {
-              dvalue = 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
+              fvalue = ((float)(100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));// / (512.0 * 512.0 * 512.0)) * 255.0;
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
+              //fprintf(stderr, "value = %f\n", fvalue);
             }
 
-            else if ((bpv[var]) == 192)
+            else if ((bpv[var]) == 64 &&  vps[var] == 1)
             {
               dvalue = 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
+            }
+
+            else if ((bpv[var]) == 192  && vps[var] == 3)
+            {
+              dvalue = 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
 
           }
@@ -440,7 +446,7 @@ static void set_pidx_file(int ts)
   //PIDX_debug_hz(file, 1);
 
   // Selecting raw I/O mode
-  PIDX_set_io_mode(file, PIDX_RAW_IO);
+  PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
@@ -460,7 +466,7 @@ static void set_pidx_variable(int var)
 {
   PIDX_return_code ret = 0;
 
-  ret = PIDX_variable_create(var_name[var],  bpv[var], type_name[var], &variable[var]);
+  ret = PIDX_variable_create(var_name[var], bpv[var] * vps[var], type_name[var], &variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
   ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);

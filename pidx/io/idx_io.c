@@ -263,8 +263,8 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
-    PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-    printf("X %d %d %d Y %d %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared, var_grp->nshared_end_layout_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared, var_grp->shared_end_layout_index);
+    //PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+    //printf("X %d %d %d Y %d %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared, var_grp->nshared_end_layout_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared, var_grp->shared_end_layout_index);
 
 
     if (hz_io(file, gi, PIDX_READ) != PIDX_success)
