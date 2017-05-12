@@ -14,6 +14,8 @@ PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
 {
   set_reg_patch_size_from_bit_string(file);
   calculate_rank_mapping(file, gi, svi);
+
+  return PIDX_success;
 }
 
 PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
@@ -26,6 +28,8 @@ PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
   }
 
   calculate_rank_mapping(file, gi, svi);
+
+  return PIDX_success;
 }
 
 static PIDX_return_code calculate_rank_mapping(PIDX_io file, int gi, int svi)
