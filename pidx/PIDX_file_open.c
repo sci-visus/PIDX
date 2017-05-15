@@ -167,7 +167,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         count = 0;
         while (pch != NULL)
         {
-          if (count % 2 == 1)
+          if (count % 2 == 1 && count / 2 < PIDX_MAX_DIMENSIONS)
           {
             (*file)->idx->bounds[count / 2] = atoi(pch) + 1;
             (*file)->idx->box_bounds[count / 2] = atoi(pch) + 1;
