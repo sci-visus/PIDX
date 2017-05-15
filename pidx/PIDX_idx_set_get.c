@@ -249,6 +249,14 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
   if (file->idx->io_type != PIDX_MERGE_TREE_ANALYSIS)
     file->idx->reg_box_set = PIDX_USER_RST_BOX;
 
+  if (((reg_patch_size[0] & (reg_patch_size[0] - 1)) != 0) && ((reg_patch_size[1] & (reg_patch_size[1] - 1)) != 0) && ((reg_patch_size[2] & (reg_patch_size[2] - 1)) != 0))
+  {
+    if (file->idx_c->grank == 0)
+      fprintf(stderr, "Warning in %s %d restructuring box needs to be power of two in size %d %d %d (will be over written!!!!)\n", __FILE__, __LINE__, (int)reg_patch_size[0], (int)reg_patch_size[1], (int)reg_patch_size[2]);
+
+    return PIDX_err_box;
+  }
+
   memcpy(file->idx->reg_patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;

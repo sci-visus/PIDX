@@ -349,32 +349,17 @@ static void create_synthetic_simulation_data()
 
           for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
           {
-            if ((bpv[var]) == 32 && vps[var] == 1)
+            if ((bpv[var]) == 32)
             {
               fvalue = ((float)(100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));// / (512.0 * 512.0 * 512.0)) * 255.0;
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
-              //fprintf(stderr, "value = %f\n", fvalue);
             }
 
-            else if ((bpv[var]) == 32 && vps[var] == 2)
+            else if ((bpv[var]) == 64)
             {
-              fvalue = ((float)(100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));// / (512.0 * 512.0 * 512.0)) * 255.0;
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
-              //fprintf(stderr, "value = %f\n", fvalue);
-            }
-
-            else if ((bpv[var]) == 64 &&  vps[var] == 1)
-            {
-              dvalue = 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              dvalue = ((double)100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
-
-            else if ((bpv[var]) == 192  && vps[var] == 3)
-            {
-              dvalue = 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
-            }
-
           }
         }
   }

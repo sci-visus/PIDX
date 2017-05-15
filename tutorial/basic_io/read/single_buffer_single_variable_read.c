@@ -277,7 +277,7 @@ static void verify_read_results()
       {
         unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
 
-        if (strcmp(type_name, INT32) == 0)
+        if (strcmp(type_name, INT32) == 0 || strcmp(type_name, INT32_GA) == 0 || strcmp(type_name, INT32_RGB) == 0)
         {
           for (vps = 0; vps < values_per_sample; vps++)
           {
@@ -297,7 +297,7 @@ static void verify_read_results()
           }
         }
 
-        else if (strcmp(type_name, FLOAT64) == 0 || strcmp(type_name, FLOAT64_RGB) == 0)
+        else if (strcmp(type_name, FLOAT64) == 0 || strcmp(type_name, FLOAT64_RGB) == 0 || strcmp(type_name, FLOAT64_GA) == 0)
         {
           for (vps = 0; vps < values_per_sample; vps++)
           {
@@ -317,7 +317,7 @@ static void verify_read_results()
           }
         }
 
-        else if (strcmp(type_name, FLOAT32) == 0 || strcmp(type_name, FLOAT32_GA) == 0)
+        else if (strcmp(type_name, FLOAT32) == 0 || strcmp(type_name, FLOAT32_GA) == 0 || strcmp(type_name, FLOAT32_RGB) == 0)
         {
           for (vps = 0; vps < values_per_sample; vps++)
           {
@@ -326,7 +326,7 @@ static void verify_read_results()
             {
               read_error_count++;
               //if (rank == 1)
-              printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
+              //printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
             }
             else
             {
