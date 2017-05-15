@@ -282,7 +282,7 @@ static void verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&int_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (int_val != var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (int_val != var + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
@@ -302,7 +302,7 @@ static void verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&double_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (double_val != vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (double_val != var + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
