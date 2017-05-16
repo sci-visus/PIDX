@@ -22,7 +22,7 @@
           *---------*---------* |
          /         /         /| |
         *---------*---------* | *
-        |         |         | |/|           --------->        IDX Data format
+        |         |         | |/|           --------->        RAW Data format
         |         |         | * |
         | P4      | P5      |/| | P3
         *---------*---------* | *
@@ -31,6 +31,34 @@
         | P0      | P1      |/
         *---------*---------*
 
+        ABOUT this application:
+        Writes data in PIDX raw format
+        Takes input the size of the volume and the size of per-process volumes
+        and input file with list of fields and the restructuring box.
+        Restructuring box is imposed on the grid, processes communicate and transfer data
+        among each other after which processes hold data only for restructured box.
+        Processes holding the restructured box writes its data to a seperate file.
+
+
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+       =========||=========||=========||=========  ->   - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        ============||=============||=========
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
+        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
+                ||         ||         ||                            ||             ||
 */
 
 #include <unistd.h>
@@ -38,10 +66,11 @@
 #include <stdint.h>
 #include <PIDX.h>
 
-#define MAX_VAR_COUNT 128
+#define MAX_VAR_COUNT 256
 enum { X, Y, Z, NUM_DIMS };
 
 static int process_count = 1, rank = 0;
+static unsigned long long rst_box_size[NUM_DIMS];
 static unsigned long long global_box_size[NUM_DIMS];
 static unsigned long long local_box_offset[NUM_DIMS];
 static unsigned long long local_box_size[NUM_DIMS];
@@ -56,8 +85,11 @@ static char var_name[MAX_VAR_COUNT][512];
 static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
+static int max_file_count = 0;
 
-static PIDX_point global_size, local_offset, local_size;
+static int *random_agg_list;
+
+static PIDX_point global_size, local_offset, local_size, reg_size;
 static PIDX_access p_access;
 static PIDX_file file;
 static PIDX_variable* variable;
@@ -77,12 +109,14 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
+static void create_random_aggregators();
 
-static char *usage = "Serial Usage: ./single_buffer_idx_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./single_buffer_idx_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
+static char *usage = "Serial Usage: ./single_buffer_raw_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./single_buffer_raw_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -f: idx file name template\n"
+                     "  -r: restructured box dimension\n"
+                     "  -f: Raw file name template\n"
                      "  -t: number of timesteps\n"
                      "  -v: number of variables\n";
 
@@ -91,16 +125,21 @@ int main(int argc, char **argv)
   int ts = 0, var = 0;
   init_mpi(argc, argv);
   parse_args(argc, argv);
+
   check_args();
   calculate_per_process_offsets();
-  create_synthetic_simulation_data();
 
-  rank_0_print("Simulation Data Created\n");
+  create_synthetic_simulation_data();
+  //create_random_aggregators();
+
+  //rank_0_print("Simulation Data Created\n");
 
   create_pidx_var_point_and_access();
+
   for (ts = 0; ts < time_step_count; ts++)
   {
     set_pidx_file(ts);
+    //PIDX_dump_state(file, PIDX_META_DATA_DUMP_ONLY);
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
     PIDX_close(file);
@@ -108,6 +147,7 @@ int main(int argc, char **argv)
   destroy_pidx_var_point_and_access();
 
   destroy_synthetic_simulation_data();
+
   shutdown_mpi();
 
   return 0;
@@ -129,7 +169,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:";
+  char flags[] = "g:l:r:f:t:v:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -145,6 +185,11 @@ static void parse_args(int argc, char **argv)
     case('l'): // local dimension
       if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[X], &local_box_size[Y], &local_box_size[Z]) == EOF) ||(local_box_size[X] < 1 || local_box_size[Y] < 1 || local_box_size[Z] < 1))
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
+      break;
+
+    case('r'): // local dimension
+      if ((sscanf(optarg, "%lldx%lldx%lld", &rst_box_size[X], &rst_box_size[Y], &rst_box_size[Z]) == EOF) ||(rst_box_size[X] < 1 || rst_box_size[Y] < 1 || rst_box_size[Z] < 1))
+        terminate_with_error_msg("Invalid partition dimension\n%s", usage);
       break;
 
     case('f'): // output file name
@@ -176,7 +221,7 @@ static int parse_var_list()
   FILE *fp = fopen(var_list, "r");
   if (fp == NULL)
   {
-    fprintf(stdout, "Error Opening %s\n", var_list);
+    fprintf(stderr, "Error Opening %s\n", var_list);
     return PIDX_err_file;
   }
 
@@ -217,11 +262,12 @@ static int parse_var_list()
             strcpy(type_name[variable_counter], pch1);
             int ret;
             int bits_per_sample = 0;
-            ret = PIDX_default_bits_per_datatype(type_name[variable_counter], &bits_per_sample);
+            int sample_count = 0;
+            ret = PIDX_values_per_datatype(type_name[variable_counter], &sample_count, &bits_per_sample);
             if (ret != PIDX_success)  return PIDX_err_file;
 
             bpv[variable_counter] = bits_per_sample;
-            vps[variable_counter] = 1;
+            vps[variable_counter] = sample_count;
           }
           count++;
           pch1 = strtok(NULL, " +");
@@ -238,14 +284,16 @@ static int parse_var_list()
   }
   fclose(fp);
 
+  /*
   int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank == 0)
   {
     int v = 0;
     for(v = 0; v < variable_count; v++)
-      printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
+      fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
+  */
 
   return PIDX_success;
 }
@@ -286,16 +334,10 @@ static void create_synthetic_simulation_data()
   // Synthetic simulation data
   for(var = 0; var < variable_count; var++)
   {
-    int sample_count = 1;
-    unsigned long long i, j, k, vps = 0;
-    if ((bpv[var]) == 32)
-      sample_count = 1;
-    else if ((bpv[var]) == 192)
-      sample_count = 3;
-    else if ((bpv[var]) == 64)
-      sample_count = 1;
+    //fprintf(stderr, "vps[var] %d - bpv[var] %d\n", vps[var], bpv[var]);
+    unsigned long long i, j, k, val_per_sample = 0;
 
-    data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8));
+    data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
 
     float fvalue = 0;
     double dvalue = 0;
@@ -305,26 +347,19 @@ static void create_synthetic_simulation_data()
         {
           unsigned long long index = (unsigned long long) (local_box_size[X] * local_box_size[Y] * k) + (local_box_size[X] * j) + i;
 
-          for (vps = 0; vps < sample_count; vps++)
+          for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
           {
             if ((bpv[var]) == 32)
             {
-              fvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
+              fvalue = ((float)(100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));// / (512.0 * 512.0 * 512.0)) * 255.0;
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
             }
 
             else if ((bpv[var]) == 64)
             {
-              dvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
+              dvalue = ((double)100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
-
-            else if ((bpv[var]) == 192)
-            {
-              dvalue = 100 + var + vps + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * sample_count + vps) * sizeof(double), &dvalue, sizeof(double));
-            }
-
           }
         }
   }
@@ -369,6 +404,7 @@ static void create_pidx_var_point_and_access()
   PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
   PIDX_set_point(local_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z]);
   PIDX_set_point(local_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
+  PIDX_set_point(reg_size, rst_box_size[X], rst_box_size[Y], rst_box_size[Z]);
 
   //  Creating access
   PIDX_create_access(&p_access);
@@ -388,18 +424,24 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   PIDX_set_variable_count(file, variable_count);
 
+  // Seting the restructuring box size
+  PIDX_set_restructuring_box(file, reg_size);
+
   //PIDX_debug_rst(file, 1);
   //PIDX_debug_hz(file, 1);
 
-  PIDX_set_block_count(file, 256);
-
-  //PIDX_point reg_size;
-  //PIDX_set_point(reg_size, 16, 16, 16);
-  //PIDX_set_restructuring_box(file, reg_size);
-
-  // Selecting idx I/O mode
+  // Selecting raw I/O mode
+  PIDX_set_io_mode(file, PIDX_RAW_IO);
   //PIDX_set_io_mode(file, PIDX_IDX_IO);
-  PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
+  //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
+
+  PIDX_set_block_count(file, 256);
+  PIDX_set_block_size(file, 15);
+
+  PIDX_set_cache_time_step(file, 0);
+
+  //PIDX_randomized_aggregators(file, random_agg_list, (max_file_count * variable_count));
+
 
   return;
 }
@@ -409,7 +451,7 @@ static void set_pidx_variable(int var)
 {
   PIDX_return_code ret = 0;
 
-  ret = PIDX_variable_create(var_name[var],  bpv[var], type_name[var], &variable[var]);
+  ret = PIDX_variable_create(var_name[var], bpv[var] * vps[var], type_name[var], &variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
   ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
@@ -452,4 +494,55 @@ static void shutdown_mpi()
 #if PIDX_HAVE_MPI
   MPI_Finalize();
 #endif
+}
+
+
+static void create_random_aggregators()
+{
+  unsigned long long total_reg_sample_count = (getPowerOf2(global_box_size[0]) * getPowerOf2(global_box_size[1]) * getPowerOf2(global_box_size[2]));
+  unsigned long long max_sample_per_file = (unsigned long long) 32768 * 256;
+  max_file_count = total_reg_sample_count / max_sample_per_file;
+  if (total_reg_sample_count % max_sample_per_file)
+    max_file_count++;
+
+  random_agg_list = malloc(sizeof(*random_agg_list) * max_file_count * variable_count);
+  memset(random_agg_list, 0, sizeof(*random_agg_list) * max_file_count * variable_count);
+
+  int i = 0;
+  if (rank == 0)
+  {
+    time_t t;
+    srand((unsigned) time(&t));
+
+    int M = max_file_count * variable_count;
+    int N = process_count - 1;
+
+    unsigned char *is_used;
+    is_used = malloc(sizeof(*is_used) * N);
+    memset(is_used, 0, sizeof(*is_used) * N);
+
+    int in, im;
+    im = 0;
+
+    for (in = N - M; in < N && im < M; ++in)
+    {
+      int r = rand() % (in + 1);
+      if (is_used[r])
+        r = in;
+
+      assert(!is_used[r]);
+      random_agg_list[im++] = r;
+      is_used[r] = 1;
+    }
+
+    assert(im == M);
+
+    fprintf(stderr, "\n[%d x %d]Aggs: ", max_file_count, variable_count);
+    for (i = 0; i < max_file_count * variable_count; i++)
+      fprintf(stderr, "%d ", random_agg_list[i]);
+    fprintf(stderr, "\n");
+  }
+  MPI_Bcast(random_agg_list, (max_file_count * variable_count), MPI_INT, 0, MPI_COMM_WORLD);
+
+  return;
 }

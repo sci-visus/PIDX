@@ -60,8 +60,8 @@ IF (PIDX_BUILD_TUTORIAL)
 #  PIDX_ADD_CEXECUTABLE(multi_buffer_single_variable_read "basic_io/read/multi_buffer_single_variable_read.c")
 #  TARGET_LINK_LIBRARIES(multi_buffer_single_variable_read ${TUTORIAL_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(single_buffer_single_variable_read "basic_io/read/single_buffer_single_variable_read.c")
-  TARGET_LINK_LIBRARIES(single_buffer_single_variable_read ${TUTORIAL_LINK_LIBS})
+#  PIDX_ADD_CEXECUTABLE(single_buffer_single_variable_read "basic_io/read/single_buffer_single_variable_read.c")
+#  TARGET_LINK_LIBRARIES(single_buffer_single_variable_read ${TUTORIAL_LINK_LIBS})
 
 #  PIDX_ADD_CEXECUTABLE(multi_buffer_all_variable_read "basic_io/read/multi_buffer_all_variable_read.c")
 #  TARGET_LINK_LIBRARIES(multi_buffer_all_variable_read ${TUTORIAL_LINK_LIBS})
@@ -83,8 +83,8 @@ IF (PIDX_BUILD_TUTORIAL)
 #  PIDX_ADD_CEXECUTABLE(multi_buffer_raw_write "basic_io/write/raw/multi_buffer_raw_write.c")
 #  TARGET_LINK_LIBRARIES(multi_buffer_raw_write ${TUTORIAL_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(single_buffer_raw_write "basic_io/write/raw/single_buffer_raw_write.c")
-  TARGET_LINK_LIBRARIES(single_buffer_raw_write ${TUTORIAL_LINK_LIBS})
+#  PIDX_ADD_CEXECUTABLE(single_buffer_raw_write "basic_io/write/raw/single_buffer_raw_write.c")
+#  TARGET_LINK_LIBRARIES(single_buffer_raw_write ${TUTORIAL_LINK_LIBS})
 
 
 
@@ -93,11 +93,11 @@ IF (PIDX_BUILD_TUTORIAL)
 #  PIDX_ADD_CEXECUTABLE(multi_buffer_global_partitioned_idx_write "basic_io/write/global_partitioned_idx/multi_buffer_global_partitioned_idx_write.c")
 #  TARGET_LINK_LIBRARIES(multi_buffer_global_partitioned_idx_write ${TUTORIAL_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(single_buffer_global_partitioned_idx_write "basic_io/write/global_partitioned_idx/single_buffer_global_partitioned_idx_write.c")
-  TARGET_LINK_LIBRARIES(single_buffer_global_partitioned_idx_write ${TUTORIAL_LINK_LIBS})
+#  PIDX_ADD_CEXECUTABLE(single_buffer_global_partitioned_idx_write "basic_io/write/global_partitioned_idx/single_buffer_global_partitioned_idx_write.c")
+#  TARGET_LINK_LIBRARIES(single_buffer_global_partitioned_idx_write ${TUTORIAL_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(two_var "basic_io/write/global_partitioned_idx/two_var.c")
-  TARGET_LINK_LIBRARIES(two_var ${TUTORIAL_LINK_LIBS})
+#  PIDX_ADD_CEXECUTABLE(two_var "basic_io/write/global_partitioned_idx/two_var.c")
+#  TARGET_LINK_LIBRARIES(two_var ${TUTORIAL_LINK_LIBS})
 
 
 

@@ -22,7 +22,7 @@
           *---------*---------* |
          /         /         /| |
         *---------*---------* | *
-        |         |         | |/|           --------->        RAW Data format
+        |         |         | |/|           --------->        IDX Data format
         |         |         | * |
         | P4      | P5      |/| | P3
         *---------*---------* | *
@@ -31,34 +31,6 @@
         | P0      | P1      |/
         *---------*---------*
 
-        ABOUT this application:
-        Writes data in PIDX raw format
-        Takes input the size of the volume and the size of per-process volumes
-        and input file with list of fields and the restructuring box.
-        Restructuring box is imposed on the grid, processes communicate and transfer data
-        among each other after which processes hold data only for restructured box.
-        Processes holding the restructured box writes its data to a seperate file.
-
-
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
-       =========||=========||=========||=========  ->   - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        ============||=============||=========
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
-        - - - - || - - - - || - - - - || - - - -        - - - - - - || - - - - - - || - - - -
-                ||         ||         ||                            ||             ||
 */
 
 #include <unistd.h>
@@ -432,7 +404,6 @@ static void set_pidx_file(int ts)
 
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_IDX_IO);
-  //PIDX_set_io_mode(file, PIDX_IDX_IO);
   //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
   PIDX_set_block_count(file, 256);

@@ -18,6 +18,7 @@
 
 import os
 import sys, getopt
+#import platform
 from idx_utils import *
 
 #
@@ -26,15 +27,15 @@ from idx_utils import *
 
 # User settings
 # Set write_executable and read_executable acoording to your build directory
-write_executable = "../../build/tutorial/single_buffer_raw_write.app/Contents/MacOS/single_buffer_raw_write"
-read_executable = "../../build/tutorial/single_buffer_single_variable_read.app/Contents/MacOS/single_buffer_single_variable_read"
+write_executable = "../../build/examples/idx_write.app/Contents/MacOS/idx_write"
+read_executable = "../../build/examples/idx_read.app/Contents/MacOS/idx_read"
 
 patch_size = (32, 32, 32)
 #var_types = ["1*float32", "1*int32", "1*float64", 
 #             "2*float32", "2*int32", "2*float64", 
 #             "3*float32", "3*int32", "3*float64"]
 
-var_types = ["1*float32","1*float64","3*float32","3*float64"]
+var_types = ["1*float32"]#,"1*float64","3*float32","3*float64"]
 
 #####
 
