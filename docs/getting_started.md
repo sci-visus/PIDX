@@ -1,22 +1,5 @@
 Getting Started
 ===============================================
-#/*****************************************************
-# **  PIDX Parallel I/O Library                      **
-# **  Copyright (c) 2010-2014 University of Utah     **
-# **  Scientific Computing and Imaging Institute     **
-# **  72 S Central Campus Drive, Room 3750           **
-# **  Salt Lake City, UT 84112                       **
-# **                                                 **
-# **  PIDX is licensed under the Creative Commons    **
-# **  Attribution-NonCommercial-NoDerivatives 4.0    **
-# **  International License. See LICENSE.md.         **
-# **                                                 **
-# **  For information about this project see:        **
-# **  http://www.cedmav.com/pidx                     **
-# **  or contact: pascucci@sci.utah.edu              **
-# **  For support: PIDX-support@visus.net            **
-# **                                                 **
-# *****************************************************/
 
 --------------------------------------
 Prerequisites 
@@ -52,9 +35,9 @@ Explicitly control whether to build static or shared library::
 
   -DBUILD_SHARED_LIBS=[ON|OFF]
 
-Enable PNetCDF::
+Enable Examples::
 
-  -DPIDX_OPTION_PNETCDF=[ON|OFF]
+  -DPIDX_BUILD_EXAMPLES=[ON|OFF]
 
 Enable Profiling::
 
@@ -79,4 +62,6 @@ Documentation
 
 A few simple function calls are all that's necessary to instrument your application to utilize PIDX I/O:
 
-Please see the examples in PIDX/test for a demonstration.
+Please see the examples in the "examples" folder for a demonstration.
+
+Documentation from the PIDX Tutorial can be found here: <https://sites.google.com/site/bigdatahpc/>
