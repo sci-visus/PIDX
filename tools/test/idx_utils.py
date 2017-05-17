@@ -18,10 +18,9 @@
 
 import os
 import sys, getopt
+import os.path
 
 vars_file = "VARS"
-write_executable = "../build/tutorial/single_buffer_raw_write.app/Contents/MacOS/single_buffer_raw_write"
-read_executable = "../build/tutorial/single_buffer_single_variable_read.app/Contents/MacOS/single_buffer_single_variable_read"
 
 # These are the procs configuration that will be used for different core counts
 # (first is the default)
@@ -85,3 +84,17 @@ def generate_vars(n_vars, type):
   file.write("(end)")
   file.close() 
 
+# Generate variable list with alternate types
+def generate_vars(n_vars, type1, type2):
+  file = open(vars_file,"w") 
+  
+  file.write("(fields)\n")
+
+  for i in range(n_vars):
+    if i % 2 == 0:
+      file.write("var_"+str(i)+" "+type1+" +\n")
+    else:
+      file.write("var_"+str(i)+" "+type2+" +\n")
+
+  file.write("(end)")
+  file.close() 

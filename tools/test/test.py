@@ -27,10 +27,11 @@ from idx_utils import *
 
 # User settings
 # Set write_executable and read_executable acoording to your build directory
-write_executable = "../../build/examples/idx_write.app/Contents/MacOS/idx_write"
-read_executable = "../../build/examples/idx_read.app/Contents/MacOS/idx_read"
+write_executable = "../../build/examples/idx_write"
+read_executable = "../../build/examples/idx_read"
+mpirun="/usr/lib64/mpi/gcc/openmpi/bin/mpirun"
 
-patch_size = (32, 32, 32)
+patch_size = (16, 16, 16)
 #var_types = ["1*float32", "1*int32", "1*float64", 
 #             "2*float32", "2*int32", "2*float64", 
 #             "3*float32", "3*int32", "3*float64"]
@@ -38,6 +39,14 @@ patch_size = (32, 32, 32)
 var_types = ["1*float32"]#,"1*float64","3*float32","3*float64"]
 
 #####
+
+if not(os.path.isfile(write_executable)):
+  print "ERROR: write executable not found! Change it in test.py"
+  sys.exit(2)
+
+if not(os.path.isfile(read_executable)):
+  print "ERROR: read executable not found! Change it in test.py"
+  sys.exit(2)
 
 profiling = 0
 profile_file_write = "pidx_write.prof"
@@ -76,7 +85,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
   n_tests = 0
 
   generate_vars(n_vars, var_type)
-  test_str = "mpirun -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t"+str(n_ts)+" -v "+vars_file+" -f data"
+  test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t"+str(n_ts)+" -v "+vars_file+" -f data"
   os.system(test_str+" 2&> _out_write.txt")
 
   if profiling > 0:
@@ -86,7 +95,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
     for vr in range(0, n_vars):
       n_tests = n_tests + 1
 
-      test_str="mpirun -np "+str(n_cores_read)+" "+read_executable+" -g "+g_box+" -l "+l_box_read+" -t "+str(t-1)+" -v "+str(vr)+" -f data"
+      test_str= mpirun+" -np "+str(n_cores_read)+" "+read_executable+" -g "+g_box+" -l "+l_box_read+" -t "+str(t-1)+" -v "+str(vr)+" -f data"
 
       #print "Testing t="+str(t)+" v="+str(vr)+" type="+var_type
       os.system(test_str+" 2&> _out_read.txt")
