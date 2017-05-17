@@ -1,0 +1,45 @@
+sudo: false
+
+language: c
+
+branches:
+  only:
+    - master
+
+cache:
+  directories:
+    - openmpi
+    - openmpi-2.0.1
+
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      sudo: required
+      compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5 gcc-5 libstdc++-5-dev
+      env:
+        - CXX_COMPILER=g++-5
+        - C_COMPILER=gcc-5
+        - BUILD_TYPE=release
+
+before_install:
+  - test -n $CC && unset CC
+  - test -n $CXX && unset CXX
+  - which $CXX_COMPILER
+
+install:
+  - sh ci/travis/install_mpi.sh
+ 
+before_script: 
+  - mkdir build
+  - cd build
+
+script:
+  - cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/openmpi
+  - make -j 4
