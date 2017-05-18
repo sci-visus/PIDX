@@ -1,6 +1,9 @@
 sudo: false
 
-language: c
+language: c, python
+
+python:
+  - "2.7"
 
 branches:
   only:
@@ -41,5 +44,7 @@ before_script:
   - cd build
 
 script:
-  - cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib64/libmpich.so -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/libmpicxx.so -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include
+  - cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib64/libmpich.so -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/libmpicxx.so -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DPIDX_BUILD_EXAMPLES=ON
   - make -j 4
+  - cd ../tools/test
+  - python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun
