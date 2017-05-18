@@ -1,9 +1,6 @@
 sudo: false
 
-language: c, python
-
-python:
-  - "2.7"
+language: c
 
 branches:
   only:
