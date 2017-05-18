@@ -73,28 +73,21 @@ def verify_read(filename, count):
   return -1
 
 # Generate variables list
-def generate_vars(n_vars, type):
+def generate_vars(n_vars, *type):
   file = open(vars_file,"w") 
   
   file.write("(fields)\n")
 
-  for i in range(n_vars):
-    file.write("var_"+str(i)+" "+type+" +\n")
+  if len(type) > 1:
+    for i in range(n_vars):
+      file.write("var_"+str(i)+" "+type[0]+" +\n")
+  else:
+    for i in range(n_vars):
+      if i % 2 == 0:
+        file.write("var_"+str(i)+" "+type[0]+" +\n")
+      else:
+        file.write("var_"+str(i)+" "+type[1]+" +\n")
 
   file.write("(end)")
   file.close() 
 
-# Generate variable list with alternate types
-def generate_vars(n_vars, type1, type2):
-  file = open(vars_file,"w") 
-  
-  file.write("(fields)\n")
-
-  for i in range(n_vars):
-    if i % 2 == 0:
-      file.write("var_"+str(i)+" "+type1+" +\n")
-    else:
-      file.write("var_"+str(i)+" "+type2+" +\n")
-
-  file.write("(end)")
-  file.close() 

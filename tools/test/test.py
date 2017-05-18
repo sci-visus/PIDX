@@ -18,7 +18,7 @@
 
 import os
 import sys, getopt
-#import platform
+import platform
 from idx_utils import *
 
 #
@@ -29,7 +29,7 @@ from idx_utils import *
 # Set write_executable and read_executable acoording to your build directory
 write_executable = "../../build/examples/idx_write"
 read_executable = "../../build/examples/idx_read"
-mpirun="/usr/lib64/mpi/gcc/openmpi/bin/mpirun"
+mpirun="mpirun"
 
 patch_size = (16, 16, 16)
 #var_types = ["1*float32", "1*int32", "1*float64", 
@@ -40,12 +40,16 @@ var_types = ["1*float32"]#,"1*float64","3*float32","3*float64"]
 
 #####
 
+if platform.system() == "Darwin":
+  write_executable = write_executable+".app/Contents/MacOS/idx_write"
+  read_executable = read_executable+".app/Contents/MacOS/idx_read"
+
 if not(os.path.isfile(write_executable)):
-  print "ERROR: write executable not found! Change it in test.py"
+  print "ERROR: write executable not found!", write_executable
   sys.exit(2)
 
 if not(os.path.isfile(read_executable)):
-  print "ERROR: read executable not found! Change it in test.py"
+  print "ERROR: read executable not found!", read_executable
   sys.exit(2)
 
 profiling = 0
@@ -84,7 +88,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
 
   n_tests = 0
 
-  generate_vars(n_vars, var_type)
+  generate_vars(n_vars, var_type, var_type)
   test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t"+str(n_ts)+" -v "+vars_file+" -f data"
   os.system(test_str+" 2&> _out_write.txt")
 
@@ -175,11 +179,12 @@ def main(argv):
   global prof_file_write
   global prof_file_read
   global var_types
+  global mpirun
 
   try:
-    opts, args = getopt.getopt(argv,"h:w:r:o:p:",["pfile="])
+    opts, args = getopt.getopt(argv,"h:w:r:o:p:m",["pfile="])
   except getopt.GetoptError:
-    print 'test_idx.py -w <wcores> -r <rcores> -p <profilefile>'
+    print 'test_idx.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
     sys.exit(2)
 
   for opt, arg in opts:
@@ -191,6 +196,8 @@ def main(argv):
       n_cores = int(arg)
     elif opt in ("-r", "--rcores"):
       n_cores_read = int(arg)
+    elif opt in ("-m", "--mprun"):
+      mpirun = int(arg)
     elif opt in ("-p", "--pfile"):
       prof_file = arg
       prof_file_write = arg+"_write.prof"
@@ -207,6 +214,8 @@ def main(argv):
   for var in var_types:
     succ = succ + pow_2(n_cores, n_cores_read, var, 3, 3)
     succ = succ + non_pow_2(n_cores, n_cores_read, var, 3, 1)
+
+  sys.exit(succ)
 
 if __name__ == "__main__":
    main(sys.argv[1:])
