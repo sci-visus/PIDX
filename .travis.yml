@@ -8,8 +8,7 @@ branches:
 
 cache:
   directories:
-    - openmpi
-    - openmpi-2.0.1
+    - mpich
 
 matrix:
   include:
@@ -26,20 +25,21 @@ matrix:
       env:
         - CXX_COMPILER=g++-5
         - C_COMPILER=gcc-5
-        - BUILD_TYPE=release
+        - BUILD_TYPE=Release
 
 before_install:
-  - test -n $CC && unset CC
-  - test -n $CXX && unset CXX
+#  - test -n $CC && unset CC
+#  - test -n $CXX && unset CXX
   - which $CXX_COMPILER
+  - which $C_COMPILER
 
 install:
-  - sh ci/travis/install_mpi.sh
+  - bash ci/travis/install_mpi.sh
  
 before_script: 
   - mkdir build
   - cd build
 
 script:
-  - cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/openmpi
+  - cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib64/libmpich.so -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/libmpicxx.so -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include
   - make -j 4
