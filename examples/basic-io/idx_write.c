@@ -17,6 +17,21 @@
  *****************************************************/
 
 /*
+  PIDX write example
+
+  In this example we show how to write data using the PIDX library.
+
+  In this example we consider a global 3D regular grid domain that we will call 
+  global domain (g).
+  This global domain represents the grid space where all the data are stored.
+
+  In a parallel environment each core (e.g. MPI rank) owns a portion of the data
+  that has to be written on the disk. We refer to this portion of the domain as
+  local domain (l).
+
+  In this example we well see how to execute parallel write with PIDX of a 
+  syntethic dataset 
+
              *---------*--------*
            /         /         /| P7
           *---------*---------* |
@@ -58,9 +73,6 @@ static char var_name[MAX_VAR_COUNT][512];
 static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
-static int max_file_count = 0;
-
-static int *random_agg_list;
 
 static PIDX_point global_size, local_offset, local_size, reg_size;
 static PIDX_access p_access;
@@ -76,14 +88,12 @@ static void calculate_per_process_offsets();
 static void create_synthetic_simulation_data();
 static void terminate_with_error_msg(const char *format, ...);
 static void terminate();
-static void rank_0_print(const char *format, ...);
 static void set_pidx_file(int ts);
 static void set_pidx_variable();
 static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static void create_random_aggregators();
 
 static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./idx_write -g 64x64x64 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
@@ -97,17 +107,25 @@ static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 
 int main(int argc, char **argv)
 {
   int ts = 0, var = 0;
+
+  // Init MPI and MPI vars (e.g. rank and process_count)
   init_mpi(argc, argv);
+
+  // Parse input arguments and initialize 
+  // corresponing variables
   parse_args(argc, argv);
 
+  // Verify that the domain decomposition is valid
+  // for the given number of cores
   check_args();
+
+  // Initialize per-process local domain
   calculate_per_process_offsets();
 
+  // Generate synthetic data
   create_synthetic_simulation_data();
-  //create_random_aggregators();
 
-  //rank_0_print("Simulation Data Created\n");
-
+  // Create variables
   create_pidx_var_point_and_access();
 
   for (ts = 0; ts < time_step_count; ts++)
@@ -156,11 +174,25 @@ int isNumber(char number[])
     return 1;
 }
 
+int nextPow2(int v)
+{
+  v--;
+  v |= v >> 1;
+  v |= v >> 2;
+  v |= v >> 4;
+  v |= v >> 8;
+  v |= v >> 16;
+  v++;
+
+  return v;
+}
+
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
   char flags[] = "g:l:r:f:t:v:";
   int one_opt = 0;
+  int with_rst = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
   {
@@ -179,7 +211,9 @@ static void parse_args(int argc, char **argv)
 
     case('r'): // local dimension
       if ((sscanf(optarg, "%lldx%lldx%lld", &rst_box_size[X], &rst_box_size[Y], &rst_box_size[Z]) == EOF) ||(rst_box_size[X] < 1 || rst_box_size[Y] < 1 || rst_box_size[Z] < 1))
-        terminate_with_error_msg("Invalid partition dimension\n%s", usage);
+        terminate_with_error_msg("Invalid restructuring box dimension\n%s", usage);
+      else
+        with_rst = 1;
       break;
 
     case('f'): // output file name
@@ -211,6 +245,13 @@ static void parse_args(int argc, char **argv)
       terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
   }
+
+  if(!with_rst){
+    // Set default restructuring box size
+    rst_box_size[X] = nextPow2(local_box_size[X]);
+    rst_box_size[Y] = nextPow2(local_box_size[Y]);
+    rst_box_size[Z] = nextPow2(local_box_size[Y]);
+  }
 }
 
 static int generate_vars(){
@@ -233,6 +274,8 @@ static int generate_vars(){
     bpv[variable_counter] = bits_per_sample;
     vps[variable_counter] = sample_count;
   }
+
+  return 0;
 }
 
 //----------------------------------------------------------------
@@ -406,16 +449,6 @@ static void terminate_with_error_msg(const char *format, ...)
 }
 
 //----------------------------------------------------------------
-static void rank_0_print(const char *format, ...)
-{
-  if (rank != 0) return;
-  va_list arg_ptr;
-  va_start(arg_ptr, format);
-  vfprintf(stderr, format, arg_ptr);
-  va_end(arg_ptr);
-}
-
-//----------------------------------------------------------------
 static void create_pidx_var_point_and_access()
 {
   variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
@@ -438,29 +471,25 @@ static void set_pidx_file(int ts)
 {
   PIDX_return_code ret;
 
+  // Create IDX file 
   ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, p_access, global_size, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
+  // Set the current timestep
   PIDX_set_current_time_step(file, ts);
+  // Set the number of variables
   PIDX_set_variable_count(file, variable_count);
 
-  // Seting the restructuring box size
+  // Set the restructuring box size
   PIDX_set_restructuring_box(file, reg_size);
 
-  //PIDX_debug_rst(file, 1);
-  //PIDX_debug_hz(file, 1);
-
-  // Selecting raw I/O mode
+  // Select I/O mode 
   PIDX_set_io_mode(file, PIDX_IDX_IO);
-  //PIDX_set_io_mode(file, PIDX_MERGE_TREE_ANALYSIS);
 
   PIDX_set_block_count(file, 256);
   PIDX_set_block_size(file, 15);
 
   PIDX_set_cache_time_step(file, 0);
-
-  //PIDX_randomized_aggregators(file, random_agg_list, (max_file_count * variable_count));
-
 
   return;
 }
@@ -515,53 +544,3 @@ static void shutdown_mpi()
 #endif
 }
 
-
-static void create_random_aggregators()
-{
-  unsigned long long total_reg_sample_count = (getPowerOf2(global_box_size[0]) * getPowerOf2(global_box_size[1]) * getPowerOf2(global_box_size[2]));
-  unsigned long long max_sample_per_file = (unsigned long long) 32768 * 256;
-  max_file_count = total_reg_sample_count / max_sample_per_file;
-  if (total_reg_sample_count % max_sample_per_file)
-    max_file_count++;
-
-  random_agg_list = malloc(sizeof(*random_agg_list) * max_file_count * variable_count);
-  memset(random_agg_list, 0, sizeof(*random_agg_list) * max_file_count * variable_count);
-
-  int i = 0;
-  if (rank == 0)
-  {
-    time_t t;
-    srand((unsigned) time(&t));
-
-    int M = max_file_count * variable_count;
-    int N = process_count - 1;
-
-    unsigned char *is_used;
-    is_used = malloc(sizeof(*is_used) * N);
-    memset(is_used, 0, sizeof(*is_used) * N);
-
-    int in, im;
-    im = 0;
-
-    for (in = N - M; in < N && im < M; ++in)
-    {
-      int r = rand() % (in + 1);
-      if (is_used[r])
-        r = in;
-
-      assert(!is_used[r]);
-      random_agg_list[im++] = r;
-      is_used[r] = 1;
-    }
-
-    assert(im == M);
-
-    fprintf(stderr, "\n[%d x %d]Aggs: ", max_file_count, variable_count);
-    for (i = 0; i < max_file_count * variable_count; i++)
-      fprintf(stderr, "%d ", random_agg_list[i]);
-    fprintf(stderr, "\n");
-  }
-  MPI_Bcast(random_agg_list, (max_file_count * variable_count), MPI_INT, 0, MPI_COMM_WORLD);
-
-  return;
-}

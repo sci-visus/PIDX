@@ -72,6 +72,7 @@ typedef struct PIDX_file_descriptor* PIDX_file;
 /// the file will be created in read-write mode, regardless.
 /// \param access Used to manage file access between processes. Must be created prior to calling 
 /// this function using PIDX_create_access().
+/// \param dims The dims parameter specifies the global domain dimensions
 /// \param file Reference to PIDX_file object that will be initialized on successful completion of this function.
 /// \return file The file parameter is the IDX file handler created by this function.
 /// The file handle returned, file, can be subsequently used to access the IDX

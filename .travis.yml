@@ -45,4 +45,9 @@ script:
   - make -j 4
   - cd ../tools/test
   - chmod -R 755 ./
+  - touch data.idx
+  - touch VARS
+  - mkdir -p data
+  - chmod -R 755 data*
   - python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun
+  - ls -a .
