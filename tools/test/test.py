@@ -182,22 +182,23 @@ def main(argv):
   global mpirun
 
   try:
-    opts, args = getopt.getopt(argv,"h:w:r:o:p:m",["pfile="])
+    opts, args = getopt.getopt(argv,"h:w:r:m:p",["pfile="])
   except getopt.GetoptError:
     print 'test_idx.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
     sys.exit(2)
 
   for opt, arg in opts:
-    
+    print opts
     if opt == '-h':
-      print 'test_idx.py -w <wcores> -r <rcores> -p <profilefile>'
+      print 'test_idx.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
       sys.exit()
     elif opt in ("-w", "--wcores"):
       n_cores = int(arg)
     elif opt in ("-r", "--rcores"):
       n_cores_read = int(arg)
     elif opt in ("-m", "--mprun"):
-      mpirun = int(arg)
+      mpirun = arg
+      print mpirun
     elif opt in ("-p", "--pfile"):
       prof_file = arg
       prof_file_write = arg+"_write.prof"
