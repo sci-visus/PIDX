@@ -229,7 +229,7 @@ static void set_pidx_file(int ts)
   PIDX_return_code ret;
 
   ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, global_bounds, &file);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_open\n");
 
   PIDX_set_current_time_step(file, ts);
   PIDX_get_variable_count(file, &variable_count);
@@ -246,7 +246,7 @@ static void set_pidx_variable_and_create_buffer()
 
   if (variable_index >= variable_count) terminate_with_error_msg("Variable index more than variable count\n");
   ret = PIDX_set_current_variable_index(file, variable_index);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index");
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index\n");
 
   PIDX_get_current_variable(file, &variable);
 

@@ -91,7 +91,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
   generate_vars(n_vars, var_type, var_type)
   test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t"+str(n_ts)+" -v "+vars_file+" -f data"
   print "EXECUTE write:", test_str
-  os.system(test_str+" 2&> _out_write.txt")
+  os.popen(test_str+" 2&> _out_write.txt")
 
   if profiling > 0:
     append_profile("_out_write.txt", prof_file_write)
@@ -103,7 +103,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
       test_str= mpirun+" -np "+str(n_cores_read)+" "+read_executable+" -g "+g_box+" -l "+l_box_read+" -t "+str(t-1)+" -v "+str(vr)+" -f data"
 
       #print "Testing t="+str(t)+" v="+str(vr)+" type="+var_type
-      os.system(test_str+" 2&> _out_read.txt")
+      os.popen(test_str+" 2&> _out_read.txt")
       res = verify_read("_out_read.txt", data_count)
 
       if profiling > 0:
@@ -113,10 +113,10 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
         print "Test t="+str(t)+" v="+str(vr)+" type="+var_type + " FAILED"
       else:
         success = success + 1
-        #os.system("rm -R _out_read.txt")
-        #os.system("rm -R _out_write.txt")
+        #os.popen("rm -R _out_read.txt")
+        #os.popen("rm -R _out_write.txt")
 
-  os.system("rm -R data*")
+  os.popen("rm -R data*")
 
   print "Success %d/%d" % (success, n_tests)
 
@@ -205,7 +205,7 @@ def main(argv):
       profiling = 1
 
   if profiling > 0:
-    os.system("rm "+prof_file+"*.prof")
+    os.popen("rm "+prof_file+"*.prof")
 
   if not(n_cores in procs_conf) or not(n_cores_read in procs_conf):
     print "Procs configuration not available use one these: ", sorted(procs_conf.keys()), "\nOr add a new configuration to idx_utils.py"
@@ -215,9 +215,9 @@ def main(argv):
     succ = succ + pow_2(n_cores, n_cores_read, var, 1, 1)
     succ = succ + non_pow_2(n_cores, n_cores_read, var, 1, 1)
 
-  print "last outputs:"
-  os.system("cat _out_write.txt")
-  os.system("cat _out_read.txt")
+  print "latest outputs:"
+  os.popen("cat _out_write.txt")
+  os.popen("cat _out_read.txt")
 
   sys.exit(succ)
 

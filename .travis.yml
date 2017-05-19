@@ -47,3 +47,4 @@ script:
   - chmod -R 777 ./
   - sudo -E su $USER -c 'python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun'
   - ls -a .
+  - cat VARS
