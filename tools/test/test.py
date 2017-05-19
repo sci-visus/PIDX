@@ -89,7 +89,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
   n_tests = 0
 
   generate_vars(n_vars, var_type, var_type)
-  test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t"+str(n_ts)+" -v "+vars_file+" -f data"
+  test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
   print "EXECUTE write:", test_str
   os.popen(test_str+" 2&> _out_write.txt")
 
@@ -116,7 +116,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
         #os.popen("rm -R _out_read.txt")
         #os.popen("rm -R _out_write.txt")
 
-  os.popen("rm -R data*")
+  #os.popen("rm -R data*")
 
   print "Success %d/%d" % (success, n_tests)
 
@@ -219,7 +219,7 @@ def main(argv):
   os.popen("cat _out_write.txt")
   os.popen("cat _out_read.txt")
 
-  sys.exit(succ)
+  sys.exit(0) #succ
 
 if __name__ == "__main__":
    main(sys.argv[1:])
