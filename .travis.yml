@@ -1,4 +1,4 @@
-sudo: false
+sudo: true
 
 language: c
 
@@ -45,10 +45,5 @@ script:
   - make -j 4
   - cd ../tools/test
   - chmod -R 777 ./
-  - touch data.idx
-  - touch VARS
-  - mkdir -p data
-  - chmod -R 777 data*
-  - chmod -R 777 ./
-  - python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun
+  - sudo -E su $USER -c 'python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun'
   - ls -a .
