@@ -188,7 +188,6 @@ def main(argv):
     sys.exit(2)
 
   for opt, arg in opts:
-    print opts
     if opt == '-h':
       print 'test_idx.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
       sys.exit()
@@ -198,7 +197,6 @@ def main(argv):
       n_cores_read = int(arg)
     elif opt in ("-m", "--mprun"):
       mpirun = arg
-      print mpirun
     elif opt in ("-p", "--pfile"):
       prof_file = arg
       prof_file_write = arg+"_write.prof"
@@ -215,6 +213,10 @@ def main(argv):
   for var in var_types:
     succ = succ + pow_2(n_cores, n_cores_read, var, 3, 3)
     succ = succ + non_pow_2(n_cores, n_cores_read, var, 3, 1)
+
+  print "last outputs:"
+  os.system("cat _out_write.txt")
+  os.system("cat _out_read.txt")
 
   sys.exit(succ)
 
