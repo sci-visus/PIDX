@@ -4,22 +4,28 @@
 /// Function to create IDX file descriptor (based on flags and access)
 PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
 {
-  if (flags != PIDX_MODE_CREATE && flags != PIDX_MODE_EXCL)
+  if (flags != PIDX_MODE_CREATE && flags != PIDX_MODE_EXCL){
+    fprintf(stderr,"[%s] [%d]\n", __FILE__, __LINE__);
     return PIDX_err_unsupported_flags;
+  }
 
   if (flags == PIDX_MODE_EXCL)
   {
     struct stat buffer;
-    if (stat(filename, &buffer) != 0)
+    if (stat(filename, &buffer) != 0){
+      fprintf(stderr,"[%s] [%d]\n", __FILE__, __LINE__);
       return PIDX_err_file_exists;
+    }
   }
 
   unsigned long long i = 0;
   int ret;
   char file_name_skeleton[1024];
 
-  if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
+  if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename){
+    fprintf(stderr,"[%s] [%d]\n", __FILE__, __LINE__);
     return PIDX_err_name;
+  }
 
   *file = malloc(sizeof (*(*file)));
   memset(*file, 0, sizeof (*(*file)));

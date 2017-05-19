@@ -90,6 +90,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
 
   generate_vars(n_vars, var_type, var_type)
   test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t"+str(n_ts)+" -v "+vars_file+" -f data"
+  print "EXECUTE write:", test_str
   os.system(test_str+" 2&> _out_write.txt")
 
   if profiling > 0:
@@ -211,8 +212,8 @@ def main(argv):
     sys.exit(2)
   
   for var in var_types:
-    succ = succ + pow_2(n_cores, n_cores_read, var, 3, 3)
-    succ = succ + non_pow_2(n_cores, n_cores_read, var, 3, 1)
+    succ = succ + pow_2(n_cores, n_cores_read, var, 1, 1)
+    succ = succ + non_pow_2(n_cores, n_cores_read, var, 1, 1)
 
   print "last outputs:"
   os.system("cat _out_write.txt")

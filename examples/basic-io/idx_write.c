@@ -473,7 +473,7 @@ static void set_pidx_file(int ts)
 
   // Create IDX file 
   ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, p_access, global_size, &file);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create\n");
 
   // Set the current timestep
   PIDX_set_current_time_step(file, ts);
