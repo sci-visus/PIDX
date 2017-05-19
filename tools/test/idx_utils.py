@@ -74,20 +74,23 @@ def verify_read(filename, count):
 
 # Generate variables list
 def generate_vars(n_vars, *type):
-  file = open(vars_file,"w") 
+  try:
+    file = open(vars_file,"w") 
   
-  file.write("(fields)\n")
+    file.write("(fields)\n")
 
-  if len(type) > 1:
-    for i in range(n_vars):
-      file.write("var_"+str(i)+" "+type[0]+" +\n")
-  else:
-    for i in range(n_vars):
-      if i % 2 == 0:
+    if len(type) > 1:
+      for i in range(n_vars):
         file.write("var_"+str(i)+" "+type[0]+" +\n")
-      else:
-        file.write("var_"+str(i)+" "+type[1]+" +\n")
+    else:
+      for i in range(n_vars):
+        if i % 2 == 0:
+          file.write("var_"+str(i)+" "+type[0]+" +\n")
+        else:
+          file.write("var_"+str(i)+" "+type[1]+" +\n")
 
-  file.write("(end)")
-  file.close() 
+    file.write("(end)")
+    file.close() 
+  except IOError, inst:
+    print 'ERROR: generating vars file:', inst.errno, inst.strerror
 

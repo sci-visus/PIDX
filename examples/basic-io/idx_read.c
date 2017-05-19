@@ -60,13 +60,13 @@ static int bits_per_sample = 0;
 static int values_per_sample = 0;
 static char type_name[512];
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./vis_read -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
+static char *usage = "Serial Usage: ./vis_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./vis_read -g 32x32x32 -l 16x16x16 -f -v 0 input_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -f: IDX filename\n"
-                     "  -t: time step index that needs to be read\n"
-                     "  -v: Variable Index";
+                     "  -f: IDX input filename\n"
+                     "  -t: time step index to read\n"
+                     "  -v: variable index to read";
 
 
 static void init_mpi(int argc, char **argv);
