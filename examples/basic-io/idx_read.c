@@ -78,7 +78,7 @@ static void terminate();
 static void create_pidx_var_point_and_access();
 static void set_pidx_file(int ts);
 static void set_pidx_variable_and_create_buffer();
-static void verify_read_results();
+static int verify_read_results();
 static void shutdown_mpi();
 
 int main(int argc, char **argv)
@@ -92,16 +92,18 @@ int main(int argc, char **argv)
 
   set_pidx_file(current_ts);
   set_pidx_variable_and_create_buffer();
+  
   PIDX_variable_read_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
   PIDX_close(file);
 
   PIDX_close_access(p_access);
-  verify_read_results();
+  int ret = 0;
+  ret = verify_read_results();
 
   free(data);
   shutdown_mpi();
 
-  return 0;
+  return ret;
 }
 
 //----------------------------------------------------------------
@@ -260,7 +262,7 @@ static void set_pidx_variable_and_create_buffer()
 }
 
 //----------------------------------------------------------------
-static void verify_read_results()
+static int verify_read_results()
 {
   int read_error_count = 0, read_count = 0;
   int total_read_error_count = 0, total_read_count = 0;
@@ -345,6 +347,8 @@ static void verify_read_results()
 
   if (rank == 0)
     printf("Correct Sample Count %d Incorrect Sample Count %d\n", total_read_count, total_read_error_count);
+
+  return total_read_error_count == 0 || total_read_count > 0;
 }
 
 
