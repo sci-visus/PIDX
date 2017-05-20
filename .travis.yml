@@ -45,9 +45,9 @@ script:
   - make -j 4
   - cd ../tools/test
   - chmod -R 777 ./
-  - $TRAVIS_BUILD_DIR/mpich/bin/mpirun -np 8 ../../build/examples/idx_write -g 32x32x32 -l 16x16x16 -r 16x16x16 -t 1 -v 5 -f data
+  - $TRAVIS_BUILD_DIR/mpich/bin/mpirun -np 8 ../../build/examples/idx_write -g 32x32x32 -l 16x16x16 -r 16x16x16 -t 2 -v 5 -f data
   - $TRAVIS_BUILD_DIR/mpich/bin/mpirun -np 8 ../../build/examples/idx_read -g 32x32x32 -l 16x16x16 -t 0 -v 0 -f data
 #  - python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun
   - ls -a .
-  - cat VARS
+#  - cat VARS
   - ls data

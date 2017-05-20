@@ -219,7 +219,7 @@ def main(argv):
   os.popen("cat _out_write.txt")
   os.popen("cat _out_read.txt")
 
-  sys.exit(0) #succ
+  sys.exit(succ)
 
 if __name__ == "__main__":
    main(sys.argv[1:])

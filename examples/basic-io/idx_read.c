@@ -348,7 +348,10 @@ static int verify_read_results()
   if (rank == 0)
     printf("Correct Sample Count %d Incorrect Sample Count %d\n", total_read_count, total_read_error_count);
 
-  return total_read_error_count == 0 || total_read_count > 0;
+  if(total_read_error_count == 0 && total_read_count == local_box_size[2]*local_box_size[1]*local_box_size[0])
+    return 0;
+  else 
+    return 1;
 }
 
 
