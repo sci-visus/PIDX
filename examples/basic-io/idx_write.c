@@ -21,7 +21,7 @@
 
   In this example we show how to write data using the PIDX library.
 
-  In this example we consider a global 3D regular grid domain that we will call 
+  We consider a global 3D regular grid domain that we will call 
   global domain (g).
   This global domain represents the grid space where all the data are stored.
 
@@ -30,7 +30,13 @@
   local domain (l).
 
   In this example we well see how to execute parallel write with PIDX of a 
-  syntethic dataset 
+  syntethic dataset.
+
+  In the following picture is represented a sample domain decomposition
+  of the global domain (l) in per-core local domains (l), sometimes referred
+  as patches.
+  In this example all the local domains have same dimesions for simplicity.
+  PIDX supports different number and sizes of patches per core.
 
              *---------*--------*
            /         /         /| P7
@@ -130,12 +136,19 @@ int main(int argc, char **argv)
 
   for (ts = 0; ts < time_step_count; ts++)
   {
+    // Set PIDX_file for this timestep
     set_pidx_file(ts);
-    //PIDX_dump_state(file, PIDX_META_DATA_DUMP_ONLY);
+    
+    // Set all the PIDX_variable that we want to write
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
+
+    // PIDX_close triggers the actual write on the disk
+    // of the variables that we just set
     PIDX_close(file);
   }
+
+  // Clean up our mess
   destroy_pidx_var_point_and_access();
 
   destroy_synthetic_simulation_data();
@@ -451,12 +464,17 @@ static void terminate_with_error_msg(const char *format, ...)
 //----------------------------------------------------------------
 static void create_pidx_var_point_and_access()
 {
+  // Allocate a PIDX_variable array where we store the information 
+  // of all the variables
   variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
 
+  // Set variables that define the global and local domain information
   PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
   PIDX_set_point(local_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z]);
   PIDX_set_point(local_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
+
+  // Set variable that defines the restructuring box size
   PIDX_set_point(reg_size, rst_box_size[X], rst_box_size[Y], rst_box_size[Z]);
 
   //  Creating access
@@ -480,15 +498,22 @@ static void set_pidx_file(int ts)
   // Set the number of variables
   PIDX_set_variable_count(file, variable_count);
 
+  // Advanced settings
+
   // Set the restructuring box size
   PIDX_set_restructuring_box(file, reg_size);
-
-  // Select I/O mode 
+  
+  // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
   PIDX_set_io_mode(file, PIDX_IDX_IO);
-
+  
+  // Set how many blocks we want to write in a single file
   PIDX_set_block_count(file, 256);
+  
+  // Set the size of a block: how many 2^N samples we want to put in a single block
   PIDX_set_block_size(file, 15);
 
+  // If the domain decomposition and the cores configuration do not change over time 
+  // we can instruct PIDX to cache and reuse these information for the next timesteps
   PIDX_set_cache_time_step(file, 0);
 
   return;
@@ -499,12 +524,16 @@ static void set_pidx_variable(int var)
 {
   PIDX_return_code ret = 0;
 
+  // Set variable name, number of bits, typename
   ret = PIDX_variable_create(var_name[var], bpv[var] * vps[var], type_name[var], &variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
 
+  // Set the variable offset and size of the local domain,
+  // where the data is in memory (data) and what is its layout in memory (row major)
   ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_write_data_layout");
 
+  // Tell PIDX that we want to write this variable
   ret = PIDX_append_and_write_variable(file, variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
 

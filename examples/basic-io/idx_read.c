@@ -17,6 +17,28 @@
  *****************************************************/
 
 /*
+  PIDX read example
+
+  In this example we show how to read data using the PIDX library.
+
+  We consider a global 3D regular grid domain that we will call 
+  global domain (g).
+  This global domain represents the grid space where all the data are stored.
+
+  In a parallel environment each core (e.g. MPI rank) owns a portion of the data
+  that has to be written on the disk. We refer to this portion of the domain as
+  local domain (l).
+
+  In this example we well see how to execute parallel read with PIDX of a 
+  syntethic dataset.
+
+  In the following picture is represented a sample domain decomposition
+  of the global domain (l) in per-core local domains (l), sometimes referred
+  as patches.
+  In this example all the local domains have same dimesions for simplicity.
+  PIDX supports different number and sizes of patches per core. 
+  This also means that you can actually read the same data from a different 
+  core configurations.
 
                                          *---------*--------*
                                        /         /         /| P7
@@ -60,8 +82,8 @@ static int bits_per_sample = 0;
 static int values_per_sample = 0;
 static char type_name[512];
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./vis_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./vis_read -g 32x32x32 -l 16x16x16 -f -v 0 input_idx_file_name\n"
+static char *usage = "Serial Usage: ./idx_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./idx_read -g 32x32x32 -l 16x16x16 -f -v 0 input_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX input filename\n"
@@ -83,20 +105,40 @@ static void shutdown_mpi();
 
 int main(int argc, char **argv)
 {
+  // Init MPI and MPI vars (e.g. rank and process_count)
   init_mpi(argc, argv);
+
+  // Parse input arguments and initialize 
+  // corresponing variables
   parse_args(argc, argv);
+
+  // Verify that the domain decomposition is valid
+  // for the given number of cores
   check_args();
+
+  // Initialize per-process local domain
   calculate_per_process_offsets();
 
+  // Create variables
   create_pidx_var_point_and_access();
 
+  // Set PIDX_file for this timestep
   set_pidx_file(current_ts);
+
+  // Get all the information about the variable that we want to read
   set_pidx_variable_and_create_buffer();
   
+  // Read the data into a local buffer (data) in row major order
   PIDX_variable_read_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
+
+  // PIDX_close triggers the actual write on the disk
+  // of the variables that we just set
   PIDX_close(file);
 
+  // Close PIDX_access
   PIDX_close_access(p_access);
+
+  // Compare the data that we just against the syntethic data
   int ret = 0;
   ret = verify_read_results();
 
@@ -230,13 +272,14 @@ static void set_pidx_file(int ts)
 {
   PIDX_return_code ret;
 
+  // Open IDX file
   ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, global_bounds, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_open\n");
 
+  // Set the current timestep
   PIDX_set_current_time_step(file, ts);
+  // Get the total number of variables
   PIDX_get_variable_count(file, &variable_count);
-
-  PIDX_query_box(file, global_size);
 
   return;
 }
@@ -246,16 +289,20 @@ static void set_pidx_variable_and_create_buffer()
 {
   PIDX_return_code ret;
 
+  // Check if the index variable requested is valid (< num variables in the dataset)
   if (variable_index >= variable_count) terminate_with_error_msg("Variable index more than variable count\n");
+
+  // Set the variable index that we want to read
   ret = PIDX_set_current_variable_index(file, variable_index);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index\n");
 
+  // Get corresponding PIDX_variable
   PIDX_get_current_variable(file, &variable);
 
+  // Get some information about this variable (typename, number of values per sample, 
+  // number of bits per sample)
   PIDX_values_per_datatype(variable->type_name, &values_per_sample, &bits_per_sample);
   strcpy(type_name, variable->type_name);
-
-  //printf("[%s] variable->vps = %d\n", variable->type_name, variable->vps);
 
   data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
   memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
@@ -340,7 +387,6 @@ static int verify_read_results()
         }
 
       }
-
 
   MPI_Allreduce(&read_count, &total_read_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(&read_error_count, &total_read_error_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
