@@ -27,7 +27,24 @@ matrix:
         - C_COMPILER=gcc-5
         - BUILD_TYPE=Release
     - os: osx
-      osx_image: xcode7.2
+      osx_image: xcode8
+      compiler: gcc
+      env:
+        - CXX_COMPILER=g++-6
+        - C_COMPILER=gcc-6
+        - HOMEBREW_CC=gcc-6
+        - HOMEBREW_CXX=g++-6
+        - BUILD_TYPE=Release
+    - os: osx
+      osx_image: xcode8
+      compiler: clang
+      env:
+        - CXX_COMPILER=clang++
+        - C_COMPILER=clang
+        - HOMEBREW_CC=clang
+        - HOMEBREW_CXX=clang++
+        - BUILD_TYPE=Release
+      
 
 before_install:
 #  - test -n $CC && unset CC
@@ -54,3 +71,6 @@ script:
 #  - ls -a .
 #  - cat VARS
 #  - ls data
+
+notifications:
+  email: false
