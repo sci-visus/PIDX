@@ -30,10 +30,10 @@ matrix:
       osx_image: xcode8
       compiler: gcc
       env:
-        - CXX_COMPILER=g++-6
-        - C_COMPILER=gcc-6
-        - HOMEBREW_CC=gcc-6
-        - HOMEBREW_CXX=g++-6
+        - CXX_COMPILER=g++
+        - C_COMPILER=gcc
+        - HOMEBREW_CC=gcc
+        - HOMEBREW_CXX=g++
         - BUILD_TYPE=Release
     - os: osx
       osx_image: xcode8
@@ -63,7 +63,9 @@ before_script:
   - cd build
 
 script:
-  - cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpich.so -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpicxx.so -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DPIDX_BUILD_EXAMPLES=ON
+  - ls $TRAVIS_BUILD_DIR/mpich/lib
+  - if [[ "$C_COMPILER" != "clang" ]]; then cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpich.so -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpicxx.so -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DPIDX_BUILD_EXAMPLES=ON; fi
+  - if [[ "$C_COMPILER" == "clang" ]]; then cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpich.dylib -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpicxx.dylib -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DPIDX_BUILD_EXAMPLES=ON; fi
   - make -j 4
   - ls examples/
   - cd ../tools/test
