@@ -62,6 +62,6 @@ Documentation
 
 A few simple function calls are all that's necessary to instrument your application to utilize PIDX I/O:
 
-Please see the examples in the "examples" folder for a demonstration.
+Please see the examples in the "examples" folder and our wiki: <https://github.com/sci-visus/PIDX/wiki>
 
 Documentation from the PIDX Tutorial can be found here: <https://sites.google.com/site/bigdatahpc/>

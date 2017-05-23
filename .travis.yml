@@ -63,7 +63,6 @@ before_script:
   - cd build
 
 script:
-  - ls $TRAVIS_BUILD_DIR/mpich/lib
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpich.so -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpicxx.so -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DPIDX_BUILD_EXAMPLES=ON; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cmake ../ -DPIDX_BUILD_EXAMPLES=ON; fi
   - make -j 4

@@ -28,7 +28,7 @@ PIDX is an efficient parallel I/O library that reads and writes multiresolution 
 Documentation
 --------------------------------------
 
-Please see the complete documentation online: <http://www.cedmav.com/pidx/docs>.
+Please see our Wiki page: <https://github.com/sci-visus/PIDX/wiki>.
 
 Please see [Getting Started](docs/getting_started.md) for instructions on how to build and link PIDX with your application.
 
