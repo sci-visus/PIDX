@@ -25,14 +25,26 @@ IF (PIDX_BUILD_TOOLS)
   SET(IDXCOMPARE_SOURCES idx-compare.c)
   SET(DUMPHEADER_SOURCES idx-dump-header.c)
   SET(IDXVERIFY_SOURCES idx-verify.c)
-  # SET(HDF5VERIFY_SOURCES hdf5-verify.c)
+  SET(IDXMINMAX_SOURCES idx-minmax.c)
+
+  SET(TOOLS_LINK_LIBS pidx ${PIDX_LINK_LIBS})
+  IF (MPI_CXX_FOUND)
+    MESSAGE("Configuring utility with MPI support")
+    INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
+    SET(TOOLS_LINK_LIBS ${TOOLS_LINK_LIBS} ${MPI_C_LIBRARIES})
+  ENDIF()
+
+  IF (ZFP_FOUND)
+    MESSAGE("Configuring profiling with ZFP support")
+    INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
+    SET(TOOLS_LINK_LIBS ${TOOLS_LINK_LIBS} ${ZFP_LIBRARIES})
+  ENDIF()
 
   # ////////////////////////////////////////
   # includes
   # ////////////////////////////////////////
 
-  #INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
-  #INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
   
   # ////////////////////////////////////////
   # executables
@@ -41,13 +53,10 @@ IF (PIDX_BUILD_TOOLS)
   PIDX_ADD_CEXECUTABLE(idxcompare "${IDXCOMPARE_SOURCES}")
   PIDX_ADD_CEXECUTABLE(idxdumpheader "${DUMPHEADER_SOURCES}")
   PIDX_ADD_CEXECUTABLE(idxverify "${IDXVERIFY_SOURCES}")
-  
-  IF (ZFP_FOUND)
-    MESSAGE("Configuring profiling with ZFP support")
-    INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
-    SET(PROFILE_LINK_LIBS ${PROFILE_LINK_LIBS} ${ZFP_LIBRARIES})
-  ENDIF()
 
-  TARGET_LINK_LIBRARIES(idxverify m ${PROFILE_LINK_LIBS})
+  PIDX_ADD_CEXECUTABLE(minmax "${IDXMINMAX_SOURCES}")
+  
+  TARGET_LINK_LIBRARIES(idxverify m ${TOOLS_LINK_LIBS})
+  TARGET_LINK_LIBRARIES(minmax ${TOOLS_LINK_LIBS})
 
 ENDIF()
