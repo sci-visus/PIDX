@@ -108,6 +108,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx->variable_count = -1;
   (*file)->idx->group_index_tracker = 0;
 
+  (*file)->idx_d->pidx_version = 1;
+
   (*file)->idx->agg_counter = 0;
 
   (*file)->idx->zfp_precisison = 0;

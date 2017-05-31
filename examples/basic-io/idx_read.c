@@ -139,13 +139,10 @@ int main(int argc, char **argv)
   PIDX_close_access(p_access);
 
   // Compare the data that we just against the syntethic data
-  int ret = 0;
-  ret = verify_read_results();
+  verify_read_results();
 
   free(data);
   shutdown_mpi();
-
-  return ret;
 }
 
 //----------------------------------------------------------------
@@ -396,7 +393,7 @@ static int verify_read_results()
 
   if(total_read_error_count == 0 && (total_read_count == global_bounds[2]*global_bounds[1]*global_bounds[0]*values_per_sample))
     return 0;
-  else 
+  else
     return 1;
 }
 

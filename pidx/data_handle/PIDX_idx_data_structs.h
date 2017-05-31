@@ -278,6 +278,7 @@ typedef struct idx_file_struct* idx_dataset;
 /// idx_dataset_derived_metadata
 struct idx_dataset_derived_metadata_struct
 {
+  int pidx_version;
   int io_mode;
 
   int w_nx;

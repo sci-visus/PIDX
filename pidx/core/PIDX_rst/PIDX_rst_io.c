@@ -419,6 +419,10 @@ PIDX_return_code PIDX_rst_buf_aggregated_read(PIDX_rst_id rst_id)
 PIDX_return_code PIDX_rst_forced_raw_read(PIDX_rst_id rst_id)
 {
   int temp_max_dim = 3;
+
+  if (rst_id->idx_d->pidx_version == 0)
+    temp_max_dim = 5;
+
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;

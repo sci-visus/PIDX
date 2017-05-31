@@ -130,6 +130,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   //(*file)->idx_d->agg_buffer->agg_f = 1;
   (*file)->idx_d->data_core_count = -1;
 
+  (*file)->idx_d->pidx_version = 1;
+
   (*file)->idx_dbg->state_dump = PIDX_NO_META_DATA_DUMP;
 
   (*file)->idx->endian = 1;
@@ -241,6 +243,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         }
 
         (*file)->idx->io_type = PIDX_RAW_IO;
+        (*file)->idx_d->pidx_version = 0;
         //(*file)->idx->endian = 0;
       }
 
@@ -447,6 +450,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast((*file)->idx->reg_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
     MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
+    MPI_Bcast(&((*file)->idx_d->pidx_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
