@@ -26,6 +26,7 @@ matrix:
         - CXX_COMPILER=g++-5
         - C_COMPILER=gcc-5
         - BUILD_TYPE=Release
+        - MPIRUN_CMD=$TRAVIS_BUILD_DIR/mpich/bin/mpirun
     - os: osx
       osx_image: xcode8
       compiler: clang
@@ -35,6 +36,7 @@ matrix:
         - HOMEBREW_CC=clang
         - HOMEBREW_CXX=clang++
         - BUILD_TYPE=Release
+        - MPIRUN_CMD=$TRAVIS_BUILD_DIR/openmpi/bin/mpirun
       
 
 before_install:
@@ -60,8 +62,8 @@ script:
   - ls examples/
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_read.app/Contents/MacOS/idx_read examples/idx_read; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_write.app/Contents/MacOS/idx_write examples/idx_write; fi
-  - $TRAVIS_BUILD_DIR/mpich/bin/mpirun -np 8 ./examples/idx_write -g 32x32x32 -l 16x16x16 -r 16x16x16 -t 2 -v 5 -f data
-  - $TRAVIS_BUILD_DIR/mpich/bin/mpirun -np 8 ./examples/idx_read -g 32x32x32 -l 16x16x16 -t 0 -v 0 -f data
+  - $MPIRUN_CMD -np 8 ./examples/idx_write -g 32x32x32 -l 16x16x16 -r 16x16x16 -t 2 -v 5 -f data
+  - $MPIRUN_CMD -np 8 ./examples/idx_read -g 32x32x32 -l 16x16x16 -t 0 -v 0 -f data
 
 #  - python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun
 #  - ls -a .
