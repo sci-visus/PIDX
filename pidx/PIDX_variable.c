@@ -213,7 +213,7 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
 
 
 
-PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, char* variable_name)
+PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, const char* variable_name)
 {
   if(!file)
     return PIDX_err_file;

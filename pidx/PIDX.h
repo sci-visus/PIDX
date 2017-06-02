@@ -701,7 +701,7 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
 /// \param variable_name
 /// \return
 ///
-PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, char* variable_name);
+PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, const char* variable_name);
 
 
 
