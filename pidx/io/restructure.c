@@ -50,7 +50,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
 #if ACTUAL_IO
     if (file->idx->io_type == PIDX_RAW_IO)
     {
-      if (file->idx->cached_ts == file->idx->current_time_step)
+      //if (file->idx->cached_ts == file->idx->current_time_step)
       {
         if (mode == PIDX_WRITE)
         {
@@ -93,7 +93,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
     time->rst_meta_data_create_end[lgi][cvi] = PIDX_get_time();
 
 
-    if (file->idx->cached_ts == file->idx->current_time_step)
+    //if (file->idx->cached_ts == file->idx->current_time_step)
     {
       if (mode == PIDX_WRITE)
       {
@@ -137,7 +137,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
 
     if (file->idx->io_type == PIDX_RAW_IO)
     {
-      if (file->idx->cached_ts == file->idx->current_time_step)
+      //if (file->idx->cached_ts == file->idx->current_time_step)
       {
         if (mode == PIDX_WRITE)
         {
