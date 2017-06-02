@@ -36,7 +36,7 @@ matrix:
         - HOMEBREW_CC=clang
         - HOMEBREW_CXX=clang++
         - BUILD_TYPE=Release
-        - MPIRUN_CMD=$TRAVIS_BUILD_DIR/openmpi/bin/mpirun
+        - MPIRUN_CMD=mpirun
       
 
 before_install:
