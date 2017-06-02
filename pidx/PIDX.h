@@ -696,6 +696,16 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
 
 
 ///
+/// \brief PIDX_set_current_variable_by_name
+/// \param file
+/// \param variable_name
+/// \return
+///
+PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, char* variable_name);
+
+
+
+///
 /// Gets the index of the variable in an IDX file.
 /// starts with index 0, to (number of variable - 1) 
 /// \param file The IDX file handler.

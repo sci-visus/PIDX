@@ -213,6 +213,40 @@ PIDX_return_code PIDX_set_current_variable_index(PIDX_file file, int variable_in
 
 
 
+PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, char* variable_name)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  int variable_index = -1;
+
+  PIDX_variable_group var_grp = file->idx->variable_grp[0];
+  if(var_grp->variable_index_tracker >= file->idx->variable_count)
+    return PIDX_err_count;
+
+  int i = 0;
+  for (i = 0; i < file->idx->variable_count; i++)
+  {
+    //printf("str %s %s\n", variable_name, file->idx->variable_grp[0]->variable[i]->var_name);
+    if (strcmp(variable_name, file->idx->variable_grp[0]->variable[i]->var_name) == 0)
+    {
+      variable_index = i;
+      break;
+    }
+  }
+
+  var_grp->variable_index_tracker = variable_index;
+  var_grp->local_variable_count = 1;
+  var_grp->local_variable_index = variable_index;
+
+  if (variable_index == -1)
+    return PIDX_err_variable;
+  else
+    return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_get_current_variable_index(PIDX_file file, int* variable_index)
 {
   return PIDX_err_not_implemented;
