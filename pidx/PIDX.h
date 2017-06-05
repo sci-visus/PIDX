@@ -936,7 +936,7 @@ PIDX_return_code PIDX_disable_agg(PIDX_file file);
 /// \param process_state
 /// \return
 ///
-PIDX_return_code PIDX_dump_state(PIDX_file file, int process_state);
+PIDX_return_code PIDX_dump_state(PIDX_file file, int process_current_state);
 /*
  * Implementation in PIDX_debug.c
  */
