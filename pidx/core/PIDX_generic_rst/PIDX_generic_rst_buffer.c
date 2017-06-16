@@ -122,8 +122,8 @@ PIDX_return_code PIDX_generic_rst_aggregate_buf_create(PIDX_generic_rst_id gener
       int ny = out_patch->size[1];
       int nz = out_patch->size[2];
 
-      var->rst_patch_group[g]->reg_patch->buffer = malloc(nx * ny * nz * (var->bpv/8) * var->vps);
-      memset(var->rst_patch_group[g]->reg_patch->buffer, 0, nx * ny * nz * (var->bpv/8) * var->vps);
+      var->rst_patch_group[g]->reg_patch->buffer = malloc((size_t)(nx * ny * nz * (var->bpv/8) * var->vps));
+      memset(var->rst_patch_group[g]->reg_patch->buffer, 0,(size_t)(nx * ny * nz * (var->bpv/8) * var->vps));
 
       if (var->rst_patch_group[g]->reg_patch->buffer == NULL)
         return PIDX_err_chunk;
