@@ -165,6 +165,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
 
+  (*file)->idx->cached_ts = -1;
+
   (*file)->idx->shared_face = 0;
 
   for (i = 0; i < 16; i++)
@@ -173,6 +175,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     memset((*file)->idx->variable_grp[i], 0, sizeof(*((*file)->idx->variable_grp[i])));
   }
 
+#if 1
   if ((*file)->idx_c->grank == 0)
   {
     //TODO: close and delete the file (there is a way to do this automatically by fopen...)
@@ -191,6 +194,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 #if PIDX_HAVE_MPI
   if ((*file)->idx_d->parallel_mode == 1)
     MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
+#endif
 #endif
 
   (*file)->idx->flip_endian = 0;

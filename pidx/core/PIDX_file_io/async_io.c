@@ -109,6 +109,8 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
   {
     generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) /*adjusted_file_index*/agg_buf->file_number, file_name, PATH_MAX);
 
+    //printf("File number %d File name %s\n", agg_buf->file_number, file_name);
+
     ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fp);
     if (ret != MPI_SUCCESS)
     {
@@ -148,7 +150,9 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
 
         int buffer_index = (block_count * io_id->idx_d->samples_per_block * (var_grp->variable[agg_buf->var_number]->bpv/8) * var_grp->variable[agg_buf->var_number]->vps * tck) / io_id->idx->compression_factor;
 
-        //fprintf(stderr, "[R] Offset %d Size %d File %s\n", data_offset, data_size, file_name);
+        //if (data_offset != 0)
+        //  fprintf(stderr, "[R] Offset %d Size %d File %s\n", data_offset, data_size, file_name);
+
         ret = MPI_File_read_at(fp, data_offset, agg_buf->buffer + buffer_index, data_size, MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
         {

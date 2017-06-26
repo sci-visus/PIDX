@@ -56,6 +56,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     if (prcp.x == 0)  prcp.x = 1;
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
+    /*
     if (file->idx->bitsequence_type == 0)
       guess_bit_string_Z(process_bs, prcp);
     else if (file->idx->bitsequence_type == 1)
@@ -68,6 +69,8 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
       guess_bit_string_YXZ(process_bs, prcp);
     else if (file->idx->bitsequence_type == 5)
       guess_bit_string_ZYX(process_bs, prcp);
+    */
+    guess_bit_string_Y(process_bs, prcp);
 
 #if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
@@ -156,6 +159,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 #if 1
   if (file->idx_c->grank == 0)
   {
+    //printf("CTS %d CACTS %d\n", file->idx->current_time_step, file->idx->cached_ts);
     if (file->idx->current_time_step == file->idx->cached_ts)
     {
       time_t t;
@@ -166,6 +170,8 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
         M = file->idx_c->gnprocs;
 
       int N = file->idx_c->gnprocs;
+
+      //printf("M N %d %d\n", M, N);
 
       unsigned char *is_used;
       is_used = malloc(sizeof(*is_used) * N);
@@ -214,13 +220,14 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
       fclose(agg_file);
 
-#if DETAIL_OUTPUT
+#if 0//DETAIL_OUTPUT
       fprintf(stderr, "\nAggs: ");
       for (i = 0; i < file->idx_d->max_file_count * file->idx->variable_count; i++)
         fprintf(stderr, "%d ", file->idx->random_agg_list[i]);
       fprintf(stderr, "\n");
 #endif
     }
+#if 0
     else
     {
       FILE* agg_file;
@@ -246,6 +253,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
       fprintf(stderr, "\n");
 #endif
     }
+#endif
   }
   MPI_Bcast(file->idx->random_agg_list, (file->idx_d->max_file_count * file->idx->variable_count), MPI_INT, 0, file->idx_c->global_comm);
 #endif

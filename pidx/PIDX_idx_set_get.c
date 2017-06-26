@@ -107,6 +107,10 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
     return PIDX_err_time;
 
   file->idx->current_time_step = current_time_step;
+
+  if (file->idx->cached_ts == -1)
+    file->idx->cached_ts = current_time_step;
+
   return PIDX_success;
 }
 

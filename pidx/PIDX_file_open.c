@@ -111,6 +111,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->transform[10] = 1.0;
   (*file)->idx->transform[15] = 1.0;
 
+  (*file)->idx->cached_ts = -1;
+
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
   memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
@@ -490,6 +492,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       (*file)->idx_d->start_fs_block++;
 
     (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
+
+    //printf("fs_block_size = %d start_fs_block = %d vc = %d\n", (*file)->idx_d->fs_block_size, (*file)->idx_d->start_fs_block, (*file)->idx->variable_count);
   }
 
   if((*file)->idx_c->grank != 0)
@@ -516,6 +520,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx->variable_grp[0]->variable[var]->sim_patch_count = 0;
   }
 
+#if 0
   if ((*file)->idx_c->grank == 0)
   {
     int ret;
@@ -533,7 +538,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   if ((*file)->idx_d->parallel_mode == 1)
     MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
 #endif
-
+#endif
   (*file)->idx->flip_endian = 0;
 
   if ((*file)->idx->io_type == PIDX_IDX_IO)

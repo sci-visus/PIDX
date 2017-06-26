@@ -510,7 +510,7 @@ static void set_pidx_file(int ts)
   PIDX_set_block_count(file, 256);
   
   // Set the size of a block: how many 2^N samples we want to put in a single block
-  PIDX_set_block_size(file, 15);
+  PIDX_set_block_size(file, 13);
 
   // If the domain decomposition and the cores configuration do not change over time 
   // we can instruct PIDX to cache and reuse these information for the next timesteps

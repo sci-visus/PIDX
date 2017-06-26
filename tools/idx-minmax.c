@@ -344,7 +344,7 @@ static void verify_read_results()
     int_final_max = int_max;
 #endif
     if (rank == 0)
-      printf("Min %d Max %d\n", int_final_min, int_final_max);
+      printf("[INT] Min %d Max %d\n", int_final_min, int_final_max);
   }
   else if (strcmp(type_name, FLOAT32) == 0)
   {
@@ -357,7 +357,7 @@ static void verify_read_results()
     float_final_max = float_max;
 #endif
     if (rank == 0)
-      printf("Min %f Max %f\n", float_final_min, float_final_max);
+      printf("[FLOAT32] Min %.13f Max %f\n", float_final_min, float_final_max);
   }
   else if (strcmp(type_name, FLOAT64) == 0)
   {

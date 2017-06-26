@@ -82,7 +82,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
         }
       }
     }
-
+#if 1
     else if (var0->hz_buffer[p]->type == 2)
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
@@ -114,6 +114,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
                 return PIDX_err_io;
               }
             }
+#if 1
             else
             {
               send_index = 0;
@@ -138,6 +139,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
                     count = hz_id->idx_d->samples_per_block;
                   }
 
+                  //printf("Level %d Block %d Index %d size %d: ", i, bl, index, count);
                   ret = write_read_samples(hz_id, v, index + var_grp->variable[v]->hz_buffer[p]->start_hz_index[i], count, var_grp->variable[v]->hz_buffer[p]->buffer[i], send_index, block_layout, MODE);
                   if (ret != PIDX_success)
                   {
@@ -150,10 +152,12 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
                   send_index = send_index + hz_id->idx_d->samples_per_block;
               }
             }
+#endif
           }
         }
       }
     }
+#endif
   }
 
   return PIDX_success;
@@ -198,6 +202,8 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
     bytes_per_sample = curr_var->bpv / 8;
     data_offset = file_index * bytes_per_sample * curr_var->vps;
     data_offset += hz_id->idx_d->start_fs_block * hz_id->idx_d->fs_block_size;
+
+    //printf("file_index %d start fs block %d fs block size %d\n", file_index, hz_id->idx_d->start_fs_block, hz_id->idx_d->fs_block_size);
 
     block_negative_offset = PIDX_blocks_find_negative_offset(hz_id->idx->blocks_per_file, block_number, layout);
 
@@ -290,12 +296,18 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
         return PIDX_err_io;
       }
 
+
+
       ret = MPI_File_read_at(fh, data_offset, hz_buffer, file_count * curr_var->vps * (curr_var->bpv/8), MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {
         fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
+
+      float val;
+      memcpy(&val, hz_buffer, sizeof(float));
+      printf("Offset %d Count %d value %.11f\n", data_offset, (file_count * curr_var->vps * (curr_var->bpv/8)), val);
 
       if (hz_id->idx->flip_endian == 1)
       {

@@ -297,6 +297,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       time->io_end[gi][li] = PIDX_get_time();
     }
 
+#if 1
     // Step 5: Performs data aggregation
     for (li = si; li <= ei; li = li + 1)
     {
@@ -309,7 +310,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
 
       finalize_aggregation(file, gi, li, si);
     }
-
+#endif
     // Step 6: Perform HZ encoding
     ret = hz_encode(file, PIDX_READ);
     if (ret != PIDX_success)
@@ -451,7 +452,7 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
     }
   }
 
-  if (total_aggregator >= file->idx_c->lnprocs)
+  if (total_aggregator > file->idx_c->lnprocs)
   {
     var_grp->agg_l_f0 = var_grp->f0_start_layout_index;
     var_grp->agg_l_shared = var_grp->shared_start_layout_index;

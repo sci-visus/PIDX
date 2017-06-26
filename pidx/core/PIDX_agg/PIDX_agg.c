@@ -1,6 +1,6 @@
 #include "../../PIDX_inc.h"
 
-#define MULTI_BOX 1
+#define MULTI_BOX 0
 #define PIDX_MIN(a,b) (((a)<(b))?(a):(b))
 
 #define PIDX_ACTIVE_TARGET 1
@@ -442,7 +442,9 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
 
           //if (i == 0)// || i == id->idx->variable_count - 1)
           //if (agg_offset == 3)
-          fprintf(stderr, "[G %d] [L %d] [Lid %d] [MFC %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx_c->lrank, agg_offset, lbl->efc, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+          ////fprintf(stderr, "[G %d] [L %d] [Lid %d] [MFC %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx_c->lrank, agg_offset, lbl->efc, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
+
+          fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
@@ -800,9 +802,9 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
           ab->buffer_size = sample_count * bpdt;
 
-#if DETAIL_OUTPUT
+#if 0//DETAIL_OUTPUT
           //if (i == 0)
-          fprintf(stderr, "B: [Lid %d] [TS %d] [%d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [Buffer %lld (%d x %d x %d)]\n",
+          fprintf(stderr, "[Lid %d] [TS %d] [%d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [Buffer %lld (%d x %d x %d)]\n",
                agg_offset, id->idx->current_time_step,
                id->agg_r[k][i - id->fi][j],
                max_patch_count,
@@ -819,6 +821,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
                file_status,
                ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 #endif
+          fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
