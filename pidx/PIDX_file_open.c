@@ -536,10 +536,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->idx->flip_endian = 0;
 
-  if ((*file)->idx->io_type == PIDX_IDX_IO)
+  //if ((*file)->idx->io_type == PIDX_IDX_IO)
     (*file)->idx->reg_box_set = PIDX_BOX_FROM_BITSTRING;
-  else
-    (*file)->idx->reg_box_set = PIDX_USER_RST_BOX;
+  //else
+  //  (*file)->idx->reg_box_set = PIDX_USER_RST_BOX;
   unsigned int endian = 1;
   int current_endian = 0;
   char *c = (char*)&endian;

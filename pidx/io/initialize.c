@@ -181,7 +181,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   PIDX_variable var0 = var_grp->variable[svi];
 
   //file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
-  //printf("file->idx->reg_box_set = %d (%d %d %d)\n", file->idx->reg_box_set, file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
+  printf("file->idx->reg_box_set = %d (%d %d %d)\n", file->idx->reg_box_set, file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
 
 
   if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
