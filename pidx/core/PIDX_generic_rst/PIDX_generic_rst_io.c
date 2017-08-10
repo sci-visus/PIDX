@@ -308,6 +308,12 @@ PIDX_return_code PIDX_generic_rst_buf_aggregated_write(PIDX_generic_rst_id gener
         }
       }
 
+      /*
+      float x;
+      memcpy(&x, var_start->rst_patch_group[g]->reg_patch->buffer, sizeof(float));
+      printf("first val %f\n", x);
+      */
+
       ssize_t write_count = pwrite(fp, var_start->rst_patch_group[g]->reg_patch->buffer, buffer_size, data_offset);
       if (write_count != buffer_size)
       {
@@ -335,6 +341,7 @@ PIDX_return_code PIDX_generic_rst_buf_aggregated_read(PIDX_generic_rst_id generi
 
   PIDX_variable_group var_grp = generic_rst_id->idx->variable_grp[generic_rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[generic_rst_id->first_index];
+
   for (g = 0; g < var0->patch_group_count; ++g)
   {
     // loop through all groups
@@ -374,6 +381,12 @@ PIDX_return_code PIDX_generic_rst_buf_aggregated_read(PIDX_generic_rst_id generi
         fprintf(stderr, "[%s] [%d] pwrite() %s offset %d failed %lld %lld\n", __FILE__, __LINE__, file_name, data_offset, (unsigned long long)read_count, (unsigned long long)buffer_size);
         return PIDX_err_io;
       }
+
+      /*
+      float x;
+      memcpy(&x, var_start->rst_patch_group[g]->reg_patch->buffer, sizeof(float));
+      printf("first val %f\n", x);
+      */
 
       if (generic_rst_id->idx->flip_endian == 1)
       {
