@@ -47,7 +47,7 @@ static int process_count = 1, rank = 0;
 static unsigned long long local_box_offset[3];
 static unsigned long long global_box_size[3] = {0, 0, 0};
 static unsigned long long local_box_size[3] = {0, 0, 0};
-static int current_ts = 1;
+static int current_ts = 0;
 static int variable_index = 0;
 static char output_file_template[512] = "test_idx";
 static unsigned char *data;
@@ -60,13 +60,14 @@ static int bits_per_sample = 0;
 static int values_per_sample = 0;
 static char type_name[512];
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./vis_read -g 32x32x32 -l 32x32x32 -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
-                     "  -g: global dimensions\n"
-                     "  -l: local (per-process) dimensions\n"
-                     "  -f: IDX filename\n"
-                     "  -t: time step index that needs to be read\n"
-                     "  -v: Variable Index";
+static char *usage = "Serial Usage: ./minmax file_name variable_index time_step_index\n";
+
+                     //"Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
+                     //"  -g: global dimensions\n"
+                     //"  -l: local (per-process) dimensions\n"
+                     //"  -f: IDX filename\n"
+                     //"  -t: time step index that needs to be read\n"
+                     //"  -v: Variable Index";
 
 
 static void init_mpi(int argc, char **argv);
@@ -84,13 +85,28 @@ static void shutdown_mpi();
 int main(int argc, char **argv)
 {
   init_mpi(argc, argv);
-  parse_args(argc, argv);
-  check_args();
-  calculate_per_process_offsets();
+
+  if (argc == 4)
+  {
+    sprintf(output_file_name, "%s%s", argv[1], ".idx");
+    variable_index = atoi(argv[2]);
+    current_ts = atoi(argv[3]);
+  }
+  else if (argc > 4)
+  {
+    parse_args(argc, argv);
+    check_args();
+  }
+  else
+      terminate_with_error_msg("Wrong Usage\n%s", usage);
+
 
   create_pidx_var_point_and_access();
 
   set_pidx_file(current_ts);
+
+  calculate_per_process_offsets();
+
   set_pidx_variable_and_create_buffer();
   PIDX_variable_read_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
   PIDX_close(file);
@@ -179,6 +195,13 @@ static void check_args()
 
 static void calculate_per_process_offsets()
 {
+  if (local_box_size[X] == 0)
+      local_box_size[X] = global_bounds[X];
+  if (local_box_size[Y] == 0)
+      local_box_size[Y] = global_bounds[Y];
+  if (local_box_size[Z] == 0)
+      local_box_size[Z] = global_bounds[Z];
+
   int sub_div[NUM_DIMS];
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
   sub_div[Y] = (global_box_size[Y] / local_box_size[Y]);
@@ -187,6 +210,9 @@ static void calculate_per_process_offsets()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
+
+  PIDX_set_point(local_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z]);
+  PIDX_set_point(local_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
 }
 
 //----------------------------------------------------------------
@@ -212,10 +238,6 @@ static void terminate_with_error_msg(const char *format, ...)
 //----------------------------------------------------------------
 static void create_pidx_var_point_and_access()
 {
-  PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
-  PIDX_set_point(local_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z]);
-  PIDX_set_point(local_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
-
   //  Creating access
   PIDX_create_access(&p_access);
   PIDX_set_mpi_access(p_access, MPI_COMM_WORLD);
@@ -231,10 +253,20 @@ static void set_pidx_file(int ts)
   ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, global_bounds, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create");
 
+  PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
+
   PIDX_set_current_time_step(file, ts);
   PIDX_get_variable_count(file, &variable_count);
 
-  PIDX_query_box(file, global_size);
+  if (global_box_size[X] == 0 && global_box_size[Y] == 0 && global_box_size[Z] == 0)
+  {
+    global_box_size[X] = global_bounds[X];
+    global_box_size[Y] = global_bounds[Y];
+    global_box_size[Z] = global_bounds[Z];
+    PIDX_query_box(file, global_bounds);
+  }
+  else
+    PIDX_query_box(file, global_size);
 
   return;
 }
@@ -253,8 +285,8 @@ static void set_pidx_variable_and_create_buffer()
   PIDX_values_per_datatype(variable->type_name, &values_per_sample, &bits_per_sample);
   strcpy(type_name, variable->type_name);
 
-  data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->vps);
-  memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * variable->vps);
+  data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
+  memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
 }
 
 //----------------------------------------------------------------
@@ -266,6 +298,9 @@ static void verify_read_results()
   double double_val = 0, double_min = 0, double_max = 0;
   float float_val = 0, float_min = 0, float_max = 0;
   int int_min = 0, int_max = 0;
+  double *min_temp, *max_temp;
+  double min_magnitude = 7000000;
+  double max_magnitude = 0;
 
   bits_per_sample = bits_per_sample / 8;
 
@@ -284,6 +319,18 @@ static void verify_read_results()
     memcpy(&double_min, data, bits_per_sample);
     memcpy(&double_max, data, bits_per_sample);
   }
+  else if (strcmp(type_name, FLOAT64_RGB) == 0)
+  {
+
+    min_temp = malloc(values_per_sample * sizeof (*min_temp));
+    max_temp = malloc(values_per_sample * sizeof (*max_temp));
+
+    memcpy(min_temp, data, values_per_sample * sizeof (*min_temp));
+    memcpy(max_temp, data, values_per_sample * sizeof (*min_temp));
+  }
+
+  //printf("values_per_sample = %d %d [ %f %f %f ] [ %f %f %f ]\n", values_per_sample, bits_per_sample, min_temp[X], min_temp[Y], min_temp[Z], max_temp[X], max_temp[Y], max_temp[Z]);
+
 
   for (k = 0; k < local_box_size[2]; k++)
     for (j = 0; j < local_box_size[1]; j++)
@@ -306,15 +353,32 @@ static void verify_read_results()
 
         else if (strcmp(type_name, FLOAT64) == 0 || strcmp(type_name, FLOAT64_RGB) == 0)
         {
-          for (vps = 0; vps < values_per_sample; vps++)
-          {
-            memcpy(&double_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (double_val < double_min)
-              double_min = double_val;
+          double *temp = malloc(values_per_sample * sizeof (*temp));
 
-            if (double_val > double_max)
-              double_max = double_val;
+
+          double c_magnitude = 0;
+          for (vps = 0; vps < values_per_sample; vps++)
+            memcpy(&temp[vps], data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
+
+          c_magnitude = (temp[0]*temp[0]) + (temp[1]*temp[1]) + (temp[2]*temp[2]);
+          if (c_magnitude < min_magnitude)
+          {
+            min_magnitude = c_magnitude;
+            min_temp[0] = temp[0];
+            min_temp[1] = temp[1];
+            min_temp[2] = temp[2];
           }
+
+          if (c_magnitude > max_magnitude)
+          {
+              max_magnitude = c_magnitude;
+              max_temp[0] = temp[0];
+              max_temp[1] = temp[1];
+              max_temp[2] = temp[2];
+          }
+
+          free(temp);
+
         }
 
         else if (strcmp(type_name, FLOAT32) == 0)
@@ -371,6 +435,15 @@ static void verify_read_results()
 #endif
     if (rank == 0)
       printf("Min %f Max %f\n", double_final_min, double_final_max);
+  }
+
+  else if (strcmp(type_name, FLOAT64_RGB) == 0)
+  {
+    if (rank == 0)
+      printf("Min %f %f %f Max %f %f %f\n", min_temp[0], min_temp[1], min_temp[2], max_temp[0], max_temp[1], max_temp[2]);
+
+    free(min_temp);
+    free(max_temp);
   }
 
 

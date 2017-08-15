@@ -433,7 +433,7 @@ static void create_synthetic_simulation_data()
 
             else if ((bpv[var]) == 64)
             {
-              dvalue = ((double)100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              dvalue = ((double)100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
           }
@@ -504,7 +504,7 @@ static void set_pidx_file(int ts)
   PIDX_set_restructuring_box(file, reg_size);
   
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_IDX_IO);
+  PIDX_set_io_mode(file, PIDX_RAW_IO);
   
   // Set how many blocks we want to write in a single file
   PIDX_set_block_count(file, 256);
