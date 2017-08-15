@@ -86,20 +86,18 @@ int main(int argc, char **argv)
 {
   init_mpi(argc, argv);
 
-  if (argc == 4)
+  if (argc == 3)
   {
     sprintf(output_file_name, "%s%s", argv[1], ".idx");
     variable_index = atoi(argv[2]);
-    current_ts = atoi(argv[3]);
   }
-  else if (argc > 4)
+  else if (argc > 3)
   {
     parse_args(argc, argv);
     check_args();
   }
   else
       terminate_with_error_msg("Wrong Usage\n%s", usage);
-
 
   create_pidx_var_point_and_access();
 
@@ -255,7 +253,14 @@ static void set_pidx_file(int ts)
 
   PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
 
-  PIDX_set_current_time_step(file, ts);
+  int last_ts;
+  PIDX_get_last_tstep(file, &last_ts);
+
+  if (ts != 0)
+    PIDX_set_current_time_step(file, ts);
+  else
+    PIDX_set_current_time_step(file, last_ts);
+
   PIDX_get_variable_count(file, &variable_count);
 
   if (global_box_size[X] == 0 && global_box_size[Y] == 0 && global_box_size[Z] == 0)
@@ -351,7 +356,20 @@ static void verify_read_results()
           }
         }
 
-        else if (strcmp(type_name, FLOAT64) == 0 || strcmp(type_name, FLOAT64_RGB) == 0)
+        else if (strcmp(type_name, FLOAT64) == 0)
+        {
+          for (vps = 0; vps < values_per_sample; vps++)
+          {
+            memcpy(&double_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
+            if (double_val < double_min)
+              double_min = double_val;
+
+            if (double_val > double_max)
+              double_max = double_val;
+          }
+        }
+
+        else if (strcmp(type_name, FLOAT64_RGB) == 0)
         {
           double *temp = malloc(values_per_sample * sizeof (*temp));
 
