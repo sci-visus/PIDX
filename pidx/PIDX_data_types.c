@@ -67,6 +67,7 @@ PIDX_data_type FLOAT64       = "1*float64";
 PIDX_data_type FLOAT64_GA    = "2*float64";
 PIDX_data_type FLOAT64_RGB   = "3*float64";
 PIDX_data_type FLOAT64_RGBA  = "4*float64";
+PIDX_data_type FLOAT64_7STENCIL  = "7*float64";
 
 
 PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
@@ -160,6 +161,8 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
     *bits = 192;
   else if (strcmp(type, FLOAT64_RGBA) == 0)
     *bits = 256;
+  else if (strcmp(type, FLOAT64_7STENCIL) == 0)
+    *bits = 448;
   else
     *bits = 0;
 
@@ -375,6 +378,11 @@ PIDX_return_code PIDX_values_per_datatype(PIDX_data_type type, int* values, int*
     else if (strcmp(type, FLOAT64_RGBA) == 0)
     {
       *values = 4;
+      *bits = 64;
+    }
+    else if (strcmp(type, FLOAT64_7STENCIL) == 0)
+    {
+      *values = 7;
       *bits = 64;
     }
     else

@@ -111,6 +111,7 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
     rst_case_type = 1;
 
   file->idx->variable_pipe_length = file->idx->variable_count;
+#if 0
   if (file->idx_d->data_core_count == file->idx_c->gnprocs && rst_case_type == 0)
   {
     for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
@@ -151,7 +152,8 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
       }
     }
   }
-  else
+#endif
+//  else
   {
     for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
     {

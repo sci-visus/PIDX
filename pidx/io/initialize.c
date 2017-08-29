@@ -34,15 +34,26 @@ PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
 
 static PIDX_return_code calculate_rank_mapping(PIDX_io file, int gi, int svi)
 {
+  int box_size_factor = 1;
+
+  recaliberate:
+
+  file->idx->reg_patch_size[0] = file->idx->reg_patch_size[0] * box_size_factor;
+  file->idx->reg_patch_size[1] = file->idx->reg_patch_size[1] * box_size_factor;
+  file->idx->reg_patch_size[2] = file->idx->reg_patch_size[2] * box_size_factor;
+
   file->idx->number_processes[0] = ceil((float)file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
   file->idx->number_processes[1] = ceil((float)file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
   file->idx->number_processes[2] = ceil((float)file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
 
-#if 0
+#if 1
   if (file->idx->number_processes[0] * file->idx->number_processes[1] * file->idx->number_processes[2] > file->idx_c->gnprocs)
   {
-    fprintf(stderr, "Error in line number %d file %s [%d %d %d > %d] Box size is %d %d %d\n", __LINE__, __FILE__, file->idx->number_processes[0], file->idx->number_processes[1], file->idx->number_processes[2], file->idx_c->gnprocs, file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
-    return PIDX_err_file;
+    //fprintf(stderr, "Error in line number %d file %s [%d %d %d > %d] Box size is %d %d %d\n", __LINE__, __FILE__, file->idx->number_processes[0], file->idx->number_processes[1], file->idx->number_processes[2], file->idx_c->gnprocs, file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
+    //return PIDX_err_file;
+
+      box_size_factor = box_size_factor * 2;
+      goto recaliberate;
   }
 #endif
 
@@ -172,6 +183,7 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
   //file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
   //printf("file->idx->reg_box_set = %d (%d %d %d)\n", file->idx->reg_box_set, file->idx->reg_patch_size[0], file->idx->reg_patch_size[1], file->idx->reg_patch_size[2]);
 
+
   if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
   {
     file->idx->reg_patch_size[0] = getPowerOf2(file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[0]);
@@ -215,7 +227,10 @@ PIDX_return_code set_rst_box_size(PIDX_io file, int gi, int svi)
     }
   }
   else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
+  {
     set_reg_patch_size_from_bit_string(file);
+    calculate_rank_mapping(file, gi, svi);
+  }
 
   else if (file->idx->reg_box_set == PIDX_UNIFORMLY_DISTRIBUTED_BOX)
   {

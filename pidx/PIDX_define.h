@@ -182,6 +182,7 @@ extern PIDX_data_type FLOAT64;
 extern PIDX_data_type FLOAT64_GA;
 extern PIDX_data_type FLOAT64_RGB;
 extern PIDX_data_type FLOAT64_RGBA;
+extern PIDX_data_type FLOAT64_7STENCIL;
 
 #ifdef __cplusplus
 }

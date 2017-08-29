@@ -290,8 +290,8 @@ static void set_pidx_variable_and_create_buffer()
   if (variable_index >= variable_count) terminate_with_error_msg("Variable index more than variable count\n");
 
   // Set the variable index that we want to read
-  //ret = PIDX_set_current_variable_index(file, variable_index);
-  ret = PIDX_set_current_variable_by_name(file, "var_1");
+  ret = PIDX_set_current_variable_index(file, variable_index);
+  //ret = PIDX_set_current_variable_by_name(file, "var_1");
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_set_current_variable_index\n");
 
   // Get corresponding PIDX_variable
