@@ -29,15 +29,15 @@ struct PIDX_file_descriptor
 
   PIDX_io io;
 
-  int local_group_index;                    ///<
-  int local_group_count;                    ///<
+  int local_group_index;                        ///< Starting index of the variables that needs to be written before flush or close
+  int local_group_count;                        ///< Number of variables that needs to be written out
 
-  int flush_used;
-  int write_on_close;                          ///< HPC Writes
+  int flush_used;                               ///< Flush used
+  int write_on_close;                           ///< HPC Writes
 
-  int ROI_writes;
+  int ROI_writes;                               ///< ROI writes
 
-  idx_comm idx_c;
+  idx_comm idx_c;                               ///< MPI related info
 
 
   idx_dataset idx;                             ///< Contains all relevant IDX file info
@@ -46,5 +46,5 @@ struct PIDX_file_descriptor
   idx_dataset_derived_metadata idx_d;          ///< Contains all derieved IDX file info
                                                ///< number of files, files that are ging to be populated
 
-  idx_debug idx_dbg;
+  idx_debug idx_dbg;                           ///< Contains flags for debugging
 };

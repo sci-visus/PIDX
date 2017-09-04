@@ -434,10 +434,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         pch = strtok(NULL, " ");
 
         if(pch != NULL)
-        {
-          (*file)->idx->last_tstep = atoi(pch);
-            printf("LLLLLLLL %d\n", atoi(pch));
-        }
+            (*file)->idx->last_tstep = atoi(pch);
+
 
         else
           return PIDX_err_file;
@@ -473,6 +471,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
     if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
     {
+      if ((*file)->idx->compression_bit_rate == 64)
+        (*file)->idx->compression_factor = 1;
       if ((*file)->idx->compression_bit_rate == 32)
         (*file)->idx->compression_factor = 2;
       if ((*file)->idx->compression_bit_rate == 16)

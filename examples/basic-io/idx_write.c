@@ -276,7 +276,7 @@ static int generate_vars(){
     int bits_per_sample = 0;
     int sample_count = 0;
     char temp_name[512];
-    char* temp_type_name = "1*float32";
+    char* temp_type_name = "1*float64";
     sprintf(temp_name, "var_%d", variable_counter);
     strcpy(var_name[variable_counter], temp_name);
     strcpy(type_name[variable_counter], temp_type_name);
@@ -504,7 +504,7 @@ static void set_pidx_file(int ts)
   PIDX_set_restructuring_box(file, reg_size);
   
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_RAW_IO);
+  PIDX_set_io_mode(file, PIDX_IDX_IO);
   
   // Set how many blocks we want to write in a single file
   PIDX_set_block_count(file, 256);
@@ -515,6 +515,9 @@ static void set_pidx_file(int ts)
   // If the domain decomposition and the cores configuration do not change over time 
   // we can instruct PIDX to cache and reuse these information for the next timesteps
   PIDX_set_cache_time_step(file, 0);
+
+  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+  //PIDX_set_lossy_compression_bit_rate(file, 32);
 
   return;
 }

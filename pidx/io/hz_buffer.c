@@ -276,8 +276,8 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
 
 
   time->compression_start[lgi][cvi] = PIDX_get_time();
-  if (file->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
-  {
+  //if (file->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
+  //{
     // Perform Compression
     if (file->idx_dbg->debug_do_compress == 1)
     {
@@ -288,7 +288,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
         return PIDX_err_compress;
       }
     }
-  }
+  //}
 
   if (file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {

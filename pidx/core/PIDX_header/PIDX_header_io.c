@@ -177,7 +177,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     else if (header_io->idx->io_type == PIDX_LOCAL_PARTITION_IDX_IO)
       fprintf(idx_file_p, "(io mode)\n3\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
-      fprintf(idx_file_p, "(io mode)\n4\n");
+      fprintf(idx_file_p, "(io mode)\n4\n");    
 
     fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
@@ -190,8 +190,11 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx->reg_patch_size[0], (long long)header_io->idx->reg_patch_size[1], (long long)header_io->idx->reg_patch_size[2]);
     fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->gnprocs);
     fprintf(idx_file_p, "(file system block size)\n%d\n", header_io->idx_d->fs_block_size);
-    fprintf(idx_file_p, "(fields)\n");
 
+    fprintf(idx_file_p, "(compression bit rate)\n%f\n", header_io->idx->compression_bit_rate);
+    fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
+
+    fprintf(idx_file_p, "(fields)\n");
     for (l = 0; l < header_io->last_index; l++)
     {
       fprintf(idx_file_p, "%s %s", var_grp->variable[l]->var_name, var_grp->variable[l]->type_name);

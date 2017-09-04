@@ -151,7 +151,7 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
         int buffer_index = (block_count * io_id->idx_d->samples_per_block * (var_grp->variable[agg_buf->var_number]->bpv/8) * var_grp->variable[agg_buf->var_number]->vps * tck) / io_id->idx->compression_factor;
 
         //if (data_offset != 0)
-        //  fprintf(stderr, "[R] Offset %d Size %d File %s\n", data_offset, data_size, file_name);
+        //  fprintf(stderr, "%d [R] %d Offset %d Size %d buffer index %d File %s\n", io_id->idx->compression_factor, i, data_offset, data_size, buffer_index, file_name);
 
         ret = MPI_File_read_at(fp, data_offset, agg_buf->buffer + buffer_index, data_size, MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
@@ -159,6 +159,15 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
           fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
           return PIDX_err_io;
         }
+
+        int read_count = 0;
+        MPI_Get_count(&status, MPI_BYTE, &read_count);
+        if (read_count != data_size)
+        {
+          fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed. %d != %dd\n", __FILE__, __LINE__, read_count, total_header_size);
+          return PIDX_err_io;
+        }
+
         /*
         if (io_id->idx_c->grank == 1)
         {
@@ -168,7 +177,8 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
             fprintf(stderr, "FOT %f %f\n", x1, x2);
         }
         */
-
+#if 0
+        //printf("ENDIAN %d\n", io_id->idx->flip_endian);
         if (io_id->idx->flip_endian == 1)
         {
           PIDX_variable curr_var = var_grp->variable[agg_buf->var_number];
@@ -199,6 +209,7 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
             }
           }
         }
+#endif
 
         block_count++;
       }

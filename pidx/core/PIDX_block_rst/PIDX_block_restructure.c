@@ -284,7 +284,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       }
       */
 
-      float* p=(float*)temp_buffer;
+      double* p=(double*)temp_buffer;
       int dz=4*nx*(ny-(ny/4)*4);
       int dy=4*(nx-(nx/4)*4);
       int dx=4;      
@@ -296,13 +296,13 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       {
         for (z=0;z<nz;z+=4)
         {
-          float* s = (float*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bpv/8)*cbz) + nx*ny*nz*s1;
+          double* s = (double*)(out_patch->patch[0]->buffer+((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bpv/8)*cbz) + nx*ny*nz*s1;
           for (y=0;y<ny;y+=4)
           {
             for (x=0;x<nx;x+=4)
             {
               unsigned long long diff=(z/4)*(dz+4*(ny/4)*(dy+4*(nx/4)*dx))+(y/4)*(dy+4*(nx/4)*dx)+(x/4)*dx;
-              float* q=p+var->vps*diff+s1;
+              double* q=p+var->vps*diff+s1;
 
               for (zz = 0; zz < 4; ++zz)
               {
