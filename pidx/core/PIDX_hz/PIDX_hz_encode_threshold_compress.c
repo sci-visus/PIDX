@@ -19,7 +19,7 @@
 
 #include "../../PIDX_inc.h"
 
-
+#if 0
 
 PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
 {
@@ -235,3 +235,5 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
 #endif
   return PIDX_success;
 }
+
+#endif

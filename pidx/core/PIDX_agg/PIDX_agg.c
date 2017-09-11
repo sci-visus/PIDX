@@ -236,7 +236,7 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
   }
   free(agg_list);
 
-  int aggregator_interval = id->idx_c->lnprocs / ((id->fi - id->li + 1) * lbl->efc);
+  //int aggregator_interval = id->idx_c->lnprocs / ((id->fi - id->li + 1) * lbl->efc);
   //int aggregator_interval = id->idx_c->lnprocs / ((id->fi - id->li + 1) * id->idx_d->max_file_count);
 
   for (k = 0; k < lbl->efc; k++)
@@ -444,7 +444,7 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
           //if (agg_offset == 3)
           ////fprintf(stderr, "[G %d] [L %d] [Lid %d] [MFC %d] [V %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [AGG %d [CR %d (%d %d %d) Rank (%d %d %d)]] [Buffer %lld (%d x %d x %d)]\n", id->idx_c->grank, id->idx_c->lrank, agg_offset, lbl->efc, i, k, lbl->existing_file_index[k], j, file_status, trank, calculated_rank, first[0], first[1], first[2], rank_x, rank_y, rank_z, ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);//, first[0], first[1], first[2], rank_x, rank_y, rank_z);
 
-          fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
+          //fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
@@ -469,29 +469,19 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 {
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   PIDX_variable var0 = var_grp->variable[id->fi];
-  int i = 0, j = 0, k = 0, i1 = 0;
-
-  int max_patch_count;
-  int patch_count =var0->patch_group_count;
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, id->idx_c->local_comm);
-
-  unsigned long long *local_patch_offset = malloc(sizeof(*local_patch_offset) * (max_patch_count * PIDX_MAX_DIMENSIONS));
-  memset(local_patch_offset, 0, sizeof(*local_patch_offset) * (max_patch_count * PIDX_MAX_DIMENSIONS));
-
-  unsigned long long *local_patch_size = malloc(sizeof(*local_patch_size) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
-  memset(local_patch_size, 0, sizeof(*local_patch_size) * (max_patch_count * PIDX_MAX_DIMENSIONS));
+  int i = 0, j = 0, k = 0;
+  unsigned long long local_patch_offset[PIDX_MAX_DIMENSIONS];
+  unsigned long long local_patch_size[PIDX_MAX_DIMENSIONS];
 
   int d = 0;
-  for (i = 0; i < patch_count; i++)
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-    {
-      local_patch_offset[i * PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group[i]->reg_patch->offset[d];
-      local_patch_size[i * PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group[i]->reg_patch->size[d];
-    }
+    local_patch_offset[PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group->reg_patch->offset[d];
+    local_patch_size[PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group->reg_patch->size[d];
   }
 
-  int wc = id->idx_c->lnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS);
+
+  int wc = id->idx_c->lnprocs * (PIDX_MAX_DIMENSIONS);
 
   unsigned long long* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
   memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
@@ -499,12 +489,10 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
   unsigned long long* global_patch_size = malloc(wc * sizeof(*global_patch_size));
   memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
 
-  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
 
-  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
 
-  free(local_patch_offset);
-  free(local_patch_size);
 
   //if (id->idx_c->grank == 0 && agg_offset == 0)
   //{
@@ -690,28 +678,26 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         int break_counter = 0;
         for (r = 0; r < id->idx_c->lnprocs; r++)
         {
-          for (m = 0; m < max_patch_count; m++)
+          if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 2] == 0)
           {
-            if (global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
-                global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
-                global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 2] == 0)
-            {
-              continue;
-            }
-
-            for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-            {
-              rank_r_patch->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + d];
-              rank_r_patch->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + d];
-            }
-
-            if (intersectNDChunk(global_start_point, rank_r_patch))
-            {
-              start_rank = r;
-              break_counter = 1;
-              break;
-            }
+            continue;
           }
+
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+          {
+            rank_r_patch->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
+            rank_r_patch->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
+          }
+
+          if (intersectNDChunk(global_start_point, rank_r_patch))
+          {
+            start_rank = r;
+            break_counter = 1;
+            break;
+          }
+
 
           if (break_counter == 1)
             break;
@@ -731,26 +717,24 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         memset(rank_r_patch, 0, sizeof (*rank_r_patch));
         for (r = 0; r < id->idx_c->lnprocs; r++)
         {
-          for (m = 0; m < max_patch_count; m++)
+          if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 2] == 0)
+            continue;
+
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
           {
-            if (global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
-                global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
-                global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + 2] == 0)
-              continue;
-
-            for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-            {
-              rank_r_patch->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + d];
-              rank_r_patch->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * max_patch_count * r + m * PIDX_MAX_DIMENSIONS + d];
-            }
-
-            if (intersectNDChunk(global_end_point, rank_r_patch))
-            {
-              end_rank = r;
-              break_counter = 1;
-              break;
-            }
+            rank_r_patch->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
+            rank_r_patch->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
           }
+
+          if (intersectNDChunk(global_end_point, rank_r_patch))
+          {
+            end_rank = r;
+            break_counter = 1;
+            break;
+          }
+
           if (break_counter == 1)
             break;
         }
@@ -802,12 +786,11 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
           ab->buffer_size = sample_count * bpdt;
 
-#if 0//DETAIL_OUTPUT
+#if 1//DETAIL_OUTPUT
           //if (i == 0)
-          fprintf(stderr, "[Lid %d] [TS %d] [%d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [Buffer %lld (%d x %d x %d)]\n",
+          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [Buffer %lld (%d x %d x %d)]\n",
                agg_offset, id->idx->current_time_step,
                id->agg_r[k][i - id->fi][j],
-               max_patch_count,
                id->idx_d->color,
                id->idx_c->grank, id->idx_c->gnprocs,
                id->idx_c->lrank, id->idx_c->lnprocs,
@@ -821,7 +804,283 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
                file_status,
                ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 #endif
-          fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
+          //fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
+
+          ab->buffer = malloc(ab->buffer_size);
+          memset(ab->buffer, 0, ab->buffer_size);
+          if (ab->buffer == NULL)
+          {
+            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) ab->buffer_size, __LINE__, __FILE__);
+            return PIDX_err_agg;
+          }
+        }
+      }
+    }
+  }
+
+  free(global_patch_size);
+  free(global_patch_offset);
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
+{
+  PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
+  PIDX_variable var0 = var_grp->variable[id->fi];
+  int i = 0, j = 0, k = 0;
+  unsigned long long local_patch_offset[PIDX_MAX_DIMENSIONS];
+  unsigned long long local_patch_size[PIDX_MAX_DIMENSIONS];
+
+  int d = 0;
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  {
+    local_patch_offset[d] = var0->rst_patch_group->reg_patch->offset[d];
+    local_patch_size[d] = var0->rst_patch_group->reg_patch->size[d];
+  }
+
+  int wc = id->idx_c->lnprocs * (PIDX_MAX_DIMENSIONS);
+
+  unsigned long long* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
+  memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
+
+  unsigned long long* global_patch_size = malloc(wc * sizeof(*global_patch_size));
+  memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
+
+  MPI_Allgather(&local_patch_offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+
+  MPI_Allgather(&local_patch_size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+
+#if 0
+  if (id->idx_c->grank == 0 && agg_offset == 0)
+  {
+    for (i = 0; i < id->idx_c->lnprocs; i++)
+      fprintf(stderr, "[%d] (%d) -----> %d %d %d - %d %d %d\n", i, id->idx_c->lnprocs, (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 0], (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 1], (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 2], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 0], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 1], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 2]);
+  }
+#endif
+
+  for (k = 0; k < lbl->efc; k++)
+  {
+    for (i = id->fi; i <= id->li; i++)
+    {
+      for (j = 0; j < var_grp->variable[i]->vps * ab->agg_f; j++)
+      {
+        int start_rank = -1, end_rank = -1;
+        unsigned long long global_file_index = lbl->existing_file_index[k];
+
+        int first_block = -1, last_block = -1;
+        int b = 0;
+        for (b = 0; b < id->idx->blocks_per_file; b++)
+        {
+          if (id->idx_d->block_bitmap[global_file_index][b] == 1)
+          {
+            first_block = b;
+            break;
+          }
+        }
+        for (b = id->idx->blocks_per_file - 1; b >= 0; b--)
+        {
+          if (id->idx_d->block_bitmap[global_file_index][b] == 1)
+          {
+            last_block = b;
+            break;
+          }
+        }
+        assert(last_block == lbl->lbi[global_file_index]);
+
+        //fprintf(stderr, "[%d] first last block %d %d [%d %d %d - %d %d %d]\n", id->idx_d->color, first_block, last_block, id->idx_d->partition_offset[0], id->idx_d->partition_offset[1], id->idx_d->partition_offset[2], (id->idx_d->partition_offset[0] + id->idx_d->partition_size[0] - 1), (id->idx_d->partition_offset[1] + id->idx_d->partition_size[1] - 1), (id->idx_d->partition_offset[2] + id->idx_d->partition_size[2] - 1));
+
+        int s = 0;
+        int last_index = -1;
+        int first_index = -1;
+        unsigned long long ZYX[PIDX_MAX_DIMENSIONS];
+
+        for (s = 0; s < id->idx_d->samples_per_block; s++)
+        {
+          // HZ index of last sample of the block.
+          last_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (lbl->lbi[global_file_index] + 1) * id->idx_d->samples_per_block - 1 - s;
+
+          // xyz index of the last sample of the block.
+          Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
+
+            // check to see if the sample is within bounds.
+          if (ZYX[0] < PIDX_MIN(id->idx->box_bounds[0], id->idx_d->partition_offset[0] + id->idx_d->partition_size[0]) &&
+              ZYX[1] < PIDX_MIN(id->idx->box_bounds[1], id->idx_d->partition_offset[1] + id->idx_d->partition_size[1]) &&
+              ZYX[2] < PIDX_MIN(id->idx->box_bounds[2], id->idx_d->partition_offset[2] + id->idx_d->partition_size[2]))
+              break;
+        }
+
+
+        for (s = 0; s < id->idx_d->samples_per_block; s++)
+        {
+           // HZ index of first sample of the block.
+          first_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (first_block) * id->idx_d->samples_per_block + s;
+
+          // xyz index of the first sample of the block.
+          Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, first_index, ZYX);
+
+          // check to see if the sample is within bounds.
+          if (ZYX[0] >= id->idx_d->partition_offset[0] && ZYX[0] < PIDX_MIN(id->idx->box_bounds[0], id->idx_d->partition_offset[0] + id->idx_d->partition_size[0]) &&
+              ZYX[1] >= id->idx_d->partition_offset[1] && ZYX[1] < PIDX_MIN(id->idx->box_bounds[1], id->idx_d->partition_offset[1] + id->idx_d->partition_size[1]) &&
+              ZYX[2] >= id->idx_d->partition_offset[2] && ZYX[2] < PIDX_MIN(id->idx->box_bounds[2], id->idx_d->partition_offset[2] + id->idx_d->partition_size[2]))
+            break;
+        }
+
+
+        unsigned long long global_start_hz = first_index;
+        unsigned long long global_end_hz = last_index;
+
+        unsigned long long global_start_ZYX[PIDX_MAX_DIMENSIONS], global_end_ZYX[PIDX_MAX_DIMENSIONS];
+
+        Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_start_hz, global_start_ZYX);
+        Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_end_hz, global_end_ZYX);
+
+        Ndim_patch global_start_point = (Ndim_patch)malloc(sizeof (*global_start_point));
+        memset(global_start_point, 0, sizeof (*global_start_point));
+        global_start_point->offset[0] = global_start_ZYX[0];
+        global_start_point->offset[1] = global_start_ZYX[1];
+        global_start_point->offset[2] = global_start_ZYX[2];
+        global_start_point->size[0] = 1;
+        global_start_point->size[1] = 1;
+        global_start_point->size[2] = 1;
+
+        //Extent of process with rank r
+        Ndim_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
+        memset(rank_r_patch, 0, sizeof (*rank_r_patch));
+
+        int r = 0, d = 0, m = 0;
+        int break_counter = 0;
+        for (r = 0; r < id->idx_c->lnprocs; r++)
+        {
+          if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 2] == 0)
+          {
+            continue;
+          }
+
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+          {
+            rank_r_patch->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
+            rank_r_patch->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
+          }
+
+          if (intersectNDChunk(global_start_point, rank_r_patch))
+          {
+            start_rank = r;
+            break_counter = 1;
+            break;
+          }
+
+
+          if (break_counter == 1)
+            break;
+        }
+        free(global_start_point);
+
+        Ndim_patch global_end_point = (Ndim_patch)malloc(sizeof (*global_end_point));
+        memset(global_end_point, 0, sizeof (*global_end_point));
+        global_end_point->offset[0] = global_end_ZYX[0];
+        global_end_point->offset[1] = global_end_ZYX[1];
+        global_end_point->offset[2] = global_end_ZYX[2];
+        global_end_point->size[0] = 1;
+        global_end_point->size[1] = 1;
+        global_end_point->size[2] = 1;
+
+        break_counter = 0;
+        memset(rank_r_patch, 0, sizeof (*rank_r_patch));
+        for (r = 0; r < id->idx_c->lnprocs; r++)
+        {
+          if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
+              global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 2] == 0)
+            continue;
+
+          for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+          {
+            rank_r_patch->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
+            rank_r_patch->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + d];
+          }
+
+          if (intersectNDChunk(global_end_point, rank_r_patch))
+          {
+            end_rank = r;
+            break_counter = 1;
+            break;
+          }
+
+          if (break_counter == 1)
+            break;
+        }
+        free(rank_r_patch);
+        free(global_end_point);
+
+        //int range = (end_rank - start_rank + 1) / id->idx->variable_count;
+        float range = (float)(end_rank - start_rank + 1) / (id->idx->variable_pipe_length + 1);
+
+        if (file_status == 1)
+          id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range) + (range/2);
+        else if (file_status == 0)
+          id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
+        else if (file_status == 2)
+          id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
+        else
+          id->agg_r[k][i - id->fi][j] = -1;
+#if 0//DETAIL_OUTPUT
+        if (id->idx_c->grank == 0)
+        {
+        //fprintf(stderr, "[P %d] [%d] %d %d -> %d\n", id->idx->variable_pipe_length, file_status, id->idx_c->lrank, id->idx_c->grank, id->agg_r[k][i - id->fi][j]);
+        //26
+        fprintf(stderr, "A: [Lid %d] [%d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d]\n",
+             agg_offset,
+             id->agg_r[k][i - id->fi][j],
+             max_patch_count,
+             id->idx_d->color,
+             id->idx_c->grank, id->idx_c->gnprocs,
+             id->idx_c->lrank, id->idx_c->lnprocs,
+             start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
+             end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
+             range,
+             i, (id->idx->variable_pipe_length + 1),
+             k,
+             lbl->existing_file_index[k],
+             j,
+             file_status);
+        }
+#endif
+        if (id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
+        {
+          ab->file_number = lbl->existing_file_index[k];
+          ab->var_number = i;
+          ab->sample_number = j;
+
+          unsigned long long sample_count = lbl->bcpf[ab->file_number] * id->idx_d->samples_per_block / ab->agg_f;
+          int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
+          int bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
+
+          ab->buffer_size = sample_count * bpdt;
+
+#if 1//DETAIL_OUTPUT
+          //if (i == 0)
+          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [Buffer %lld (%d x %d x %d)]\n",
+               agg_offset, id->idx->current_time_step,
+               id->agg_r[k][i - id->fi][j],
+               id->idx_d->color,
+               id->idx_c->grank, id->idx_c->gnprocs,
+               id->idx_c->lrank, id->idx_c->lnprocs,
+               start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
+               end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
+               range,
+               i, (id->idx->variable_pipe_length + 1),
+               k,
+               lbl->existing_file_index[k],
+               j,
+               file_status,
+               ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
+#endif
+          //fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
 
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
@@ -1260,19 +1519,21 @@ static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PI
 
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode)
 {
-  int i, p, v, ret = 0;
+  int i, v, ret = 0;
   unsigned long long index = 0, count = 0;
 
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   PIDX_variable var0 = var_grp->variable[id->fi];
 
+  if (var0->patch_group_count == 0)
+    return PIDX_success;
+
   for(v = id->fi; v <= id->li; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    for (p = 0; p < var->patch_group_count; p++)
-    {
+
       index = 0, count = 0;
-      HZ_buffer hz_buf = var->hz_buffer[p];
+      HZ_buffer hz_buf = var->hz_buffer;
 
 #if 1
       if (hz_buf->type == 1)
@@ -1328,7 +1589,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
 
         for (i = lbl->resolution_from; i < lbl->resolution_to; i++)
         {
-          if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
+          if (var0->hz_buffer->nsamples_per_level[i][0] * var0->hz_buffer->nsamples_per_level[i][1] * var0->hz_buffer->nsamples_per_level[i][2] != 0)
           {
 #ifdef PIDX_DUMP_AGG
             if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
@@ -1345,7 +1606,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
             {
               count = (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1);
               //fprintf(stderr, "B [Level %d] : Offset %d Count %d\n", i, hz_buf->start_hz_index[i], count);
-              ret = aggregate(id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
+              ret = aggregate(id, v, var0->hz_buffer->start_hz_index[i], count, hz_buf->buffer[i], 0, ab, lbl, mode, layout_id);
               if (ret != PIDX_success)
               {
                 fprintf(stderr, " Error in aggregate Line %d File %s\n", __LINE__, __FILE__);
@@ -1395,7 +1656,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
         }
       }
 #endif
-    }
+
   }
 
   return PIDX_success;

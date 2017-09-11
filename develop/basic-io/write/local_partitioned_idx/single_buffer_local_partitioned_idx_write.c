@@ -35,6 +35,7 @@
 #include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
+#include <ctype.h>
 #include <PIDX.h>
 
 #define MAX_VAR_COUNT 128
@@ -77,6 +78,8 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
+static int generate_vars();
+static int isNumber(char number[]);
 
 static char *usage = "Serial Usage: ./single_buffer_global_partitioned_idx_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./single_buffer_local_partitioned_idx_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
@@ -164,15 +167,65 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('v'): // number of variables
-      if (sprintf(var_list, "%s", optarg) < 0)
-        terminate_with_error_msg("Invalid output file name template\n%s", usage);
-      parse_var_list();
+      if(!isNumber(optarg)){ // the param is a file with the list of variables
+        if (sprintf(var_list, "%s", optarg) > 0)
+          parse_var_list();
+        else
+          terminate_with_error_msg("Invalid variable list file\n%s", usage);
+      }else { // the param is a number of variables (default: 1*float32)
+        if(sscanf(optarg, "%d", &variable_count) > 0)
+          generate_vars();
+        else
+          terminate_with_error_msg("Invalid number of variables\n%s", usage);
+      }
       break;
 
     default:
       terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
   }
+}
+
+
+static int isNumber(char number[])
+{
+    int i = 0;
+
+    //checking for negative numbers
+    if (number[0] == '-')
+        i = 1;
+    for (; number[i] != 0; i++)
+    {
+        //if (number[i] > '9' || number[i] < '0')
+        if (!isdigit(number[i]))
+            return 0;
+    }
+    return 1;
+}
+
+
+static int generate_vars(){
+
+  int variable_counter = 0;
+
+  for(variable_counter = 0; variable_counter < variable_count; variable_counter++){
+    int ret;
+    int bits_per_sample = 0;
+    int sample_count = 0;
+    char temp_name[512];
+    char* temp_type_name = "1*float64";
+    sprintf(temp_name, "var_%d", variable_counter);
+    strcpy(var_name[variable_counter], temp_name);
+    strcpy(type_name[variable_counter], temp_type_name);
+
+    ret = PIDX_values_per_datatype(temp_type_name, &sample_count, &bits_per_sample);
+    if (ret != PIDX_success)  return PIDX_err_file;
+
+    bpv[variable_counter] = bits_per_sample;
+    vps[variable_counter] = sample_count;
+  }
+
+  return 0;
 }
 
 //----------------------------------------------------------------

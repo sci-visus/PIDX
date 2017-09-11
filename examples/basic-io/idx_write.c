@@ -263,7 +263,7 @@ static void parse_args(int argc, char **argv)
     // Set default restructuring box size
     rst_box_size[X] = nextPow2(local_box_size[X]);
     rst_box_size[Y] = nextPow2(local_box_size[Y]);
-    rst_box_size[Z] = nextPow2(local_box_size[Y]);
+    rst_box_size[Z] = nextPow2(local_box_size[Z]);
   }
 }
 

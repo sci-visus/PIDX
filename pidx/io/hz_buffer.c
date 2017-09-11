@@ -292,7 +292,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
 
   if (file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
   {
-    if (compute_average(file, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
+    if (compute_average(file->wavelet_id, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
@@ -300,7 +300,7 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
 
     if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
     {
-      if (idx_stencil_wavelet(file, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
+      if (idx_stencil_wavelet(file->wavelet_id, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
@@ -341,11 +341,11 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
     if (file->idx->compression_type == PIDX_ZFP_COMPRESSION)
     {
       //if (PIDX_hz_encode_compress(file->hz_id) != PIDX_success)
-      if (PIDX_hz_encode_block_wise_compress(file->hz_id) != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_hz;
-      }
+      //if (PIDX_hz_encode_block_wise_compress(file->hz_id) != PIDX_success)
+      //{
+      //  fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      //  return PIDX_err_hz;
+      //}
     }
     time->hz_compress_end[lgi][cvi] = PIDX_get_time();
 #endif

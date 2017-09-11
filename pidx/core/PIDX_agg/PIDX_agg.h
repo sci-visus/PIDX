@@ -81,6 +81,8 @@ PIDX_return_code PIDX_agg_buffer_compress(PIDX_agg_id id, Agg_buffer ab, int lay
 PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
 
 
+PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status);
+
 ///
 PIDX_return_code PIDX_agg_finalize(PIDX_agg_id agg_id);
 

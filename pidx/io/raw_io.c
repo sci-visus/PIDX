@@ -98,74 +98,20 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
-  }
-
-  int rst_case_type = 0;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var0 = var_grp->variable[svi];
-  int patch_count = var0->sim_patch_count;
-  int max_patch_count = 0;
-
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
-  if (max_patch_count > 1)
-    rst_case_type = 1;
+  } 
 
   file->idx->variable_pipe_length = file->idx->variable_count;
-#if 0
-  if (file->idx_d->data_core_count == file->idx_c->gnprocs && rst_case_type == 0)
+
+  for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
-    for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
+    ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+
+    ret = restructure_forced_read(file, si, ei);
+    if (ret != PIDX_success)
     {
-      ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
-      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
-
-      // Step 1: Setup restructuring buffers
-      ret = restructure_setup(file, gi, si, ei, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      // Step 2: Write out restructured data
-      ret = restructure_io(file, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      // Step 3: Perform data restructuring
-      ret = restructure(file, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      // Step 4: Cleanup all buffers and ids
-      ret = restructure_cleanup(file);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-    }
-  }
-#endif
-//  else
-  {
-    for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
-    {
-      ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
-      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
-
-      ret = restructure_forced_read(file, si, ei);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
     }
   }
 
@@ -179,11 +125,23 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   PIDX_time time = file->idx_d->time;
 
   time->set_reg_box_start = MPI_Wtime();
-  ret = set_rst_box_size(file, gi, svi);
-  if (ret != PIDX_success)
+  if (mode == PIDX_WRITE)
   {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    ret = set_rst_box_size_for_write(file, gi, svi);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+  else if (mode == PIDX_READ)
+  {
+    ret = set_rst_box_size_for_read(file, gi, svi);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
   }
   time->set_reg_box_end = MPI_Wtime();
 

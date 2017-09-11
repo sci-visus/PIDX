@@ -54,15 +54,6 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
   else if (MODE == PIDX_RAW_IO)
     ret = PIDX_raw_write(file, gi, svi, evi);
 
-  else if (MODE == PIDX_MERGE_TREE_ANALYSIS)
-    ret = PIDX_idx_insitu(file, gi, svi, evi);
-
-  else if (MODE == PIDX_WAVELET_IO)
-  {
-    file->idx_d->io_mode = 0;
-    ret = PIDX_wavelet_write(file, gi, svi, evi);
-  }
-
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
 
   file->idx_d->time->EX = PIDX_get_time();

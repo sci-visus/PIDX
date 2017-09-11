@@ -8,27 +8,22 @@ struct PIDX_io_descriptor
 {
   PIDX_header_io_id header_io_id;                   ///< IDX metadata id
 
-  PIDX_wavelet_rst_id wavelet_rst_id;               ///< Restructuring phase id
   PIDX_generic_rst_id generic_rst_id;               ///< Restructuring phase id
-  PIDX_rst_id rst_id;                               ///< Restructuring phase id
   PIDX_multi_patch_rst_id multi_patch_rst_id;       ///< Multi-patch restructuring phase id
 
   PIDX_chunk_id chunk_id;                           ///< Block restructuring id (prepration for compression)
   PIDX_comp_id comp_id;                             ///< Compression (lossy and lossless) id
   PIDX_hz_encode_id hz_id;                          ///< HZ encoding phase id
 
-  PIDX_shared_block_agg_id* shared_block_agg_id;
+  PIDX_wavelet_id wavelet_id;                          ///< HZ encoding phase id
 
-  PIDX_agg_id** f0_agg_id;                          ///< Aggregation phase id for file zero
   PIDX_agg_id** shared_agg_id;                      ///< Aggregation phase id for all shared file
   PIDX_agg_id** nshared_agg_id;                     ///< Aggregation phase id for all nonshared file
 
-  PIDX_file_io_id** f0_io_id;                       ///< Aggregation phase id for file zero
   PIDX_file_io_id** shared_io_id;                   ///< Aggregation phase id for all shared file
   PIDX_file_io_id** nshared_io_id;                  ///< Aggregation phase id for all nonshared file
 
   PIDX_insitu_id insitu_id;
-  PIDX_in_transit_id intransit_id;
 
   idx_comm idx_c;
 

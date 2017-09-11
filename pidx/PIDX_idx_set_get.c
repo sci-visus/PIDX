@@ -37,6 +37,8 @@ PIDX_return_code PIDX_randomized_aggregators(PIDX_file file, int* agg_list, int 
   file->idx->random_agg_counter = 0;
 
   memcpy(file->idx->random_agg_list, agg_list, agg_count * sizeof (int));
+
+  return PIDX_success;
 }
 
 
@@ -379,6 +381,8 @@ PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, float precisison)
     return PIDX_err_file;
 
   file->idx->zfp_precisison = precisison;
+
+  return PIDX_success;
 }
 
 

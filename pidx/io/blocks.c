@@ -70,7 +70,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     else if (file->idx->bitsequence_type == 5)
       guess_bit_string_ZYX(process_bs, prcp);
     */
-    guess_bit_string_Y(process_bs, prcp);
+    guess_bit_string_Z(process_bs, prcp);
 
 #if DETAIL_OUTPUT
     if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
@@ -510,16 +510,16 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
 
     if (io_type == PIDX_IDX_IO)
     {
-      for (p = 0 ; p < var->sim_patch_count ; p++)
+      //for (p = 0 ; p < var->sim_patch_count ; p++)
       //for (p = 0 ; p < var->patch_group_count ; p++)
       {
         for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
         {
-          bounding_box[0][i] = var->sim_patch[p]->offset[i];
-          bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
+          //bounding_box[0][i] = var->sim_patch[p]->offset[i];
+          //bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
 
-          //bounding_box[0][i] = var->rst_patch_group[p]->reg_patch->offset[i];
-          //bounding_box[1][i] = var->rst_patch_group[p]->reg_patch->size[i] + var->rst_patch_group[p]->reg_patch->offset[i];
+          bounding_box[0][i] = var->rst_patch_group->reg_patch->offset[i];
+          bounding_box[1][i] = var->rst_patch_group->reg_patch->size[i] + var->rst_patch_group->reg_patch->offset[i];
 
 
           bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
@@ -602,8 +602,8 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
           //bounding_box[0][i] = var->sim_patch[p]->offset[i];
           //bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
 
-          bounding_box[0][i] = var->rst_patch_group[0]->reg_patch->offset[i];
-          bounding_box[1][i] = var->rst_patch_group[0]->reg_patch->size[i] + var->rst_patch_group[0]->reg_patch->offset[i];
+          bounding_box[0][i] = var->rst_patch_group->reg_patch->offset[i];
+          bounding_box[1][i] = var->rst_patch_group->reg_patch->size[i] + var->rst_patch_group->reg_patch->offset[i];
 
 
           bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
@@ -765,7 +765,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     }
 
     if (file->idx_c->grank == 0)
-      fprintf(stderr, "BB %d %d %d\n", cb[0], cb[1], cb[2]);
+      fprintf(stderr, "BB %d %d %d\n", (int) cb[0], (int) cb[1], (int) cb[2]);
 
     ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bitPattern, block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
     if (ret_code != PIDX_success)

@@ -35,23 +35,6 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
 {
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
 
-  if (rst_id->idx->enable_rst != 1)
-  {
-    int v = 0, j = 0, p = 0;
-    for (v = rst_id->first_index; v <= rst_id->last_index; v++)
-    {
-      PIDX_variable var = var_grp->variable[v];
-      for (p = 0; p < var->patch_group_count; p++)
-      {
-        Ndim_patch_group patch_group = var->rst_patch_group[p];
-        for(j = 0; j < patch_group->count; j++)
-          memcpy(var->sim_patch[p]->buffer, patch_group->patch[j]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * var->bpv/8 * var->vps));
-      }
-    }
-    return PIDX_success;
-  }
-
-#if PIDX_HAVE_MPI
   unsigned long long k1 = 0, i1 = 0, j1 = 0;
   unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
@@ -125,7 +108,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
                       PIDX_variable var = var_grp->variable[v];
                       send_o = index * var->vps;
                       send_c = reg_patch_count[0] * var->vps;
-                      memcpy(var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
+                      memcpy(var->rst_patch_group->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
                     }
 
                     count1++;
@@ -139,7 +122,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
 
             int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
 
-            ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
+            ret = MPI_Isend(var->rst_patch_group->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -150,6 +133,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
         }
       }
       counter++;
+      assert(counter == 1);
     }
     else
     {
@@ -244,10 +228,5 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
   status = 0;
 
   return PIDX_success;
-#else
-  if (rst_id->idx->enable_rst == 1)
-    return PIDX_err_rst;
-  else
-    return PIDX_success;
-#endif
+
 }

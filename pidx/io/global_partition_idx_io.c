@@ -495,11 +495,23 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   time->init_end = MPI_Wtime();
 
   time->set_reg_box_start = MPI_Wtime();
-  ret = set_rst_box_size(file, gi, svi);
-  if (ret != PIDX_success)
+  if (mode == PIDX_WRITE)
   {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    ret = set_rst_box_size_for_write(file, gi, svi);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+  else if (mode == PIDX_READ)
+  {
+    ret = set_rst_box_size_for_read(file, gi, svi);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
   }
   time->set_reg_box_end = MPI_Wtime();
 

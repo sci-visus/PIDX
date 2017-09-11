@@ -63,14 +63,15 @@ typedef struct PIDX_Ndim_patch_struct* Ndim_patch;
 
 
 /// Struct to store a group of Ndim_buffer
+/// NAMES
 struct PIDX_Ndim_patch_group_struct
 {
   //int data_source;
-  int type;                                             ///< decide the type of the group
+  int type;                                             ///< is complete or not
   int count;                                            ///< how many Ndim_buffer are there in the group
   Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
-  int *source_patch_rank;                               ///<
-  int max_patch_rank;                                   ///<
+  int *source_patch_rank;                               ///< all sender ranks
+  int max_patch_rank;                                   ///< The rank of the process that has maximum intersection (receiver)
   Ndim_patch reg_patch;                                 ///< Pointer to the reg patch
 
   //Ndim_patch wavelet_reg_patch;                         ///< Pointer to the reg patch

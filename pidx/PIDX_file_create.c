@@ -33,10 +33,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx = malloc(sizeof (*((*file)->idx)));
   memset((*file)->idx, 0, sizeof (*((*file)->idx)));
 
-  (*file)->idx_c = malloc(sizeof (*((*file)->idx_c)));
-  memset((*file)->idx_c, 0, sizeof (*((*file)->idx_c)));
-
-  // IDX derived pointer (everything derived from idx)
   (*file)->idx_d = malloc(sizeof (*((*file)->idx_d)));
   memset((*file)->idx_d, 0, sizeof (*((*file)->idx_d)));
 
@@ -44,6 +40,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx_d->time, 0, sizeof (*((*file)->idx_d->time)));
 
   (*file)->idx_d->time->sim_start = PIDX_get_time();
+
+  (*file)->idx_c = malloc(sizeof (*((*file)->idx_c)));
+  memset((*file)->idx_c, 0, sizeof (*((*file)->idx_c)));
 
   (*file)->idx_dbg = malloc(sizeof (*((*file)->idx_dbg)));
   memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));

@@ -219,13 +219,6 @@ PIDX_return_code PIDX_generic_rst_forced_raw_read(PIDX_generic_rst_id rst_id);
 /*
  * Implementation in PIDX_generic_rst_write.c
  */
-///
-/// \brief PIDX_generic_rst_write Actually do the restructuring, using pre-calculated data associated with the id
-/// \param rst_id
-/// \return
-///
-PIDX_return_code PIDX_generic_rst_write(PIDX_generic_rst_id rst_id);
-
 
 
 ///

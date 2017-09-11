@@ -66,6 +66,18 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     return PIDX_err_file;
   }
 
+  if (create_restructured_communicators(file, gi, svi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  PIDX_variable var0 = var_grp->variable[svi];
+
+  if (var0->patch_group_count == 1)
+  {
+
   // Step 3:  Partition
   if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
   {
@@ -80,8 +92,6 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     return PIDX_err_file;
   }
 
-  if (file->idx->variable_grp[gi]->variable[svi]->patch_group_count == 0)
-    goto cleanup;
 
   // Step 5:  Post partition group meta data
   ret = post_partition_group_meta_data_init(file, gi, svi, evi, PIDX_WRITE);
@@ -173,8 +183,9 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     return PIDX_err_file;
   }
 #endif
+  }
+
   // Step 13: Partition cleanup
-  cleanup:
   time->partition_cleanup_start = MPI_Wtime();
   if (destroy_local_comm(file) != PIDX_success)
   {
@@ -508,7 +519,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
 
 static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
 {
-  int i = 0, p = 0;
+  int i = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var = var_grp->variable[svi];
 
@@ -518,13 +529,11 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
     return PIDX_err_file;
   }
 
-  for (p = 0 ; p < var->patch_group_count; p++)
-  {
-    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    {
-      var->rst_patch_group[0]->reg_patch->offset[i] = var->rst_patch_group[0]->reg_patch->offset[i] - file->idx_d->partition_offset[i];
-    }
-  }
+
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+    var->rst_patch_group->reg_patch->offset[i] = var->rst_patch_group->reg_patch->offset[i] - file->idx_d->partition_offset[i];
+
+
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
@@ -543,7 +552,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
 
 static PIDX_return_code re_adjust_offsets(PIDX_io file, int gi, int svi)
 {
-  int i = 0, p = 0;
+  int i = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var = var_grp->variable[svi];
 
@@ -553,13 +562,8 @@ static PIDX_return_code re_adjust_offsets(PIDX_io file, int gi, int svi)
     return PIDX_err_file;
   }
 
-  for (p = 0 ; p < var->patch_group_count; p++)
-  {
-    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    {
-      var->rst_patch_group[0]->reg_patch->offset[i] = var->rst_patch_group[0]->reg_patch->offset[i] + file->idx_d->partition_offset[i];
-    }
-  }
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+    var->rst_patch_group->reg_patch->offset[i] = var->rst_patch_group->reg_patch->offset[i] + file->idx_d->partition_offset[i];
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
@@ -602,11 +606,23 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
   time->init_end = MPI_Wtime();
 
   time->set_reg_box_start = MPI_Wtime();
-  ret = set_rst_box_size(file, gi, svi);
-  if (ret != PIDX_success)
+  if (mode == PIDX_WRITE)
   {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    ret = set_rst_box_size_for_write(file, gi, svi);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+  else if (mode == PIDX_READ)
+  {
+    ret = set_rst_box_size_for_read(file, gi, svi);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
   }
   time->set_reg_box_end = MPI_Wtime();
 

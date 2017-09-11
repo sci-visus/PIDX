@@ -156,6 +156,7 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int n
      zfp_stream_set_rate(zfp, bit_rate, type, 3, 0);
      size_t bytes_max = zfp_stream_maximum_size(zfp, field);
      //printf("BM %d\n", bytes_max);
+
      unsigned char* output = malloc(bytes_max);
      bitstream* stream = stream_open(output, bytes_max);
      zfp_stream_set_bit_stream(zfp, stream);
@@ -210,30 +211,26 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP || comp_id->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
   {
-
-    int v, p, b;
+    int v, b;
     PIDX_variable_group var_grp = comp_id->idx->variable_grp[0];
     for (v = comp_id->first_index; v <= comp_id->last_index; v++)
     {
       PIDX_variable var = var_grp->variable[v];
-      for (p = 0; p < var->patch_group_count; p++)
+      for (b = 0; b < var->chunk_patch_group->count; b++)
       {
-        for (b = 0; b < var->chunk_patch_group[p]->count; b++)
-        {
-          Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
-          unsigned char* buffer = patch->buffer;
-          int nx = patch->size[0];
-          int ny = patch->size[1];
-          int nz = patch->size[2];
-          float bit_rate = comp_id->idx->compression_bit_rate;
-          int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
-          //fprintf(stderr, "%d %d %d %d %f CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
-          unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
-          if (temp_buffer == NULL)
-            return PIDX_err_compress;
-          else
-            patch->buffer = temp_buffer;
-        }
+        Ndim_patch patch = var->chunk_patch_group->patch[b];
+        unsigned char* buffer = patch->buffer;
+        int nx = patch->size[0];
+        int ny = patch->size[1];
+        int nz = patch->size[2];
+        float bit_rate = comp_id->idx->compression_bit_rate;
+        int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
+        //fprintf(stderr, "%d %d %d %d %f CMP %d\n", nx, ny, nz, var->bpv/8, bit_rate, compressed_bytes);
+        unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
+        if (temp_buffer == NULL)
+          return PIDX_err_compress;
+        else
+          patch->buffer = temp_buffer;
       }
     }
   }
@@ -250,7 +247,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
 #if PIDX_HAVE_ZFP
-    int v, p, b, ret = 0;
+    int v, b, ret = 0;
 
     PIDX_variable_group var_grp = comp_id->idx->variable_grp[0];
     PIDX_variable var0 = var_grp->variable[comp_id->first_index];
@@ -258,38 +255,35 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
     for (v = comp_id->first_index; v <= comp_id->last_index; v++)
     {
       PIDX_variable var = var_grp->variable[v];
-      for (p = 0; p < var0->patch_group_count; p++)
+      for (b = 0; b < var0->chunk_patch_group->count; b++)
       {
-        for (b = 0; b < var0->chunk_patch_group[p]->count; b++)
-        {
-          Ndim_patch patch = var->chunk_patch_group[p]->patch[b];
-          unsigned char* buffer = patch->buffer;
-          int nx = patch->size[0];
-          int ny = patch->size[1];
-          int nz = patch->size[2];
-          float bit_rate = comp_id->idx->compression_bit_rate;
+        Ndim_patch patch = var->chunk_patch_group->patch[b];
+        unsigned char* buffer = patch->buffer;
+        int nx = patch->size[0];
+        int ny = patch->size[1];
+        int nz = patch->size[2];
+        float bit_rate = comp_id->idx->compression_bit_rate;
 
-          //if (rank == 0)
-          //fprintf(stderr, "Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bpv/8, var->bpv/8, comp_id->idx->compression_bit_rate);
+        //if (rank == 0)
+        //fprintf(stderr, "Before [%d] element count %d byte size %d bit rate %d\n", rank, element_count*var->bpv/8, var->bpv/8, comp_id->idx->compression_bit_rate);
 
-          ret = decompress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
-          if (ret == -1)
-            return PIDX_err_compress;
+        ret = decompress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
+        if (ret == -1)
+          return PIDX_err_compress;
 
-          //if (rank == 0)
-          //fprintf(stderr, "After [%d] Compressed element count = %d\n", rank, compressed_element_count);
+        //if (rank == 0)
+        //fprintf(stderr, "After [%d] Compressed element count = %d\n", rank, compressed_element_count);
 
-          /*
-          if (compressed_element_count <= 0)
-            return PIDX_err_compress;
+        /*
+        if (compressed_element_count <= 0)
+          return PIDX_err_compress;
 
-          unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
-          if (temp_buffer == NULL)
-            return PIDX_err_compress;
-          else
-            patch->buffer = temp_buffer;
-          */
-        }
+        unsigned char* temp_buffer = realloc(patch->buffer, compressed_element_count);
+        if (temp_buffer == NULL)
+          return PIDX_err_compress;
+        else
+          patch->buffer = temp_buffer;
+        */
       }
     }
 #else

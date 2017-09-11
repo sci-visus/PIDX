@@ -122,12 +122,12 @@ struct PIDX_variable_struct
   // buffer (before, after HZ encoding phase)
   int sim_patch_count;                                       ///< The actual number of patches (application layout), most probably more than 1 in uintah
   Ndim_patch sim_patch[1024];                                ///< Pointer to the patches
-  HZ_buffer* hz_buffer;                                      ///< HZ encoded buffer of the patches
+  HZ_buffer hz_buffer;                                      ///< HZ encoded buffer of the patches
 
   // buffer before aggregation
   int patch_group_count;                                     ///< Number of groups of patches to be passed to aggregation phase
-  Ndim_patch_group* rst_patch_group;                         ///< Pointer to the patch groups
-  Ndim_patch_group* chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
+  Ndim_patch_group rst_patch_group;                         ///< Pointer to the patch groups
+  Ndim_patch_group chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
 
   //Ndim_patch rst_wavelet_patch;
 };
@@ -191,8 +191,10 @@ struct idx_comm_struct
   int gnproc_y;
   int gnproc_z;
 
+  /// Names
   MPI_Comm global_comm;
   MPI_Comm local_comm;
+  MPI_Comm rst_comm;
 };
 typedef struct idx_comm_struct* idx_comm;
 
@@ -233,8 +235,8 @@ struct idx_file_struct
   char bitPattern[512];
   
   int reg_box_set;
-  int number_processes[PIDX_MAX_DIMENSIONS];
-  Ndim_empty_patch* new_box_set;
+  int regridded_process_count[PIDX_MAX_DIMENSIONS];
+  Ndim_empty_patch* regridded_patch;
   unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
 
   double zfp_precisison;

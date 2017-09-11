@@ -54,4 +54,18 @@ PIDX_return_code restructure_cleanup(PIDX_io file);
 ///
 PIDX_return_code restructure_forced_read(PIDX_io file, int svi, int evi);
 
+
+
+///
+/// \brief create_restructured_communictors
+/// \param file
+/// \param gi
+/// \param svi
+/// \return
+///
+PIDX_return_code create_restructured_communictors(PIDX_io file, int gi, int svi);
+
+
+PIDX_return_code create_restructured_communicators(PIDX_io file, int gi, int svi);
+
 #endif

@@ -68,9 +68,9 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   MPI_Comm insitu_comm;
 
 
-  for (i = 0; i < id->idx->number_processes[0] * id->idx->number_processes[1] * id->idx->number_processes[2]; i++)
+  for (i = 0; i < id->idx->regridded_process_count[0] * id->idx->regridded_process_count[1] * id->idx->regridded_process_count[2]; i++)
   {
-    if (id->idx_c->grank == id->idx->new_box_set[i]->rank)
+    if (id->idx_c->grank == id->idx->regridded_patch[i]->rank)
     {
       color = 1;
       break;
@@ -78,7 +78,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   }
 
   //if (color == 1)
-  //  fprintf(stderr, "[INSITU] [%d] --> %d (%d / %d) %d (%d / %d) %d (%d / %d) : %d\n", id->idx_c->grank, id->idx->number_processes[0], id->idx->bounds[0], id->idx->reg_patch_size[0],  id->idx->number_processes[1], id->idx->bounds[1], id->idx->reg_patch_size[1], id->idx->number_processes[2], id->idx->bounds[2], id->idx->reg_patch_size[2], color);
+  //  fprintf(stderr, "[INSITU] [%d] --> %d (%d / %d) %d (%d / %d) %d (%d / %d) : %d\n", id->idx_c->grank, id->idx->regridded_process_count[0], id->idx->bounds[0], id->idx->reg_patch_size[0],  id->idx->regridded_process_count[1], id->idx->bounds[1], id->idx->reg_patch_size[1], id->idx->regridded_process_count[2], id->idx->bounds[2], id->idx->reg_patch_size[2], color);
 
 
 
@@ -236,7 +236,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
                 low,
                 high,
                 bound,
-                (uint32_t*) id->idx->number_processes,
+                (uint32_t*) id->idx->regridded_process_count,
                 2, 2.9, "FINAL", 2,  insitu_comm);
     //
 

@@ -30,8 +30,8 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   {
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_p->offset[d] = var->rst_patch_group[0]->reg_patch->offset[d];
-      local_p->size[d] = var->rst_patch_group[0]->reg_patch->size[d];
+      local_p->offset[d] = var->rst_patch_group->reg_patch->offset[d];
+      local_p->size[d] = var->rst_patch_group->reg_patch->size[d];
     }
     Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
     memset(reg_patch, 0, sizeof (*reg_patch));
@@ -147,9 +147,9 @@ PIDX_return_code create_local_comm(PIDX_io file)
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
 
-  PIDX_variable_group var_grp = file->idx->variable_grp[0];
-  memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
+  //PIDX_variable_group var_grp = file->idx->variable_grp[0];
+  //memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
+  //MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
 
   return PIDX_success;
 }
@@ -184,6 +184,44 @@ PIDX_return_code find_partition_count(PIDX_io file)
   return PIDX_success;
 }
 
+#if 0
+PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
+{
+  int ret;
+  PIDX_time time = file->idx_d->time;
+
+  time->partition_start = MPI_Wtime();
+  // Calculates the number of partititons
+  if (mode == PIDX_WRITE)
+  {
+    ret = find_partition_count(file);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+
+  // assign same color to processes within the same partition
+  ret = partition_setup(file, gi, svi);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  // Splits the global communicator into local communicators
+  ret = create_local_comm(file);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  time->partition_end = MPI_Wtime();
+
+  return PIDX_success;
+}
+#endif
 
 static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
 {

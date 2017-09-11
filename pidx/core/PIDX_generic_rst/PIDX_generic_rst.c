@@ -55,9 +55,9 @@ PIDX_return_code PIDX_generic_rst_perform(PIDX_generic_rst_id id)
   int i = 0, v = 0;
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
 
-  for (i = 0; i < id->idx->number_processes[0] * id->idx->number_processes[1] * id->idx->number_processes[2]; i++)
+  for (i = 0; i < id->idx->regridded_process_count[0] * id->idx->regridded_process_count[1] * id->idx->regridded_process_count[2]; i++)
   {
-    if (id->idx_c->grank = id->idx->new_box_set[i]->rank)
+    if (id->idx_c->grank = id->idx->regridded_patch[i]->rank)
     {
       id->reg_patch_grp_count = 1;
 

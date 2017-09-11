@@ -26,17 +26,16 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
 
 int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_layout, int MODE)
 {
-  int i = 0, p = 0, v = 0, ret;
+  int i = 0, v = 0, ret;
   int send_index = 0;
   unsigned long long index = 0, count = 0;
 
   PIDX_variable_group var_grp = hz_id->idx->variable_grp[hz_id->group_index];
   PIDX_variable var0 = var_grp->variable[hz_id->first_index];
-  for (p = 0; p < var0->patch_group_count; p++)
-  {
+
     index = 0, count = 0, send_index = 0;
     index = 0, count = 0, send_index = 0;
-    if (var0->hz_buffer[p]->type == 1)
+    if (var0->hz_buffer->type == 1)
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
       {
@@ -46,13 +45,13 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
           fflush(hz_id->idx_dbg->local_dump_fp);
         }
 
-        HZ_buffer hz_buf = var_grp->variable[v]->hz_buffer[p];
+        HZ_buffer hz_buf = var_grp->variable[v]->hz_buffer;
         for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
         {
-          if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
+          if (var0->hz_buffer->nsamples_per_level[i][0] * var0->hz_buffer->nsamples_per_level[i][1] * var0->hz_buffer->nsamples_per_level[i][2] != 0)
           {
             index = 0;
-            count =  var0->hz_buffer[p]->end_hz_index[i] - var0->hz_buffer[p]->start_hz_index[i] + 1;
+            count =  var0->hz_buffer->end_hz_index[i] - var0->hz_buffer->start_hz_index[i] + 1;
 
             if (hz_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || hz_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
             {
@@ -68,11 +67,11 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
               memcpy(&x2, hz_buf->buffer[i] + 1*sizeof(double), sizeof(double));
               memcpy(&x3, hz_buf->buffer[i] + 2*sizeof(double), sizeof(double));
               memcpy(&x4, hz_buf->buffer[i] + 3*sizeof(double), sizeof(double));
-              fprintf(stderr, "[%d] OS %d %d - %f %f %f %f\n", i, var0->hz_buffer[p]->start_hz_index[i], count, x1, x2, x3, x4);
+              fprintf(stderr, "[%d] OS %d %d - %f %f %f %f\n", i, var0->hz_buffer->start_hz_index[i], count, x1, x2, x3, x4);
 
             }
 #endif
-            ret = write_read_samples(hz_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
+            ret = write_read_samples(hz_id, v, var0->hz_buffer->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
             if (ret != PIDX_success)
             {
               fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
@@ -83,7 +82,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
       }
     }
 #if 1
-    else if (var0->hz_buffer[p]->type == 2)
+    else if (var0->hz_buffer->type == 2)
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
       {
@@ -93,21 +92,21 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
           fflush(hz_id->idx_dbg->local_dump_fp);
         }
 
-        HZ_buffer hz_buf = var_grp->variable[v]->hz_buffer[p];
+        HZ_buffer hz_buf = var_grp->variable[v]->hz_buffer;
         for (i = block_layout->resolution_from; i < block_layout->resolution_to; i++)
         {
-          if (var0->hz_buffer[p]->nsamples_per_level[i][0] * var0->hz_buffer[p]->nsamples_per_level[i][1] * var0->hz_buffer[p]->nsamples_per_level[i][2] != 0)
+          if (var0->hz_buffer->nsamples_per_level[i][0] * var0->hz_buffer->nsamples_per_level[i][1] * var0->hz_buffer->nsamples_per_level[i][2] != 0)
           {
-            int start_block_index = var_grp->variable[v]->hz_buffer[p]->start_hz_index[i] / hz_id->idx_d->samples_per_block;
-            int end_block_index = var_grp->variable[v]->hz_buffer[p]->end_hz_index[i] / hz_id->idx_d->samples_per_block;
+            int start_block_index = var_grp->variable[v]->hz_buffer->start_hz_index[i] / hz_id->idx_d->samples_per_block;
+            int end_block_index = var_grp->variable[v]->hz_buffer->end_hz_index[i] / hz_id->idx_d->samples_per_block;
             assert(start_block_index >= 0 && end_block_index >= 0 && start_block_index <= end_block_index);
 
             if (end_block_index == start_block_index)
             {
               index = 0;
-              count = (var_grp->variable[v]->hz_buffer[p]->end_hz_index[i] - var_grp->variable[v]->hz_buffer[p]->start_hz_index[i] + 1);
+              count = (var_grp->variable[v]->hz_buffer->end_hz_index[i] - var_grp->variable[v]->hz_buffer->start_hz_index[i] + 1);
 
-              ret = write_read_samples(hz_id, v, var0->hz_buffer[p]->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
+              ret = write_read_samples(hz_id, v, var0->hz_buffer->start_hz_index[i], count, hz_buf->buffer[i], 0, block_layout, MODE);
               if (ret != PIDX_success)
               {
                 fprintf(stderr, " Error in aggregate_write_read Line %d File %s\n", __LINE__, __FILE__);
@@ -126,21 +125,21 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
                   if (bl == start_block_index)
                   {
                     index = 0;
-                    count = ((start_block_index + 1) * hz_id->idx_d->samples_per_block) - var_grp->variable[v]->hz_buffer[p]->start_hz_index[i];
+                    count = ((start_block_index + 1) * hz_id->idx_d->samples_per_block) - var_grp->variable[v]->hz_buffer->start_hz_index[i];
                   }
                   else if (bl == end_block_index)
                   {
-                    index = (end_block_index * hz_id->idx_d->samples_per_block - var_grp->variable[v]->hz_buffer[p]->start_hz_index[i]);
-                    count = var_grp->variable[v]->hz_buffer[p]->end_hz_index[i] - ((end_block_index) * hz_id->idx_d->samples_per_block) + 1;
+                    index = (end_block_index * hz_id->idx_d->samples_per_block - var_grp->variable[v]->hz_buffer->start_hz_index[i]);
+                    count = var_grp->variable[v]->hz_buffer->end_hz_index[i] - ((end_block_index) * hz_id->idx_d->samples_per_block) + 1;
                   }
                   else
                   {
-                    index = (bl * hz_id->idx_d->samples_per_block - var_grp->variable[v]->hz_buffer[p]->start_hz_index[i]);
+                    index = (bl * hz_id->idx_d->samples_per_block - var_grp->variable[v]->hz_buffer->start_hz_index[i]);
                     count = hz_id->idx_d->samples_per_block;
                   }
 
                   //printf("Level %d Block %d Index %d size %d: ", i, bl, index, count);
-                  ret = write_read_samples(hz_id, v, index + var_grp->variable[v]->hz_buffer[p]->start_hz_index[i], count, var_grp->variable[v]->hz_buffer[p]->buffer[i], send_index, block_layout, MODE);
+                  ret = write_read_samples(hz_id, v, index + var_grp->variable[v]->hz_buffer->start_hz_index[i], count, var_grp->variable[v]->hz_buffer->buffer[i], send_index, block_layout, MODE);
                   if (ret != PIDX_success)
                   {
                     fprintf(stderr, "[%s] [%d] write_read_samples() failed.\n", __FILE__, __LINE__);
@@ -158,7 +157,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
       }
     }
 #endif
-  }
+
 
   return PIDX_success;
 }
@@ -305,9 +304,9 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
         return PIDX_err_io;
       }
 
-      float val;
-      memcpy(&val, hz_buffer, sizeof(float));
-      printf("Offset %d Count %d value %.11f\n", data_offset, (file_count * curr_var->vps * (curr_var->bpv/8)), val);
+      //float val;
+      //memcpy(&val, hz_buffer, sizeof(float));
+      //printf("Offset %d Count %d value %.11f\n", data_offset, (file_count * curr_var->vps * (curr_var->bpv/8)), val);
 
       if (hz_id->idx->flip_endian == 1)
       {
