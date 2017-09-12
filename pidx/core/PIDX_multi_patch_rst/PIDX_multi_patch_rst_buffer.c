@@ -71,6 +71,10 @@ PIDX_return_code PIDX_multi_patch_rst_buf_create(PIDX_multi_patch_rst_id rst_id)
 PIDX_return_code PIDX_multi_patch_rst_buf_destroy(PIDX_multi_patch_rst_id rst_id)
 {
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable var0 = var_grp->variable[rst_id->first_index];
+  if (var0->patch_group_count == 0)
+      return PIDX_success;
+
   int j, v;
 
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)

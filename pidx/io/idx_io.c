@@ -54,7 +54,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#if 1
   if (create_restructured_communicators(file, gi, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -73,7 +73,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
 
   if (var0->patch_group_count == 1)
   {
-
     if (populate_block_layout_and_buffers(file, gi, svi, evi, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -223,14 +222,13 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   }
 
 
-
   ret = restructure_cleanup(file);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#endif
   return PIDX_success;
 }
 

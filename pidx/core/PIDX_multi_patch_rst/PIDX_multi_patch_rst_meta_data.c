@@ -56,9 +56,9 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
   int v = 0, j = 0;
 
-  int r, d, c;
-  unsigned long long i, k, max_vol, patch_count, pc;
-  int reg_patch_count, edge_case = 0;
+  int r, d;
+  unsigned long long i, patch_count, pc;
+  int reg_patch_count;
 
   int start_var_index = rst_id->first_index;
 
@@ -122,13 +122,16 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
   Ndim_patch* found_reg_patches = malloc(sizeof(Ndim_patch*)*max_found_reg_patches);
   memset(found_reg_patches, 0, sizeof(Ndim_patch*)*max_found_reg_patches);
 
+  //printf("%d %d %d --> %d\n", rst_id->idx->regridded_process_count[0], rst_id->idx->regridded_process_count[1], rst_id->idx->regridded_process_count[2], rst_id->idx->regridded_patch[i]->rank);
 
   // Receiver Rank
   for (i = 0; i < rst_id->idx->regridded_process_count[0] * rst_id->idx->regridded_process_count[1] * rst_id->idx->regridded_process_count[2]; i++)
   {
+    //printf("Rank %d %d\n", rst_id->idx_c->grank, rst_id->idx->regridded_patch[i]->rank);
     if (rst_id->idx_c->grank == rst_id->idx->regridded_patch[i]->rank)
       rst_id->reg_multi_patch_grp_count++;
   }
+
 
   int found_reg_patches_count = 0;
   for(pc0 = 0; pc0 < var_grp->variable[start_var_index]->sim_patch_count; pc0++)
@@ -171,6 +174,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
           rst_id->reg_multi_patch_grp_count++;
         }
       }
+
       free(reg_patch);
     }
     free(local_proc_patch);
@@ -182,6 +186,9 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
     found_reg_patches[i] = 0;
   }
   free(found_reg_patches);
+
+  //printf("%d\n", rst_id->reg_multi_patch_grp_count);
+
 
   found_reg_patches = malloc(sizeof(Ndim_patch*)*max_found_reg_patches);
   memset(found_reg_patches, 0, sizeof(Ndim_patch*)*max_found_reg_patches);
@@ -209,6 +216,12 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
     reg_patch->size[1] = rst_id->idx->regridded_patch[i]->size[1];
     reg_patch->size[2] = rst_id->idx->regridded_patch[i]->size[2];
 
+    if (rst_id->idx_c->grank == rst_id->idx->regridded_patch[i]->rank)
+    {
+      free(reg_patch);
+      continue;
+    }
+
     for(pc0 = 0; pc0 < var_grp->variable[start_var_index]->sim_patch_count; pc0++)
     {
       Ndim_patch local_proc_patch = (Ndim_patch)malloc(sizeof (*local_proc_patch));
@@ -222,12 +235,6 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
       /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
       if (intersectNDChunk(reg_patch, local_proc_patch) && !contains_patch(reg_patch, found_reg_patches, found_reg_patches_count))
       {
-        if (rst_id->idx_c->grank == rst_id->idx->regridded_patch[i]->rank)
-        {
-          free(reg_patch);
-          continue;
-        }
-
         found_reg_patches[found_reg_patches_count] = (Ndim_patch)malloc(sizeof (*reg_patch));
         memcpy(found_reg_patches[found_reg_patches_count], reg_patch, sizeof (*reg_patch));
         found_reg_patches_count++;
@@ -246,10 +253,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
 
         patch_count = 0;
         patch_grp->count = 0;
-        if(edge_case == 0)
-          patch_grp->type = 1;
-        else
-          patch_grp->type = 2;
+        patch_grp->type = rst_id->idx->regridded_patch[i]->edge;
 
         //Iterate through all processes
         for (r = 0; r < rst_id->idx_c->gnprocs; r++)
@@ -345,23 +349,11 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
           }
         }
 
-
-        patch_grp->max_patch_rank = patch_grp->source_patch[0].rank;
-        max_vol = 1;
-        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-          max_vol = max_vol * patch_grp->patch[0]->size[d];
-
-        unsigned long long c_vol = 1;
-        for(c = 1; c < patch_grp->count ; c++)
+        patch_grp->max_patch_rank = rst_id->idx->regridded_patch[i]->rank;
+        if(rst_id->idx_c->grank == patch_grp->max_patch_rank)
         {
-          c_vol = 1;
-          for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-            c_vol = c_vol * patch_grp->patch[c]->size[d];
-          if(c_vol > max_vol)
-          {
-            max_vol = c_vol;
-            patch_grp->max_patch_rank = patch_grp->source_patch[c].rank;
-          }
+          var0->patch_group_count = var0->patch_group_count + 1;
+          assert (var0->patch_group_count == 1);
         }
 
         if(rst_id->idx_c->grank == patch_grp->max_patch_rank)
@@ -374,7 +366,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
     }
     free(reg_patch);
   }
-
+#if 1
 
   for (i = 0; i < rst_id->idx->regridded_process_count[0] * rst_id->idx->regridded_process_count[1] * rst_id->idx->regridded_process_count[2]; i++)
   {
@@ -402,12 +394,6 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
       /// STEP 4: If local process intersects with regular patch, then find all other process that intersects with the regular patch.
       if (rst_id->idx_c->grank == rst_id->idx->regridded_patch[i]->rank && !contains_patch(reg_patch, found_reg_patches, found_reg_patches_count))
       {
-        if (rst_id->idx_c->grank == rst_id->idx->regridded_patch[i]->rank)
-        {
-          free(reg_patch);
-          continue;
-        }
-
         found_reg_patches[found_reg_patches_count] = (Ndim_patch)malloc(sizeof (*reg_patch));
         memcpy(found_reg_patches[found_reg_patches_count], reg_patch, sizeof (*reg_patch));
         found_reg_patches_count++;
@@ -426,10 +412,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
 
         patch_count = 0;
         patch_grp->count = 0;
-        if(edge_case == 0)
-          patch_grp->type = 1;
-        else
-          patch_grp->type = 2;
+        patch_grp->type = rst_id->idx->regridded_patch[i]->edge;
 
         //Iterate through all processes
         for (r = 0; r < rst_id->idx_c->gnprocs; r++)
@@ -525,27 +508,12 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
           }
         }
 
-
-        patch_grp->max_patch_rank = patch_grp->source_patch[0].rank;
-        max_vol = 1;
-        for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-          max_vol = max_vol * patch_grp->patch[0]->size[d];
-
-        unsigned long long c_vol = 1;
-        for(c = 1; c < patch_grp->count ; c++)
-        {
-          c_vol = 1;
-          for(d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-            c_vol = c_vol * patch_grp->patch[c]->size[d];
-          if(c_vol > max_vol)
-          {
-            max_vol = c_vol;
-            patch_grp->max_patch_rank = patch_grp->source_patch[c].rank;
-          }
-        }
-
+        patch_grp->max_patch_rank = rst_id->idx->regridded_patch[i]->rank;
         if(rst_id->idx_c->grank == patch_grp->max_patch_rank)
+        {
           var0->patch_group_count = var0->patch_group_count + 1;
+          assert (var0->patch_group_count <= 1);
+        }
 
         reg_patch_count++;
       }
@@ -617,7 +585,7 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_create(PIDX_multi_patch_rst_id r
 
   free(rst_id->sim_multi_patch_r_offset);
   free(rst_id->sim_multi_patch_r_count);
-
+#endif
   return PIDX_success;
 }
 
@@ -647,8 +615,8 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_write(PIDX_multi_patch_rst_id rs
   {
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_patch_offset[PIDX_MAX_DIMENSIONS + d + 1] = (uint32_t)var0->rst_patch_group->reg_patch->offset[d];
-      local_patch_size[PIDX_MAX_DIMENSIONS + d + 1] = (uint32_t)var0->rst_patch_group->reg_patch->size[d];
+      local_patch_offset[d + 1] = (uint32_t)var0->rst_patch_group->reg_patch->offset[d];
+      local_patch_size[d + 1] = (uint32_t)var0->rst_patch_group->reg_patch->size[d];
     }
     pcounter++;
   }
@@ -716,9 +684,12 @@ PIDX_return_code PIDX_multi_patch_rst_meta_data_write(PIDX_multi_patch_rst_id rs
 
 PIDX_return_code PIDX_multi_patch_rst_meta_data_destroy(PIDX_multi_patch_rst_id rst_id)
 {
-  int j, v;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable var0 = var_grp->variable[rst_id->first_index];
+  if (var0->patch_group_count == 0)
+      return PIDX_success;
 
+  int j, v;
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
