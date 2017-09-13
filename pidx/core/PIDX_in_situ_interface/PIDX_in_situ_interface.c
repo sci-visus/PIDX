@@ -68,7 +68,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   MPI_Comm insitu_comm;
 
 
-  for (i = 0; i < id->idx->regridded_process_count[0] * id->idx->regridded_process_count[1] * id->idx->regridded_process_count[2]; i++)
+  for (i = 0; i < id->idx->restructured_grid_total_patch_count[0] * id->idx->restructured_grid_total_patch_count[1] * id->idx->restructured_grid_total_patch_count[2]; i++)
   {
     if (id->idx_c->grank == id->idx->regridded_patch[i]->rank)
     {
@@ -78,7 +78,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   }
 
   //if (color == 1)
-  //  fprintf(stderr, "[INSITU] [%d] --> %d (%d / %d) %d (%d / %d) %d (%d / %d) : %d\n", id->idx_c->grank, id->idx->regridded_process_count[0], id->idx->bounds[0], id->idx->reg_patch_size[0],  id->idx->regridded_process_count[1], id->idx->bounds[1], id->idx->reg_patch_size[1], id->idx->regridded_process_count[2], id->idx->bounds[2], id->idx->reg_patch_size[2], color);
+  //  fprintf(stderr, "[INSITU] [%d] --> %d (%d / %d) %d (%d / %d) %d (%d / %d) : %d\n", id->idx_c->grank, id->idx->restructured_grid_total_patch_count[0], id->idx->bounds[0], id->idx->reg_patch_size[0],  id->idx->restructured_grid_total_patch_count[1], id->idx->bounds[1], id->idx->reg_patch_size[1], id->idx->restructured_grid_total_patch_count[2], id->idx->bounds[2], id->idx->reg_patch_size[2], color);
 
 
 
@@ -98,7 +98,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   if (color == 1)
   {
     //int sf = 2;
-    Ndim_patch r_p = id->idx->variable_grp[id->group_index]->variable[id->first_index]->rst_patch_group[0]->reg_patch;
+    PIDX_patch r_p = id->idx->variable_grp[id->group_index]->variable[id->first_index]->rst_patch_group[0]->reg_patch;
 
     /*
     int s_x = r_p->size[0];
@@ -236,7 +236,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
                 low,
                 high,
                 bound,
-                (uint32_t*) id->idx->regridded_process_count,
+                (uint32_t*) id->idx->restructured_grid_total_patch_count,
                 2, 2.9, "FINAL", 2,  insitu_comm);
     //
 

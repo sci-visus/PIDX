@@ -51,7 +51,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
   }
 
 
-  for (b = 0; b < var0->chunk_patch_group->count; b++)
+  for (b = 0; b < var0->chunk_patch_group->patch_count; b++)
   {
     total_chunked_patch_size = 0;
     for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
@@ -203,7 +203,7 @@ PIDX_return_code PIDX_hz_encode_read_inverse(PIDX_hz_encode_id id, int start_hz_
   }
 
 
-  for (b = 0; b < var0->chunk_patch_group->count; b++)
+  for (b = 0; b < var0->chunk_patch_group->patch_count; b++)
   {
     total_chunked_patch_size = 0;
 

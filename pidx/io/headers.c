@@ -59,16 +59,6 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
     }
   }
 
-  if (var_grp->f0_start_layout_index != var_grp->f0_end_layout_index)
-  {
-    ret = write_idx_headers_layout(file, group_index, start_var_index, end_var_index, file->idx->filename_file_zero, file->idx->filename_template_file_zero, var_grp->f0_block_layout);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-  }
-
   return PIDX_success;
 }
 

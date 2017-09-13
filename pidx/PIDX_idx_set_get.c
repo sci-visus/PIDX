@@ -252,9 +252,6 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
   if (file == NULL)
     return PIDX_err_file;
 
-  if (file->idx->io_type != PIDX_MERGE_TREE_ANALYSIS)
-    file->idx->reg_box_set = PIDX_USER_RST_BOX;
-
   if (((reg_patch_size[0] & (reg_patch_size[0] - 1)) != 0) && ((reg_patch_size[1] & (reg_patch_size[1] - 1)) != 0) && ((reg_patch_size[2] & (reg_patch_size[2] - 1)) != 0))
   {
     if (file->idx_c->grank == 0)
@@ -263,7 +260,7 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
     return PIDX_err_box;
   }
 
-  memcpy(file->idx->reg_patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(file->idx_d->restructured_grid->patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;
 }
@@ -275,7 +272,7 @@ PIDX_return_code PIDX_get_restructuring_box(PIDX_file file, PIDX_point reg_patch
   if (file == NULL)
     return PIDX_err_file;
 
-  memcpy(reg_patch_size, file->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(reg_patch_size, file->idx_d->restructured_grid->patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;
 }
@@ -520,15 +517,6 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
 
   file->idx->io_type = io_type;
 
-  //if (file->idx->io_type == PIDX_IDX_IO)
-  //  file->idx->reg_box_set = PIDX_CLOSEST_POWER_TWO;
-
-  if (file->idx->io_type == PIDX_MERGE_TREE_ANALYSIS)
-  {
-    file->idx->shared_face = 1;
-    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
-  }
-
   return PIDX_success;
 }
 
@@ -544,26 +532,6 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type)
   return PIDX_success;
 }
 
-
-
-
-PIDX_return_code PIDX_set_wavelet_implementation_type(PIDX_file file, int w_type)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  if (file->idx->io_type != PIDX_WAVELET_IO)
-    return PIDX_err_file;
-
-  file->idx_d->wavelet_imeplementation_type = w_type;
-
-  if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
-    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
-  else if (file->idx_d->wavelet_imeplementation_type == WAVELET_RST)
-    file->idx->reg_box_set = PIDX_WAVELET_BOX;
-
-  return PIDX_success;
-}
 
 
 

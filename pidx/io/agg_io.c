@@ -80,11 +80,7 @@ static PIDX_return_code PIDX_global_async_io(PIDX_io file, PIDX_file_io_id **io_
 
     if (file->idx_dbg->debug_do_io == 1)
     {
-      if (file_zero == 0)
-      {
-        ret = PIDX_async_aggregated_io(io_id[svi][j_1], temp_agg, temp_layout, &(request[j_1]), &(fp[j_1]), file->idx->filename_template_file_zero, mode);
-      }
-      else if (file_zero == 1)
+      if (file_zero == 1)
       {
         ret = PIDX_async_aggregated_io(io_id[svi][j_1], temp_agg, temp_layout, &(request[j_1]), &(fp[j_1]), file->idx->filename_template_partition, mode);
       }

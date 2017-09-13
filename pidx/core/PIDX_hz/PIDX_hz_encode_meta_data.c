@@ -60,7 +60,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
     memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)));
 
     HZ_buffer hz_buf = var->hz_buffer;
-    if (var->chunk_patch_group->type == 0)
+    if (var->chunk_patch_group->is_boundary_patch == 0)
     {
       unsigned long long buffer_size = 1;
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -70,7 +70,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       memset(hz_buf->buffer_index, 0, buffer_size * sizeof (unsigned long long));
     }
 
-    hz_buf->type = var->chunk_patch_group->type;
+    hz_buf->is_boundary_HZ_buffer = var->chunk_patch_group->is_boundary_patch;
 
     hz_buf->start_hz_index = malloc(sizeof (unsigned long long) * maxH);
     hz_buf->end_hz_index = malloc(sizeof (unsigned long long) * maxH);
@@ -172,7 +172,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
     free(var->hz_buffer->start_hz_index);
     free(var->hz_buffer->end_hz_index);
 
-    if (var->hz_buffer->type == 0)
+    if (var->hz_buffer->is_boundary_HZ_buffer == 0)
       free(var->hz_buffer->buffer_index);
 
     for (itr = 0; itr < id->idx_d->maxh; itr++)

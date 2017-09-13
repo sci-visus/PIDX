@@ -44,9 +44,8 @@ PIDX_return_code PIDX_multi_patch_rst_buf_create(PIDX_multi_patch_rst_id rst_id)
     {
       if (rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
       {
-        Ndim_patch_group patch_group = var->rst_patch_group; // here use patch_group
-
-        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
+        PIDX_super_patch patch_group = var->rst_patch_group; // here use patch_group
+        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
         {
           patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * var->vps * var->bpv/8);
 
@@ -76,11 +75,10 @@ PIDX_return_code PIDX_multi_patch_rst_buf_destroy(PIDX_multi_patch_rst_id rst_id
       return PIDX_success;
 
   int j, v;
-
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    for(j = 0; j < var_grp->variable[v]->rst_patch_group->count; j++)
+    for(j = 0; j < var_grp->variable[v]->rst_patch_group->patch_count; j++)
     {
       free(var->rst_patch_group->patch[j]->buffer);
       var->rst_patch_group->patch[j]->buffer = 0;
@@ -105,7 +103,7 @@ PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_create(PIDX_multi_patch_rst_
     //int bytes_per_value = var->bpv / 8;
 
     // copy the size and offset to output
-    Ndim_patch out_patch = var->rst_patch_group->reg_patch;
+    PIDX_patch out_patch = var->rst_patch_group->reg_patch;
 
     int nx = out_patch->size[0];
     int ny = out_patch->size[1];
@@ -156,15 +154,15 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate(PIDX_multi_patch_rst_id rst_
     PIDX_variable var = var_grp->variable[v];
 
     // copy the size and offset to output
-    Ndim_patch_group patch_group = var->rst_patch_group;
-    Ndim_patch out_patch = var->rst_patch_group->reg_patch;
+    PIDX_super_patch patch_group = var->rst_patch_group;
+    PIDX_patch out_patch = var->rst_patch_group->reg_patch;
 
     int nx = out_patch->size[0];
     int ny = out_patch->size[1];
     //int nz = out_patch->size[2];
 
     int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
-    for (r = 0; r < var->rst_patch_group->count; r++)
+    for (r = 0; r < var->rst_patch_group->patch_count; r++)
     {
       for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
       {

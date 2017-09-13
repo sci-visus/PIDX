@@ -41,6 +41,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx_d->time->sim_start = PIDX_get_time();
 
+  (*file)->idx_d->restructured_grid = malloc(sizeof(*(*file)->idx_d->restructured_grid ));
+  memset((*file)->idx_d->restructured_grid , 0, sizeof(*(*file)->idx_d->restructured_grid));
+
   (*file)->idx_c = malloc(sizeof (*((*file)->idx_c)));
   memset((*file)->idx_c, 0, sizeof (*((*file)->idx_c)));
 
@@ -122,7 +125,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_global, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_partition, "%s.idx", file_name_skeleton);
-  sprintf((*file)->idx->filename_file_zero, "%s.idx", file_name_skeleton);
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
@@ -140,12 +142,11 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
   //memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
-  (*file)->idx->reg_patch_size[0] = -1;
-  (*file)->idx->reg_patch_size[1] = -1;
-  (*file)->idx->reg_patch_size[2] = -1;
+  (*file)->idx_d->restructured_grid->patch_size[0] = -1;
+  (*file)->idx_d->restructured_grid->patch_size[1] = -1;
+  (*file)->idx_d->restructured_grid->patch_size[2] = -1;
 
 
-  (*file)->idx->reg_box_set = PIDX_BOX_PER_PROCESS;
   (*file)->idx->compression_factor = 1;
   (*file)->idx->compression_bit_rate = 64;
   for (i=0;i<PIDX_MAX_DIMENSIONS;i++)
@@ -165,8 +166,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->reduced_res_to = 0;
 
   (*file)->idx->cached_ts = -1;
-
-  (*file)->idx->shared_face = 0;
 
   for (i = 0; i < 16; i++)
   {

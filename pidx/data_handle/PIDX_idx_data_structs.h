@@ -121,15 +121,15 @@ struct PIDX_variable_struct
 
   // buffer (before, after HZ encoding phase)
   int sim_patch_count;                                       ///< The actual number of patches (application layout), most probably more than 1 in uintah
-  Ndim_patch sim_patch[1024];                                ///< Pointer to the patches
+  PIDX_patch sim_patch[1024];                                ///< Pointer to the patches
   HZ_buffer hz_buffer;                                      ///< HZ encoded buffer of the patches
 
   // buffer before aggregation
   int patch_group_count;                                     ///< Number of groups of patches to be passed to aggregation phase
-  Ndim_patch_group rst_patch_group;                         ///< Pointer to the patch groups
-  Ndim_patch_group chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
+  PIDX_super_patch rst_patch_group;                         ///< Pointer to the patch groups
+  PIDX_super_patch chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
 
-  //Ndim_patch rst_wavelet_patch;
+  //PIDX_patch rst_wavelet_patch;
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -216,11 +216,10 @@ struct idx_file_struct
   char filename[1024];
   char filename_global[1024];
   char filename_partition[1024];
-  char filename_file_zero[1024];
   char filename_template_global[1024];
   char filename_template_partition[1024];
   char filename_template[1024];
-  char filename_template_file_zero[1024];
+
 
   int first_tstep;
   int last_tstep;
@@ -233,11 +232,6 @@ struct idx_file_struct
   int bitsequence_type;
   char bitSequence[512];
   char bitPattern[512];
-  
-  int reg_box_set;
-  int regridded_process_count[PIDX_MAX_DIMENSIONS];
-  Ndim_empty_patch* regridded_patch;
-  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
 
   double zfp_precisison;
   int compression_type;
@@ -266,8 +260,6 @@ struct idx_file_struct
 
   int cached_ts;
 
-  int shared_face;
-
   unsigned long long* all_offset;
   unsigned long long* all_size;
 
@@ -291,6 +283,8 @@ struct idx_dataset_derived_metadata_struct
   int w_pz;
   int wavelet_levels;
   int wavelet_imeplementation_type;
+
+  PIDX_restructured_grid restructured_grid;
 
   int dimension;
   int samples_per_block;
@@ -324,10 +318,6 @@ struct idx_dataset_derived_metadata_struct
   MPI_Status *status_shared;
   MPI_File *fp_shared;
   MPI_Request *request_shared;
-
-  MPI_Status *status_file_zero;
-  MPI_File *fp_file_zero;
-  MPI_Request *request_file_zero;
 
   MPI_File *fp;
   MPI_Request *request;

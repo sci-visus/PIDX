@@ -38,9 +38,9 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
     // First part of the bitstring
     Point3D rpp;
-    rpp.x = (int) file->idx->reg_patch_size[0] / cs[0];
-    rpp.y = (int) file->idx->reg_patch_size[1] / cs[1];
-    rpp.z = (int) file->idx->reg_patch_size[2] / cs[2];
+    rpp.x = (int) file->idx_d->restructured_grid->patch_size[0] / cs[0];
+    rpp.y = (int) file->idx_d->restructured_grid->patch_size[1] / cs[1];
+    rpp.z = (int) file->idx_d->restructured_grid->patch_size[2] / cs[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
 
 #if DETAIL_OUTPUT
@@ -50,9 +50,9 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 
     // Middle part of the bitstring
     Point3D prcp;
-    prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
-    prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
-    prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
+    prcp.x = (int) file->idx_d->partition_size[0] / file->idx_d->restructured_grid->patch_size[0];
+    prcp.y = (int) file->idx_d->partition_size[1] / file->idx_d->restructured_grid->patch_size[1];
+    prcp.z = (int) file->idx_d->partition_size[2] / file->idx_d->restructured_grid->patch_size[2];
     if (prcp.x == 0)  prcp.x = 1;
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
@@ -290,18 +290,18 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
 
     // First part of the bitstring
     Point3D rpp;
-    rpp.x = (int) file->idx->reg_patch_size[0];
-    rpp.y = (int) file->idx->reg_patch_size[1];
-    rpp.z = (int) file->idx->reg_patch_size[2];
+    rpp.x = (int) file->idx_d->restructured_grid->patch_size[0];
+    rpp.y = (int) file->idx_d->restructured_grid->patch_size[1];
+    rpp.z = (int) file->idx_d->restructured_grid->patch_size[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
     //if (file->idx_c->lrank == 0)
     //  fprintf(stderr, "[1X %d] %s : %d %d %d\n", file->idx_d->color, reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
     Point3D prcp;
-    prcp.x = (int) getPowerOf2(file->idx->box_bounds[0]) / file->idx->reg_patch_size[0];
-    prcp.y = (int) getPowerOf2(file->idx->box_bounds[1]) / file->idx->reg_patch_size[1];
-    prcp.z = (int) getPowerOf2(file->idx->box_bounds[2]) / file->idx->reg_patch_size[2];
+    prcp.x = (int) getPowerOf2(file->idx->box_bounds[0]) / file->idx_d->restructured_grid->patch_size[0];
+    prcp.y = (int) getPowerOf2(file->idx->box_bounds[1]) / file->idx_d->restructured_grid->patch_size[1];
+    prcp.z = (int) getPowerOf2(file->idx->box_bounds[2]) / file->idx_d->restructured_grid->patch_size[2];
     //prcp.x = (int) file->idx_d->partition_size[0] / file->idx->reg_patch_size[0];
     //prcp.y = (int) file->idx_d->partition_size[1] / file->idx->reg_patch_size[1];
     //prcp.z = (int) file->idx_d->partition_size[2] / file->idx->reg_patch_size[2];
@@ -395,7 +395,6 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
   PIDX_file_initialize_time_step(file, file->idx->filename, file->idx->filename_template, file->idx->current_time_step);
   PIDX_file_initialize_time_step(file, file->idx->filename_global, file->idx->filename_template_global, file->idx->current_time_step);
   PIDX_file_initialize_time_step(file, file->idx->filename_partition, file->idx->filename_template_partition, file->idx->current_time_step);
-  PIDX_file_initialize_time_step(file, file->idx->filename_file_zero, file->idx->filename_template_file_zero, file->idx->current_time_step);
 
   if (hz_from_file_zero == hz_to_file_zero)
   {

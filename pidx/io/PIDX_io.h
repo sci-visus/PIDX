@@ -8,7 +8,6 @@ struct PIDX_io_descriptor
 {
   PIDX_header_io_id header_io_id;                   ///< IDX metadata id
 
-  PIDX_generic_rst_id generic_rst_id;               ///< Restructuring phase id
   PIDX_multi_patch_rst_id multi_patch_rst_id;       ///< Multi-patch restructuring phase id
 
   PIDX_chunk_id chunk_id;                           ///< Block restructuring id (prepration for compression)

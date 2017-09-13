@@ -435,17 +435,6 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type);
 
 
 ///
-/// \brief PIDX_set_wavelet_implementation_type
-/// \param file
-/// \param io_type
-/// \return
-///
-PIDX_return_code PIDX_set_wavelet_implementation_type(PIDX_file file, int w_type);
-
-
-
-
-///
 /// \brief PIDX_set_wavelet_level
 /// \param file
 /// \param w_type

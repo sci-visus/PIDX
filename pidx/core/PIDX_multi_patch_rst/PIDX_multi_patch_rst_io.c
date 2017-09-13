@@ -62,8 +62,8 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_and_write(PIDX_multi_patch_r
 
     // copy the size and offset to output
     PIDX_variable var_start = var_grp->variable[v_start];
-    Ndim_patch_group patch_group = var_start->rst_patch_group;
-    Ndim_patch out_patch = var_start->rst_patch_group->reg_patch;
+    PIDX_super_patch patch_group = var_start->rst_patch_group;
+    PIDX_patch out_patch = var_start->rst_patch_group->reg_patch;
 
     int nx = out_patch->size[0];
     int ny = out_patch->size[1];
@@ -82,7 +82,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate_and_write(PIDX_multi_patch_r
       return PIDX_err_chunk;
 
     int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
-    for (r = 0; r < var_start->rst_patch_group->count; r++)
+    for (r = 0; r < var_start->rst_patch_group->patch_count; r++)
     {
       for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
       {
@@ -164,8 +164,8 @@ PIDX_return_code PIDX_multi_patch_rst_buf_read_and_aggregate(PIDX_multi_patch_rs
     PIDX_variable var = var_grp->variable[v];
 
     // copy the size and offset to output
-    Ndim_patch_group patch_group = var->rst_patch_group;
-    Ndim_patch out_patch = var->rst_patch_group->reg_patch;
+    PIDX_super_patch patch_group = var->rst_patch_group;
+    PIDX_patch out_patch = var->rst_patch_group->reg_patch;
 
     int nx = out_patch->size[0];
     int ny = out_patch->size[1];
@@ -213,7 +213,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_read_and_aggregate(PIDX_multi_patch_rs
     }
 
     int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
-    for (r = 0; r < var->rst_patch_group->count; r++)
+    for (r = 0; r < var->rst_patch_group->patch_count; r++)
     {
       for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
       {
@@ -269,7 +269,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregated_write(PIDX_multi_patch_rst_
   {
     // copy the size and offset to output
     PIDX_variable var_start = var_grp->variable[v_start];
-    Ndim_patch out_patch = var_start->rst_patch_group->reg_patch;
+    PIDX_patch out_patch = var_start->rst_patch_group->reg_patch;
 
     int bits = 0;
     PIDX_variable var = var_grp->variable[v_start];
@@ -326,7 +326,7 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregated_read(PIDX_multi_patch_rst_i
   {
     // copy the size and offset to output
     PIDX_variable var_start = var_grp->variable[v_start];
-    Ndim_patch out_patch = var_start->rst_patch_group->reg_patch;
+    PIDX_patch out_patch = var_start->rst_patch_group->reg_patch;
 
     int bits = 0;
     PIDX_variable var = var_grp->variable[v_start];

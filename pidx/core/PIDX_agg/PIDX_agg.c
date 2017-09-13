@@ -14,7 +14,7 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
 //static PIDX_return_code block_decompress_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
 //static PIDX_return_code block_wise_compression(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl);
 //static PIDX_return_code squeeze_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab);
-static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
+static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 
 struct PIDX_agg_struct
 {
@@ -401,11 +401,11 @@ PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer a
         Deinterleave(id->idx->bitPattern, (id->idx_d->maxh - 1), file_index, first);
 
         int calculated_rank = 0;
-        int rank_x = first[0] / (id->idx->reg_patch_size[0] / id->idx->chunk_size[0]);
-        int rank_y = first[1] / (id->idx->reg_patch_size[1] / id->idx->chunk_size[1]);
-        int rank_z = first[2] / (id->idx->reg_patch_size[2] / id->idx->chunk_size[2]);
-        int nrank_x = ((id->idx_d->partition_size[0] * id->idx_d->partition_count[0]) / id->idx->reg_patch_size[0]);
-        int nrank_y = ((id->idx_d->partition_size[1] * id->idx_d->partition_count[1]) / id->idx->reg_patch_size[1]);
+        int rank_x = first[0] / (id->idx_d->restructured_grid->patch_size[0] / id->idx->chunk_size[0]);
+        int rank_y = first[1] / (id->idx_d->restructured_grid->patch_size[1] / id->idx->chunk_size[1]);
+        int rank_z = first[2] / (id->idx_d->restructured_grid->patch_size[2] / id->idx->chunk_size[2]);
+        int nrank_x = ((id->idx_d->partition_size[0] * id->idx_d->partition_count[0]) / id->idx_d->restructured_grid->patch_size[0]);
+        int nrank_y = ((id->idx_d->partition_size[1] * id->idx_d->partition_count[1]) / id->idx_d->restructured_grid->patch_size[1]);
 
         calculated_rank = rank_x + (rank_y * nrank_x) + (rank_z * nrank_x * nrank_y);
 
@@ -661,7 +661,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_start_hz, global_start_ZYX);
         Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_end_hz, global_end_ZYX);
 
-        Ndim_patch global_start_point = (Ndim_patch)malloc(sizeof (*global_start_point));
+        PIDX_patch global_start_point = (PIDX_patch)malloc(sizeof (*global_start_point));
         memset(global_start_point, 0, sizeof (*global_start_point));
         global_start_point->offset[0] = global_start_ZYX[0];
         global_start_point->offset[1] = global_start_ZYX[1];
@@ -671,7 +671,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         global_start_point->size[2] = 1;
 
         //Extent of process with rank r
-        Ndim_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
+        PIDX_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
         memset(rank_r_patch, 0, sizeof (*rank_r_patch));
 
         int r = 0, d = 0, m = 0;
@@ -704,7 +704,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
         }
         free(global_start_point);
 
-        Ndim_patch global_end_point = (Ndim_patch)malloc(sizeof (*global_end_point));
+        PIDX_patch global_end_point = (PIDX_patch)malloc(sizeof (*global_end_point));
         memset(global_end_point, 0, sizeof (*global_end_point));
         global_end_point->offset[0] = global_end_ZYX[0];
         global_end_point->offset[1] = global_end_ZYX[1];
@@ -937,7 +937,7 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
         Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_start_hz, global_start_ZYX);
         Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_end_hz, global_end_ZYX);
 
-        Ndim_patch global_start_point = (Ndim_patch)malloc(sizeof (*global_start_point));
+        PIDX_patch global_start_point = (PIDX_patch)malloc(sizeof (*global_start_point));
         memset(global_start_point, 0, sizeof (*global_start_point));
         global_start_point->offset[0] = global_start_ZYX[0];
         global_start_point->offset[1] = global_start_ZYX[1];
@@ -947,7 +947,7 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
         global_start_point->size[2] = 1;
 
         //Extent of process with rank r
-        Ndim_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
+        PIDX_patch rank_r_patch = malloc(sizeof (*rank_r_patch));
         memset(rank_r_patch, 0, sizeof (*rank_r_patch));
 
         int r = 0, d = 0, m = 0;
@@ -980,7 +980,7 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
         }
         free(global_start_point);
 
-        Ndim_patch global_end_point = (Ndim_patch)malloc(sizeof (*global_end_point));
+        PIDX_patch global_end_point = (PIDX_patch)malloc(sizeof (*global_end_point));
         memset(global_end_point, 0, sizeof (*global_end_point));
         global_end_point->offset[0] = global_end_ZYX[0];
         global_end_point->offset[1] = global_end_ZYX[1];
@@ -1536,7 +1536,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
       HZ_buffer hz_buf = var->hz_buffer;
 
 #if 1
-      if (hz_buf->type == 1)
+      if (hz_buf->is_boundary_HZ_buffer == 1)
       {
 #ifdef PIDX_DUMP_AGG
         if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
@@ -1577,7 +1577,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
           }
         }
       }
-      else if (hz_buf->type == 2)
+      else if (hz_buf->is_boundary_HZ_buffer == 2)
       {
 #ifdef PIDX_DUMP_AGG
         if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
@@ -2062,7 +2062,7 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
 
 
 /// Function to check if NDimensional data chunks A and B intersects
-static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
+static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
 {
   int d = 0, check_bit = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)

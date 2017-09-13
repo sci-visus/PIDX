@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 
 
 #if 1
-  //rank_0_print("Simulation Data Created\n");
+  rank_0_print("Simulation Data Created\n");
 
   MPI_Barrier(MPI_COMM_WORLD);
   create_pidx_var_point_and_access();
@@ -320,8 +320,6 @@ static void calculate_per_process_offsets()
 //----------------------------------------------------------------
 static void create_synthetic_simulation_data()
 {
-  int i1, j1, k1;
-  int index = 0;
   int var = 0;
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);

@@ -39,44 +39,30 @@ struct PIDX_Ndim_empty_patch_struct
   int edge;
   unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
   unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
-
-  unsigned long long size_px;
-  unsigned long long size_nx;
-
-  unsigned long long size_py;
-  unsigned long long size_ny;
-
-  unsigned long long size_pz;
-  unsigned long long size_nz;
 };
 typedef struct PIDX_Ndim_empty_patch_struct* Ndim_empty_patch;
 
 
+
+/// Struct to store the restructured grid
+struct PIDX_grid_struct
+{
+  unsigned long long patch_size[PIDX_MAX_DIMENSIONS];
+  int total_patch_count[PIDX_MAX_DIMENSIONS];
+  Ndim_empty_patch* patch;
+};
+typedef struct PIDX_grid_struct* PIDX_restructured_grid;
+
+
 /// Struct to store the row/column major chunk of data given by application
-struct PIDX_Ndim_patch_struct
+struct PIDX_patch_struct
 {
   unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
   unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
   unsigned char* buffer;                                ///< the data buffer
 };
-typedef struct PIDX_Ndim_patch_struct* Ndim_patch;
+typedef struct PIDX_patch_struct* PIDX_patch;
 
-
-/// Struct to store a group of Ndim_buffer
-/// NAMES
-struct PIDX_Ndim_patch_group_struct
-{
-  //int data_source;
-  int type;                                             ///< is complete or not
-  int count;                                            ///< how many Ndim_buffer are there in the group
-  Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
-  int *source_patch_rank;                               ///< all sender ranks
-  int max_patch_rank;                                   ///< The rank of the process that has maximum intersection (receiver)
-  Ndim_patch reg_patch;                                 ///< Pointer to the reg patch
-
-  //Ndim_patch wavelet_reg_patch;                         ///< Pointer to the reg patch
-};
-typedef struct PIDX_Ndim_patch_group_struct* Ndim_patch_group;
 
 
 struct PIDX_source_patch_index_struct
@@ -87,23 +73,26 @@ struct PIDX_source_patch_index_struct
 typedef struct PIDX_source_patch_index_struct PIDX_source_patch_index;
 
 
-struct PIDX_Ndim_multi_patch_group_struct
+/// Struct to store a group of patches also called a super patch
+/// The super patch is a rectilinear 3D patch
+struct PIDX_super_patch_struct
 {
-  int data_source;
-  int type;                                             ///< decide the type of the group
-  int count;                                            ///< how many Ndim_buffer are there in the group
-  Ndim_patch *patch;                                    ///< Pointer to all the Ndim_buffer
-  PIDX_source_patch_index *source_patch;
-  int max_patch_rank;                                   ///<
-  Ndim_patch reg_patch;                                 ///< Pointer to the reg patch
+  uint8_t is_boundary_patch;                            ///< 1 for boundary patch 0 otherwise
+
+  uint32_t patch_count;                                 ///< Number of patches in the super patch
+  PIDX_patch *patch;                                    ///< Pointer to the patches that comprises the super patch
+
+  PIDX_source_patch_index *source_patch;                ///< Rank of all the patches
+  int max_patch_rank;                                   ///< Rank of the process that holds this super patch
+  PIDX_patch reg_patch;                                 ///< Pointer to the restructured (super) patch
 };
-typedef struct PIDX_Ndim_multi_patch_group_struct* Ndim_multi_patch_group;
+typedef struct PIDX_super_patch_struct* PIDX_super_patch;
 
 
 /// Struct to store the HZ encoded data and meta-data
 struct PIDX_HZ_buffer_struct
 {
-  int type;                                             ///< decide the type of the group
+  int is_boundary_HZ_buffer;                            ///< 1 for boundary patch 0 otherwise
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   unsigned long long *start_hz_index;                              ///< Starting HZ index at of the data at all the HZ levels
   unsigned long long *end_hz_index;                                ///< Ending HZ index at of the data at all the HZ levels

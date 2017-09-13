@@ -187,7 +187,7 @@ PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* da
     fprintf(idx_file_p, "(partition size)\n%d %d %d\n", header_io->idx_d->partition_size[0], header_io->idx_d->partition_size[1], header_io->idx_d->partition_size[2]);
 
     fprintf(idx_file_p, "(endian)\n%d\n", header_io->idx->endian);
-    fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx->reg_patch_size[0], (long long)header_io->idx->reg_patch_size[1], (long long)header_io->idx->reg_patch_size[2]);
+    fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx_d->restructured_grid->patch_size[0], (long long)header_io->idx_d->restructured_grid->patch_size[1], (long long)header_io->idx_d->restructured_grid->patch_size[2]);
     fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->gnprocs);
     fprintf(idx_file_p, "(file system block size)\n%d\n", header_io->idx_d->fs_block_size);
 

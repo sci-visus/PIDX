@@ -30,6 +30,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset((*file)->idx_d->time, 0, sizeof (*((*file)->idx_d->time)));
   (*file)->idx_d->time->sim_start = PIDX_get_time();
 
+  (*file)->idx_d->restructured_grid = malloc(sizeof(*(*file)->idx_d->restructured_grid ));
+  memset((*file)->idx_d->restructured_grid , 0, sizeof(*(*file)->idx_d->restructured_grid));
+
   (*file)->idx_c->global_comm = access_type->comm;
   (*file)->idx_c->local_comm = access_type->comm;
   MPI_Comm_rank((*file)->idx_c->global_comm, &((*file)->idx_c->grank));
@@ -73,7 +76,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   //(*file)->enable_raw_dump = 0;
 
   (*file)->idx_d->parallel_mode = access_type->parallel;
-  (*file)->idx->shared_face = 0;
 
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;
@@ -89,7 +91,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_global, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_partition, "%s.idx", file_name_skeleton);
-  sprintf((*file)->idx->filename_file_zero, "%s.idx", file_name_skeleton);
 
 #if 0
   if ((*file)->idx_d->partition_count[0] == 1 && (*file)->idx_d->partition_count[1] == 1 && (*file)->idx_d->partition_count[2] == 1)
@@ -115,7 +116,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
-  memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
   (*file)->idx->compression_bit_rate = 64;
   (*file)->idx->compression_factor = 1;
@@ -223,7 +223,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         count = 0;
         while (pch != NULL)
         {
-          (*file)->idx->reg_patch_size[count] = atoi(pch);
+          (*file)->idx_d->restructured_grid->patch_size[count] = atoi(pch);
           count++;
           pch = strtok(NULL, " ");
         }
@@ -239,7 +239,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         count = 0;
         while (pch != NULL)
         {
-          (*file)->idx->reg_patch_size[count] = atoi(pch);
+          (*file)->idx_d->restructured_grid->patch_size[count] = atoi(pch);
           count++;
           pch = strtok(NULL, " ");
         }
@@ -451,7 +451,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   {
     MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
     MPI_Bcast((*file)->idx->box_bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
-    MPI_Bcast((*file)->idx->reg_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
+    MPI_Bcast((*file)->idx_d->restructured_grid->patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
     MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
     MPI_Bcast(&((*file)->idx_d->pidx_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
@@ -545,10 +545,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 #endif
   (*file)->idx->flip_endian = 0;
 
-  //if ((*file)->idx->io_type == PIDX_IDX_IO)
-    (*file)->idx->reg_box_set = PIDX_BOX_FROM_BITSTRING;
-  //else
-  //  (*file)->idx->reg_box_set = PIDX_USER_RST_BOX;
   unsigned int endian = 1;
   int current_endian = 0;
   char *c = (char*)&endian;

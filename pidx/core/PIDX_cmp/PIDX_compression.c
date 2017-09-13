@@ -216,9 +216,9 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
     for (v = comp_id->first_index; v <= comp_id->last_index; v++)
     {
       PIDX_variable var = var_grp->variable[v];
-      for (b = 0; b < var->chunk_patch_group->count; b++)
+      for (b = 0; b < var->chunk_patch_group->patch_count; b++)
       {
-        Ndim_patch patch = var->chunk_patch_group->patch[b];
+        PIDX_patch patch = var->chunk_patch_group->patch[b];
         unsigned char* buffer = patch->buffer;
         int nx = patch->size[0];
         int ny = patch->size[1];
@@ -255,9 +255,9 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
     for (v = comp_id->first_index; v <= comp_id->last_index; v++)
     {
       PIDX_variable var = var_grp->variable[v];
-      for (b = 0; b < var0->chunk_patch_group->count; b++)
+      for (b = 0; b < var0->chunk_patch_group->patch_count; b++)
       {
-        Ndim_patch patch = var->chunk_patch_group->patch[b];
+        PIDX_patch patch = var->chunk_patch_group->patch[b];
         unsigned char* buffer = patch->buffer;
         int nx = patch->size[0];
         int ny = patch->size[1];

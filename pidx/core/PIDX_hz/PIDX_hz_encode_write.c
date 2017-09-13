@@ -54,7 +54,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   }
 
 
-  for (b = 0; b < var0->chunk_patch_group->count; b++)
+  for (b = 0; b < var0->chunk_patch_group->patch_count; b++)
   {
     total_chunked_patch_size = 0;
     for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
@@ -210,7 +210,7 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
   int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0};
   int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0};
 
-  for (b = 0; b < var0->chunk_patch_group->count; b++)
+  for (b = 0; b < var0->chunk_patch_group->patch_count; b++)
   {
     for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
     {
@@ -277,7 +277,7 @@ PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id)
 #endif
   }
 
-  for (b = 0; b < var0->chunk_patch_group->count; b++)
+  for (b = 0; b < var0->chunk_patch_group->patch_count; b++)
   {
     total_chunked_patch_size = 0;
     for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
@@ -454,7 +454,7 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int res_from
   }
 
 
-  for (b = 0; b < var0->chunk_patch_group->count; b++)
+  for (b = 0; b < var0->chunk_patch_group->patch_count; b++)
   {
     total_chunked_patch_size = 0;
 

@@ -1,21 +1,6 @@
 #include "../PIDX_inc.h"
 
 
-PIDX_return_code free_rst_box_size(PIDX_io file)
-{
-  if (file->idx->reg_box_set == PIDX_WAVELET_BOX || file->idx->reg_box_set == PIDX_UNIFORMLY_DISTRIBUTED_BOX)
-  {
-    int i = 0;
-    for (i = 0; i < file->idx->regridded_process_count[0] * file->idx->regridded_process_count[1] * file->idx->regridded_process_count[2]; i++)
-      free(file->idx->regridded_patch[i]);
-    free(file->idx->regridded_patch);
-  }
-  return PIDX_success;
-}
-
-
-
-
 PIDX_return_code idx_init(PIDX_io file, int gi, int svi)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];

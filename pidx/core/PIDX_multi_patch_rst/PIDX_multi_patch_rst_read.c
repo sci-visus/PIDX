@@ -48,7 +48,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
 
   //fprintf(stderr, "rst_id->reg_multi_patch_grp_count = %d\n", rst_id->reg_multi_patch_grp_count);
   for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
-    for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
+    for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
       req_count++;
 
   //creating ample requests and statuses
@@ -80,7 +80,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
   {
     if (rank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
     {
-      for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
+      for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
       {
         unsigned long long *reg_patch_offset = rst_id->reg_multi_patch_grp[i]->patch[j]->offset;
         unsigned long long *reg_patch_count  = rst_id->reg_multi_patch_grp[i]->patch[j]->size;
@@ -137,7 +137,7 @@ PIDX_return_code PIDX_multi_patch_rst_read(PIDX_multi_patch_rst_id rst_id)
     }
     else
     {
-      for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
+      for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
       {
         if(rank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
         {

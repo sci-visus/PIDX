@@ -542,8 +542,8 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
     else
       file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx_d->partition_offset[i];
 
-    if (getPowerOf2(file->idx->box_bounds[i]) < file->idx->reg_patch_size[i])
-      file->idx->box_bounds[i] = file->idx->reg_patch_size[i];//(file->idx->box_bounds[i] / file->idx->reg_patch_size[i] + 1) * file->idx->reg_patch_size[i];
+    if (getPowerOf2(file->idx->box_bounds[i]) < file->idx_d->restructured_grid->patch_size[i])
+      file->idx->box_bounds[i] = file->idx_d->restructured_grid->patch_size[i];//(file->idx->box_bounds[i] / file->idx->reg_patch_size[i] + 1) * file->idx->reg_patch_size[i];
   }
 
   return PIDX_success;

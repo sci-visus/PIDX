@@ -1,6 +1,6 @@
 #include "../PIDX_inc.h"
 
-static int intersectNDChunk(Ndim_patch A, Ndim_patch B);
+static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 
 
 PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
@@ -20,7 +20,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
         colors[(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i] = (file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i;
       }
 
-  Ndim_patch local_p = (Ndim_patch)malloc(sizeof (*local_p));
+  PIDX_patch local_p = (PIDX_patch)malloc(sizeof (*local_p));
   memset(local_p, 0, sizeof (*local_p));
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -33,7 +33,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
       local_p->offset[d] = var->rst_patch_group->reg_patch->offset[d];
       local_p->size[d] = var->rst_patch_group->reg_patch->size[d];
     }
-    Ndim_patch reg_patch = (Ndim_patch)malloc(sizeof (*reg_patch));
+    PIDX_patch reg_patch = (PIDX_patch)malloc(sizeof (*reg_patch));
     memset(reg_patch, 0, sizeof (*reg_patch));
 
     Point3D bounds_point;
@@ -112,15 +112,9 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
 
   if (file->idx_d->partition_count[0] != 1 || file->idx_d->partition_count[1] != 1 || file->idx_d->partition_count[2] != 1)
-  {
     sprintf(file->idx->filename_partition, "%s_%d.idx", file_name_skeleton, file->idx_d->color);
-    sprintf(file->idx->filename_file_zero, "%s_%s.idx", file_name_skeleton, "file_zero");
-  }
   else
-  {
     strcpy(file->idx->filename_partition, file->idx->filename);
-    strcpy(file->idx->filename_file_zero, file->idx->filename);
-  }
 
   strcpy(file->idx->filename_global, file->idx->filename);
 
@@ -223,7 +217,7 @@ PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
 }
 #endif
 
-static int intersectNDChunk(Ndim_patch A, Ndim_patch B)
+static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
 {
   int d = 0, check_bit = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)

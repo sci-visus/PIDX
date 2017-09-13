@@ -199,15 +199,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
     if (file->idx->io_type != PIDX_RAW_IO)
     {
       fprintf(stderr, "[%d : %d %d] [%d %d %d : %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count);
-
-      if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
-        fprintf(stderr, "Box set using PIDX_CLOSEST_POWER_TWO %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-      else if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
-        fprintf(stderr, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-      else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
-        fprintf(stderr, "Box set automatic for box per process case (PIDX_BOX_PER_PROCESS) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-      else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
-        fprintf(stderr, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+      fprintf(stderr, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx_d->restructured_grid->patch_size[0], (int)file->idx_d->restructured_grid->patch_size[1], (int)file->idx_d->restructured_grid->patch_size[2]);
 
       fprintf(stderr, "Compression Bit rate set to %f\n", file->idx->compression_bit_rate);
 
@@ -520,7 +512,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       }
 
       //grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all;
-      fprintf(stderr, "[RAW] [%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
+      fprintf(stderr, "[RAW] [%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx_d->restructured_grid->patch_size[0], (int)file->idx_d->restructured_grid->patch_size[1], (int)file->idx_d->restructured_grid->patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
              group_total,
              rst_all,
              r1 + r2 + r3,

@@ -40,13 +40,6 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
 
 
-// Types of restructuring boxes
-// PIDX_USER_RST_BOX - Box size ste by user/application
-// PIDX_BOX_PER_PROCESS - Box size set automatically such that at the end of restructuring every process has at max only one box to process
-// PIDX_BOX_FROM_BITSTRING - Box size set automatically suing the bitstring
-// PIDX_CLOSEST_POWER_TWO - Box size is closest power in two in every dimension of the per process box size
-enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, PIDX_CLOSEST_POWER_TWO, PIDX_UNIFORMLY_DISTRIBUTED_BOX, PIDX_WAVELET_BOX};
-
 
 
 // Aggregation modes

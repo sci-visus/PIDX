@@ -4,7 +4,6 @@ static int hz_from_non_shared = 0, hz_from_shared = 0, hz_from_file_zero = 0;
 static int hz_to_non_shared = 0, hz_to_shared = 0, hz_to_file_zero = 0;
 static PIDX_return_code find_agg_level(PIDX_io file, int gi);
 static PIDX_return_code select_io_mode(PIDX_io file, int gi);
-static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
 static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, int svi, int evi, int mode);
 
@@ -32,7 +31,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   PIDX_time time = file->idx_d->time;
 
   // Step 0
-  ret = group_meta_data_init(file, gi, svi, evi, PIDX_WRITE);
+  ret = set_rst_box_size_for_write(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -61,12 +60,15 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
+  time->init_start = PIDX_get_time();
   ret = idx_init(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  time->init_end = PIDX_get_time();
+
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
@@ -258,7 +260,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   PIDX_time time = file->idx_d->time;
 
   // Step 0
-  ret = group_meta_data_init(file, gi, svi, evi, PIDX_READ);
+  ret = set_rst_box_size_for_read(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -527,44 +529,6 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi)
 }
 
 #endif
-
-static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode)
-{
-  int ret;
-  PIDX_time time = file->idx_d->time;
-
-  time->init_start = PIDX_get_time();
-  //ret = idx_init(file, gi, svi);
-  //if (ret != PIDX_success)
-  //{
-  //  fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-  //  return PIDX_err_file;
-  //}
-  time->init_end = PIDX_get_time();
-
-  time->set_reg_box_start = PIDX_get_time();
-  if (mode == PIDX_WRITE)
-  {
-    ret = set_rst_box_size_for_write(file, gi, svi);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-  }
-  else if (mode == PIDX_READ)
-  {
-    ret = set_rst_box_size_for_read(file, gi, svi);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-  }
-  time->set_reg_box_end = MPI_Wtime();
-
-  return PIDX_success;
-}
 
 
 static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, int svi, int evi, int mode)

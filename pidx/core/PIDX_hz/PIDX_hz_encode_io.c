@@ -35,7 +35,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
 
     index = 0, count = 0, send_index = 0;
     index = 0, count = 0, send_index = 0;
-    if (var0->hz_buffer->type == 1)
+    if (var0->hz_buffer->is_boundary_HZ_buffer == 1)
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
       {
@@ -82,7 +82,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
       }
     }
 #if 1
-    else if (var0->hz_buffer->type == 2)
+    else if (var0->hz_buffer->is_boundary_HZ_buffer == 2)
     {
       for(v = hz_id->first_index; v <= hz_id->last_index; v++)
       {

@@ -47,7 +47,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
 
   //creating ample requests and statuses
   for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
-    for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
+    for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
       req_count++;
 
   int end_index = 0;
@@ -85,7 +85,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
     {
       if (rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
       {
-        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
+        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
         {
           unsigned long long *reg_patch_offset = rst_id->reg_multi_patch_grp[i]->patch[j]->offset;
           unsigned long long *reg_patch_count  = rst_id->reg_multi_patch_grp[i]->patch[j]->size;
@@ -154,7 +154,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
       }
       else
       {
-        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->count; j++)
+        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
         {
           if(rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
           {
