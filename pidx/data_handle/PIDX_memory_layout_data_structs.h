@@ -84,7 +84,7 @@ struct PIDX_super_patch_struct
 
   PIDX_source_patch_index *source_patch;                ///< Rank of all the patches
   int max_patch_rank;                                   ///< Rank of the process that holds this super patch
-  PIDX_patch reg_patch;                                 ///< Pointer to the restructured (super) patch
+  PIDX_patch restructured_patch;                                 ///< Pointer to the restructured (super) patch
 };
 typedef struct PIDX_super_patch_struct* PIDX_super_patch;
 

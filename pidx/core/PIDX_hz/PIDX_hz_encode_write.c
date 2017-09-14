@@ -35,7 +35,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
   PIDX_variable var0 = var_grp->variable[id->first_index];
 
-  if (var0->patch_group_count == 0)
+  if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
   int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0};

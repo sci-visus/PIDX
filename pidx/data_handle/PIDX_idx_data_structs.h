@@ -125,8 +125,8 @@ struct PIDX_variable_struct
   HZ_buffer hz_buffer;                                      ///< HZ encoded buffer of the patches
 
   // buffer before aggregation
-  int patch_group_count;                                     ///< Number of groups of patches to be passed to aggregation phase
-  PIDX_super_patch rst_patch_group;                         ///< Pointer to the patch groups
+  int restructured_super_patch_count;                                     ///< Number of groups of patches to be passed to aggregation phase
+  PIDX_super_patch restructured_super_patch;                         ///< Pointer to the patch groups
   PIDX_super_patch chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
 
   //PIDX_patch rst_wavelet_patch;

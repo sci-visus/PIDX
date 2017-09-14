@@ -476,8 +476,8 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
   int d = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-    local_patch_offset[PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group->reg_patch->offset[d];
-    local_patch_size[PIDX_MAX_DIMENSIONS + d] = var0->rst_patch_group->reg_patch->size[d];
+    local_patch_offset[PIDX_MAX_DIMENSIONS + d] = var0->restructured_super_patch->restructured_patch->offset[d];
+    local_patch_size[PIDX_MAX_DIMENSIONS + d] = var0->restructured_super_patch->restructured_patch->size[d];
   }
 
 
@@ -826,7 +826,7 @@ PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id id, Agg_b
 
 
 
-PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
+PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset)
 {
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   PIDX_variable var0 = var_grp->variable[id->fi];
@@ -837,8 +837,8 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
   int d = 0;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-    local_patch_offset[d] = var0->rst_patch_group->reg_patch->offset[d];
-    local_patch_size[d] = var0->rst_patch_group->reg_patch->size[d];
+    local_patch_offset[d] = var0->restructured_super_patch->restructured_patch->offset[d];
+    local_patch_size[d] = var0->restructured_super_patch->restructured_patch->size[d];
   }
 
   int wc = id->idx_c->lnprocs * (PIDX_MAX_DIMENSIONS);
@@ -971,7 +971,6 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
             break;
           }
 
-
           if (break_counter == 1)
             break;
         }
@@ -1066,7 +1065,7 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
 
 #if 1//DETAIL_OUTPUT
           //if (i == 0)
-          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [F/S/N %d] [Buffer %lld (%d x %d x %d)]\n",
+          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [Buffer %lld (%d x %d x %d)]\n",
                agg_offset, id->idx->current_time_step,
                id->agg_r[k][i - id->fi][j],
                id->idx_d->color,
@@ -1079,7 +1078,6 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
                k,
                lbl->existing_file_index[k],
                j,
-               file_status,
                ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 #endif
           //fprintf(stderr, "%d %d %d ---- %d\n", lbl->existing_file_index[k], agg_offset, k, id->idx_c->lrank);
@@ -1527,7 +1525,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
   PIDX_variable var0 = var_grp->variable[id->fi];
 
-  if (var0->patch_group_count == 0)
+  if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
   for(v = id->fi; v <= id->li; v++)

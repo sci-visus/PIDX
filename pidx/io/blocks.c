@@ -305,8 +305,8 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
-    bounding_box[0][i] = var->rst_patch_group->reg_patch->offset[i];
-    bounding_box[1][i] = var->rst_patch_group->reg_patch->size[i] + var->rst_patch_group->reg_patch->offset[i];
+    bounding_box[0][i] = var->restructured_super_patch->restructured_patch->offset[i];
+    bounding_box[1][i] = var->restructured_super_patch->restructured_patch->size[i] + var->restructured_super_patch->restructured_patch->offset[i];
 
     bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
 

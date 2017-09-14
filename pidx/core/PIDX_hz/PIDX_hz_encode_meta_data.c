@@ -26,7 +26,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
   PIDX_variable var0 = var_grp->variable[id->first_index];
 
-  if (var0->patch_group_count == 0)
+  if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
   int **tpatch;
@@ -53,8 +53,8 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   {
     PIDX_variable var = var_grp->variable[v];
 
-    var->hz_buffer = malloc(sizeof(*(var->hz_buffer)) * var->patch_group_count);
-    memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)) * var->patch_group_count);
+    var->hz_buffer = malloc(sizeof(*(var->hz_buffer)) * var->restructured_super_patch_count);
+    memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)) * var->restructured_super_patch_count);
 
     var->hz_buffer = malloc(sizeof(*(var->hz_buffer)));
     memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)));
@@ -102,12 +102,12 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      tpatch[0][d] = var->chunk_patch_group->reg_patch->offset[d] / id->idx->chunk_size[d];
+      tpatch[0][d] = var->chunk_patch_group->restructured_patch->offset[d] / id->idx->chunk_size[d];
 
-      if (var->chunk_patch_group->reg_patch->size[d] % id->idx->chunk_size[d] == 0)
-        tpatch[1][d] = (var->chunk_patch_group->reg_patch->offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group->reg_patch->size[d] / id->idx->chunk_size[d]) - 1;
+      if (var->chunk_patch_group->restructured_patch->size[d] % id->idx->chunk_size[d] == 0)
+        tpatch[1][d] = (var->chunk_patch_group->restructured_patch->offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group->restructured_patch->size[d] / id->idx->chunk_size[d]) - 1;
       else
-        tpatch[1][d] = (var->chunk_patch_group->reg_patch->offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group->reg_patch->size[d] / id->idx->chunk_size[d]) + 1) - 1;
+        tpatch[1][d] = (var->chunk_patch_group->restructured_patch->offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group->restructured_patch->size[d] / id->idx->chunk_size[d]) + 1) - 1;
     }
 
 
@@ -161,7 +161,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
   PIDX_variable var0 = var_grp->variable[id->first_index];
 
-  if (var0->patch_group_count == 0)
+  if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
   int itr = 0, v = 0;

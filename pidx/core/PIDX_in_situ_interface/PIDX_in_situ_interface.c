@@ -83,7 +83,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
 
 
 
-//  if (id->idx->variable_grp[id->group_index]->variable[id->first_index]->patch_group_count != 0)
+//  if (id->idx->variable_grp[id->group_index]->variable[id->first_index]->restructured_super_patch_count != 0)
 //    color = 1;
 
   ret = MPI_Comm_split(id->idx_c->global_comm, color, id->idx_c->grank, &(insitu_comm));
@@ -98,7 +98,7 @@ PIDX_return_code PIDX_in_situ_perform(PIDX_insitu_id id)
   if (color == 1)
   {
     //int sf = 2;
-    PIDX_patch r_p = id->idx->variable_grp[id->group_index]->variable[id->first_index]->rst_patch_group[0]->reg_patch;
+    PIDX_patch r_p = id->idx->variable_grp[id->group_index]->variable[id->first_index]->restructured_super_patch[0]->reg_patch;
 
     /*
     int s_x = r_p->size[0];

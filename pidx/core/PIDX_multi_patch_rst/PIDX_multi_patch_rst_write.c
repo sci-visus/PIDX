@@ -30,9 +30,9 @@
 
 #include "../../PIDX_inc.h"
 
-PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_id)
+PIDX_return_code PIDX_idx_rst_staged_write(PIDX_idx_rst_id rst_id)
 {
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
 
   unsigned long long k1 = 0, i1 = 0, j1 = 0;
   unsigned long long i, j, v, index, count1 = 0, req_count = 0;
@@ -46,8 +46,8 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
   MPI_Datatype *chunk_data_type;
 
   //creating ample requests and statuses
-  for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
-    for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
+  for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+    for(j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
       req_count++;
 
   int end_index = 0;
@@ -81,19 +81,19 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
     }
     memset(chunk_data_type, 0, sizeof (*chunk_data_type) * req_count  * (end_index - start_index + 1));
 
-    for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
+    for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     {
-      if (rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
+      if (rst_id->idx_comm_metadata->grank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
       {
-        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
+        for(j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
         {
-          unsigned long long *reg_patch_offset = rst_id->reg_multi_patch_grp[i]->patch[j]->offset;
-          unsigned long long *reg_patch_count  = rst_id->reg_multi_patch_grp[i]->patch[j]->size;
+          unsigned long long *reg_patch_offset = rst_id->intersected_restructured_super_patch[i]->patch[j]->offset;
+          unsigned long long *reg_patch_count  = rst_id->intersected_restructured_super_patch[i]->patch[j]->size;
 
-          if(rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
+          if(rst_id->idx_comm_metadata->grank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
           {
             count1 = 0;
-            int p_index = rst_id->reg_multi_patch_grp[i]->source_patch[j].index;
+            int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
             unsigned long long *sim_patch_offset = var_grp->variable[start_index]->sim_patch[p_index]->offset;
             unsigned long long *sim_patch_count = var_grp->variable[start_index]->sim_patch[p_index]->size;
 
@@ -111,13 +111,13 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                     send_o = index * var->vps;
                     send_c = reg_patch_count[0] * var->vps;
 
-                    if (rst_id->idx_dbg->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
-                      memcpy(var->rst_patch_group->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
+                    if (rst_id->idx_debug_metadata->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
+                      memcpy(var->restructured_super_patch->patch[j]->buffer + (count1 * send_c * var->bpv/8), var->sim_patch[p_index]->buffer + send_o * var->bpv/8, send_c * var->bpv/8);
 
-                    if (rst_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || rst_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
+                    if (rst_id->idx_debug_metadata->state_dump == PIDX_META_DATA_DUMP_ONLY || rst_id->idx_debug_metadata->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
                     {
-                      fprintf(rst_id->idx_dbg->local_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
-                      fflush(rst_id->idx_dbg->local_dump_fp);
+                      fprintf(rst_id->idx_debug_metadata->local_dump_fp, "[M] [%lld] Dest offset %lld Dest size %lld Source offset %lld Source size %lld\n", v, (unsigned long long)(count1 * send_c * var->bpv/8), (unsigned long long)(send_c * var->bpv/8), (unsigned long long)(send_o * var->bpv/8), (unsigned long long)(send_c * var->bpv/8));
+                      fflush(rst_id->idx_debug_metadata->local_dump_fp);
                     }
                   }
                   count1++;
@@ -129,9 +129,9 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
             {
               PIDX_variable var = var_grp->variable[v];
               int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
-              if (rst_id->idx_dbg->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
+              if (rst_id->idx_debug_metadata->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
               {
-                ret = MPI_Irecv(var->rst_patch_group->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_multi_patch_grp[i]->source_patch[j].rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
+                ret = MPI_Irecv(var->restructured_super_patch->patch[j]->buffer, length, MPI_BYTE, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank, 123, rst_id->idx_comm_metadata->global_comm, &req[req_counter]);
                 if (ret != MPI_SUCCESS)
                 {
                   fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -139,10 +139,10 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                 }
               }
 
-              if (rst_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || rst_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
+              if (rst_id->idx_debug_metadata->state_dump == PIDX_META_DATA_DUMP_ONLY || rst_id->idx_debug_metadata->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
               {
-                fprintf(rst_id->idx_dbg->mpi_dump_fp, "[N REC] [%lld] Dest offset 0 Dest size %d My rank %d Source rank %d\n", v, length, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->source_patch[j].rank);
-                fflush(rst_id->idx_dbg->mpi_dump_fp);
+                fprintf(rst_id->idx_debug_metadata->mpi_dump_fp, "[N REC] [%lld] Dest offset 0 Dest size %d My rank %d Source rank %d\n", v, length, rst_id->idx_comm_metadata->grank,  rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank);
+                fflush(rst_id->idx_debug_metadata->mpi_dump_fp);
               }
 
               req_counter++;
@@ -154,16 +154,16 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
       }
       else
       {
-        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
+        for(j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
         {
-          if(rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->source_patch[j].rank)
+          if(rst_id->idx_comm_metadata->grank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
           {
             for(v = start_index; v <= end_index; v++)
             {
               PIDX_variable var = var_grp->variable[v];
 
-              unsigned long long *reg_patch_count = rst_id->reg_multi_patch_grp[i]->patch[j]->size;
-              unsigned long long *reg_patch_offset = rst_id->reg_multi_patch_grp[i]->patch[j]->offset;
+              unsigned long long *reg_patch_count = rst_id->intersected_restructured_super_patch[i]->patch[j]->size;
+              unsigned long long *reg_patch_offset = rst_id->intersected_restructured_super_patch[i]->patch[j]->offset;
 
               send_offset = malloc(sizeof (int) * (reg_patch_count[1] * reg_patch_count[2]));
               if (!send_offset)
@@ -182,7 +182,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
               memset(send_count, 0, sizeof (int) * (reg_patch_count[1] * reg_patch_count[2]));
 
               count1 = 0;
-              int p_index =  rst_id->reg_multi_patch_grp[i]->source_patch[j].index;
+              int p_index =  rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
               unsigned long long *sim_patch_count  = var_grp->variable[start_index]->sim_patch[p_index]->size;
               unsigned long long *sim_patch_offset = var_grp->variable[start_index]->sim_patch[p_index]->offset;
 
@@ -204,9 +204,9 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
               MPI_Type_indexed(count1, send_count, send_offset, MPI_BYTE, &chunk_data_type[chunk_counter]);
               MPI_Type_commit(&chunk_data_type[chunk_counter]);
 
-              if (rst_id->idx_dbg->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
+              if (rst_id->idx_debug_metadata->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
               {
-                ret = MPI_Isend(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->reg_multi_patch_grp[i]->max_patch_rank, 123, rst_id->idx_c->global_comm, &req[req_counter]);
+                ret = MPI_Isend(var->sim_patch[p_index]->buffer, 1, chunk_data_type[chunk_counter], rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123, rst_id->idx_comm_metadata->global_comm, &req[req_counter]);
                 if (ret != MPI_SUCCESS)
                 {
                   fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -214,10 +214,10 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
                 }
               }
 
-              if (rst_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || rst_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
+              if (rst_id->idx_debug_metadata->state_dump == PIDX_META_DATA_DUMP_ONLY || rst_id->idx_debug_metadata->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
               {
-                fprintf(rst_id->idx_dbg->mpi_dump_fp, "[N SND] [%lld] Source offset 0 Source size %d My rank %d Dest rank %d\n", v, total_send_count, rst_id->idx_c->grank,  rst_id->reg_multi_patch_grp[i]->max_patch_rank);
-                fflush(rst_id->idx_dbg->mpi_dump_fp);
+                fprintf(rst_id->idx_debug_metadata->mpi_dump_fp, "[N SND] [%lld] Source offset 0 Source size %d My rank %d Dest rank %d\n", v, total_send_count, rst_id->idx_comm_metadata->grank,  rst_id->intersected_restructured_super_patch[i]->max_patch_rank);
+                fflush(rst_id->idx_debug_metadata->mpi_dump_fp);
               }
 
               req_counter++;
@@ -231,7 +231,7 @@ PIDX_return_code PIDX_multi_patch_rst_staged_write(PIDX_multi_patch_rst_id rst_i
       }
     }
 
-    if (rst_id->idx_dbg->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
+    if (rst_id->idx_debug_metadata->state_dump != PIDX_NO_IO_AND_META_DATA_DUMP)
     {
       ret = MPI_Waitall(req_counter, req, status);
       if (ret != MPI_SUCCESS)

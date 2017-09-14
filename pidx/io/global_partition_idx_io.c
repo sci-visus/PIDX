@@ -69,7 +69,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     return PIDX_err_file;
   }
 
-  if (file->idx->variable_grp[gi]->variable[svi]->patch_group_count == 0)
+  if (file->idx->variable_grp[gi]->variable[svi]->restructured_super_patch_count == 0)
     goto cleanup;
 
   // Step 4:  Post partition group meta data
@@ -237,7 +237,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
     return PIDX_err_file;
   }
 
-  if (file->idx->variable_grp[gi]->variable[svi]->patch_group_count == 0)
+  if (file->idx->variable_grp[gi]->variable[svi]->restructured_super_patch_count == 0)
     goto cleanup;
 
   // Step 3:  Post partition group meta data

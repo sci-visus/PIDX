@@ -26,7 +26,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
   PIDX_variable var0 = var_grp->variable[id->first_index];
 
-  if (var0->patch_group_count == 0)
+  if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
   int c = 0, v = 0, bytes_for_datatype = 0;
@@ -62,7 +62,7 @@ PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
   PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
   PIDX_variable var0 = var_grp->variable[id->first_index];
 
-  if (var0->patch_group_count == 0)
+  if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
   if(var_grp->variable[id->first_index]->sim_patch_count < 0)

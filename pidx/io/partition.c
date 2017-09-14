@@ -26,12 +26,12 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var = var_grp->variable[svi];
 
-  if (var->patch_group_count == 1)
+  if (var->restructured_super_patch_count == 1)
   {
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_p->offset[d] = var->rst_patch_group->reg_patch->offset[d];
-      local_p->size[d] = var->rst_patch_group->reg_patch->size[d];
+      local_p->offset[d] = var->restructured_super_patch->restructured_patch->offset[d];
+      local_p->size[d] = var->restructured_super_patch->restructured_patch->size[d];
     }
     PIDX_patch reg_patch = (PIDX_patch)malloc(sizeof (*reg_patch));
     memset(reg_patch, 0, sizeof (*reg_patch));
@@ -101,8 +101,8 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
     }
     free(reg_patch);
   }
-  else if (var->patch_group_count > 1)
-    fprintf(stderr, "RST artifact %d\n", var->patch_group_count);
+  else if (var->restructured_super_patch_count > 1)
+    fprintf(stderr, "RST artifact %d\n", var->restructured_super_patch_count);
 
   free(colors);
 

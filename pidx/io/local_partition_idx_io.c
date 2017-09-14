@@ -75,7 +75,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
-  if (var0->patch_group_count == 1)
+  if (var0->restructured_super_patch_count == 1)
   {
 
   // Step 3:  Partition
@@ -267,7 +267,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     return PIDX_err_file;
   }
 
-  if (file->idx->variable_grp[gi]->variable[svi]->patch_group_count == 0)
+  if (file->idx->variable_grp[gi]->variable[svi]->restructured_super_patch_count == 0)
     goto cleanup;
 
   // Step 4:  Post partition group meta data
@@ -516,7 +516,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var = var_grp->variable[svi];
 
-  if (var->patch_group_count > 1)
+  if (var->restructured_super_patch_count > 1)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -524,7 +524,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
 
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    var->rst_patch_group->reg_patch->offset[i] = var->rst_patch_group->reg_patch->offset[i] - file->idx_d->partition_offset[i];
+    var->restructured_super_patch->restructured_patch->offset[i] = var->restructured_super_patch->restructured_patch->offset[i] - file->idx_d->partition_offset[i];
 
 
 
@@ -549,14 +549,14 @@ static PIDX_return_code re_adjust_offsets(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var = var_grp->variable[svi];
 
-  if (var->patch_group_count > 1)
+  if (var->restructured_super_patch_count > 1)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    var->rst_patch_group->reg_patch->offset[i] = var->rst_patch_group->reg_patch->offset[i] + file->idx_d->partition_offset[i];
+    var->restructured_super_patch->restructured_patch->offset[i] = var->restructured_super_patch->restructured_patch->offset[i] + file->idx_d->partition_offset[i];
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {

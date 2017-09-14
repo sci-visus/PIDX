@@ -65,7 +65,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
     PIDX_variable var0 = var_grp->variable[var_grp->local_variable_index];
 
-    if (var0->patch_group_count != 0)
+    if (var0->restructured_super_patch_count != 0)
     {
       int lvi = var_grp->local_variable_index;
       int lvc = var_grp->local_variable_count;

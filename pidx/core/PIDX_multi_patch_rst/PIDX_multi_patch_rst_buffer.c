@@ -30,58 +30,81 @@
 
 #include "../../PIDX_inc.h"
 
-PIDX_return_code PIDX_multi_patch_rst_buf_create(PIDX_multi_patch_rst_id rst_id)
+
+// Creates the buffers for all the patches that constitutes the super patch
+PIDX_return_code PIDX_idx_rst_buf_create(PIDX_idx_rst_id rst_id)
 {
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
 
   int j = 0, v = 0;
   int cnt = 0, i = 0;
+
+  // Allocate buffer for restructured patches (super patch) for all variables
   for (v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
-    PIDX_variable var = var_grp->variable[v];
     cnt = 0;
-    for (i = 0; i < rst_id->reg_multi_patch_grp_count; i++)
+    PIDX_variable var = var_grp->variable[v];
+
+    // Iterate through all the super patch a process intersects with
+    for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     {
-      if (rst_id->idx_c->grank == rst_id->reg_multi_patch_grp[i]->max_patch_rank)
+      // If the process is the target rank of a super patch then allocate buffer for the patches of the super patch
+      if (rst_id->idx_comm_metadata->grank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
       {
-        PIDX_super_patch patch_group = var->rst_patch_group; // here use patch_group
-        for(j = 0; j < rst_id->reg_multi_patch_grp[i]->patch_count; j++)
+        PIDX_super_patch patch_group = var->restructured_super_patch;
+        // Iterate through all the patches of the super patch and allocate buffer for them
+        for(j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
         {
           patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * var->vps * var->bpv/8);
 
           if (patch_group->patch[j]->buffer == NULL)
+          {
+            fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
             return PIDX_err_rst;
+          }
 
           memset(patch_group->patch[j]->buffer, 0, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * var->vps * var->bpv/8));
         }
+
         cnt++;
-        assert(cnt == 1);
+        assert(cnt == 1);  // This is gauranteed because every process can hold at max only one suoer patch
       }
     }
-    if (cnt != var->patch_group_count)
+
+    // This is gauranteed because every process can hold at max only one suoer patch
+    if (cnt != var->restructured_super_patch_count)
+    {
+      fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
       return PIDX_err_rst;
+    }
   }
 
   return PIDX_success;
 }
 
 
-
-PIDX_return_code PIDX_multi_patch_rst_buf_destroy(PIDX_multi_patch_rst_id rst_id)
+// Free all the patches that constitute a super patch
+PIDX_return_code PIDX_idx_rst_buf_destroy(PIDX_idx_rst_id rst_id)
 {
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
-  if (var0->patch_group_count == 0)
+
+  // If the process does not hold a super patch
+  if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
   int j, v;
+
+  // Iterate through all the variables
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    for(j = 0; j < var_grp->variable[v]->rst_patch_group->patch_count; j++)
+
+    // Iterate through all the patches of the super patch
+    for(j = 0; j < var_grp->variable[v]->restructured_super_patch->patch_count; j++)
     {
-      free(var->rst_patch_group->patch[j]->buffer);
-      var->rst_patch_group->patch[j]->buffer = 0;
+      free(var->restructured_super_patch->patch[j]->buffer);
+      var->restructured_super_patch->patch[j]->buffer = 0;
     }
   }
 
@@ -89,32 +112,53 @@ PIDX_return_code PIDX_multi_patch_rst_buf_destroy(PIDX_multi_patch_rst_id rst_id
 }
 
 
-PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_create(PIDX_multi_patch_rst_id rst_id)
+// Create the buffer that holds all the patches of a super patch into one single patch
+PIDX_return_code PIDX_idx_rst_aggregate_buf_create(PIDX_idx_rst_id rst_id)
 {
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
-  if (var0->patch_group_count == 0)
+
+  // If the process does not hold a super patch
+  if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
   int v = 0;
   for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
   {
     PIDX_variable var = var_grp->variable[v];
-    //int bytes_per_value = var->bpv / 8;
 
-    // copy the size and offset to output
-    PIDX_patch out_patch = var->rst_patch_group->reg_patch;
+    // The restructured patch is the sum of all the small patches
+    PIDX_patch out_patch = var->restructured_super_patch->restructured_patch;
 
-    int nx = out_patch->size[0];
-    int ny = out_patch->size[1];
-    int nz = out_patch->size[2];
+    var->restructured_super_patch->restructured_patch->buffer = malloc(out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->bpv/8) * var->vps);
+    memset(var->restructured_super_patch->restructured_patch->buffer, 0, out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->bpv/8) * var->vps);
 
-    var->rst_patch_group->reg_patch->buffer = malloc(nx * ny * nz * (var->bpv/8) * var->vps);
-    memset(var->rst_patch_group->reg_patch->buffer, 0, nx * ny * nz * (var->bpv/8) * var->vps);
-
-    if (var->rst_patch_group->reg_patch->buffer == NULL)
+    if (var->restructured_super_patch->restructured_patch->buffer == NULL)
+    {
+      fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
       return PIDX_err_chunk;
+    }
+  }
 
+  return PIDX_success;
+}
+
+
+// Free the restructured patch
+PIDX_return_code PIDX_idx_rst_aggregate_buf_destroy(PIDX_idx_rst_id rst_id)
+{
+  PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
+  PIDX_variable var0 = var_grp->variable[rst_id->first_index];
+
+  // If the process does not hold a super patch
+  if (var0->restructured_super_patch_count == 0)
+      return PIDX_success;
+
+  int v = 0;
+  for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
+  {
+    PIDX_variable var = var_grp->variable[v];
+    free(var->restructured_super_patch->restructured_patch->buffer);
   }
 
   return PIDX_success;
@@ -122,30 +166,14 @@ PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_create(PIDX_multi_patch_rst_
 
 
 
-PIDX_return_code PIDX_multi_patch_rst_aggregate_buf_destroy(PIDX_multi_patch_rst_id rst_id)
+// Combine the small patches of a super patch into a restructured patch
+PIDX_return_code PIDX_idx_rst_buf_aggregate(PIDX_idx_rst_id rst_id, int mode)
 {
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
-  if (var0->patch_group_count == 0)
-      return PIDX_success;
 
-  int v = 0;
-  for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
-  {
-    PIDX_variable var = var_grp->variable[v];
-    free(var->rst_patch_group->reg_patch->buffer);
-  }
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_multi_patch_rst_buf_aggregate(PIDX_multi_patch_rst_id rst_id, int mode)
-{
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
-  PIDX_variable var0 = var_grp->variable[rst_id->first_index];
-  if (var0->patch_group_count == 0)
+  // If the process does not hold a super patch
+  if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
   int v = 0;
@@ -153,34 +181,33 @@ PIDX_return_code PIDX_multi_patch_rst_buf_aggregate(PIDX_multi_patch_rst_id rst_
   {
     PIDX_variable var = var_grp->variable[v];
 
-    // copy the size and offset to output
-    PIDX_super_patch patch_group = var->rst_patch_group;
-    PIDX_patch out_patch = var->rst_patch_group->reg_patch;
+    PIDX_super_patch rst_super_patch = var->restructured_super_patch;
+    PIDX_patch out_patch = rst_super_patch->restructured_patch;
 
     int nx = out_patch->size[0];
     int ny = out_patch->size[1];
-    //int nz = out_patch->size[2];
 
     int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
-    for (r = 0; r < var->rst_patch_group->patch_count; r++)
+
+    // Iterate through all the small patches of the super patch
+    for (r = 0; r < rst_super_patch->patch_count; r++)
     {
-      for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
+      PIDX_patch patch = rst_super_patch->patch[r];
+      for (k1 = patch->offset[2]; k1 < patch->offset[2] + patch->size[2]; k1++)
       {
-        for (j1 = patch_group->patch[r]->offset[1]; j1 < patch_group->patch[r]->offset[1] + patch_group->patch[r]->size[1]; j1++)
+        for (j1 = patch->offset[1]; j1 < patch->offset[1] + patch->size[1]; j1++)
         {
-          for (i1 = patch_group->patch[r]->offset[0]; i1 < patch_group->patch[r]->offset[0] + patch_group->patch[r]->size[0]; i1 = i1 + patch_group->patch[r]->size[0])
+          for (i1 = patch->offset[0]; i1 < patch->offset[0] + patch->size[0]; i1 = i1 + patch->size[0])
           {
-            index = ((patch_group->patch[r]->size[0])* (patch_group->patch[r]->size[1]) * (k1 - patch_group->patch[r]->offset[2])) + ((patch_group->patch[r]->size[0]) * (j1 - patch_group->patch[r]->offset[1])) + (i1 - patch_group->patch[r]->offset[0]);
+            index = ((patch->size[0])* (patch->size[1]) * (k1 - patch->offset[2])) + ((patch->size[0]) * (j1 - patch->offset[1])) + (i1 - patch->offset[0]);
             send_o = index * var->vps * (var->bpv/8);
-            send_c = (patch_group->patch[r]->size[0]);
+            send_c = (patch->size[0]);
             recv_o = (nx * ny * (k1 - out_patch->offset[2])) + (nx * (j1 - out_patch->offset[1])) + (i1 - out_patch->offset[0]);
 
-#if !SIMULATE_IO
             if (mode == PIDX_WRITE)
-              memcpy(out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), var->rst_patch_group->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
+              memcpy(out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), rst_super_patch->patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
             else
-              memcpy(var->rst_patch_group->patch[r]->buffer + send_o, out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
-#endif
+              memcpy(rst_super_patch->patch[r]->buffer + send_o, out_patch->buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
           }
         }
       }
