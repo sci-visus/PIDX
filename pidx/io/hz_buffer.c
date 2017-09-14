@@ -83,16 +83,19 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
 
   if (file->idx_dbg->debug_do_io == 1)
   {
-    for (j = var_grp->agg_l_f0; j < var_grp->f0_end_layout_index; j++)
+    for (j = var_grp->agg_level; j < var_grp->nshared_end_layout_index; j++)
     {
-      ret = PIDX_file_io_per_process(file->hz_id, var_grp->f0_block_layout_by_level[j - var_grp->agg_l_f0], mode);
+      file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
+      ret = PIDX_file_io_per_process(file->hz_id, var_grp->block_layout_by_level[j], mode);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;
       }
+      file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
     }
 
+#if 0
     for (j = var_grp->agg_l_shared; j < var_grp->shared_end_layout_index; j++)
     {
       //printf("S [A %d %d] index %d\n", j, var_grp->agg_l_shared, j - var_grp->agg_l_shared);
@@ -122,6 +125,7 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
 
       //printf("NS [B %d %d] index %d\n", j, (var_grp->agg_l_nshared - var_grp->nshared_start_layout_index), (j - var_grp->agg_l_nshared));
     }
+#endif
   }
 
   return PIDX_success;

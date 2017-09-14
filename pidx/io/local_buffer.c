@@ -1,153 +1,12 @@
 #include "../PIDX_inc.h"
 
-static PIDX_return_code create_non_shared_async_buffers(PIDX_io file, int start_layout_index_non_shared, int agg_io_level_non_shared);
-static PIDX_return_code create_shared_async_buffers(PIDX_io file, int start_layout_index_shared, int agg_io_level_shared);
-
-static PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_io file, int start_layout_index_non_shared, int agg_io_level_non_shared);
-static PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_io file, int start_layout_index_shared, int agg_io_level_shared);
-
-static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_non_shared, int agg_io_level_non_shared);
-static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_shared, int agg_io_level_shared);
-
-static PIDX_return_code create_non_shared_async_buffers(PIDX_io file, int start_layout_index_non_shared, int agg_io_level_non_shared)
-{
-  file->idx_d->status_non_shared = malloc(sizeof(*(file->idx_d->status_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
-  memset(file->idx_d->status_non_shared, 0, sizeof(*(file->idx_d->status_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
-
-  file->idx_d->request_non_shared = malloc(sizeof(*(file->idx_d->request_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
-  memset(file->idx_d->request_non_shared, 0, sizeof(*(file->idx_d->request_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
-
-  file->idx_d->fp_non_shared = malloc(sizeof(*(file->idx_d->fp_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
-  memset(file->idx_d->fp_non_shared, 0, sizeof(*(file->idx_d->fp_non_shared)) * (agg_io_level_non_shared - start_layout_index_non_shared));
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code create_shared_async_buffers(PIDX_io file, int start_layout_index_shared, int agg_io_level_shared)
-{
-  file->idx_d->status_shared = malloc(sizeof(*(file->idx_d->status_shared)) * (agg_io_level_shared - start_layout_index_shared));
-  memset(file->idx_d->status_shared, 0, sizeof(*(file->idx_d->status_shared)) * (agg_io_level_shared - start_layout_index_shared));
-
-  file->idx_d->request_shared = malloc(sizeof(*(file->idx_d->request_shared)) * (agg_io_level_shared - start_layout_index_shared));
-  memset(file->idx_d->request_shared, 0, sizeof(*(file->idx_d->request_shared)) * (agg_io_level_shared - start_layout_index_shared));
-
-  file->idx_d->fp_shared = malloc(sizeof(*(file->idx_d->fp_shared)) * (agg_io_level_shared - start_layout_index_shared));
-  memset(file->idx_d->fp_shared, 0, sizeof(*(file->idx_d->fp_shared)) * (agg_io_level_shared - start_layout_index_shared));
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code wait_and_destroy_non_shared_async_buffers(PIDX_io file, int start_layout_index_non_shared, int agg_io_level_non_shared)
-{
-  int i = 0;
-  int ret;
-  for (i = start_layout_index_non_shared; i < (agg_io_level_non_shared); i++)
-  {
-    if (file->idx_d->request_non_shared[i - start_layout_index_non_shared] != 0)
-    {
-      ret = MPI_Wait(&(file->idx_d->request_non_shared[i - start_layout_index_non_shared]), &(file->idx_d->status_non_shared[i - start_layout_index_non_shared]));
-      if (ret != MPI_SUCCESS)
-      {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-      }
-
-      MPI_File_close(&(file->idx_d->fp_non_shared[i - start_layout_index_non_shared]));
-    }
-  }
-
-  free(file->idx_d->status_non_shared);
-  free(file->idx_d->request_non_shared);
-  free(file->idx_d->fp_non_shared);
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code wait_and_destroy_shared_async_buffers(PIDX_io file, int start_layout_index_shared, int agg_io_level_shared)
-{
-  int i = 0;
-  int ret;
-  for (i = start_layout_index_shared; i < (agg_io_level_shared); i++)
-  {
-    if (file->idx_d->request_shared[i - start_layout_index_shared] != 0)
-    {
-      ret = MPI_Wait(&(file->idx_d->request_shared[i - start_layout_index_shared]), &(file->idx_d->status_shared[i - start_layout_index_shared]));
-      if (ret != MPI_SUCCESS)
-      {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-      }
-      MPI_File_close(&(file->idx_d->fp_shared[i - start_layout_index_shared]));
-    }
-  }
-
-  free(file->idx_d->status_shared);
-  free(file->idx_d->request_shared);
-  free(file->idx_d->fp_shared);
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code destroy_non_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_non_shared, int agg_io_level_non_shared)
-{
-  int ret;
-  int i = 0;
-  int i_1 = 0;
-  start_index = start_index - local_var_index;
-  for (i = start_layout_index_non_shared; i < (agg_io_level_non_shared); i++)
-  {
-    i_1 = i - start_layout_index_non_shared;
-    ret = PIDX_agg_buf_destroy(file->idx_d->nshared_agg_buffer[start_index][i_1]);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_agg;
-    }
-
-    free(file->idx_d->nshared_agg_buffer[start_index][i_1]);
-    PIDX_agg_finalize(file->nshared_agg_id[start_index][i_1]);
-    PIDX_file_io_finalize(file->nshared_io_id[start_index][i_1]);
-  }
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code destroy_shared_ids_and_buffers(PIDX_io file, int start_index, int local_var_index, int start_layout_index_shared, int agg_io_level_shared)
-{
-  int i = 0;
-  int i_1 = 0;
-  int ret;
-  start_index = start_index - local_var_index;
-  //printf("START index %d\n", start_index);
-  for (i = start_layout_index_shared; i < agg_io_level_shared; i++)
-  {
-    i_1 = i - start_layout_index_shared;
-    ret = PIDX_agg_buf_destroy(file->idx_d->shared_agg_buffer[start_index][i_1]);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_agg;
-    }
-
-    free(file->idx_d->shared_agg_buffer[start_index][i_1]);
-    PIDX_agg_finalize(file->shared_agg_id[start_index][i_1]);
-    PIDX_file_io_finalize(file->shared_io_id[start_index][i_1]);
-  }
-
-  return PIDX_success;
-}
-
-
 
 PIDX_return_code create_agg_io_buffer(PIDX_io file, int gi, int svi, int evi)
 {
   int lc = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  assert (var_grp->shared_start_layout_index == 0);
+
   int vc = (evi - svi);
   if (vc <= 0)
   {
@@ -157,43 +16,25 @@ PIDX_return_code create_agg_io_buffer(PIDX_io file, int gi, int svi, int evi)
 
   idx_dataset_derived_metadata idx = file->idx_d;
 
-  file->shared_agg_id = malloc(sizeof(*(file->shared_agg_id)) * vc);
-  file->shared_io_id = malloc(sizeof(*(file->shared_io_id)) * vc);
-  memset(file->shared_agg_id, 0, sizeof(*(file->shared_agg_id)) * vc);
-  memset(file->shared_io_id, 0, sizeof(*(file->shared_io_id)) * vc);
+  file->agg_id = malloc(sizeof(*(file->agg_id)) * vc);
+  file->io_id = malloc(sizeof(*(file->io_id)) * vc);
+  memset(file->agg_id, 0, sizeof(*(file->agg_id)) * vc);
+  memset(file->io_id, 0, sizeof(*(file->io_id)) * vc);
 
-  file->nshared_agg_id = malloc(sizeof(*(file->nshared_agg_id)) * vc);
-  file->nshared_io_id = malloc(sizeof(*(file->nshared_io_id)) * vc);
-  memset(file->nshared_agg_id, 0, sizeof(*(file->nshared_agg_id)) * vc);
-  memset(file->nshared_io_id, 0, sizeof(*(file->nshared_io_id)) * vc);
-
-  idx->shared_agg_buffer = malloc(sizeof(*(idx->shared_agg_buffer)) * vc);
-  memset(idx->shared_agg_buffer, 0, sizeof(*(idx->shared_agg_buffer)) * vc);
-
-  idx->nshared_agg_buffer = malloc(sizeof(*(idx->nshared_agg_buffer)) * vc);
-  memset(idx->nshared_agg_buffer, 0, sizeof(*(idx->nshared_agg_buffer)) * vc);
+  idx->agg_buffer = malloc(sizeof(*(idx->agg_buffer)) * vc);
+  memset(idx->agg_buffer, 0, sizeof(*(idx->agg_buffer)) * vc);
 
   int v = 0;
   for (v = 0; v < vc; v++)
   {
-    lc = (var_grp->agg_l_shared - var_grp->shared_start_layout_index);
-    file->shared_agg_id[v] = malloc(sizeof(*(file->shared_agg_id[v])) * lc);
-    file->shared_io_id[v] = malloc(sizeof(*(file->shared_io_id[v])) * lc);
-    memset(file->shared_agg_id[v], 0, sizeof(*(file->shared_agg_id[v])) * lc);
-    memset(file->shared_io_id[v], 0, sizeof(*(file->shared_io_id[v])) * lc);
+    lc = (var_grp->agg_level - var_grp->shared_start_layout_index);
+    file->agg_id[v] = malloc(sizeof(*(file->agg_id[v])) * lc);
+    file->io_id[v] = malloc(sizeof(*(file->io_id[v])) * lc);
+    memset(file->agg_id[v], 0, sizeof(*(file->agg_id[v])) * lc);
+    memset(file->io_id[v], 0, sizeof(*(file->io_id[v])) * lc);
 
-    idx->shared_agg_buffer[v] = malloc(sizeof(*(idx->shared_agg_buffer[v])) * lc);
-    memset(idx->shared_agg_buffer[v], 0, sizeof(*(idx->shared_agg_buffer[v])) * lc);
-
-
-    lc = (var_grp->agg_l_nshared - var_grp->nshared_start_layout_index);
-    file->nshared_agg_id[v] = malloc(sizeof(*(file->nshared_agg_id[v])) * lc);
-    file->nshared_io_id[v] = malloc(sizeof(*(file->nshared_io_id[v])) * lc);
-    memset(file->nshared_agg_id[v], 0, sizeof(*(file->nshared_agg_id[v])) * lc);
-    memset(file->nshared_io_id[v], 0, sizeof(*(file->nshared_io_id[v])) * lc);    
-
-    idx->nshared_agg_buffer[v] = malloc(sizeof(*(idx->nshared_agg_buffer[v])) * lc);
-    memset(idx->nshared_agg_buffer[v], 0, sizeof(*(idx->nshared_agg_buffer[v])) * lc);
+    idx->agg_buffer[v] = malloc(sizeof(*(idx->agg_buffer[v])) * lc);
+    memset(idx->agg_buffer[v], 0, sizeof(*(idx->agg_buffer[v])) * lc);
   }
 
   return PIDX_success;
@@ -208,23 +49,14 @@ PIDX_return_code destroy_agg_io_buffer(PIDX_io file, int svi, int evi)
   int v = 0;
   for (v = 0; v < vc; v++)
   {
-    free(file->shared_agg_id[v]);
-    free(file->shared_io_id[v]);
-    free(idx->shared_agg_buffer[v]);
-
-    free(file->nshared_agg_id[v]);
-    free(file->nshared_io_id[v]);
-    free(idx->nshared_agg_buffer[v]);
+    free(file->agg_id[v]);
+    free(file->io_id[v]);
+    free(idx->agg_buffer[v]);
   }
 
-  free(file->shared_agg_id);
-  free(file->shared_io_id);
-
-  free(file->nshared_agg_id);
-  free(file->nshared_io_id);
-
-  free(idx->shared_agg_buffer);
-  free(idx->nshared_agg_buffer);
+  free(file->agg_id);
+  free(file->io_id);
+  free(idx->agg_buffer);
 
   return PIDX_success;
 }
@@ -234,8 +66,14 @@ PIDX_return_code create_async_buffers(PIDX_io file, int gi)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  create_shared_async_buffers(file, var_grp->shared_start_layout_index, var_grp->agg_l_shared);
-  create_non_shared_async_buffers(file, var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
+  file->idx_d->status1 = malloc(sizeof(*(file->idx_d->status1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
+  memset(file->idx_d->status1, 0, sizeof(*(file->idx_d->status1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
+
+  file->idx_d->request1 = malloc(sizeof(*(file->idx_d->request1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
+  memset(file->idx_d->request1, 0, sizeof(*(file->idx_d->request1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
+
+  file->idx_d->fp1 = malloc(sizeof(*(file->idx_d->fp1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
+  memset(file->idx_d->fp1, 0, sizeof(*(file->idx_d->fp1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
 
   return PIDX_success;
 }
@@ -245,8 +83,30 @@ PIDX_return_code wait_and_destroy_async_buffers(PIDX_io file, int gi)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  wait_and_destroy_shared_async_buffers(file, var_grp->shared_start_layout_index, var_grp->agg_l_shared);
-  wait_and_destroy_non_shared_async_buffers(file, var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
+  int sli = var_grp->shared_start_layout_index;
+  int agg_i = var_grp->agg_level;
+
+  assert (sli == 0);
+  int i = 0;
+  int ret;
+  for (i = sli; i < (agg_i); i++)
+  {
+    if (file->idx_d->request1[i - sli] != 0)
+    {
+      ret = MPI_Wait(&(file->idx_d->request1[i - sli]), &(file->idx_d->status1[i - sli]));
+      if (ret != MPI_SUCCESS)
+      {
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_file;
+      }
+
+      MPI_File_close(&(file->idx_d->fp1[i - sli]));
+    }
+  }
+
+  free(file->idx_d->status1);
+  free(file->idx_d->request1);
+  free(file->idx_d->fp1);
 
   return PIDX_success;
 }
@@ -256,8 +116,28 @@ PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index, int
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  destroy_shared_ids_and_buffers(file, start_index, local_var_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared);
-  destroy_non_shared_ids_and_buffers(file, start_index, local_var_index, var_grp->nshared_start_layout_index, var_grp->agg_l_nshared);
+  int ret;
+  int i = 0;
+  int i_1 = 0;
+  start_index = start_index - local_var_index;
+
+  int sli = var_grp->shared_start_layout_index;
+  int agg_i = var_grp->agg_level;
+
+  for (i = sli; i < (agg_i); i++)
+  {
+    i_1 = i - sli;
+    ret = PIDX_agg_buf_destroy(file->idx_d->agg_buffer[start_index][i_1]);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_agg;
+    }
+
+    free(file->idx_d->agg_buffer[start_index][i_1]);
+    PIDX_agg_finalize(file->agg_id[start_index][i_1]);
+    PIDX_file_io_finalize(file->io_id[start_index][i_1]);
+  }
 
   return PIDX_success;
 }

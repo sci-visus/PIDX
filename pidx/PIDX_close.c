@@ -152,9 +152,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d->block_bitmap);
   file->idx_d->block_bitmap = 0;
 
-  free(file->idx->random_agg_list);
-  file->idx->random_agg_list = 0;
-
   free(file->idx);                  file->idx = 0;
   free(file->idx_d->time);          file->idx_d->time = 0;
   free(file->idx_d);                file->idx_d = 0;
@@ -216,7 +213,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       fprintf(stderr, "Partition count %d = %d x %d x %d Partitio size = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
       fprintf(stderr, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
       fprintf(stderr, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
-      fprintf(stderr, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
+      fprintf(stderr, "Partition level : maxh = %d : %d\n", file->idx_d->total_partiton_level, file->idx_d->maxh);
     }
   }
 #endif
@@ -336,6 +333,16 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 #endif
 
           double hz_io = 0;
+          for (i = file->idx->variable_grp[gi]->agg_level; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
+          {
+            hz_io = time->hz_io_end[gi][si][i] - time->hz_io_start[gi][si][i];
+            hz_io_all = hz_io_all + hz_io;
+
+#if DETAIL_OUTPUT
+            fprintf(stderr, "[HZ I/O S %d %d]  :[%d] [%d] %.4f [%.4f] \n", file->idx->variable_grp[gi]->agg_level, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, hz_io, hz_io_all);
+#endif
+          }
+#if 0
           for (i = file->idx->variable_grp[gi]->agg_l_shared; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
           {
             hz_io = time->hz_io_end[gi][si][i] - time->hz_io_start[gi][si][i];
@@ -355,6 +362,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
             fprintf(stderr, "[HZ I/O N %d %d]  :[%d] [%d] %.4f [%.4f]\n", file->idx->variable_grp[gi]->agg_l_nshared, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, hz_io, hz_io_all);
 #endif
           }
+#endif
 
         }
 
@@ -408,6 +416,25 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
         }
 
         double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total = 0, agg_cmp = 0;
+        for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->agg_level ; i++)
+        {
+          agg_init = time->agg_init_end[gi][si][i] - time->agg_init_start[gi][si][i];
+          agg_meta = time->agg_meta_end[gi][si][i] - time->agg_meta_start[gi][si][i];
+          agg_buf = time->agg_buf_end[gi][si][i] - time->agg_buf_start[gi][si][i];
+          agg = time->agg_end[gi][si][i] - time->agg_start[gi][si][i];
+          agg_cmp = time->agg_compress_end[gi][si][i] - time->agg_compress_start[gi][si][i];
+          agg_meta_cleanup = time->agg_meta_cleanup_end[gi][si][i] - time->agg_meta_cleanup_start[gi][si][i];
+          agg_total = agg_init + agg_meta + agg_buf + agg + agg_cmp + agg_meta_cleanup;
+          agg_all = agg_all + agg_total;
+
+          //fprintf(stderr, "[S] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
+
+#if DETAIL_OUTPUT
+          fprintf(stderr, "[AGG S %d %d]   :[%d] [%d] %f + %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_cmp, agg_meta_cleanup, agg_total, agg_all);
+#endif
+        }
+
+#if 0
         for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->agg_l_shared ; i++)
         {
           agg_init = time->agg_init_end[gi][si][i] - time->agg_init_start[gi][si][i];
@@ -444,6 +471,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           fprintf(stderr, "[AGG N %d %d]   :[%d] [%d] %f + %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->nshared_start_layout_index, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_cmp, agg_meta_cleanup, agg_total, agg_all);
 #endif
         }
+#endif
 
         io = time->io_end[gi][si] - time->io_start[gi][si];
         io_all = io_all + io;

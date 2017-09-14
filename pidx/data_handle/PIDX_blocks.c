@@ -33,7 +33,7 @@ Level #Elements [#Block_id] (HZ_start HZ_end) (HZ_start_form HZ_end_form)
 5 16 [0] (16, 31) [0]
 6 32 [0] (32, 63) [0]
 7 64 [0] (64, 127) [0]
-8 128 [0] (128, 255) [0]PIDX_row_maPIDX_row_majorjor
+8 128 [0] (128, 255) [0]
 9 256 [0] (256, 511) [0]
 10 512 [0] (512, 1023) [0]
 11 1024 [1] (1024, 2047) [0]
@@ -54,61 +54,35 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from
 {
   int ctr = 1, j;
 
-  layout->maxh = maxh;
   layout->resolution_from = resolution_from;
   layout->resolution_to = resolution_to;
-  layout->bits_per_block = bits_per_block;
 
   if (maxh == 0)
     return PIDX_success;
 
-  if (layout->maxh < bits_per_block + 1)
-    layout->maxh = bits_per_block + 1;
+  layout->hz_block_number_array = malloc(sizeof(int*) * maxh);
+  memset(layout->hz_block_number_array, 0, sizeof(int*) * maxh);
 
-  //levels = (resolution_to - resolution_from);
-  //fprintf(stderr, "levels = %d\n (%d %d)\n", levels, layout->resolution_from, layout->resolution_to);
-
-  layout->hz_block_number_array = malloc(sizeof(int*) * layout->maxh);
-  memset(layout->hz_block_number_array, 0, sizeof(int*) * layout->maxh);
-
-  //if (resolution_from <= bits_per_block)
-  //{
-    for (j = 0 ; j < bits_per_block + 1 ; j++)
-    {
-      layout->hz_block_number_array[j] = malloc(sizeof(int));
-      memset(layout->hz_block_number_array[j], 0, sizeof(int));
-    }
-
-    ctr = 1;
-    for (j = bits_per_block + 1 ; j < layout->maxh ; j++)
-    {
-      layout->hz_block_number_array[j] = malloc(sizeof(int) * ctr);
-      memset(layout->hz_block_number_array[j], 0, sizeof(int) * ctr);
-      ctr = ctr * 2;
-    }
-  //}
-  /*
-  else
+  for (j = 0 ; j < PIDX_MIN(maxh, bits_per_block + 1) ; j++)
   {
-    ctr = 1;
-    for (j = bits_per_block + 1 ; j < resolution_to ; j++)
-    {
-      if (j > resolution_from)
-      {
-        layout->hz_block_number_array[j] = malloc(sizeof(int) * ctr);
-        memset(layout->hz_block_number_array[j], 0, sizeof(int) * ctr);
-      }
-      ctr = ctr * 2;
-    }
+    layout->hz_block_number_array[j] = malloc(sizeof(int));
+    memset(layout->hz_block_number_array[j], 0, sizeof(int));
   }
-  */
+
+  ctr = 1;
+  for (j = bits_per_block + 1 ; j < maxh ; j++)
+  {
+    layout->hz_block_number_array[j] = malloc(sizeof(int) * ctr);
+    memset(layout->hz_block_number_array[j], 0, sizeof(int) * ctr);
+    ctr = ctr * 2;
+  }
 
   return PIDX_success;
 }
 
 
 ///
-int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bitPattern, PIDX_block_layout layout, int res_from, int res_to)
+int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, int bits_per_block, const char* bitPattern, PIDX_block_layout layout, int res_from, int res_to)
 {
   int m = 0, n_blocks = 1, t = 0, block_number = 1;
   unsigned long long hz_from = 0, hz_to = 0;
@@ -116,20 +90,15 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
 
   int adjusted_res_to = layout->resolution_to;
   if (layout->resolution_to > maxH - res_to)
-  {
     adjusted_res_to = maxH - res_to;//layout->resolution_to - res_to;
-//    fprintf(stderr, "adjusted %d [%d %d] maxh (%d %d) res_to %d\n", layout->resolution_to, layout->resolution_from, adjusted_res_to, layout->maxh, maxH, res_to);
-  }
-  //else
-  //  fprintf(stderr, "N adjusted %d [%d %d] maxh (%d %d) res_to %d\n", layout->resolution_to, layout->resolution_from, adjusted_res_to, layout->maxh, maxH, res_to);
 
   ZYX_to = (unsigned long long*) malloc(sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   ZYX_from = (unsigned long long*) malloc(sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
   //fprintf(stderr, "res from to to : %d %d\n", layout->resolution_from, layout->resolution_to);
-  if (layout->resolution_from <= layout->bits_per_block)
+  if (layout->resolution_from <= bits_per_block)
   {
-    for (m = layout->resolution_from ; m <= layout->bits_per_block; m++)
+    for (m = layout->resolution_from ; m <= bits_per_block; m++)
     {
       if (m == 0)
       {
@@ -152,13 +121,13 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         layout->hz_block_number_array[m][0] = 0;
     }
 
-    for (m = layout->bits_per_block + 1 ; m < adjusted_res_to; m++)
+    for (m = bits_per_block + 1 ; m < adjusted_res_to; m++)
     {
-      n_blocks = pow(2, (m - (layout->bits_per_block + 1)));
+      n_blocks = pow(2, (m - (bits_per_block + 1)));
       for (t = 0 ; t < n_blocks ; t++)
       {
-        hz_from = (unsigned long long)(block_number) * pow(2, layout->bits_per_block);
-        hz_to = (unsigned long long)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
+        hz_from = (unsigned long long)(block_number) * pow(2, bits_per_block);
+        hz_to = (unsigned long long)((block_number + 1) * pow(2, bits_per_block)) - 1;
       
         memset(ZYX_to, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
         memset(ZYX_from, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
@@ -166,7 +135,6 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
         Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
         Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
       
-        //fprintf(stderr, "m = %d\n", m);
         if (ZYX_to[0] >= bounding_box[0][0] && ZYX_from[0] < bounding_box[1][0] && ZYX_to[1] >= bounding_box[0][1] && ZYX_from[1] < bounding_box[1][1] && ZYX_to[2] >= bounding_box[0][2] && ZYX_from[2] < bounding_box[1][2])
           layout->hz_block_number_array[m][t] = block_number;
       
@@ -176,15 +144,15 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
   }
   else
   {
-    for (m = layout->bits_per_block + 1 ; m < adjusted_res_to; m++)
+    for (m = bits_per_block + 1 ; m < adjusted_res_to; m++)
     {
-      n_blocks = pow(2, (m - (layout->bits_per_block + 1)));
+      n_blocks = pow(2, (m - (bits_per_block + 1)));
       if (m >= layout->resolution_from)
       {
         for (t = 0 ; t < n_blocks ; t++)
         {
-          hz_from = (unsigned long long)(block_number) * pow(2, layout->bits_per_block);
-          hz_to = (unsigned long long)((block_number + 1) * pow(2, layout->bits_per_block)) - 1;
+          hz_from = (unsigned long long)(block_number) * pow(2, bits_per_block);
+          hz_to = (unsigned long long)((block_number + 1) * pow(2, bits_per_block)) - 1;
 
           memset(ZYX_to, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
           memset(ZYX_from, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
@@ -211,17 +179,15 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, const char* bit
 }
 
 
-///
-void PIDX_blocks_print_layout(PIDX_block_layout layout)
+void PIDX_blocks_print_layout(PIDX_block_layout layout, int bits_per_block)
 {
   int ctr = 1, i, j;
   int res_level = 0;
   int res_index = 0;
 
-  fprintf(stderr, "levels: [%d %d] [%d]\n", layout->resolution_from, layout->resolution_to, layout->maxh);
-  if (layout->resolution_from <= layout->bits_per_block)
+  if (layout->resolution_from <= bits_per_block)
   {
-    for (i = layout->resolution_from; i <= layout->bits_per_block; i++)
+    for (i = layout->resolution_from; i <= bits_per_block; i++)
     {
       fprintf(stderr, "A Number of blocks at level %d = %d :: ", i, ctr);
       for (j = 0 ; j <  ctr; j++)
@@ -230,16 +196,15 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
           res_level = 0;
         else
         {
-          res_level = log2 (layout->hz_block_number_array[i][j]) + 1 + layout->bits_per_block;
-          res_index = layout->hz_block_number_array[i][j] % ((int) pow(2, (res_level - 1 - layout->bits_per_block)));
+          res_level = log2 (layout->hz_block_number_array[i][j]) + 1 + bits_per_block;
+          res_index = layout->hz_block_number_array[i][j] % ((int) pow(2, (res_level - 1 - bits_per_block)));
         }
-        //fprintf(stderr, "%d ", layout->hz_block_number_array[i][j]);
         fprintf(stderr, "[%d (%d %d)] ", layout->hz_block_number_array[i][j], res_level, res_index);
       }
       fprintf(stderr, "\n");
     }
 
-    for (i = layout->bits_per_block + 1; i < layout->resolution_to; i++)
+    for (i = bits_per_block + 1; i < layout->resolution_to; i++)
     {
       fprintf(stderr, "B Number of blocks at level %d = %d :: ", i, ctr);
       for (j = 0 ; j <  ctr; j++)
@@ -248,11 +213,10 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
           res_level = 0;
         else
         {
-          res_level = log2 (layout->hz_block_number_array[i][j]) + 1 + layout->bits_per_block;
-          res_index = layout->hz_block_number_array[i][j] % ((int) pow(2, (res_level - 1 - layout->bits_per_block)));
+          res_level = log2 (layout->hz_block_number_array[i][j]) + 1 + bits_per_block;
+          res_index = layout->hz_block_number_array[i][j] % ((int) pow(2, (res_level - 1 - bits_per_block)));
         }
         fprintf(stderr, "[%d (%d %d)] ", layout->hz_block_number_array[i][j], res_level, res_index);
-        //fprintf(stderr, "%d ", layout->hz_block_number_array[i][j]);
       }
 
       ctr = ctr * 2;
@@ -261,7 +225,7 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
   }
   else
   {
-    for (i = layout->bits_per_block + 1; i < layout->resolution_to; i++)
+    for (i = bits_per_block + 1; i < layout->resolution_to; i++)
     {
       if (i >= layout->resolution_from)
       {
@@ -272,8 +236,8 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
             res_level = 0;
           else
           {
-            res_level = log2 (layout->hz_block_number_array[i][j]) + 1 + layout->bits_per_block;
-            res_index = layout->hz_block_number_array[i][j] % ((int) pow(2, (res_level - 1 - layout->bits_per_block)));
+            res_level = log2 (layout->hz_block_number_array[i][j]) + 1 + bits_per_block;
+            res_index = layout->hz_block_number_array[i][j] % ((int) pow(2, (res_level - 1 - bits_per_block)));
           }
           fprintf(stderr, "[%d (%d %d)] ", layout->hz_block_number_array[i][j], res_level, res_index);
         }
@@ -286,23 +250,22 @@ void PIDX_blocks_print_layout(PIDX_block_layout layout)
 }
 
 
-///
-int PIDX_blocks_is_block_present(int block_number, PIDX_block_layout layout)
+int PIDX_blocks_is_block_present(int block_number, int bits_per_block, PIDX_block_layout layout)
 {
   int res_level = 0, res_index = 0;
 
   if (block_number == 0)
   {
-    if (layout->resolution_from <= layout->bits_per_block)
+    if (layout->resolution_from <= bits_per_block)
       return 1;
 
     return 0;
-    //res_level = layout->bits_per_block;
+    //res_level = bits_per_block;
   }
   else
   {
-    res_level = log2 (block_number) + 1 + layout->bits_per_block;
-    res_index = block_number % ((int) pow(2, (res_level - 1 - layout->bits_per_block)));
+    res_level = log2 (block_number) + 1 + bits_per_block;
+    res_index = block_number % ((int) pow(2, (res_level - 1 - bits_per_block)));
   }
 
   if (res_level < layout->resolution_from || res_level >= layout->resolution_to)
@@ -315,31 +278,29 @@ int PIDX_blocks_is_block_present(int block_number, PIDX_block_layout layout)
 }
 
 
-///
-int PIDX_blocks_find_negative_offset(int blocks_per_file, int block_number, PIDX_block_layout layout)
+int PIDX_blocks_find_negative_offset(int blocks_per_file, int bits_per_block, int block_number, PIDX_block_layout layout)
 {
   //PIDX_blocks_print_layout(layout);
   int b;
   int file_no = block_number/blocks_per_file;
   int block_offset = 0;
   for (b = file_no * blocks_per_file ; b < block_number; b++)
-    if (!PIDX_blocks_is_block_present(b, layout))
+    if (!PIDX_blocks_is_block_present(b, bits_per_block, layout))
       block_offset++;
   return block_offset;
 }
 
 
-///
-void PIDX_blocks_free_layout(PIDX_block_layout layout)
+void PIDX_blocks_free_layout(int bits_per_block, int maxh, PIDX_block_layout layout)
 {
   int j = 0;
-  for (j = 0 ; j < layout->bits_per_block + 1 ; j++)
+  for (j = 0 ; j < bits_per_block + 1 ; j++)
   {
     free(layout->hz_block_number_array[j]);
     layout->hz_block_number_array[j] = 0;
   }
 
-  for (j = layout->bits_per_block + 1 ; j < layout->maxh ; j++)
+  for (j = bits_per_block + 1 ; j < maxh ; j++)
   {
     free(layout->hz_block_number_array[j]);
     layout->hz_block_number_array[j] = 0;

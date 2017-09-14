@@ -145,32 +145,28 @@ struct PIDX_variable_group_struct
   int local_variable_index;
   int local_variable_count;
 
-  int agg_l_f0;
-  int f0_start_layout_index;
-  int f0_end_layout_index;
-  int f0_layout_count;
-
-  int agg_l_shared;
+  //int agg_l_shared;
   int shared_start_layout_index;
   int shared_end_layout_index;
   int shared_layout_count;
 
-  int agg_l_nshared;
+  //int agg_l_nshared;
   int nshared_start_layout_index;
   int nshared_end_layout_index;
   int nshared_layout_count;
 
   int *rank_buffer;
 
+  int agg_level;
+  PIDX_block_layout block_layout;
+  PIDX_block_layout* block_layout_by_level;
+
   // Block level layout
-  PIDX_block_layout f0_block_layout;
-  PIDX_block_layout* f0_block_layout_by_level;
+  //PIDX_block_layout shared_block_layout;
+  //PIDX_block_layout* shared_block_layout_by_level;
 
-  PIDX_block_layout shared_block_layout;
-  PIDX_block_layout* shared_block_layout_by_level;
-
-  PIDX_block_layout nshared_block_layout;
-  PIDX_block_layout* nshared_block_layout_by_level;
+  //PIDX_block_layout nshared_block_layout;
+  //PIDX_block_layout* nshared_block_layout_by_level;
 };
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
@@ -229,7 +225,6 @@ struct idx_file_struct
   unsigned long long bounds[PIDX_MAX_DIMENSIONS];
   unsigned long long box_bounds[PIDX_MAX_DIMENSIONS];
   double transform[16];
-  int bitsequence_type;
   char bitSequence[512];
   char bitPattern[512];
 
@@ -260,11 +255,11 @@ struct idx_file_struct
 
   int cached_ts;
 
-  unsigned long long* all_offset;
-  unsigned long long* all_size;
+  //unsigned long long* all_offset;
+  //unsigned long long* all_size;
 
-  int random_agg_counter;
-  int *random_agg_list;
+  //int random_agg_counter;
+  //int *random_agg_list;
 };
 typedef struct idx_file_struct* idx_dataset;
 
@@ -294,11 +289,7 @@ struct idx_dataset_derived_metadata_struct
   int fs_block_size;
   off_t start_fs_block;
 
-  unsigned char* shared_block_agg_buffer;
-
-  Agg_buffer **f0_agg_buffer;
-  Agg_buffer **shared_agg_buffer;
-  Agg_buffer **nshared_agg_buffer;
+  Agg_buffer **agg_buffer;
 
   int color;
   int partition_count[PIDX_MAX_DIMENSIONS];
@@ -306,21 +297,13 @@ struct idx_dataset_derived_metadata_struct
   int partition_offset[PIDX_MAX_DIMENSIONS];
 
   int var_pipe_length;
-  int parallel_mode;  
   
   int start_layout_index;
   int end_layout_index;
 
-  MPI_Status *status_non_shared;
-  MPI_File *fp_non_shared;
-  MPI_Request *request_non_shared;
-
-  MPI_Status *status_shared;
-  MPI_File *fp_shared;
-  MPI_Request *request_shared;
-
-  MPI_File *fp;
-  MPI_Request *request;
+  MPI_Status *status1;
+  MPI_File *fp1;
+  MPI_Request *request1;
 
   int layout_count;
   int reduced_res_from;
@@ -333,7 +316,7 @@ struct idx_dataset_derived_metadata_struct
   int aggregator_multiplier;
   int data_core_count;
 
-  int shared_block_level;
+  //int shared_block_level;
   int total_partiton_level;
 
   int **block_bitmap;

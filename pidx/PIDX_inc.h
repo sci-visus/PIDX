@@ -40,6 +40,8 @@
 extern "C" {
 #endif
 
+#define PIDX_MIN(a,b) (((a)<(b))?(a):(b))
+
 
 #include "./utils/PIDX_error_codes.h"
 #include "./utils/PIDX_point.h"
@@ -77,7 +79,6 @@ extern "C" {
 #include "./io/blocks.h"
 #include "./io/hz_buffer.h"
 #include "./io/agg_io.h"
-#include "./io/initialize.h"
 #include "./io/timming.h"
 
 #ifdef __cplusplus

@@ -206,6 +206,10 @@ PIDX_return_code create_restructured_communicators(PIDX_io file, int gi, int svi
   MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
 
+  var_grp->rank_buffer = malloc(file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
+  memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
+  MPI_Allgather(&(file->idx_c->grank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
+
   return PIDX_success;
 }
 

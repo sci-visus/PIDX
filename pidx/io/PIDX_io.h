@@ -16,11 +16,16 @@ struct PIDX_io_descriptor
 
   PIDX_wavelet_id wavelet_id;                          ///< HZ encoding phase id
 
+#if 0
   PIDX_agg_id** shared_agg_id;                      ///< Aggregation phase id for all shared file
   PIDX_agg_id** nshared_agg_id;                     ///< Aggregation phase id for all nonshared file
 
   PIDX_file_io_id** shared_io_id;                   ///< Aggregation phase id for all shared file
   PIDX_file_io_id** nshared_io_id;                  ///< Aggregation phase id for all nonshared file
+#endif
+
+  PIDX_agg_id** agg_id;                      ///< Aggregation phase id for all shared file
+  PIDX_file_io_id** io_id;                  ///< Aggregation phase id for all nonshared file
 
   PIDX_insitu_id insitu_id;
 

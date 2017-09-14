@@ -114,12 +114,8 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
 
   }
 
-#if PIDX_HAVE_MPI
   unsigned long long global_volume = 0;
-  if (id->idx_d->parallel_mode == 1)
-    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, id->idx_c->local_comm);
-  else
-    global_volume = element_count;
+  MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, id->idx_c->local_comm);
 
   //fprintf(stderr, "[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (unsigned long long)(id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1)));
 
@@ -139,6 +135,6 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
     if (id->idx_c->lrank == 0)
       fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
   }
-#endif
+
   return PIDX_success;
 }

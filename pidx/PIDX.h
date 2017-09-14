@@ -141,11 +141,6 @@ PIDX_return_code PIDX_close(PIDX_file file);
 /*
  * Implementation in PIDX_idx_set_get.c
  */
-
-
-PIDX_return_code PIDX_randomized_aggregators(PIDX_file file, int* agg_list, int agg_count);
-
-
 ///
 /// Sets the number of variables in the IDX file.
 /// \param file The IDX file handler.
@@ -550,25 +545,6 @@ PIDX_return_code PIDX_set_cache_time_step(PIDX_file file, int ts);
 ///
 PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts);
 
-
-
-///
-/// \brief PIDX_set_bit_string_type
-/// \param file
-/// \param bs_type
-/// \return
-///
-PIDX_return_code PIDX_set_bit_string_type(PIDX_file file, int bs_type);
-
-
-
-///
-/// \brief PIDX_get_bit_string_type
-/// \param file
-/// \param bs_type
-/// \return
-///
-PIDX_return_code PIDX_get_bit_string_type(PIDX_file file, int* bs_type);
 
 
 

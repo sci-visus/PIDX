@@ -120,7 +120,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
               int bl;
               for (bl = start_block_index; bl <= end_block_index; bl++)
               {
-                if (PIDX_blocks_is_block_present(bl, block_layout))
+                if (PIDX_blocks_is_block_present(bl, hz_id->idx->bits_per_block, block_layout))
                 {
                   if (bl == start_block_index)
                   {
@@ -204,7 +204,7 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
 
     //printf("file_index %d start fs block %d fs block size %d\n", file_index, hz_id->idx_d->start_fs_block, hz_id->idx_d->fs_block_size);
 
-    block_negative_offset = PIDX_blocks_find_negative_offset(hz_id->idx->blocks_per_file, block_number, layout);
+    block_negative_offset = PIDX_blocks_find_negative_offset(hz_id->idx->blocks_per_file, hz_id->idx->bits_per_block, block_number, layout);
 
     data_offset -= block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps;
 
@@ -213,7 +213,7 @@ static int write_read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsig
     {
       bytes_per_sample = var_grp->variable[l]->bpv / 8;
       for (i = 0; i < hz_id->idx->blocks_per_file; i++)
-        if (PIDX_blocks_is_block_present((i + (hz_id->idx->blocks_per_file * file_number)), layout))
+        if (PIDX_blocks_is_block_present((i + (hz_id->idx->blocks_per_file * file_number)), hz_id->idx->bits_per_block, layout))
           data_offset = data_offset + (var_grp->variable[l]->vps * bytes_per_sample * hz_id->idx_d->samples_per_block);
     }
 

@@ -99,7 +99,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
 
 PIDX_return_code PIDX_agg_random_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
 {
-#if 1
+#if 0
   int i = 0, j = 0, k = 0;
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
 
@@ -912,7 +912,6 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
               break;
         }
 
-
         for (s = 0; s < id->idx_d->samples_per_block; s++)
         {
            // HZ index of first sample of the block.
@@ -928,10 +927,8 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
             break;
         }
 
-
         unsigned long long global_start_hz = first_index;
         unsigned long long global_end_hz = last_index;
-
         unsigned long long global_start_ZYX[PIDX_MAX_DIMENSIONS], global_end_ZYX[PIDX_MAX_DIMENSIONS];
 
         Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, global_start_hz, global_start_ZYX);
@@ -1020,14 +1017,19 @@ PIDX_return_code PIDX_agg_localized_aggregation(PIDX_agg_id id, Agg_buffer ab, P
         //int range = (end_rank - start_rank + 1) / id->idx->variable_count;
         float range = (float)(end_rank - start_rank + 1) / (id->idx->variable_pipe_length + 1);
 
+#if 0
         if (file_status == 1)
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range) + (range/2);
         else if (file_status == 0)
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
-        else if (file_status == 2)
-          id->agg_r[k][i - id->fi][j] = id->idx_c->gnprocs - 1;
         else
           id->agg_r[k][i - id->fi][j] = -1;
+#endif
+        if (agg_offset < var_grp->shared_end_layout_index)
+            id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
+        else
+            id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range) + (range/2);
+
 #if 0//DETAIL_OUTPUT
         if (id->idx_c->grank == 0)
         {
@@ -1620,7 +1622,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
               int bl;
               for (bl = start_block_index; bl <= end_block_index; bl++)
               {
-                if (PIDX_blocks_is_block_present(bl, lbl))
+                if (PIDX_blocks_is_block_present(bl, id->idx->bits_per_block, lbl))
                 {
                   if (bl == start_block_index)
                   {
@@ -1690,7 +1692,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   //number of empty blocks befor block "block_no" in the file "file_no"
   //negative_block_offset = PIDX_blocks_find_negative_offset(id->idx->blocks_per_file, block_no, id->idx->variable[id->ini]->global_block_layout);
-  negative_block_offset = PIDX_blocks_find_negative_offset(id->idx->blocks_per_file, block_no, lbl);
+  negative_block_offset = PIDX_blocks_find_negative_offset(id->idx->blocks_per_file, id->idx->bits_per_block, block_no, lbl);
   if (negative_block_offset < 0)
     return PIDX_err_agg;
 
@@ -1999,7 +2001,7 @@ static PIDX_return_code compressed_aggregate(PIDX_agg_id id, int variable_index,
 
 
   //number of empty blocks befor block "block_no" in the file "file_no"
-  negative_block_offset = PIDX_blocks_find_negative_offset(id->idx->blocks_per_file, block_no, lbl);
+  negative_block_offset = PIDX_blocks_find_negative_offset(id->idx->blocks_per_file, id->idx->bits_per_block, block_no, lbl);
   if (negative_block_offset < 0)
     return PIDX_err_agg;
 

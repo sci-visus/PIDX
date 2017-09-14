@@ -143,7 +143,7 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
     int block_count = 0;
     for (i = 0; i < io_id->idx->blocks_per_file; i++)
     {
-      if (PIDX_blocks_is_block_present(agg_buf->file_number * io_id->idx->blocks_per_file + i, block_layout))
+      if (PIDX_blocks_is_block_present(agg_buf->file_number * io_id->idx->blocks_per_file + i, io_id->idx->bits_per_block, block_layout))
       {
         data_offset = htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * agg_buf->var_number))*10 )]);
         data_size = htonl(headers[14 + ((i + (io_id->idx->blocks_per_file * agg_buf->var_number))*10 )]);

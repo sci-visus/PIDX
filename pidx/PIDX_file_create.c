@@ -71,8 +71,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
-  (*file)->idx->bitsequence_type = 0;
-
   (*file)->local_group_index = 0;
   (*file)->local_group_count = 1;
   (*file)->flush_used = 0;
@@ -88,7 +86,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_d->reduced_res_from = 0;
   (*file)->idx_d->reduced_res_to = 0;
 
-  (*file)->idx_d->parallel_mode = access_type->parallel;
   (*file)->idx_d->raw_io_pipe_length = 0;
 
   (*file)->idx_c->global_comm = access_type->comm;
@@ -137,8 +134,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx->variable_group_count = 1;
 
-  (*file)->idx->random_agg_counter = 0;
-
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
   //memset((*file)->idx->reg_patch_size, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
@@ -173,7 +168,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     memset((*file)->idx->variable_grp[i], 0, sizeof(*((*file)->idx->variable_grp[i])));
   }
 
-#if 1
   if ((*file)->idx_c->grank == 0)
   {
     //TODO: close and delete the file (there is a way to do this automatically by fopen...)
@@ -189,11 +183,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     (*file)->idx_d->fs_block_size = stat_buf.st_blksize;
   }
 
-#if PIDX_HAVE_MPI
-  if ((*file)->idx_d->parallel_mode == 1)
-    MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-#endif
-#endif
+  MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
 
   (*file)->idx->flip_endian = 0;
 
