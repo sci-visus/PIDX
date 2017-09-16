@@ -14,6 +14,9 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
   generate_file_name_template(file->idx_d->maxh, file->idx->bits_per_block, file->idx->filename_global, file->idx->current_time_step, file->idx->filename_template_global);
   generate_file_name_template(file->idx_d->maxh, file->idx->bits_per_block, file->idx->filename_partition, file->idx->current_time_step, file->idx->filename_template_partition);
 
+  if (mode == PIDX_READ)
+    return PIDX_success;
+
   //fprintf(stderr, "F0: %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
   //fprintf(stderr, "SL: %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
   //fprintf(stderr, "NS: %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);

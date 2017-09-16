@@ -19,13 +19,13 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
 
   // Initialize the restructuring phase
   time->rst_init_start[lgi][cvi] = PIDX_get_time();
-  file->multi_patch_rst_id = PIDX_idx_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
+  file->idx_rst_id = PIDX_idx_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
   time->rst_init_end[lgi][cvi] = PIDX_get_time();
 
 
   // Populates the relevant meta-data
   time->rst_meta_data_create_start[lgi][cvi] = PIDX_get_time();
-  ret = PIDX_idx_rst_meta_data_create(file->multi_patch_rst_id);
+  ret = PIDX_idx_rst_meta_data_create(file->idx_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
   time->rst_meta_data_create_end[lgi][cvi] = PIDX_get_time();
 
@@ -38,7 +38,7 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
   {
     if (mode == PIDX_WRITE)
     {
-      ret = PIDX_idx_rst_meta_data_write(file->multi_patch_rst_id);
+      ret = PIDX_idx_rst_meta_data_write(file->idx_rst_id);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
     }
   }
@@ -47,12 +47,12 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
 
   // Creating the buffers required for restructurig
   time->rst_buffer_start[lgi][cvi] = PIDX_get_time();
-  ret = PIDX_idx_rst_buf_create(file->multi_patch_rst_id);
+  ret = PIDX_idx_rst_buf_create(file->idx_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
 
   // Aggregating the aligned small buffers after restructuring into one single buffer
-  ret = PIDX_idx_rst_aggregate_buf_create(file->multi_patch_rst_id);
+  ret = PIDX_idx_rst_aggregate_buf_create(file->idx_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
   time->rst_buffer_end[lgi][cvi] = PIDX_get_time();
 
@@ -72,19 +72,25 @@ PIDX_return_code restructure(PIDX_io file, int mode)
     {
       // Perform data restructuring
       time->rst_write_read_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_staged_write(file->multi_patch_rst_id);
+      ret = PIDX_idx_rst_staged_write(file->idx_rst_id);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
 
+      if (file->idx_dbg->debug_rst == 1)
+      {
+        ret = HELPER_idx_rst(file->idx_rst_id);
+        if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+
       // Aggregating in memory restructured buffers into one large buffer
       time->rst_buff_agg_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_buf_aggregate(file->multi_patch_rst_id, PIDX_WRITE);
+      ret = PIDX_idx_rst_buf_aggregate(file->idx_rst_id, PIDX_WRITE);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
 
       // Destroying the restructure buffers (as they are now combined into one large buffer)
       time->rst_buff_agg_free_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_buf_destroy(file->multi_patch_rst_id);
+      ret = PIDX_idx_rst_buf_destroy(file->idx_rst_id);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_free_end[lgi][cvi] = PIDX_get_time();
     }
@@ -96,19 +102,25 @@ PIDX_return_code restructure(PIDX_io file, int mode)
     {
       // Aggregating in memory restructured buffers into one large buffer
       time->rst_buff_agg_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_buf_aggregate(file->multi_patch_rst_id, PIDX_READ);
+      ret = PIDX_idx_rst_buf_aggregate(file->idx_rst_id, PIDX_READ);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
 
+      //if (file->idx_dbg->debug_rst == 1)
+      {
+        ret = HELPER_idx_rst(file->idx_rst_id);
+        if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+      }
+
       // Perform data restructuring
       time->rst_write_read_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_read(file->multi_patch_rst_id);
+      ret = PIDX_idx_rst_read(file->idx_rst_id);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_write_read_end[lgi][cvi] = PIDX_get_time();
 
       // Destroying the restructure buffers (as they are now combined into one large buffer)
       time->rst_buff_agg_free_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_buf_destroy(file->multi_patch_rst_id);
+      ret = PIDX_idx_rst_buf_destroy(file->idx_rst_id);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_free_end[lgi][cvi] = PIDX_get_time();
     }
@@ -130,7 +142,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
     {
       // Write out restructured data
       time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_buf_aggregated_write(file->multi_patch_rst_id);
+      ret = PIDX_idx_rst_buf_aggregated_write(file->idx_rst_id);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_io_end[lgi][cvi] = PIDX_get_time();
     }
@@ -141,7 +153,7 @@ PIDX_return_code restructure_io(PIDX_io file, int mode)
     {
       // Read restructured data
       time->rst_buff_agg_io_start[lgi][cvi] = PIDX_get_time();
-      ret = PIDX_idx_rst_buf_aggregated_read(file->multi_patch_rst_id);
+      ret = PIDX_idx_rst_buf_aggregated_read(file->idx_rst_id);
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_io_end[lgi][cvi] = PIDX_get_time();
     }
@@ -159,14 +171,14 @@ PIDX_return_code restructure_cleanup(PIDX_io file)
 
   // Destroy buffers allocated during restructuring phase
   time->rst_cleanup_start[lgi][cvi] = PIDX_get_time();
-  ret = PIDX_idx_rst_aggregate_buf_destroy(file->multi_patch_rst_id);
+  ret = PIDX_idx_rst_aggregate_buf_destroy(file->idx_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-  ret = PIDX_idx_rst_meta_data_destroy(file->multi_patch_rst_id);
+  ret = PIDX_idx_rst_meta_data_destroy(file->idx_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
   // Deleting the restructuring ID
-  PIDX_idx_rst_finalize(file->multi_patch_rst_id);
+  PIDX_idx_rst_finalize(file->idx_rst_id);
   time->rst_cleanup_end[lgi][cvi] = PIDX_get_time();
 
   return PIDX_success;
@@ -177,12 +189,12 @@ PIDX_return_code restructure_forced_read(PIDX_io file, int svi, int evi)
 {
   int ret = 0;
 
-  file->multi_patch_rst_id = PIDX_idx_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
+  file->idx_rst_id = PIDX_idx_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
 
-  ret = PIDX_idx_rst_forced_raw_read(file->multi_patch_rst_id);
+  ret = PIDX_idx_rst_forced_raw_read(file->idx_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
-  ret = PIDX_idx_rst_finalize(file->multi_patch_rst_id);
+  ret = PIDX_idx_rst_finalize(file->idx_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
   return PIDX_success;
@@ -198,17 +210,14 @@ PIDX_return_code create_restructured_communicators(PIDX_io file, int gi, int svi
   MPI_Comm_rank(file->idx_c->global_comm, &(temp_rank));
 
   MPI_Comm_split(file->idx_c->global_comm, var0->restructured_super_patch_count, file->idx_c->grank, &(file->idx_c->rst_comm));
-  file->idx_c->global_comm = file->idx_c->rst_comm;
   file->idx_c->local_comm = file->idx_c->rst_comm;
 
-  MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
-  MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
 
-  var_grp->rank_buffer = malloc(file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  MPI_Allgather(&(file->idx_c->grank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
+  var_grp->rank_buffer = malloc(file->idx_c->lnprocs * sizeof(*var_grp->rank_buffer));
+  memset(var_grp->rank_buffer, 0, file->idx_c->lnprocs * sizeof(*var_grp->rank_buffer));
+  MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->local_comm);
 
   return PIDX_success;
 }
@@ -263,17 +272,20 @@ static void adjust_restructured_box_size(PIDX_io file)
   int box_size_factor_z = 1;
   int counter = 0;
 
+  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
+
   recaliberate:
 
-  file->idx_d->restructured_grid->patch_size[0] = file->idx_d->restructured_grid->patch_size[0] * box_size_factor_x;
-  file->idx_d->restructured_grid->patch_size[1] = file->idx_d->restructured_grid->patch_size[1] * box_size_factor_y;
-  file->idx_d->restructured_grid->patch_size[2] = file->idx_d->restructured_grid->patch_size[2] * box_size_factor_z;
+  ps[0] = ps[0] * box_size_factor_x;
+  ps[1] = ps[1] * box_size_factor_y;
+  ps[2] = ps[2] * box_size_factor_z;
 
-  file->idx_d->restructured_grid->total_patch_count[0] = ceil((float)file->idx->box_bounds[0] / file->idx_d->restructured_grid->patch_size[0]);
-  file->idx_d->restructured_grid->total_patch_count[1] = ceil((float)file->idx->box_bounds[1] / file->idx_d->restructured_grid->patch_size[1]);
-  file->idx_d->restructured_grid->total_patch_count[2] = ceil((float)file->idx->box_bounds[2] / file->idx_d->restructured_grid->patch_size[2]);
+  int *tpc = file->idx_d->restructured_grid->total_patch_count;
+  tpc[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
+  tpc[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
+  tpc[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
 
-  if (file->idx_d->restructured_grid->total_patch_count[0] * file->idx_d->restructured_grid->total_patch_count[1] * file->idx_d->restructured_grid->total_patch_count[2] > file->idx_c->gnprocs)
+  if (tpc[0] * tpc[1] * tpc[2] > file->idx_c->gnprocs)
   {
     if (counter % 3 == 0)
       box_size_factor_x = box_size_factor_x * 2;
@@ -292,13 +304,15 @@ static void adjust_restructured_box_size(PIDX_io file)
 
 static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi)
 {
+  // TODO: cache computation
   int *rgp = file->idx_d->restructured_grid->total_patch_count;
+  int total_patch_count = rgp[0] * rgp[1] * rgp[2];
 
-  file->idx_d->restructured_grid->patch = malloc(rgp[0] * rgp[1] * rgp[2] * sizeof(*file->idx_d->restructured_grid->patch));
-  memset(file->idx_d->restructured_grid->patch, 0, (rgp[0] * rgp[1] * rgp[2] * sizeof(*file->idx_d->restructured_grid->patch)));
+  file->idx_d->restructured_grid->patch = malloc(total_patch_count * sizeof(*file->idx_d->restructured_grid->patch));
+  memset(file->idx_d->restructured_grid->patch, 0, (total_patch_count * sizeof(*file->idx_d->restructured_grid->patch)));
 
   int i = 0, j = 0, k = 0;
-  for (i = 0; i < rgp[0] * rgp[1] * rgp[2]; i++)
+  for (i = 0; i <   total_patch_count; i++)
   {
     file->idx_d->restructured_grid->patch[i] = malloc(sizeof(*(file->idx_d->restructured_grid->patch[i])));
     memset(file->idx_d->restructured_grid->patch[i], 0, sizeof(*(file->idx_d->restructured_grid->patch[i])));
@@ -308,54 +322,55 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
 
   int rank_count = 0;
   int index = 0;
-  for (k = 0; k < file->idx->box_bounds[2]; k = k + file->idx_d->restructured_grid->patch_size[2])
-    for (j = 0; j < file->idx->box_bounds[1]; j = j + file->idx_d->restructured_grid->patch_size[1])
-      for (i = 0; i < file->idx->box_bounds[0]; i = i + file->idx_d->restructured_grid->patch_size[0])
+  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
+  for (k = 0; k < file->idx->box_bounds[2]; k = k + ps[2])
+    for (j = 0; j < file->idx->box_bounds[1]; j = j + ps[1])
+      for (i = 0; i < file->idx->box_bounds[0]; i = i + ps[0])
       {
         //Interior regular patches
-        index = ((k / file->idx_d->restructured_grid->patch_size[2]) * rgp[0] * rgp[1]) + ((j / file->idx_d->restructured_grid->patch_size[1]) * rgp[0]) + (i / file->idx_d->restructured_grid->patch_size[0]);
+        index = ((k / ps[2]) * rgp[0] * rgp[1]) + ((j / ps[1]) * rgp[0]) + (i / ps[0]);
 
-        if (index >= rgp[0] * rgp[1] * rgp[2])
+        if (index >= total_patch_count)
         {
-          fprintf(stderr, "[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", rgp[2], rgp[1], rgp[0], index, i, j, k, (int)(k / file->idx_d->restructured_grid->patch_size[2]), (int)(j / file->idx_d->restructured_grid->patch_size[1]), (int)(i / file->idx_d->restructured_grid->patch_size[0]));
+          fprintf(stderr, "[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", rgp[2], rgp[1], rgp[0], index, i, j, k, (int)(k / ps[2]), (int)(j / ps[1]), (int)(i / ps[0]));
         }
 
-        assert(index < rgp[0] * rgp[1] * rgp[2]);
+        assert(index < total_patch_count);
 
-        file->idx_d->restructured_grid->patch[index]->offset[0] = i;
-        file->idx_d->restructured_grid->patch[index]->offset[1] = j;
-        file->idx_d->restructured_grid->patch[index]->offset[2] = k;
+        Ndim_empty_patch *patch = file->idx_d->restructured_grid->patch;
+        patch[index]->offset[0] = i;
+        patch[index]->offset[1] = j;
+        patch[index]->offset[2] = k;
 
-        file->idx_d->restructured_grid->patch[index]->size[0] = file->idx_d->restructured_grid->patch_size[0];
-        file->idx_d->restructured_grid->patch[index]->size[1] = file->idx_d->restructured_grid->patch_size[1];
-        file->idx_d->restructured_grid->patch[index]->size[2] = file->idx_d->restructured_grid->patch_size[2];
+        patch[index]->size[0] = ps[0];
+        patch[index]->size[1] = ps[1];
+        patch[index]->size[2] = ps[2];
 
-        file->idx_d->restructured_grid->patch[index]->edge = 1;
+        patch[index]->is_boundary_patch = 1;
 
 
         //Edge regular patches
-        if ((i + file->idx_d->restructured_grid->patch_size[0]) > file->idx->box_bounds[0])
+        if ((i + ps[0]) > file->idx->box_bounds[0])
         {
-          file->idx_d->restructured_grid->patch[index]->edge = 2;
-          file->idx_d->restructured_grid->patch[index]->size[0] = file->idx->box_bounds[0] - i;
+          patch[index]->is_boundary_patch = 2;
+          patch[index]->size[0] = file->idx->box_bounds[0] - i;
         }
 
-        if ((j + file->idx_d->restructured_grid->patch_size[1]) > file->idx->box_bounds[1])
+        if ((j + ps[1]) > file->idx->box_bounds[1])
         {
-          file->idx_d->restructured_grid->patch[index]->edge = 2;
-          file->idx_d->restructured_grid->patch[index]->size[1] = file->idx->box_bounds[1] - j;
+          patch[index]->is_boundary_patch = 2;
+          patch[index]->size[1] = file->idx->box_bounds[1] - j;
         }
 
-        if ((k + file->idx_d->restructured_grid->patch_size[2]) > file->idx->box_bounds[2])
+        if ((k + ps[2]) > file->idx->box_bounds[2])
         {
-          file->idx_d->restructured_grid->patch[index]->edge = 2;
-          file->idx_d->restructured_grid->patch[index]->size[2] = file->idx->box_bounds[2] - k;
+          patch[index]->is_boundary_patch = 2;
+          patch[index]->size[2] = file->idx->box_bounds[2] - k;
         }
 
-        file->idx_d->restructured_grid->patch[index]->rank = rank_count * (file->idx_c->gnprocs / (rgp[0] * rgp[1] * rgp[2]));
+        patch[index]->rank = rank_count * (file->idx_c->gnprocs / (total_patch_count));
         rank_count++;
       }
-
 #if 0
   int nx = 0, ny = 0, nz = 0;
   int int_x = file->idx_c->gnproc_x / rgp[0];
@@ -370,20 +385,34 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
         {
           index = ((nz / int_z) * rgp[0] * rgp[1]) + ((ny / int_y) * rgp[0]) + (nx / int_x);
 
-          file->idx_d->restructured_grid->patch[index]->rank = (nz * file->idx_c->gnproc_x * file->idx_c->gnproc_y) + (ny * file->idx_c->gnproc_x) + nx;
+          patch[index]->rank = (nz * file->idx_c->gnproc_x * file->idx_c->gnproc_y) + (ny * file->idx_c->gnproc_x) + nx;
 
-          if (file->idx_c->grank == file->idx_d->restructured_grid->patch[index]->rank)
+          if (file->idx_c->grank == patch[index]->rank)
           {
             file->idx_c->grank_x = nx;
             file->idx_c->grank_y = ny;
             file->idx_c->grank_z = nz;
-            //fprintf(stderr, "file->idx_d->restructured_grid->patch[index]->rank %d [%d %d %d]\n", file->idx_d->restructured_grid->patch[index]->rank, nx, ny, nz);
+            //fprintf(stderr, "patch[index]->rank %d [%d %d %d]\n", patch[index]->rank, nx, ny, nz);
           }
         }
   }
 #endif
 
-  assert(rank_count == rgp[0] * rgp[1] * rgp[2]);
+#if 0
+  if (file->idx_c->grank == 0)
+  {
+    for (k = 0; k < rgp[2]; k++)
+      for (j = 0; j < rgp[1]; j++)
+        for (i = 0; i < rgp[0]; i++)
+        {
+            index = (k * rgp[0] * rgp[1]) + (j * rgp[0]) + i;
+            printf("Index %d\n", index);
+            Ndim_empty_patch *patch = file->idx_d->restructured_grid->patch;
+            printf("patch %d %d %d - %d %d %d R %d\n", patch[index]->offset[0], patch[index]->offset[1], patch[index]->offset[2], patch[index]->size[0], patch[index]->size[1], patch[index]->size[2], patch[index]->rank);
+        }
+  }
+#endif
+  assert(rank_count <= total_patch_count);
 
   return PIDX_success;
 
@@ -391,7 +420,6 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
 
 PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
 {
-#if 0
   PIDX_time time = file->idx_d->time;
   time->set_reg_box_start = PIDX_get_time();
 
@@ -399,15 +427,14 @@ PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
   populate_restructured_grid(file, gi, svi);
 
   time->set_reg_box_end = MPI_Wtime();
-#endif
+
   return PIDX_success;
 }
 
 
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
 {
-#if 0
-  int core = log2(getPowerOf2(file->idx_c->gnprocs));
+  int core = (int)log2(getPowerOf2(file->idx_c->gnprocs));
   int bits;
   int counter = 1;
   unsigned long long power_two_bound[PIDX_MAX_DIMENSIONS];
@@ -416,37 +443,41 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   power_two_bound[2] = file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
 
   increase_box_size:
+  memcpy(file->idx_d->restructured_grid->patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
   bits = core;
   counter = 1;
 
-  memcpy(file->idx->reg_patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
-
+  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
   while (bits != 0)
   {
     if (file->idx->bitSequence[counter] == '0')
-      file->idx->reg_patch_size[0] = file->idx->reg_patch_size[0] / 2;
+      ps[0] = ps[0] / 2;
 
     else if (file->idx->bitSequence[counter] == '1')
-      file->idx->reg_patch_size[1] = file->idx->reg_patch_size[1] / 2;
+      ps[1] = ps[1] / 2;
 
     else if (file->idx->bitSequence[counter] == '2')
-      file->idx->reg_patch_size[2] = file->idx->reg_patch_size[2] / 2;
+      ps[2] = ps[2] / 2;
 
     counter++;
     bits--;
   }
 
   int np[3];
-  np[0] = ceil((float)file->idx->box_bounds[0] / file->idx->reg_patch_size[0]);
-  np[1] = ceil((float)file->idx->box_bounds[1] / file->idx->reg_patch_size[1]);
-  np[2] = ceil((float)file->idx->box_bounds[2] / file->idx->reg_patch_size[2]);
+  np[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
+  np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
+  np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
 
   if (np[0] * np[1] * np[2] > file->idx_c->gnprocs)
   {
     core = core - 1;
     goto increase_box_size;
   }
-#endif
+
+  file->idx_d->restructured_grid->total_patch_count[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
+  file->idx_d->restructured_grid->total_patch_count[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
+  file->idx_d->restructured_grid->total_patch_count[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
+
   return PIDX_success;
 }

@@ -166,78 +166,6 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
 #if 1
   int i = 0, j = 0, k = 0;
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
-  int *agg_list;
-
-  //if (agg_offset == 0)
-  //  id->idx->agg_counter = 0;
-
-  agg_list = malloc(sizeof(*agg_list) * id->idx_d->max_file_count * id->idx->variable_count);
-  memset(agg_list, 0, sizeof(*agg_list) * id->idx_d->max_file_count * id->idx->variable_count);
-
-  int M = id->idx_d->max_file_count * id->idx->variable_count;
-  int N = id->idx_c->lnprocs;
-  int interval = (N / M);
-
-  if (interval >= 1)
-  {
-  for (i = 0; i < M; i++)
-    agg_list[i] = i * interval;
-  }
-  else
-  {
-    // M = 32
-    // N = 8
-    interval = 1;
-    for (k = 0; k < M/N; k++)
-    {
-      for (i = 0; i < N ; i++)
-      {
-        agg_list[N * k + i] = i * interval;
-      }
-    }
-    i = 0;
-    for (k = (M/N) * N; k < M; k++)
-      agg_list[k] = i++;
-
-  }
-
-  /*
-  int interval = ((N + 1) / M) * 2;
-  int constant = ((N + 1) / M);
-  for (i = 0; i < M/2; i++)
-  {
-    id->idx->agg_list[i] = i * interval;
-  }
-  for (i = M/2; i < M; i++)
-  {
-    id->idx->agg_list[i] = (i - M/2) * interval + constant;
-  }
-  */
-  /*
-  int interval = (N / M);
-  for (i = 0; i < M; i++)
-  {
-    id->idx->agg_list[i] = i * interval + 1;
-  }
-  */
-
-  for (k = 0; k < lbl->efc; k++)
-  {
-    for (i = id->fi; i <= id->li; i++)
-    {
-      for (j = 0; j < var_grp->variable[i]->vps * ab->agg_f; j++)
-      {
-        id->agg_r[k][i - id->fi][j] = agg_list[id->idx->agg_counter];
-        //if (id->idx_c->lrank == 0)
-        //  fprintf(stderr, "%d ----> %d\n", id->idx->agg_counter, agg_list[id->idx->agg_counter]);
-        id->idx->agg_counter++;
-      }
-    }
-  }
-  free(agg_list);
-
-  //int aggregator_interval = id->idx_c->lnprocs / ((id->fi - id->li + 1) * lbl->efc);
-  //int aggregator_interval = id->idx_c->lnprocs / ((id->fi - id->li + 1) * id->idx_d->max_file_count);
 
   for (k = 0; k < lbl->efc; k++)
   {
@@ -257,7 +185,6 @@ PIDX_return_code PIDX_agg_buf_create_global_uniform_dist(PIDX_agg_id id, Agg_buf
 
           int bpdt = 0;
           bpdt = (chunk_size * var_grp->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
-          //fprintf(stderr, "CS %d bpv %d CF %d\n", chunk_size, var_grp->variable[ab->var_number]->bpv/8,  id->idx->compression_factor);
 
           ab->buffer_size = sample_count * bpdt;
 

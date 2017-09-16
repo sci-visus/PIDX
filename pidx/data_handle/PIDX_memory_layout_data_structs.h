@@ -36,7 +36,7 @@
 struct PIDX_Ndim_empty_patch_struct
 {
   int rank;
-  int edge;
+  int is_boundary_patch;
   unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
   unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
 };
@@ -82,9 +82,9 @@ struct PIDX_super_patch_struct
   uint32_t patch_count;                                 ///< Number of patches in the super patch
   PIDX_patch *patch;                                    ///< Pointer to the patches that comprises the super patch
 
-  PIDX_source_patch_index *source_patch;                ///< Rank of all the patches
+  PIDX_source_patch_index *source_patch;                ///< Rank and index of all the patches
   int max_patch_rank;                                   ///< Rank of the process that holds this super patch
-  PIDX_patch restructured_patch;                                 ///< Pointer to the restructured (super) patch
+  PIDX_patch restructured_patch;                        ///< Pointer to the restructured (super) patch
 };
 typedef struct PIDX_super_patch_struct* PIDX_super_patch;
 

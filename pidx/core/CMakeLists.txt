@@ -22,7 +22,7 @@
 #ADD_SUBDIRECTORY(PIDX_generic_rst)
 #ADD_SUBDIRECTORY(PIDX_wavelet_rst)
 #ADD_SUBDIRECTORY(PIDX_rst)
-ADD_SUBDIRECTORY(PIDX_multi_patch_rst)
+ADD_SUBDIRECTORY(PIDX_idx_rst)
 ADD_SUBDIRECTORY(PIDX_block_rst)
 ADD_SUBDIRECTORY(PIDX_cmp)
 ADD_SUBDIRECTORY(PIDX_hz)
@@ -69,5 +69,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_core "${PIDX_CORE_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_core m pidx_in_situ_interface pidx_utils pidx_data_handle pidx_header pidx_multi_patch_rst pidx_in_situ_interface pidx_wavelet pidx_cmp pidx_hz pidx_agg pidx_file_io ${PIDX_CORE_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_core m pidx_in_situ_interface pidx_utils pidx_data_handle pidx_header pidx_idx_rst pidx_in_situ_interface pidx_wavelet pidx_cmp pidx_hz pidx_agg pidx_file_io ${PIDX_CORE_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_core PROPERTIES LINKER_LANGUAGE CXX)

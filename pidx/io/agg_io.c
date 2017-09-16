@@ -115,9 +115,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int lvi, int svi, int evi,
           return PIDX_err_rst;
         }
         time->agg_compress_end[lgi][svi][j] = PIDX_get_time();
-
       }
-
 
       time->agg_meta_cleanup_start[lgi][svi][j] = PIDX_get_time();
       ret = PIDX_agg_meta_data_destroy(file->agg_id[svi][j], var_grp->block_layout_by_level[j]);

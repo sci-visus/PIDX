@@ -107,7 +107,7 @@ PIDX_return_code PIDX_async_aggregated_read(PIDX_file_io_id io_id, Agg_buffer ag
   int tck = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
   if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
   {
-    generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) /*adjusted_file_index*/agg_buf->file_number, file_name, PATH_MAX);
+    generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
     //printf("File number %d File name %s\n", agg_buf->file_number, file_name);
 

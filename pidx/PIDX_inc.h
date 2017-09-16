@@ -56,7 +56,7 @@ extern "C" {
 #include "./data_handle/PIDX_idx_data_structs.h"
 
 #include "./core/PIDX_header/PIDX_header_io.h"
-#include "./core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.h"
+#include "./core/PIDX_idx_rst/PIDX_idx_rst.h"
 #include "./core/PIDX_hz/PIDX_hz_encode.h"
 #include "./core/PIDX_in_situ_interface/PIDX_in_situ_interface.h"
 #include "./core/PIDX_block_rst/PIDX_block_restructure.h"

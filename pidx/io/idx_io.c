@@ -71,9 +71,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     file->idx->variable_pipe_length = file->idx->variable_count;
     for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
     {
-
-      //ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
-
       if ((si + file->idx->variable_pipe_length) >= evi)
         file->idx->variable_pipe_length = evi - (si + 1);
 
@@ -189,7 +186,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         finalize_aggregation(file, gi, li, si);
         time->io_end[gi][li] = PIDX_get_time();
       }
-
+#endif
       // Step 8: Cleanup all buffers and ids
       ret = hz_encode_cleanup(file);
       if (ret != PIDX_success)
@@ -197,7 +194,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#endif
     }
 
     // Step 9
@@ -207,9 +203,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-
   }
-
 
   ret = restructure_cleanup(file);
   if (ret != PIDX_success)
@@ -254,42 +248,99 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  file->idx->variable_pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (file->idx->variable_count + 1))
+  // Step 1: Setup restructuring buffers
+  if (restructure_setup(file, gi, svi, evi - 1, PIDX_READ) != PIDX_success)
   {
-    ei = ((si + file->idx->variable_count) >= (evi)) ? (evi - 1) : (si + file->idx->variable_count);
-    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
 
-    // Step 1: Setup restructuring buffers
-    ret = restructure_setup(file, gi, si, ei, PIDX_READ);
-    if (ret != PIDX_success)
+  if (create_restructured_communicators(file, gi, svi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  PIDX_variable var0 = var_grp->variable[svi];
+
+  if (var0->restructured_super_patch_count == 1)
+  {
+    if (populate_block_layout_and_buffers(file, gi, svi, evi, PIDX_READ) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
-    // Step 2: Setup HZ buffers
-    ret = hz_encode_setup(file, gi, si, ei);
-    if (ret != PIDX_success)
+    file->idx->variable_pipe_length = file->idx->variable_count;
+    for (si = svi; si < evi; si = si + (file->idx->variable_count + 1))
     {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
+      ei = ((si + file->idx->variable_count) >= (evi)) ? (evi - 1) : (si + file->idx->variable_count);
+      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
-    //PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-    //printf("X %d %d %d Y %d %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared, var_grp->nshared_end_layout_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared, var_grp->shared_end_layout_index);
+      // Step 2: Setup HZ buffers
+      ret = hz_encode_setup(file, gi, si, ei);
+      if (ret != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
 
+      //PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+      //printf("X %d %d %d Y %d %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared, var_grp->nshared_end_layout_index, var_grp->shared_start_layout_index, var_grp->agg_l_shared, var_grp->shared_end_layout_index);
 
-    if (hz_io(file, gi, PIDX_READ) != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
+      if (hz_io(file, gi, PIDX_READ) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
 
-    // Step 3: Setup aggregation buffers
-    for (li = si; li <= ei; li = li + 1)
-    {
-      ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_READ);
+      // Step 3: Setup aggregation buffers
+      for (li = si; li <= ei; li = li + 1)
+      {
+        ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_READ);
+        if (ret != PIDX_success)
+        {
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_file;
+        }
+      }
+
+      // Step 4: Performs actual file io
+      for (li = si; li <= ei; li = li + 1)
+      {
+        time->io_start[gi][li] = PIDX_get_time();
+        ret = data_io(file, gi, si, li, ei, PIDX_READ);
+        if (ret != PIDX_success)
+        {
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_file;
+        }
+        time->io_end[gi][li] = PIDX_get_time();
+      }
+
+      // Step 5: Performs data aggregation
+      for (li = si; li <= ei; li = li + 1)
+      {
+        ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_READ);
+        if (ret != PIDX_success)
+        {
+          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+          return PIDX_err_file;
+        }
+        finalize_aggregation(file, gi, li, si);
+      }
+
+      // Step 6: Perform HZ encoding
+      ret = hz_encode(file, PIDX_READ);
+      if (ret != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      // Step 8: Cleanup all buffers and ids
+      ret = hz_encode_cleanup(file);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -297,58 +348,8 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       }
     }
 
-    // Step 4: Performs actual file io
-    for (li = si; li <= ei; li = li + 1)
-    {
-      time->io_start[gi][li] = PIDX_get_time();
-      ret = data_io(file, gi, si, li, ei, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-      time->io_end[gi][li] = PIDX_get_time();
-    }
-
-#if 1
-    // Step 5: Performs data aggregation
-    for (li = si; li <= ei; li = li + 1)
-    {
-      ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      finalize_aggregation(file, gi, li, si);
-    }
-#endif
-    // Step 6: Perform HZ encoding
-    ret = hz_encode(file, PIDX_READ);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    // Step 7: Perform data restructuring
-    ret = restructure(file, PIDX_READ);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    // Step 8: Cleanup all buffers and ids
-    ret = hz_encode_cleanup(file);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    ret = restructure_cleanup(file);
+    // Step 9
+    ret = group_meta_data_finalize(file, gi, svi, evi);
     if (ret != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -356,8 +357,15 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     }
   }
 
-  // Step 9
-  ret = group_meta_data_finalize(file, gi, svi, evi);
+  // Step 7: Perform data restructuring
+  ret = restructure(file, PIDX_READ);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  ret = restructure_cleanup(file);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -367,53 +375,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   return PIDX_success;
 }
 
-#if 0
-static PIDX_return_code find_agg_level(PIDX_io file, int gi)
-{
-  int i = 0;
-  int no_of_aggregators = 0;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  if (file->idx->enable_agg == 0)
-    var_grp->agg_l_nshared = var_grp->nshared_start_layout_index;
-  else
-  {
-    for (i = var_grp->nshared_start_layout_index; i < var_grp->nshared_end_layout_index ; i++)
-    {
-      no_of_aggregators = var_grp->nshared_block_layout_by_level[i - var_grp->nshared_start_layout_index]->efc;
-      if (no_of_aggregators <= file->idx_c->gnprocs)
-        var_grp->agg_l_nshared = i + 1;
-    }
-  }
-
-  if (file->idx_c->grank == 0)
-    fprintf(stderr, "%d - %d %d %d\n", var_grp->agg_l_nshared, var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index, var_grp->nshared_layout_count);
-
-  return PIDX_success;
-}
-
-
-static PIDX_return_code select_io_mode(PIDX_io file, int gi)
-{
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  idx_dataset_derived_metadata idx = file->idx_d;
-
-  var_grp->agg_l_f0 = 0;
-  var_grp->f0_start_layout_index = 0;
-  var_grp->f0_end_layout_index = 0;
-  var_grp->f0_layout_count = 0;
-
-  var_grp->agg_l_shared = 0;
-  var_grp->shared_start_layout_index = 0;
-  var_grp->shared_end_layout_index = 0;
-  var_grp->shared_layout_count = 0;
-
-  hz_from_non_shared = 0;
-  hz_to_non_shared =  idx->maxh;
-
-  return PIDX_success;
-}
-#else
 
 static PIDX_return_code find_agg_level(PIDX_io file, int gi)
 {
@@ -422,10 +384,6 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   int total_aggregator = 0;
 
-  //printf("F %d %d\n", var_grp->f0_start_layout_index, var_grp->f0_end_layout_index);
-  //printf("S %d %d\n", var_grp->shared_start_layout_index, var_grp->shared_end_layout_index);
-  //printf("NS %d %d\n", var_grp->nshared_start_layout_index, var_grp->nshared_end_layout_index);
-
   if (file->idx->enable_agg == 0)
     var_grp->agg_level = var_grp->shared_start_layout_index;
   else
@@ -433,48 +391,15 @@ static PIDX_return_code find_agg_level(PIDX_io file, int gi)
     for (i = 0; i < var_grp->shared_layout_count + var_grp->nshared_layout_count ; i++)
     {
       no_of_aggregators = var_grp->block_layout_by_level[i]->efc;
+      total_aggregator = total_aggregator + no_of_aggregators;
       if (no_of_aggregators <= file->idx_c->lnprocs)
         var_grp->agg_level = i + 1;
     }
   }
 
-#if 0
-  if (file->idx->enable_agg == 0)
-    var_grp->agg_l_nshared = var_grp->nshared_start_layout_index;
-  else
-  {
-    for (i = var_grp->nshared_start_layout_index; i < var_grp->nshared_end_layout_index ; i++)
-    {
-      no_of_aggregators = var_grp->nshared_block_layout_by_level[i - var_grp->nshared_start_layout_index]->efc;
-      total_aggregator = total_aggregator + no_of_aggregators;
-      if (no_of_aggregators <= file->idx_c->lnprocs)
-        var_grp->agg_l_nshared = i + 1;
-    }
-  }
-
-  if (file->idx->enable_agg == 0)
-    var_grp->agg_l_shared = var_grp->shared_start_layout_index;
-  else
-  {
-    for (i = var_grp->shared_start_layout_index; i < var_grp->shared_end_layout_index ; i++)
-    {
-      no_of_aggregators = var_grp->shared_block_layout_by_level[i - var_grp->shared_start_layout_index]->efc;
-      total_aggregator = total_aggregator + no_of_aggregators;
-      if (no_of_aggregators <= file->idx_c->lnprocs)
-        var_grp->agg_l_shared = i + 1;
-    }
-  }
-
   if (total_aggregator > file->idx_c->lnprocs)
-  {
-    var_grp->agg_l_shared = var_grp->shared_start_layout_index;
-    var_grp->agg_l_nshared = var_grp->nshared_start_layout_index;
-  }
+    var_grp->agg_level = var_grp->shared_start_layout_index;
 
-  //printf("F %d %d %d\n", var_grp->f0_start_layout_index, var_grp->agg_l_f0, var_grp->f0_end_layout_index);
-  //printf("S %d %d %d\n", var_grp->shared_start_layout_index, var_grp->agg_l_shared, var_grp->shared_end_layout_index);
-  //printf("NS %d %d %d\n", var_grp->nshared_start_layout_index, var_grp->agg_l_nshared, var_grp->nshared_end_layout_index);
-#endif
   return PIDX_success;
 }
 
@@ -504,8 +429,6 @@ static PIDX_return_code select_io_mode(PIDX_io file, int gi)
 
   return PIDX_success;
 }
-
-#endif
 
 
 static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, int svi, int evi, int mode)
@@ -554,18 +477,17 @@ static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, 
   time->layout_end = PIDX_get_time();
 
 
-  if (mode == PIDX_WRITE)
+
+  time->header_io_start = PIDX_get_time();
+  // Creates the file heirarchy and writes the header info for all binary files
+  ret = write_headers(file, gi, svi, evi, mode);
+  if (ret != PIDX_success)
   {
-    time->header_io_start = PIDX_get_time();
-    // Creates the file heirarchy and writes the header info for all binary files
-    ret = write_headers(file, gi, svi, evi, PIDX_IDX_IO);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-    time->header_io_end = PIDX_get_time();
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
   }
+  time->header_io_end = PIDX_get_time();
+
 
   return PIDX_success;
 }

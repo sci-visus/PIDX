@@ -187,6 +187,9 @@ struct idx_comm_struct
   int gnproc_y;
   int gnproc_z;
 
+  int rrank;
+  int rnprocs;
+
   /// Names
   MPI_Comm global_comm;
   MPI_Comm local_comm;
@@ -254,12 +257,6 @@ struct idx_file_struct
   int agg_counter;
 
   int cached_ts;
-
-  //unsigned long long* all_offset;
-  //unsigned long long* all_size;
-
-  //int random_agg_counter;
-  //int *random_agg_list;
 };
 typedef struct idx_file_struct* idx_dataset;
 

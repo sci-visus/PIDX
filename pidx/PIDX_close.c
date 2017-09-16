@@ -63,14 +63,10 @@ PIDX_return_code PIDX_flush(PIDX_file file)
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
-    PIDX_variable var0 = var_grp->variable[var_grp->local_variable_index];
 
-    if (var0->restructured_super_patch_count != 0)
-    {
-      int lvi = var_grp->local_variable_index;
-      int lvc = var_grp->local_variable_count;
-      PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
-    }
+    int lvi = var_grp->local_variable_index;
+    int lvc = var_grp->local_variable_count;
+    PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
   }
   PIDX_delete_timming_buffers1(time, vgc, file->idx->variable_count);
 

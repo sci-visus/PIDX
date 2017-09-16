@@ -37,7 +37,7 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
   for (v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    for (p = 0; p < var->patch_group_count; p++)
+    for (p = 0; p < var->restructured_super_patch_count; p++)
     {
       bytes_for_datatype = var->bpv / 8;
       for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
@@ -65,7 +65,7 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
   for (v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    for (p = 0; p < var->patch_group_count; p++)
+    for (p = 0; p < var->restructured_super_patch_count; p++)
     {
       bytes_for_datatype = var->bpv / 8;
       for (c = id->idx->compression_start_level; c < maxH - id->resolution_to; c++)
@@ -126,7 +126,7 @@ PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id)
   for (v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    for (p = 0; p < var->patch_group_count; p++)
+    for (p = 0; p < var->restructured_super_patch_count; p++)
     {
       bytes_for_datatype = var->bpv / 8;
       for (c = id->idx->compression_start_level; c < maxH - id->resolution_to; c++)
@@ -178,7 +178,7 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id)
   for (v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
-    for (p = 0; p < var->patch_group_count; p++)
+    for (p = 0; p < var->restructured_super_patch_count; p++)
     {
       //var->hz_buffer[p]->buffer = (unsigned char**)malloc( maxH * sizeof (unsigned char*));
       //memset(var->hz_buffer[p]->buffer, 0,  maxH * sizeof (unsigned char*));
