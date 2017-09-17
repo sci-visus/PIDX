@@ -34,7 +34,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
   if (file->idx->variable_count <= 0)
     return PIDX_err_variable;
 
-  file->io = PIDX_io_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg);
+  file->io = PIDX_io_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, file->idx_cache);
   if (file->io == NULL)
     return PIDX_err_flush;
 
@@ -153,6 +153,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d);                file->idx_d = 0;
   free(file->idx_dbg);              file->idx_dbg = 0;
   free(file->idx_c);                file->idx_c = 0;
+  free(file->idx_cache);            file->idx_cache = 0;
 
   free(file);
 

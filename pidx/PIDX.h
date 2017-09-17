@@ -731,6 +731,28 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
  * Implementation in PIDX_meta_data.c
  */
 ///
+/// \brief PIDX_set_meta_data_cache
+/// \param file
+/// \param cache
+/// \return
+///
+PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache cache);
+
+
+
+
+///
+/// \brief PIDX_set_meta_data_cache
+/// \param file
+/// \param cache
+/// \return
+///
+PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_meta_data_cache* cache);
+
+
+
+
+///
 /// Gets the number of boxes.
 /// This function gets the number of boxes written by all the processes.
 /// \param file The file handler.

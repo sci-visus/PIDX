@@ -160,7 +160,7 @@ static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
 
   time->hz_init_start[lgi][cvi] = PIDX_get_time();
   // Create the HZ encoding ID
-  file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
+  file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, file->idx_cache, svi, evi);
 
   // resolution for HZ encoding
   ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
@@ -321,7 +321,6 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   {
     time->hz_start[lgi][cvi] = PIDX_get_time();
     ret = PIDX_hz_encode_write(file->hz_id);
-    //ret = PIDX_hz_encode_row_major_write(file->hz_id);
     if (ret != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);

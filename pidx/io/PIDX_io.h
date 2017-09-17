@@ -8,16 +8,16 @@ struct PIDX_io_descriptor
 {
   PIDX_header_io_id header_io_id;                   ///< IDX metadata id
 
-  PIDX_idx_rst_id idx_rst_id;       ///< Multi-patch restructuring phase id
+  PIDX_idx_rst_id idx_rst_id;                       ///< Multi-patch restructuring phase id
 
   PIDX_chunk_id chunk_id;                           ///< Block restructuring id (prepration for compression)
   PIDX_comp_id comp_id;                             ///< Compression (lossy and lossless) id
   PIDX_hz_encode_id hz_id;                          ///< HZ encoding phase id
 
-  PIDX_wavelet_id wavelet_id;                          ///< HZ encoding phase id
+  PIDX_wavelet_id wavelet_id;                       ///< HZ encoding phase id
 
-  PIDX_agg_id** agg_id;                      ///< Aggregation phase id for all shared file
-  PIDX_file_io_id** io_id;                  ///< Aggregation phase id for all nonshared file
+  PIDX_agg_id** agg_id;                             ///< Aggregation phase id for all shared file
+  PIDX_file_io_id** io_id;                          ///< Aggregation phase id for all nonshared file
 
   PIDX_insitu_id insitu_id;
 
@@ -31,6 +31,13 @@ struct PIDX_io_descriptor
                                                     ///< number of files, files that are ging to be populated
 
   idx_debug idx_dbg;                                ///<
+
+  idx_meta_data_cache idx_cache;
+
+  int hz_from_non_shared;
+  int hz_from_shared;
+  int hz_to_non_shared;
+  int hz_to_shared;
 };
 typedef struct PIDX_io_descriptor* PIDX_io;
 
@@ -43,7 +50,7 @@ typedef struct PIDX_io_descriptor* PIDX_io;
 /// \param idx_dbg
 /// \return
 ///
-PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg);
+PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_meta_data_cache cache);
 
 
 

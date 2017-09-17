@@ -11,7 +11,7 @@
 
 
 
-PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg)
+PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_meta_data_cache idx_cache)
 {
   //Creating the restructuring ID
   PIDX_io idx_io_id;
@@ -22,6 +22,7 @@ PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata id
   idx_io_id->idx_d = idx_derived_ptr;
   idx_io_id->idx_dbg = idx_dbg;
   idx_io_id->idx_c = idx_c;
+  idx_io_id->idx_cache = idx_cache;
 
   return (idx_io_id);
 }

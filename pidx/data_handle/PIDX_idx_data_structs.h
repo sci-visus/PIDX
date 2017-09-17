@@ -33,7 +33,6 @@
 
 #include "PIDX_memory_layout_data_structs.h"
 
-
 struct PIDX_timming_struct
 {
   //double a1, a2, a3, a4, a5;
@@ -127,7 +126,7 @@ struct PIDX_variable_struct
   // buffer before aggregation
   int restructured_super_patch_count;                                     ///< Number of groups of patches to be passed to aggregation phase
   PIDX_super_patch restructured_super_patch;                         ///< Pointer to the patch groups
-  PIDX_super_patch chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
+  PIDX_super_patch chunked_super_patch;                       ///< Pointer to the patch group after block restructuring
 
   //PIDX_patch rst_wavelet_patch;
 };
@@ -196,6 +195,15 @@ struct idx_comm_struct
   MPI_Comm rst_comm;
 };
 typedef struct idx_comm_struct* idx_comm;
+
+
+
+/// Communicator related struct
+struct idx_meta_data_cache_struct
+{
+  PIDX_meta_data_cache meta_data_cache;
+};
+typedef struct idx_meta_data_cache_struct* idx_meta_data_cache;
 
 
 /// idx_file

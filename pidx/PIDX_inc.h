@@ -51,6 +51,8 @@ extern "C" {
 
 #include "./comm/PIDX_comm.h"
 
+#include "./meta_data_cache/PIDX_meta_data_cache.h"
+
 #include "./data_handle/PIDX_data_layout.h"
 #include "./data_handle/PIDX_blocks.h"
 #include "./data_handle/PIDX_idx_data_structs.h"
@@ -72,6 +74,8 @@ extern "C" {
 #include "./io/raw_io.h"
 
 
+#include "./io/io_setup.h"
+#include "./io/bit_string.h"
 #include "./io/restructure.h"
 #include "./io/partition.h"
 #include "./io/local_buffer.h"

@@ -26,6 +26,31 @@
 ///
 static PIDX_return_code PIDX_validate(PIDX_file file);
 
+PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache cache)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  if(!cache)
+    return PIDX_err_file;
+
+  file->idx_cache->meta_data_cache = cache;
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_meta_data_cache* cache)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  if(!cache)
+    return PIDX_err_file;
+
+  *cache = file->idx_cache->meta_data_cache;
+  return PIDX_success;
+}
 
 
 PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)

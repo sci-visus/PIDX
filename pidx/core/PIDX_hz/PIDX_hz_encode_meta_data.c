@@ -60,25 +60,13 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
     memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)));
 
     HZ_buffer hz_buf = var->hz_buffer;
-    if (var->chunk_patch_group->is_boundary_patch == 0)
-    {
-      unsigned long long buffer_size = 1;
-      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-        buffer_size = buffer_size * (var->chunk_patch_group->patch[0]->size[d]/id->idx->chunk_size[d]);
 
-      hz_buf->buffer_index = malloc(buffer_size * sizeof (unsigned long long));
-      memset(hz_buf->buffer_index, 0, buffer_size * sizeof (unsigned long long));
-    }
-
-    hz_buf->is_boundary_HZ_buffer = var->chunk_patch_group->is_boundary_patch;
+    hz_buf->is_boundary_HZ_buffer = var->chunked_super_patch->is_boundary_patch;
 
     hz_buf->start_hz_index = malloc(sizeof (unsigned long long) * maxH);
     hz_buf->end_hz_index = malloc(sizeof (unsigned long long) * maxH);
     memset(hz_buf->start_hz_index, 0, sizeof (unsigned long long) * maxH);
     memset(hz_buf->end_hz_index, 0, sizeof (unsigned long long) * maxH);
-
-    hz_buf->compressed_buffer_size = malloc(sizeof (unsigned long long) * maxH);
-    memset(hz_buf->compressed_buffer_size, 0, sizeof (unsigned long long) * maxH);
 
     hz_buf->nsamples_per_level = malloc(sizeof (int*) * maxH);
     memset(hz_buf->nsamples_per_level, 0, sizeof (int*) * maxH);
@@ -102,12 +90,12 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      tpatch[0][d] = var->chunk_patch_group->restructured_patch->offset[d] / id->idx->chunk_size[d];
+      tpatch[0][d] = var->chunked_super_patch->restructured_patch->offset[d] / id->idx->chunk_size[d];
 
-      if (var->chunk_patch_group->restructured_patch->size[d] % id->idx->chunk_size[d] == 0)
-        tpatch[1][d] = (var->chunk_patch_group->restructured_patch->offset[d] / id->idx->chunk_size[d]) + (var->chunk_patch_group->restructured_patch->size[d] / id->idx->chunk_size[d]) - 1;
+      if (var->chunked_super_patch->restructured_patch->size[d] % id->idx->chunk_size[d] == 0)
+        tpatch[1][d] = (var->chunked_super_patch->restructured_patch->offset[d] / id->idx->chunk_size[d]) + (var->chunked_super_patch->restructured_patch->size[d] / id->idx->chunk_size[d]) - 1;
       else
-        tpatch[1][d] = (var->chunk_patch_group->restructured_patch->offset[d] / id->idx->chunk_size[d]) + ((var->chunk_patch_group->restructured_patch->size[d] / id->idx->chunk_size[d]) + 1) - 1;
+        tpatch[1][d] = (var->chunked_super_patch->restructured_patch->offset[d] / id->idx->chunk_size[d]) + ((var->chunked_super_patch->restructured_patch->size[d] / id->idx->chunk_size[d]) + 1) - 1;
     }
 
 
@@ -172,18 +160,12 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
     free(var->hz_buffer->start_hz_index);
     free(var->hz_buffer->end_hz_index);
 
-    if (var->hz_buffer->is_boundary_HZ_buffer == 0)
-      free(var->hz_buffer->buffer_index);
-
     for (itr = 0; itr < id->idx_d->maxh; itr++)
       free(var->hz_buffer->nsamples_per_level[itr]);
     free(var->hz_buffer->nsamples_per_level);
 
     free(var->hz_buffer->buffer);
     var->hz_buffer->buffer = 0;
-
-    free(var->hz_buffer->compressed_buffer_size);
-    var->hz_buffer->compressed_buffer_size = 0;
 
     free(var->hz_buffer);
     var->hz_buffer = 0;

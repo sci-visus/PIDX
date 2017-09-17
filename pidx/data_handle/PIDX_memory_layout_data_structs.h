@@ -94,11 +94,9 @@ struct PIDX_HZ_buffer_struct
 {
   int is_boundary_HZ_buffer;                            ///< 1 for boundary patch 0 otherwise
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
-  unsigned long long *start_hz_index;                              ///< Starting HZ index at of the data at all the HZ levels
-  unsigned long long *end_hz_index;                                ///< Ending HZ index at of the data at all the HZ levels
-  unsigned long long *buffer_index;                                ///< HZ indices of the data (used only when no restructuring phsae is used)
+  unsigned long long *start_hz_index;                   ///< Starting HZ index at of the data at all the HZ levels
+  unsigned long long *end_hz_index;                     ///< Ending HZ index at of the data at all the HZ levels
   unsigned char** buffer;                               ///< data buffer at all the HZ levels
-  unsigned long long *compressed_buffer_size;
 };
 typedef struct PIDX_HZ_buffer_struct* HZ_buffer;
 

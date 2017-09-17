@@ -47,6 +47,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_c = malloc(sizeof (*((*file)->idx_c)));
   memset((*file)->idx_c, 0, sizeof (*((*file)->idx_c)));
 
+  (*file)->idx_cache = malloc(sizeof (*((*file)->idx_cache)));
+  memset((*file)->idx_cache, 0, sizeof (*((*file)->idx_cache)));
+
   (*file)->idx_dbg = malloc(sizeof (*((*file)->idx_dbg)));
   memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));
 

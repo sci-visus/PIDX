@@ -30,6 +30,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   memset((*file)->idx_d->time, 0, sizeof (*((*file)->idx_d->time)));
   (*file)->idx_d->time->sim_start = PIDX_get_time();
 
+  (*file)->idx_cache = malloc(sizeof (*((*file)->idx_cache)));
+  memset((*file)->idx_cache, 0, sizeof (*((*file)->idx_cache)));
+
   (*file)->idx_d->restructured_grid = malloc(sizeof(*(*file)->idx_d->restructured_grid ));
   memset((*file)->idx_d->restructured_grid , 0, sizeof(*(*file)->idx_d->restructured_grid));
 

@@ -1478,13 +1478,8 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
           if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
           {
             index = 0;
-            if (id->idx->compression_type == PIDX_ZFP_COMPRESSION)
-              count = hz_buf->compressed_buffer_size[i];
-            else
-              count = hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
+            count = hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
 
-            //if (id->idx_c->grank == 0)
-            //  fprintf(stderr, "L [%d] : %d : %d [%d - %d]\n", i, hz_buf->compressed_buffer_size[i], (hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1), hz_buf->end_hz_index[i], hz_buf->start_hz_index[i]);
 #ifdef PIDX_DUMP_AGG
             if (id->idx_d->dump_agg_info == 1 && id->idx->current_time_step == 0)
             {
