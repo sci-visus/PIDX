@@ -26,17 +26,19 @@ from idx_utils import *
 #   
 
 # User settings
-# Set write_executable and read_executable acoording to your build directory
+# Set write_executable and read_executable according to your build directory
 write_executable = "../../build/examples/idx_write"
 read_executable = "../../build/examples/idx_read"
 mpirun="mpirun"
 
-patch_size = (16, 16, 16)
-#var_types = ["1*float32", "1*int32", "1*float64", 
-#             "2*float32", "2*int32", "2*float64", 
-#             "3*float32", "3*int32", "3*float64", "uint8"]
+debug_print=0
 
-var_types = ["1*int32"]#"1*float32", "1*int32", "1*uint8", "1*float64","3*float32","3*float64"]
+patch_size = (2, 2, 2)
+var_types = ["1*float32", "1*int32", "1*float64", 
+             "2*float32", "2*int32", "2*float64", 
+             "3*float32", "3*int32", "3*float64"]
+
+#var_types = ["1*uint8", "1*int16","2*uint8","2*int16"]
 
 #####
 
@@ -84,13 +86,18 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
 
   n_comp = int(var_type.split('*')[0])
   data_count = g_box_n[0]*g_box_n[1]*g_box_n[2]*n_comp
-  success = 0
 
+  if("8" in var_type or "16" in var_type):
+    print "WARNING: testing ", var_type, "this datatype can be tested only on small domains"
+
+  success = 0
   n_tests = 0
 
   generate_vars(n_vars, var_type, var_type)
   test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
-  print "EXECUTE write:", test_str
+  
+  if(debug_print>0):
+    print "EXECUTE write:", test_str
   os.popen(test_str+" 2&> _out_write.txt")
 
   if profiling > 0:
