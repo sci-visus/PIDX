@@ -34,9 +34,9 @@ mpirun="mpirun"
 patch_size = (16, 16, 16)
 #var_types = ["1*float32", "1*int32", "1*float64", 
 #             "2*float32", "2*int32", "2*float64", 
-#             "3*float32", "3*int32", "3*float64"]
+#             "3*float32", "3*int32", "3*float64", "uint8"]
 
-var_types = ["1*float32"]#,"1*float64","3*float32","3*float64"]
+var_types = ["1*int32"]#"1*float32", "1*int32", "1*uint8", "1*float64","3*float32","3*float64"]
 
 #####
 
@@ -174,6 +174,9 @@ def non_pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
   
   return succ
 
+def print_usage():
+  print 'test.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
+
 def main(argv):
   succ = 0
   global profiling
@@ -182,10 +185,14 @@ def main(argv):
   global var_types
   global mpirun
 
+  # defaults
+  n_cores = 8
+  n_cores_read = 8
+
   try:
     opts, args = getopt.getopt(argv,"h:w:r:m:p",["pfile="])
   except getopt.GetoptError:
-    print 'test_idx.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
+    print_usage()
     sys.exit(2)
 
   for opt, arg in opts:
@@ -196,7 +203,7 @@ def main(argv):
       n_cores = int(arg)
     elif opt in ("-r", "--rcores"):
       n_cores_read = int(arg)
-    elif opt in ("-m", "--mprun"):
+    elif opt in ("-m", "--mpirun"):
       mpirun = arg
     elif opt in ("-p", "--pfile"):
       prof_file = arg
@@ -222,5 +229,5 @@ def main(argv):
   sys.exit(succ)
 
 if __name__ == "__main__":
-   main(sys.argv[1:])
+  main(sys.argv[1:])
 
