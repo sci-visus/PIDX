@@ -66,6 +66,14 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
           return PIDX_err_io;
         }
 
+        int read_count = 0;
+        MPI_Get_count(&status, MPI_BYTE, &read_count);
+        if (read_count != data_size)
+        {
+          fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed. %d != %d\n", __FILE__, __LINE__, read_count, total_header_size);
+          return PIDX_err_io;
+        }
+
         if (io_id->idx->flip_endian == 1)
         {
           PIDX_variable curr_var = var_grp->variable[agg_buf->var_number];

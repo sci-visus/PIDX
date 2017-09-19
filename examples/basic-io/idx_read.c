@@ -278,7 +278,7 @@ static void set_pidx_file(int ts)
   // Get the total number of variables
   PIDX_get_variable_count(file, &variable_count);
 
-  //PIDX_disable_agg(file);
+  PIDX_disable_agg(file);
   return;
 }
 
