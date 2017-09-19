@@ -203,15 +203,6 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
   if (total_reg_sample_count % max_sample_per_file)
     file->idx_d->max_file_count++;
 
-  //if (file->idx_c->lrank == 0)
-  //fprintf(stderr, "[%d] MFC %d : %d %d %d (%d %d %d)\n", file->idx_d->color, file->idx_d->max_file_count, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
-  file->idx_d->block_bitmap = malloc(file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
-  memset(file->idx_d->block_bitmap, 0, file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
-  for (i = 0; i < file->idx_d->max_file_count; i++)
-  {
-    file->idx_d->block_bitmap[i] = malloc(file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
-    memset(file->idx_d->block_bitmap[i], 0, file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
-  }
 
   int partion_level = (int) log2(/*file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]*/1);
   file->idx_d->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;

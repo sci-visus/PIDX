@@ -31,6 +31,13 @@ PIDX_return_code PIDX_create_meta_data_cache(PIDX_meta_data_cache* cache)
 
 PIDX_return_code PIDX_free_meta_data_cache(PIDX_meta_data_cache cache)
 {
+  if (cache->is_set == 1)
+  {
+      free(cache->hz_level);
+      free(cache->index_level);
+      free(cache->xyz_mapped_index);
+  }
+
   free(cache);
   return PIDX_success;
 }

@@ -57,7 +57,11 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
   {
     chunked_patch_offset[l] = var0->chunked_super_patch->restructured_patch->offset[l] / id->idx->chunk_size[l];
-    chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    if (var0->chunked_super_patch->restructured_patch->size[l] % id->idx->chunk_size[l] == 0)
+      chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    else
+      chunked_patch_size[l] = (var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l]) + 1;
+
     total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
   }
 
@@ -81,7 +85,8 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   int index_count = 0;
   if (id->cache->meta_data_cache->is_set == 0)
   {
-    printf("Cache Setup\n");
+    if (id->idx_c->lrank == 0)
+      printf("Cache Setup\n");
     id->cache->meta_data_cache->is_set = 1;
     if(var0->data_layout == PIDX_row_major)
     {
@@ -144,7 +149,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
             index_count++;
           }
-
     }
     else
     {
@@ -202,7 +206,8 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   }
   else
   {
-    printf("Cache Used\n");
+    if (id->idx_c->lrank == 0)
+      printf("Cache Used\n");
     if(var0->data_layout == PIDX_row_major)
     {
       for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
@@ -261,8 +266,6 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
             index_count++;
           }
     }
-
-
   }
 
   return PIDX_success;
@@ -301,11 +304,14 @@ PIDX_return_code PIDX_hz_encode_write_inverse(PIDX_hz_encode_id id, int res_from
   }
 
   total_chunked_patch_size = 0;
-
   for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
   {
     chunked_patch_offset[l] = var0->chunked_super_patch->restructured_patch->offset[l] / id->idx->chunk_size[l];
-    chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    if (var0->chunked_super_patch->restructured_patch->size[l] % id->idx->chunk_size[l] == 0)
+      chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    else
+      chunked_patch_size[l] = (var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l]) + 1;
+
     total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
   }
 

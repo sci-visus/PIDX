@@ -130,6 +130,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
     }
 
     // malloc the storage for all elements in the output array
+    // printf("[Chunking] Buffer size of %d = %d\n", chunk_id->idx_c->grank, num_elems_group);
     out_patch->restructured_patch->buffer = malloc(bytes_per_value * num_elems_group);
     memset(out_patch->restructured_patch->buffer, 0, bytes_per_value * num_elems_group);
   }
@@ -212,7 +213,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
         {
           for (x=0;x<nx;x+=4)
           {
-
             unsigned long long diff = (z/4) * (dz + 4 * (ny/4) * (dy+4 * (nx/4) * dx)) + (y/4) * (dy+4*(nx/4)*dx) + (x/4)*dx;
             double* q = p + var->vps * diff + s1;
 
@@ -226,9 +226,19 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
                   int j = xx + yy * nx + zz * nx * ny;
 
                   if (MODE == PIDX_WRITE)
+                  {
+                    if (j * var->vps + s1 + var->vps * diff + s1 >= var->restructured_super_patch->restructured_patch->size[0] * var->restructured_super_patch->restructured_patch->size[1] * var->restructured_super_patch->restructured_patch->size[2])
+                      continue;
+
                     s[nx*ny*nz*s1 + i*var->vps+s1] = q[j*var->vps + s1];
+                  }
                   else
+                  {
+                    if (j * var->vps + s1 + var->vps * diff + s1 >= var->restructured_super_patch->restructured_patch->size[0] * var->restructured_super_patch->restructured_patch->size[1] * var->restructured_super_patch->restructured_patch->size[2])
+                      continue;
+
                     q[j*var->vps + s1] = s[nx*ny*nz*s1 + i*var->vps+s1];
+                  }
                 }
               }
             }

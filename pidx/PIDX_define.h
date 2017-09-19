@@ -1,14 +1,13 @@
 #ifndef __PIDX_DEFINE_H
 #define __PIDX_DEFINE_H
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define PIDX_MAX_DIMENSIONS 3
+#define MULTI_BOX 0
 
-#define PIDX_HAVE_MPI 1
 #define PIDX_HAVE_ZFP 1
 #define PIDX_HAVE_PMT 0
 #define PIDX_HAVE_VTK 0

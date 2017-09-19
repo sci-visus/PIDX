@@ -98,7 +98,7 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
-  } 
+  }
 
   file->idx->variable_pipe_length = file->idx->variable_count;
 
@@ -123,27 +123,6 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 {
   int ret;
   PIDX_time time = file->idx_d->time;
-
-  time->set_reg_box_start = MPI_Wtime();
-  if (mode == PIDX_WRITE)
-  {
-    ret = set_rst_box_size_for_write(file, gi, svi);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-  }
-  else if (mode == PIDX_READ)
-  {
-    ret = set_rst_box_size_for_read(file, gi, svi);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-  }
-  time->set_reg_box_end = MPI_Wtime();
 
   if (mode == PIDX_WRITE)
   {

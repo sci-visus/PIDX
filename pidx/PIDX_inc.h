@@ -18,11 +18,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#if PIDX_HAVE_MPI
-  #include <mpi.h>
-#else
-  #include <sys/time.h>
-#endif
+#include <mpi.h>
 
 #if PIDX_HAVE_ZFP
   #include <zfp.h>  

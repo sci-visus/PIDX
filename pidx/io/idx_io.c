@@ -26,13 +26,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
 
-  // Step 0
-  if (set_rst_box_size_for_write(file, gi, svi) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
   // Step 1: Setup restructuring buffers
   if (restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
   {
@@ -124,7 +117,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       //for (li = si; li <= ei; li = li + 1)
       //{
         time->io_start[gi][li] = PIDX_get_time();
-        create_async_buffers(file, gi);
 
         ret = data_io(file, gi, si, li, ei, PIDX_WRITE);
         if (ret != PIDX_success)
@@ -133,7 +125,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
           return PIDX_err_file;
         }
 
-        wait_and_destroy_async_buffers(file, gi);
         finalize_aggregation(file, gi, li, si);
         time->io_end[gi][li] = PIDX_get_time();
       //}
@@ -201,6 +192,8 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     }
   }
 
+  free_restructured_communicators(file, gi);
+
   ret = restructure_cleanup(file);
   if (ret != PIDX_success)
   {
@@ -235,14 +228,6 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   int si = 0, ei = 0;
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
-
-  // Step 0
-  ret = set_rst_box_size_for_read(file, gi, svi);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
 
   // Step 1: Setup restructuring buffers
   if (restructure_setup(file, gi, svi, evi - 1, PIDX_READ) != PIDX_success)
@@ -351,6 +336,8 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     }
   }
 
+  free_restructured_communicators(file, gi);
+
   // Step 7: Perform data restructuring
   ret = restructure(file, PIDX_READ);
   if (ret != PIDX_success)
@@ -446,7 +433,7 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
     return PIDX_err_file;
   }
 
-  ret = delete_block_layout(file, gi, file->hz_from_shared, file->hz_to_shared, file->hz_from_non_shared, file->hz_to_non_shared);
+  ret = delete_block_layout(file, gi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);

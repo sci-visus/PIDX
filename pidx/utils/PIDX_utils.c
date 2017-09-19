@@ -706,13 +706,12 @@ int VisusSplitFilename(const char* filename,char* dirname,char* basename)
 /// Returns elapsed time
 double PIDX_get_time()
 {
-#if PIDX_HAVE_MPI
   return MPI_Wtime();
-#else
-  struct timeval temp;
-  gettimeofday(&temp, NULL);
-  return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
-#endif
+
+//  struct timeval temp;
+//  gettimeofday(&temp, NULL);
+//  return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
+
 }
 
 

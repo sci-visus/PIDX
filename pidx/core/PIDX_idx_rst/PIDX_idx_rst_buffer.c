@@ -133,6 +133,8 @@ PIDX_return_code PIDX_idx_rst_aggregate_buf_create(PIDX_idx_rst_id rst_id)
     var->restructured_super_patch->restructured_patch->buffer = malloc(out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->bpv/8) * var->vps);
     memset(var->restructured_super_patch->restructured_patch->buffer, 0, out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->bpv/8) * var->vps);
 
+    //printf("[Restructuring] Buffer size of %d = %d\n", rst_id->idx_comm_metadata->grank, out_patch->size[0] * out_patch->size[1] * out_patch->size[2]);
+
     if (var->restructured_super_patch->restructured_patch->buffer == NULL)
     {
       fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);

@@ -6,12 +6,6 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
 
 static PIDX_return_code destroy_block_layout(PIDX_io file, int gi);
 
-static PIDX_return_code create_shared_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to);
-static PIDX_return_code create_non_shared_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to);
-
-
-
-
 
 PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared)
 {
@@ -25,26 +19,6 @@ PIDX_return_code populate_block_layouts(PIDX_io file, int gi, int svi, int hz_fr
     file->idx_d->block_bitmap[i] = malloc(file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
     memset(file->idx_d->block_bitmap[i], 0, file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
   }
-
-  if (hz_from_shared == hz_to_shared)
-  {
-    var_grp->shared_start_layout_index = 0;
-    var_grp->shared_end_layout_index = 0;
-    var_grp->shared_layout_count = 0;
-  }
-  else
-    create_shared_block_layout(file, gi, hz_from_shared, hz_to_shared);
-
-
-  if (hz_from_non_shared == hz_to_non_shared)
-  {
-    var_grp->nshared_start_layout_index = 0;
-    var_grp->nshared_end_layout_index = 0;
-    var_grp->nshared_layout_count = 0;
-  }
-  else
-    create_non_shared_block_layout(file, gi, hz_from_non_shared, hz_to_non_shared);
-
 
   int total_layout_count = var_grp->shared_layout_count + var_grp->nshared_layout_count;
   var_grp->block_layout = malloc(sizeof (*var_grp->block_layout));
@@ -303,49 +277,6 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
 
 
 
-PIDX_return_code create_shared_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to)
-{
-  int lower_hz_level = hz_level_from;
-  int higher_hz_level = hz_level_to;
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  var_grp->shared_start_layout_index = (lower_hz_level - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
-  if (var_grp->shared_start_layout_index <= 0)
-    var_grp->shared_start_layout_index = 0;
-
-  var_grp->shared_end_layout_index = (higher_hz_level - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
-  if (var_grp->shared_end_layout_index <= 0)
-    var_grp->shared_end_layout_index = 1;
-
-  var_grp->shared_layout_count = var_grp->shared_end_layout_index - var_grp->shared_start_layout_index;
-
-  return PIDX_success;
-}
-
-
-PIDX_return_code create_non_shared_block_layout(PIDX_io file, int gi, int hz_level_from, int hz_level_to)
-{
-  int lower_hz_level = hz_level_from;
-  int higher_hz_level = hz_level_to;
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  var_grp->nshared_start_layout_index = (lower_hz_level - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
-  if (var_grp->nshared_start_layout_index <= 0)
-    var_grp->nshared_start_layout_index = 0;
-
-  var_grp->nshared_end_layout_index = (higher_hz_level - (file->idx->bits_per_block + log2(file->idx->blocks_per_file)));
-  if (var_grp->nshared_end_layout_index <= 0)
-    var_grp->nshared_end_layout_index = 1;
-
-  var_grp->nshared_layout_count = var_grp->nshared_end_layout_index - var_grp->nshared_start_layout_index;
-
-  return PIDX_success;
-}
-
-
-
 static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout block_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int gi, int si, int hz_level_from, int hz_level_to)
 {
   if (hz_level_from == 0 && hz_level_to == 0)
@@ -551,14 +482,14 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
     }
   }
 
-  //if (file->idx_c->grank == 32)
-  //  PIDX_blocks_print_layout(block_layout);
+  //if (file->idx_c->grank == 0)
+  //  PIDX_blocks_print_layout(block_layout, file->idx->bits_per_block);
 
   return PIDX_success;
 }
 
 
-PIDX_return_code delete_block_layout(PIDX_io file, int gi, int hz_from_shared, int hz_to_shared, int hz_from_non_shared, int hz_to_non_shared)
+PIDX_return_code delete_block_layout(PIDX_io file, int gi)
 {
   int i;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];

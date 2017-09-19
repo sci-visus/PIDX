@@ -267,26 +267,26 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *
 
 
 ///
-/// \brief PIDX_set_partition_size
+/// \brief PIDX_set_partition_count
 /// \param file
 /// \param count_x
 /// \param count_y
 /// \param count_z
 /// \return
 ///
-PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z);
+PIDX_return_code PIDX_set_partition_count(PIDX_file file, int count_x, int count_y, int count_z);
 
 
 
 ///
-/// \brief PIDX_get_partition_size
+/// \brief PIDX_get_partition_count
 /// \param file
 /// \param count_x
 /// \param count_y
 /// \param count_z
 /// \return
 ///
-PIDX_return_code PIDX_get_partition_size(PIDX_file file, int* count_x, int* count_y, int* count_z);
+PIDX_return_code PIDX_get_partition_count(PIDX_file file, int* count_x, int* count_y, int* count_z);
 
 
 

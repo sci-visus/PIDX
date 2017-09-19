@@ -221,12 +221,9 @@ struct idx_file_struct
   char agg_list_filename[1024];
 
   char filename[1024];
-  char filename_global[1024];
   char filename_partition[1024];
-  char filename_template_global[1024];
-  char filename_template_partition[1024];
   char filename_template[1024];
-
+  char filename_template_partition[1024];
 
   int first_tstep;
   int last_tstep;
@@ -273,7 +270,7 @@ typedef struct idx_file_struct* idx_dataset;
 struct idx_dataset_derived_metadata_struct
 {
   int pidx_version;
-  int io_mode;
+  //int io_mode;
 
   int w_nx;
   int w_px;

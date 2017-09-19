@@ -599,7 +599,7 @@ static void set_pidx_file(int ts)
   //PIDX_debug_rst(file, 1);
   //PIDX_debug_hz(file, 1);
 
-  PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
+  PIDX_set_partition_count(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   // Selecting raw I/O mode
   PIDX_set_io_mode(file, PIDX_GLOBAL_PARTITION_IDX_IO);

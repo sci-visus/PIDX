@@ -148,12 +148,13 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->idx_d->block_bitmap);
   file->idx_d->block_bitmap = 0;
 
-  free(file->idx);                  file->idx = 0;
-  free(file->idx_d->time);          file->idx_d->time = 0;
-  free(file->idx_d);                file->idx_d = 0;
-  free(file->idx_dbg);              file->idx_dbg = 0;
-  free(file->idx_c);                file->idx_c = 0;
-  free(file->idx_cache);            file->idx_cache = 0;
+  free(file->idx);
+  free(file->idx_d->restructured_grid);
+  free(file->idx_d->time);
+  free(file->idx_d);
+  free(file->idx_dbg);
+  free(file->idx_c);
+  free(file->idx_cache);
 
   free(file);
 
@@ -330,7 +331,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 #endif
 
           double hz_io = 0;
-          for (i = file->idx->variable_grp[gi]->agg_level; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
+          for (i = file->idx->variable_grp[gi]->agg_level; i < file->idx->variable_grp[gi]->shared_layout_count + file->idx->variable_grp[gi]->nshared_layout_count ; i++)
           {
             hz_io = time->hz_io_end[gi][si][i] - time->hz_io_start[gi][si][i];
             hz_io_all = hz_io_all + hz_io;
@@ -339,28 +340,6 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
             fprintf(stderr, "[HZ I/O S %d %d]  :[%d] [%d] %.4f [%.4f] \n", file->idx->variable_grp[gi]->agg_level, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, hz_io, hz_io_all);
 #endif
           }
-#if 0
-          for (i = file->idx->variable_grp[gi]->agg_l_shared; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
-          {
-            hz_io = time->hz_io_end[gi][si][i] - time->hz_io_start[gi][si][i];
-            hz_io_all = hz_io_all + hz_io;
-
-#if DETAIL_OUTPUT
-            fprintf(stderr, "[HZ I/O S %d %d]  :[%d] [%d] %.4f [%.4f] \n", file->idx->variable_grp[gi]->agg_l_shared, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, hz_io, hz_io_all);
-#endif
-          }
-
-          for (i = file->idx->variable_grp[gi]->agg_l_nshared; i < file->idx->variable_grp[gi]->nshared_end_layout_index ; i++)
-          {
-            hz_io = time->hz_io_end[gi][si][i] - time->hz_io_start[gi][si][i];
-            hz_io_all = hz_io_all + hz_io;
-
-#if DETAIL_OUTPUT
-            fprintf(stderr, "[HZ I/O N %d %d]  :[%d] [%d] %.4f [%.4f]\n", file->idx->variable_grp[gi]->agg_l_nshared, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, hz_io, hz_io_all);
-#endif
-          }
-#endif
-
         }
 
         double w_comm_s_x_odd = 0, w_comp_s_x_odd = 0, w_comm_s_x_even = 0, w_comp_s_x_even;

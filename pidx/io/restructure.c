@@ -24,6 +24,10 @@ static int lgi = 0;
 
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file);
 static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi);
+
+static PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi);
+static PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi);
+
 static void guess_restructured_box_size(PIDX_io file, int gi, int svi);
 static void adjust_restructured_box_size(PIDX_io file);
 
@@ -34,6 +38,26 @@ PIDX_return_code restructure_setup(PIDX_io file, int gi, int svi, int evi, int m
   PIDX_time time = file->idx_d->time;
   cvi = svi;
   lgi = gi;
+
+  time->set_reg_box_start = MPI_Wtime();
+  if (mode == PIDX_WRITE)
+  {
+    if (set_rst_box_size_for_write(file, gi, svi) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+  else
+  {
+    ret = set_rst_box_size_for_read(file, gi, svi);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+  time->set_reg_box_end = MPI_Wtime();
 
   // Initialize the restructuring phase
   time->rst_init_start[lgi][cvi] = PIDX_get_time();
@@ -124,7 +148,7 @@ PIDX_return_code restructure(PIDX_io file, int mode)
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
 
-      //if (file->idx_dbg->debug_rst == 1)
+      if (file->idx_dbg->debug_rst == 1)
       {
         ret = HELPER_idx_rst(file->idx_rst_id);
         if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
@@ -199,6 +223,8 @@ PIDX_return_code restructure_cleanup(PIDX_io file)
   PIDX_idx_rst_finalize(file->idx_rst_id);
   time->rst_cleanup_end[lgi][cvi] = PIDX_get_time();
 
+  free_rst_box(file);
+
   return PIDX_success;
 }
 
@@ -241,8 +267,19 @@ PIDX_return_code create_restructured_communicators(PIDX_io file, int gi, int svi
 }
 
 
+PIDX_return_code free_restructured_communicators(PIDX_io file, int gi)
+{
+  MPI_Comm_free(&(file->idx_c->rst_comm));
 
-PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  free(var_grp->rank_buffer);
+
+  return PIDX_success;
+}
+
+
+
+static  PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
 {
   PIDX_time time = file->idx_d->time;
   time->set_reg_box_start = PIDX_get_time();
@@ -330,7 +367,7 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
   memset(file->idx_d->restructured_grid->patch, 0, (total_patch_count * sizeof(*file->idx_d->restructured_grid->patch)));
 
   int i = 0, j = 0, k = 0;
-  for (i = 0; i <   total_patch_count; i++)
+  for (i = 0; i < total_patch_count; i++)
   {
     file->idx_d->restructured_grid->patch[i] = malloc(sizeof(*(file->idx_d->restructured_grid->patch[i])));
     memset(file->idx_d->restructured_grid->patch[i], 0, sizeof(*(file->idx_d->restructured_grid->patch[i])));
@@ -436,7 +473,9 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
 
 }
 
-PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
+
+
+static PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
 {
   PIDX_time time = file->idx_d->time;
   time->set_reg_box_start = PIDX_get_time();
@@ -448,6 +487,22 @@ PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
 
   return PIDX_success;
 }
+
+
+PIDX_return_code free_rst_box(PIDX_io file)
+{
+  int *rgp = file->idx_d->restructured_grid->total_patch_count;
+  int total_patch_count = rgp[0] * rgp[1] * rgp[2];
+
+  int i = 0;
+  for (i = 0; i < total_patch_count; i++)
+    free(file->idx_d->restructured_grid->patch[i]);
+
+  free(file->idx_d->restructured_grid->patch);
+
+  return PIDX_success;
+}
+
 
 
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)

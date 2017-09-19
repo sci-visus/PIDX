@@ -123,7 +123,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   sprintf((*file)->idx->agg_list_filename, "%s_agg", file_name_skeleton);
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
-  sprintf((*file)->idx->filename_global, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_partition, "%s.idx", file_name_skeleton);
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;

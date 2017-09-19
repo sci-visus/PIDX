@@ -35,22 +35,13 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 
   file->idx_d->time->SX = PIDX_get_time();
   if (MODE == PIDX_IDX_IO)
-  {
-    file->idx_d->io_mode = 0;
     ret = PIDX_idx_write(file, gi, svi, evi);
-  }
 
   else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-  {
-    file->idx_d->io_mode = 1;
     ret = PIDX_local_partition_idx_write(file, gi, svi, evi);
-  }
 
   else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
-  {
-    file->idx_d->io_mode = 0;
     ret = PIDX_global_partition_idx_write(file, gi, svi, evi);
-  }
 
   else if (MODE == PIDX_RAW_IO)
     ret = PIDX_raw_write(file, gi, svi, evi);
@@ -70,22 +61,13 @@ PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
 
   file->idx_d->time->SX = PIDX_get_time();
   if (MODE == PIDX_IDX_IO)
-  {
-    file->idx_d->io_mode = 0;
     ret = PIDX_idx_read(file, gi, svi, evi);
-  }
 
   else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-  {
-    file->idx_d->io_mode = 1;
     ret = PIDX_local_partition_idx_read(file, gi, svi, evi);
-  }
 
   else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
-  {
-    file->idx_d->io_mode = 0;
     ret = PIDX_global_partition_idx_read(file, gi, svi, evi);
-  }
 
   else if (MODE == PIDX_RAW_IO)
     ret = PIDX_raw_read(file, gi, svi, evi);

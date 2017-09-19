@@ -227,7 +227,7 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_from, int *hz_to)
 
 
 
-PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z)
+PIDX_return_code PIDX_set_partition_count(PIDX_file file, int count_x, int count_y, int count_z)
 {
   if(count_x < 0 || count_y < 0 || count_z < 0)
     return PIDX_err_box;
@@ -235,23 +235,23 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
   if(file == NULL)
     return PIDX_err_file;
 
-  file->idx_d->partition_size[0] = count_x;
-  file->idx_d->partition_size[1] = count_y;
-  file->idx_d->partition_size[2] = count_z;
+  file->idx_d->partition_count[0] = count_x;
+  file->idx_d->partition_count[1] = count_y;
+  file->idx_d->partition_count[2] = count_z;
 
   return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_get_partition_size(PIDX_file file, int* count_x, int* count_y, int* count_z)
+PIDX_return_code PIDX_get_partition_count(PIDX_file file, int* count_x, int* count_y, int* count_z)
 {
   if(file == NULL)
     return PIDX_err_file;
 
-  *count_x = file->idx_d->partition_size[0];
-  *count_y = file->idx_d->partition_size[1];
-  *count_z = file->idx_d->partition_size[2];
+  *count_x = file->idx_d->partition_count[0];
+  *count_y = file->idx_d->partition_count[1];
+  *count_z = file->idx_d->partition_count[2];
 
   return PIDX_success;
 }

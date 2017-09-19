@@ -124,7 +124,7 @@ PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index, int
   int sli = var_grp->shared_start_layout_index;
   int agg_i = var_grp->agg_level;
 
-  for (i = sli; i < (agg_i); i++)
+  for (i = sli; i < agg_i; i++)
   {
     i_1 = i - sli;
     ret = PIDX_agg_buf_destroy(file->idx_d->agg_buffer[start_index][i_1]);

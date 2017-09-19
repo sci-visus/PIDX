@@ -79,11 +79,9 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
   int ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  //printf("[X %d] %d %d %d [Y %d] %d %d %d\n", var_grp->nshared_layout_count, var_grp->nshared_start_layout_index, var_grp->agg_l_nshared, var_grp->nshared_end_layout_index, var_grp->shared_layout_count, var_grp->shared_start_layout_index, var_grp->agg_l_shared, var_grp->shared_end_layout_index);
-
   if (file->idx_dbg->debug_do_io == 1)
   {
-    for (j = var_grp->agg_level; j < var_grp->nshared_end_layout_index; j++)
+    for (j = var_grp->agg_level; j < var_grp->shared_layout_count + var_grp->nshared_layout_count; j++)
     {
       file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
       ret = PIDX_file_io_per_process(file->hz_id, var_grp->block_layout_by_level[j], mode);
@@ -94,38 +92,6 @@ PIDX_return_code hz_io(PIDX_io file, int gi, int mode)
       }
       file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
     }
-
-#if 0
-    for (j = var_grp->agg_l_shared; j < var_grp->shared_end_layout_index; j++)
-    {
-      //printf("S [A %d %d] index %d\n", j, var_grp->agg_l_shared, j - var_grp->agg_l_shared);
-      file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
-      ret = PIDX_file_io_per_process(file->hz_id, var_grp->shared_block_layout_by_level[j - var_grp->agg_l_shared], mode);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_io;
-      }
-      file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
-      //printf("S [B %d %d] index %d\n", j, var_grp->agg_l_shared, j - var_grp->agg_l_shared);
-    }
-
-    for (j = var_grp->agg_l_nshared; j < var_grp->nshared_end_layout_index; j++)
-    {
-      //printf("NS [A %d %d] index %d\n", j, var_grp->agg_l_nshared, j - var_grp->agg_l_nshared);
-
-      file->idx_d->time->hz_io_start[lgi][cvi][j] = MPI_Wtime();
-      ret = PIDX_file_io_per_process(file->hz_id, var_grp->nshared_block_layout_by_level[j - (var_grp->agg_l_nshared)], mode);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_io;
-      }
-      file->idx_d->time->hz_io_end[lgi][cvi][j] = MPI_Wtime();
-
-      //printf("NS [B %d %d] index %d\n", j, (var_grp->agg_l_nshared - var_grp->nshared_start_layout_index), (j - var_grp->agg_l_nshared));
-    }
-#endif
   }
 
   return PIDX_success;

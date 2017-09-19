@@ -128,10 +128,10 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, int bits_per_bl
       {
         hz_from = (unsigned long long)(block_number) * pow(2, bits_per_block);
         hz_to = (unsigned long long)((block_number + 1) * pow(2, bits_per_block)) - 1;
-      
+
         memset(ZYX_to, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
         memset(ZYX_from, 0, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
-      
+
         Hz_to_xyz(bitPattern, maxH - 1, hz_from, ZYX_from);
         Hz_to_xyz(bitPattern, maxH - 1, hz_to, ZYX_to);
       

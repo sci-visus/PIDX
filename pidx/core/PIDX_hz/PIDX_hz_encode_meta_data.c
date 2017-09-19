@@ -53,9 +53,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   {
     PIDX_variable var = var_grp->variable[v];
 
-    var->hz_buffer = malloc(sizeof(*(var->hz_buffer)) * var->restructured_super_patch_count);
-    memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)) * var->restructured_super_patch_count);
-
     var->hz_buffer = malloc(sizeof(*(var->hz_buffer)));
     memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)));
 

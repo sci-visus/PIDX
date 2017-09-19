@@ -90,7 +90,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   file_name_skeleton[strlen(filename) - 4] = '\0';
 
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
-  sprintf((*file)->idx->filename_global, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_partition, "%s.idx", file_name_skeleton);
 
 #if 0
@@ -531,10 +530,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx_d->fs_block_size = stat_buf.st_blksize;
   }
 
-#if PIDX_HAVE_MPI
-  if ((*file)->idx_d->parallel_mode == 1)
     MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-#endif
 #endif
   (*file)->idx->flip_endian = 0;
 

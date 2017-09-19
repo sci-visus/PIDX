@@ -56,9 +56,14 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
   for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
   {
     chunked_patch_offset[l] = var0->chunked_super_patch->restructured_patch->offset[l] / id->idx->chunk_size[l];
-    chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    if (var0->chunked_super_patch->restructured_patch->size[l] % id->idx->chunk_size[l] == 0)
+      chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    else
+      chunked_patch_size[l] = (var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l]) + 1;
+
     total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
   }
+
   number_levels = maxH - 1;
   Point3D xyzuv_Index;
 
@@ -198,7 +203,11 @@ PIDX_return_code PIDX_hz_encode_read_inverse(PIDX_hz_encode_id id, int start_hz_
   for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
   {
     chunked_patch_offset[l] = var0->chunked_super_patch->restructured_patch->offset[l] / id->idx->chunk_size[l];
-    chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    if (var0->chunked_super_patch->restructured_patch->size[l] % id->idx->chunk_size[l] == 0)
+      chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    else
+      chunked_patch_size[l] = (var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l]) + 1;
+
     total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
   }
 

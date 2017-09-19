@@ -93,7 +93,6 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
             file->idx_d->partition_offset[1] = j;
             file->idx_d->partition_offset[2] = k;
 
-            //assert(var->sim_patch_count == 1);
             break;
           }
         }
@@ -106,7 +105,6 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 
   free(colors);
 
-  //
   char file_name_skeleton[1024];
   strncpy(file_name_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
@@ -116,10 +114,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   else
     strcpy(file->idx->filename_partition, file->idx->filename);
 
-  strcpy(file->idx->filename_global, file->idx->filename);
-
   free(local_p);
-  local_p = 0;
 
   return PIDX_success;
 }
@@ -168,11 +163,11 @@ PIDX_return_code find_partition_count(PIDX_io file)
   // calculate number of partitions
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
-    file->idx_d->partition_count[d] = file->idx->bounds[d] / file->idx_d->partition_size[d];
-    if (file->idx->bounds[d] % file->idx_d->partition_size[d] != 0)
-      file->idx_d->partition_count[d]++;
+    file->idx_d->partition_size[d] = file->idx->bounds[d] / file->idx_d->partition_count[d];
+    if (file->idx->bounds[d] % file->idx_d->partition_count[d] != 0)
+      file->idx_d->partition_size[d]++;
 
-    file->idx_d->partition_count[d] = pow(2, (int)ceil(log2(file->idx_d->partition_count[d])));
+    file->idx_d->partition_size[d] = pow(2, (int)ceil(log2(file->idx_d->partition_size[d])));
   }
 
   return PIDX_success;

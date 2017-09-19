@@ -31,11 +31,6 @@
 
 struct PIDX_file_io_struct
 {
-#if PIDX_HAVE_MPI
-  //MPI_Comm comm;
-  //MPI_Win win;
-#endif
-
   idx_comm idx_c;
 
   //Contains all relevant IDX file info
@@ -64,23 +59,13 @@ PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived
 
 
 ///
-int PIDX_file_io_file_create(PIDX_file_io_id io_id, int time_step, char* data_set_path, int MODE);
+int PIDX_file_io_async_write(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, MPI_Request* req, MPI_File *fp, char* filename_template);
 
 
-
-///
-int PIDX_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, int MODE);
+PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, char* filename_template);
 
 
-///
-int PIDX_async_aggregated_io(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, MPI_Request* req, MPI_File *fp, char* filename_template, int mode);
-
-
-
-///
-int PIDX_file_io_aggregated_read(PIDX_file_io_id io_id, Agg_buffer agg_buffer);
-
-
+PIDX_return_code  PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, char* filename_template);
 
 ///
 int PIDX_file_io_finalize(PIDX_file_io_id io_id);
