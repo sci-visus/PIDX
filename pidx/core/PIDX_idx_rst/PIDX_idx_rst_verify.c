@@ -85,7 +85,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
               {
                 for (s = 0; s < 3; s++)
                 {
-                  dvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_metadata->color * bounds[0] * bounds[1] * bounds[2]);
+                  dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_metadata->color * bounds[0] * bounds[1] * bounds[2]);
 
                   memcpy(&dvalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * 3) + s) * sizeof(double), sizeof(double));
                   check_bit = check_bit && (dvalue_1  == dvalue_2);

@@ -313,6 +313,8 @@ static int verify_read_results()
   int read_error_count = 0, read_count = 0;
   int total_read_error_count = 0, total_read_count = 0;
   int i, j, k, vps;
+  unsigned char uchar_val = 0;
+  short short_val = 0;
   int int_val = 0;
   double double_val = 0;
   float float_val = 0;
@@ -325,7 +327,47 @@ static int verify_read_results()
       {
         unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
 
-        if (strcmp(type_name, INT32) == 0 || strcmp(type_name, INT32_GA) == 0 || strcmp(type_name, INT32_RGB) == 0)
+        if (strcmp(type_name, UINT8) == 0 || strcmp(type_name, UINT8_GA) == 0 || strcmp(type_name, UINT8_RGB) == 0)
+        {
+          for (vps = 0; vps < values_per_sample; vps++)
+          {
+            memcpy(&uchar_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
+            if (uchar_val != var + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            {
+              read_error_count++;
+              //if (rank == 0)
+              //printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
+            else
+            {
+              read_count++;
+              //if (rank == 0)
+              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
+          }
+        }
+
+        else if (strcmp(type_name, INT16) == 0 || strcmp(type_name, INT16_GA) == 0 || strcmp(type_name, INT16_RGB) == 0)
+        {
+          for (vps = 0; vps < values_per_sample; vps++)
+          {
+            memcpy(&short_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
+            if (short_val != var + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            {
+              read_error_count++;
+              //if (rank == 0)
+              //printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
+            else
+            {
+              read_count++;
+              //if (rank == 0)
+              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
+          }
+        }
+
+        else if (strcmp(type_name, INT32) == 0 || strcmp(type_name, INT32_GA) == 0 || strcmp(type_name, INT32_RGB) == 0)
         {
           for (vps = 0; vps < values_per_sample; vps++)
           {
@@ -350,7 +392,7 @@ static int verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&double_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (double_val != var + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (double_val != var + 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
