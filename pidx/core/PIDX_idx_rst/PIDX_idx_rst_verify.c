@@ -38,6 +38,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
   float fvalue_1, fvalue_2;
   double dvalue_1, dvalue_2;
   unsigned long long uvalue_1, uvalue_2;
+  int ivalue_1, ivalue_2;
   int vol = 0;
   unsigned long long global_volume;
 
@@ -97,6 +98,14 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
                 memcpy(&uvalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
                 check_bit = check_bit && (uvalue_1 == uvalue_2);
+              }
+              else if (strcmp(var->type_name, INT32) == 0)
+              {
+                ivalue_1 = 100 + v + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_metadata->color * bounds[0] * bounds[1] * bounds[2]);
+
+                memcpy(&ivalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
+
+                check_bit = check_bit && (ivalue_1 == ivalue_2);
               }
             }
 

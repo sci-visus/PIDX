@@ -148,7 +148,7 @@ PIDX_return_code restructure(PIDX_io file, int mode)
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
       time->rst_buff_agg_end[lgi][cvi] = PIDX_get_time();
 
-      if (file->idx_dbg->debug_rst == 1)
+      //if (file->idx_dbg->debug_rst == 1)
       {
         ret = HELPER_idx_rst(file->idx_rst_id);
         if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
