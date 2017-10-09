@@ -576,8 +576,6 @@ PIDX_return_code PIDX_set_ROI_type(PIDX_file file, int type)
     return PIDX_err_file;
 
   file->ROI_writes = 1;
-  file->idx->enable_rst = 0;
-  //file->idx->enable_agg = 0;
 
   return PIDX_success;
 }
@@ -726,6 +724,35 @@ PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* 
   *np_x = file->idx_c->gnproc_x;
   *np_y = file->idx_c->gnproc_y;
   *np_z = file->idx_c->gnproc_z;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_comm(PIDX_file file, MPI_Comm *comm)
+{
+  if(!file)
+    return PIDX_err_file;
+
+   *comm = file->idx_c->global_comm;
+
+  return PIDX_success;
+}
+
+
+PIDX_return_code PIDX_set_comm(PIDX_file file, MPI_Comm comm)
+{
+  if(!file)
+    return PIDX_err_file;
+
+   file->idx_c->global_comm = comm;
+   file->idx_c->local_comm = comm;
+
+   MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
+   MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
+   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
+   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
 
   return PIDX_success;
 }

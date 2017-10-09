@@ -141,12 +141,8 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_dump_state_finalize(file);
 
   for (i = 0; i < file->idx_d->max_file_count; i++)
-  {
     free(file->idx_d->block_bitmap[i]);
-    file->idx_d->block_bitmap[i] = 0;
-  }
   free(file->idx_d->block_bitmap);
-  file->idx_d->block_bitmap = 0;
 
   free(file->idx);
   free(file->idx_d->restructured_grid);
@@ -209,7 +205,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
         fprintf(stderr, "Endian Flipping Not Done\n");
 
       fprintf(stderr, "Partition count %d = %d x %d x %d Partitio size = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
-      fprintf(stderr, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
+      fprintf(stderr, "Comp = %d\n", file->idx->compression_type);
       fprintf(stderr, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
       fprintf(stderr, "Partition level : maxh = %d : %d\n", file->idx_d->total_partiton_level, file->idx_d->maxh);
     }

@@ -27,8 +27,6 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
       return PIDX_err_io;
     }
 
-    data_offset = 0;
-    data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
     PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
     int total_header_size = (10 + (10 * io_id->idx->blocks_per_file)) * sizeof (uint32_t) * io_id->idx->variable_count;
     headers = malloc(total_header_size);
@@ -37,7 +35,7 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
     ret = MPI_File_read_at(fp, 0, headers, total_header_size , MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)
     {
-      fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+      fprintf(stderr, "Data offset = [%s] [%d] MPI_File_write_at() failed for filename %s.\n", __FILE__, __LINE__, file_name);
       return PIDX_err_io;
     }
     int read_count = 0;
@@ -133,54 +131,50 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
   if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
   {
     generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
+    ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
+    if (ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
+      return PIDX_err_io;
+    }
 
+    PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
+    data_offset = 0;
+    data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
 
+    for (k = 0; k < agg_buf->var_number; k++)
+    {
+      PIDX_variable vark = var_grp->variable[k];
+      int bytes_per_datatype =  ((vark->bpv/8) * tck) / (io_id->idx->compression_factor);
+      unsigned long long prev_var_sample = (unsigned long long) block_layout->bcpf[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * var_grp->variable[k]->vps;
 
-        ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
-        if (ret != MPI_SUCCESS)
-        {
-          fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
-          return PIDX_err_io;
-        }
+      data_offset = (unsigned long long) data_offset + prev_var_sample;
+    }
 
+    for (i = 0; i < agg_buf->sample_number; i++)
+      data_offset = (unsigned long long) data_offset + agg_buf->buffer_size;
 
-      PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
-      data_offset = 0;
-      data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
+    ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
+    if (ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+      return PIDX_err_io;
+    }
 
-        for (k = 0; k < agg_buf->var_number; k++)
-        {
-          PIDX_variable vark = var_grp->variable[k];
-          int bytes_per_datatype =  ((vark->bpv/8) * tck) / (io_id->idx->compression_factor);
-          unsigned long long prev_var_sample = (unsigned long long) block_layout->bcpf[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * var_grp->variable[k]->vps;
+    int write_count = 0;
+    MPI_Get_count(&status, MPI_BYTE, &write_count);
+    if (write_count != agg_buf->buffer_size)
+    {
+      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
+      return PIDX_err_io;
+    }
 
-          data_offset = (unsigned long long) data_offset + prev_var_sample;
-        }
-
-        for (i = 0; i < agg_buf->sample_number; i++)
-          data_offset = (unsigned long long) data_offset + agg_buf->buffer_size;
-
-        ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
-        if (ret != MPI_SUCCESS)
-        {
-          fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
-          return PIDX_err_io;
-        }
-
-        int write_count = 0;
-        MPI_Get_count(&status, MPI_BYTE, &write_count);
-        if (write_count != agg_buf->buffer_size)
-        {
-          fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
-          return PIDX_err_io;
-        }
-
-      ret = MPI_File_close(&fh);
-      if (ret != MPI_SUCCESS)
-      {
-        fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-       return PIDX_err_io;
-      }
+    ret = MPI_File_close(&fh);
+    if (ret != MPI_SUCCESS)
+    {
+      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
+      return PIDX_err_io;
+    }
   }
 
   return PIDX_success;
@@ -190,32 +184,32 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
 
 static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf)
 {
-    unsigned char *data = ((unsigned char *)val) + 3;
-    unsigned char *out = (unsigned char *)outbuf;
+  unsigned char *data = ((unsigned char *)val) + 3;
+  unsigned char *out = (unsigned char *)outbuf;
 
-    *out++ = *data--;
-    *out++ = *data--;
-    *out++ = *data--;
-    *out = *data;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out = *data;
 
-    return;
+  return;
 }
 
 
 
 static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf)
 {
-    unsigned char *data = ((unsigned char *)val) + 7;
-    unsigned char *out = (unsigned char *)outbuf;
+  unsigned char *data = ((unsigned char *)val) + 7;
+  unsigned char *out = (unsigned char *)outbuf;
 
-    *out++ = *data--;
-    *out++ = *data--;
-    *out++ = *data--;
-    *out++ = *data--;
-    *out++ = *data--;
-    *out++ = *data--;
-    *out++ = *data--;
-    *out = *data;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out++ = *data--;
+  *out = *data;
 
-    return;
+  return;
 }

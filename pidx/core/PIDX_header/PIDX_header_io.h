@@ -43,8 +43,16 @@ PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_dataset_der
 /// \param current_time_step
 /// \return
 ///
-PIDX_return_code PIDX_header_io_write_idx (PIDX_header_io_id header_io, char* data_set_path, int current_time_step);
+PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, char* data_set_path);
 
+
+
+
+PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io, char* data_set_path);
+
+
+
+PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char* data_set_path);
 
 
 ///

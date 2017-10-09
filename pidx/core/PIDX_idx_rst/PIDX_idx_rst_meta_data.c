@@ -566,7 +566,7 @@ PIDX_return_code PIDX_idx_rst_meta_data_destroy(PIDX_idx_rst_id rst_id)
   if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
-  int j, v;
+  int i, j, v;
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
@@ -587,34 +587,21 @@ PIDX_return_code PIDX_idx_rst_meta_data_destroy(PIDX_idx_rst_id rst_id)
     var->restructured_super_patch = 0;
   }
 
-  if (rst_id->idx_metadata->enable_rst == 1)
+  for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
-    int i, j;
-    for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
-    {
-      PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
-      for (j = 0; j < irsp->patch_count; j++ )
-      {
-        free(irsp->patch[j]);
-        irsp->patch[j] = 0;
-      }
+    PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
+    for (j = 0; j < irsp->patch_count; j++ )
+      free(irsp->patch[j]);
 
-      free(irsp->source_patch);
-      irsp->source_patch = 0;
-
-      free(irsp->patch);
-      irsp->patch = 0;
-
-      free(irsp->restructured_patch);
-      irsp->restructured_patch = 0;
-
-      free(irsp);
-      irsp = 0;
-    }
-
-    free(rst_id->intersected_restructured_super_patch);
-    rst_id->intersected_restructured_super_patch = 0;
+    free(irsp->source_patch);
+    free(irsp->patch);
+    free(irsp->restructured_patch);
+    free(irsp);
   }
+
+  free(rst_id->intersected_restructured_super_patch);
+  rst_id->intersected_restructured_super_patch = 0;
+
 
   return PIDX_success;
 }

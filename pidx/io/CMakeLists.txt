@@ -19,15 +19,10 @@
 # sources
 # ////////////////////////////////////////
 
-#ADD_SUBDIRECTORY(PIDX_raw_io)
-#ADD_SUBDIRECTORY(PIDX_idx_io)
-#ADD_SUBDIRECTORY(PIDX_global_idx_io)
-#ADD_SUBDIRECTORY(PIDX_partitioned_idx_io)
-#ADD_SUBDIRECTORY(PIDX_partition_merge_idx_io)
-#ADD_SUBDIRECTORY(PIDX_multi_patch_idx_io)
-
 FILE(GLOB PIDX_IO_SOURCES *.h *.c)
 
+ADD_SUBDIRECTORY(raw)
+ADD_SUBDIRECTORY(idx)
 
 # ////////////////////////////////////////
 # includes
@@ -45,11 +40,6 @@ IF (ZFP_FOUND)
   SET(PIDX_IO_LINK_LIBS ${PIDX_IO_LINK_LIBS} ${ZFP_LIBRARIES})
 ENDIF()
 
-IF (PMT_FOUND)
-  MESSAGE("Configuring pidx with PMT support")
-  INCLUDE_DIRECTORIES(${PMT_INSITU_INCLUDE_DIR})
-  SET(PIDX_IO_LINK_LIBS ${PIDX_IO_LINK_LIBS} ${PMT_INSITU_LINK_LIBRARIES})
-ENDIF()
 
 IF (VTK_RENDERER_FOUND)
   INCLUDE_DIRECTORIES(${VTK_RENDERER_INCLUDE_DIR})
@@ -60,6 +50,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_io "${PIDX_IO_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_io m ${PIDX_IO_LINK_LIBS})
-#TARGET_LINK_LIBRARIES(pidx_io m pidx_io pidx_global_idx_io pidx_idx_io pidx_multi_patch_idx_io pidx_raw_io pidx_partitioned_idx_io pidx_partition_merge_idx_io ${PIDX_IO_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_io m pidx_idx_io pidx_raw_io ${PIDX_IO_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_io PROPERTIES LINKER_LANGUAGE CXX)

@@ -121,14 +121,17 @@ struct PIDX_variable_struct
   // buffer (before, after HZ encoding phase)
   int sim_patch_count;                                       ///< The actual number of patches (application layout), most probably more than 1 in uintah
   PIDX_patch sim_patch[1024];                                ///< Pointer to the patches
-  HZ_buffer hz_buffer;                                      ///< HZ encoded buffer of the patches
 
   // buffer before aggregation
-  int restructured_super_patch_count;                                     ///< Number of groups of patches to be passed to aggregation phase
-  PIDX_super_patch restructured_super_patch;                         ///< Pointer to the patch groups
-  PIDX_super_patch chunked_super_patch;                       ///< Pointer to the patch group after block restructuring
+  int restructured_super_patch_count;                        ///< Number of groups of patches to be passed to aggregation phase
+  PIDX_super_patch restructured_super_patch;                 ///< Pointer to the patch groups
+  PIDX_super_patch chunked_super_patch;                      ///< Pointer to the patch group after block restructuring
+  HZ_buffer hz_buffer;                                       ///< HZ encoded buffer of the patches
 
-  //PIDX_patch rst_wavelet_patch;
+
+  int patch_group_count;
+  PIDX_super_patch* rst_patch_group;
+
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -238,7 +241,7 @@ struct idx_file_struct
 
   double zfp_precisison;
   int compression_type;
-  int enable_rst;
+
 
   /// 0 No aggregation
   /// 1 Only aggregation

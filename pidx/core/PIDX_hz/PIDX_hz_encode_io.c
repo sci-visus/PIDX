@@ -300,9 +300,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
 
 static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout)
 {
-  int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
-  int bytes_per_sample, bytes_per_datatype;
-  int i = 0;
+  int samples_per_file, block_number, file_index, file_count, ret = 0, file_number, bytes_per_datatype;
   char file_name[PATH_MAX];
   off_t data_offset = 0;
   size_t data_size = 0;
@@ -343,13 +341,10 @@ static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned lo
         return PIDX_err_io;
       }
 
-      data_offset = 0;
-      data_offset += hz_id->idx_d->start_fs_block * hz_id->idx_d->fs_block_size;
-
       ret = MPI_File_read_at(fp, 0, headers, total_header_size , MPI_BYTE, &status);
       if (ret != MPI_SUCCESS)
       {
-        fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
+        fprintf(stderr, "Data offset = [%s] [%d] MPI_File_write_at() failed for filename %s.\n", __FILE__, __LINE__, file_name);
         return PIDX_err_io;
       }
       int read_count = 0;
@@ -365,8 +360,6 @@ static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned lo
     if ((unsigned long long)file_count > hz_count)
       file_count = hz_count;
 
-
-#if 1
     int block_size_bytes = hz_id->idx_d->samples_per_block * curr_var->vps * (curr_var->bpv/8);
     unsigned char *temp_buffer = malloc(block_size_bytes);
     int bl = 0;
@@ -404,73 +397,6 @@ static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned lo
         memcpy (hz_buffer + bl * block_size_bytes, temp_buffer + (hz_start_index % hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8), (hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8));
     }
     free(temp_buffer);
-#endif
-
-#if 0
-    data_offset = 0;
-    bytes_per_sample = curr_var->bpv / 8;
-    data_offset = file_index * bytes_per_sample * curr_var->vps;
-    data_offset += hz_id->idx_d->start_fs_block * hz_id->idx_d->fs_block_size;
-
-    block_negative_offset = PIDX_blocks_find_negative_offset(hz_id->idx->blocks_per_file, hz_id->idx->bits_per_block, block_number, layout);
-
-    data_offset -= block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps;
-
-    int l = 0;
-    for (l = 0; l < variable_index; l++)
-    {
-      bytes_per_sample = var_grp->variable[l]->bpv / 8;
-      for (i = 0; i < hz_id->idx->blocks_per_file; i++)
-        if (PIDX_blocks_is_block_present((i + (hz_id->idx->blocks_per_file * file_number)), hz_id->idx->bits_per_block, layout))
-          data_offset = data_offset + (var_grp->variable[l]->vps * bytes_per_sample * hz_id->idx_d->samples_per_block);
-    }
-
-    MPI_Status status;
-    int ret;
-    ret = MPI_File_read_at(fp, data_offset, hz_buffer, file_count * curr_var->vps * (curr_var->bpv/8), MPI_BYTE, &status);
-    if (ret != MPI_SUCCESS)
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-
-    int read_count = 0;
-    MPI_Get_count(&status, MPI_BYTE, &read_count);
-    if (read_count != file_count * curr_var->vps * (curr_var->bpv/8))
-    {
-      fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed. %d != %dd\n", __FILE__, __LINE__, read_count, total_header_size);
-      return PIDX_err_io;
-    }
-
-    if (hz_id->idx->flip_endian == 1)
-    {
-      if (curr_var->bpv/8 == 4 || curr_var->bpv/8 == 12)
-      {
-        int y = 0;
-        float temp, temp2;
-
-        for (y = 0; y < (file_count * curr_var->vps * (curr_var->bpv/8)) / sizeof(float); y++)
-        {
-          memcpy(&temp, hz_buffer + (y * sizeof(float)), sizeof(float));
-          bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
-          memcpy(hz_buffer + (y * sizeof(float)), &temp2, sizeof(float));
-        }
-      }
-      else if (curr_var->bpv/8 == 8 || curr_var->bpv/8 == 24)
-      {
-        int y = 0;
-        double temp, temp2;
-
-        for (y = 0; y < (file_count * curr_var->vps * (curr_var->bpv/8)) / sizeof(double); y++)
-        {
-          memcpy(&temp, hz_buffer + (y * sizeof(double)), sizeof(double));
-          bit64_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
-          memcpy(hz_buffer + (y * sizeof(double)), &temp2, sizeof(double));
-        }
-      }
-    }
-#endif
-
 
     hz_count -= file_count;
     hz_start_index += file_count;

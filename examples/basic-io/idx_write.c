@@ -162,14 +162,12 @@ int main(int argc, char **argv)
 //----------------------------------------------------------------
 static void init_mpi(int argc, char **argv)
 {
-#if PIDX_HAVE_MPI
   if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Init error\n");
   if (MPI_Comm_size(MPI_COMM_WORLD, &process_count) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Comm_size error\n");
   if (MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Comm_rank error\n");
-#endif
 }
 
 int isNumber(char number[])
@@ -411,9 +409,7 @@ static void create_synthetic_simulation_data()
   // Synthetic simulation data
   for(var = 0; var < variable_count; var++)
   {
-    //fprintf(stderr, "vps[var] %d - bpv[var] %d\n", vps[var], bpv[var]);
     unsigned long long i, j, k, val_per_sample = 0;
-
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
 
     unsigned char cvalue = 0;
@@ -531,7 +527,7 @@ static void set_pidx_file(int ts)
   PIDX_set_block_count(file, 256);
   
   // Set the size of a block: how many 2^N samples we want to put in a single block
-  PIDX_set_block_size(file, 13);
+  PIDX_set_block_size(file, 15);
 
   // If the domain decomposition and the cores configuration do not change over time 
   // we can instruct PIDX to cache and reuse these information for the next timesteps

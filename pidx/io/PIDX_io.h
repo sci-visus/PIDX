@@ -8,7 +8,9 @@ struct PIDX_io_descriptor
 {
   PIDX_header_io_id header_io_id;                   ///< IDX metadata id
 
-  PIDX_idx_rst_id idx_rst_id;                       ///< Multi-patch restructuring phase id
+  PIDX_raw_rst_id raw_rst_id;                       ///< Multi-patch restructuring phase id for raw writes
+
+  PIDX_idx_rst_id idx_rst_id;                       ///< Multi-patch restructuring phase id for idx writes
 
   PIDX_chunk_id chunk_id;                           ///< Block restructuring id (prepration for compression)
   PIDX_comp_id comp_id;                             ///< Compression (lossy and lossless) id
@@ -19,7 +21,6 @@ struct PIDX_io_descriptor
   PIDX_agg_id** agg_id;                             ///< Aggregation phase id for all shared file
   PIDX_file_io_id** io_id;                          ///< Aggregation phase id for all nonshared file
 
-  PIDX_insitu_id insitu_id;
 
   idx_comm idx_c;
 

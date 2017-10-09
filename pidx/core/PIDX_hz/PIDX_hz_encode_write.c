@@ -68,6 +68,9 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
   number_levels = maxH - 1;
   Point3D xyzuv_Index;
 
+  if (id->cache->meta_data_cache != NULL)
+  {
+
   if (id->cache->meta_data_cache->is_set == 0)
   {
     id->cache->meta_data_cache->element_count = chunked_patch_size[0] * chunked_patch_size[1] * chunked_patch_size[2];
@@ -266,6 +269,116 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
             index_count++;
           }
     }
+  }
+  }
+  else
+  {
+      if(var0->data_layout == PIDX_row_major)
+      {
+        for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
+          for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
+            for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
+            {
+              index = (chunked_patch_size[0] * chunked_patch_size[1] * (k - chunked_patch_offset[2]))
+                  + (chunked_patch_size[0] * (j - chunked_patch_offset[1]))
+                  + (i - chunked_patch_offset[0]);
+
+              xyzuv_Index.x = i;
+              xyzuv_Index.y = j;
+              xyzuv_Index.z = k;
+
+              z_order = 0;
+              Point3D zero;
+              zero.x = 0;
+              zero.y = 0;
+              zero.z = 0;
+              memset(&zero, 0, sizeof (Point3D));
+
+              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (Point3D)); cnt++, number_levels--)
+              {
+                int bit = id->idx->bitPattern[number_levels];
+                z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
+                PGET(xyzuv_Index, bit) >>= 1;
+              }
+
+              number_levels = maxH - 1;
+              unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
+              z_order |= lastbitmask;
+              while (!(1 & z_order)) z_order >>= 1;
+              z_order >>= 1;
+
+              hz_order = z_order;
+              level = getLeveL(hz_order);
+
+              if (level >= maxH - id->resolution_to)
+                continue;
+
+              for(v1 = id->first_index; v1 <= id->last_index; v1++)
+              {
+                hz_index = hz_order - var_grp->variable[v1]->hz_buffer->start_hz_index[level];
+
+                bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
+
+                memcpy(var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype),
+                     var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype),
+                     bytes_for_datatype);
+              }
+            }
+      }
+      else
+      {
+        for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)
+          for (j = chunked_patch_offset[1]; j < chunked_patch_offset[1] + chunked_patch_size[1]; j++)
+            for (i = chunked_patch_offset[0]; i < chunked_patch_offset[0] + chunked_patch_size[0]; i++)
+            {
+              xyzuv_Index.x = i;
+              xyzuv_Index.y = j;
+              xyzuv_Index.z = k;
+
+              z_order = 0;
+              Point3D zero;
+              zero.x = 0;
+              zero.y = 0;
+              zero.z = 0;
+              memset(&zero, 0, sizeof (Point3D));
+
+              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (Point3D)); cnt++, number_levels--)
+              {
+                int bit = id->idx->bitPattern[number_levels];
+                z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
+                PGET(xyzuv_Index, bit) >>= 1;
+              }
+
+              number_levels = maxH - 1;
+              unsigned long long lastbitmask = ((unsigned long long) 1) << number_levels;
+              z_order |= lastbitmask;
+              while (!(1 & z_order)) z_order >>= 1;
+              z_order >>= 1;
+
+              hz_order = z_order;
+              level = getLeveL(hz_order);
+
+              if (level >= maxH - id->resolution_to)
+                continue;
+
+              index = (chunked_patch_size[2] * chunked_patch_size[1] * (i - chunked_patch_offset[0]))
+                  + (chunked_patch_size[2] * (j - chunked_patch_offset[1]))
+                  + (k - chunked_patch_offset[2]);
+
+              for(v1 = id->first_index; v1 <= id->last_index; v1++)
+              {
+                hz_index = hz_order - var_grp->variable[v1]->hz_buffer->start_hz_index[level];
+                bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
+                for (s = 0; s < var_grp->variable[v1]->vps; s++)
+                {
+                  memcpy(var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype),
+                       var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype),
+                       bytes_for_datatype);
+                }
+              }
+            }
+      }
+
   }
 
   return PIDX_success;

@@ -116,16 +116,6 @@ PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz)
 }
 
 
-PIDX_return_code PIDX_disable_rst(PIDX_file file)
-{
-  if(!file)
-    return PIDX_err_file;
-
-  file->idx->enable_rst = 0;
-
-  return PIDX_success;
-}
-
 
 
 PIDX_return_code PIDX_disable_agg(PIDX_file file)

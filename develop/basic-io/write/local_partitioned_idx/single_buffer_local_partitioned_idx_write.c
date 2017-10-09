@@ -45,7 +45,7 @@ static int process_count = 1, rank = 0;
 static unsigned long long global_box_size[NUM_DIMS];
 static unsigned long long local_box_offset[NUM_DIMS];
 static unsigned long long local_box_size[NUM_DIMS];
-static int partition_box_size[NUM_DIMS];
+static int partition_box_count[NUM_DIMS];
 int sub_div[NUM_DIMS];
 static int time_step_count = 1;
 static int variable_count = 1;
@@ -151,7 +151,7 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('c'): // partitioned box dimension
-      if ((sscanf(optarg, "%dx%dx%d", &partition_box_size[X], &partition_box_size[Y], &partition_box_size[Z]) == EOF) ||(partition_box_size[X] < 1 || partition_box_size[Y] < 1 || partition_box_size[Z] < 1))
+      if ((sscanf(optarg, "%dx%dx%d", &partition_box_count[X], &partition_box_count[Y], &partition_box_count[Z]) == EOF) ||(partition_box_count[X] < 1 || partition_box_count[Y] < 1 || partition_box_count[Z] < 1))
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
@@ -447,7 +447,7 @@ static void set_pidx_file(int ts)
   PIDX_set_variable_count(file, variable_count);
 
   PIDX_set_block_count(file, 128);
-  PIDX_set_partition_count(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
+  PIDX_set_partition_count(file, partition_box_count[0], partition_box_count[1], partition_box_count[2]);
 
   // Selecting idx I/O mode
   PIDX_set_io_mode(file, PIDX_LOCAL_PARTITION_IDX_IO);

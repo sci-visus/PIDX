@@ -107,6 +107,20 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
 
 
+
+///
+/// \brief PIDX_serial_file_open
+/// \param filename
+/// \param flags
+/// \param dims
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file);
+
+
+
+
 ///
 /// \brief PIDX_query_box
 /// \param file
@@ -569,6 +583,24 @@ PIDX_return_code PIDX_set_process_decomposition(PIDX_file file, int np_x, int np
 /// \return
 ///
 PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* np_y, int* np_z);
+
+
+///
+/// \brief PIDX_set_comm
+/// \param file
+/// \param comm
+/// \return
+///
+PIDX_return_code PIDX_set_comm(PIDX_file file, MPI_Comm comm);
+
+
+///
+/// \brief PIDX_get_comm
+/// \param file
+/// \param comm
+/// \return
+///
+PIDX_return_code PIDX_get_comm(PIDX_file file, MPI_Comm *comm);
 /*
  * Implementation in PIDX_variable.c
  */
@@ -897,15 +929,6 @@ PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst);
 /// \return
 ///
 PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
-
-
-///
-/// \brief PIDX_disable_rst
-/// \param file
-/// \return
-///
-PIDX_return_code PIDX_disable_rst(PIDX_file file);
-
 
 
 ///

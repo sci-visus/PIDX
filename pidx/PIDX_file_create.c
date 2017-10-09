@@ -103,7 +103,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_c->gnproc_z = -1;
 
 
-  (*file)->idx->enable_rst = 1;
   (*file)->idx->enable_agg = 1;
 
   (*file)->idx->current_time_step = 0;
