@@ -60,7 +60,7 @@ static int bits_per_sample = 0;
 static int values_per_sample = 0;
 static char type_name[512];
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./minmax file_name variable_index time_step_index\n";
+static char *usage = "Serial Usage: ./minmax file_name variable_index\n";
 
                      //"Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
                      //"  -g: global dimensions\n"
