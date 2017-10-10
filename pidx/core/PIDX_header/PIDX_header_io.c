@@ -621,6 +621,8 @@ static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout blo
 
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
         headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps / (header_io_id->idx->compression_factor));
+
+        header_io_id->idx_d->block_offset_bitmap[file_number][i] = data_offset;
       }
     }
   }

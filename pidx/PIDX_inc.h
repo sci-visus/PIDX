@@ -65,6 +65,7 @@ extern "C" {
 
 
 #include "./io/PIDX_io.h"
+#include "./io/idx/serial/serial_idx_io.h"
 #include "./io/idx/no_partition/idx_io.h"
 #include "./io/idx/local_partition/local_partition_idx_io.h"
 #include "./io/idx/global_partition/global_partition_idx_io.h"
@@ -78,7 +79,8 @@ extern "C" {
 #include "./io/idx/partition.h"
 #include "./io/idx/local_buffer.h"
 #include "./io/idx/headers.h"
-#include "./io/idx/blocks.h"
+#include "./io/idx/rst_blocks.h"
+#include "./io/idx/sim_blocks.h"
 #include "./io/idx/hz_buffer.h"
 #include "./io/idx/agg_io.h"
 #include "./io/idx/timming.h"

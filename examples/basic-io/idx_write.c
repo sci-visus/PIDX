@@ -275,7 +275,7 @@ static int generate_vars(){
     int bits_per_sample = 0;
     int sample_count = 0;
     char temp_name[512];
-    char* temp_type_name = "1*float64";
+    char* temp_type_name = "1*float32";
     sprintf(temp_name, "var_%d", variable_counter);
     strcpy(var_name[variable_counter], temp_name);
     strcpy(type_name[variable_counter], temp_type_name);

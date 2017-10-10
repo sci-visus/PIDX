@@ -325,6 +325,7 @@ struct idx_dataset_derived_metadata_struct
   int total_partiton_level;
 
   int **block_bitmap;
+  int **block_offset_bitmap;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

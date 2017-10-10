@@ -89,7 +89,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   file_name_skeleton[strlen(filename) - 4] = '\0';
 
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
-  sprintf((*file)->idx->filename_partition, "%s.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_partition, "%s_0.idx", file_name_skeleton);
 
 #if 0
   if ((*file)->idx_d->partition_count[0] == 1 && (*file)->idx_d->partition_count[1] == 1 && (*file)->idx_d->partition_count[2] == 1)
@@ -550,7 +550,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   return PIDX_success;
 }
-
 
 
 

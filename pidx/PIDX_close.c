@@ -141,8 +141,12 @@ PIDX_return_code PIDX_close(PIDX_file file)
   PIDX_dump_state_finalize(file);
 
   for (i = 0; i < file->idx_d->max_file_count; i++)
+  {
     free(file->idx_d->block_bitmap[i]);
+    free(file->idx_d->block_offset_bitmap[i]);
+  }
   free(file->idx_d->block_bitmap);
+  free(file->idx_d->block_offset_bitmap);
 
   free(file->idx);
   free(file->idx_d->restructured_grid);
