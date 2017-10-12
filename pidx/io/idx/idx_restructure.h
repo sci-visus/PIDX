@@ -56,8 +56,10 @@ PIDX_return_code idx_restructure_forced_read(PIDX_io file, int svi, int evi);
 
 
 
-PIDX_return_code idx_restructure_comm_create(PIDX_io file, int gi, int svi);
+PIDX_return_code idx_restructure_rst_comm_create(PIDX_io file, int gi, int svi);
 
+
+PIDX_return_code idx_restructure_copy_rst_comm_to_local_comm(PIDX_io file, int gi, int svi);
 
 
 PIDX_return_code free_restructured_communicators(PIDX_io file, int gi);

@@ -367,6 +367,9 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
 
   int wc = id->idx_c->lnprocs * PIDX_MAX_DIMENSIONS;
 
+  //if (id->idx_d->color == 1)
+  //printf("[%d] [%d] O : S :: %d %d %d - %d %d %d\n", id->idx_d->color, id->idx_c->lrank, local_patch_offset[0], local_patch_offset[1], local_patch_offset[2], local_patch_size[0], local_patch_size[1], local_patch_size[2]);
+
   unsigned long long* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
   memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
 
@@ -551,7 +554,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
           ab->buffer_size = sample_count * bpdt;
 
 #if DETAIL_OUTPUT
-          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d] [Si %d] [Buffer %lld (%d x %d x %d)]\n",
+          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d %d] [Si %d] [Buffer %lld (%d x %d x %d)]\n",
                agg_offset, id->idx->current_time_step,
                id->agg_r[k][i - id->fi][j],
                id->idx_d->color,
@@ -562,7 +565,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
                range,
                i, (id->idx->variable_pipe_length + 1),
                k,
-               lbl->existing_file_index[k],
+               lbl->existing_file_index[k], global_file_index,
                j,
                ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 #endif

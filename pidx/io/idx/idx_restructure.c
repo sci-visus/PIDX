@@ -232,7 +232,7 @@ PIDX_return_code idx_restructure_forced_read(PIDX_io file, int svi, int evi)
 }
 
 
-PIDX_return_code idx_restructure_comm_create(PIDX_io file, int gi, int svi)
+PIDX_return_code idx_restructure_rst_comm_create(PIDX_io file, int gi, int svi)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
@@ -242,14 +242,21 @@ PIDX_return_code idx_restructure_comm_create(PIDX_io file, int gi, int svi)
 
   MPI_Comm_split(file->idx_c->global_comm, var0->restructured_super_patch_count, file->idx_c->grank, &(file->idx_c->rst_comm));
 
+  MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
+  MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
+
+  return PIDX_success;
+}
+
+PIDX_return_code idx_restructure_copy_rst_comm_to_local_comm(PIDX_io file, int gi, int svi)
+{
   file->idx_c->local_comm = file->idx_c->rst_comm;
 
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
 
-  var_grp->rank_buffer = malloc(file->idx_c->lnprocs * sizeof(*var_grp->rank_buffer));
-  memset(var_grp->rank_buffer, 0, file->idx_c->lnprocs * sizeof(*var_grp->rank_buffer));
-  MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->local_comm);
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  PIDX_variable var0 = var_grp->variable[svi];
 
   return PIDX_success;
 }
@@ -258,9 +265,6 @@ PIDX_return_code idx_restructure_comm_create(PIDX_io file, int gi, int svi)
 PIDX_return_code free_restructured_communicators(PIDX_io file, int gi)
 {
   MPI_Comm_free(&(file->idx_c->rst_comm));
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  free(var_grp->rank_buffer);
 
   return PIDX_success;
 }
@@ -499,9 +503,9 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   int bits;
   int counter = 1;
   unsigned long long power_two_bound[PIDX_MAX_DIMENSIONS];
-  power_two_bound[0] = file->idx_d->partition_count[0] * file->idx_d->partition_size[0];
-  power_two_bound[1] = file->idx_d->partition_count[1] * file->idx_d->partition_size[1];
-  power_two_bound[2] = file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
+  power_two_bound[0] = getPowerOf2(file->idx->bounds[0]);//file->idx_d->partition_count[0] * file->idx_d->partition_size[0];
+  power_two_bound[1] = getPowerOf2(file->idx->bounds[1]);//file->idx_d->partition_count[1] * file->idx_d->partition_size[1];
+  power_two_bound[2] = getPowerOf2(file->idx->bounds[2]);//file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
 
   increase_box_size:
   memcpy(file->idx_d->restructured_grid->patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
@@ -512,6 +516,9 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
   while (bits != 0)
   {
+    //if (file->idx_c->grank == 0)
+    //  printf("%d %d %d -> %d\n", ps[0], ps[1], ps[2], bits);
+
     if (file->idx->bitSequence[counter] == '0')
       ps[0] = ps[0] / 2;
 
@@ -539,6 +546,8 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   file->idx_d->restructured_grid->total_patch_count[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
   file->idx_d->restructured_grid->total_patch_count[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
   file->idx_d->restructured_grid->total_patch_count[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
+
+  //printf("TPC: %d %d %d\n", file->idx_d->restructured_grid->total_patch_count[0], file->idx_d->restructured_grid->total_patch_count[1], file->idx_d->restructured_grid->total_patch_count[2]);
 
   return PIDX_success;
 }

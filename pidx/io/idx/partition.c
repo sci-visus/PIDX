@@ -123,24 +123,17 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 PIDX_return_code create_local_comm(PIDX_io file)
 {
   int ret;
-  ret = MPI_Comm_split(file->idx_c->global_comm, file->idx_d->color, file->idx_c->grank, &(file->idx_c->local_comm));
+  ret = MPI_Comm_split(file->idx_c->rst_comm, file->idx_d->color, file->idx_c->grank, &(file->idx_c->local_comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
-  MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
-
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
 
   //printf("[%d %d] [%d %d]\n", file->idx_c->gnprocs, file->idx_c->grank, file->idx_c->lnprocs, file->idx_c->lrank);
-
-  //PIDX_variable_group var_grp = file->idx->variable_grp[0];
-  //memset(var_grp->rank_buffer, 0, file->idx_c->gnprocs * sizeof(*var_grp->rank_buffer));
-  //MPI_Allgather(&(file->idx_c->lrank), 1, MPI_INT, var_grp->rank_buffer, 1, MPI_INT, file->idx_c->global_comm);
 
   return PIDX_success;
 }
@@ -172,7 +165,7 @@ PIDX_return_code find_partition_count(PIDX_io file)
     file->idx_d->partition_size[d] = pow(2, (int)ceil(log2(file->idx_d->partition_size[d])));
   }
 
-  printf("Rank %d Partition size %d %d %d\n", file->idx_c->grank, file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
+  //printf("Rank %d Partition size %d %d %d\n", file->idx_c->grank, file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
 
   return PIDX_success;
 }

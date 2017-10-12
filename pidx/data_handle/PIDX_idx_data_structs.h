@@ -157,8 +157,6 @@ struct PIDX_variable_group_struct
   int nshared_end_layout_index;
   int nshared_layout_count;
 
-  int *rank_buffer;
-
   int agg_level;
   PIDX_block_layout block_layout;
   PIDX_block_layout* block_layout_by_level;

@@ -35,12 +35,16 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 
   file->idx_d->time->SX = PIDX_get_time();
 
-  if (MODE == PIDX_IDX_IO || MODE == PIDX_LOCAL_PARTITION_IDX_IO || MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
+#if 0
+  if (file->idx_c->gnprocs == 1)
   {
-    if (file->idx_c->gnprocs == 1)
+    if (MODE == PIDX_IDX_IO || MODE == PIDX_LOCAL_PARTITION_IDX_IO || MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
       ret = PIDX_serial_idx_write(file, gi, svi, evi);
+    else if (MODE == PIDX_RAW_IO)
+      ret = PIDX_raw_write(file, gi, svi, evi);
   }
-  else
+#endif
+//  else
   {
     if (MODE == PIDX_IDX_IO)
       ret = PIDX_idx_write(file, gi, svi, evi);

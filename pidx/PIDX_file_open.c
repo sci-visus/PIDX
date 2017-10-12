@@ -98,7 +98,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
 #endif
 
-
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
@@ -483,18 +482,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       (*file)->idx->compression_factor = 64;
   }
 
-
   if ((*file)->idx->io_type != PIDX_RAW_IO)
-  {
-    int total_header_size = (10 + (10 * (*file)->idx->blocks_per_file)) * sizeof (uint32_t) * (*file)->idx->variable_count;
-    (*file)->idx_d->start_fs_block = total_header_size / (*file)->idx_d->fs_block_size;
-    if (total_header_size % (*file)->idx_d->fs_block_size)
-      (*file)->idx_d->start_fs_block++;
-
     (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
-
-    //printf("fs_block_size = %d start_fs_block = %d vc = %d\n", (*file)->idx_d->fs_block_size, (*file)->idx_d->start_fs_block, (*file)->idx->variable_count);
-  }
 
   if((*file)->idx_c->grank != 0)
   {
@@ -547,6 +536,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx->flip_endian = 1;
 
   memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
+
+
 
   return PIDX_success;
 }

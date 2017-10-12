@@ -19,6 +19,7 @@
 #ifndef __BIT_STRING_H
 #define __BIT_STRING_H
 
+PIDX_return_code populate_bit_string(PIDX_io file, int mode);
 
 PIDX_return_code populate_global_bit_string(PIDX_io file, int mode);
 

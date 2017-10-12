@@ -215,6 +215,17 @@ PIDX_return_code PIDX_header_io_idx_file_write(PIDX_header_io_id header_io_id, P
   int i = 0, ret;
   char bin_file[PATH_MAX];
 
+#if 0
+  for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
+  {
+    if (block_layout->file_bitmap[i] == 1)
+    {
+      if (header_io_id->idx_c->grank == 0)
+        printf("[%d] File %d being populated\n", header_io_id->idx_c->lnprocs, i);
+    }
+  }
+#endif
+
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
     if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
@@ -447,9 +458,11 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     fprintf(idx_file_p, "(logic_to_physic)\n%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n", header_io->idx->transform[0], header_io->idx->transform[1], header_io->idx->transform[2], header_io->idx->transform[3], header_io->idx->transform[4], header_io->idx->transform[5], header_io->idx->transform[6], header_io->idx->transform[7], header_io->idx->transform[8], header_io->idx->transform[9], header_io->idx->transform[10], header_io->idx->transform[11], header_io->idx->transform[12], header_io->idx->transform[13], header_io->idx->transform[14], header_io->idx->transform[15]);
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
 
-    fprintf(idx_file_p, "(partition count)\n%d %d %d\n", header_io->idx_d->partition_count[0], header_io->idx_d->partition_count[1], header_io->idx_d->partition_count[2]);
-
     fprintf(idx_file_p, "(partition size)\n%d %d %d\n", header_io->idx_d->partition_size[0], header_io->idx_d->partition_size[1], header_io->idx_d->partition_size[2]);
+
+    fprintf(idx_file_p, "(partition offset)\n%d %d %d\n", header_io->idx_d->partition_offset[0], header_io->idx_d->partition_offset[1], header_io->idx_d->partition_offset[2]);
+
+    fprintf(idx_file_p, "(partition index)\n%d\n", header_io->idx_d->color);
 
     fprintf(idx_file_p, "(endian)\n%d\n", header_io->idx->endian);
     fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx_d->restructured_grid->patch_size[0], (long long)header_io->idx_d->restructured_grid->patch_size[1], (long long)header_io->idx_d->restructured_grid->patch_size[2]);
@@ -598,6 +611,7 @@ static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout blo
   int i = 0, j = 0, k = 0;
   off_t data_offset = 0, base_offset = 0;
 
+  //printf("[%d] File being written\n", file_number);
   unsigned long long total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2]);
 
   int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;

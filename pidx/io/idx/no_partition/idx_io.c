@@ -26,6 +26,13 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
 
+  ret = populate_bit_string(file, PIDX_WRITE);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
   if (write_global_idx(file, svi, evi, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -46,11 +53,13 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 #if 1
-  if (idx_restructure_comm_create(file, gi, svi) != PIDX_success)
+  if (idx_restructure_rst_comm_create(file, gi, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+  idx_restructure_copy_rst_comm_to_local_comm(file, gi, svi);
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
@@ -243,11 +252,13 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  if (idx_restructure_comm_create(file, gi, svi) != PIDX_success)
+  if (idx_restructure_rst_comm_create(file, gi, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+  idx_restructure_copy_rst_comm_to_local_comm(file, gi, svi);
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
@@ -391,6 +402,21 @@ static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, 
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+#if 0
+  int i = 0, j = 0;
+  for (i = 0; i < file->idx_d->max_file_count; i++)
+  {
+    for (j = 0; j < file->idx->blocks_per_file; j++)
+    {
+      if (file->idx_d->block_bitmap[i][j] != 0)
+      {
+        if (file->idx_c->grank == 0)
+          printf("File [%d] Block [%d]\n", i, j);
+      }
+    }
+  }
+#endif
 
   // Calculate the hz level upto which aggregation is possible
   ret = find_agg_level(file, gi);

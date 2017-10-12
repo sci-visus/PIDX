@@ -194,7 +194,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
     file_index = hz_start_index % samples_per_file;
     file_count = samples_per_file - file_index;
 
-    ret = generate_file_name(hz_id->idx->blocks_per_file, hz_id->idx->filename_template, file_number, file_name, PATH_MAX);
+    ret = generate_file_name(hz_id->idx->blocks_per_file, hz_id->idx->filename_template_partition, file_number, file_name, PATH_MAX);
     if (ret == 1)
     {
       fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
@@ -320,7 +320,7 @@ static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned lo
     file_index = hz_start_index % samples_per_file;
     file_count = samples_per_file - file_index;
 
-    ret = generate_file_name(hz_id->idx->blocks_per_file, hz_id->idx->filename_template, file_number, file_name, PATH_MAX);
+    ret = generate_file_name(hz_id->idx->blocks_per_file, hz_id->idx->filename_template_partition, file_number, file_name, PATH_MAX);
     if (ret == 1)
     {
       fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);

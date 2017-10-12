@@ -20,6 +20,77 @@
 #include "../../PIDX_inc.h"
 
 
+PIDX_return_code populate_bit_string(PIDX_io file, int mode)
+{
+  int i = 0;
+  unsigned long long cb[PIDX_MAX_DIMENSIONS];
+  unsigned long long* cs = file->idx->chunk_size;
+
+  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+  {
+    if (file->idx->bounds[i] % file->idx->chunk_size[i] == 0)
+      cb[i] = (int) file->idx->bounds[i] / file->idx->chunk_size[i];
+    else
+      cb[i] = (int) (file->idx->bounds[i] / file->idx->chunk_size[i]) + 1;
+  }
+
+  if (mode == PIDX_WRITE)
+  {
+    char temp_bs[512];
+    char reg_patch_bs[512];
+    char process_bs[512];
+    char partition_bs[512];
+
+    // First part of the bitstring
+    Point3D rpp;
+    rpp.x = (int) file->idx_d->restructured_grid->patch_size[0] / cs[0];
+    rpp.y = (int) file->idx_d->restructured_grid->patch_size[1] / cs[1];
+    rpp.z = (int) file->idx_d->restructured_grid->patch_size[2] / cs[2];
+    guess_bit_string_ZYX(reg_patch_bs, rpp);
+
+#if DETAIL_OUTPUT
+    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+      fprintf(stderr, "[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+#endif
+
+    // Middle part of the bitstring
+    Point3D prcp;
+    prcp.x = (int) file->idx_d->partition_size[0] / file->idx_d->restructured_grid->patch_size[0];
+    prcp.y = (int) file->idx_d->partition_size[1] / file->idx_d->restructured_grid->patch_size[1];
+    prcp.z = (int) file->idx_d->partition_size[2] / file->idx_d->restructured_grid->patch_size[2];
+    if (prcp.x == 0)  prcp.x = 1;
+    if (prcp.y == 0)  prcp.y = 1;
+    if (prcp.z == 0)  prcp.z = 1;
+    guess_bit_string_Z(process_bs, prcp);
+
+#if DETAIL_OUTPUT
+    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+      fprintf(stderr, "[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
+#endif
+
+    // Last part of the bitstring
+    Point3D pcp;
+    pcp.x = (int) file->idx_d->partition_count[0];
+    pcp.y = (int) file->idx_d->partition_count[1];
+    pcp.z = (int) file->idx_d->partition_count[2];
+    guess_bit_string(partition_bs, pcp);
+
+#if DETAIL_OUTPUT
+    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+      fprintf(stderr, "[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
+#endif
+
+    // Concatenating the three components to get the final bit string
+    strcpy(temp_bs, process_bs);
+    strcat(temp_bs, reg_patch_bs + 1);
+    strcpy(file->idx->bitSequence, partition_bs);
+    strcat(file->idx->bitSequence, temp_bs + 1);
+  }
+
+  return PIDX_success;
+}
+
+
 PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 {
   int i = 0;
@@ -165,8 +236,8 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     if (prcp.y == 0)  prcp.y = 1;
     if (prcp.z == 0)  prcp.z = 1;
     guess_bit_string_Z(process_bs, prcp);
-    //if (file->idx_c->lrank == 0)
-    //  fprintf(stderr, "[2Y %d] %s : %d %d %d\n", file->idx_d->color, process_bs, prcp.x, prcp.y, prcp.z);
+    //if (file->idx_d->color == 1)
+    //  fprintf(stderr, "[2Y %d] %s : %d %d %d - %d %d %d\n", file->idx_d->color, process_bs, prcp.x, prcp.y, prcp.z, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
 
     // Concatenating the three components to get the final bit string
