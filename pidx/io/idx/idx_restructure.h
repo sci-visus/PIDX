@@ -65,4 +65,9 @@ PIDX_return_code idx_restructure_copy_rst_comm_to_local_comm(PIDX_io file, int g
 PIDX_return_code free_restructured_communicators(PIDX_io file, int gi);
 
 
+PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi);
+
+
+PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi);
+
 #endif

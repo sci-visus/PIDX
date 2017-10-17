@@ -22,7 +22,7 @@
 static int cvi = 0;
 static int lgi = 0;
 
-static PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi);
+static PIDX_return_code set_rst_box_size_for_raw_write(PIDX_io file, int gi, int svi);
 
 
 // Initialiazation and creation of buffers for restructuring phase
@@ -34,7 +34,7 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
   lgi = gi;
 
   time->set_reg_box_start = MPI_Wtime();
-  if (set_rst_box_size_for_write(file, gi, svi) != PIDX_success)
+  if (set_rst_box_size_for_raw_write(file, gi, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -227,7 +227,7 @@ PIDX_return_code raw_restructure_forced_read(PIDX_io file, int svi, int evi)
 
 
 
-static PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
+static PIDX_return_code set_rst_box_size_for_raw_write(PIDX_io file, int gi, int svi)
 {
   PIDX_time time = file->idx_d->time;
   time->set_reg_box_start = PIDX_get_time();

@@ -113,6 +113,14 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
             bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
 
             memcpy(var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype), var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype), bytes_for_datatype);
+
+            //if (id->idx_d->color == 1)
+            //{
+            //  double x1;
+            //  memcpy(&x1, var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype), sizeof(double));
+            //  printf("xyz index - hz index :: %d - %d ----> %f\n", index, hz_index, x1);
+            //}
+
           }
         }
   }

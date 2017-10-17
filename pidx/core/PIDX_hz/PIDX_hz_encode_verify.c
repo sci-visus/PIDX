@@ -120,7 +120,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   else
   {
     if (id->idx_c->lrank == 0)
-      fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
+      fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld] [Lost Elemet COunt %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1), (long long) lost_element_count);
   }
 
   return PIDX_success;

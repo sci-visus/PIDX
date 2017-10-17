@@ -65,6 +65,22 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
         }
 
 #if 0
+        if (io_id->idx_d->color == 1 && agg_buf->buffer_size != 0)
+        {
+          double x1, x2, x3, x4, x5, x6, x7, x8;
+          memcpy(&x1, agg_buf->buffer, sizeof(double));
+          memcpy(&x2, agg_buf->buffer + sizeof(double), sizeof(double));
+          memcpy(&x3, agg_buf->buffer + sizeof(double) * 2, sizeof(double));
+          memcpy(&x4, agg_buf->buffer + sizeof(double) * 3, sizeof(double));
+          memcpy(&x5, agg_buf->buffer + sizeof(double) * 4, sizeof(double));
+          memcpy(&x6, agg_buf->buffer + sizeof(double) * 5, sizeof(double));
+          memcpy(&x7, agg_buf->buffer + sizeof(double) * 6, sizeof(double));
+          memcpy(&x8, agg_buf->buffer + sizeof(double) * 7, sizeof(double));
+          printf("x %f %f %f %f %f %f %f %f\n", x1, x2, x3, x4, x5, x6, x7, x8);
+        }
+#endif
+
+#if 0
         int read_count = 0;
         MPI_Get_count(&status, MPI_BYTE, &read_count);
         if (read_count != data_size)

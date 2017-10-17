@@ -320,6 +320,9 @@ static int verify_read_results()
   float float_val = 0;
   int var = variable_index;
 
+  if (rank == 100)
+      printf("LBO %d %d %d LBS %d %d %d\n", local_box_offset[0], local_box_offset[1], local_box_offset[2], local_box_size[0], local_box_size[1], local_box_size[2]);
+
   bits_per_sample = bits_per_sample / 8;
   for (k = 0; k < local_box_size[2]; k++)
     for (j = 0; j < local_box_size[1]; j++)
@@ -415,20 +418,21 @@ static int verify_read_results()
             if (float_val != var + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
-              //if (rank == 1)
-              //printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
+              //if (rank == 100)
+              //  printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
             }
             else
             {
               read_count++;
-              //if (rank == 0)
-              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //if (rank == 100)
+              //  printf("C [%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, float_val, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }
 
       }
 
+  //printf("RANK %d CC %d WC %d\n", rank, read_count, read_error_count);
   MPI_Allreduce(&read_count, &total_read_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(&read_error_count, &total_read_error_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 

@@ -158,10 +158,19 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       PIDX_super_patch out_patch = var->chunked_super_patch;
       PIDX_super_patch in_patch = var->restructured_super_patch;
 
+      //printf("Buffer size %d %d %d - %d %d\n", out_patch->restructured_patch->size[0], out_patch->restructured_patch->size[1], out_patch->restructured_patch->size[2], bytes_per_value, var->vps);
+
       if (MODE == PIDX_WRITE)
         memcpy(out_patch->restructured_patch->buffer, in_patch->restructured_patch->buffer, out_patch->restructured_patch->size[0] * out_patch->restructured_patch->size[1] * out_patch->restructured_patch->size[2] * bytes_per_value * var->vps);
       else
         memcpy(in_patch->restructured_patch->buffer, out_patch->restructured_patch->buffer, out_patch->restructured_patch->size[0] * out_patch->restructured_patch->size[1] * out_patch->restructured_patch->size[2] * bytes_per_value * var->vps);
+
+      //if (chunk_id->idx_derived->color == 1)
+      //{
+      //double t1;
+      //memcpy(&t1, in_patch->restructured_patch->buffer, sizeof(double));
+      //printf("Value %f\n", t1);
+      //}
     }
 
     return PIDX_success;

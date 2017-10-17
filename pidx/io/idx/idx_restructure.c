@@ -25,9 +25,6 @@ static int lgi = 0;
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file);
 static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi);
 
-static PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi);
-static PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi);
-
 static void guess_restructured_box_size(PIDX_io file, int gi, int svi);
 static void adjust_restructured_box_size(PIDX_io file);
 
@@ -41,6 +38,7 @@ PIDX_return_code idx_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
   cvi = svi;
   lgi = gi;
 
+#if 0
   time->set_reg_box_start = MPI_Wtime();
   if (mode == PIDX_WRITE)
   {
@@ -60,6 +58,7 @@ PIDX_return_code idx_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
     }
   }
   time->set_reg_box_end = MPI_Wtime();
+#endif
 
   // Initialize the restructuring phase
   time->rst_init_start[lgi][cvi] = PIDX_get_time();
@@ -245,6 +244,9 @@ PIDX_return_code idx_restructure_rst_comm_create(PIDX_io file, int gi, int svi)
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
 
+  MPI_Comm_rank(file->idx_c->rst_comm, &(file->idx_c->rrank));
+  MPI_Comm_size(file->idx_c->rst_comm, &(file->idx_c->rnprocs));
+
   return PIDX_success;
 }
 
@@ -271,7 +273,7 @@ PIDX_return_code free_restructured_communicators(PIDX_io file, int gi)
 
 
 
-static PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
+PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int gi, int svi)
 {
   PIDX_time time = file->idx_d->time;
   time->set_reg_box_start = PIDX_get_time();
@@ -467,7 +469,7 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
 
 
 
-static PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
+PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int gi, int svi)
 {
   PIDX_time time = file->idx_d->time;
   time->set_reg_box_start = PIDX_get_time();
@@ -511,8 +513,37 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   memcpy(file->idx_d->restructured_grid->patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
   bits = core;
-  counter = 1;
 
+#if 1
+  counter = 1;
+  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
+  int np[3] = {1,1,1};
+  while (bits != 0)
+  //while (np[0] * np[1] * np[2] < file->idx_c->gnprocs)
+  {
+    if (file->idx->bitSequence[counter] == '0')
+      ps[0] = ps[0] / 2;
+
+    else if (file->idx->bitSequence[counter] == '1')
+      ps[1] = ps[1] / 2;
+
+    else if (file->idx->bitSequence[counter] == '2')
+      ps[2] = ps[2] / 2;
+
+    counter++;
+    bits--;
+
+    //np[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
+    //np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
+    //np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
+
+    if (file->idx_c->grank == 0)
+      printf("[%c] : %d %d %d -> %d (np: %d %d %d - %d) BB %d %d %d\n", file->idx->bitSequence[counter], ps[0], ps[1], ps[2], bits, np[0], np[1], np[2], file->idx_c->gnprocs, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
+  }
+#endif
+
+#if 0
+  counter = strlen(file->idx->bitSequence) - 1;
   unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
   while (bits != 0)
   {
@@ -528,11 +559,11 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
     else if (file->idx->bitSequence[counter] == '2')
       ps[2] = ps[2] / 2;
 
-    counter++;
+    counter--;
     bits--;
   }
+#endif
 
-  int np[3];
   np[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
   np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
   np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);

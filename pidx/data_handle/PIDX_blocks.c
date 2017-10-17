@@ -60,6 +60,8 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from
   if (maxh == 0)
     return PIDX_success;
 
+  //printf("maxh = %d bpb = %d from to to %d %d \n", maxh, bits_per_block, resolution_from, resolution_to);
+
   layout->hz_block_number_array = malloc(sizeof(int*) * maxh);
   memset(layout->hz_block_number_array, 0, sizeof(int*) * maxh);
 

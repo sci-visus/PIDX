@@ -306,13 +306,13 @@ static void verify_read_results()
             {
               read_error_count++;
               //if (rank == 0)
-              //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val,100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //printf("W [%d] [%d %d %d] [%d] Read error %f %d\n", rank, i,j ,k, vps, double_val, 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
               read_count++;
               //if (rank == 0)
-              //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val, var /*+ vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
+              //printf("C[%d] [%d %d %d] [%d] Read error %f %d\n", rank, i,j ,k, vps, double_val, 100 + var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }

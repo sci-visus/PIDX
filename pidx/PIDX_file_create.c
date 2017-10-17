@@ -58,6 +58,22 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memcpy((*file)->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
   memcpy((*file)->idx->box_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
+  (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
+  (*file)->idx_d->samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
+
+  if (dims[0] * dims[1] * dims[2] < (*file)->idx_d->samples_per_block)
+  {
+    // ensure blocksize is a subset of the total volume.
+    (*file)->idx_d->samples_per_block = getPowerOf2(dims[0] * dims[1] * dims[2]) >> 1;
+    (*file)->idx->bits_per_block = getNumBits((*file)->idx_d->samples_per_block) - 1;
+  }
+
+  if ((*file)->idx->bits_per_block == 0)
+  {
+    (*file)->idx->bits_per_block = 1;
+    (*file)->idx_d->samples_per_block = 2;
+  }
+
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
     (*file)->idx_d->partition_count[i] = 1;
@@ -124,7 +140,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_partition, "%s_0.idx", file_name_skeleton);
 
-  (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
   //initialize logic_to_physic transform to identity
@@ -149,7 +164,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     (*file)->idx->chunk_size[i] = 1;
 
   (*file)->idx_d->dimension = 0;
-  (*file)->idx_d->samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
   (*file)->idx_d->maxh = 0;
   (*file)->idx_d->max_file_count = 0;
   (*file)->idx_d->fs_block_size = 0;

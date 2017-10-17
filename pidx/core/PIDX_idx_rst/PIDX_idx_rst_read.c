@@ -107,6 +107,10 @@ PIDX_return_code PIDX_idx_rst_read(PIDX_idx_rst_id rst_id)
                   send_c = reg_patch_count[0] * var->vps;
 
                   memcpy(var->sim_patch[p_index]->buffer + send_o * var->bpv/8, var->restructured_super_patch->patch[j]->buffer + (count1 * send_c * var->bpv/8), send_c * var->bpv/8);
+
+                  //double a1;
+                  //memcpy(&a1, var->restructured_super_patch->patch[j]->buffer + (count1 * send_c * var->bpv/8), sizeof(double));
+                  //printf("a1 = %f\n", a1);
                 }
                 count1++;
               }

@@ -40,6 +40,8 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   }
 
   // Step 1: Setup restructuring buffers
+  set_rst_box_size_for_write(file, gi, svi);
+
   if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -246,6 +248,8 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
   PIDX_time time = file->idx_d->time;
 
   // Step 1: Setup restructuring buffers
+  set_rst_box_size_for_read(file, gi, svi);
+
   if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_READ) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -274,7 +278,11 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     file->idx->variable_pipe_length = file->idx->variable_count;
     for (si = svi; si < evi; si = si + (file->idx->variable_count + 1))
     {
-      ei = ((si + file->idx->variable_count) >= (evi)) ? (evi - 1) : (si + file->idx->variable_count);
+      if ((si + file->idx->variable_pipe_length) >= evi)
+        file->idx->variable_pipe_length = evi - (si + 1);
+
+      ei = si + file->idx->variable_pipe_length;
+
       file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
       // Step 2: Setup HZ buffers

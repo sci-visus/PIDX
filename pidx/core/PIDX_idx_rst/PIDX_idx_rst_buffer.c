@@ -192,9 +192,9 @@ PIDX_return_code PIDX_idx_rst_buf_aggregate(PIDX_idx_rst_id rst_id, int mode)
     int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
 
     // Iterate through all the small patches of the super patch
+    PIDX_patch *patch = var->restructured_super_patch->patch;
     for (r = 0; r < var->restructured_super_patch->patch_count; r++)
     {
-      PIDX_patch *patch = var->restructured_super_patch->patch;
       for (k1 = patch[r]->offset[2]; k1 < patch[r]->offset[2] + patch[r]->size[2]; k1++)
       {
         for (j1 = patch[r]->offset[1]; j1 < patch[r]->offset[1] + patch[r]->size[1]; j1++)

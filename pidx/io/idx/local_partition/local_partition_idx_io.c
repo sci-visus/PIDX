@@ -39,6 +39,8 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
   PIDX_time time = file->idx_d->time;
 
   // Step 1:  Restrucure setup
+  set_rst_box_size_for_write(file, gi, svi);
+
   if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -237,6 +239,9 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
   PIDX_time time = file->idx_d->time;
 
   // Step 1:  Restrucure setup
+
+  set_rst_box_size_for_write(file, gi, svi);
+
   if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_READ) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -249,12 +254,13 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     return PIDX_err_file;
   }
 
+  //printf("rst size %d %d %d\n", file->idx_d->restructured_grid->patch_size[0], file->idx_d->restructured_grid->patch_size[1], file->idx_d->restructured_grid->patch_size[2]);
+
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
   if (var0->restructured_super_patch_count == 1)
   {
-
     // Step 2:  Partition
     ret = partition(file, gi, svi, PIDX_READ);
     if (ret != PIDX_success)
@@ -262,7 +268,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if 0
+
     // Step 3: Adjust per process offsets and global bounds as per the partition
     if (adjust_offsets(file, gi, svi) != PIDX_success)
     {
@@ -322,7 +328,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
         }
         time->io_end[gi][li] = PIDX_get_time();
       }
-
+#if 1
       //
       // Setup 8: Performs data aggregation
       for (li = si; li <= ei; li = li + 1)
@@ -352,6 +358,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+      #endif
     }
 
     // Step 11: Cleanup the group and IDX related meta-data
@@ -370,9 +377,15 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
       return PIDX_err_file;
     }
     time->partition_cleanup_end = MPI_Wtime();
-#endif
+
+    int i = 0;
+    PIDX_variable var = var_grp->variable[svi];
+    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+      var->restructured_super_patch->restructured_patch->offset[i] = var->restructured_super_patch->restructured_patch->offset[i] + file->idx_d->partition_offset[i];
+
   }
 
+#if 1
   // Step 13:  Restrucure
   if (idx_restructure(file, PIDX_READ) != PIDX_success)
   {
@@ -386,6 +399,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+#endif
 
   return PIDX_success;
 }
@@ -400,14 +414,11 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
 
   time->partition_start = MPI_Wtime();
   // Calculates the number of partititons
-  if (mode == PIDX_WRITE)
+  ret = find_partition_count(file);
+  if (ret != PIDX_success)
   {
-    ret = find_partition_count(file);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
   }
 
   // assign same color to processes within the same partition
@@ -453,9 +464,6 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
       file->idx->box_bounds[i] = file->idx_d->partition_size[i];
     else
       file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx_d->partition_offset[i];
-
-    //if (getPowerOf2(file->idx->box_bounds[i]) < file->idx_d->restructured_grid->patch_size[i])
-    //  file->idx->box_bounds[i] = file->idx_d->restructured_grid->patch_size[i];//(file->idx->box_bounds[i] / file->idx->reg_patch_size[i] + 1) * file->idx->reg_patch_size[i];
   }
 
   memcpy(file->idx->bounds, file->idx->box_bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
@@ -471,6 +479,8 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
 {
   int ret;
   PIDX_time time = file->idx_d->time;
+
+  //printf("%d %d %d\n", file->idx_d->restructured_grid->patch_size[0], file->idx_d->restructured_grid->patch_size[1], file->idx_d->restructured_grid->patch_size[2]);
 
   time->bit_string_start = PIDX_get_time();
   // calculates maxh and bitstring
@@ -493,7 +503,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if 1
+
   // Calculate the hz level upto which aggregation is possible
   ret = find_agg_level(file, gi);
   if (ret != PIDX_success)
@@ -511,10 +521,10 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   }
   time->layout_end = PIDX_get_time();
 
-
+#if 1
   time->header_io_start = PIDX_get_time();
   // Creates the file heirarchy and writes the header info for all binary files
-  ret = write_headers(file, gi, svi, evi, PIDX_WRITE);
+  ret = write_headers(file, gi, svi, evi, mode);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);

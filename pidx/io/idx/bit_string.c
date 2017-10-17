@@ -209,8 +209,8 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
       cb[i] = (int) (file->idx->box_bounds[i] / file->idx->chunk_size[i]) + 1;
   }
 
-  if (mode == PIDX_WRITE)
-  {
+  //if (mode == PIDX_WRITE)
+  //{
     char temp_bs[512];
     char reg_patch_bs[512];
     char process_bs[512];
@@ -246,7 +246,8 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     //strcpy(file->idx->bitSequence, partition_bs);
     //strcat(file->idx->bitSequence, temp_bs + 1);
     strcpy(file->idx->bitSequence, temp_bs);
-  }
+    //printf("[%d] - bit sequence %s\n", file->idx_d->color, file->idx->bitSequence);
+  //}
 
   // maxh calculation
   file->idx_d->maxh = strlen(file->idx->bitSequence);
@@ -269,12 +270,13 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     fprintf(stderr, "[%s] [%d ]IDX dimensions are wrong %d %d\n", __FILE__, __LINE__, file->idx_d->samples_per_block, file->idx->blocks_per_file);
     return PIDX_err_file;
   }
+  //printf("total reg sample count %d %d\n", total_reg_sample_count, max_sample_per_file);
 
   file->idx_d->max_file_count = total_reg_sample_count / max_sample_per_file;
   if (total_reg_sample_count % max_sample_per_file)
     file->idx_d->max_file_count++;
 
-
+#if 1
   int partion_level = (int) log2(/*file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]*/1);
   file->idx_d->total_partiton_level = file->idx->bits_per_block + (int)log2(file->idx->blocks_per_file) + 1 + partion_level;
   if (file->idx_d->total_partiton_level >= file->idx_d->maxh)
@@ -285,6 +287,6 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     file->idx_d->maxh = 0;
     file->idx_d->max_file_count = 0;
   }
-
+#endif
   return PIDX_success;
 }
