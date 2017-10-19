@@ -76,10 +76,10 @@ PIDX_return_code PIDX_flush(PIDX_file file)
     return PIDX_err_io;
 
 
+  int j = 0, p = 0;
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
-    /*
     for (j = var_grp->local_variable_index; j < var_grp->local_variable_index + var_grp->local_variable_count; j++)
     {
       for(p = 0; p < var_grp->variable[j]->sim_patch_count; p++)
@@ -88,7 +88,6 @@ PIDX_return_code PIDX_flush(PIDX_file file)
         var_grp->variable[j]->sim_patch[p] = 0;
       }
     }
-    */
     var_grp->local_variable_index = var_grp->variable_index_tracker;
     var_grp->local_variable_count = 0;
   }
@@ -140,7 +139,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   PIDX_dump_state_finalize(file);
 
-#if 0
+#if 1
   for (i = 0; i < file->idx_d->max_file_count; i++)
   {
     free(file->idx_d->block_bitmap[i]);

@@ -440,14 +440,14 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
   {
     file->idx->bits_per_block = file->idx->bits_per_block;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
-    file->idx->compression_factor = 2;
+    file->idx->compression_factor = 1;
   }
   if (file->idx->compression_bit_rate == 16)
   {
     file->idx->bits_per_block = file->idx->bits_per_block + 1;
     file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
 
-    file->idx->compression_factor = 4;
+    file->idx->compression_factor = 2;
   }
   if (file->idx->compression_bit_rate == 8)
   {
@@ -770,7 +770,7 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
   if (PIDX_inner_product(&dims, adjusted_bounds))
     return PIDX_err_size;
 
-  printf("dims %d spb %d\n", dims, file->idx_d->samples_per_block);
+  //printf("dims %d spb %d\n", dims, file->idx_d->samples_per_block);
 
   if (dims < file->idx_d->samples_per_block)
   {

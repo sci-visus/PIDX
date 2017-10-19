@@ -469,9 +469,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     if ((*file)->idx->compression_bit_rate == 64)
       (*file)->idx->compression_factor = 1;
     if ((*file)->idx->compression_bit_rate == 32)
-      (*file)->idx->compression_factor = 2;
+      (*file)->idx->compression_factor = 1;
     if ((*file)->idx->compression_bit_rate == 16)
-      (*file)->idx->compression_factor = 4;
+      (*file)->idx->compression_factor = 2;
     if ((*file)->idx->compression_bit_rate == 8)
       (*file)->idx->compression_factor = 8;
     if ((*file)->idx->compression_bit_rate == 4)
@@ -983,9 +983,9 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
     if ((*file)->idx->compression_bit_rate == 64)
       (*file)->idx->compression_factor = 1;
     if ((*file)->idx->compression_bit_rate == 32)
-      (*file)->idx->compression_factor = 2;
+      (*file)->idx->compression_factor = 1;
     if ((*file)->idx->compression_bit_rate == 16)
-      (*file)->idx->compression_factor = 4;
+      (*file)->idx->compression_factor = 2;
     if ((*file)->idx->compression_bit_rate == 8)
       (*file)->idx->compression_factor = 8;
     if ((*file)->idx->compression_bit_rate == 4)

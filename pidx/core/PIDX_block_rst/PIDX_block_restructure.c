@@ -205,6 +205,8 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
     if (out_patch->restructured_patch->size[2] % chunk_id->idx->chunk_size[2] != 0)
       nz = ((out_patch->restructured_patch->size[2] / chunk_id->idx->chunk_size[2]) + 1) * chunk_id->idx->chunk_size[2];
 
+    if (strcmp(var->type_name, FLOAT64) == 0)
+    {
     double* p = (double*)in_patch->restructured_patch->buffer;
     int dz = 4 * nx*(ny-(ny/4)*4);
     int dy = 4 * (nx-(nx/4)*4);
@@ -255,6 +257,61 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
         }
       }
+    }
+    }
+    else
+    {
+        float* p = (float*)in_patch->restructured_patch->buffer;
+        int dz = 4 * nx*(ny-(ny/4)*4);
+        int dy = 4 * (nx-(nx/4)*4);
+        int dx = 4;
+
+        int s1 = 0;
+        int z, y, x;
+        int zz, yy, xx;
+        for (s1 = 0; s1 < var->vps; s1++)
+        {
+          for (z=0;z<nz;z+=4)
+          {
+            float* s = (float*)(out_patch->restructured_patch->buffer + ((z/4)*((ny+3)/4)*((nx+3)/4))*(var->bpv/CHAR_BIT)*cbz) + nx*ny*nz*s1;
+            for (y=0;y<ny;y+=4)
+            {
+              for (x=0;x<nx;x+=4)
+              {
+                unsigned long long diff = (z/4) * (dz + 4 * (ny/4) * (dy+4 * (nx/4) * dx)) + (y/4) * (dy+4*(nx/4)*dx) + (x/4)*dx;
+                float* q = p + var->vps * diff + s1;
+
+                for (zz = 0; zz < 4; ++zz)
+                {
+                  for (yy = 0; yy < 4; ++yy)
+                  {
+                    for (xx = 0; xx < 4; ++xx)
+                    {
+                      int i = xx + yy * 4 + zz * 4 * 4;
+                      int j = xx + yy * nx + zz * nx * ny;
+
+                      if (MODE == PIDX_WRITE)
+                      {
+                        if (j * var->vps + s1 + var->vps * diff + s1 >= var->restructured_super_patch->restructured_patch->size[0] * var->restructured_super_patch->restructured_patch->size[1] * var->restructured_super_patch->restructured_patch->size[2])
+                          continue;
+
+                        s[nx*ny*nz*s1 + i*var->vps+s1] = q[j*var->vps + s1];
+                      }
+                      else
+                      {
+                        if (j * var->vps + s1 + var->vps * diff + s1 >= var->restructured_super_patch->restructured_patch->size[0] * var->restructured_super_patch->restructured_patch->size[1] * var->restructured_super_patch->restructured_patch->size[2])
+                          continue;
+
+                        q[j*var->vps + s1] = s[nx*ny*nz*s1 + i*var->vps+s1];
+                      }
+                    }
+                  }
+                }
+                s += cbz;
+              }
+            }
+          }
+        }
     }
   }
 

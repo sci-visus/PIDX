@@ -114,12 +114,15 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
 
             memcpy(var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype), var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype), bytes_for_datatype);
 
-            //if (id->idx_d->color == 1)
-            //{
-            //  double x1;
-            //  memcpy(&x1, var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype), sizeof(double));
-            //  printf("xyz index - hz index :: %d - %d ----> %f\n", index, hz_index, x1);
-            //}
+            /*
+            if (id->idx_d->color == 0)
+            {
+              double x1, x2;
+              memcpy(&x1, var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype), sizeof(double));
+              memcpy(&x2, var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype) + sizeof(double), sizeof(double));
+              printf("xyz index - hz index :: %d - %d ----> %f %f\n", index, hz_index, x1, x2);
+            }
+            */
 
           }
         }

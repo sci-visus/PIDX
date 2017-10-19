@@ -334,6 +334,8 @@ static void adjust_restructured_box_size(PIDX_io file)
   tpc[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
   tpc[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
 
+  //printf("BB %d %d %d -> tpc %d %d %d\n", file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], tpc[0], tpc[1], tpc[2]);
+
   if (tpc[0] * tpc[1] * tpc[2] > file->idx_c->gnprocs)
   {
     if (counter % 3 == 0)
@@ -505,9 +507,11 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   int bits;
   int counter = 1;
   unsigned long long power_two_bound[PIDX_MAX_DIMENSIONS];
-  power_two_bound[0] = getPowerOf2(file->idx->bounds[0]);//file->idx_d->partition_count[0] * file->idx_d->partition_size[0];
-  power_two_bound[1] = getPowerOf2(file->idx->bounds[1]);//file->idx_d->partition_count[1] * file->idx_d->partition_size[1];
-  power_two_bound[2] = getPowerOf2(file->idx->bounds[2]);//file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
+  power_two_bound[0] = getPowerOf2(file->idx->box_bounds[0]);//file->idx_d->partition_count[0] * file->idx_d->partition_size[0];
+  power_two_bound[1] = getPowerOf2(file->idx->box_bounds[1]);//file->idx_d->partition_count[1] * file->idx_d->partition_size[1];
+  power_two_bound[2] = getPowerOf2(file->idx->box_bounds[2]);//file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
+
+  //printf("PTB %d %d %d BB %d %d %d\n", power_two_bound[0], power_two_bound[1], power_two_bound[2], file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
   increase_box_size:
   memcpy(file->idx_d->restructured_grid->patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
@@ -530,36 +534,14 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
     else if (file->idx->bitSequence[counter] == '2')
       ps[2] = ps[2] / 2;
 
-    counter++;
-    bits--;
-
     //np[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
     //np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
     //np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
 
-    if (file->idx_c->grank == 0)
-      printf("[%c] : %d %d %d -> %d (np: %d %d %d - %d) BB %d %d %d\n", file->idx->bitSequence[counter], ps[0], ps[1], ps[2], bits, np[0], np[1], np[2], file->idx_c->gnprocs, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
-  }
-#endif
-
-#if 0
-  counter = strlen(file->idx->bitSequence) - 1;
-  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
-  while (bits != 0)
-  {
     //if (file->idx_c->grank == 0)
-    //  printf("%d %d %d -> %d\n", ps[0], ps[1], ps[2], bits);
+    //  printf("[%c] : %d %d %d -> %d (np: %d) BB %d %d %d\n", file->idx->bitSequence[counter], ps[0], ps[1], ps[2], bits, file->idx_c->gnprocs, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
-    if (file->idx->bitSequence[counter] == '0')
-      ps[0] = ps[0] / 2;
-
-    else if (file->idx->bitSequence[counter] == '1')
-      ps[1] = ps[1] / 2;
-
-    else if (file->idx->bitSequence[counter] == '2')
-      ps[2] = ps[2] / 2;
-
-    counter--;
+    counter++;
     bits--;
   }
 #endif
@@ -567,6 +549,9 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   np[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
   np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
   np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
+
+  if (file->idx_c->grank == 0)
+    printf("np %d (%d / %d) %d %d\n", np[0], file->idx->box_bounds[0], ps[0], np[1], np[2]);
 
   if (np[0] * np[1] * np[2] > file->idx_c->gnprocs)
   {

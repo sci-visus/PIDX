@@ -160,13 +160,6 @@ struct PIDX_variable_group_struct
   int agg_level;
   PIDX_block_layout block_layout;
   PIDX_block_layout* block_layout_by_level;
-
-  // Block level layout
-  //PIDX_block_layout shared_block_layout;
-  //PIDX_block_layout* shared_block_layout_by_level;
-
-  //PIDX_block_layout nshared_block_layout;
-  //PIDX_block_layout* nshared_block_layout_by_level;
 };
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
@@ -245,7 +238,6 @@ struct idx_file_struct
   /// 1 Only aggregation
   int enable_agg;
 
-  int compression_start_level;
   int compression_factor;
   float compression_bit_rate;
   unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];

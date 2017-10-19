@@ -570,6 +570,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
                ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 #endif
 
+          //printf("Agg buffer size %d (%d x %d (%d x %d / %d))\n", ab->buffer_size, sample_count, bpdt, chunk_size, var_grp->variable[ab->var_number]->bpv/8, id->idx->compression_factor);
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
           if (ab->buffer == NULL)
