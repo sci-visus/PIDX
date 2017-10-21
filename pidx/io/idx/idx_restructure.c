@@ -419,6 +419,13 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
           patch[index]->size[2] = file->idx->box_bounds[2] - k;
         }
 
+        if (patch[index]->size[0] % file->idx->chunk_size[0] != 0)
+          patch[index]->size[0] = (ceil((float)patch[index]->size[0] / file->idx->chunk_size[0])) * file->idx->chunk_size[0];
+        if (patch[index]->size[1] % file->idx->chunk_size[1] != 0)
+          patch[index]->size[1] = (ceil((float)patch[index]->size[1] / file->idx->chunk_size[1])) * file->idx->chunk_size[1];
+        if (patch[index]->size[2] % file->idx->chunk_size[2] != 0)
+          patch[index]->size[2] = (ceil((float)patch[index]->size[2] / file->idx->chunk_size[2])) * file->idx->chunk_size[2];
+
         patch[index]->rank = rank_count * (file->idx_c->gnprocs / (total_patch_count));
         rank_count++;
       }

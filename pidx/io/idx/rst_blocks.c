@@ -155,6 +155,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   free(per_patch_local_block_layout);
   per_patch_local_block_layout = 0;
 
+  //printf("RF %d BPB %d\n", block_layout->resolution_from, file->idx->bits_per_block);
   if (block_layout->resolution_from <= file->idx->bits_per_block)
   {
     int level_count = 1;

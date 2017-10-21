@@ -369,8 +369,8 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
 
       if (file->idx->bits_per_block <= 0)
       {
-        file->idx->bits_per_block = 1;
-        file->idx_d->samples_per_block = 2;
+        file->idx->bits_per_block = 0;
+        file->idx_d->samples_per_block = 1;
       }
     }
     else
@@ -504,7 +504,13 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
     file->idx->compression_factor = 512;
   }
 
-  return PIDX_success;
+  if (file->idx->bits_per_block <= 0)
+  {
+    file->idx->bits_per_block = 0;
+    file->idx_d->samples_per_block = 1;
+  }
+
+  return PIDX_validate(file);
 }
 
 
@@ -781,8 +787,8 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
 
   if (file->idx->bits_per_block == 0)
   {
-    file->idx->bits_per_block = 1;
-    file->idx_d->samples_per_block = 2;
+    file->idx->bits_per_block = 0;
+    file->idx_d->samples_per_block = 1;
   }
 
   // other validations...

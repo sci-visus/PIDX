@@ -21,7 +21,7 @@
 #include <mpi.h>
 
 #if PIDX_HAVE_ZFP
-  #include <zfp.h>  
+  #include <zfp.h>
 #endif
 
 #if PIDX_HAVE_PMT

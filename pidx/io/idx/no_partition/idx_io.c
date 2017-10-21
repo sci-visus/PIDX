@@ -343,7 +343,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-
+#if 1
       // Step 8: Cleanup all buffers and ids
       ret = hz_encode_cleanup(file);
       if (ret != PIDX_success)
@@ -351,8 +351,10 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+#endif
     }
 
+#if 1
     // Step 9
     ret = group_meta_data_finalize(file, gi, svi, evi);
     if (ret != PIDX_success)
@@ -360,8 +362,10 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+#endif
   }
 
+#if 1
   free_restructured_communicators(file, gi);
 
   // Step 7: Perform data restructuring
@@ -378,7 +382,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#endif
   return PIDX_success;
 }
 

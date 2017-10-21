@@ -43,9 +43,12 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
 
     // First part of the bitstring
     Point3D rpp;
-    rpp.x = (int) file->idx_d->restructured_grid->patch_size[0] / cs[0];
-    rpp.y = (int) file->idx_d->restructured_grid->patch_size[1] / cs[1];
-    rpp.z = (int) file->idx_d->restructured_grid->patch_size[2] / cs[2];
+    rpp.x = (int) ceil((float)file->idx_d->restructured_grid->patch_size[0] / cs[0]);
+    rpp.y = (int) ceil((float)file->idx_d->restructured_grid->patch_size[1] / cs[1]);
+    rpp.z = (int) ceil((float)file->idx_d->restructured_grid->patch_size[2] / cs[2]);
+    if (rpp.x == 0)  rpp.x = 1;
+    if (rpp.y == 0)  rpp.y = 1;
+    if (rpp.z == 0)  rpp.z = 1;
     guess_bit_string_ZYX(reg_patch_bs, rpp);
 
 #if DETAIL_OUTPUT
@@ -117,6 +120,9 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     rpp.x = (int) file->idx_d->restructured_grid->patch_size[0] / cs[0];
     rpp.y = (int) file->idx_d->restructured_grid->patch_size[1] / cs[1];
     rpp.z = (int) file->idx_d->restructured_grid->patch_size[2] / cs[2];
+    if (rpp.x == 0)  rpp.x = 1;
+    if (rpp.y == 0)  rpp.y = 1;
+    if (rpp.z == 0)  rpp.z = 1;
     guess_bit_string_ZYX(reg_patch_bs, rpp);
 
 #if DETAIL_OUTPUT

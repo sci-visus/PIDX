@@ -374,7 +374,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
   }
   time->compression_end[lgi][cvi] = PIDX_get_time();
 
-
+#if 1
   time->chunk_start[lgi][cvi] = PIDX_get_time();
   // Perform Chunking
   if (file->idx_dbg->debug_do_chunk == 1)
@@ -398,7 +398,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     return PIDX_err_chunk;
   }
   time->chunk_buffer_free_end[lgi][cvi] = PIDX_get_time();
-
+#endif
   return PIDX_success;
 }
 

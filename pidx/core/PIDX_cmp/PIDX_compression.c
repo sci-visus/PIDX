@@ -140,6 +140,7 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int n
        //printf("Decompressing int %d %f %f bit offst seek %d\n", i, *(float*)temp_buffer, *(float*)(temp_buffer + sizeof(float)), (i / comp_id->idx->compression_factor) * CHAR_BIT);
      }
 
+     //printf("nx ny nx bps - %d %d %d %d\n", nx, ny, nz, bytes_per_sample);
      unsigned char *temp_buffer2 = realloc(buffer, nx * ny * nz * bytes_per_sample);
      if (temp_buffer2 == NULL)
      {

@@ -65,7 +65,7 @@ ENDIF()
 # library
 # ////////////////////////////////////////
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx m pidx_comm pidx_meta_data_cache pidx_data_handle pidx_utils pidx_core pidx_io ${PIDX_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx m pidx_comm pidx_meta_data_cache pidx_data_handle pidx_utils pidx_core pidx_io zfp ${PIDX_LINK_LIBS})
 
 
 SET_TARGET_PROPERTIES(pidx PROPERTIES LINKER_LANGUAGE CXX)

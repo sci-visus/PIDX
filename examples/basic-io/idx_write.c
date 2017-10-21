@@ -536,7 +536,7 @@ static void set_pidx_file(int ts)
   //PIDX_disable_agg(file);
 
   PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-  PIDX_set_lossy_compression_bit_rate(file, 64);
+  PIDX_set_lossy_compression_bit_rate(file, 4);
 
   return;
 }

@@ -67,11 +67,12 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     (*file)->idx_d->samples_per_block = getPowerOf2(dims[0] * dims[1] * dims[2]) >> 1;
     (*file)->idx->bits_per_block = getNumBits((*file)->idx_d->samples_per_block) - 1;
   }
+  //printf("BPB %d SPB %d D %d\n", (*file)->idx->bits_per_block, (*file)->idx_d->samples_per_block, getPowerOf2(dims[0] * dims[1] * dims[2]));
 
   if ((*file)->idx->bits_per_block == 0)
   {
-    (*file)->idx->bits_per_block = 1;
-    (*file)->idx_d->samples_per_block = 2;
+    (*file)->idx->bits_per_block = 0;
+    (*file)->idx_d->samples_per_block = 1;
   }
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
