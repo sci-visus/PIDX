@@ -568,7 +568,7 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
 
   (*file)->idx_d->time = malloc(sizeof (*((*file)->idx_d->time)));
   memset((*file)->idx_d->time, 0, sizeof (*((*file)->idx_d->time)));
-  (*file)->idx_d->time->sim_start = PIDX_get_time();
+  (*file)->idx_d->time->sim_start = 0; //PIDX_get_time();
 
   (*file)->idx_cache = malloc(sizeof (*((*file)->idx_cache)));
   memset((*file)->idx_cache, 0, sizeof (*((*file)->idx_cache)));
@@ -832,7 +832,6 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
           {
             char* temp_name = strdup(pch1);
             strcpy((*file)->idx->variable_grp[0]->variable[variable_counter]->var_name, /*strdup(pch1)*/temp_name);
-            printf("Var name %s\n", (*file)->idx->variable_grp[0]->variable[variable_counter]->var_name);
             free(temp_name);
           }
 
