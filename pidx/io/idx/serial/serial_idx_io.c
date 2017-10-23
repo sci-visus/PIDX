@@ -3,21 +3,6 @@
 static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, int svi, int evi, int mode);
 
-// IDX Write Steps
-/********************************************************
-*  Step 0: Setup Group and IDX related meta-data    *
-*                             *
-*  Step 1: Setup Restructuring Phase          *
-*  Step 2: Perform data Restructuring           *
-*  Step 3: Setup HZ encoding Phase            *
-*  Step 4: Perform HZ encoding              *
-*  Step 5: Setup aggregation buffers          *
-*  Step 6: Perform data aggregation           *
-*  Step 7: Perform actual file IO             *
-*  Step 8: cleanup for Steps 1, 3, 5          *
-*                             *
-*  Step 9: Cleanup the group and IDX related meta-data  *
-*********************************************************/
 
 PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
 {
@@ -57,7 +42,6 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
 
     for (i = 0; i < file->idx_d->max_file_count; i++)
     {
-
       if (generate_file_name(file->idx->blocks_per_file, file->idx->filename_template_partition, i, file_name, PATH_MAX) == 1)
       {
         fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
@@ -117,153 +101,9 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
 
 
 
-// IDX Read Steps
-/********************************************************
-*  Step 0: Setup Group and IDX related meta-data    *
-*                             *
-*  Step 1: Setup Restructuring Phase          *
-*  Step 2: Setup HZ encoding Phase            *
-*  Step 3: Setup aggregation buffers          *
-*  Step 4: Perform actual file IO             *
-*  Step 5: Perform data aggregation           *
-*  Step 6: Perform HZ encoding              *
-*  Step 7: Perform data Restructuring           *
-*  Step 8: cleanup for Steps 1, 3, 5          *
-*                             *
-*  Step 9: Cleanup the group and IDX related meta-data  *
-*********************************************************/
 
 PIDX_return_code PIDX_serial_idx_read(PIDX_io file, int gi, int svi, int evi)
 {
-  int li = 0;
-  int si = 0, ei = 0;
-  PIDX_return_code ret;
-  PIDX_time time = file->idx_d->time;
-
-  // Step 1: Setup restructuring buffers
-  if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_READ) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  if (idx_restructure_rst_comm_create(file, gi, svi) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var0 = var_grp->variable[svi];
-
-  if (var0->restructured_super_patch_count == 1)
-  {
-    if (populate_block_layout_and_buffers(file, gi, svi, evi, PIDX_READ) != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    file->idx->variable_pipe_length = file->idx->variable_count;
-    for (si = svi; si < evi; si = si + (file->idx->variable_count + 1))
-    {
-      ei = ((si + file->idx->variable_count) >= (evi)) ? (evi - 1) : (si + file->idx->variable_count);
-      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
-
-      // Step 2: Setup HZ buffers
-      ret = hz_encode_setup(file, gi, si, ei);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-
-      if (hz_io(file, gi, PIDX_READ) != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      // Step 3: Setup aggregation buffers
-      for (li = si; li <= ei; li = li + 1)
-      {
-        ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-      }
-
-      // Step 4: Performs actual file io
-      for (li = si; li <= ei; li = li + 1)
-      {
-        time->io_start[gi][li] = PIDX_get_time();
-        ret = data_io(file, gi, si, li, ei, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-        time->io_end[gi][li] = PIDX_get_time();
-      }
-
-      // Step 5: Performs data aggregation
-      for (li = si; li <= ei; li = li + 1)
-      {
-        ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-        finalize_aggregation(file, gi, li, si);
-      }
-
-      // Step 6: Perform HZ encoding
-      ret = hz_encode(file, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      // Step 8: Cleanup all buffers and ids
-      ret = hz_encode_cleanup(file);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-    }
-
-    // Step 9
-    ret = group_meta_data_finalize(file, gi, svi, evi);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-  }
-
-  free_restructured_communicators(file, gi);
-
-  // Step 7: Perform data restructuring
-  ret = idx_restructure(file, PIDX_READ);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  ret = idx_restructure_cleanup(file);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
   return PIDX_success;
 }
 

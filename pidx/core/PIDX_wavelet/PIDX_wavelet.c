@@ -57,59 +57,6 @@ static PIDX_return_code wavelet_comm_p2p_even_z (PIDX_wavelet_id file, int gi, i
 static PIDX_return_code wavelet_comp_even_z (PIDX_wavelet_id file, int gi, int v, int l, int stride_x, int stride_y, int stride_z);
 
 
-PIDX_return_code compute_average(PIDX_wavelet_id file, int gi, int svi, int evi, int mode)
-{
-  int v = 0, b = 0, i = 0, j = 0;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  for (v = svi; v <= evi; v++)
-  {
-    PIDX_variable var = var_grp->variable[v];
-
-    for (b = 0; b < var->chunked_super_patch->patch_count; b++)
-    {
-      PIDX_patch patch = var->chunked_super_patch->patch[b];
-      unsigned char* buffer = patch->buffer;
-      int element_count = patch->size[0] * patch->size[1] * patch->size[2] * var->vps;
-      unsigned char* temp = malloc(element_count / 64 * sizeof (float));
-      int count = 0;
-      float sum = 0;
-      float average = 0;
-
-      for (i = 0; i < element_count; i = i + 64)
-      {
-        sum = 0;
-        for (j = 0; j < 64; j++)
-        {
-          float value;
-          //value = ((float*) buffer)[i + j];
-          memcpy(&value, buffer + (i + j) * sizeof (float), sizeof(float));
-          sum = sum + value;
-          //sum = sum + ((float*) buffer)[i + j];
-        }
-        average = sum / 64;
-
-        //if (file->idx_c->grank == 1)
-        //  fprintf(stderr, "Average = %f\n", average);
-
-        memcpy(temp + count * sizeof (float), &average, sizeof (float));
-        count++;
-      }
-      memcpy(patch->buffer, temp, element_count / 64 * sizeof (float));
-
-      unsigned char* temp_buffer = realloc(patch->buffer, count* sizeof (float));
-      if (temp_buffer == NULL)
-        return PIDX_err_compress;
-      else
-        patch->buffer = temp_buffer;
-
-      free(temp);
-
-    }
-  }
-  return PIDX_success;
-}
-
 
 PIDX_return_code idx_stencil_wavelet(PIDX_wavelet_id file, int gi, int svi, int evi, int mode)
 {

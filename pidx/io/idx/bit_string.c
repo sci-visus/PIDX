@@ -22,17 +22,7 @@
 
 PIDX_return_code populate_bit_string(PIDX_io file, int mode)
 {
-  int i = 0;
-  unsigned long long cb[PIDX_MAX_DIMENSIONS];
   unsigned long long* cs = file->idx->chunk_size;
-
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-  {
-    if (file->idx->bounds[i] % file->idx->chunk_size[i] == 0)
-      cb[i] = (int) file->idx->bounds[i] / file->idx->chunk_size[i];
-    else
-      cb[i] = (int) (file->idx->bounds[i] / file->idx->chunk_size[i]) + 1;
-  }
 
   if (mode == PIDX_WRITE)
   {

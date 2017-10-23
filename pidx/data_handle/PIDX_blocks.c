@@ -49,7 +49,6 @@ Level #Elements [#Block_id] (HZ_start HZ_end) (HZ_start_form HZ_end_form)
 //const int PIDX_default_bits_per_block       = 15;
 //const int PIDX_default_blocks_per_file      = 256;
 
-
 int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from, int resolution_to, int maxh, int bits_per_block)
 {
   int ctr = 1, j;
@@ -60,10 +59,6 @@ int PIDX_blocks_initialize_layout (PIDX_block_layout layout, int resolution_from
   if (maxh == 0)
     return PIDX_success;
 
-  //printf("maxh = %d bpb = %d from to to %d %d \n", maxh, bits_per_block, resolution_from, resolution_to);
-
-  //if (maxh == 1)
-  //  maxh++;
   layout->hz_block_number_array = malloc(sizeof(int*) * maxh);
   memset(layout->hz_block_number_array, 0, sizeof(int*) * maxh);
 

@@ -230,14 +230,14 @@ struct idx_file_struct
   char bitSequence[512];
   char bitPattern[512];
 
-  double zfp_precisison;
-  int compression_type;
+
 
 
   /// 0 No aggregation
   /// 1 Only aggregation
   int enable_agg;
 
+  int compression_type;
   int compression_factor;
   float compression_bit_rate;
   unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];

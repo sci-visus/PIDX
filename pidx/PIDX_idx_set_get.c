@@ -343,22 +343,18 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   if(!file)
     return PIDX_err_file;
 
-  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP&& compression_type != PIDX_ZFP_COMPRESSION && compression_type != PIDX_CHUNKING_ZFP_63_COEFFICIENT && compression_type != PIDX_CHUNKING_AVERAGE)
+  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP)
     return PIDX_err_unsupported_compression_type;
 
   file->idx->compression_type = compression_type;
 
   if (file->idx->compression_type == PIDX_NO_COMPRESSION)
     return PIDX_success;
-  else if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP || file->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT || file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
+  else if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-    PIDX_point chunk_size;
-
-    chunk_size[0] = 4;
-    chunk_size[1] = 4;
-    chunk_size[2] = 4;
-
-    memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+    file->idx->chunk_size[0] = 4;
+    file->idx->chunk_size[1] = 4;
+    file->idx->chunk_size[2] = 4;
 
     int reduce_by_sample = 1;
     unsigned long long total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
@@ -380,18 +376,6 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, float precisison)
-{
-  if(!file)
-    return PIDX_err_file;
-
-  if (file->idx->compression_type != PIDX_ZFP_COMPRESSION)
-    return PIDX_err_file;
-
-  file->idx->zfp_precisison = precisison;
-
-  return PIDX_success;
-}
 
 
 PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type)

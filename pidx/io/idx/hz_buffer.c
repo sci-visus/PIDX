@@ -256,24 +256,6 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       return PIDX_err_compress;
     }
   }
-
-  if (file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
-  {
-    if (compute_average(file->wavelet_id, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
-    {
-      if (idx_stencil_wavelet(file->wavelet_id, lgi, cvi, levi, PIDX_WRITE) != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-    }
-  }
   time->compression_end[lgi][cvi] = PIDX_get_time();
 
 
@@ -301,20 +283,6 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
       }
     }
     time->hz_end[lgi][cvi] = PIDX_get_time();
-
-#if 1
-    time->hz_compress_start[lgi][cvi] = PIDX_get_time();
-    if (file->idx->compression_type == PIDX_ZFP_COMPRESSION)
-    {
-      //if (PIDX_hz_encode_compress(file->hz_id) != PIDX_success)
-      //if (PIDX_hz_encode_block_wise_compress(file->hz_id) != PIDX_success)
-      //{
-      //  fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      //  return PIDX_err_hz;
-      //}
-    }
-    time->hz_compress_end[lgi][cvi] = PIDX_get_time();
-#endif
   }
 
 //

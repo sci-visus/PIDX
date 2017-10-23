@@ -65,11 +65,6 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 #define PIDX_CHUNKING_ONLY 1
 #define PIDX_CHUNKING_ZFP 2
 
-#define PIDX_CHUNKING_ZFP_ACCURACY 3
-#define PIDX_ZFP_COMPRESSION 4
-#define PIDX_CHUNKING_ZFP_63_COEFFICIENT 5
-#define PIDX_CHUNKING_AVERAGE 6
-
 // Data in buffer is in row order
 #define PIDX_row_major                           0
 

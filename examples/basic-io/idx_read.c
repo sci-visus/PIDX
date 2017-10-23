@@ -322,8 +322,8 @@ static int verify_read_results()
   float float_val = 0;
   int var = variable_index;
 
-  if (rank == 100)
-      printf("LBO %d %d %d LBS %d %d %d\n", local_box_offset[0], local_box_offset[1], local_box_offset[2], local_box_size[0], local_box_size[1], local_box_size[2]);
+  //if (rank == 100)
+  //    printf("LBO %d %d %d LBS %d %d %d\n", local_box_offset[0], local_box_offset[1], local_box_offset[2], local_box_size[0], local_box_size[1], local_box_size[2]);
 
   bits_per_sample = bits_per_sample / 8;
   for (k = 0; k < local_box_size[2]; k++)

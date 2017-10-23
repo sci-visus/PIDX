@@ -257,9 +257,6 @@ PIDX_return_code idx_restructure_copy_rst_comm_to_local_comm(PIDX_io file, int g
   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
 
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var0 = var_grp->variable[svi];
-
   return PIDX_success;
 }
 
@@ -557,8 +554,8 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
   np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
 
-  if (file->idx_c->grank == 0)
-    printf("np %d (%d / %d) %d %d\n", np[0], file->idx->box_bounds[0], ps[0], np[1], np[2]);
+  //if (file->idx_c->grank == 0)
+  //  printf("np %d (%d / %d) %d %d\n", np[0], file->idx->box_bounds[0], ps[0], np[1], np[2]);
 
   if (np[0] * np[1] * np[2] > file->idx_c->gnprocs)
   {

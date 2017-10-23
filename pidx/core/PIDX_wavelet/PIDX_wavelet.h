@@ -39,18 +39,6 @@ PIDX_return_code idx_stencil_wavelet(PIDX_wavelet_id file, int gi, int svi, int 
 
 
 
-///
-/// \brief compute_average
-/// \param file
-/// \param gi
-/// \param svi
-/// \param evi
-/// \param mode
-/// \return
-///
-PIDX_return_code compute_average(PIDX_wavelet_id file, int gi, int svi, int evi, int mode);
-
-
 PIDX_return_code PIDX_wavelet_finalize(PIDX_wavelet_id id);
 
 #endif
