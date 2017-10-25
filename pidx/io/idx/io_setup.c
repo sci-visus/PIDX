@@ -106,7 +106,7 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi)
         var_grp->agg_level = i + 1;
     }
   }
-  //printf("AGG %d nproc %d\n", total_aggregator, file->idx_c->lnprocs);
+
   if (total_aggregator > file->idx_c->lnprocs)
     var_grp->agg_level = var_grp->shared_start_layout_index;
 

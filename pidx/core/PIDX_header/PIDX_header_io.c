@@ -320,10 +320,45 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
 
   if (header_io->idx_c->lrank == 0)
   {
+    int ret = 0, j = 0;
+    char last_path[PATH_MAX] = {0};
+    char this_path[PATH_MAX] = {0};
+    char tmp_path[PATH_MAX] = {0};
+    char* pos;
+    strcpy(this_path, data_set_path);
+    if ((pos = strrchr(this_path, '/')))
+    {
+      pos[1] = '\0';
+      if (!strcmp(this_path, last_path) == 0)
+      {
+        //this file is in a previous directory than the last
+        //one; we need to make sure that it exists and create
+        //it if not.
+        strcpy(last_path, this_path);
+        memset(tmp_path, 0, PATH_MAX * sizeof (char));
+        //walk up path and mkdir each segment
+        for (j = 0; j < (int)strlen(this_path); j++)
+        {
+          if (j > 0 && this_path[j] == '/')
+          {
+            ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
+            if (ret != 0 && errno != EEXIST)
+            {
+              perror("mkdir");
+              fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
+              return 1;
+            }
+          }
+          tmp_path[j] = this_path[j];
+        }
+      }
+    }
+
+
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p)
     {
-      fprintf(stderr, " [%s] [%d] idx_dir is corrupt.\n", __FILE__, __LINE__);
+      fprintf(stderr, " [%s] [%d] idx_dir is corrupt, filename %s.\n", __FILE__, __LINE__, data_set_path);
       return -1;
     }
 
@@ -595,7 +630,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
         fprintf(idx_file_p, " + \n");
     }
 
-    fprintf(idx_file_p, "(filename_template)\n./%s\n", file_temp);
+    fprintf(idx_file_p, "\n(filename_template)\n./%s\n", file_temp);
     fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
     fclose(idx_file_p);
   }

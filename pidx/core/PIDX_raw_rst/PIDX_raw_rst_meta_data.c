@@ -114,6 +114,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
     max_found_reg_patches *= ceil((float)rst_id->idx->box_bounds[d]/(float)rst_id->reg_patch_size[d]);
   }
 
+  //printf("max_found_reg_patches = %d [%d %d %d]\n", max_found_reg_patches, rst_id->reg_patch_size[0], rst_id->reg_patch_size[1], rst_id->reg_patch_size[2]);
   rst_id->reg_raw_grp_count = 0;
 
   unsigned long long pc0 = 0, d0 = 0;

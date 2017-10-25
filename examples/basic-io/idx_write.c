@@ -533,7 +533,7 @@ static void set_pidx_file(int ts)
   // we can instruct PIDX to cache and reuse these information for the next timesteps
   PIDX_set_cache_time_step(file, 0);
 
-  //PIDX_disable_agg(file);
+  PIDX_disable_agg(file);
 
   PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
   PIDX_set_lossy_compression_bit_rate(file, 4);

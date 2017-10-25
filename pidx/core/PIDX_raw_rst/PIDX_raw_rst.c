@@ -51,6 +51,10 @@ PIDX_raw_rst_id PIDX_raw_rst_init(idx_dataset idx_meta_data, idx_dataset_derived
   raw_rst_id->reg_raw_grp_count = 0;
   raw_rst_id->sim_max_patch_group_count = 0;
 
+  raw_rst_id->reg_patch_size[0] = idx_derived->restructured_grid->patch_size[0];
+  raw_rst_id->reg_patch_size[1] = idx_derived->restructured_grid->patch_size[1];
+  raw_rst_id->reg_patch_size[2] = idx_derived->restructured_grid->patch_size[2];
+
   return (raw_rst_id);
 }
 
