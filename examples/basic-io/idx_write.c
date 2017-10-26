@@ -82,7 +82,7 @@ static int vps[MAX_VAR_COUNT];
 
 static PIDX_point global_size, local_offset, local_size, reg_size;
 static PIDX_access p_access;
-//static PIDX_meta_data_cache cache;
+static PIDX_meta_data_cache cache;
 static PIDX_file file;
 static PIDX_variable* variable;
 
@@ -495,7 +495,7 @@ static void create_pidx_var_point_and_access()
   PIDX_create_access(&p_access);
   PIDX_set_mpi_access(p_access, MPI_COMM_WORLD);
 
-  //PIDX_create_meta_data_cache(&cache);
+  PIDX_create_meta_data_cache(&cache);
 
   return;
 }
@@ -515,7 +515,7 @@ static void set_pidx_file(int ts)
   PIDX_set_variable_count(file, variable_count);
 
   // Advanced settings
-  //PIDX_set_meta_data_cache(file, cache);
+  PIDX_set_meta_data_cache(file, cache);
 
   // Set the restructuring box size
   PIDX_set_restructuring_box(file, reg_size);
@@ -527,7 +527,7 @@ static void set_pidx_file(int ts)
   PIDX_set_block_count(file, 256);
   
   // Set the size of a block: how many 2^N samples we want to put in a single block
-  PIDX_set_block_size(file, 13);
+  PIDX_set_block_size(file, 15);
 
   // If the domain decomposition and the cores configuration do not change over time 
   // we can instruct PIDX to cache and reuse these information for the next timesteps
@@ -568,8 +568,8 @@ static void destroy_pidx_var_point_and_access()
   if (PIDX_close_access(p_access) != PIDX_success)
     terminate_with_error_msg("PIDX_close_access");
 
-  //if (PIDX_free_meta_data_cache(cache) != PIDX_success)
-  //  terminate_with_error_msg("PIDX_free_meta_data_cache");
+  if (PIDX_free_meta_data_cache(cache) != PIDX_success)
+    terminate_with_error_msg("PIDX_free_meta_data_cache");
 
   free(variable);
   variable = 0;

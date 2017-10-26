@@ -100,6 +100,8 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+      if (file->idx_c->lrank == 0)
+        printf("SI and EI %d and %d\n", si, ei);
 
       // Step 5: Setup aggregation buffers
       ret = data_aggregate(file, gi, li, si, ei, AGG_SETUP, PIDX_WRITE);
@@ -108,7 +110,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-
+#if 0
       // Step 6: Performs data aggregation
       ret = data_aggregate(file, gi, li, si, ei, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
@@ -128,6 +130,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       }
 
       finalize_aggregation(file, gi, li, si);
+#endif
       time->io_end[gi][li] = PIDX_get_time();
 
       // Step 8: Cleanup all buffers and ids
