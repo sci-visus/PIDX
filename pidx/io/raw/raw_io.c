@@ -33,10 +33,10 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  file->idx->variable_pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
+  file->idx_d->variable_pipe_length = file->idx->variable_count;
+  for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
   {
-    ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
     // Step 1: Setup restructuring buffers
@@ -92,11 +92,11 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
   int si = 0, ei = 0;
   PIDX_return_code ret;
 
-  file->idx->variable_pipe_length = file->idx->variable_count;
+  file->idx_d->variable_pipe_length = file->idx->variable_count;
 
-  for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
+  for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
   {
-    ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
     ret = raw_restructure_forced_read(file, si, ei);

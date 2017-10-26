@@ -74,14 +74,9 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
-    file->idx->variable_pipe_length = file->idx->variable_count;
-    for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
+    for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
     {
-      if ((si + file->idx->variable_pipe_length) >= evi)
-        file->idx->variable_pipe_length = evi - (si + 1);
-
-      ei = si + file->idx->variable_pipe_length;
-
+      ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
       file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
       // Step 3: Setup HZ buffers
@@ -106,92 +101,35 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         return PIDX_err_file;
       }
 
-
       // Step 5: Setup aggregation buffers
-      //for (li = si; li <= ei; li = li + 1)
-      //{
-      //printf("[PL %d] [%d %d %d]\n", file->idx->variable_pipe_length, si, li, ei);
-        ret = data_aggregate(file, gi, si, li, ei, AGG_SETUP, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-      //}
-
-      // Step 6: Performs data aggregation
-      //for (li = si; li <= ei; li = li + 1)
-      //{
-        ret = data_aggregate(file, gi, si, li, ei, AGG_PERFORM, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-      //}
-
-
-      // Step 7: Performs actual file io
-      //for (li = si; li <= ei; li = li + 1)
-      //{
-        time->io_start[gi][li] = PIDX_get_time();
-
-        ret = data_io(file, gi, si, li, ei, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-
-        finalize_aggregation(file, gi, li, si);
-        time->io_end[gi][li] = PIDX_get_time();
-      //}
-#if 0
-      int aei = 0;
-      int agg_pipe_length = 2;
-      for (li = si; li <= ei; li = li + (agg_pipe_length + 1))
+      ret = data_aggregate(file, gi, li, si, ei, AGG_SETUP, PIDX_WRITE);
+      if (ret != PIDX_success)
       {
-        aei = ((li + agg_pipe_length) >= (ei)) ? (ei) : (li + agg_pipe_length);
-        ret = data_aggregate(file, gi, si, li, aei, AGG_SETUP, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
 
       // Step 6: Performs data aggregation
-      for (li = si; li <= ei; li = li + (agg_pipe_length + 1))
+      ret = data_aggregate(file, gi, li, si, ei, AGG_PERFORM, PIDX_WRITE);
+      if (ret != PIDX_success)
       {
-        aei = ((li + agg_pipe_length) >= (ei)) ? (ei) : (li + agg_pipe_length);
-        ret = data_aggregate(file, gi, si, li, ei, AGG_PERFORM, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
-
 
       // Step 7: Performs actual file io
-      for (li = si; li <= ei; li = li + (agg_pipe_length + 1))
+      time->io_start[gi][li] = PIDX_get_time();
+
+      ret = data_io(file, gi, si, li, ei, PIDX_WRITE);
+      if (ret != PIDX_success)
       {
-        aei = ((li + agg_pipe_length) >= (ei)) ? (ei) : (li + agg_pipe_length);
-        time->io_start[gi][li] = PIDX_get_time();
-        create_async_buffers(file, gi);
-
-        ret = data_io(file, gi, si, li, ei, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-
-        wait_and_destroy_async_buffers(file, gi);
-        finalize_aggregation(file, gi, li, si);
-        time->io_end[gi][li] = PIDX_get_time();
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
-#endif
+
+      finalize_aggregation(file, gi, li, si);
+      time->io_end[gi][li] = PIDX_get_time();
+
       // Step 8: Cleanup all buffers and ids
       ret = hz_encode_cleanup(file);
       if (ret != PIDX_success)
@@ -275,14 +213,9 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
-    file->idx->variable_pipe_length = file->idx->variable_count;
-    for (si = svi; si < evi; si = si + (file->idx->variable_count + 1))
+    for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
     {
-      if ((si + file->idx->variable_pipe_length) >= evi)
-        file->idx->variable_pipe_length = evi - (si + 1);
-
-      ei = si + file->idx->variable_pipe_length;
-
+      ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
       file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
       // Step 2: Setup HZ buffers

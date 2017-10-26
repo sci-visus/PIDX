@@ -28,7 +28,6 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  file->idx->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si++)
   {
     bytes_for_datatype = ((var_grp->variable[si]->bpv / 8) * var_grp->variable[si]->vps);

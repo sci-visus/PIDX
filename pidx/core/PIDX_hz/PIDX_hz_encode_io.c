@@ -167,6 +167,8 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
   if (fp != 0)
     MPI_File_close(&fp);
 
+  opened_file_number = -1;
+
   return PIDX_success;
 }
 
@@ -208,6 +210,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
       if (fp != 0)
         MPI_File_close(&fp);
 
+      printf("Opening file %s\n", file_name);
       ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fp);
       if (ret != MPI_SUCCESS)
       {
@@ -276,7 +279,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
     ret = MPI_File_write_at(fp, data_offset, hz_buffer, file_count * curr_var->vps * (curr_var->bpv/8), MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)
     {
-      fprintf(stderr, "[%s] [%d] MPI_File_open() failed. wc %d\n", __FILE__, __LINE__, file_count);
+      fprintf(stderr, "[%s] [%d] MPI_File_open() failed. wc %d %s\n", __FILE__, __LINE__, file_count, file_name);
       return PIDX_err_io;
     }
 
@@ -287,7 +290,6 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
       fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
     }
-
 
     hz_count -= file_count;
     hz_start_index += file_count;

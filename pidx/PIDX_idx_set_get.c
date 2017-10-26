@@ -63,7 +63,7 @@ PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
 
   file->idx->variable_count = variable_count;
   file->idx->variable_grp[0]->variable_count = variable_count;
-  file->idx_d->var_pipe_length = file->idx->variable_count - 1 > 1 ? file->idx->variable_count - 1 : 1;
+  //file->idx_d->var_pipe_length = file->idx->variable_count - 1 > 1 ? file->idx->variable_count - 1 : 1;
 
   int total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
   file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
@@ -617,7 +617,7 @@ PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_leng
   if (var_pipe_length < 0)
     return PIDX_err_size;
 
-  file->idx_d->var_pipe_length = var_pipe_length;
+  file->idx_d->variable_pipe_length = var_pipe_length;
 
   return PIDX_success;
 }
@@ -632,7 +632,7 @@ PIDX_return_code PIDX_get_variable_pile_length(PIDX_file file, int* var_pipe_len
   if (var_pipe_length < 0)
     return PIDX_err_size;
 
-  *var_pipe_length = file->idx_d->var_pipe_length;
+  *var_pipe_length = file->idx_d->variable_pipe_length;
 
   return PIDX_success;
 }

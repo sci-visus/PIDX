@@ -293,7 +293,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
         free(rank_r_patch);
         free(global_end_point);
 
-        float range = (float)(end_rank - start_rank + 1) / (id->idx->variable_pipe_length + 1);
+        float range = (float)(end_rank - start_rank + 1) / (id->idx_d->variable_pipe_length + 1);
 
         if (agg_offset < var_grp->shared_end_layout_index)
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
@@ -323,7 +323,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
                start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
                end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
                range,
-               i, (id->idx->variable_pipe_length + 1),
+               i, (id->idx_d->variable_pipe_length + 1),
                k,
                lbl->existing_file_index[k],
                j,
@@ -534,7 +534,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
         free(rank_r_patch);
         free(global_end_point);
 
-        float range = (float)(end_rank - start_rank + 1) / (id->idx->variable_pipe_length + 1);
+        float range = (float)(end_rank - start_rank + 1) / (id->idx_d->variable_pipe_length + 1);
 
         if (agg_offset < var_grp->shared_end_layout_index)
             id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
@@ -563,7 +563,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
                start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
                end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
                range,
-               i, (id->idx->variable_pipe_length + 1),
+               i, (id->idx_d->variable_pipe_length + 1),
                k,
                lbl->existing_file_index[k], global_file_index,
                j,

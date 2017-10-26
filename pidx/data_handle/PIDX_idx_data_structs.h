@@ -206,7 +206,6 @@ struct idx_file_struct
   int io_type;
   int current_time_step;
 
-  int variable_pipe_length;
   int variable_count;
   int variable_group_count;
   int group_index_tracker;
@@ -290,8 +289,6 @@ struct idx_dataset_derived_metadata_struct
   int partition_count[PIDX_MAX_DIMENSIONS];
   int partition_size[PIDX_MAX_DIMENSIONS];
   int partition_offset[PIDX_MAX_DIMENSIONS];
-
-  int var_pipe_length;
   
   int start_layout_index;
   int end_layout_index;
@@ -316,6 +313,8 @@ struct idx_dataset_derived_metadata_struct
 
   int **block_bitmap;
   int **block_offset_bitmap;
+
+  int variable_pipe_length;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

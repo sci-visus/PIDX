@@ -485,7 +485,7 @@ void PIDX_init_timming_buffers1(PIDX_time time, int group_count, int variable_co
     memset(time->io_end[i], 0, sizeof(double) * variable_count);
   }
 
-
+  //printf("gc vc lc %d %d %d\n", group_count, variable_count, layout_count);
   // Aggregation phase timings
   for (g = 0; g < group_count; g++)
   {
@@ -601,6 +601,7 @@ void PIDX_init_timming_buffers1(PIDX_time time, int group_count, int variable_co
       memset(time->w_rst_comp_z_end[g][i], 0, sizeof(double) * wavelet_level_count);
     }
   }
+
 
 
   // Aggregation phase timings

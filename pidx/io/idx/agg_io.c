@@ -55,6 +55,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int lvi, int svi, int evi,
   {
     if (agg_mode == AGG_SETUP_AND_PERFORM || agg_mode == AGG_SETUP)
     {
+      printf("svi lvi j %d %d %d\n", svi, lvi, j);
       time->agg_init_start[lgi][svi][j] = PIDX_get_time();
 
       file->agg_id[svi][j] = PIDX_agg_init(file->idx, file->idx_d, file->idx_c, svi + lvi, evi + lvi, lvi);
