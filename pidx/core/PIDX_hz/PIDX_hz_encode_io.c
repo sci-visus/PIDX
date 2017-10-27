@@ -176,7 +176,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
 static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout)
 {
   int samples_per_file, block_number, file_index, file_count, ret = 0, block_negative_offset = 0, file_number;
-  int bytes_per_sample, bytes_per_datatype;
+  int bytes_per_datatype;
   int i = 0;
   char file_name[PATH_MAX];
   off_t data_offset = 0;
@@ -186,8 +186,8 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
 
   samples_per_file = hz_id->idx_d->samples_per_block * hz_id->idx->blocks_per_file;
 
-  bytes_per_datatype = (curr_var->bpv / 8) * (hz_id->idx->chunk_size[0] * hz_id->idx->chunk_size[1] * hz_id->idx->chunk_size[2]) / (hz_id->idx->compression_factor);
-  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * curr_var->vps;
+  bytes_per_datatype = (curr_var->bpv / 8) * curr_var->vps * (hz_id->idx->chunk_size[0] * hz_id->idx->chunk_size[1] * hz_id->idx->chunk_size[2]) / hz_id->idx->compression_factor;
+  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype;
 
   while (hz_count)
   {
@@ -210,7 +210,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
       if (fp != 0)
         MPI_File_close(&fp);
 
-      printf("Opening file %s\n", file_name);
+      //printf("Opening file %s\n", file_name);
       ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fp);
       if (ret != MPI_SUCCESS)
       {
@@ -223,27 +223,25 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
       file_count = hz_count;
 
     data_offset = 0;
-    bytes_per_sample = curr_var->bpv / 8;
-    data_offset = file_index * bytes_per_sample * curr_var->vps;
+    data_offset = file_index * bytes_per_datatype;
     data_offset += hz_id->idx_d->start_fs_block * hz_id->idx_d->fs_block_size;
 
     block_negative_offset = PIDX_blocks_find_negative_offset(hz_id->idx->blocks_per_file, hz_id->idx->bits_per_block, block_number, layout);
 
-    data_offset -= block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps;
+    data_offset -= block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_datatype;
 
     int l = 0;
     for (l = 0; l < variable_index; l++)
     {
-      bytes_per_sample = var_grp->variable[l]->bpv / 8;
       for (i = 0; i < hz_id->idx->blocks_per_file; i++)
         if (PIDX_blocks_is_block_present((i + (hz_id->idx->blocks_per_file * file_number)), hz_id->idx->bits_per_block, layout))
-          data_offset = data_offset + (var_grp->variable[l]->vps * bytes_per_sample * hz_id->idx_d->samples_per_block);
+          data_offset = data_offset + (var_grp->variable[l]->vps * (var_grp->variable[l]->bpv / 8) * ((hz_id->idx->chunk_size[0] * hz_id->idx->chunk_size[1] * hz_id->idx->chunk_size[2]) / hz_id->idx->compression_factor) * hz_id->idx_d->samples_per_block);
     }
 
 
     if (hz_id->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || hz_id->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
     {
-      fprintf(hz_id->idx_dbg->local_dump_fp, "[A] Count %lld Target Disp %d (%d %d)\n", (long long)file_count * curr_var->vps * (curr_var->bpv/8), (file_index * bytes_per_sample * curr_var->vps - block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_sample * curr_var->vps)/8, (int)hz_id->idx_d->start_fs_block, (int)hz_id->idx_d->fs_block_size);
+      fprintf(hz_id->idx_dbg->local_dump_fp, "[A] Count %lld Target Disp %d (%d %d)\n", (long long)file_count * bytes_per_datatype, (file_index * bytes_per_datatype - block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_datatype), (int)hz_id->idx_d->start_fs_block, (int)hz_id->idx_d->fs_block_size);
       fflush(hz_id->idx_dbg->local_dump_fp);
     }
 
@@ -276,7 +274,9 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
       }
     }
 
-    ret = MPI_File_write_at(fp, data_offset, hz_buffer, file_count * curr_var->vps * (curr_var->bpv/8), MPI_BYTE, &status);
+    if (hz_id->idx_c->lrank == 0)
+      printf("[%d] Data offset %d data size %d\n", variable_index, data_offset, file_count * bytes_per_datatype);
+    ret = MPI_File_write_at(fp, data_offset, hz_buffer, file_count * bytes_per_datatype, MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)
     {
       fprintf(stderr, "[%s] [%d] MPI_File_open() failed. wc %d %s\n", __FILE__, __LINE__, file_count, file_name);
@@ -285,7 +285,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
 
     int write_count;
     MPI_Get_count(&status, MPI_BYTE, &write_count);
-    if (write_count != file_count * curr_var->vps * (curr_var->bpv/8))
+    if (write_count != file_count * bytes_per_datatype)
     {
       fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -293,7 +293,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
 
     hz_count -= file_count;
     hz_start_index += file_count;
-    hz_buffer += file_count * curr_var->vps * bytes_per_datatype;
+    hz_buffer += file_count * bytes_per_datatype;
   }
   return PIDX_success;
 }
@@ -312,8 +312,8 @@ static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned lo
 
   samples_per_file = hz_id->idx_d->samples_per_block * hz_id->idx->blocks_per_file;
 
-  bytes_per_datatype = (curr_var->bpv / 8) * (hz_id->idx->chunk_size[0] * hz_id->idx->chunk_size[1] * hz_id->idx->chunk_size[2]) / (hz_id->idx->compression_factor);
-  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype * curr_var->vps;
+  bytes_per_datatype = (curr_var->bpv / 8) * curr_var->vps * (hz_id->idx->chunk_size[0] * hz_id->idx->chunk_size[1] * hz_id->idx->chunk_size[2]) / (hz_id->idx->compression_factor);
+  hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype;
 
   while (hz_count)
   {
@@ -362,7 +362,7 @@ static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned lo
     if ((unsigned long long)file_count > hz_count)
       file_count = hz_count;
 
-    int block_size_bytes = hz_id->idx_d->samples_per_block * curr_var->vps * (curr_var->bpv/8);
+    int block_size_bytes = hz_id->idx_d->samples_per_block * bytes_per_datatype;
     unsigned char *temp_buffer = malloc(block_size_bytes);
     int bl = 0;
     int blocks_to_read = 0;
@@ -391,18 +391,18 @@ static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned lo
       if (bl == blocks_to_read - 1)
       {
         if (file_count % hz_id->idx_d->samples_per_block == 0)
-          memcpy (hz_buffer + bl * block_size_bytes, temp_buffer + (hz_start_index % hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8), (hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8));
+          memcpy (hz_buffer + bl * block_size_bytes, temp_buffer + (hz_start_index % hz_id->idx_d->samples_per_block) * bytes_per_datatype, block_size_bytes);
         else
-          memcpy (hz_buffer + bl * block_size_bytes, temp_buffer + (hz_start_index % hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8), (file_count % hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8));
+          memcpy (hz_buffer + bl * block_size_bytes, temp_buffer + (hz_start_index % hz_id->idx_d->samples_per_block) * bytes_per_datatype, (file_count % hz_id->idx_d->samples_per_block) * bytes_per_datatype);
       }
       else
-        memcpy (hz_buffer + bl * block_size_bytes, temp_buffer + (hz_start_index % hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8), (hz_id->idx_d->samples_per_block) * curr_var->vps * (curr_var->bpv/8));
+        memcpy (hz_buffer + bl * block_size_bytes, temp_buffer + (hz_start_index % hz_id->idx_d->samples_per_block) * bytes_per_datatype, block_size_bytes);
     }
     free(temp_buffer);
 
     hz_count -= file_count;
     hz_start_index += file_count;
-    hz_buffer += file_count * curr_var->vps * bytes_per_datatype;
+    hz_buffer += file_count * bytes_per_datatype;
   }
   return PIDX_success;
 }

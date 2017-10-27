@@ -110,7 +110,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if 0
+#if 1
       // Step 6: Performs data aggregation
       ret = data_aggregate(file, gi, li, si, ei, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
