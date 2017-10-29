@@ -7,7 +7,7 @@ PIDX_return_code create_agg_io_buffer(PIDX_io file, int gi, int svi, int evi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   assert (var_grp->shared_start_layout_index == 0);
 
-  int vc = (evi - svi);
+  int vc =  file->idx->variable_count;// (evi - svi);
   if (vc <= 0)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -43,7 +43,8 @@ PIDX_return_code create_agg_io_buffer(PIDX_io file, int gi, int svi, int evi)
 
 PIDX_return_code destroy_agg_io_buffer(PIDX_io file, int svi, int evi)
 {
-  int vc = evi - svi;
+  //int vc = evi - svi;
+  int vc =  file->idx->variable_count;// (evi - svi);
   idx_dataset_derived_metadata idx = file->idx_d;
 
   int v = 0;
@@ -112,18 +113,19 @@ PIDX_return_code wait_and_destroy_async_buffers(PIDX_io file, int gi)
 }
 
 
-PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index, int local_var_index)
+PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int local_var_index, int start_index)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   int ret;
   int i = 0;
   int i_1 = 0;
-  start_index = start_index - local_var_index;
+  //start_index = start_index - local_var_index;
 
   int sli = var_grp->shared_start_layout_index;
   int agg_i = var_grp->agg_level;
 
+  //printf("sli and agg_i %d %d\n", sli, agg_i);
   for (i = sli; i < agg_i; i++)
   {
     i_1 = i - sli;

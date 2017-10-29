@@ -100,6 +100,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+
       if (file->idx_c->lrank == 0)
         printf("SI and EI %d and %d\n", si, ei);
 
@@ -110,7 +111,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if 1
+
       // Step 6: Performs data aggregation
       ret = data_aggregate(file, gi, li, si, ei, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
@@ -118,19 +119,19 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-
+#if 1
       // Step 7: Performs actual file io
       time->io_start[gi][li] = PIDX_get_time();
 
-      ret = data_io(file, gi, si, li, ei, PIDX_WRITE);
+      ret = data_io(file, gi, li, si, ei, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-
-      finalize_aggregation(file, gi, li, si);
 #endif
+      finalize_aggregation(file, gi, li, si);
+
       time->io_end[gi][li] = PIDX_get_time();
 
       // Step 8: Cleanup all buffers and ids
@@ -235,42 +236,40 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+      //if (file->idx_c->lrank == 0)
+      //  printf("SI and EI %d and %d\n", si, ei);
 
       // Step 3: Setup aggregation buffers
-      for (li = si; li <= ei; li = li + 1)
-      {
-        ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_READ);
+      //for (li = si; li <= ei; li = li + 1)
+      //{
+        ret = data_aggregate(file, gi, li, si, ei, AGG_SETUP, PIDX_READ);
         if (ret != PIDX_success)
         {
           fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
           return PIDX_err_file;
         }
-      }
-
+      //}
+#if 1
       // Step 4: Performs actual file io
-      for (li = si; li <= ei; li = li + 1)
+      time->io_start[gi][li] = PIDX_get_time();
+      ret = data_io(file, gi, li, si, ei, PIDX_READ);
+      if (ret != PIDX_success)
       {
-        time->io_start[gi][li] = PIDX_get_time();
-        ret = data_io(file, gi, si, li, ei, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-        time->io_end[gi][li] = PIDX_get_time();
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
+      time->io_end[gi][li] = PIDX_get_time();
+
 
       // Step 5: Performs data aggregation
-      for (li = si; li <= ei; li = li + 1)
+      ret = data_aggregate(file, gi, li, si, ei, AGG_PERFORM, PIDX_READ);
+      if (ret != PIDX_success)
       {
-        ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-        finalize_aggregation(file, gi, li, si);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
+      finalize_aggregation(file, li, si, ei);
+
 
       // Step 6: Perform HZ encoding
       ret = hz_encode(file, PIDX_READ);
@@ -279,7 +278,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if 1
+
       // Step 8: Cleanup all buffers and ids
       ret = hz_encode_cleanup(file);
       if (ret != PIDX_success)
@@ -367,7 +366,7 @@ static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, 
 #endif
 
   // Calculate the hz level upto which aggregation is possible
-  ret = find_agg_level(file, gi);
+  ret = find_agg_level(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);

@@ -2,7 +2,7 @@
 
 
 
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int fi, int li, int lvi)
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int fi, int li)
 {
   PIDX_agg_id id;
 
@@ -16,9 +16,9 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   id->gi = 0;
   id->fi = fi;
   id->li = li;
-  id->lvi = lvi;
+  //id->lvi = lvi;
 
-  printf("fi : li : lvi :: %d : %d : %d\n", fi, li, lvi);
+  //printf("fi : li : lvi :: %d : %d : %d\n", fi, li, lvi);
 
   return id;
 }

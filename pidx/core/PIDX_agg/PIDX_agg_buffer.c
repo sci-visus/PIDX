@@ -295,10 +295,17 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
 
         float range = (float)(end_rank - start_rank + 1) / (id->idx_d->variable_pipe_length + 1);
 
+#if 0
         if (agg_offset < var_grp->shared_end_layout_index)
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range) + (range/2);
+#endif
+
+        if (agg_offset < var_grp->shared_end_layout_index)
+          id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->fi) * range);
+        else
+          id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->fi) * range) + (range/2);
 
 
         if (id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
@@ -362,7 +369,14 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
     local_patch_offset[d] = var0->restructured_super_patch->restructured_patch->offset[d];
+    assert(local_patch_offset[d] % id->idx->chunk_size[d] == 0);
+    local_patch_offset[d] = local_patch_offset[d] / id->idx->chunk_size[d];
+
     local_patch_size[d] = var0->restructured_super_patch->restructured_patch->size[d];
+    if (local_patch_size[d] % id->idx->chunk_size[d] == 0)
+      local_patch_size[d] = local_patch_size[d] / id->idx->chunk_size[d];
+    else
+      local_patch_size[d] = (local_patch_size[d] / id->idx->chunk_size[d]) + 1;
   }
 
   int wc = id->idx_c->lnprocs * PIDX_MAX_DIMENSIONS;
@@ -382,6 +396,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
 
   //printf("[%d : %d] - %d %d %d - %d %d %d\n", id->idx_c->lrank, id->idx_c->grank, (int)local_patch_offset[0], (int)local_patch_offset[1], (int)local_patch_offset[2], (int)local_patch_size[0], (int)local_patch_size[1], (int)local_patch_size[2]);
 
+  //printf("Fi Li %d %d\n", id->fi, id->li);
   for (k = 0; k < lbl->efc; k++)
   {
     for (i = id->fi; i <= id->li; i++)
@@ -416,6 +431,30 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
         int first_index = -1;
         unsigned long long ZYX[PIDX_MAX_DIMENSIONS];
 
+#if 0
+        int x = 0;
+        for (x = 0; x <= last_block; x++)
+        {
+        for (s = 0; s < id->idx_d->samples_per_block; s++)
+        {
+          // HZ index of last sample of the block.
+          last_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (/*lbl->lbi[global_file_index]*/x + 1) * id->idx_d->samples_per_block - 1 - s;
+
+          // xyz index of the last sample of the block.
+          Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
+
+          if (id->idx_c->lrank == 0)
+            printf("[%d] ZYX: %d %d %d\n", x, ZYX[0], ZYX[1], ZYX[2]);
+
+          // check to see if the sample is within bounds.
+          //if (ZYX[0] < id->idx->box_bounds[0] / id->idx->chunk_size[0] &&
+          //    ZYX[1] < id->idx->box_bounds[1] / id->idx->chunk_size[1] &&
+          //    ZYX[2] < id->idx->box_bounds[2] / id->idx->chunk_size[2])
+          //  break;
+        }
+        }
+#endif
+        last_index = -1;
         for (s = 0; s < id->idx_d->samples_per_block; s++)
         {
           // HZ index of last sample of the block.
@@ -424,10 +463,13 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
           // xyz index of the last sample of the block.
           Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
 
+          //if (id->idx_c->lrank == 0)
+          //  printf("ZYX: %d %d %d\n", ZYX[0], ZYX[1], ZYX[2]);
+
           // check to see if the sample is within bounds.
-          if (ZYX[0] < id->idx->box_bounds[0] &&
-              ZYX[1] < id->idx->box_bounds[1] &&
-              ZYX[2] < id->idx->box_bounds[2])
+          if (ZYX[0] < id->idx->box_bounds[0] / id->idx->chunk_size[0] &&
+              ZYX[1] < id->idx->box_bounds[1] / id->idx->chunk_size[1] &&
+              ZYX[2] < id->idx->box_bounds[2] / id->idx->chunk_size[2])
             break;
         }
 
@@ -440,9 +482,9 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
           Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, first_index, ZYX);
 
           // check to see if the sample is within bounds.
-          if (ZYX[0] >= 0 && ZYX[0] < id->idx->box_bounds[0] &&
-              ZYX[1] >= 0 && ZYX[1] < id->idx->box_bounds[1] &&
-              ZYX[2] >= 0 && ZYX[2] < id->idx->box_bounds[2])
+          if (ZYX[0] >= 0 && ZYX[0] < id->idx->box_bounds[0] / id->idx->chunk_size[0] &&
+              ZYX[1] >= 0 && ZYX[1] < id->idx->box_bounds[1] / id->idx->chunk_size[1] &&
+              ZYX[2] >= 0 && ZYX[2] < id->idx->box_bounds[2] / id->idx->chunk_size[2])
             break;
         }
 
@@ -536,10 +578,16 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
 
         float range = (float)(end_rank - start_rank + 1) / (id->idx_d->variable_pipe_length + 1);
 
+#if 0
         if (agg_offset < var_grp->shared_end_layout_index)
             id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range);
         else
             id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->lvi) * range) + (range/2);
+#endif
+        if (agg_offset < var_grp->shared_end_layout_index)
+            id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->fi) * range);
+        else
+            id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->fi) * range) + (range/2);
 
         if (id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
         {
@@ -554,7 +602,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
           ab->buffer_size = sample_count * bpdt;
 
 #if DETAIL_OUTPUT
-          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d P %d] [LFi %d] [GFi %d %d] [Si %d] [Buffer %lld (%d x %d x %d)]\n",
+          fprintf(stderr, "[Lid %d] [TS %d] [%d] [C %d] [G %d %d] [L %d %d] [S E R %d (%lld : %lld %lld %lld) - %d (%lld : %lld %lld %lld) R %f] [V %d LVI %d P %d] [LFi %d] [GFi %d %d] [Si %d] [Buffer %lld (%d x %d x %d)]\n",
                agg_offset, id->idx->current_time_step,
                id->agg_r[k][i - id->fi][j],
                id->idx_d->color,
@@ -563,7 +611,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
                start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
                end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
                range,
-               i, (id->idx_d->variable_pipe_length + 1),
+               i, (i - id->fi), (id->idx_d->variable_pipe_length + 1),
                k,
                lbl->existing_file_index[k], global_file_index,
                j,

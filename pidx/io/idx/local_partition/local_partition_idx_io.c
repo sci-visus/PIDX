@@ -503,7 +503,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   }
 
   // Calculate the hz level upto which aggregation is possible
-  ret = find_agg_level(file, gi);
+  ret = find_agg_level(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);

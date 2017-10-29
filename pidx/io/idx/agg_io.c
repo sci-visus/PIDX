@@ -8,7 +8,7 @@ PIDX_return_code data_io(PIDX_io file, int gi, int lvi, int svi, int end_index, 
 
   int j;
   int ret = 0;
-  svi = svi - lvi;
+  //svi = svi - lvi;
 
   assert(var_grp->shared_start_layout_index == 0);
   for(j = var_grp->shared_start_layout_index; j < var_grp->agg_level; j++)
@@ -16,7 +16,7 @@ PIDX_return_code data_io(PIDX_io file, int gi, int lvi, int svi, int end_index, 
     Agg_buffer temp_agg = idx->agg_buffer[svi][j];
     PIDX_block_layout temp_layout = var_grp->block_layout_by_level[j];
 
-    file->io_id[svi][j] = PIDX_file_io_init(file->idx, file->idx_d, file->idx_c, svi + lvi, svi + lvi);
+    file->io_id[svi][j] = PIDX_file_io_init(file->idx, file->idx_d, file->idx_c, svi, svi);
 
     if (file->idx_dbg->debug_do_io == 1)
     {
@@ -47,18 +47,19 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int lvi, int svi, int evi,
 
   int j;
   PIDX_time time = file->idx_d->time;
-  svi = svi - lvi;
-  evi = evi - lvi;
+  //svi = svi - lvi;
+  //evi = evi - lvi;
 
   assert(var_grp->shared_start_layout_index == 0);
   for (j = var_grp->shared_start_layout_index; j < var_grp->agg_level; j++)
   {
     if (agg_mode == AGG_SETUP_AND_PERFORM || agg_mode == AGG_SETUP)
     {
-      printf("svi lvi j %d %d %d\n", svi, lvi, j);
+      //printf("svi lvi j %d %d %d\n", svi, lvi, j);
       time->agg_init_start[lgi][svi][j] = PIDX_get_time();
 
-      file->agg_id[svi][j] = PIDX_agg_init(file->idx, file->idx_d, file->idx_c, svi + lvi, evi + lvi, lvi);
+      //file->agg_id[svi][j] = PIDX_agg_init(file->idx, file->idx_d, file->idx_c, svi + lvi, evi + lvi, lvi);
+      file->agg_id[svi][j] = PIDX_agg_init(file->idx, file->idx_d, file->idx_c, svi, evi);
       idx->agg_buffer[svi][j] = malloc(sizeof(*(idx->agg_buffer[svi][j])));
       memset(idx->agg_buffer[svi][j], 0, sizeof(*(idx->agg_buffer[svi][j])));
 
@@ -100,6 +101,7 @@ PIDX_return_code data_aggregate(PIDX_io file, int gi, int lvi, int svi, int evi,
 
     if (agg_mode == AGG_SETUP_AND_PERFORM || agg_mode == AGG_PERFORM)
     {
+
       if (file->idx_dbg->debug_do_agg == 1)
       {
         time->agg_start[lgi][svi][j] = PIDX_get_time();

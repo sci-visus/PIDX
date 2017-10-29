@@ -260,6 +260,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   target_rank = id->agg_r[lbl->inverse_existing_file_index[file_no]][variable_index - id->fi][sample_index];
 
+  //printf("[F %d] [V %d] target rank %d\n", file_no, (variable_index - id->fi), target_rank);
   target_count = hz_count * vps;
   bpdt = ((var->bpv / 8) * tcs) / (id->idx->compression_factor);
   hz_buffer = hz_buffer + buffer_offset * bpdt * vps;
