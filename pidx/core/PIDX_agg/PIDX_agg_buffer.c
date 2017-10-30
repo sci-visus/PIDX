@@ -435,24 +435,24 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
         int x = 0;
         for (x = 0; x <= last_block; x++)
         {
-        for (s = 0; s < id->idx_d->samples_per_block; s++)
-        {
-          // HZ index of last sample of the block.
-          last_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (/*lbl->lbi[global_file_index]*/x + 1) * id->idx_d->samples_per_block - 1 - s;
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+            // HZ index of last sample of the block.
+            last_index = global_file_index * id->idx->blocks_per_file * id->idx_d->samples_per_block + (/*lbl->lbi[global_file_index]*/x + 1) * id->idx_d->samples_per_block - 1 - s;
 
-          // xyz index of the last sample of the block.
-          Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
+            // xyz index of the last sample of the block.
+            Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
 
-          if (id->idx_c->lrank == 0)
-            printf("[%d] ZYX: %d %d %d\n", x, ZYX[0], ZYX[1], ZYX[2]);
+            if (id->idx_c->lrank == 0)
+              printf("[%d] ZYX: %d %d %d\n", x, ZYX[0], ZYX[1], ZYX[2]);
 
-          // check to see if the sample is within bounds.
-          //if (ZYX[0] < id->idx->box_bounds[0] / id->idx->chunk_size[0] &&
-          //    ZYX[1] < id->idx->box_bounds[1] / id->idx->chunk_size[1] &&
-          //    ZYX[2] < id->idx->box_bounds[2] / id->idx->chunk_size[2])
-          //  break;
-        }
-        }
+            // check to see if the sample is within bounds.
+            if (ZYX[0] < id->idx->box_bounds[0] / id->idx->chunk_size[0] &&
+                ZYX[1] < id->idx->box_bounds[1] / id->idx->chunk_size[1] &&
+                ZYX[2] < id->idx->box_bounds[2] / id->idx->chunk_size[2])
+              break;
+          }
+        },ik
 #endif
         last_index = -1;
         for (s = 0; s < id->idx_d->samples_per_block; s++)

@@ -447,7 +447,7 @@ static void create_synthetic_simulation_data()
             }
             else if (strcmp(type_name[var], FLOAT64) == 0 || strcmp(type_name[var], FLOAT64_GA) == 0 || strcmp(type_name[var], FLOAT64_RGB) == 0)
             {
-              dvalue = ((double)100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              dvalue = ((double)100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
           }
@@ -535,7 +535,7 @@ static void set_pidx_file(int ts)
 
   //PIDX_disable_agg(file);
 
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+  //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
   //PIDX_set_lossy_compression_bit_rate(file, 4);
 
   return;
