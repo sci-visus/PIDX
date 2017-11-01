@@ -253,13 +253,13 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     n_proc_patch = 0;
 
     unsigned long long k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
-    int count1 = 0, send_o = 0, send_c = 0, index = 0;
+    int send_c = 0;
     unsigned long long sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
     unsigned long long sim_patch_countx[PIDX_MAX_DIMENSIONS];
 
-    unsigned char ***temp_patch_buffer;
-    temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi + 1));
-    memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (evi - svi + 1));
+    //unsigned char ***temp_patch_buffer;
+    //temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi + 1));
+    //memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (evi - svi + 1));
 
     unsigned char ***temp_patch_buffer2;
     temp_patch_buffer2 = malloc(sizeof(*temp_patch_buffer2) * (evi - svi + 1));
@@ -268,8 +268,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     for (i = 0; i <= (evi - svi); i++)
     {
       PIDX_variable var = var_grp->variable[i + svi];
-      temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
-      memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
+      //temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
+      //memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
       temp_patch_buffer2[i] = malloc(sizeof(*(temp_patch_buffer2[i])) * patch_count);
       memset(temp_patch_buffer2[i], 0, sizeof(*(temp_patch_buffer2[i])) * patch_count);
@@ -288,8 +288,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         memset(temp_patch_buffer2[i][j], 0, sizeof(*(temp_patch_buffer2[i][j])) * total_sample_count * var->bpv/8 * var->vps);
         //printf("[%d %d] [%d] Created buffer size %d\n", i, j, source_patch_id[j], (sizeof(*(temp_patch_buffer2[i][j])) * total_sample_count * var->bpv/8 * var->vps));
 
-        temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
-        memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
+        //temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
+        //memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
       }
     }
 
@@ -363,7 +363,6 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
         sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
         total_sample_count = total_sample_count * sim_patch_countx[d];
-        //printf("%d ", size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1]);
       }
 
       int start_index = 0, other_offset = 0, v1 = 0;
@@ -378,8 +377,6 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
         PIDX_variable var = var_grp->variable[start_index];
         size_t preadc = pread(fpx, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
-        //printf("[%d %d] [%d] count %d offset %d\n", start_index, i, source_patch_id[i], total_sample_count * var->vps * var->bpv/8, other_offset);
-
         if (preadc != total_sample_count * var->vps * var->bpv/8)
         {
           fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bpv/8);
@@ -388,7 +385,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
       }
       close(fpx);
 
-
+#if 0
       count1 = 0;
       for (k1 = patch_grp->patch[i]->offset[2]; k1 < patch_grp->patch[i]->offset[2] + patch_grp->patch[i]->size[2]; k1++)
       {
@@ -423,29 +420,49 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
           }
         }
       }
+#endif
     }
 
     int r, recv_o;
+
+
     for (r = 0; r < patch_count; r++)
     {
+      pc_index = patch_grp->source_patch[r].rank * (max_patch_count * temp_max_dim + 1);
+      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      {
+        sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[r] * temp_max_dim + d + 1];
+        sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[r] * temp_max_dim + d + 1];
+      }
+
+      unsigned long long *sim_patch_offset = sim_patch_offsetx;// var_grp->variable[svi]->sim_patch[pc1]->offset;
+      unsigned long long *sim_patch_count = sim_patch_countx;// var_grp->variable[svi]->sim_patch[pc1]->size;
+
       for (k1 = patch_grp->patch[r]->offset[2]; k1 < patch_grp->patch[r]->offset[2] + patch_grp->patch[r]->size[2]; k1++)
       {
         for (j1 = patch_grp->patch[r]->offset[1]; j1 < patch_grp->patch[r]->offset[1] + patch_grp->patch[r]->size[1]; j1++)
         {
           for (i1 = patch_grp->patch[r]->offset[0]; i1 < patch_grp->patch[r]->offset[0] + patch_grp->patch[r]->size[0]; i1 = i1 + patch_grp->patch[r]->size[0])
           {
-            index = ((patch_grp->patch[r]->size[0])* (patch_grp->patch[r]->size[1]) * (k1 - patch_grp->patch[r]->offset[2])) + ((patch_grp->patch[r]->size[0]) * (j1 - patch_grp->patch[r]->offset[1])) + (i1 - patch_grp->patch[r]->offset[0]);
+            int send_index = (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
+                    (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
+                    (i1 - sim_patch_offset[0]);
+
+
+            //index = ((patch_grp->patch[r]->size[0])* (patch_grp->patch[r]->size[1]) * (k1 - patch_grp->patch[r]->offset[2])) + ((patch_grp->patch[r]->size[0]) * (j1 - patch_grp->patch[r]->offset[1])) + (i1 - patch_grp->patch[r]->offset[0]);
 
             int start_index;
             for (start_index = svi; start_index <= evi; start_index = start_index + 1)
             {
               PIDX_variable var = var_grp->variable[start_index];
 
-              send_o = index * var->vps * (var->bpv/8);
+              //send_o = index * var->vps * (var->bpv/8);
               send_c = (patch_grp->patch[r]->size[0]);
               recv_o = (var_grp->variable[start_index]->sim_patch[pc1]->size[0] * var_grp->variable[start_index]->sim_patch[pc1]->size[1] * (k1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[2])) + (var_grp->variable[start_index]->sim_patch[pc1]->size[0] * (j1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[1])) + (i1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[0]);
 
-              memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)), temp_patch_buffer[start_index - svi][r] + send_o, send_c * var->vps * (var->bpv/8));
+              //memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)), temp_patch_buffer[start_index - svi][r] + send_o, send_c * var->vps * (var->bpv/8));
+
+              memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)), temp_patch_buffer2[start_index - svi][r] + send_index * var->vps * (var->bpv/8), send_c * var->vps * (var->bpv/8));
 
 #if INVERT_ENDIANESS
               if (rst_id->idx->flip_endian == 1)
@@ -489,14 +506,14 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     {
       for (j = 0; j < patch_count; j++)
       {
-        free(temp_patch_buffer[i][j]);
+        //free(temp_patch_buffer[i][j]);
         free(temp_patch_buffer2[i][j]);
       }
 
-      free(temp_patch_buffer[i]);
+      //free(temp_patch_buffer[i]);
       free(temp_patch_buffer2[i]);
     }
-    free(temp_patch_buffer);
+    //free(temp_patch_buffer);
     free(temp_patch_buffer2);
 
     free(patch_grp->source_patch);
