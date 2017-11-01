@@ -276,12 +276,17 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
       for (j = 0; j < patch_count; j++)
       {
+        pc_index = patch_grp->source_patch[j].rank * (max_patch_count * temp_max_dim + 1);
         int total_sample_count = 1;
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-          total_sample_count = total_sample_count * size_buffer[pc_index + source_patch_id[j] * temp_max_dim + d + 1];
+        {
+          total_sample_count = total_sample_count * (unsigned long long)size_buffer[pc_index + source_patch_id[j] * temp_max_dim + d + 1];
+          //printf("%d ", size_buffer[pc_index + source_patch_id[j] * temp_max_dim + d + 1]);
+        }
 
         temp_patch_buffer2[i][j] = malloc(sizeof(*(temp_patch_buffer2[i][j])) * total_sample_count * var->bpv/8 * var->vps);
         memset(temp_patch_buffer2[i][j], 0, sizeof(*(temp_patch_buffer2[i][j])) * total_sample_count * var->bpv/8 * var->vps);
+        //printf("[%d %d] [%d] Created buffer size %d\n", i, j, source_patch_id[j], (sizeof(*(temp_patch_buffer2[i][j])) * total_sample_count * var->bpv/8 * var->vps));
 
         temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
         memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
@@ -358,6 +363,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
         sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
         total_sample_count = total_sample_count * sim_patch_countx[d];
+        //printf("%d ", size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1]);
       }
 
       int start_index = 0, other_offset = 0, v1 = 0;
@@ -371,7 +377,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         }
 
         PIDX_variable var = var_grp->variable[start_index];
-        size_t preadc = pread(fp, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
+        size_t preadc = pread(fpx, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
+        //printf("[%d %d] [%d] count %d offset %d\n", start_index, i, source_patch_id[i], total_sample_count * var->vps * var->bpv/8, other_offset);
 
         if (preadc != total_sample_count * var->vps * var->bpv/8)
         {
