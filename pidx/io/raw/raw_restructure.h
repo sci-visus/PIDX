@@ -55,5 +55,6 @@ PIDX_return_code raw_restructure_cleanup(PIDX_io file);
 PIDX_return_code raw_restructure_forced_read(PIDX_io file, int svi, int evi);
 
 
+PIDX_return_code set_rst_box_size_for_raw_write(PIDX_io file, int gi, int svi);
 
 #endif

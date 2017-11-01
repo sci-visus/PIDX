@@ -17,8 +17,17 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
 {  
   int si = 0, ei = 0;
   PIDX_return_code ret;
+  PIDX_time time = file->idx_d->time;
 
   // Step 0
+  time->set_reg_box_start = MPI_Wtime();
+  if (set_rst_box_size_for_raw_write(file, gi, svi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  time->set_reg_box_end = MPI_Wtime();
+
   ret = group_meta_data_init(file, gi, svi, evi);
   if (ret != PIDX_success)
   {

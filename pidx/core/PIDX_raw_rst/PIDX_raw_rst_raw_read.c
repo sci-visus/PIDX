@@ -261,19 +261,34 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi + 1));
     memset(temp_patch_buffer, 0, sizeof(*temp_patch_buffer) * (evi - svi + 1));
 
+    unsigned char ***temp_patch_buffer2;
+    temp_patch_buffer2 = malloc(sizeof(*temp_patch_buffer2) * (evi - svi + 1));
+    memset(temp_patch_buffer2, 0, sizeof(*temp_patch_buffer2) * (evi - svi + 1));
+
     for (i = 0; i <= (evi - svi); i++)
     {
       PIDX_variable var = var_grp->variable[i + svi];
       temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
       memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
+      temp_patch_buffer2[i] = malloc(sizeof(*(temp_patch_buffer2[i])) * patch_count);
+      memset(temp_patch_buffer2[i], 0, sizeof(*(temp_patch_buffer2[i])) * patch_count);
+
       for (j = 0; j < patch_count; j++)
       {
+        int total_sample_count = 1;
+        for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+          total_sample_count = total_sample_count * size_buffer[pc_index + source_patch_id[j] * temp_max_dim + d + 1];
+
+        temp_patch_buffer2[i][j] = malloc(sizeof(*(temp_patch_buffer2[i][j])) * total_sample_count * var->bpv/8 * var->vps);
+        memset(temp_patch_buffer2[i][j], 0, sizeof(*(temp_patch_buffer2[i][j])) * total_sample_count * var->bpv/8 * var->vps);
+
         temp_patch_buffer[i][j] = malloc(sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
         memset(temp_patch_buffer[i][j], 0, sizeof(*(temp_patch_buffer[i][j])) * patch_grp->patch[j]->size[0] * patch_grp->patch[j]->size[1] * patch_grp->patch[j]->size[2] * var->bpv/8 * var->vps);
       }
     }
 
+#if 0
     for (i = 0; i < patch_count; i++)
     {
       sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
@@ -328,6 +343,79 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         }
       }
       close(fpx);
+    }
+#endif
+
+    for (i = 0; i < patch_count; i++)
+    {
+      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
+      int fpx = open(file_name, O_RDONLY);
+
+      pc_index = patch_grp->source_patch[i].rank * (max_patch_count * temp_max_dim + 1);
+      int total_sample_count = 1;
+      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      {
+        sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+        sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+        total_sample_count = total_sample_count * sim_patch_countx[d];
+      }
+
+      int start_index = 0, other_offset = 0, v1 = 0;
+      for (start_index = svi; start_index <= evi; start_index = start_index + 1)
+      {
+        other_offset = 0;
+        for (v1 = 0; v1 < start_index; v1++)
+        {
+          PIDX_variable var1 = var_grp->variable[v1];
+          other_offset = other_offset + ((var1->bpv/8) * var1->vps * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
+        }
+
+        PIDX_variable var = var_grp->variable[start_index];
+        size_t preadc = pread(fp, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
+
+        if (preadc != total_sample_count * var->vps * var->bpv/8)
+        {
+          fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bpv/8);
+          return PIDX_err_rst;
+        }
+      }
+      close(fpx);
+
+
+      count1 = 0;
+      for (k1 = patch_grp->patch[i]->offset[2]; k1 < patch_grp->patch[i]->offset[2] + patch_grp->patch[i]->size[2]; k1++)
+      {
+        for (j1 = patch_grp->patch[i]->offset[1]; j1 < patch_grp->patch[i]->offset[1] + patch_grp->patch[i]->size[1]; j1++)
+        {
+          for (i1 = patch_grp->patch[i]->offset[0]; i1 < patch_grp->patch[i]->offset[0] + patch_grp->patch[i]->size[0]; i1 = i1 + patch_grp->patch[i]->size[0])
+          {
+            unsigned long long *sim_patch_offset = sim_patch_offsetx;// var_grp->variable[svi]->sim_patch[pc1]->offset;
+            unsigned long long *sim_patch_count = sim_patch_countx;// var_grp->variable[svi]->sim_patch[pc1]->size;
+
+            index = (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
+                (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
+                (i1 - sim_patch_offset[0]);
+
+            int start_index = 0, other_offset = 0, v1 = 0;
+            for (start_index = svi; start_index <= evi; start_index = start_index + 1)
+            {
+              other_offset = 0;
+              for (v1 = 0; v1 < start_index; v1++)
+              {
+                PIDX_variable var1 = var_grp->variable[v1];
+                other_offset = other_offset + ((var1->bpv/8) * var1->vps * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
+              }
+
+              PIDX_variable var = var_grp->variable[start_index];
+              send_o = index * var->vps;
+              send_c = patch_grp->patch[i]->size[0] * var->vps;
+
+              memcpy(temp_patch_buffer[start_index - svi][i] + (count1 * send_c * var->bpv/8), temp_patch_buffer2[start_index - svi][i] + (send_o * var->bpv/8), send_c * var->bpv/8);
+            }
+            count1++;
+          }
+        }
+      }
     }
 
     int r, recv_o;
@@ -393,11 +481,16 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     for (i = 0; i <= (evi - svi); i++)
     {
       for (j = 0; j < patch_count; j++)
+      {
         free(temp_patch_buffer[i][j]);
+        free(temp_patch_buffer2[i][j]);
+      }
 
       free(temp_patch_buffer[i]);
+      free(temp_patch_buffer2[i]);
     }
     free(temp_patch_buffer);
+    free(temp_patch_buffer2);
 
     free(patch_grp->source_patch);
     free(patch_grp->patch);
