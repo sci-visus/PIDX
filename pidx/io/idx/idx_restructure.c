@@ -236,8 +236,7 @@ PIDX_return_code idx_restructure_rst_comm_create(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
-  int temp_rank = 0;
-  MPI_Comm_rank(file->idx_c->global_comm, &(temp_rank));
+  MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
 
   MPI_Comm_split(file->idx_c->global_comm, var0->restructured_super_patch_count, file->idx_c->grank, &(file->idx_c->rst_comm));
 

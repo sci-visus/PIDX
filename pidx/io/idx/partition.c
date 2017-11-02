@@ -123,7 +123,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 PIDX_return_code create_local_comm(PIDX_io file)
 {
   int ret;
-  ret = MPI_Comm_split(file->idx_c->rst_comm, file->idx_d->color, file->idx_c->grank, &(file->idx_c->local_comm));
+  ret = MPI_Comm_split(file->idx_c->rst_comm, file->idx_d->color, file->idx_c->rrank, &(file->idx_c->local_comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);

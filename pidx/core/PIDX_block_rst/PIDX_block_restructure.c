@@ -1,19 +1,19 @@
 /*****************************************************
- **  PIDX Parallel I/O Library      **
+ **  PIDX Parallel I/O Library  **
  **  Copyright (c) 2010-2014 University of Utah   **
  **  Scientific Computing and Imaging Institute   **
- **  72 S Central Campus Drive, Room 3750     **
- **  Salt Lake City, UT 84112       **
- **             **
+ **  72 S Central Campus Drive, Room 3750   **
+ **  Salt Lake City, UT 84112   **
+ **     **
  **  PIDX is licensed under the Creative Commons  **
  **  Attribution-NonCommercial-NoDerivatives 4.0  **
  **  International License. See LICENSE.md.   **
- **             **
+ **     **
  **  For information about this project see:  **
- **  http://www.cedmav.com/pidx       **
- **  or contact: pascucci@sci.utah.edu    **
- **  For support: PIDX-support@visus.net    **
- **             **
+ **  http://www.cedmav.com/pidx   **
+ **  or contact: pascucci@sci.utah.edu  **
+ **  For support: PIDX-support@visus.net  **
+ **     **
  *****************************************************/
 
 /**
@@ -257,7 +257,109 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       bits = 64;
     }
 
+    int dz = 4 * nx*(ny-(ny/4)*4);
+    int dy = 4 * (nx-(nx/4)*4);
+    int dx = 4;
+
+    int z, y, x;
+    int zz, yy, xx;
+
+    if (strcmp(var->type_name, FLOAT64) == 0 || strcmp(var->type_name, FLOAT32) == 0)
+    {
+      for (z=0;z<nz;z+=4)
+      {
+        unsigned char* s = out_patch->restructured_patch->buffer + ((z/4) * ((ny+3)/4) * ((nx+3)/4)) * cbz * (bits/CHAR_BIT);
+        for (y=0;y<ny;y+=4)
+        {
+          for (x=0;x<nx;x+=4)
+          {
+            unsigned long long diff = (z/4) * (dz + 4 * (ny/4) * (dy+4 * (nx/4) * dx)) + (y/4) * (dy+4*(nx/4)*dx) + (x/4)*dx;
+            unsigned char* q = in_patch->restructured_patch->buffer + diff * (bits/CHAR_BIT);
+
+            for (zz = 0; zz < 4; ++zz)
+            {
+              for (yy = 0; yy < 4; ++yy)
+              {
+                for (xx = 0; xx < 4; ++xx)
+                {
+                  int i = xx + yy * 4 + zz * 4 * 4;
+                  int j = xx + yy * nx + zz * nx * ny;
+
+                  if (MODE == PIDX_WRITE)
+                  {
+                    if (j + diff >= in_patch->restructured_patch->size[0] * in_patch->restructured_patch->size[1] * in_patch->restructured_patch->size[2])
+                      continue;
+
+                    memcpy(s + i * (bits/CHAR_BIT), q + j * (bits/CHAR_BIT), (bits/CHAR_BIT));
+                    printf("index %d %d\n", i + (((z/4) * ((ny+3)/4) * ((nx+3)/4)) * cbz), j + diff);
+                  }
+                  else
+                  {
+                    if (j + diff >= in_patch->restructured_patch->size[0] * in_patch->restructured_patch->size[1] * in_patch->restructured_patch->size[2])
+                      continue;
+
+                    memcpy(q + j * (bits/CHAR_BIT), s + i * (bits/CHAR_BIT), (bits/CHAR_BIT));
+                  }
+                }
+              }
+            }
+            s += cbz * (bits/CHAR_BIT);
+          }
+        }
+      }
+    }
+    else if (strcmp(var->type_name, FLOAT64_GA) == 0 || strcmp(var->type_name, FLOAT32_GA) == 0 || strcmp(var->type_name, FLOAT64_RGB) == 0 || strcmp(var->type_name, FLOAT32_RGB) == 0)
+    {
+      int s1 = 0;
+      for (s1 = 0; s1 < values; s1++)
+      {
+        for (z=0;z<nz;z+=4)
+        {
+          unsigned char* s = out_patch->restructured_patch->buffer + ((z/4) * ((ny+3)/4) * ((nx+3)/4)) * (bits/CHAR_BIT) * cbz;
+          for (y=0;y<ny;y+=4)
+          {
+            for (x=0;x<nx;x+=4)
+            {
+              unsigned long long diff = (z/4) * (dz + 4 * (ny/4) * (dy+4 * (nx/4) * dx)) + (y/4) * (dy+4*(nx/4)*dx) + (x/4)*dx;
+              unsigned char* q = in_patch->restructured_patch->buffer + diff * (bits/CHAR_BIT);
+
+              for (zz = 0; zz < 4; ++zz)
+              {
+                for (yy = 0; yy < 4; ++yy)
+                {
+                  for (xx = 0; xx < 4; ++xx)
+                  {
+                    int i = xx + yy * 4 + zz * 4 * 4;
+                    int j = xx + yy * nx + zz * nx * ny;
+
+                    if (MODE == PIDX_WRITE)
+                    {
+                      if (j + diff >= in_patch->restructured_patch->size[0] * in_patch->restructured_patch->size[1] * in_patch->restructured_patch->size[2])
+                        continue;
+
+                      memcpy(s + i * (bits/CHAR_BIT), q + j * (bits/CHAR_BIT), (bits/CHAR_BIT));
+                    }
+                    else
+                    {
+                      if (j + diff >= in_patch->restructured_patch->size[0] * in_patch->restructured_patch->size[1] * in_patch->restructured_patch->size[2])
+                        continue;
+
+                      memcpy(q + j * (bits/CHAR_BIT), s + i * (bits/CHAR_BIT), (bits/CHAR_BIT));
+                    }
+                  }
+                }
+              }
+              s += cbz * (bits/CHAR_BIT);
+            }
+          }
+        }
+      }
+
+    }
+
+
     //printf("[%s] vps = %d bps = %d\n", var->type_name, values, bits);
+#if 0
     if (strcmp(var->type_name, FLOAT64) == 0 || strcmp(var->type_name, FLOAT64_RGB) == 0 || strcmp(var->type_name, FLOAT64_GA) == 0)
     {
       double* p = (double*)in_patch->restructured_patch->buffer;
@@ -367,58 +469,59 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
           }
         }
       }
+#endif
     }
+
+
+    return PIDX_success;
   }
 
-  return PIDX_success;
-}
 
 
-
-PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
-{
-  int var;
-  PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
-  PIDX_variable var0 = var_grp->variable[chunk_id->first_index];
-
-  if (var0->restructured_super_patch_count == 0)
-    return PIDX_success;
-
-  for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
+  PIDX_return_code PIDX_chunk_meta_data_destroy(PIDX_chunk_id chunk_id)
   {
-    free(var_grp->variable[var]->chunked_super_patch->restructured_patch);
-    free(var_grp->variable[var]->chunked_super_patch);
+    int var;
+    PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
+    PIDX_variable var0 = var_grp->variable[chunk_id->first_index];
+
+    if (var0->restructured_super_patch_count == 0)
+      return PIDX_success;
+
+    for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
+    {
+      free(var_grp->variable[var]->chunked_super_patch->restructured_patch);
+      free(var_grp->variable[var]->chunked_super_patch);
+    }
+
+    return PIDX_success;
   }
 
-  return PIDX_success;
-}
+  PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
+  {
+    PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
+    PIDX_variable var0 = var_grp->variable[chunk_id->first_index];
 
-PIDX_return_code PIDX_chunk_buf_destroy(PIDX_chunk_id chunk_id)
-{
-  PIDX_variable_group var_grp = chunk_id->idx->variable_grp[chunk_id->group_index];
-  PIDX_variable var0 = var_grp->variable[chunk_id->first_index];
+    if (var0->restructured_super_patch_count == 0)
+      return PIDX_success;
 
-  if (var0->restructured_super_patch_count == 0)
+    int var = 0;
+    for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
+      free(var_grp->variable[var]->chunked_super_patch->restructured_patch->buffer);
+
     return PIDX_success;
-
-  int var = 0;
-  for (var = chunk_id->first_index; var <= chunk_id->last_index; var++)
-    free(var_grp->variable[var]->chunked_super_patch->restructured_patch->buffer);
-
-  return PIDX_success;
-}
+  }
 
 
-PIDX_return_code PIDX_chunk_finalize(PIDX_chunk_id chunk_id)
-{
-  free(chunk_id);
-  chunk_id = 0;
+  PIDX_return_code PIDX_chunk_finalize(PIDX_chunk_id chunk_id)
+  {
+    free(chunk_id);
+    chunk_id = 0;
 
-  return PIDX_success;
-}
+    return PIDX_success;
+  }
 
 
-int HELPER_chunking(PIDX_chunk_id id)
-{
-  return PIDX_success;
-}
+  int HELPER_chunking(PIDX_chunk_id id)
+  {
+    return PIDX_success;
+  }
