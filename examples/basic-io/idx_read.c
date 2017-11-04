@@ -139,7 +139,7 @@ int main(int argc, char **argv)
   PIDX_close_access(p_access);
 
   // Compare the data that we just against the syntethic data
-  verify_read_results();
+  //verify_read_results();
 
   free(data);
   shutdown_mpi();
@@ -202,6 +202,30 @@ static void parse_args(int argc, char **argv)
       terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
   }
+
+#if 0
+  if (rank == 0)
+  {
+    local_box_size[X] = 514;
+    local_box_size[Y] = 1024;
+    local_box_size[Z] = 512;
+
+    local_box_offset[X] = 0;
+    local_box_offset[Y] = 0;
+    local_box_offset[Z] = 0;
+  }
+  else if (rank == 1)
+  {
+    local_box_size[X] = 512;
+    local_box_size[Y] = 1024;
+    local_box_size[Z] = 512;
+
+    local_box_offset[X] = 512;
+    local_box_offset[Y] = 0;
+    local_box_offset[Z] = 0;
+  }
+#endif
+
 }
 
 static void check_args()
@@ -305,8 +329,8 @@ static void set_pidx_variable_and_create_buffer()
   PIDX_values_per_datatype(variable->type_name, &values_per_sample, &bits_per_sample);
   strcpy(type_name, variable->type_name);
 
-  data = malloc((bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
-  memset(data, 0, (bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
+  data = malloc((uint64_t)(bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
+  memset(data, 0, (uint64_t)(bits_per_sample/8) * local_box_size[0] * local_box_size[1] * local_box_size[2]  * values_per_sample);
 }
 
 //----------------------------------------------------------------
