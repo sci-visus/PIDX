@@ -202,6 +202,7 @@ int generate_file_name_template(int maxh, int bits_per_block, char* filename, in
 
   nbits_blocknumber = (maxh - bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
+  //printf("dirname %s basename %s\n", dirname, basename);
 
   //remove suffix
   for (N = strlen(basename) - 1; N >= 0; N--) 

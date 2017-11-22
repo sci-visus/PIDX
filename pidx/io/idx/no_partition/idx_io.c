@@ -26,6 +26,9 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
   PIDX_return_code ret;
   PIDX_time time = file->idx_d->time;
 
+  // Step 1: Setup restructuring buffers
+  set_rst_box_size_for_write(file, gi, svi);
+
   ret = populate_bit_string(file, PIDX_WRITE);
   if (ret != PIDX_success)
   {
@@ -38,9 +41,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
-  // Step 1: Setup restructuring buffers
-  set_rst_box_size_for_write(file, gi, svi);
 
   if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
   {

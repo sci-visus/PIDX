@@ -57,7 +57,8 @@ typedef struct PIDX_grid_struct* PIDX_restructured_grid;
 /// Struct to store the row/column major chunk of data given by application
 struct PIDX_patch_struct
 {
-  unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  int particle_count;
+  unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
   unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
   unsigned char* buffer;                                ///< the data buffer
 };

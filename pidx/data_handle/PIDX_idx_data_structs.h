@@ -110,7 +110,9 @@ typedef struct PIDX_timming_struct* PIDX_time;
 
 
 struct PIDX_variable_struct
-{
+{  
+  int is_particle;
+
   // General Info
   char var_name[1024];                                       ///< Variable name
   int vps;                                                   ///< values per sample, Vector(3), scalar(1), or n
@@ -128,10 +130,8 @@ struct PIDX_variable_struct
   PIDX_super_patch chunked_super_patch;                      ///< Pointer to the patch group after block restructuring
   HZ_buffer hz_buffer;                                       ///< HZ encoded buffer of the patches
 
-
   int patch_group_count;
   PIDX_super_patch* rst_patch_group;
-
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -312,7 +312,7 @@ struct idx_dataset_derived_metadata_struct
   int total_partiton_level;
 
   int **block_bitmap;
-  int **block_offset_bitmap;
+  int ***block_offset_bitmap;
 
   int variable_pipe_length;
 };

@@ -101,7 +101,7 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-
+static int isNumber(char number[]);
 static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./idx_write -g 64x64x64 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
@@ -170,7 +170,7 @@ static void init_mpi(int argc, char **argv)
     terminate_with_error_msg("ERROR: MPI_Comm_rank error\n");
 }
 
-int isNumber(char number[])
+static int isNumber(char number[])
 {
     int i = 0;
 
@@ -275,8 +275,8 @@ static int generate_vars(){
     int bits_per_sample = 0;
     int sample_count = 0;
     char temp_name[512];
-    //char* temp_type_name = "1*float32";
-    char* temp_type_name = "1*int8";
+    char* temp_type_name = "1*float64";
+    //char* temp_type_name = "1*int8";
     sprintf(temp_name, "var_%d", variable_counter);
     strcpy(var_name[variable_counter], temp_name);
     strcpy(type_name[variable_counter], temp_type_name);
@@ -443,7 +443,7 @@ static void create_synthetic_simulation_data()
             }
             else if (strcmp(type_name[var], FLOAT32) == 0 || strcmp(type_name[var], FLOAT32_GA) == 0 || strcmp(type_name[var], FLOAT32_RGB) == 0)
             {
-              fvalue = ((float)(100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));
+              fvalue = ((float)(100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i))));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
             }
             else if (strcmp(type_name[var], FLOAT64) == 0 || strcmp(type_name[var], FLOAT64_GA) == 0 || strcmp(type_name[var], FLOAT64_RGB) == 0)
@@ -522,7 +522,7 @@ static void set_pidx_file(int ts)
   PIDX_set_restructuring_box(file, reg_size);
   
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_RAW_IO);
+  PIDX_set_io_mode(file, PIDX_IDX_IO);
   
   // Set how many blocks we want to write in a single file
   PIDX_set_block_count(file, 256);

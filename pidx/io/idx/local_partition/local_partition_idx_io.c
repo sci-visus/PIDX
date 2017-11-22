@@ -100,7 +100,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-
+#if 1
     for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
     {
       ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
@@ -190,6 +190,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
       return PIDX_err_file;
     }
     time->partition_cleanup_end = MPI_Wtime();
+#endif
   }
 
   //free_restructured_communicators(file, gi);
@@ -207,27 +208,27 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
 
 /// local Partitioned IDX Read Steps
 /*********************************************************
-*  Step 0:  group and IDX related meta data    *
-*              *
-*  Step 1:  Restrucure setup         *
-*  Step 2:  Partition          *
-*              *
-*  Step 3:  Adjust offsets         *
-*              *
-*  Step 4:  Post partition group meta data     *
-*              *
-*  Step 5:  Setup HZ encoding Phase      *
-*  Step 6:  Setup aggregation buffers      *
-*  Step 7:  Perform actual file IO       *
-*  Step 8:  Perform data aggregation       *
-*  Step 9:  Perform HZ encoding        *
-*  Step 10:  cleanup for Steps 6       *
-*              *
+*  Step 0:  group and IDX related meta data              *
+*                                                        *
+*  Step 1:  Restrucure setup                             *
+*  Step 2:  Partition                                    *
+*                                                        *
+*  Step 3:  Adjust offsets                               *
+*                                                        *
+*  Step 4:  Post partition group meta data               *
+*                                                        *
+*  Step 5:  Setup HZ encoding Phase                      *
+*  Step 6:  Setup aggregation buffers                    *
+*  Step 7:  Perform actual file IO                       *
+*  Step 8:  Perform data aggregation                     *
+*  Step 9:  Perform HZ encoding                          *
+*  Step 10:  cleanup for Steps 6                         *
+*                                                        *
 *  Step 11: Cleanup the group and IDX related meta-data  *
-*              *
-*  Step 12: Partition cleanup        *
-*  Step 13: Restrucure           *
-*  Step 14: Restructuring cleanup      *
+*                                                        *
+*  Step 12: Partition cleanup                            *
+*  Step 13: Restrucure                                   *
+*  Step 14: Restructuring cleanup                        *
 **********************************************************/
 
 PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, int evi)
@@ -252,8 +253,6 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
-  //printf("rst size %d %d %d\n", file->idx_d->restructured_grid->patch_size[0], file->idx_d->restructured_grid->patch_size[1], file->idx_d->restructured_grid->patch_size[2]);
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
@@ -403,6 +402,12 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
 }
 
 
+PIDX_return_code PIDX_local_partition_mapped_idx_read(PIDX_io file, int gi, int svi, int evi)
+{
+
+}
+
+
 
 
 static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
@@ -519,7 +524,6 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   }
   time->layout_end = PIDX_get_time();
 
-#if 1
   time->header_io_start = PIDX_get_time();
   // Creates the file heirarchy and writes the header info for all binary files
   ret = write_headers(file, gi, svi, evi, mode);
@@ -530,7 +534,6 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   }
   time->header_io_end = PIDX_get_time();
 
-#endif
   return PIDX_success;
 }
 

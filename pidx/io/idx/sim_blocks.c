@@ -7,7 +7,7 @@ static PIDX_return_code destroy_block_layout(PIDX_io file, int gi);
 
 PIDX_return_code populate_sim_block_layouts(PIDX_io file, int gi, int svi, int hz_from_shared, int hz_to_non_shared)
 {
-  int i = 0, ret;
+  int i = 0, v = 0, ret;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   file->idx_d->block_bitmap = malloc(file->idx_d->max_file_count * sizeof (*file->idx_d->block_bitmap));
@@ -18,12 +18,18 @@ PIDX_return_code populate_sim_block_layouts(PIDX_io file, int gi, int svi, int h
     memset(file->idx_d->block_bitmap[i], 0, file->idx->blocks_per_file * sizeof (*file->idx_d->block_bitmap[i]));
   }
 
-  file->idx_d->block_offset_bitmap = malloc(file->idx_d->max_file_count * sizeof (*file->idx_d->block_offset_bitmap));
-  memset(file->idx_d->block_offset_bitmap, 0, file->idx_d->max_file_count * sizeof (*file->idx_d->block_offset_bitmap));
-  for (i = 0; i < file->idx_d->max_file_count; i++)
+  file->idx_d->block_offset_bitmap = malloc(file->idx->variable_count * sizeof (*file->idx_d->block_offset_bitmap));
+  memset(file->idx_d->block_offset_bitmap, 0, file->idx->variable_count * sizeof (*file->idx_d->block_offset_bitmap));
+  for (v = 0; v < file->idx->variable_count; v++)
   {
-    file->idx_d->block_offset_bitmap[i] = malloc(file->idx->blocks_per_file * sizeof (*file->idx_d->block_offset_bitmap[i]));
-    memset(file->idx_d->block_offset_bitmap[i], 0, file->idx->blocks_per_file * sizeof (*file->idx_d->block_offset_bitmap[i]));
+    file->idx_d->block_offset_bitmap[v] = malloc(file->idx_d->max_file_count * sizeof (*(file->idx_d->block_offset_bitmap[v])));
+    memset(file->idx_d->block_offset_bitmap[v], 0, file->idx_d->max_file_count * sizeof (*(file->idx_d->block_offset_bitmap[v])));
+
+    for (i = 0; i < file->idx_d->max_file_count; i++)
+    {
+      file->idx_d->block_offset_bitmap[v][i] = malloc(file->idx->blocks_per_file * sizeof (*file->idx_d->block_offset_bitmap[v][i]));
+      memset(file->idx_d->block_offset_bitmap[v][i], 0, file->idx->blocks_per_file * sizeof (*file->idx_d->block_offset_bitmap[v][i]));
+    }
   }
 
   int total_layout_count = var_grp->shared_layout_count + var_grp->nshared_layout_count;
@@ -512,6 +518,19 @@ PIDX_return_code delete_sim_block_layout(PIDX_io file, int gi)
     PIDX_blocks_free_layout(file->idx->bits_per_block, file->idx_d->maxh, var_grp->block_layout_by_level[i]);
   }
   destroy_block_layout(file, gi);
+
+  int v = 0;
+  for (v = 0; v < file->idx->variable_count; v++)
+  {
+    for (i = 0; i < file->idx_d->max_file_count; i++)
+      free(file->idx_d->block_offset_bitmap[v][i]);
+    free(file->idx_d->block_offset_bitmap[v]);
+  }
+  free(file->idx_d->block_offset_bitmap);
+
+  for (i = 0; i < file->idx_d->max_file_count; i++)
+    free(file->idx_d->block_bitmap[i]);
+  free(file->idx_d->block_bitmap);
 
   return PIDX_success;
 }

@@ -168,9 +168,17 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('v'): // number of variables
-      if (sprintf(var_list, "%s", optarg) < 0)
-        terminate_with_error_msg("Invalid output file name template\n%s", usage);
-      parse_var_list();
+      if(!isNumber(optarg)){ // the param is a file with the list of variables
+        if (sprintf(var_list, "%s", optarg) > 0)
+          parse_var_list();
+        else
+          terminate_with_error_msg("Invalid variable list file\n%s", usage);
+      }else { // the param is a number of variables (default: 1*float32)
+        if(sscanf(optarg, "%d", &variable_count) > 0)
+          generate_vars();
+        else
+          terminate_with_error_msg("Invalid number of variables\n%s", usage);
+      }
       break;
 
     case('p'): // number of timesteps

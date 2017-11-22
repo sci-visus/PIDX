@@ -42,8 +42,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     guess_bit_string_ZYX(reg_patch_bs, rpp);
 
 #if DETAIL_OUTPUT
-    //if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
-    //  fprintf(stderr, "[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
+    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+      fprintf(stderr, "[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 #endif
 
     // Middle part of the bitstring
@@ -57,8 +57,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     guess_bit_string_Z(process_bs, prcp);
 
 #if DETAIL_OUTPUT
-    //if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
-    //  fprintf(stderr, "[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
+    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+      fprintf(stderr, "[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 #endif
 
     // Last part of the bitstring
@@ -69,8 +69,8 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     guess_bit_string(partition_bs, pcp);
 
 #if DETAIL_OUTPUT
-    //if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
-    //  fprintf(stderr, "[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
+    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+      fprintf(stderr, "[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 #endif
 
     // Concatenating the three components to get the final bit string

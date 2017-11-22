@@ -315,7 +315,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       {
         for (z=0;z<nz;z+=4)
         {
-          unsigned char* s = out_patch->restructured_patch->buffer + ((z/4) * ((ny+3)/4) * ((nx+3)/4)) * (bits/CHAR_BIT) * cbz;
+          unsigned char* s = out_patch->restructured_patch->buffer + ((z/4) * ((ny+3)/4) * ((nx+3)/4)) * cbz * (bits/CHAR_BIT);
           for (y=0;y<ny;y+=4)
           {
             for (x=0;x<nx;x+=4)

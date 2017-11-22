@@ -98,6 +98,35 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
 
 
 
+
+PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, int number_of_particles, PIDX_data_layout data_layout)
+{
+  if(!variable)
+    return PIDX_err_variable;
+
+  const void *temp_buffer;
+  variable->sim_patch[variable->sim_patch_count] = malloc(sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+  memset(variable->sim_patch[variable->sim_patch_count], 0, sizeof(*(variable->sim_patch[variable->sim_patch_count])));
+
+  memcpy(variable->sim_patch[variable->sim_patch_count]->offset, offset, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(variable->sim_patch[variable->sim_patch_count]->size, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+
+  variable->sim_patch[variable->sim_patch_count]->particle_count = number_of_particles;
+
+  temp_buffer = read_from_this_buffer;
+  variable->sim_patch[variable->sim_patch_count]->buffer = (unsigned char*)temp_buffer;
+
+  variable->data_layout = data_layout;
+  variable->sim_patch_count = variable->sim_patch_count + 1;
+
+  variable->is_particle = 1;
+
+  return PIDX_success;
+}
+
+
+
+
 PIDX_return_code PIDX_append_and_write_variable(PIDX_file file, PIDX_variable variable)
 {
 

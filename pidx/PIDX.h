@@ -622,6 +622,20 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
 
 
 ///
+/// \brief PIDX_variable_write_particle_data_layout
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param read_from_this_buffer
+/// \param number_of_particles
+/// \param data_layout
+/// \return
+///
+PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, int number_of_particles, PIDX_data_layout data_layout);
+
+
+
+///
 /// \brief PIDX_append_and_write_variable Write function used for dumping data from a simulation.
 /// This function is used to write data in increasing order, typically suited for dumping data from a simulation.
 /// \param file

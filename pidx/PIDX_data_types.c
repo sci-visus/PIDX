@@ -69,6 +69,11 @@ PIDX_data_type FLOAT64_RGB   = "3*float64";
 PIDX_data_type FLOAT64_RGBA  = "4*float64";
 PIDX_data_type FLOAT64_7STENCIL  = "7*float64";
 
+PIDX_data_type FLOAT64_9TENSOR  = "9*float64";
+PIDX_data_type FLOAT32_9TENSOR  = "9*float32";
+PIDX_data_type INT64_9TENSOR  = "9*int64";
+PIDX_data_type INT32_9TENSOR  = "9*int32";
+
 
 PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
 {
@@ -152,6 +157,8 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
     *bits = 96;
   else if (strcmp(type, FLOAT32_RGBA) == 0)
     *bits = 128;
+  else if (strcmp(type, FLOAT32_9TENSOR) == 0)
+    *bits = 288;
 
   else if (strcmp(type, FLOAT64) == 0)
     *bits = 64;
@@ -163,6 +170,8 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
     *bits = 256;
   else if (strcmp(type, FLOAT64_7STENCIL) == 0)
     *bits = 448;
+  else if (strcmp(type, FLOAT64_9TENSOR) == 0)
+    *bits = 576;
   else
     *bits = 0;
 
@@ -359,6 +368,11 @@ PIDX_return_code PIDX_values_per_datatype(PIDX_data_type type, int* values, int*
       *values = 4;
       *bits = 32;
     }
+    else if (strcmp(type, FLOAT32_9TENSOR) == 0)
+    {
+      *values = 9;
+      *bits = 32;
+    }
 
     else if (strcmp(type, FLOAT64) == 0)
     {
@@ -383,6 +397,11 @@ PIDX_return_code PIDX_values_per_datatype(PIDX_data_type type, int* values, int*
     else if (strcmp(type, FLOAT64_7STENCIL) == 0)
     {
       *values = 7;
+      *bits = 64;
+    }
+    else if (strcmp(type, FLOAT64_9TENSOR) == 0)
+    {
+      *values = 9;
       *bits = 64;
     }
     else

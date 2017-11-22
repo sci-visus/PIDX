@@ -94,7 +94,7 @@ int PIDX_blocks_create_layout (int bounding_box[2][5], int maxH, int bits_per_bl
   ZYX_to = (unsigned long long*) malloc(sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   ZYX_from = (unsigned long long*) malloc(sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
 
-  //fprintf(stderr, "res from to to : %d %d\n", layout->resolution_from, layout->resolution_to);
+  //fprintf(stderr, "res from to to : %d %d bpb %d\n", layout->resolution_from, layout->resolution_to, bits_per_block);
   if (layout->resolution_from <= bits_per_block)
   {
     for (m = layout->resolution_from ; m <= bits_per_block; m++)

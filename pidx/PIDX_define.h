@@ -165,12 +165,14 @@ extern PIDX_data_type FLOAT32;
 extern PIDX_data_type FLOAT32_GA;
 extern PIDX_data_type FLOAT32_RGB;
 extern PIDX_data_type FLOAT32_RGBA;
+extern PIDX_data_type FLOAT32_9TENSOR;
 
 extern PIDX_data_type FLOAT64;
 extern PIDX_data_type FLOAT64_GA;
 extern PIDX_data_type FLOAT64_RGB;
 extern PIDX_data_type FLOAT64_RGBA;
 extern PIDX_data_type FLOAT64_7STENCIL;
+extern PIDX_data_type FLOAT64_9TENSOR;
 
 #ifdef __cplusplus
 }

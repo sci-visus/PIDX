@@ -19,7 +19,7 @@
 # sources
 # ////////////////////////////////////////
 
-FILE(GLOB PIDX_IDX_IO_SOURCES global_partition/*.h global_partition/*.c local_partition/*.h local_partition/*.c no_partition/*.h no_partition/*.c serial/*.h serial/*.c *.h *.c)
+FILE(GLOB PIDX_IDX_IO_SOURCES particle/*.h particle/*.c global_partition/*.h global_partition/*.c local_partition/*.h local_partition/*.c no_partition/*.h no_partition/*.c serial/*.h serial/*.c *.h *.c)
 
 
 # ////////////////////////////////////////

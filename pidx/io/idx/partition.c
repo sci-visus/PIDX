@@ -165,6 +165,30 @@ PIDX_return_code find_partition_count(PIDX_io file)
     file->idx_d->partition_size[d] = pow(2, (int)ceil(log2(file->idx_d->partition_size[d])));
   }
 
+  unsigned long long dims;
+  unsigned long long adjusted_bounds[PIDX_MAX_DIMENSIONS];
+  adjusted_bounds[0] = file->idx_d->partition_size[0] / file->idx->chunk_size[0];
+  adjusted_bounds[1] = file->idx_d->partition_size[1] / file->idx->chunk_size[1];
+  adjusted_bounds[2] = file->idx_d->partition_size[2] / file->idx->chunk_size[2];
+
+  if (PIDX_inner_product(&dims, adjusted_bounds))
+    return PIDX_err_size;
+
+  //printf("dims %d spb %d\n", dims, file->idx_d->samples_per_block);
+
+  if (dims < file->idx_d->samples_per_block)
+  {
+    // ensure blocksize is a subset of the total volume.
+    file->idx_d->samples_per_block = getPowerOf2(dims) >> 1;
+    file->idx->bits_per_block = getNumBits(file->idx_d->samples_per_block) - 1;
+  }
+
+  if (file->idx->bits_per_block == 0)
+  {
+    file->idx->bits_per_block = 0;
+    file->idx_d->samples_per_block = 1;
+  }
+
   //printf("Rank %d Partition size %d %d %d\n", file->idx_c->grank, file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
 
   return PIDX_success;

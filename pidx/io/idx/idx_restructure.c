@@ -307,6 +307,7 @@ static void guess_restructured_box_size(PIDX_io file, int gi, int svi)
   file->idx_d->restructured_grid->patch_size[1] = getPowerOf2(max_patch_size_y);
   file->idx_d->restructured_grid->patch_size[2] = getPowerOf2(max_patch_size_z);
 
+  //printf("Guess %d %d %d\n", file->idx_d->restructured_grid->patch_size[0], file->idx_d->restructured_grid->patch_size[1], file->idx_d->restructured_grid->patch_size[2]);
   return;
 }
 
@@ -341,6 +342,7 @@ static void adjust_restructured_box_size(PIDX_io file)
     else if (counter % 3 == 2)
       box_size_factor_z = box_size_factor_z * 2;
 
+    counter++;
     goto recaliberate;
   }
 
