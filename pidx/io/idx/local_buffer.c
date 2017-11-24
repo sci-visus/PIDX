@@ -113,7 +113,7 @@ PIDX_return_code wait_and_destroy_async_buffers(PIDX_io file, int gi)
 }
 
 
-PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int local_var_index, int start_index)
+PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
@@ -125,7 +125,7 @@ PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int local_var_index,
   int sli = var_grp->shared_start_layout_index;
   int agg_i = var_grp->agg_level;
 
-  //printf("sli and agg_i %d %d\n", sli, agg_i);
+  //printf("[%d] sli and agg_i %d %d si %d\n", file->idx_c->grank, sli, agg_i, start_index);
   for (i = sli; i < agg_i; i++)
   {
     i_1 = i - sli;

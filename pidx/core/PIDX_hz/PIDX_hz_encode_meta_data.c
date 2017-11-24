@@ -116,8 +116,8 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       //if (hz_buf->end_hz_index[j] > id->idx_d->samples_per_block && hz_buf->end_hz_index[j] % id->idx_d->samples_per_block != 0)
       //  hz_buf->end_hz_index[j] = (int) ((hz_buf->end_hz_index[j] / id->idx_d->samples_per_block) + 1) * id->idx_d->samples_per_block;
 
-      //if (rank == 0)
-      //  fprintf(stderr, "[%d] [%d] [%d %d %d - %d %d %d] : SE %d %d T %d %d %d\n", j, p, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[1][0], tpatch[1][1], tpatch[1][2], hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
+      //if (id->idx_c->grank == 1)
+      //  fprintf(stderr, "[%d] [%d] [mh %d] [bs %s] [%d %d %d - %d %d %d] : SE %d %d T %d %d %d\n", v, j, maxH, id->idx->bitSequence, tpatch[0][0], tpatch[0][1], tpatch[0][2], tpatch[1][0], tpatch[1][1], tpatch[1][2], hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
     }
 
     for (j = 0; j < maxH; j++)

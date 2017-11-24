@@ -2,7 +2,7 @@
 
 static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode);
-static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi);
+static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
 
 
@@ -86,7 +86,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
     }
 
     // Step 4: Adjust per process offsets and global bounds as per the partition
-    if (adjust_offsets(file, gi, svi) != PIDX_success)
+    if (adjust_offsets(file, gi, svi, evi) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
@@ -127,44 +127,34 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
       }
 
       // Setup 8: Setup aggregation buffers
-      for (li = si; li <= ei; li = li + 1)
+      ret = data_aggregate(file, gi, si, ei, AGG_SETUP, PIDX_WRITE);
+      if (ret != PIDX_success)
       {
-        ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
 
       // Setup 9: Performs data aggregation
-      for (li = si; li <= ei; li = li + 1)
+      ret = data_aggregate(file, gi, si, ei, AGG_PERFORM, PIDX_WRITE);
+      if (ret != PIDX_success)
       {
-        ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
 
       // Setup 10: Performs actual file io
-      for (li = si; li <= ei; li = li + 1)
+      time->io_start[gi][li] = PIDX_get_time();
+
+      ret = data_io(file, gi, si, ei, PIDX_WRITE);
+      if (ret != PIDX_success)
       {
-        time->io_start[gi][li] = PIDX_get_time();
-        create_async_buffers(file, gi);
-
-        ret = data_io(file, gi, si, li, li, PIDX_WRITE);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-
-        wait_and_destroy_async_buffers(file, gi);
-        finalize_aggregation(file, gi, li, si);
-        time->io_end[gi][li] = PIDX_get_time();
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
+
+      finalize_aggregation(file, gi, si);
+      time->io_end[gi][li] = PIDX_get_time();
+
 
       // Step 11: Cleanup for step 6
       if (hz_encode_cleanup(file) != PIDX_success)
@@ -268,7 +258,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
     }
 
     // Step 3: Adjust per process offsets and global bounds as per the partition
-    if (adjust_offsets(file, gi, svi) != PIDX_success)
+    if (adjust_offsets(file, gi, svi, evi) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
@@ -302,42 +292,36 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
       }
 
       // Setup 6: Setup aggregation buffers
-      for (li = si; li <= ei; li = li + 1)
+      ret = data_aggregate(file, gi, si, ei, AGG_SETUP, PIDX_READ);
+      if (ret != PIDX_success)
       {
-        ret = data_aggregate(file, gi, si, li, li, AGG_SETUP, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
+
 
       // Setup 7: Performs actual file io
-      for (li = si; li <= ei; li = li + 1)
-      {
-        time->io_start[gi][li] = PIDX_get_time();
+      time->io_start[gi][li] = PIDX_get_time();
 
-        ret = data_io(file, gi, si, li, li, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-        time->io_end[gi][li] = PIDX_get_time();
+      ret = data_io(file, gi, si, ei, PIDX_READ);
+      if (ret != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
+      time->io_end[gi][li] = PIDX_get_time();
+
 #if 1
       //
       // Setup 8: Performs data aggregation
-      for (li = si; li <= ei; li = li + 1)
+      ret = data_aggregate(file, gi, si, ei, AGG_PERFORM, PIDX_READ);
+      if (ret != PIDX_success)
       {
-        ret = data_aggregate(file, gi, si, li, li, AGG_PERFORM, PIDX_READ);
-        if (ret != PIDX_success)
-        {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-        }
-        finalize_aggregation(file, gi, li, si);
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
       }
+      finalize_aggregation(file, gi, si);
+
       //
 
       // Step 9: Perform HZ encoding
@@ -446,11 +430,15 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
 
 
 
-static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
+static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
 {
-  int i = 0;
+  int i = 0, v = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var = var_grp->variable[svi];
+
+  printf("SE %d %d\n", svi, evi);
+  for (v = svi; v < evi; v++)
+  {
+  PIDX_variable var = var_grp->variable[v];
 
   if (var->restructured_super_patch_count != 1)
   {
@@ -460,6 +448,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi)
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
     var->restructured_super_patch->restructured_patch->offset[i] = var->restructured_super_patch->restructured_patch->offset[i] - file->idx_d->partition_offset[i];
+  }
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {

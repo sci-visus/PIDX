@@ -30,6 +30,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
 
 PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, int evi)
 {
+#if 0
   int li = 0;
   int si = 0, ei = 0;
   PIDX_return_code ret;
@@ -166,7 +167,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#endif
   return PIDX_success;
 }
 
@@ -196,6 +197,7 @@ PIDX_return_code PIDX_global_partition_idx_write(PIDX_io file, int gi, int svi, 
 
 PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, int evi)
 {
+#if 0
   int li = 0;
   int si = 0, ei = 0;
   PIDX_return_code ret;
@@ -333,7 +335,7 @@ PIDX_return_code PIDX_global_partition_idx_read(PIDX_io file, int gi, int svi, i
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+#endif
   return PIDX_success;
 }
 

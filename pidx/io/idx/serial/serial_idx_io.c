@@ -260,15 +260,12 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
       int par = 0;
       for (par = 0; par < file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]; par++)
       {
-        parse_local_partition_idx_file(file, par);
-
+        if (parse_local_partition_idx_file(file, par) == -1) continue;
         char dirname[1024], basename[1024];
         VisusSplitFilename(file->idx->filename_template_partition, dirname, basename);
-        printf("[B] generated template %s [%s %s]\n", file->idx->filename_template_partition, dirname, basename);
         sprintf(file->idx->filename_template_partition, "%s/time%09d/%s", dirname, file->idx->current_time_step, basename );
-        printf("[A] generated template %s [%s %s]\n", file->idx->filename_template_partition, dirname, basename);
 
-        printf("Partition %d ----> offset %d %d %d size %d %d %d\n", par, file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
+        //printf("Partition %d ----> offset %d %d %d size %d %d %d -> %s\n", par, file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2], file->idx->filename_template_partition);
 
         int d = 0, check_bit = 0;
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -329,8 +326,7 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
             return PIDX_err_file;
           }
 
-          PIDX_blocks_print_layout(per_patch_local_block_layout, file->idx->bits_per_block);
-
+          //PIDX_blocks_print_layout(per_patch_local_block_layout, file->idx->bits_per_block);
           int ctr = 1;
           int block_number = 0;
           read_block(file, gi, si, p, block_number, intersected_box_offset, intersected_box_size, intersected_box_buffer);
@@ -353,7 +349,7 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
           for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
             intersected_box_offset[d] = intersected_box_offset[d] + file->idx_d->partition_offset[d];
 
-          int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
+          int k1, j1, i1, index = 0, recv_o = 0, send_o = 0, send_c = 0;
           for (k1 = intersected_box_offset[2]; k1 < intersected_box_offset[2] + intersected_box_size[2]; k1++)
           {
             for (j1 = intersected_box_offset[1]; j1 < intersected_box_offset[1] + intersected_box_size[1]; j1++)
@@ -367,9 +363,9 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
 
                 memcpy(var_grp->variable[si]->sim_patch[p]->buffer + (recv_o * var->vps * (var->bpv/8)), intersected_box_buffer + send_o, send_c * var->vps * (var->bpv/8));
 
-                double x;
-                memcpy(&x, var_grp->variable[si]->sim_patch[p]->buffer + (recv_o * var->vps * (var->bpv/8)), sizeof(double));
-                printf("x %d %f\n", recv_o, x);
+                //double x;
+                //memcpy(&x, var_grp->variable[si]->sim_patch[p]->buffer + (recv_o * var->vps * (var->bpv/8)), sizeof(double));
+                //printf("x %d %f\n", recv_o, x);
               }
             }
           }
@@ -522,7 +518,7 @@ static PIDX_return_code read_block(PIDX_io file, int gi, int vi, int p, int bloc
   off_t data_offset = htonl(headers[12 + (( (block_number % file->idx->blocks_per_file) + (file->idx->blocks_per_file * vi))*10 )]);
   size_t data_size = htonl(headers[14 + (( (block_number % file->idx->blocks_per_file) + (file->idx->blocks_per_file * vi))*10 )]);
 
-  printf("File number %d Block number %d\n", file_number, block_number);
+  //printf("File number %d Block number %d\n", file_number, block_number);
   assert (data_size != 0);
 
   ret = MPI_File_read_at(fp, data_offset, block_buffer, data_size, MPI_BYTE, &status);
@@ -574,11 +570,8 @@ static PIDX_return_code parse_local_partition_idx_file(PIDX_io file, int partiti
     char line [ 512 ];
 
     FILE *fp = fopen(file->idx->filename_partition, "r");
-    if (fp == NULL)
-    {
-      fprintf(stderr, "Error Opening %s\n", file->idx->filename_partition);
-      return PIDX_err_file;
-    }
+    if (fp == NULL)  return -1;
+
 
     while (fgets(line, sizeof (line), fp) != NULL)
     {
@@ -627,10 +620,11 @@ static PIDX_return_code parse_local_partition_idx_file(PIDX_io file, int partiti
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
 
+        memset(file->idx->filename_template_partition, 0, 1024 * sizeof(char));
         strcpy(file->idx->filename_template_partition, line);
       }
 
-      if (strcmp(line, "(partition count)") == 0)
+      if (strcmp(line, "(partition offset)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
@@ -640,7 +634,7 @@ static PIDX_return_code parse_local_partition_idx_file(PIDX_io file, int partiti
         count = 0;
         while (pch != NULL)
         {
-          file->idx_d->partition_count[count] = atoi(pch);
+          file->idx_d->partition_offset[count] = atoi(pch);
           count++;
           pch = strtok(NULL, " ");
         }

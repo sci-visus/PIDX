@@ -1,7 +1,7 @@
 #include "../../PIDX_inc.h"
 static int lgi = 0;
 
-PIDX_return_code data_io(PIDX_io file, int gi, int lvi, int svi, int end_index, int mode)
+PIDX_return_code data_io(PIDX_io file, int gi, int svi, int end_index, int mode)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   idx_dataset_derived_metadata idx = file->idx_d;
@@ -38,7 +38,7 @@ PIDX_return_code data_io(PIDX_io file, int gi, int lvi, int svi, int end_index, 
 
 
 
-PIDX_return_code data_aggregate(PIDX_io file, int gi, int lvi, int svi, int evi, int agg_mode, int mode )
+PIDX_return_code data_aggregate(PIDX_io file, int gi, int svi, int evi, int agg_mode, int mode )
 {
   lgi = gi;
   int ret = 0;

@@ -105,7 +105,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         printf("SI and EI %d and %d\n", si, ei);
 
       // Step 5: Setup aggregation buffers
-      ret = data_aggregate(file, gi, li, si, ei, AGG_SETUP, PIDX_WRITE);
+      ret = data_aggregate(file, gi, si, ei, AGG_SETUP, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -113,7 +113,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       }
 
       // Step 6: Performs data aggregation
-      ret = data_aggregate(file, gi, li, si, ei, AGG_PERFORM, PIDX_WRITE);
+      ret = data_aggregate(file, gi, si, ei, AGG_PERFORM, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -123,14 +123,14 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       // Step 7: Performs actual file io
       time->io_start[gi][li] = PIDX_get_time();
 
-      ret = data_io(file, gi, li, si, ei, PIDX_WRITE);
+      ret = data_io(file, gi, si, ei, PIDX_WRITE);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 #endif
-      finalize_aggregation(file, gi, li, si);
+      finalize_aggregation(file, gi, si);
 
       time->io_end[gi][li] = PIDX_get_time();
 
@@ -242,7 +242,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
       // Step 3: Setup aggregation buffers
       //for (li = si; li <= ei; li = li + 1)
       //{
-        ret = data_aggregate(file, gi, li, si, ei, AGG_SETUP, PIDX_READ);
+        ret = data_aggregate(file, gi, si, ei, AGG_SETUP, PIDX_READ);
         if (ret != PIDX_success)
         {
           fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -252,7 +252,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
 #if 1
       // Step 4: Performs actual file io
       time->io_start[gi][li] = PIDX_get_time();
-      ret = data_io(file, gi, li, si, ei, PIDX_READ);
+      ret = data_io(file, gi, si, ei, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -262,13 +262,13 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
 
 
       // Step 5: Performs data aggregation
-      ret = data_aggregate(file, gi, li, si, ei, AGG_PERFORM, PIDX_READ);
+      ret = data_aggregate(file, gi, si, ei, AGG_PERFORM, PIDX_READ);
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      finalize_aggregation(file, li, si, ei);
+      finalize_aggregation(file, li, ei);
 
 
       // Step 6: Perform HZ encoding

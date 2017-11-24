@@ -274,8 +274,8 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
       }
     }
 
-    if (hz_id->idx_c->lrank == 0)
-      printf("[%d] Data offset %d data size %d\n", variable_index, data_offset, file_count * bytes_per_datatype);
+    //if (hz_id->idx_c->lrank == 0)
+    //  printf("[%d] Data offset %d data size %lld\n", variable_index, data_offset, file_count * bytes_per_datatype);
     ret = MPI_File_write_at(fp, data_offset, hz_buffer, file_count * bytes_per_datatype, MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)
     {
