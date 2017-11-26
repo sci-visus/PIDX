@@ -82,37 +82,28 @@ PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
 
   file->idx_d->time->SX = PIDX_get_time();
 
-  PIDX_parallel_local_partition_idx_read(file, gi, svi, evi);
-
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
   if (var0->is_particle == 1)
     ret = PIDX_particle_write(file, gi, svi, evi);
   else
   {
-#if 0
-    if (file->idx_c->gnprocs == 1)
-    {
-      if (MODE == PIDX_IDX_IO || MODE == PIDX_LOCAL_PARTITION_IDX_IO || MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
-        ret = PIDX_serial_idx_read(file, gi, svi, evi);
-      else if (MODE == PIDX_RAW_IO)
-        ret = PIDX_raw_read(file, gi, svi, evi);
-    }
-    else
-    {
-      if (MODE == PIDX_IDX_IO)
-        ret = PIDX_idx_read(file, gi, svi, evi);
+    if (MODE == PIDX_IDX_IO)
+      ret = PIDX_idx_read(file, gi, svi, evi);
 
-      else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
+    else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
+    {
+      if (file->idx_d->data_core_count == file->idx_c->gnprocs)
         ret = PIDX_local_partition_idx_read(file, gi, svi, evi);
-
-      else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
-        ret = PIDX_global_partition_idx_read(file, gi, svi, evi);
-
-      else if (MODE == PIDX_RAW_IO)
-        ret = PIDX_raw_read(file, gi, svi, evi);
+      else
+        ret = PIDX_parallel_local_partition_idx_read(file, gi, svi, evi);
     }
-#endif
+
+    else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
+      ret = PIDX_global_partition_idx_read(file, gi, svi, evi);
+
+    else if (MODE == PIDX_RAW_IO)
+      ret = PIDX_raw_read(file, gi, svi, evi);
   }
 
 

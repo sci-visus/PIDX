@@ -73,7 +73,6 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
             memcpy(block_buffer + (k * bytes_for_datatype),
                  var_grp->variable[si]->sim_patch[0]->buffer + (index * bytes_for_datatype),
                 bytes_for_datatype);
-
           }
 
           if (MPI_File_write_at(fp, file->idx_d->block_offset_bitmap[si][i][j], block_buffer, file->idx_d->samples_per_block * bytes_for_datatype, MPI_BYTE, &status) != MPI_SUCCESS)
@@ -101,135 +100,6 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
 
 
 
-
-PIDX_return_code PIDX_serial_idx_read(PIDX_io file, int gi, int svi, int evi)
-{
-  int bytes_for_datatype;
-  int i = 0, j = 0, k = 0;
-  int si = 0;
-  PIDX_return_code ret;
-  char file_name[PATH_MAX];
-  MPI_File fp = 0;
-  MPI_Status status;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  file->idx_d->maxh = strlen(file->idx->bitSequence);
-  for (i = 0; i <= file->idx_d->maxh; i++)
-    file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
-
-  unsigned long long cb[PIDX_MAX_DIMENSIONS];
-
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-  {
-    if (file->idx->bounds[i] % file->idx->chunk_size[i] == 0)
-      cb[i] = (int) file->idx->bounds[i] / file->idx->chunk_size[i];
-    else
-      cb[i] = (int) (file->idx->bounds[i] / file->idx->chunk_size[i]) + 1;
-  }
-  unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));
-  if (total_reg_sample_count <= 0)
-  {
-    fprintf(stderr, "[%s] [%d ]File dimensions are wrong\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  unsigned long long max_sample_per_file = (unsigned long long) file->idx_d->samples_per_block * file->idx->blocks_per_file;
-  if (max_sample_per_file <= 0)
-  {
-    fprintf(stderr, "[%s] [%d ]IDX dimensions are wrong %d %d\n", __FILE__, __LINE__, file->idx_d->samples_per_block, file->idx->blocks_per_file);
-    return PIDX_err_file;
-  }
-
-  file->idx_d->max_file_count = total_reg_sample_count / max_sample_per_file;
-  if (total_reg_sample_count % max_sample_per_file)
-    file->idx_d->max_file_count++;
-
-  for (si = svi; si < evi; si++)
-  {
-    bytes_for_datatype = ((var_grp->variable[si]->bpv / 8) * var_grp->variable[si]->vps);
-
-    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
-
-    unsigned long long index = 0;
-    unsigned long long hz;
-    unsigned long long xyz[PIDX_MAX_DIMENSIONS];
-    unsigned char* block_buffer = malloc(file->idx_d->samples_per_block * bytes_for_datatype);
-
-    for (i = 0; i < file->idx_d->max_file_count; i++)
-    {
-      generate_file_name_template(file->idx_d->maxh, file->idx->bits_per_block, file->idx->filename_partition, file->idx->current_time_step, file->idx->filename_template_partition);
-      if (generate_file_name(file->idx->blocks_per_file, file->idx->filename_template_partition, i, file_name, PATH_MAX) == 1)
-      {
-        fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
-        return PIDX_err_io;
-      }
-
-      if (MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fp) != MPI_SUCCESS)
-      {
-        fprintf(stderr, "[%s] [%d] MPI_File_open() filename %s failed.\n", __FILE__, __LINE__, file_name);
-        continue;
-      }
-
-      uint32_t *headers;
-      int total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
-      headers = malloc(total_header_size);
-      memset(headers, 0, total_header_size);
-
-      ret = MPI_File_read_at(fp, 0, headers, total_header_size , MPI_BYTE, &status);
-      if (ret != MPI_SUCCESS)
-      {
-        fprintf(stderr, "Data offset = [%s] [%d] MPI_File_write_at() failed for filename %s.\n", __FILE__, __LINE__, file_name);
-        return PIDX_err_io;
-      }
-      int read_count = 0;
-      MPI_Get_count(&status, MPI_BYTE, &read_count);
-      if (read_count != total_header_size)
-      {
-        fprintf(stderr, "[%s] [%d] MPI_File_write_at() failed. %d != %dd\n", __FILE__, __LINE__, read_count, total_header_size);
-        return PIDX_err_io;
-      }
-
-      for (j = 0; j < file->idx->blocks_per_file; j++)
-      {
-        off_t data_offset = htonl(headers[12 + ((j + (file->idx->blocks_per_file * si))*10 )]);
-        size_t data_size = htonl(headers[14 + ((j + (file->idx->blocks_per_file * si))*10 )]);
-
-        if (data_size == 0)
-          continue;
-
-        ret = MPI_File_read_at(fp, data_offset, block_buffer, data_size, MPI_BYTE, &status);
-        if (ret != MPI_SUCCESS)
-        {
-          fprintf(stderr, "Data offset = %lld [%s] [%d] MPI_File_write_at() failed for filename %s.\n", (long long)  data_offset, __FILE__, __LINE__, file_name);
-          return PIDX_err_io;
-        }
-
-        for (k = 0; k < file->idx_d->samples_per_block; k++)
-        {
-          hz = (i * file->idx->blocks_per_file * file->idx_d->samples_per_block) + (j * file->idx_d->samples_per_block) + k;
-          Hz_to_xyz(file->idx->bitPattern, file->idx_d->maxh, hz, xyz);
-
-          index = (var_grp->variable[si]->sim_patch[0]->size[0] * var_grp->variable[si]->sim_patch[0]->size[1] * xyz[2])
-              + (var_grp->variable[si]->sim_patch[0]->size[0] * xyz[1])
-              + xyz[0];
-
-          if (xyz[0] >= file->idx->box_bounds[0] || xyz[1] >= file->idx->box_bounds[1] || xyz[2] >= file->idx->box_bounds[2])
-            continue;
-
-          memcpy(var_grp->variable[si]->sim_patch[0]->buffer + (index * bytes_for_datatype),
-              block_buffer + (k * bytes_for_datatype),
-              bytes_for_datatype);
-        }
-      }
-      MPI_File_close(&fp);
-    }
-    free(block_buffer);
-  }
-
-  return PIDX_success;
-}
-
-
 PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, int svi, int evi)
 {
   int i = 0, j = 0, p = 0;
@@ -241,14 +111,12 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
     {0, 0, 0, 0, 0}
   };
 
-
   ret = populate_global_bit_string(file, PIDX_READ);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   for (si = svi; si < evi; si++)
@@ -362,14 +230,9 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
                 recv_o = (var_grp->variable[si]->sim_patch[p]->size[0] * var_grp->variable[si]->sim_patch[p]->size[1] * (k1 - var_grp->variable[si]->sim_patch[p]->offset[2])) + (var_grp->variable[si]->sim_patch[p]->size[0] * (j1 - var_grp->variable[si]->sim_patch[p]->offset[1])) + (i1 - var_grp->variable[si]->sim_patch[p]->offset[0]);
 
                 memcpy(var_grp->variable[si]->sim_patch[p]->buffer + (recv_o * var->vps * (var->bpv/8)), intersected_box_buffer + send_o, send_c * var->vps * (var->bpv/8));
-
-                //double x;
-                //memcpy(&x, var_grp->variable[si]->sim_patch[p]->buffer + (recv_o * var->vps * (var->bpv/8)), sizeof(double));
-                //printf("x %d %f\n", recv_o, x);
               }
             }
           }
-
           free(intersected_box_buffer);
         }
       }
@@ -379,90 +242,6 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
   return PIDX_success;
 }
 
-
-
-PIDX_return_code PIDX_parallel_idx_read(PIDX_io file, int gi, int svi, int evi)
-{
-  int i = 0, j = 0, p = 0;
-  int si = 0;
-  int ret = 0;
-
-  int bounding_box[2][5] = {
-    {0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0}
-  };
-
-  ret = populate_global_bit_string(file, PIDX_READ);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  generate_file_name_template(file->idx_d->maxh, file->idx->bits_per_block, file->idx->filename_partition, file->idx->current_time_step, file->idx->filename_template_partition);
-
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  for (si = svi; si < evi; si++)
-  {
-    PIDX_variable var = var_grp->variable[si];
-
-    for (p = 0; p < var_grp->variable[si]->sim_patch_count; p++)
-    {
-      for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-      {
-        bounding_box[0][i] = var->sim_patch[p]->offset[i];
-        bounding_box[1][i] = var->sim_patch[p]->size[i] + var->sim_patch[p]->offset[i];
-
-        bounding_box[0][i] = (bounding_box[0][i] / file->idx->chunk_size[i]);
-
-        if (bounding_box[1][i] % file->idx->chunk_size[i] == 0)
-          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]);
-        else
-          bounding_box[1][i] = (bounding_box[1][i] / file->idx->chunk_size[i]) + 1;
-      }
-
-      PIDX_block_layout per_patch_local_block_layout = malloc(sizeof (*per_patch_local_block_layout));
-      memset(per_patch_local_block_layout, 0, sizeof (*per_patch_local_block_layout));
-      ret = PIDX_blocks_initialize_layout(per_patch_local_block_layout, 0, file->idx_d->maxh, file->idx_d->maxh, file->idx->bits_per_block);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      ret = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bits_per_block,  file->idx->bitPattern, per_patch_local_block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      int ctr = 1;
-      int block_number = 0;
-      read_block(file, gi, si, p, block_number, var_grp->variable[si]->sim_patch[p]->offset, var_grp->variable[si]->sim_patch[p]->size, var_grp->variable[si]->sim_patch[p]->buffer);
-      for (i = file->idx->bits_per_block + 1 ; i < per_patch_local_block_layout->resolution_to ; i++)
-      {
-        for (j = 0 ; j < ctr ; j++)
-        {
-          if(per_patch_local_block_layout->hz_block_number_array[i][j] != 0)
-          {
-            block_number = per_patch_local_block_layout->hz_block_number_array[i][j];
-            read_block(file, gi, si, p, block_number, var_grp->variable[si]->sim_patch[p]->offset, var_grp->variable[si]->sim_patch[p]->size, var_grp->variable[si]->sim_patch[p]->buffer);
-
-          }
-        }
-        ctr = ctr * 2;
-      }
-
-      PIDX_blocks_free_layout(file->idx->bits_per_block, file->idx_d->maxh, per_patch_local_block_layout);
-      free(per_patch_local_block_layout);
-
-    }
-  }
-
-  return PIDX_success;
-}
 
 
 static PIDX_return_code read_block(PIDX_io file, int gi, int vi, int p, int block_number, unsigned long long* patch_offset, unsigned long long* patch_size, unsigned char* patch_buffer)
