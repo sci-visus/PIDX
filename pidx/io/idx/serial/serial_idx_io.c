@@ -57,7 +57,7 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
       {
         if (file->idx_d->block_bitmap[i][j] != 0)
         {
-          printf("File number %d Block number %d\n", i, j);
+          //printf("File number %d Block number %d\n", i, j);
           for (k = 0; k < file->idx_d->samples_per_block; k++)
           {
             hz = (i * file->idx->blocks_per_file * file->idx_d->samples_per_block) + (j * file->idx_d->samples_per_block) + k;
