@@ -20,27 +20,11 @@ import os
 import sys, getopt
 import platform
 from idx_utils import *
+from test_config import *
 
 #
 #   Test and profile PIDX
 #   
-
-# User settings
-# Set write_executable and read_executable according to your build directory
-write_executable = "../../build/examples/idx_write"
-read_executable = "../../build/examples/idx_read"
-mpirun="mpirun"
-
-debug_print=0
-
-patch_size = (2, 2, 2)
-var_types = ["1*float32", "1*int32", "1*float64", 
-             "2*float32", "2*int32", "2*float64", 
-             "3*float32", "3*int32", "3*float64"]
-
-#var_types = ["1*uint8", "1*int16","2*uint8","2*int16"]
-
-#####
 
 if platform.system() == "Darwin":
   write_executable = write_executable+".app/Contents/MacOS/idx_write"

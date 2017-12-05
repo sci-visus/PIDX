@@ -19,23 +19,7 @@
 import os
 import sys, getopt
 import os.path
-
-vars_file = "VARS"
-
-# These are the procs configuration that will be used for different core counts
-# (first is the default)
-procs_conf = dict()
-procs_conf[4] = [(2,2,1)]
-procs_conf[6] = [(3,2,1)]
-procs_conf[8] = [(2,2,2), (4,2,1)]
-procs_conf[9] = [(1,3,3)]
-procs_conf[10] = [(5,2,1)]
-procs_conf[12] = [(3,2,2),(4,3,1)]
-procs_conf[14] = [(7,2,1)]
-procs_conf[16] = [(2,2,4), (4,4,1)]
-procs_conf[32] = [(2,4,4), (8,4,1)]
-procs_conf[64] = [(4,4,4), (8,4,2)]
-procs_conf[128] = [(4,4,8), (8,8,2), (16,4,2)]
+from test_config import *
 
 # Append to the profile file the profile output
 def append_profile(filename, pfile):
