@@ -4,7 +4,7 @@ write_executable = "../../build/examples/idx_write"
 read_executable = "../../build/examples/idx_read"
 mpirun="mpirun"
 
-debug_print=0
+debug_print=1
 
 var_types = ["1*float32", "1*int32", "1*float64", 
              "2*float32", "2*int32", "2*float64", 
@@ -15,6 +15,7 @@ var_types = ["1*float32", "1*int32", "1*float64",
 vars_file = "VARS"
 
 patch_size = (12, 12, 12)
+
 # These are the procs configuration that will be used for different core counts
 # (first is the default)
 procs_conf = dict()

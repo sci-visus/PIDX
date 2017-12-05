@@ -53,87 +53,93 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
   l_box_read = l_box
   l_box_read_n = l_box_n
 
-  pconf = procs_conf[n_cores_read][0]
+  #pconf = procs_conf[n_cores_read][0]
 
-  if n_cores != n_cores_read:  
-    l_box_read_n = (g_box_n[0]/pconf[0], g_box_n[1]/pconf[1], g_box_n[2]/pconf[2])
-    l_box_read = "%dx%dx%d" % (l_box_read_n[0], l_box_read_n[1], l_box_read_n[2])
+  for pconf in procs_conf[n_cores_read]:
 
-  if (int(g_box_n[0]/l_box_read_n[0])*int(g_box_n[1]/l_box_read_n[1])*int(g_box_n[2]/l_box_read_n[2])) != n_cores_read \
-    or (g_box_n[0]%l_box_read_n[0]) != 0 or (g_box_n[1]%l_box_read_n[1]) != 0 or (g_box_n[2]%l_box_read_n[2]) != 0:
-    print "INVALID test configuration g_box ", g_box, "read l_box ", l_box_read, " g_box/l_box != ", pconf
-    print "Try to change the patch size to get an integer value for g_box/l_box"
-    return 1
+    if n_cores != n_cores_read:  
+      l_box_read_n = (g_box_n[0]/pconf[0], g_box_n[1]/pconf[1], g_box_n[2]/pconf[2])
+      l_box_read = "%dx%dx%d" % (l_box_read_n[0], l_box_read_n[1], l_box_read_n[2])
 
-  g_box_v = g_box.split('x')
-  el_count = int(g_box_v[0])*int(g_box_v[1])*int(g_box_v[2])
+    if (int(g_box_n[0]/l_box_read_n[0])*int(g_box_n[1]/l_box_read_n[1])*int(g_box_n[2]/l_box_read_n[2])) != n_cores_read \
+      or (g_box_n[0]%l_box_read_n[0]) != 0 or (g_box_n[1]%l_box_read_n[1]) != 0 or (g_box_n[2]%l_box_read_n[2]) != 0:
+      print "INVALID test configuration g_box ", g_box, "read l_box ", l_box_read, " g_box/l_box != ", pconf
+      print "Try to change the patch size to get an integer value for g_box/l_box"
+      return 1
 
-  n_comp = int(var_type.split('*')[0])
-  data_count = g_box_n[0]*g_box_n[1]*g_box_n[2]*n_comp
+    g_box_v = g_box.split('x')
+    el_count = int(g_box_v[0])*int(g_box_v[1])*int(g_box_v[2])
 
-  if("8" in var_type or "16" in var_type):
-    print "WARNING: testing ", var_type, "this datatype can be tested only on small domains"
+    n_comp = int(var_type.split('*')[0])
+    data_count = g_box_n[0]*g_box_n[1]*g_box_n[2]*n_comp
 
-  success = 0
-  n_tests = 0
+    if("8" in var_type or "16" in var_type):
+      print "WARNING: testing ", var_type, "this datatype can be tested only on small domains"
 
-  generate_vars(n_vars, var_type, var_type)
-  test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
-  
-  if(debug_print>0):
-    print "EXECUTE write:", test_str
-  os.popen(test_str+" 2&> _out_write.txt")
+    success = 0
+    n_tests = 0
 
-  if profiling > 0:
-    append_profile("_out_write.txt", prof_file_write)
+    generate_vars(n_vars, var_type, var_type)
+    test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
+    #test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
+    
+    if(debug_print>0):
+      print "EXECUTE write:", test_str
+    os.popen(test_str+" >> _out_write.txt 2>&1")
 
-  for t in range(1, n_ts+1):
-    for vr in range(0, n_vars):
-      n_tests = n_tests + 1
+    if profiling > 0:
+      append_profile("_out_write.txt", prof_file_write)
 
-      test_str= mpirun+" -np "+str(n_cores_read)+" "+read_executable+" -g "+g_box+" -l "+l_box_read+" -t "+str(t-1)+" -v "+str(vr)+" -f data"
+    for t in range(1, n_ts+1):
+      for vr in range(0, n_vars):
+        n_tests = n_tests + 1
 
-      #print "Testing t="+str(t)+" v="+str(vr)+" type="+var_type
-      os.popen(test_str+" 2&> _out_read.txt")
-      res = verify_read("_out_read.txt", data_count)
+        test_str= mpirun+" -np "+str(n_cores_read)+" "+read_executable+" -g "+g_box+" -l "+l_box_read+" -t "+str(t-1)+" -v "+str(vr)+" -f data"
 
-      if profiling > 0:
-        append_profile("_out_read.txt", prof_file_read)
+        if(debug_print>0):
+          print "EXECUTE read:", test_str
 
-      if res < 0:
-        print "Test t="+str(t)+" v="+str(vr)+" type="+var_type + " FAILED"
-      else:
-        success = success + 1
-        #os.popen("rm -R _out_read.txt")
-        #os.popen("rm -R _out_write.txt")
+        os.popen(test_str+" >> _out_read.txt 2>&1")
+        res = verify_read("_out_read.txt", data_count)
 
-  #os.popen("rm -R data*")
+        if profiling > 0:
+          append_profile("_out_read.txt", prof_file_read)
+
+        if res < 0:
+          print "Test t="+str(t)+" v="+str(vr)+" type="+var_type + " FAILED"
+        else:
+          success = success + 1
+          #os.popen("rm -R _out_read.txt")
+          #os.popen("rm -R _out_write.txt")
+
+    #os.popen("rm -R data*")
 
   print "Success %d/%d" % (success, n_tests)
 
   return n_tests - success
 
 def pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
-  print "---POW 2 TESTS---"
+  print "---RUN TESTS---"
   
   #even_factor = int(n_cores ** (1. / 3))
 
-  pconf = procs_conf[n_cores][0]
+  pconfs = procs_conf[n_cores]
 
-  g_box = (pconf[0]*patch_size[0], pconf[1]*patch_size[1], pconf[2]*patch_size[2])
-  l_box = patch_size
+  for pconf in pconfs:
+    g_box = (pconf[0]*patch_size[0], pconf[1]*patch_size[1], pconf[2]*patch_size[2])
+    l_box = patch_size
 
-  r_box = l_box
-  print "r == l", r_box
-  succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
+    r_box = l_box
+    #print "r == l", r_box
+    succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
-  r_box = (l_box[0]/2, l_box[1]/2, l_box[2]/2)
-  print "r < l", r_box
-  succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
+  #r_box = (l_box[0]/2, l_box[1]/2, l_box[2]/2)
+  #print "r < l", r_box
+  #succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
-  r_box = (l_box[0]*2, l_box[1]*2, l_box[2]*2)
-  print "r > l", r_box
-  succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
+  #r_box = (l_box[0]*2, l_box[1]*2, l_box[2]*2)
+  #print "r > l", r_box
+  #succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
   if succ == 0:
     print "TEST PASSED"
@@ -198,8 +204,8 @@ def main(argv):
       mpirun = arg
     elif opt in ("-p", "--pfile"):
       prof_file = arg
-      prof_file_write = arg+"_write.prof"
-      prof_file_read = arg+"_read.prof"
+      prof_file_write = prof_file+"_write.prof"
+      prof_file_read = prof_file+"_read.prof"
       profiling = 1
 
   if profiling > 0:
@@ -211,11 +217,11 @@ def main(argv):
   
   for var in var_types:
     succ = succ + pow_2(n_cores, n_cores_read, var, 1, 1)
-    succ = succ + non_pow_2(n_cores, n_cores_read, var, 1, 1)
+  #  succ = succ + non_pow_2(n_cores, n_cores_read, var, 1, 1)
 
-  print "latest outputs:"
-  os.popen("cat _out_write.txt")
-  os.popen("cat _out_read.txt")
+  #print "latest outputs:"
+  #os.popen("cat _out_write.txt")
+  #os.popen("cat _out_read.txt")
 
   sys.exit(succ)
 
