@@ -24,6 +24,7 @@ patch_size = (15, 33, 71)
 # These are the procs configuration that will be used for different core counts
 # (first is the default)
 procs_conf = dict()
+procs_conf[2] = [(2,1,1)]
 procs_conf[4] = [(2,2,1)]
 procs_conf[6] = [(3,2,1)]
 procs_conf[8] = [(2,2,2), (4,2,1)]
