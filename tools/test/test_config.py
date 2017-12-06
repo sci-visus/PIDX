@@ -11,15 +11,15 @@ debug_print=1
 # but it creates a bash script to run them 
 travis_mode = 0
 
-#var_types = ["1*float32", "1*int32", "1*float64", 
-#             "2*float32", "2*int32", "2*float64", 
-#             "3*float32", "3*int32", "3*float64"]
+var_types = ["1*float32", "1*int32", "1*float64", 
+             "2*float32", "2*int32", "2*float64", 
+             "3*float32", "3*int32", "3*float64"]
 
-var_types = ["1*float32"]
+#var_types = ["3*float64"]
 
 vars_file = "VARS"
 
-patch_size = (12, 12, 12)
+patch_size = (15, 33, 71)
 
 # These are the procs configuration that will be used for different core counts
 # (first is the default)

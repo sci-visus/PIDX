@@ -275,7 +275,7 @@ static int generate_vars(){
     int bits_per_sample = 0;
     int sample_count = 0;
     char temp_name[512];
-    char* temp_type_name = "1*uint64";
+    char* temp_type_name = "2*int32";
     //char* temp_type_name = "1*int8";
     sprintf(temp_name, "var_%d", variable_counter);
     strcpy(var_name[variable_counter], temp_name);
@@ -429,17 +429,17 @@ static void create_synthetic_simulation_data()
           {
             if (strcmp(type_name[var], UINT8) == 0 || strcmp(type_name[var], UINT8_GA) == 0 || strcmp(type_name[var], UINT8_RGB) == 0)
             {
-              cvalue = (int)(var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              cvalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(unsigned char), &cvalue, sizeof(unsigned char));
             }
             if (strcmp(type_name[var], INT16) == 0 || strcmp(type_name[var], INT16_GA) == 0 || strcmp(type_name[var], INT16_RGB) == 0)
             {
-              svalue = (int)(var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              svalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(short), &svalue, sizeof(short));
             }
             if (strcmp(type_name[var], INT32) == 0 || strcmp(type_name[var], INT32_GA) == 0 || strcmp(type_name[var], INT32_RGB) == 0)
             {
-              ivalue = (int)( 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              ivalue = (int)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int), &ivalue, sizeof(int));
             }
             else if (strcmp(type_name[var], FLOAT32) == 0 || strcmp(type_name[var], FLOAT32_GA) == 0 || strcmp(type_name[var], FLOAT32_RGB) == 0)
@@ -449,12 +449,12 @@ static void create_synthetic_simulation_data()
             }
             else if (strcmp(type_name[var], FLOAT64) == 0 || strcmp(type_name[var], FLOAT64_GA) == 0 || strcmp(type_name[var], FLOAT64_RGB) == 0)
             {
-              dvalue = (double) 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              dvalue = (double) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
             else if (strcmp(type_name[var], UINT64) == 0 || strcmp(type_name[var], UINT64_GA) == 0 || strcmp(type_name[var], UINT64_RGB) == 0)
             {
-              uivalue = (uint64_t) 100 + var + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              uivalue = (uint64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(uint64_t), &uivalue, sizeof(uint64_t));
             }
           }

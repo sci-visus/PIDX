@@ -57,7 +57,7 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
 
         int buffer_index = (block_count * io_id->idx_d->samples_per_block * (var_grp->variable[agg_buf->var_number]->bpv/8) * var_grp->variable[agg_buf->var_number]->vps * tck) / io_id->idx->compression_factor;
 
-        //printf("DO and DS %d %d\n", data_offset, data_size);
+        //fprintf(stderr, "DO and DS %d %d\n", data_offset, data_size);
         ret = MPI_File_read_at(fp, data_offset, agg_buf->buffer + buffer_index, data_size, MPI_BYTE, &status);
         if (ret != MPI_SUCCESS)
         {
@@ -77,7 +77,7 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
           memcpy(&x6, agg_buf->buffer + sizeof(double) * 5, sizeof(double));
           memcpy(&x7, agg_buf->buffer + sizeof(double) * 6, sizeof(double));
           memcpy(&x8, agg_buf->buffer + sizeof(double) * 7, sizeof(double));
-          printf("x %f %f %f %f %f %f %f %f\n", x1, x2, x3, x4, x5, x6, x7, x8);
+          fprintf(stderr, "x %f %f %f %f %f %f %f %f\n", x1, x2, x3, x4, x5, x6, x7, x8);
         }
 #endif
 
@@ -171,7 +171,7 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
     for (i = 0; i < agg_buf->sample_number; i++)
       data_offset = (unsigned long long) data_offset + agg_buf->buffer_size;
 
-    //printf("DO %d DS %d\n", data_offset, agg_buf->buffer_size);
+    //fprintf(stderr, "DO %d DS %d\n", data_offset, agg_buf->buffer_size);
     ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)
     {

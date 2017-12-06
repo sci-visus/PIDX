@@ -120,7 +120,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
               double x1, x2;
               memcpy(&x1, var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype), sizeof(double));
               memcpy(&x2, var_grp->variable[v1]->hz_buffer->buffer[level] + (hz_index * bytes_for_datatype) + sizeof(double), sizeof(double));
-              printf("xyz index - hz index :: %d - %d ----> %f %f\n", index, hz_index, x1, x2);
+              fprintf(stderr, "xyz index - hz index :: %d - %d ----> %f %f\n", index, hz_index, x1, x2);
             }
             */
 

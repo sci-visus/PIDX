@@ -435,7 +435,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
   int i = 0, v = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  printf("SE %d %d\n", svi, evi);
+  fprintf(stderr, "SE %d %d\n", svi, evi);
   for (v = svi; v < evi; v++)
   {
   PIDX_variable var = var_grp->variable[v];
@@ -460,7 +460,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
 
   memcpy(file->idx->bounds, file->idx->box_bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
-  //printf("%d - %d %d %d -- PO %d %d %d\n", file->idx_c->grank, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2]);
+  //fprintf(stderr, "%d - %d %d %d -- PO %d %d %d\n", file->idx_c->grank, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2]);
 
   return PIDX_success;
 }
@@ -472,7 +472,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
   int ret;
   PIDX_time time = file->idx_d->time;
 
-  //printf("%d %d %d\n", file->idx_d->restructured_grid->patch_size[0], file->idx_d->restructured_grid->patch_size[1], file->idx_d->restructured_grid->patch_size[2]);
+  //fprintf(stderr, "%d %d %d\n", file->idx_d->restructured_grid->patch_size[0], file->idx_d->restructured_grid->patch_size[1], file->idx_d->restructured_grid->patch_size[2]);
 
   time->bit_string_start = PIDX_get_time();
   // calculates maxh and bitstring

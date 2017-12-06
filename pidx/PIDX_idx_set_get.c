@@ -759,7 +759,7 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
   if (PIDX_inner_product(&dims, adjusted_bounds))
     return PIDX_err_size;
 
-  //printf("dims %d spb %d\n", dims, file->idx_d->samples_per_block);
+  //fprintf(stderr, "dims %d spb %d\n", dims, file->idx_d->samples_per_block);
 
   if (dims < file->idx_d->samples_per_block)
   {

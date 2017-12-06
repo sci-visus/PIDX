@@ -89,7 +89,7 @@ PIDX_return_code select_io_mode(PIDX_io file, int gi)
 
 PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
 {
-  //printf("svi and evi = %d and %d\n", svi, evi);
+  //fprintf(stderr, "svi and evi = %d and %d\n", svi, evi);
   int i = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   int total_aggregator = 0;
@@ -124,14 +124,14 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
     for (i = 0; i < var_grp->shared_layout_count + var_grp->nshared_layout_count ; i++)
       total_aggregator = total_aggregator + var_grp->block_layout_by_level[i]->efc;
 
-    //printf("npocs %d agg %d vc %d\n", file->idx_c->lnprocs, total_aggregator, var_count);
+    //fprintf(stderr, "npocs %d agg %d vc %d\n", file->idx_c->lnprocs, total_aggregator, var_count);
     if (file->idx_c->lnprocs >= total_aggregator * var_count)
     {
       var_grp->agg_level = var_grp->shared_layout_count + var_grp->nshared_layout_count;
       file->idx_d->variable_pipe_length = var_count - 1;
 
       if (file->idx_c->lrank == 0)
-        printf("[A] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
+        fprintf(stderr, "[A] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
     }
     else
     {
@@ -141,7 +141,7 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
         file->idx_d->variable_pipe_length = var_count - 1;
 
         if (file->idx_c->lrank == 0)
-          printf("[B] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
+          fprintf(stderr, "[B] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
       }
       else
       {
@@ -154,13 +154,13 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
         file->idx_d->variable_pipe_length = i - 1;
         var_grp->agg_level = var_grp->shared_layout_count + var_grp->nshared_layout_count;
         if (file->idx_c->lrank == 0)
-          printf("[C] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
+          fprintf(stderr, "[C] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
       }
     }
   }
 
   //if (file->idx_c->lrank == 0)
-  //  printf("agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
+  //  fprintf(stderr, "agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
 
   return PIDX_success;
 }

@@ -347,7 +347,7 @@ static int verify_read_results()
   int var = variable_index;
 
   //if (rank == 100)
-  //    printf("LBO %d %d %d LBS %d %d %d\n", local_box_offset[0], local_box_offset[1], local_box_offset[2], local_box_size[0], local_box_size[1], local_box_size[2]);
+  //    fprintf(stderr, "LBO %d %d %d LBS %d %d %d\n", local_box_offset[0], local_box_offset[1], local_box_offset[2], local_box_size[0], local_box_size[1], local_box_size[2]);
 
   bits_per_sample = bits_per_sample / 8;
   for (k = 0; k < local_box_size[2]; k++)
@@ -361,17 +361,17 @@ static int verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&uchar_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (uchar_val != var + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (uchar_val != var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
-              //printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //fprintf(stderr, "W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
               read_count++;
               //if (rank == 0)
-              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  fprintf(stderr, "C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }
@@ -381,17 +381,17 @@ static int verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&short_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (short_val != var + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (short_val != var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
-              //printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //fprintf(stderr, "W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
               read_count++;
               //if (rank == 0)
-              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  fprintf(stderr, "C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }
@@ -401,17 +401,17 @@ static int verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&int_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (int_val != var + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (int_val != var + 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
-              //printf("W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //fprintf(stderr, "W[%d %d %d] [%d] Read error %d\n", i,j ,k, vps, int_val);//, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
               read_count++;
               //if (rank == 0)
-              //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  fprintf(stderr, "C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, data[index * vps[var] + vps], var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }
@@ -425,13 +425,13 @@ static int verify_read_results()
             {
               read_error_count++;
               //if (rank == 0)
-              //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val,100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  fprintf(stderr, "W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val,100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
               read_count++;
               //if (rank == 0)
-              //  printf("W[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val, var /*+ vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
+              //  fprintf(stderr, "C[%d %d %d] [%d] Read error %f %d\n", i,j ,k, vps, double_val,100+ var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }
@@ -441,29 +441,29 @@ static int verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&float_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (float_val != var + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (float_val != var + 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 100)
-              //printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
+              //fprintf(stderr, "W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
             }
             else
             {
               read_count++;
               //if (rank == 100)
-              //  printf("C [%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, float_val, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  fprintf(stderr, "C [%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, float_val, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }
 
       }
 
-  //printf("RANK %d CC %d WC %d\n", rank, read_count, read_error_count);
+  //fprintf(stderr, "RANK %d CC %d WC %d\n", rank, read_count, read_error_count);
   MPI_Allreduce(&read_count, &total_read_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Allreduce(&read_error_count, &total_read_error_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   if (rank == 0)
-    printf("Correct Sample Count %d Incorrect Sample Count %d\n", total_read_count, total_read_error_count);
+    fprintf(stderr, "Correct Sample Count %d Incorrect Sample Count %d\n", total_read_count, total_read_error_count);
 
   if(total_read_error_count == 0 && (total_read_count == global_bounds[2]*global_bounds[1]*global_bounds[0]*values_per_sample))
     return 0;

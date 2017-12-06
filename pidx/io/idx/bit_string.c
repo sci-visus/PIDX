@@ -242,7 +242,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     //strcpy(file->idx->bitSequence, partition_bs);
     //strcat(file->idx->bitSequence, temp_bs + 1);
     strcpy(file->idx->bitSequence, temp_bs);
-    //printf("[%d] - bit sequence %s\n", file->idx_d->color, file->idx->bitSequence);
+    //fprintf(stderr, "[%d] - bit sequence %s\n", file->idx_d->color, file->idx->bitSequence);
   //}
 
   // maxh calculation
@@ -266,7 +266,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     fprintf(stderr, "[%s] [%d ]IDX dimensions are wrong %d %d\n", __FILE__, __LINE__, file->idx_d->samples_per_block, file->idx->blocks_per_file);
     return PIDX_err_file;
   }
-  //printf("total reg sample count %d %d\n", total_reg_sample_count, max_sample_per_file);
+  //fprintf(stderr, "total reg sample count %d %d\n", total_reg_sample_count, max_sample_per_file);
 
   file->idx_d->max_file_count = total_reg_sample_count / max_sample_per_file;
   if (total_reg_sample_count % max_sample_per_file)

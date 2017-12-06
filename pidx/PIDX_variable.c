@@ -256,7 +256,7 @@ PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, const char* v
   int i = 0;
   for (i = 0; i < file->idx->variable_count; i++)
   {
-    //printf("str %s %s\n", variable_name, file->idx->variable_grp[0]->variable[i]->var_name);
+    //fprintf(stderr, "str %s %s\n", variable_name, file->idx->variable_grp[0]->variable[i]->var_name);
     if (strcmp(variable_name, file->idx->variable_grp[0]->variable[i]->var_name) == 0)
     {
       variable_index = i;

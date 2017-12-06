@@ -111,7 +111,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     return PIDX_err_file;
   }
 
-  //printf("MH %d BS %s F %d T %d\n", file->idx_d->maxh, file->idx->bitSequence, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
+  //fprintf(stderr, "MH %d BS %s F %d T %d\n", file->idx_d->maxh, file->idx->bitSequence, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
 
   ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bits_per_block,  file->idx->bitPattern, per_patch_local_block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
   if (ret_code != PIDX_success)
@@ -163,7 +163,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   free(per_patch_local_block_layout);
   per_patch_local_block_layout = 0;
 
-  //printf("RF %d BPB %d\n", block_layout->resolution_from, file->idx->bits_per_block);
+  //fprintf(stderr, "RF %d BPB %d\n", block_layout->resolution_from, file->idx->bits_per_block);
   if (block_layout->resolution_from <= file->idx->bits_per_block)
   {
     int level_count = 1;
@@ -330,7 +330,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
       fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_initialize_layout", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-    //printf("LL HL %d %d\n", lower_level_low_layout, higher_level_low_layout);
+    //fprintf(stderr, "LL HL %d %d\n", lower_level_low_layout, higher_level_low_layout);
 
     ret_code = populate_idx_layout(file, gi, si, layout_by_level[0], lower_level_low_layout, higher_level_low_layout);
     if (ret_code != PIDX_success)

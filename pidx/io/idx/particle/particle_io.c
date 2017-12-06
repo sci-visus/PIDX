@@ -21,7 +21,7 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
 
     for (p = 0; p < var->sim_patch_count; p++)
     {
-        printf("[Inside PIDX] Rank %d has %d particles [%lld %lld %lld - %lld %lld %lld]\n", file->idx_c->grank, var->sim_patch[p]->particle_count, var->sim_patch[p]->offset[0], var->sim_patch[p]->offset[1], var->sim_patch[p]->offset[2], var->sim_patch[p]->size[0], var->sim_patch[p]->size[1], var->sim_patch[p]->size[2]);
+        fprintf(stderr, "[Inside PIDX] Rank %d has %d particles [%lld %lld %lld - %lld %lld %lld]\n", file->idx_c->grank, var->sim_patch[p]->particle_count, var->sim_patch[p]->offset[0], var->sim_patch[p]->offset[1], var->sim_patch[p]->offset[2], var->sim_patch[p]->size[0], var->sim_patch[p]->size[1], var->sim_patch[p]->size[2]);
         for (pt = 0; pt < var->sim_patch[p]->particle_count; pt++)
         {
           //for (s = 0; s < sample_count; s++)

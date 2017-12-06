@@ -262,7 +262,7 @@ static int parse_var_list()
   {
     int v = 0;
     for(v = 0; v < variable_count; v++)
-      printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
+      fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
 
   return PIDX_success;
@@ -485,7 +485,7 @@ static void calculate_per_process_offsets()
       }
     }
     else
-      printf("This patch count not supported !!!!\n");
+      fprintf(stderr, "This patch count not supported !!!!\n");
   }
 }
 

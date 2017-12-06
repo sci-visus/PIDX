@@ -57,7 +57,7 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int gi, int svi, int evi)
       {
         if (file->idx_d->block_bitmap[i][j] != 0)
         {
-          //printf("File number %d Block number %d\n", i, j);
+          //fprintf(stderr, "File number %d Block number %d\n", i, j);
           for (k = 0; k < file->idx_d->samples_per_block; k++)
           {
             hz = (i * file->idx->blocks_per_file * file->idx_d->samples_per_block) + (j * file->idx_d->samples_per_block) + k;
@@ -133,7 +133,7 @@ PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int gi, in
         VisusSplitFilename(file->idx->filename_template_partition, dirname, basename);
         sprintf(file->idx->filename_template_partition, "%s/time%09d/%s", dirname, file->idx->current_time_step, basename );
 
-        //printf("Partition %d ----> offset %d %d %d size %d %d %d -> %s\n", par, file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2], file->idx->filename_template_partition);
+        //fprintf(stderr, "Partition %d ----> offset %d %d %d size %d %d %d -> %s\n", par, file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2], file->idx->filename_template_partition);
 
         int d = 0, check_bit = 0;
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -297,7 +297,7 @@ static PIDX_return_code read_block(PIDX_io file, int gi, int vi, int p, int bloc
   off_t data_offset = htonl(headers[12 + (( (block_number % file->idx->blocks_per_file) + (file->idx->blocks_per_file * vi))*10 )]);
   size_t data_size = htonl(headers[14 + (( (block_number % file->idx->blocks_per_file) + (file->idx->blocks_per_file * vi))*10 )]);
 
-  //printf("File number %d Block number %d\n", file_number, block_number);
+  //fprintf(stderr, "File number %d Block number %d\n", file_number, block_number);
   assert (data_size != 0);
 
   ret = MPI_File_read_at(fp, data_offset, block_buffer, data_size, MPI_BYTE, &status);
@@ -390,7 +390,7 @@ static PIDX_return_code parse_local_partition_idx_file(PIDX_io file, int partiti
         file->idx_d->maxh = strlen(file->idx->bitSequence);
         for (i = 0; i <= file->idx_d->maxh; i++)
           file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
-        //printf("BS %s MH %d\n", file->idx->bitSequence, file->idx_d->maxh);
+        //fprintf(stderr, "BS %s MH %d\n", file->idx->bitSequence, file->idx_d->maxh);
       }
 
       if (strcmp(line, "(filename_template)") == 0)

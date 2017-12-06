@@ -221,7 +221,7 @@ PIDX_return_code PIDX_header_io_idx_file_write(PIDX_header_io_id header_io_id, P
     if (block_layout->file_bitmap[i] == 1)
     {
       if (header_io_id->idx_c->grank == 0)
-        printf("[%d] File %d being populated\n", header_io_id->idx_c->lnprocs, i);
+        fprintf(stderr, "[%d] File %d being populated\n", header_io_id->idx_c->lnprocs, i);
     }
   }
 #endif
@@ -646,7 +646,7 @@ static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout blo
   int i = 0, j = 0, k = 0;
   off_t data_offset = 0, base_offset = 0;
 
-  //printf("[%d] File being written\n", file_number);
+  //fprintf(stderr, "[%d] File being written\n", file_number);
   unsigned long long total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2]);
 
   int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;

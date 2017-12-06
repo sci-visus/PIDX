@@ -38,7 +38,7 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
 
   generate_file_name_template(file->idx_d->maxh, file->idx->bits_per_block, file->idx->filename_partition, file->idx->current_time_step, file->idx->filename_template_partition);
 
-  //printf("FN %s FNT %s\n", file->idx->filename_partition, file->idx->filename_template_partition);
+  //fprintf(stderr, "FN %s FNT %s\n", file->idx->filename_partition, file->idx->filename_template_partition);
 
   if (mode == PIDX_READ)
     return PIDX_success;

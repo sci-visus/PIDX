@@ -210,7 +210,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
       if (fp != 0)
         MPI_File_close(&fp);
 
-      //printf("Opening file %s\n", file_name);
+      //fprintf(stderr, "Opening file %s\n", file_name);
       ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fp);
       if (ret != MPI_SUCCESS)
       {
@@ -275,7 +275,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
     }
 
     //if (hz_id->idx_c->lrank == 0)
-    //  printf("[%d] Data offset %d data size %lld\n", variable_index, data_offset, file_count * bytes_per_datatype);
+    //  fprintf(stderr, "[%d] Data offset %d data size %lld\n", variable_index, data_offset, file_count * bytes_per_datatype);
     ret = MPI_File_write_at(fp, data_offset, hz_buffer, file_count * bytes_per_datatype, MPI_BYTE, &status);
     if (ret != MPI_SUCCESS)
     {

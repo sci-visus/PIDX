@@ -102,7 +102,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
       }
 
       if (file->idx_c->lrank == 0)
-        printf("SI and EI %d and %d\n", si, ei);
+        fprintf(stderr, "SI and EI %d and %d\n", si, ei);
 
       // Step 5: Setup aggregation buffers
       ret = data_aggregate(file, gi, si, ei, AGG_SETUP, PIDX_WRITE);
@@ -237,7 +237,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
         return PIDX_err_file;
       }
       //if (file->idx_c->lrank == 0)
-      //  printf("SI and EI %d and %d\n", si, ei);
+      //  fprintf(stderr, "SI and EI %d and %d\n", si, ei);
 
       // Step 3: Setup aggregation buffers
       //for (li = si; li <= ei; li = li + 1)
@@ -359,7 +359,7 @@ static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, 
       if (file->idx_d->block_bitmap[i][j] != 0)
       {
         if (file->idx_c->grank == 0)
-          printf("File [%d] Block [%d]\n", i, j);
+          fprintf(stderr, "File [%d] Block [%d]\n", i, j);
       }
     }
   }

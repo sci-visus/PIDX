@@ -48,7 +48,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
       unsigned long long samples_per_level = (var->hz_buffer->end_hz_index[c] - var->hz_buffer->start_hz_index[c] + 1);
 
       //if (id->idx_c->grank == 1)
-      //  printf("[V %d] [C %d] %lld\n", v, c, samples_per_level);
+      //  fprintf(stderr, "[V %d] [C %d] %lld\n", v, c, samples_per_level);
 
       var->hz_buffer->buffer[c] = malloc(bytes_for_datatype * samples_per_level);
       memset(var->hz_buffer->buffer[c], 0, bytes_for_datatype * samples_per_level);

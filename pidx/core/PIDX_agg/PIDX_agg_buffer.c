@@ -382,7 +382,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
   int wc = id->idx_c->lnprocs * PIDX_MAX_DIMENSIONS;
 
   //if (id->idx_d->color == 1)
-  //printf("[%d] [%d] O : S :: %d %d %d - %d %d %d\n", id->idx_d->color, id->idx_c->lrank, local_patch_offset[0], local_patch_offset[1], local_patch_offset[2], local_patch_size[0], local_patch_size[1], local_patch_size[2]);
+  //fprintf(stderr, "[%d] [%d] O : S :: %d %d %d - %d %d %d\n", id->idx_d->color, id->idx_c->lrank, local_patch_offset[0], local_patch_offset[1], local_patch_offset[2], local_patch_size[0], local_patch_size[1], local_patch_size[2]);
 
   unsigned long long* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
   memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
@@ -394,9 +394,9 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
 
   MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
 
-  //printf("[%d : %d] - %d %d %d - %d %d %d\n", id->idx_c->lrank, id->idx_c->grank, (int)local_patch_offset[0], (int)local_patch_offset[1], (int)local_patch_offset[2], (int)local_patch_size[0], (int)local_patch_size[1], (int)local_patch_size[2]);
+  //fprintf(stderr, "[%d : %d] - %d %d %d - %d %d %d\n", id->idx_c->lrank, id->idx_c->grank, (int)local_patch_offset[0], (int)local_patch_offset[1], (int)local_patch_offset[2], (int)local_patch_size[0], (int)local_patch_size[1], (int)local_patch_size[2]);
 
-  //printf("Fi Li %d %d\n", id->fi, id->li);
+  //fprintf(stderr, "Fi Li %d %d\n", id->fi, id->li);
   for (k = 0; k < lbl->efc; k++)
   {
     for (i = id->fi; i <= id->li; i++)
@@ -444,7 +444,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
             Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
 
             if (id->idx_c->lrank == 0)
-              printf("[%d] ZYX: %d %d %d\n", x, ZYX[0], ZYX[1], ZYX[2]);
+              fprintf(stderr, "[%d] ZYX: %d %d %d\n", x, ZYX[0], ZYX[1], ZYX[2]);
 
             // check to see if the sample is within bounds.
             if (ZYX[0] < id->idx->box_bounds[0] / id->idx->chunk_size[0] &&
@@ -464,7 +464,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
           Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
 
           //if (id->idx_c->lrank == 0)
-          //  printf("ZYX: %d %d %d\n", ZYX[0], ZYX[1], ZYX[2]);
+          //  fprintf(stderr, "ZYX: %d %d %d\n", ZYX[0], ZYX[1], ZYX[2]);
 
           // check to see if the sample is within bounds.
           if (ZYX[0] < id->idx->box_bounds[0] / id->idx->chunk_size[0] &&
@@ -618,7 +618,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
                ab->buffer_size, lbl->bcpf[ab->file_number], id->idx_d->samples_per_block, bpdt);
 #endif
 
-          //printf("Agg buffer size %d (%d x %d (%d x %d / %d))\n", ab->buffer_size, sample_count, bpdt, chunk_size, var_grp->variable[ab->var_number]->bpv/8, id->idx->compression_factor);
+          //fprintf(stderr, "Agg buffer size %d (%d x %d (%d x %d / %d))\n", ab->buffer_size, sample_count, bpdt, chunk_size, var_grp->variable[ab->var_number]->bpv/8, id->idx->compression_factor);
           ab->buffer = malloc(ab->buffer_size);
           memset(ab->buffer, 0, ab->buffer_size);
           if (ab->buffer == NULL)

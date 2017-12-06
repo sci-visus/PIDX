@@ -88,7 +88,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
     if (id->cache->meta_data_cache->is_set == 0)
     {
       if (id->idx_c->lrank == 0)
-        printf("Cache Setup\n");
+        fprintf(stderr, "Cache Setup\n");
       id->cache->meta_data_cache->is_set = 1;
       if(var0->data_layout == PIDX_row_major)
       {
@@ -209,7 +209,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
     else
     {
       if (id->idx_c->lrank == 0)
-        printf("Cache Used\n");
+        fprintf(stderr, "Cache Used\n");
       if(var0->data_layout == PIDX_row_major)
       {
         for (k = chunked_patch_offset[2]; k < chunked_patch_offset[2] + chunked_patch_size[2]; k++)

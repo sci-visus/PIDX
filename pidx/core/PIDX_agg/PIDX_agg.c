@@ -18,7 +18,7 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   id->li = li;
   //id->lvi = lvi;
 
-  //printf("fi : li : lvi :: %d : %d : %d\n", fi, li, lvi);
+  //fprintf(stderr, "fi : li : lvi :: %d : %d : %d\n", fi, li, lvi);
 
   return id;
 }
