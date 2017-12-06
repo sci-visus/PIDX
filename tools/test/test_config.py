@@ -11,11 +11,11 @@ debug_print=1
 # but it creates a bash script to run them 
 travis_mode = 0
 
-var_types = ["1*float32", "1*int32", "1*float64", 
-             "2*float32", "2*int32", "2*float64", 
-             "3*float32", "3*int32", "3*float64"]
+#var_types = ["1*float32", "1*int32", "1*float64", 
+#             "2*float32", "2*int32", "2*float64", 
+#             "3*float32", "3*int32", "3*float64"]
 
-#var_types = ["1*uint8", "1*int16","2*uint8","2*int16"]
+var_types = ["1*float32"]
 
 vars_file = "VARS"
 
