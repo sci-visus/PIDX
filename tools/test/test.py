@@ -85,7 +85,11 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
     
     if(debug_print>0):
       print "EXECUTE write:", test_str
-    os.popen(test_str+" >> _out_write.txt 2>&1")
+
+    if(travis_mode > 0):
+      append_travis(test_str)
+    else:
+      os.popen(test_str+" >> _out_write.txt 2>&1")
 
     if profiling > 0:
       append_profile("_out_write.txt", prof_file_write)
@@ -99,8 +103,12 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
         if(debug_print>0):
           print "EXECUTE read:", test_str
 
-        os.popen(test_str+" >> _out_read.txt 2>&1")
-        res = verify_read("_out_read.txt", data_count)
+        if(travis_mode > 0):
+          append_travis(test_str)
+          res = 0
+        else:
+          os.popen(test_str+" >> _out_read.txt 2>&1")
+          res = verify_read("_out_read.txt", data_count)
 
         if profiling > 0:
           append_profile("_out_read.txt", prof_file_read)
@@ -113,8 +121,8 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
           #os.popen("rm -R _out_write.txt")
 
     #os.popen("rm -R data*")
-
-  print "Success %d/%d" % (success, n_tests)
+  if(travis_mode == 0):
+    print "Success %d/%d" % (success, n_tests)
 
   return n_tests - success
 
@@ -131,6 +139,7 @@ def pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
 
     r_box = l_box
     #print "r == l", r_box
+    
     succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
   #r_box = (l_box[0]/2, l_box[1]/2, l_box[2]/2)
@@ -141,7 +150,7 @@ def pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
   #print "r > l", r_box
   #succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
-  if succ == 0:
+  if succ == 0 and travis_mode == 0:
     print "TEST PASSED"
   
   return succ
@@ -181,13 +190,14 @@ def main(argv):
   global prof_file_read
   global var_types
   global mpirun
+  global travis_mode
 
   # defaults
   n_cores = 8
   n_cores_read = 8
 
   try:
-    opts, args = getopt.getopt(argv,"h:w:r:m:p",["pfile="])
+    opts, args = getopt.getopt(argv,"h:w:r:m:p:t",["pfile="])
   except getopt.GetoptError:
     print_usage()
     sys.exit(2)
@@ -207,6 +217,12 @@ def main(argv):
       prof_file_write = prof_file+"_write.prof"
       prof_file_read = prof_file+"_read.prof"
       profiling = 1
+    elif opt in ("-t", "--travismode"):
+      file = open("travis_tests.sh", "w")
+      file.write("#!/bin/sh\n\n")
+      file.close()
+      travis_mode = 1
+      print "----RUNNING IN TRAVIS TEST MODE----"
 
   if profiling > 0:
     os.popen("rm "+prof_file+"*.prof")

@@ -4,7 +4,12 @@ write_executable = "../../build/examples/idx_write"
 read_executable = "../../build/examples/idx_read"
 mpirun="mpirun"
 
+# enable debug prints 
 debug_print=1
+
+# travis mode does not execute any test
+# but it creates a bash script to run them 
+travis_mode = 0
 
 var_types = ["1*float32", "1*int32", "1*float64", 
              "2*float32", "2*int32", "2*float64", 

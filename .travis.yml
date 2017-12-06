@@ -59,11 +59,13 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then cmake ../ -DCMAKE_CXX_COMPILER=$CXX_COMPILER -DCMAKE_C_COMPILER=$C_COMPILER -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_DIR=$TRAVIS_BUILD_DIR/mpich -DMPI_C_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DMPI_C_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpich.so -DMPI_CXX_LIBRARIES=$TRAVIS_BUILD_DIR/mpich/lib/libmpicxx.so -DMPI_CXX_INCLUDE_PATH=$TRAVIS_BUILD_DIR/mpich/include -DPIDX_BUILD_EXAMPLES=ON; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cmake ../ -DPIDX_BUILD_EXAMPLES=ON; fi
   - make -j 4
-  - ls examples/
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_read.app/Contents/MacOS/idx_read examples/idx_read; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_write.app/Contents/MacOS/idx_write examples/idx_write; fi
-  - $MPIRUN_CMD -np 8 ./examples/idx_write -g 32x32x32 -l 16x16x16 -r 16x16x16 -t 2 -v 5 -f data
-  - $MPIRUN_CMD -np 8 ./examples/idx_read -g 32x32x32 -l 16x16x16 -t 0 -v 0 -f data
+  - python test.py -w 8 -r 8 -m $MPIRUN_CMD -t
+  - sh travis_tests.sh
+
+#  - $MPIRUN_CMD -np 8 ./examples/idx_write -g 32x32x32 -l 16x16x16 -r 16x16x16 -t 2 -v 5 -f data
+#  - $MPIRUN_CMD -np 8 ./examples/idx_read -g 32x32x32 -l 16x16x16 -t 0 -v 0 -f data
 
 #  - python test.py -w 8 -r 8 -m $TRAVIS_BUILD_DIR/mpich/bin/mpirun
 #  - ls -a .

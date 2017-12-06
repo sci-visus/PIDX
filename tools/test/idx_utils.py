@@ -22,6 +22,13 @@ import os.path
 from test_config import *
 
 # Append to the profile file the profile output
+def append_travis(line):
+  file = open("travis_tests.sh", "a")
+  file.write(line+"\n")
+  file.close()
+  return 0
+
+# Append to the profile file the profile output
 def append_profile(filename, pfile):
   file = open(filename, "r")
   prof_file = open(pfile, "a")
