@@ -62,6 +62,7 @@ script:
   - make -j 4
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_read.app/Contents/MacOS/idx_read examples/idx_read; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_write.app/Contents/MacOS/idx_write examples/idx_write; fi
+  - cd ../tools/test
   - python test.py -w 8 -r 8 -m $MPIRUN_CMD -t
   - sh travis_tests.sh
 
