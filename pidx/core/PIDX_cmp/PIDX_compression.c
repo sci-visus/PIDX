@@ -29,6 +29,8 @@
 
 #include "../../PIDX_inc.h"
 
+static int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int ny, int nz, int bps, int vps, float bit_rate);
+static int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int ny, int nz, int bps, int vps, float bit_rate);
 
 ///Struct for restructuring ID
 struct PIDX_comp_id_struct
@@ -53,8 +55,7 @@ struct PIDX_comp_id_struct
 };
 
 
-int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
-                    int nx, int ny, int nz, int bytes_per_sample, float bit_rate)
+static int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int ny, int nz, int bps, int vps, float bit_rate)
 {
   size_t total_bytes = 0;
 
@@ -63,19 +64,25 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
     unsigned long long* chunk_dim = comp_id->idx->chunk_size;
     assert(chunk_dim[0] == 4 && chunk_dim[1] == 4 && chunk_dim[2] == 4);
     size_t total_chunk_dim = (size_t)chunk_dim[0] * (size_t)chunk_dim[1] * (size_t)chunk_dim[2];
-    size_t chunk_bytes = total_chunk_dim * bytes_per_sample;
-    zfp_type type = (bytes_per_sample == 4) ? zfp_type_float : zfp_type_double;
+    //size_t chunk_bytes = total_chunk_dim * bytes_per_sample;
+    //zfp_type type = (bytes_per_sample == 4) ? zfp_type_float : zfp_type_double;
+
+    size_t chunk_bytes = total_chunk_dim * bps;
+    zfp_type type = (bps == 4) ? zfp_type_float : zfp_type_double;
+
     zfp_field* field = zfp_field_3d(NULL, type, nx, ny, nz);
     zfp_stream* zfp = zfp_stream_open(NULL);
     zfp_stream_set_rate(zfp, bit_rate, type, 3, 0);
     size_t bytes_max = zfp_stream_maximum_size(zfp, field);
+    bytes_max = bytes_max * vps;
 
     unsigned char* output = malloc(bytes_max);
     bitstream* stream = stream_open(output, bytes_max);
     zfp_stream_set_bit_stream(zfp, stream);
     size_t i = 0;
     size_t length = (size_t)nx * (size_t)ny * (size_t)nz;
-    for (i = 0; i < length * bytes_per_sample; i += chunk_bytes)
+
+    for (i = 0; i < length * bps * vps; i += chunk_bytes)
     {
       size_t bits = 0;
       if (type == zfp_type_float)
@@ -97,8 +104,7 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer,
 }
 
 
-int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int ny, int nz,
-                      int bytes_per_sample, float bit_rate)
+static int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int ny, int nz, int bps, int vps, float bit_rate)
 {
    size_t total_bytes = 0;
 
@@ -107,19 +113,24 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int n
      unsigned long long* chunk_dim = comp_id->idx->chunk_size;
      assert(chunk_dim[0] == 4 && chunk_dim[1] == 4 && chunk_dim[2] == 4);
      size_t total_chunk_dim = (size_t)chunk_dim[0] * (size_t)chunk_dim[1] * (size_t)chunk_dim[2];
-     size_t chunk_bytes = total_chunk_dim * bytes_per_sample;
-     zfp_type type = (bytes_per_sample == 4) ? zfp_type_float : zfp_type_double;
+
+     //size_t chunk_bytes = total_chunk_dim * bytes_per_sample;
+     //zfp_type type = (bytes_per_sample == 4) ? zfp_type_float : zfp_type_double;
+
+     size_t chunk_bytes = total_chunk_dim * bps;
+     zfp_type type = (bps == 4) ? zfp_type_float : zfp_type_double;
+
      zfp_field* field = zfp_field_3d(NULL, type, nx, ny, nz);
      zfp_stream* zfp = zfp_stream_open(NULL);
      zfp_stream_set_rate(zfp, bit_rate, type, 3, 0);
 
-     unsigned char* temp_buffer = malloc(nx * ny * nz * bytes_per_sample);
-     bitstream* stream = stream_open(buffer, (nx * ny * nz * bytes_per_sample) / comp_id->idx->compression_factor);
+     unsigned char* temp_buffer = malloc(nx * ny * nz * bps * vps);
+     bitstream* stream = stream_open(buffer, (nx * ny * nz * bps * vps) / comp_id->idx->compression_factor);
      zfp_stream_set_bit_stream(zfp, stream);
      size_t i = 0;
      size_t length = (size_t)nx * (size_t)ny * (size_t)nz;
 
-     for (i = 0; i < length * bytes_per_sample; i += chunk_bytes)
+     for (i = 0; i < length * bps * vps; i += chunk_bytes)
      {
        size_t bits = 0;
        if (type == zfp_type_float)
@@ -131,7 +142,7 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int n
        total_bytes += bits / CHAR_BIT;
      }
 
-     unsigned char *temp_buffer2 = realloc(buffer, nx * ny * nz * bytes_per_sample);
+     unsigned char *temp_buffer2 = realloc(buffer, nx * ny * nz * bps * vps);
      if (temp_buffer2 == NULL)
      {
        fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);
@@ -140,7 +151,7 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int n
      else
        buffer = temp_buffer2;
 
-     memcpy(buffer, temp_buffer, nx * ny * nz * bytes_per_sample);
+     memcpy(buffer, temp_buffer, nx * ny * nz * bps * vps);
 
      free(temp_buffer);
      zfp_stream_close(zfp);
@@ -188,7 +199,58 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
       int ny = patch->size[1];
       int nz = patch->size[2];
       float bit_rate = comp_id->idx->compression_bit_rate;
-      int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
+
+
+      int values = 0;
+      int bits = 0;
+      if (strcmp(var->type_name, FLOAT32) == 0)
+      {
+        values = 1;
+        bits = 32;
+      }
+      else if (strcmp(var->type_name, FLOAT32_GA) == 0)
+      {
+        values = 2;
+        bits = 32;
+      }
+      else if (strcmp(var->type_name, FLOAT32_RGB) == 0)
+      {
+        values = 3;
+        bits = 32;
+      }
+      else if (strcmp(var->type_name, FLOAT32_RGBA) == 0)
+      {
+        values = 4;
+        bits = 32;
+      }
+
+      else if (strcmp(var->type_name, FLOAT64) == 0)
+      {
+        values = 1;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_GA) == 0)
+      {
+        values = 2;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
+      {
+        values = 3;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_RGBA) == 0)
+      {
+        values = 4;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_7STENCIL) == 0)
+      {
+        values = 7;
+        bits = 64;
+      }
+
+      int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, bits/CHAR_BIT, values, bit_rate);
       unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
       if (temp_buffer == NULL)
         return PIDX_err_compress;
@@ -220,7 +282,56 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
       int nz = patch->size[2];
       float bit_rate = comp_id->idx->compression_bit_rate;
 
-      ret = decompress_buffer(comp_id, buffer, nx, ny, nz, var->bpv/8, bit_rate);
+      int values = 0;
+      int bits = 0;
+      if (strcmp(var->type_name, FLOAT32) == 0)
+      {
+        values = 1;
+        bits = 32;
+      }
+      else if (strcmp(var->type_name, FLOAT32_GA) == 0)
+      {
+        values = 2;
+        bits = 32;
+      }
+      else if (strcmp(var->type_name, FLOAT32_RGB) == 0)
+      {
+        values = 3;
+        bits = 32;
+      }
+      else if (strcmp(var->type_name, FLOAT32_RGBA) == 0)
+      {
+        values = 4;
+        bits = 32;
+      }
+
+      else if (strcmp(var->type_name, FLOAT64) == 0)
+      {
+        values = 1;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_GA) == 0)
+      {
+        values = 2;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
+      {
+        values = 3;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_RGBA) == 0)
+      {
+        values = 4;
+        bits = 64;
+      }
+      else if (strcmp(var->type_name, FLOAT64_7STENCIL) == 0)
+      {
+        values = 7;
+        bits = 64;
+      }
+
+      ret = decompress_buffer(comp_id, buffer, nx, ny, nz, bits/CHAR_BIT, values, bit_rate);
       if (ret == -1)
         return PIDX_err_compress;
     }

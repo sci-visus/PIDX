@@ -445,13 +445,13 @@ static int verify_read_results()
             {
               read_error_count++;
               //if (rank == 100)
-              //fprintf(stderr, "W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
+              //fprintf(stderr, "W [%d] [%d %d %d] [%d] Read error %f %d \n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
             else
             {
               read_count++;
               //if (rank == 100)
-              //  fprintf(stderr, "C [%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, float_val, var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+              //  fprintf(stderr, "C [%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, float_val, 100 + var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
             }
           }
         }

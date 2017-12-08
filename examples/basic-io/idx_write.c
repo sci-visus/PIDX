@@ -74,6 +74,7 @@ static int variable_count = 1;
 static char output_file_template[512];
 static char var_list[512];
 static unsigned char **data;
+static unsigned char **data1;
 static char output_file_name[512];
 static char var_name[MAX_VAR_COUNT][512];
 static int bpv[MAX_VAR_COUNT];
@@ -275,7 +276,7 @@ static int generate_vars(){
     int bits_per_sample = 0;
     int sample_count = 0;
     char temp_name[512];
-    char* temp_type_name = "2*int32";
+    char* temp_type_name = "2*float64";
     //char* temp_type_name = "1*int8";
     sprintf(temp_name, "var_%d", variable_counter);
     strcpy(var_name[variable_counter], temp_name);
@@ -407,11 +408,15 @@ static void create_synthetic_simulation_data()
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
+  data1 = malloc(sizeof(*data) * variable_count);
+  memset(data1, 0, sizeof(*data) * variable_count);
+
   // Synthetic simulation data
   for(var = 0; var < variable_count; var++)
   {
     unsigned long long i, j, k, val_per_sample = 0;
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
+    data1[var] = malloc(sizeof (*(data1[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
 
     unsigned char cvalue = 0;
     short svalue = 0;
@@ -419,6 +424,19 @@ static void create_synthetic_simulation_data()
     double dvalue = 0;
     int ivalue = 0;
     uint64_t uivalue = 0;
+#if 0
+    FILE* fp = fopen("OF_data.txt", "r");
+    int o = 0;
+    /*
+    for (o = 0; o < 1400; o++)
+    {
+        fscanf(fp, "%f\n", &fvalue);
+        printf("[%d] val = %.16f\n", o, fvalue);
+        memcpy(data[var] + o * sizeof(float), &fvalue, sizeof(float));
+    }
+    */
+    fclose(fp);
+#else
     for (k = 0; k < local_box_size[Z]; k++)
       for (j = 0; j < local_box_size[Y]; j++)
         for (i = 0; i < local_box_size[X]; i++)
@@ -459,6 +477,7 @@ static void create_synthetic_simulation_data()
             }
           }
         }
+#endif
   }
 }
 
@@ -543,7 +562,9 @@ static void set_pidx_file(int ts)
   //PIDX_disable_agg(file);
 
   //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-  //PIDX_set_lossy_compression_bit_rate(file, 4);
+
+  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+  //PIDX_set_lossy_compression_bit_rate(file, 16);
 
   return;
 }
