@@ -44,6 +44,43 @@ IF (ENABLE_MPI)
    ENDIF()
 ENDIF()
 
+###############################################################################
+# XIDX
+###############################################################################
+
+include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+
+ExternalProject_Add(
+  XIDX
+
+  GIT_REPOSITORY "https://github.com/sci-visus/XIDX.git"
+  GIT_TAG "master"
+  
+  UPDATE_COMMAND ""
+  PATCH_COMMAND ""
+  
+  SOURCE_DIR "${CMAKE_SOURCE_DIR}/external/xidx"
+  CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/external/xidx
+  
+  TEST_COMMAND ""
+)
+
+#ExternalProject_Add_Step(
+#  XIDX CopyToBin
+#  COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/xidx/lib" "${GLOBAL_OUTPUT_PATH}"
+#  DEPENDEES install
+#)
+
+# TODO manage static an dynamic case, use separate cmake file for this
+set(XIDX_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/external/xidx/include")
+set(XIDX_LIBRARIES "${CMAKE_STATIC_LIBRARY_PREFIX}xidx${CMAKE_STATIC_LIBRARY_SUFFIX}")
+include_directories(${XIDX_INCLUDE_DIRS})
+
+install(DIRECTORY ${CMAKE_BINARY_DIR}/external/xidx/include/ DESTINATION include/xidx FILES_MATCHING PATTERN "*.h")
+install(FILES ${CMAKE_BINARY_DIR}/external/xidx/lib/${XIDX_LIBRARIES} DESTINATION lib)
+
+#message("XIDX include ${XIDX_INCLUDE_DIRS}")
+#message("XIDX lib ${XIDX_LIBRARIES}")
 
 # ///////////////////////////////////////////////
 # platform configuration
