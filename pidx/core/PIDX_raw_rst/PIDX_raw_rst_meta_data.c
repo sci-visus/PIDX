@@ -63,6 +63,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
 
   int start_var_index = rst_id->first_index;
 
+  fprintf(stdout, "[Z1] I am here\n");
   MPI_Allreduce(&var_grp->variable[start_var_index]->sim_patch_count, &rst_id->sim_max_patch_group_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->global_comm);
 
   rst_id->sim_raw_r_count = malloc(sizeof (unsigned long long) * rst_id->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count);
@@ -70,6 +71,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
   rst_id->sim_raw_r_offset = malloc(sizeof (unsigned long long) * rst_id->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count);
   memset(rst_id->sim_raw_r_offset, 0, (sizeof (unsigned long long) * rst_id->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count));
 
+  fprintf(stdout, "[Z2] I am here\n");
   for(pc=0; pc < var_grp->variable[start_var_index]->sim_patch_count; pc++)
   {
     unsigned long long* tempoff = var_grp->variable[start_var_index]->sim_patch[pc]->offset;
@@ -83,6 +85,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
     memcpy(curr_patch_size, tempsize,sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
   }
 
+  fprintf(stdout, "[Z3] I am here\n");
   unsigned long long* count_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*count_buffer_copy));
   memset(count_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count * sizeof(*count_buffer_copy));
 
@@ -99,6 +102,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
   MPI_Allgather(offset_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->sim_raw_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_group_count, MPI_LONG_LONG, rst_id->idx_c->global_comm);
   free(offset_buffer_copy);
 
+  fprintf(stdout, "[Z4] I am here\n");
   var0->patch_group_count = 0;
 
   /// extents for the local process(rst_id->idx_c->grank)
@@ -114,6 +118,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
     max_found_reg_patches *= ceil((float)rst_id->idx->box_bounds[d]/(float)rst_id->reg_patch_size[d]);
   }
 
+  fprintf(stdout, "[Z5] I am here\n");
   //fprintf(stderr, "max_found_reg_patches = %d [%d %d %d]\n", max_found_reg_patches, rst_id->reg_patch_size[0], rst_id->reg_patch_size[1], rst_id->reg_patch_size[2]);
   rst_id->reg_raw_grp_count = 0;
 
@@ -171,6 +176,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
     free(local_proc_patch);
   }
 
+  fprintf(stdout, "[Z6] I am here\n");
   for(i=0; i<found_reg_patches_count; i++)
   {
     free(found_reg_patches[i]);
@@ -188,6 +194,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
 
   reg_patch_count = 0;
 
+  fprintf(stdout, "[Z7] I am here\n");
 
   /// STEP 3 : iterate through extents of all imposed regular patches, and find all the regular patches a process (local_proc_patch) intersects with
 
@@ -389,6 +396,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
     found_reg_patches[i] = 0;
   }
   free(found_reg_patches);
+  fprintf(stdout, "[Z8] I am here\n");
 
 
   for (v = rst_id->first_index; v <= rst_id->last_index; v++)
@@ -406,6 +414,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
       memset(var->rst_patch_group[p], 0, sizeof(*(var->rst_patch_group[p])));
     }
   }
+  fprintf(stdout, "[Z9] I am here\n");
 
   j = 0;
   v = 0;
@@ -443,6 +452,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
         cnt++;
       }
     }
+    fprintf(stdout, "[Z10] I am here\n");
 
     if (cnt != var->patch_group_count) //TODO CHECK THIS
       return PIDX_err_rst;
