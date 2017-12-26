@@ -324,7 +324,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       for (i = 0; i < dim; i++)
       {
         k = i;
-        for (int j = 0; j < (sz/dim); j++)
+        for (j = 0; j < (sz/dim); j++)
         {
           if(k < sz)
           {
