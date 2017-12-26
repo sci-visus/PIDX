@@ -66,6 +66,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
   fprintf(stdout, "[Z1] I am here\n");
   MPI_Allreduce(&var_grp->variable[start_var_index]->sim_patch_count, &rst_id->sim_max_patch_group_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->global_comm);
 
+  fprintf(stdout, "[Z11] %d I am here\n");
   rst_id->sim_raw_r_count = malloc(sizeof (unsigned long long) * rst_id->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count);
   memset(rst_id->sim_raw_r_count, 0, (sizeof (unsigned long long) * rst_id->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count));
   rst_id->sim_raw_r_offset = malloc(sizeof (unsigned long long) * rst_id->idx_c->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_group_count);
@@ -457,8 +458,6 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
     if (cnt != var->patch_group_count) //TODO CHECK THIS
       return PIDX_err_rst;
   }
-
-
 
   free(rst_id->sim_raw_r_offset);
   free(rst_id->sim_raw_r_count);

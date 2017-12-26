@@ -56,7 +56,7 @@ struct PIDX_raw_rst_struct
   int reg_raw_grp_count;
   PIDX_super_patch* reg_raw_grp;
 
-  unsigned long long sim_max_patch_group_count;
+  int sim_max_patch_group_count;
   unsigned long long* sim_raw_r_count;
   unsigned long long* sim_raw_r_offset;
 
