@@ -31,14 +31,12 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
   cvi = svi;
   lgi = gi;
 
-  fprintf(stdout, "[Y1] I am here\n");
   // Initialize the restructuring phase
   time->rst_init_start[lgi][cvi] = PIDX_get_time();
   file->raw_rst_id = PIDX_raw_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
   time->rst_init_end[lgi][cvi] = PIDX_get_time();
 
 
-  fprintf(stdout, "[Y2] I am here\n");
   // Populates the relevant meta-data
   time->rst_meta_data_create_start[lgi][cvi] = PIDX_get_time();
   ret = PIDX_raw_rst_meta_data_create(file->raw_rst_id);
@@ -46,7 +44,6 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
   time->rst_meta_data_create_end[lgi][cvi] = PIDX_get_time();
 
 
-  fprintf(stdout, "[Y3] I am here\n");
   // Saving the metadata info needed for reading back the data.
   // Especially when number of cores is different from number of cores
   // used to create the dataset
@@ -62,14 +59,12 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
   time->rst_meta_data_io_end[lgi][cvi] = PIDX_get_time();
 
 
-  fprintf(stdout, "[Y4] I am here\n");
   // Creating the buffers required for restructurig
   time->rst_buffer_start[lgi][cvi] = PIDX_get_time();
   ret = PIDX_raw_rst_buf_create(file->raw_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
 
 
-  fprintf(stdout, "[Y5] I am here\n");
   // Aggregating the aligned small buffers after restructuring into one single buffer
   ret = PIDX_raw_rst_aggregate_buf_create(file->raw_rst_id);
   if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}

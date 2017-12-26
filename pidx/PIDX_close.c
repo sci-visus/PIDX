@@ -174,6 +174,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 #if DETAIL_OUTPUT
   if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
   {
+#if 0
     if (file->idx->io_type == PIDX_RAW_IO)
       fprintf(stderr, "PIDX_RAW_IO %s\n", file->idx->filename);
     else if (file->idx->io_type == PIDX_IDX_IO)
@@ -182,6 +183,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       fprintf(stderr, "PIDX_LOCAL_PARTITION_IDX_IO %s\n", file->idx->filename);
     else if (file->idx->io_type == PIDX_GLOBAL_PARTITION_IDX_IO)
       fprintf(stderr, "PIDX_GLOBAL_PARTITION_IDX_IO %s\n", file->idx->filename);
+#endif
 
     if (file->idx->io_type != PIDX_RAW_IO)
     {

@@ -28,7 +28,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
   }
   time->set_reg_box_end = MPI_Wtime();
 
-  fprintf(stdout, "[A] I am here\n");
   ret = group_meta_data_init(file, gi, svi, evi);
   if (ret != PIDX_success)
   {
@@ -36,7 +35,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  fprintf(stdout, "[B] I am here\n");
   ret = dump_process_extent(file);
   if (ret != PIDX_success)
   {
@@ -44,14 +42,12 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  fprintf(stdout, "[C] I am here\n");
   file->idx_d->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
   {
     ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
     file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
-    fprintf(stdout, "[X1] I am here\n");
     // Step 1: Setup restructuring buffers
     ret = raw_restructure_setup(file, gi, si, ei, PIDX_WRITE);
     if (ret != PIDX_success)
@@ -60,7 +56,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
-    fprintf(stdout, "[X2] I am here\n");
     // Step 2: Perform data restructuring
     ret = raw_restructure(file, PIDX_WRITE);
     if (ret != PIDX_success)
@@ -69,7 +64,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
-    fprintf(stdout, "[X3] I am here\n");
     // Step 3: Write out restructured data
     ret = raw_restructure_io(file, PIDX_WRITE);
     if (ret != PIDX_success)
@@ -78,7 +72,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
 
-    fprintf(stdout, "[X4] I am here\n");
     // Step 4: Cleanup all buffers and ids
     ret = raw_restructure_cleanup(file);
     if (ret != PIDX_success)
@@ -87,8 +80,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
       return PIDX_err_file;
     }
   }
-
-  fprintf(stdout, "[D] I am here\n");
 
   return PIDX_success;
 }
