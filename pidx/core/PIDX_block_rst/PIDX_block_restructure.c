@@ -195,6 +195,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
   if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
+  int i = 0, j = 0, d = 0;
   unsigned long long v;
   if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
   {
@@ -220,7 +221,6 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
   unsigned long long *chunk_size = chunk_id->idx->chunk_size;
   //printf("Chunk size is %lld\n", *chunk_size);
   unsigned long long  cbz = 1;
-  int d;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d){
     cbz = cbz * chunk_size[d];
     //printf("some terms are %lld, %lld, %d\n", cbz, chunk_size[d], PIDX_MAX_DIMENSIONS);
@@ -306,22 +306,22 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
     unsigned char * q = in_patch->restructured_patch->buffer;
 
     unsigned char ** sdim = malloc(dim*(bits/CHAR_BIT));
-    for (int i = 0; i < dim; i++)
+    for (i = 0; i < dim; i++)
       sdim[i] = malloc((sz/dim) * (bits/CHAR_BIT));
 
     unsigned char ** op = malloc(dim*(bits/CHAR_BIT));
-    for (int i = 0; i < dim; i++)
+    for (i = 0; i < dim; i++)
       op[i] = malloc((sz/dim) * (bits/CHAR_BIT));
 
     unsigned char ** qp = malloc(dim*(bits/CHAR_BIT));
-    for (int i = 0; i < dim; i++)
+    for (i = 0; i < dim; i++)
       qp[i] = malloc((sz/dim) * (bits/CHAR_BIT));
 
     int compval = in_patch->restructured_patch->size[0] * in_patch->restructured_patch->size[1] * in_patch->restructured_patch->size[2];
     if (MODE == PIDX_WRITE)
     {
       int k = 0;
-      for (int i = 0; i < dim; i++)
+      for (i = 0; i < dim; i++)
       {
         k = i;
         for (int j = 0; j < (sz/dim); j++)
@@ -339,7 +339,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
         returnbuffer(sdim[d], op[d], cbz, nx, ny, nz, compval, bits, PIDX_WRITE);
 
       int ctr = 0, row = 0;
-      for (int i = 0; i < sz; i++)
+      for (i = 0; i < sz; i++)
       {
         if(ctr == (sz/dim) ){
           row+=1;
@@ -352,7 +352,7 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
     else
     {
       int ctr = 0, row = 0;
-      for (int i = 0; i < sz; i++)
+      for (i = 0; i < sz; i++)
       {
         if(ctr == (sz/dim) ){
           row+=1;
@@ -362,15 +362,15 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
         ctr++;
       }
 
-      for (int d = 0; d < dim; d++)
+      for (d = 0; d < dim; d++)
         returnbuffer(qp[d], op[d], cbz, nx, ny, nz, compval, bits, PIDX_READ);
 
       //copy data to the input buffer
       ctr = 0;
       int pos = 0;
-      for (int i = 0; i < dim; i++)
+      for (i = 0; i < dim; i++)
       {
-        for (int j = 0; j < (sz/dim); j++)
+        for (j = 0; j < (sz/dim); j++)
         {
           memcpy(q + (pos + ctr)*(bits/CHAR_BIT), qp[i] + j*(bits/CHAR_BIT), (bits/CHAR_BIT));
           ctr+=dim;
@@ -380,13 +380,13 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
       }
     }
 
-    for (int i = 0; i < dim; i++)
+    for (i = 0; i < dim; i++)
       free(sdim[i]);
     free(sdim);
-    for (int i = 0; i < dim; i++)
+    for (i = 0; i < dim; i++)
       free(op[i]);
     free(op);
-    for (int i = 0; i < dim; i++)
+    for (i = 0; i < dim; i++)
       free(qp[i]);
     free(qp);
 
