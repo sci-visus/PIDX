@@ -1,7 +1,7 @@
 version: '{build}'
 
 # https://www.appveyor.com/docs/build-environment/#build-worker-images
-#image: Visual Studio 2017
+image: Visual Studio 2017
 
 # branches to build
 branches:
@@ -10,15 +10,11 @@ branches:
     - windows
 
 # this is how to allow failing jobs in the matrix
-environment:
-  matrix:
-    - CMAKE_GENERATOR: "Visual Studio 2017"
-      CONFIG: Release
-      BUILD_SHARED_LIBS: OFF
-      ENABLE_GMOCK: OFF
-      ENABLE_BENCHMARKS: OFF
-      ENABLE_MPI: ON
-      fast_finish: true     # set this flag to immediately finish build once one of the jobs fails.
+# environment:
+#   matrix:
+#     CONFIG: Release
+#     ENABLE_MPI: ON
+      #fast_finish: true     # set this flag to immediately finish build once one of the jobs fails.
 
 install:
 # Install MS-MPI
@@ -33,8 +29,9 @@ install:
 before_build:
 - mkdir build
 - cd build
+- ls "C:/Program Files (x86)/Microsoft SDKs/MPI"
 
 build_script:
-- cmake ../ -DPIDX_BUILD_EXAMPLES=ON -DMPI_HOME="C:/Program Files (x86)/Microsoft SDKs/MPI" -DMPI_C_INCLUDE_PATH="${MPI_HOME}/Include" -DMPI_C_LIBRARIES="${MPI_HOME}/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH="${MPI_HOME}/Include"  -DMPI_CXX_LIBRARIES="${MPI_HOME}/Lib/x86/msmpi.lib"
+- cmake ../ -DPIDX_BUILD_EXAMPLES=ON -DMPI_HOME="C:/Program Files (x86)/Microsoft SDKs/MPI" -DMPI_C_INCLUDE_PATH="C:/Program Files (x86)/Microsoft SDKs/MPI/Include" -DMPI_C_LIBRARIES="C:/Program Files (x86)/Microsoft SDKs/MPI/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH="C:/Program Files (x86)/Microsoft SDKs/MPI/Include"  -DMPI_CXX_LIBRARIES="C:/Program Files (x86)/Microsoft SDKs/MPI/Lib/x86/msmpi.lib"
 - cmake ../ --build idx_read
 - cmake ../ --build idx_write
