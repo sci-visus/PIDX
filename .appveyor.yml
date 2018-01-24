@@ -2,15 +2,14 @@ version: '{build}'
 
 # https://www.appveyor.com/docs/build-environment/#build-worker-images
 image: Visual Studio 2017
+environment:
+  APPVEYOR_RDP_PASSWORD: temp_pass
 
 # branches to build
 branches:
   # whitelist
   only:
     - windows
-
-environment: 
-  - APPVEYOR_RDP_PASSWORD: "temp_pass"
 
 init:
   - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
@@ -37,5 +36,3 @@ build_script:
 #- cmake ../ --build idx_read
 #- cmake ../ --build idx_write
 
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
