@@ -29,10 +29,9 @@ before_build:
 build_script:
 - cmake ../ -DPIDX_BUILD_EXAMPLES=ON -DMPI_HOME="C:/Program Files (x86)/Microsoft SDKs/MPI" -DMPI_C_INCLUDE_PATH="C:/Program Files (x86)/Microsoft SDKs/MPI/Include" -DMPI_C_LIBRARIES="C:/Program Files (x86)/Microsoft SDKs/MPI/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH="C:/Program Files (x86)/Microsoft SDKs/MPI/Include"  -DMPI_CXX_LIBRARIES="C:/Program Files (x86)/Microsoft SDKs/MPI/Lib/x86/msmpi.lib"
 - call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
+- cd
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 - devenv /build Release PIDX.sln /log output.log
 - type output.log
 #- cmake ../ --build idx_read
 #- cmake ../ --build idx_write
-
-on_finish:
-  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
