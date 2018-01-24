@@ -54,12 +54,6 @@ INCLUDE(PIDXMacros)
 PIDX_SET_COMPILER_OPTIONS()
 PIDX_SET_MACHINE_SPECIFIC_OPTIONS()
 
-if(WIN32)
-  set(OS_SPECIFIC_LIBS Ws2_32)
-else()
-  set(OS_SPECIFIC_LIBS m)
-endif()
-
 
 # ///////////////////////////////////////////////
 # PIDX_GIT_REVISION
