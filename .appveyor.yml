@@ -35,11 +35,6 @@ before_build:
 - cd build
 
 build_script:
-- cmake ../ -DPIDX_BUILD_EXAMPLES=ON ^
-    -D MPI_HOME:PATH="C:/Program Files (x86)/Microsoft SDKs/MPI" ^
-    -D MPI_C_INCLUDE_PATH:PATH="${MPI_HOME}/Include" ^
-    -D MPI_C_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib" ^
-    -D MPI_CXX_INCLUDE_PATH:PATH="${MPI_HOME}/Include" ^
-    -D MPI_CXX_LIBRARIES:PATH="${MPI_HOME}/Lib/x86/msmpi.lib"
+- cmake ../ -DPIDX_BUILD_EXAMPLES=ON -DMPI_HOME="C:/Program Files (x86)/Microsoft SDKs/MPI" -DMPI_C_INCLUDE_PATH="${MPI_HOME}/Include" -DMPI_C_LIBRARIES="${MPI_HOME}/Lib/x86/msmpi.lib" -DMPI_CXX_INCLUDE_PATH="${MPI_HOME}/Include"  -DMPI_CXX_LIBRARIES="${MPI_HOME}/Lib/x86/msmpi.lib"
 - cmake ../ --build idx_read
 - cmake ../ --build idx_write
