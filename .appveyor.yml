@@ -9,6 +9,12 @@ branches:
   only:
     - windows
 
+environment: 
+  - APPVEYOR_RDP_PASSWORD: "temp_pass"
+
+init:
+  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 install:
 # Install MS-MPI
 - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
@@ -30,3 +36,6 @@ build_script:
 - type output.log
 #- cmake ../ --build idx_read
 #- cmake ../ --build idx_write
+
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
