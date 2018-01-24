@@ -1,9 +1,21 @@
 #ifndef __PIDX_WINDOWS_DEFINE_H
 #define __PIDX_WINDOWS_DEFINE_H
 
-#pragma comment(lib, "Ws2_32.lib")
+/** Macros to swap bytes in a multi-byte value, to convert from big-endian data
+to little-endian data and vice versa. These are taken from the Boost library.*/
+#ifndef __has_builtin
+#define __has_builtin(x) 0 // Compatibility with non-clang compilers
+#endif
+#define htonl(x) _byteswap_ulong(x)
+#define ntohl(x) htonl(x)
 
 #include <io.h>
+#include <stdio.h>
+#include <string.h>
+
+typedef long int __off_t;
+typedef long int __off64_t;
+typedef __off_t off_t;
 
 #define ssize_t size_t
 #define PATH_MAX 256
@@ -20,7 +32,7 @@ inline int pwrite(int fd, const void *buf, size_t nbytes, off_t offset)
   return(_write(fd, buf, nbytes));
 }
 
-inline int pread(int fd, const void *buf, size_t nbytes, off_t offset)
+inline int pread(int fd, void *buf, size_t nbytes, off_t offset)
 {
   if (_lseek(fd, offset, SEEK_SET) != offset) {
     return -1;
