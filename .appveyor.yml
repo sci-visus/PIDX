@@ -34,3 +34,5 @@ build_script:
 #- cmake ../ --build idx_read
 #- cmake ../ --build idx_write
 
+on_finish:
+  - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
