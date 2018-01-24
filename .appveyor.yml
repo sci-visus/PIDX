@@ -26,8 +26,10 @@ install:
 - set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
 
 before_build:
+- mkdir build
+- cd build
 - cmake ../ -DPIDX_BUILD_EXAMPLES=ON
 
 build_script:
-- cmake --build idx_read
-- cmake --build idx_write
+- cmake ../ --build idx_read
+- cmake ../ --build idx_write
