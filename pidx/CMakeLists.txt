@@ -33,6 +33,7 @@ FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./m
 
 #FILE(GLOB PIDX_SOURCES *.h *.c)
 
+MESSAGE("using OS_SPECIFIC_LIBS: ${OS_SPECIFIC_LIBS}")
 
 # ////////////////////////////////////////
 # includes
@@ -41,7 +42,7 @@ FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./m
 IF (MPI_C_FOUND)
   MESSAGE("Configuring pidx with MPI support")
   INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${MPI_C_LIBRARIES})
+  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${OS_SPECIFIC_LIBS} ${MPI_C_LIBRARIES})
 ENDIF()
 
 IF (ZFP_FOUND)

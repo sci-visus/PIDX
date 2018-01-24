@@ -1,6 +1,8 @@
 #ifndef __PIDX_WINDOWS_DEFINE_H
 #define __PIDX_WINDOWS_DEFINE_H
 
+#pragma comment(lib, "Ws2_32.lib")
+
 #include <io.h>
 
 #define ssize_t size_t

@@ -17,7 +17,7 @@
 # *****************************************************/
 
 IF (WIN32)
-  SET(OS_SPECIFIC_LIBS Ws2_32)
+  SET(OS_SPECIFIC_LIBS ws2_32)
 ELSE()
   SITE_NAME(HOSTNAME)
 	MESSAGE("Configuring PIDX for ${CMAKE_SYSTEM_NAME} (${CMAKE_SYSTEM})")
