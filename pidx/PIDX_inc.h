@@ -18,7 +18,7 @@
 #include <stdint.h>
 
 #if defined _MSC_VER
-  #include <pidx_windows_define.h>
+  #include <PIDX_windows_define.h>
 #else
   #include <unistd.h>
   #include <arpa/inet.h>
