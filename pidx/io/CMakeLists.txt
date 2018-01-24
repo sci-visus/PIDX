@@ -50,5 +50,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_io "${PIDX_IO_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_io m pidx_idx_io pidx_raw_io ${PIDX_IO_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_io ${OS_SPECIFIC_LIBS} pidx_idx_io pidx_raw_io ${PIDX_IO_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_io PROPERTIES LINKER_LANGUAGE CXX)

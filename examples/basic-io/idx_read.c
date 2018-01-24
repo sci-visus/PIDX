@@ -21,7 +21,7 @@
 
   In this example we show how to read data using the PIDX library.
 
-  We consider a global 3D regular grid domain that we will call 
+  We consider a global 3D regular grid domain that we will call
   global domain (g).
   This global domain represents the grid space where all the data are stored.
 
@@ -29,15 +29,15 @@
   that has to be written on the disk. We refer to this portion of the domain as
   local domain (l).
 
-  In this example we well see how to execute parallel read with PIDX of a 
+  In this example we well see how to execute parallel read with PIDX of a
   syntethic dataset.
 
   In the following picture is represented a sample domain decomposition
   of the global domain (l) in per-core local domains (l), sometimes referred
   as patches.
   In this example all the local domains have same dimesions for simplicity.
-  PIDX supports different number and sizes of patches per core. 
-  This also means that you can actually read the same data from a different 
+  PIDX supports different number and sizes of patches per core.
+  This also means that you can actually read the same data from a different
   core configurations.
 
                                          *---------*--------*
@@ -56,7 +56,6 @@
 
 */
 
-#include <unistd.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <PIDX.h>
@@ -108,7 +107,7 @@ int main(int argc, char **argv)
   // Init MPI and MPI vars (e.g. rank and process_count)
   init_mpi(argc, argv);
 
-  // Parse input arguments and initialize 
+  // Parse input arguments and initialize
   // corresponing variables
   parse_args(argc, argv);
 
@@ -127,7 +126,7 @@ int main(int argc, char **argv)
 
   // Get all the information about the variable that we want to read
   set_pidx_variable_and_create_buffer();
-  
+
   // Read the data into a local buffer (data) in row major order
   PIDX_variable_read_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
 
@@ -324,7 +323,7 @@ static void set_pidx_variable_and_create_buffer()
   // Get corresponding PIDX_variable
   PIDX_get_current_variable(file, &variable);
 
-  // Get some information about this variable (typename, number of values per sample, 
+  // Get some information about this variable (typename, number of values per sample,
   // number of bits per sample)
   PIDX_values_per_datatype(variable->type_name, &values_per_sample, &bits_per_sample);
   strcpy(type_name, variable->type_name);
