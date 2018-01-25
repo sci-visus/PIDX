@@ -63,6 +63,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#if defined _MSC_VER
+  #include "utils/PIDX_windows_utils.h"
+#endif
+
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;
 static unsigned long long local_box_offset[3];

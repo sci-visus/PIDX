@@ -61,6 +61,10 @@
 #include <ctype.h>
 #include <PIDX.h>
 
+#if defined _MSC_VER
+  #include "utils/PIDX_windows_utils.h"
+#endif
+
 #define MAX_VAR_COUNT 256
 enum { X, Y, Z, NUM_DIMS };
 
