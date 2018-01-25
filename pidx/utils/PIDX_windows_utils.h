@@ -1,6 +1,8 @@
 #ifndef __PIDX_WINDOWS_UTILS_H
 #define __PIDX_WINDOWS_UTILS_H
 
+#include <string.h>
+
 static int     opterr = 1,             /* if error message should be printed */
 optind = 1,                            /* index into parent argv vector */
 optopt,                                /* character checked for validity */
