@@ -194,7 +194,11 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
       fprintf(stderr, "[%s] [%d] Unable to identify File-System block size\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+#if defined _MSC_VER
+    (*file)->idx_d->fs_block_size = 512; // TODO: double check
+#else
     (*file)->idx_d->fs_block_size = stat_buf.st_blksize;
+#endif
   }
 
   MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);

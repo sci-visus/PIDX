@@ -21,7 +21,7 @@
 
   In this example we show how to write data using the PIDX library.
 
-  We consider a global 3D regular grid domain that we will call 
+  We consider a global 3D regular grid domain that we will call
   global domain (g).
   This global domain represents the grid space where all the data are stored.
 
@@ -29,7 +29,7 @@
   that has to be written on the disk. We refer to this portion of the domain as
   local domain (l).
 
-  In this example we well see how to execute parallel write with PIDX of a 
+  In this example we well see how to execute parallel write with PIDX of a
   syntethic dataset.
 
   In the following picture is represented a sample domain decomposition
@@ -53,12 +53,17 @@
         *---------*---------*
 
 */
-
+#if !defined _MSC_VER
 #include <unistd.h>
+#endif
 #include <stdarg.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <PIDX.h>
+
+#if defined _MSC_VER
+  #include "utils/PIDX_windows_utils.h"
+#endif
 
 #define MAX_VAR_COUNT 256
 enum { X, Y, Z, NUM_DIMS };
@@ -119,7 +124,7 @@ int main(int argc, char **argv)
   // Init MPI and MPI vars (e.g. rank and process_count)
   init_mpi(argc, argv);
 
-  // Parse input arguments and initialize 
+  // Parse input arguments and initialize
   // corresponing variables
   parse_args(argc, argv);
 
@@ -140,7 +145,7 @@ int main(int argc, char **argv)
   {
     // Set PIDX_file for this timestep
     set_pidx_file(ts);
-    
+
     // Set all the PIDX_variable that we want to write
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
@@ -242,7 +247,7 @@ static void parse_args(int argc, char **argv)
 
     case('v'): // number of variables
       if(!isNumber(optarg)){ // the param is a file with the list of variables
-        if (sprintf(var_list, "%s", optarg) > 0) 
+        if (sprintf(var_list, "%s", optarg) > 0)
           parse_var_list();
         else
           terminate_with_error_msg("Invalid variable list file\n%s", usage);
@@ -268,7 +273,7 @@ static void parse_args(int argc, char **argv)
 }
 
 static int generate_vars(){
-  
+
   int variable_counter = 0;
 
   for(variable_counter = 0; variable_counter < variable_count; variable_counter++){
@@ -504,7 +509,7 @@ static void terminate_with_error_msg(const char *format, ...)
 //----------------------------------------------------------------
 static void create_pidx_var_point_and_access()
 {
-  // Allocate a PIDX_variable array where we store the information 
+  // Allocate a PIDX_variable array where we store the information
   // of all the variables
   variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
   memset(variable, 0, sizeof(*variable) * variable_count);
@@ -531,7 +536,7 @@ static void set_pidx_file(int ts)
 {
   PIDX_return_code ret;
 
-  // Create IDX file 
+  // Create IDX file
   ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, p_access, global_size, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create\n");
 
@@ -545,17 +550,17 @@ static void set_pidx_file(int ts)
 
   // Set the restructuring box size
   PIDX_set_restructuring_box(file, reg_size);
-  
+
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_RAW_IO);
-  
+  PIDX_set_io_mode(file, PIDX_IDX_IO); // TODO:
+
   // Set how many blocks we want to write in a single file
   PIDX_set_block_count(file, 256);
-  
+
   // Set the size of a block: how many 2^N samples we want to put in a single block
   PIDX_set_block_size(file, 15);
 
-  // If the domain decomposition and the cores configuration do not change over time 
+  // If the domain decomposition and the cores configuration do not change over time
   // we can instruct PIDX to cache and reuse these information for the next timesteps
   PIDX_set_cache_time_step(file, 0);
 

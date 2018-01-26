@@ -10,13 +10,19 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
 
 #include <fcntl.h>
-#include <unistd.h>
+#include <stdint.h>
+
+#if defined _MSC_VER
+  #include "PIDX_windows_define.h"
+#else
+  #include <unistd.h>
+  #include <arpa/inet.h>
+#endif
 
 #include <mpi.h>
 

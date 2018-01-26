@@ -33,6 +33,7 @@ FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./m
 
 #FILE(GLOB PIDX_SOURCES *.h *.c)
 
+MESSAGE("using OS_SPECIFIC_LIBS: ${OS_SPECIFIC_LIBS}")
 
 # ////////////////////////////////////////
 # includes
@@ -41,7 +42,7 @@ FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./m
 IF (MPI_C_FOUND)
   MESSAGE("Configuring pidx with MPI support")
   INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${MPI_C_LIBRARIES})
+  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${OS_SPECIFIC_LIBS} ${MPI_C_LIBRARIES})
 ENDIF()
 
 IF (ZFP_FOUND)
@@ -65,7 +66,7 @@ ENDIF()
 # library
 # ////////////////////////////////////////
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx m pidx_comm pidx_meta_data_cache pidx_data_handle pidx_utils pidx_core pidx_io zfp ${PIDX_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx ${OS_SPECIFIC_LIBS} pidx_comm pidx_meta_data_cache pidx_data_handle pidx_utils pidx_core pidx_io zfp ${PIDX_LINK_LIBS})
 
 
 SET_TARGET_PROPERTIES(pidx PROPERTIES LINKER_LANGUAGE CXX)

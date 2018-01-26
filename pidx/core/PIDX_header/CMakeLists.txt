@@ -53,5 +53,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_header "${PIDX_HEADER_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_header m pidx_utils ${PIDX_HEADER_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_header ${OS_SPECIFIC_LIBS} pidx_utils ${PIDX_HEADER_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_header PROPERTIES LINKER_LANGUAGE CXX)
