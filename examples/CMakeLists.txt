@@ -46,5 +46,8 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(idx_read "basic-io/idx_read.c")
   TARGET_LINK_LIBRARIES(idx_read ${EXAMPLES_LINK_LIBS})
 
+  PIDX_ADD_CEXECUTABLE(particle_write "basic-io/particle_write.c")
+  TARGET_LINK_LIBRARIES(particle_write ${EXAMPLES_LINK_LIBS})
+
 
 ENDIF()
