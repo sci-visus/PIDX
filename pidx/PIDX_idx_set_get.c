@@ -111,6 +111,30 @@ PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16])
 
 
 
+PIDX_return_code PIDX_set_physical_dims(PIDX_file file, PIDX_physical_point dims)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  memcpy(file->idx->physical_bounds, dims, (sizeof(double) * PIDX_MAX_DIMENSIONS));
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_physical_dims(PIDX_file file, PIDX_physical_point dims)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  memcpy(dims, file->idx->physical_bounds, (sizeof(double) * PIDX_MAX_DIMENSIONS));
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_time_step)
 {
   if(!file)

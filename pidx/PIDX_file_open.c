@@ -1,7 +1,7 @@
 #include "PIDX_file_handler.h"
 
 /// Function to get file descriptor when opening an existing IDX file
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_physical_point physical_dims, PIDX_file* file)
 {
   int i;
   char file_name_skeleton[1024];
@@ -151,7 +151,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       fprintf(stderr, "Error Opening %s\n", (*file)->idx->filename);
       return PIDX_err_file;
     }
-
+printf("XXXXXXx\n");
     while (fgets(line, sizeof (line), fp) != NULL)
     {
       line[strcspn(line, "\r\n")] = 0;
@@ -170,6 +170,26 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           {
             (*file)->idx->bounds[count / 2] = atoi(pch) + 1;
             (*file)->idx->box_bounds[count / 2] = atoi(pch) + 1;
+          }
+          count++;
+          pch = strtok(NULL, " ");
+        }
+      }
+
+      if (strcmp(line, "(physical box)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+
+        pch = strtok(line, " ");
+        count = 0;
+        while (pch != NULL)
+        {
+          if (count % 2 == 1 && count / 2 < PIDX_MAX_DIMENSIONS)
+          {
+            (*file)->idx->physical_bounds[count / 2] = atof(pch);
+            (*file)->idx->physical_box_bounds[count / 2] = atof(pch);
           }
           count++;
           pch = strtok(NULL, " ");
@@ -431,7 +451,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         if(pch != NULL)
           (*file)->idx->last_tstep = atoi(pch);
 
-
         else
           return PIDX_err_file;
       }
@@ -442,6 +461,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 
   MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
+  MPI_Bcast((*file)->idx->physical_bounds, PIDX_MAX_DIMENSIONS, MPI_DOUBLE, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx->box_bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->restructured_grid->patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
@@ -532,9 +552,11 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   else
     (*file)->idx->flip_endian = 1;
 
-  memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
+  if (dims != NULL)
+    memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
 
-
+  if (physical_dims != NULL)
+    memcpy(physical_dims, (*file)->idx->physical_bounds, (sizeof(double) * PIDX_MAX_DIMENSIONS));
 
   return PIDX_success;
 }
@@ -626,7 +648,6 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   else
     sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
 #endif
-
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;

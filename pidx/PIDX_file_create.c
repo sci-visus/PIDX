@@ -55,17 +55,23 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->flags = flags;
 
-  memcpy((*file)->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
-  memcpy((*file)->idx->box_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  if (dims != NULL)
+  {
+    memcpy((*file)->idx->bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+    memcpy((*file)->idx->box_bounds, dims, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  }
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx_d->samples_per_block = (int)pow(2, PIDX_default_bits_per_block);
 
-  if (dims[0] * dims[1] * dims[2] < (*file)->idx_d->samples_per_block)
+  if (dims != NULL)
   {
-    // ensure blocksize is a subset of the total volume.
-    (*file)->idx_d->samples_per_block = getPowerOf2(dims[0] * dims[1] * dims[2]) >> 1;
-    (*file)->idx->bits_per_block = getNumBits((*file)->idx_d->samples_per_block) - 1;
+    if (dims[0] * dims[1] * dims[2] < (*file)->idx_d->samples_per_block)
+    {
+      // ensure blocksize is a subset of the total volume.
+      (*file)->idx_d->samples_per_block = getPowerOf2(dims[0] * dims[1] * dims[2]) >> 1;
+      (*file)->idx->bits_per_block = getNumBits((*file)->idx_d->samples_per_block) - 1;
+    }
   }
   //fprintf(stderr, "BPB %d SPB %d D %d\n", (*file)->idx->bits_per_block, (*file)->idx_d->samples_per_block, getPowerOf2(dims[0] * dims[1] * dims[2]));
 
@@ -78,7 +84,8 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
     (*file)->idx_d->partition_count[i] = 1;
-    (*file)->idx_d->partition_size[i] = getPowerOf2(dims[i]);
+    if (dims != NULL)
+      (*file)->idx_d->partition_size[i] = getPowerOf2(dims[i]);
     (*file)->idx_d->partition_offset[i] = 0;
   }
 

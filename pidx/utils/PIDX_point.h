@@ -31,9 +31,16 @@
 
 typedef unsigned long long PIDX_point[PIDX_MAX_DIMENSIONS];
 
+typedef double PIDX_physical_point[PIDX_MAX_DIMENSIONS];
+
 /// Utility functions to set or get the dimensions of an offset or a box (defined as points)
 PIDX_return_code PIDX_set_point(PIDX_point point, unsigned long long  x,unsigned long long  y,unsigned long long  z);
 PIDX_return_code PIDX_get_point(unsigned long long* x,unsigned long long* y,unsigned long long* z, PIDX_point point);
+
+
+PIDX_return_code PIDX_get_physical_point(double* x, double* y, double* z, PIDX_physical_point point);
+PIDX_return_code PIDX_set_physical_point(PIDX_physical_point point, double  x, double  y, double  z);
+
 
 /// PIDX_inner_product
 PIDX_return_code PIDX_inner_product(unsigned long long *inner_product, PIDX_point point);

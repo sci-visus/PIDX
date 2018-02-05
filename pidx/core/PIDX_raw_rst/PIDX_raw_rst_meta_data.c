@@ -462,7 +462,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_write(PIDX_raw_rst_id rst_id)
   int *global_patch_size;
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
   int max_patch_count;
-  int patch_count =var0->patch_group_count;
+  int patch_count = var0->patch_group_count;
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->global_comm);
 
   int *local_patch_offset = malloc(sizeof(uint32_t) * (max_patch_count * PIDX_MAX_DIMENSIONS + 1));
@@ -491,10 +491,8 @@ PIDX_return_code PIDX_raw_rst_meta_data_write(PIDX_raw_rst_id rst_id)
   global_patch_size = malloc((rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
   memset(global_patch_size, 0, (rst_id->idx_c->gnprocs * (max_patch_count * PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
 
-
   MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, global_patch_offset + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, rst_id->idx_c->global_comm);
   MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, global_patch_size + 2, PIDX_MAX_DIMENSIONS * max_patch_count + 1, MPI_INT, rst_id->idx_c->global_comm);
-
 
   global_patch_size[0] = rst_id->idx_c->gnprocs;
   global_patch_offset[0] = rst_id->idx_c->gnprocs;

@@ -297,7 +297,7 @@ static void set_pidx_file(int ts)
   PIDX_return_code ret;
 
   // Open IDX file
-  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, global_bounds, &file);
+  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, global_bounds, NULL, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_open\n");
 
   // Set the current timestep

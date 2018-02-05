@@ -90,7 +90,8 @@ static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
-static PIDX_point logical_global_size, logical_local_offset, logical_local_size, reg_size;
+static PIDX_point logical_global_size;
+static PIDX_physical_point physical_global_size, physical_local_offset, physical_local_size;
 static PIDX_access p_access;
 static PIDX_meta_data_cache cache;
 static PIDX_file file;
@@ -506,8 +507,10 @@ static void create_pidx_var_point_and_access()
 
   // Set variables that define the global and local domain information
   PIDX_set_point(logical_global_size, logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z]);
-  PIDX_set_point(logical_local_offset, logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z]);
-  PIDX_set_point(logical_local_size, logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z]);
+
+  PIDX_set_physical_point(physical_global_size, physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z]);
+  PIDX_set_physical_point(physical_local_offset, physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z]);
+  PIDX_set_physical_point(physical_local_size, physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z]);
 
   // Creating access
   PIDX_create_access(&p_access);
@@ -527,6 +530,8 @@ static void set_pidx_file(int ts)
   ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, p_access, logical_global_size, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_create\n");
 
+  PIDX_set_physical_dims(file, physical_global_size);
+
   // Set the current timestep
   PIDX_set_current_time_step(file, ts);
   // Set the number of variables
@@ -535,8 +540,6 @@ static void set_pidx_file(int ts)
   // Advanced settings
   PIDX_set_meta_data_cache(file, cache);
 
-  // Set the restructuring box size
-  PIDX_set_restructuring_box(file, reg_size);
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
   PIDX_set_io_mode(file, PIDX_IDX_IO); // TODO:
@@ -572,7 +575,7 @@ static void set_pidx_variable(int var)
 
   // Set the variable offset and size of the local domain,
   // where the data is in memory (data) and what is its layout in memory (row major)
-  ret = PIDX_variable_write_particle_data_layout(variable[var], logical_local_offset, logical_local_size, data[var], particle_count, PIDX_row_major);
+  ret = PIDX_variable_write_particle_data_physical_layout(variable[var], physical_local_offset, physical_local_size, data[var], particle_count, PIDX_row_major);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_write_data_layout");
 
   // Tell PIDX that we want to write this variable

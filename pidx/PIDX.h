@@ -103,7 +103,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
 ///
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_point dims, PIDX_file* file);
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_point dims, PIDX_physical_point physical_dims, PIDX_file* file);
 
 
 
@@ -321,6 +321,26 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point restructu
 /// \return
 ///
 PIDX_return_code PIDX_get_restructuring_box(PIDX_file file, PIDX_point reg_patch_size);
+
+
+
+///
+/// \brief PIDX_set_physical_dims
+/// \param file
+/// \param dims
+/// \return
+///
+PIDX_return_code PIDX_set_physical_dims(PIDX_file file, PIDX_physical_point dims);
+
+
+
+///
+/// \brief PIDX_get_physical_dims
+/// \param file
+/// \param dims
+/// \return
+///
+PIDX_return_code PIDX_get_physical_dims(PIDX_file file, PIDX_physical_point dims);
 
 
 
@@ -635,6 +655,21 @@ PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable
 
 
 
+
+///
+/// \brief PIDX_variable_write_particle_data_physical_layout
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param read_from_this_buffer
+/// \param number_of_particles
+/// \param data_layout
+/// \return
+///
+PIDX_return_code PIDX_variable_write_particle_data_physical_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, const void* read_from_this_buffer, int number_of_particles, PIDX_data_layout data_layout);
+
+
+
 ///
 /// \brief PIDX_append_and_write_variable Write function used for dumping data from a simulation.
 /// This function is used to write data in increasing order, typically suited for dumping data from a simulation.
@@ -666,6 +701,22 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
 /// \return
 ///
 PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
+
+
+///
+/// \brief PIDX_variable_read_particle_data_layout
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param write_to_this_buffer
+/// \param particle_count
+/// \param data_layout
+/// \return
+///
+PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void* write_to_this_buffer, int* particle_count, PIDX_data_layout data_layout);
+
 
 
 
