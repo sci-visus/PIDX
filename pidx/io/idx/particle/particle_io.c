@@ -10,7 +10,6 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
 {
 
-  int si = 0, p = 0, pt = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
   if (group_meta_data_init(file, gi, svi, evi) != PIDX_success)
@@ -25,13 +24,12 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  char *directory_path;
-  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
   PIDX_variable var0 = var_grp->variable[svi];
-  for (p = 0; p < var0->sim_patch_count; p++)
+  for (int p = 0; p < var0->sim_patch_count; p++)
   {
     char file_name[PATH_MAX];
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
@@ -40,7 +38,7 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     off_t data_offset = 0;
-    for (si = svi; si < evi; si++)
+    for (int si = svi; si < evi; si++)
     {
       PIDX_variable var = var_grp->variable[si];
 
@@ -50,13 +48,13 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
 
       file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
-      double particle_x = 0, particle_y, particle_z = 0;
 
       //fprintf(stderr, "[Inside PIDX] Rank %d has %d particles [%lld %lld %lld - %lld %lld %lld]\n", file->idx_c->grank, var->sim_patch[p]->particle_count, var->sim_patch[p]->offset[0], var->sim_patch[p]->offset[1], var->sim_patch[p]->offset[2], var->sim_patch[p]->size[0], var->sim_patch[p]->size[1], var->sim_patch[p]->size[2]);
       //
       if (si == 0)
       {
-        for (pt = 0; pt < var->sim_patch[p]->particle_count; pt++)
+        double particle_x = 0, particle_y, particle_z = 0;
+        for (int pt = 0; pt < var->sim_patch[p]->particle_count; pt++)
         {
           memcpy(&particle_x, var->sim_patch[p]->buffer + (pt * sample_count + 0) * sizeof(double), sizeof (double));
           memcpy(&particle_y, var->sim_patch[p]->buffer + (pt * sample_count + 1) * sizeof(double), sizeof (double));
@@ -100,12 +98,11 @@ PIDX_return_code PIDX_particle_read(PIDX_io file, int gi, int svi, int evi)
 
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi)
 {
-  int ret;
   PIDX_time time = file->idx_d->time;
 
   time->header_io_start = PIDX_get_time();
   // Creates the file heirarchy and writes the header info for all binary files
-  ret = init_raw_headers_layout(file, gi, svi, evi, file->idx->filename);
+  int ret = init_raw_headers_layout(file, gi, svi, evi, file->idx->filename);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -150,14 +147,13 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
   int pcounter = 0;
-  int i = 0, d = 0;
   local_patch[0] = (double)patch_count;
-  for (i = 0; i < patch_count; i++)
+  for (int i = 0; i < patch_count; i++)
   {
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       local_patch[i * PIDX_MAX_DIMENSIONS + d + 1] = var0->sim_patch[i]->physical_offset[d];
 
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       local_patch[i * PIDX_MAX_DIMENSIONS + PIDX_MAX_DIMENSIONS + d + 1] = var0->sim_patch[i]->physical_size[d];
 
     local_patch[i * PIDX_MAX_DIMENSIONS + 2*PIDX_MAX_DIMENSIONS + 1] = var0->sim_patch[i]->particle_count;
@@ -173,10 +169,9 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
   global_patch[0] = (double)file->idx_c->gnprocs;
   global_patch[1] = (double)max_patch_count;
 
-  char *directory_path;
   char file_path[PATH_MAX];
 
-  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
@@ -186,7 +181,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
   {
     int fp = open(file_path, O_CREAT | O_WRONLY, 0664);
 
-    for (i = 0; i < (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2); i++)
+    for (int i = 0; i < (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2); i++)
       printf("[%d] [np %d] ----> %f\n", i, file->idx_c->gnprocs, global_patch[i]);
 
     ssize_t write_count = pwrite(fp, global_patch, (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
@@ -211,10 +206,9 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   int max_dim = 3;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  char *idx_directory_path;
   char size_path[PATH_MAX];
 
-  idx_directory_path = malloc(sizeof(*idx_directory_path) * PATH_MAX);
+  char *idx_directory_path = malloc(sizeof(*idx_directory_path) * PATH_MAX);
   memset(idx_directory_path, 0, sizeof(*idx_directory_path) * PATH_MAX);
   strncpy(idx_directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
@@ -255,8 +249,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
   close(fp);
 
-  char *file_name;
-  file_name = malloc(PATH_MAX * sizeof(*file_name));
+  char *file_name = malloc(PATH_MAX * sizeof(*file_name));
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
   char *directory_path;
@@ -271,16 +264,12 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
 
-
-  // TODO WILL: Why C89?
   int pc1 = 0;
-  for (pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
+  for (int pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
   {
-	// TODO WILL: Why C89?
-    int n = 0, m = 0, d = 0;
     PIDX_patch local_proc_patch = (PIDX_patch)malloc(sizeof (*local_proc_patch));
     memset(local_proc_patch, 0, sizeof (*local_proc_patch));
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
       local_proc_patch->physical_offset[d] = var_grp->variable[svi]->sim_patch[pc1]->physical_offset[d];
       local_proc_patch->physical_size[d] = var_grp->variable[svi]->sim_patch[pc1]->physical_size[d];
@@ -291,18 +280,17 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
     PIDX_patch n_proc_patch = (PIDX_patch)malloc(sizeof (*n_proc_patch));
     memset(n_proc_patch, 0, sizeof (*n_proc_patch));
     int p_counter = 1;
-    int pc = 0, pc_index = 0;
 
     int patch_count = 0;
-    for (n = 0; n < number_cores; n++)
+    for (int n = 0; n < number_cores; n++)
     {
-      pc = (int)size_buffer[n * ((int)max_patch_count * (2 * max_dim + 1) + 1)];
-      pc_index = n * ((int)max_patch_count * (2 * max_dim + 1) + 1);
+      int pc = (int)size_buffer[n * ((int)max_patch_count * (2 * max_dim + 1) + 1)];
+      int pc_index = n * ((int)max_patch_count * (2 * max_dim + 1) + 1);
       //if (file->idx_c->grank == 0)
       //  printf("Index %d PC %d\n", n * ((int)max_patch_count * (2 * max_dim + 1) + 1), pc);
-      for (m = 0; m < pc; m++)
+      for (int m = 0; m < pc; m++)
       {
-        for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         {
           n_proc_patch->physical_offset[d] = size_buffer[pc_index + m * (2 * max_dim + 1) + d + 1];
           n_proc_patch->physical_size[d] = size_buffer[pc_index + m * (2 * max_dim + 1) + max_dim + d + 1];
@@ -312,15 +300,15 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
         if (file->idx_c->grank == 0)
           printf("[PC %d] OC %f %f %f - %f %f %f\n", n_proc_patch->particle_count, n_proc_patch->physical_offset[0], n_proc_patch->physical_offset[1], n_proc_patch->physical_offset[2], n_proc_patch->physical_size[0], n_proc_patch->physical_size[1], n_proc_patch->physical_size[2]);
 
-		// TODO: Here we don't want to directly do the reads, we want to figure out how many
-		// particles this rank is going to have in the region it's loading. This is easy to
-		// overestimate a ton (e.g. assume that we take all particles in each intersected box)
-		// then we can filter down what we actually keep by loading them and filtering the particles
-		// we actually hand back. However for large chunk reads this might end up overestimating too
-		// much, where we allocate a very large buffer to store all particles from a patch we barely touch.
-		// But, reading each particle to get an exact estimate then amounts to just reading the whole thing
-		// anyways, which we want to avoid as well.
-		// TODO: Instead just re-alloc as we go to make neough room.
+        // TODO: Here we don't want to directly do the reads, we want to figure out how many
+        // particles this rank is going to have in the region it's loading. This is easy to
+        // overestimate a ton (e.g. assume that we take all particles in each intersected box)
+        // then we can filter down what we actually keep by loading them and filtering the particles
+        // we actually hand back. However for large chunk reads this might end up overestimating too
+        // much, where we allocate a very large buffer to store all particles from a patch we barely touch.
+        // But, reading each particle to get an exact estimate then amounts to just reading the whole thing
+        // anyways, which we want to avoid as well.
+        // TODO: Instead just re-alloc as we go to make neough room.
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
           sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
@@ -335,7 +323,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
               other_offset = other_offset + ((var1->bpv/8) * var1->vps * n_proc_patch->particle_count);
             }
             PIDX_variable var = var_grp->variable[start_index];
-			/*
+            /*
             size_t preadc = pread(fpx, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
             if (preadc != total_sample_count * var->vps * var->bpv/8)
             {
