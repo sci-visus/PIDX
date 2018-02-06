@@ -456,6 +456,9 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
       file->idx->box_bounds[i] = file->idx_d->partition_size[i];
     else
       file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx_d->partition_offset[i];
+
+    if (file->idx_d->restructured_grid->patch_size[i] > file->idx->box_bounds[i])
+      file->idx_d->restructured_grid->patch_size[i] = getPowerOf2(file->idx->box_bounds[i]);
   }
 
   memcpy(file->idx->bounds, file->idx->box_bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
