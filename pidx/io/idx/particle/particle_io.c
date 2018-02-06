@@ -320,6 +320,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 		// much, where we allocate a very large buffer to store all particles from a patch we barely touch.
 		// But, reading each particle to get an exact estimate then amounts to just reading the whole thing
 		// anyways, which we want to avoid as well.
+		// TODO: Instead just re-alloc as we go to make neough room.
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
           sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
@@ -368,6 +369,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 }
 
 
+// TODO WILL: Correct this function for intersecting the chunks
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
  {
    int d = 0, check_bit = 0;

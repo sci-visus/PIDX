@@ -140,6 +140,9 @@ int main(int argc, char **argv)
   set_pidx_variable_and_create_buffer();
 
   // Read the data into a local buffer (data) in row major order
+  // TODO WILL: the data should be a pointer to a pointer, since PIDX internally
+  // will be in charge of allocating the data buffer. So this data param will take
+  // a double pointer.
   PIDX_variable_read_particle_data_layout(variable, physical_local_offset, physical_local_size, data, &particle_count, PIDX_row_major);
 
   // PIDX_close triggers the actual write on the disk
@@ -323,6 +326,7 @@ static void set_pidx_variable_and_create_buffer()
   PIDX_values_per_datatype(variable->type_name, &values_per_sample, &bits_per_sample);
   strcpy(type_name, variable->type_name);
 
+  // TODO WILL: The user will not provide us a buffer, we'll have to allocate it on the fly
   //data = malloc((uint64_t)(bits_per_sample/8) * logical_local_box_size[0] * logical_local_box_size[1] * logical_local_box_size[2]  * values_per_sample);
   //memset(data, 0, (uint64_t)(bits_per_sample/8) * logical_local_box_size[0] * logical_local_box_size[1] * logical_local_box_size[2]  * values_per_sample);
 }
