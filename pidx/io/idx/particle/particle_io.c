@@ -117,6 +117,23 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 }
 
 
+/* Will:
+ * The metadata file structure is as follows:
+ * Header:
+ *   global number of procs: f64
+ *   max patch count on a rank: f64
+ *
+ * List of patch data, with nprocs * max_count entries
+ * Each entry consists of:
+ *   local patch count: f64
+ *   box.lower: 3*f64
+ *   box.upper: 3*f64
+ *   local particle count: f64
+ *
+ * TODO: Wouldn't this be a lot easier to construct and write if we had
+ * some structs for the types? Then we also wouldn't need to store the
+ * counts as f64 (they should be u64).
+ */
 static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
@@ -125,6 +142,8 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
   PIDX_variable var0 = var_grp->variable[svi];
   int max_patch_count;
   int patch_count = var0->sim_patch_count;
+  // TODO WILL: Why the max patch count across all ranks? Ranks could have differing numbers of patches
+  // right? So would we leave some unused space in the file here?
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
 
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
@@ -204,6 +223,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
   double number_cores = 0;
   int fp = open(size_path, O_RDONLY);
+  // TODO WILL: This would be a lot easier to follow if we pread into a structure of some kind
   ssize_t read_count = pread(fp, &number_cores, sizeof(double), 0);
   if (read_count != sizeof(double))
   {
@@ -212,6 +232,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   }
 
   double max_patch_count = 0;
+  // TODO WILL: This would be a lot easier to follow if we pread into a structure of some kind
   read_count = pread(fp, &max_patch_count, sizeof(double), sizeof(double));
   if (read_count != sizeof(double))
   {
@@ -224,6 +245,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   double *size_buffer = malloc(buffer_read_size);
   memset(size_buffer, 0, buffer_read_size);
 
+  // TODO WILL: This would be a lot easier to follow if we pread into a structure of some kind
   read_count = pread(fp, size_buffer, buffer_read_size, 2 * sizeof(double));
   if (read_count != buffer_read_size)
   {
@@ -250,9 +272,11 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
 
 
+  // TODO WILL: Why C89?
   int pc1 = 0;
   for (pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
   {
+	// TODO WILL: Why C89?
     int n = 0, m = 0, d = 0;
     PIDX_patch local_proc_patch = (PIDX_patch)malloc(sizeof (*local_proc_patch));
     memset(local_proc_patch, 0, sizeof (*local_proc_patch));
@@ -288,6 +312,14 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
         if (file->idx_c->grank == 0)
           printf("[PC %d] OC %f %f %f - %f %f %f\n", n_proc_patch->particle_count, n_proc_patch->physical_offset[0], n_proc_patch->physical_offset[1], n_proc_patch->physical_offset[2], n_proc_patch->physical_size[0], n_proc_patch->physical_size[1], n_proc_patch->physical_size[2]);
 
+		// TODO: Here we don't want to directly do the reads, we want to figure out how many
+		// particles this rank is going to have in the region it's loading. This is easy to
+		// overestimate a ton (e.g. assume that we take all particles in each intersected box)
+		// then we can filter down what we actually keep by loading them and filtering the particles
+		// we actually hand back. However for large chunk reads this might end up overestimating too
+		// much, where we allocate a very large buffer to store all particles from a patch we barely touch.
+		// But, reading each particle to get an exact estimate then amounts to just reading the whole thing
+		// anyways, which we want to avoid as well.
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
           sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
@@ -302,6 +334,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
               other_offset = other_offset + ((var1->bpv/8) * var1->vps * n_proc_patch->particle_count);
             }
             PIDX_variable var = var_grp->variable[start_index];
+			/*
             size_t preadc = pread(fpx, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
             if (preadc != total_sample_count * var->vps * var->bpv/8)
             {
