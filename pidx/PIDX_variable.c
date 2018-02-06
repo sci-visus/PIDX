@@ -189,7 +189,7 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
 }
 
 
-PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void* write_to_this_buffer, int* particle_count, PIDX_data_layout data_layout)
+PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void** write_to_this_buffer, int* particle_count, PIDX_data_layout data_layout)
 {
   if(!variable)
     return PIDX_err_variable;
@@ -200,8 +200,8 @@ PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable,
   memcpy(variable->sim_patch[variable->sim_patch_count]->physical_offset, offset, PIDX_MAX_DIMENSIONS * sizeof(double));
   memcpy(variable->sim_patch[variable->sim_patch_count]->physical_size, dims, PIDX_MAX_DIMENSIONS * sizeof(double));
 
-  variable->sim_patch[variable->sim_patch_count]->buffer = write_to_this_buffer;
-  variable->sim_patch[variable->sim_patch_count]->particle_count = *particle_count;
+  variable->sim_patch[variable->sim_patch_count]->read_particle_buffer = write_to_this_buffer;
+  variable->sim_patch[variable->sim_patch_count]->read_particle_count = particle_count;
 
   variable->data_layout = data_layout;
   variable->sim_patch_count = variable->sim_patch_count + 1;

@@ -360,9 +360,11 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 // TODO WILL: Correct this function for intersecting the chunks
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
  {
-   int d = 0, check_bit = 0;
-   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-     check_bit = check_bit || (A->physical_offset[d] + A->physical_size[d]) < B->physical_offset[d] || (B->physical_offset[d] + B->physical_size[d]) < A->physical_offset[d];
+   int check_bit = 0;
+   for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+     check_bit = check_bit
+       || (A->physical_offset[d] + A->physical_size[d]) < B->physical_offset[d]
+       || (B->physical_offset[d] + B->physical_size[d]) < A->physical_offset[d];
 
    return !(check_bit);
  }

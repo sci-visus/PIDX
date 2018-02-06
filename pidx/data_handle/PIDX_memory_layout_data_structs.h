@@ -57,14 +57,27 @@ typedef struct PIDX_grid_struct* PIDX_restructured_grid;
 /// Struct to store the row/column major chunk of data given by application
 struct PIDX_patch_struct
 {
-  int particle_count;
   unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< logical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
   unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< logical size (extents) in each of the dimensions for the data chunk
 
   double physical_offset[PIDX_MAX_DIMENSIONS];       ///< physical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
   double physical_size[PIDX_MAX_DIMENSIONS];         ///< physical size (extents) in each of the dimensions for the data chunk
 
-  unsigned char* buffer;                                ///< the data buffer
+  // TODO WILL: The particles needing to modify inputs and buffer sizes
+  // which were previously thought to be fixed makes this struct really now
+  // a dual-mode pain to deal with. Do something better.
+  int particle_count;
+  int *read_particle_count;
+  // TODO WILL: Do we want some other way of differentiating the particle/grid patches?
+  union {
+    /// The data buffer for grid variables (particle_count = 0)
+    /// (or a redundant case with variable->is_particle == 1)
+    unsigned char* buffer;
+    /// The data buffer for particle variables (particle_count != 0). This
+    /// buffer is allocated by PIDX. TODO: Should the user free it? Or
+    /// should we have a PIDX_free_variable? Does such a function already exist?
+    unsigned char** read_particle_buffer;
+  };
 };
 typedef struct PIDX_patch_struct* PIDX_patch;
 

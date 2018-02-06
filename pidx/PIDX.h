@@ -710,12 +710,13 @@ PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_poi
 /// \param variable
 /// \param offset
 /// \param dims
-/// \param write_to_this_buffer
+/// \param write_to_this_buffer A buffer which will be allocated by PIDX to hold
+///           sufficient storage for the particles being loaded.
 /// \param particle_count
 /// \param data_layout
 /// \return
 ///
-PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void* write_to_this_buffer, int* particle_count, PIDX_data_layout data_layout);
+PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void** write_to_this_buffer, int* particle_count, PIDX_data_layout data_layout);
 
 
 
