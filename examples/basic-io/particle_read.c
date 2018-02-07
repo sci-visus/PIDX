@@ -73,15 +73,15 @@ static unsigned long long logical_local_box_offset[3];
 static unsigned long long logical_global_box_size[3] = {0, 0, 0};
 static unsigned long long logical_local_box_size[3] = {0, 0, 0};
 
-static double physical_local_box_offset[3];
-static double physical_global_box_size[3] = {0, 0, 0};
-static double physical_local_box_size[3] = {0, 0, 0};
+static double physical_global_box_size[NUM_DIMS] = {1.0, 1.0, 1.0};
+static double physical_local_box_offset[NUM_DIMS] = {0};
+static double physical_local_box_size[NUM_DIMS] = {0};
 
 static int current_ts = 1;
 static int variable_index = 0;
 static char output_file_template[512] = "test_idx";
-static unsigned char *data;
-static int particle_count;
+static unsigned char *data = NULL;
+static int particle_count = 0;
 
 static PIDX_point local_offset, local_size;
 static PIDX_physical_point physical_local_offset, physical_local_size, physical_global_bounds;
@@ -143,11 +143,14 @@ int main(int argc, char **argv)
   // TODO WILL: the data should be a pointer to a pointer, since PIDX internally
   // will be in charge of allocating the data buffer. So this data param will take
   // a double pointer.
-  PIDX_variable_read_particle_data_layout(variable, physical_local_offset, physical_local_size, data, &particle_count, PIDX_row_major);
+  PIDX_variable_read_particle_data_layout(variable, physical_local_offset, physical_local_size,
+      (void**)&data, &particle_count, PIDX_row_major);
 
   // PIDX_close triggers the actual write on the disk
   // of the variables that we just set
   PIDX_close(file);
+
+  printf("Loaded %d particles\n", particle_count);
 
   // Close PIDX_access
   PIDX_close_access(p_access);

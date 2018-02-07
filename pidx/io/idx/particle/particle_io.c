@@ -252,19 +252,15 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   char *file_name = malloc(PATH_MAX * sizeof(*file_name));
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-  char *directory_path;
-  char *data_set_path;
-
-  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
 
-  data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
+  char *data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
 
-  int pc1 = 0;
   for (int pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
   {
     PIDX_patch local_proc_patch = (PIDX_patch)malloc(sizeof (*local_proc_patch));
@@ -280,6 +276,9 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
     PIDX_patch n_proc_patch = (PIDX_patch)malloc(sizeof (*n_proc_patch));
     memset(n_proc_patch, 0, sizeof (*n_proc_patch));
     int p_counter = 1;
+
+    unsigned char *tmp_patch_read_buf = NULL;
+    size_t tmp_patch_buf_size = 0;
 
     int patch_count = 0;
     for (int n = 0; n < number_cores; n++)
@@ -300,37 +299,55 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
         if (file->idx_c->grank == 0)
           printf("[PC %d] OC %f %f %f - %f %f %f\n", n_proc_patch->particle_count, n_proc_patch->physical_offset[0], n_proc_patch->physical_offset[1], n_proc_patch->physical_offset[2], n_proc_patch->physical_size[0], n_proc_patch->physical_size[1], n_proc_patch->physical_size[2]);
 
-        // TODO: Here we don't want to directly do the reads, we want to figure out how many
-        // particles this rank is going to have in the region it's loading. This is easy to
-        // overestimate a ton (e.g. assume that we take all particles in each intersected box)
-        // then we can filter down what we actually keep by loading them and filtering the particles
-        // we actually hand back. However for large chunk reads this might end up overestimating too
-        // much, where we allocate a very large buffer to store all particles from a patch we barely touch.
-        // But, reading each particle to get an exact estimate then amounts to just reading the whole thing
-        // anyways, which we want to avoid as well.
-        // TODO: Instead just re-alloc as we go to make neough room.
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
+          printf("Reading from n proc patch %d\n", n);
           sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
           int fpx = open(file_name, O_RDONLY);
-          int start_index = 0, other_offset = 0, v1 = 0;
-          for (start_index = svi; start_index <= evi; start_index = start_index + 1)
+          // TODO WILL: Why was this <= evi?
+          for (int start_index = svi; start_index < evi; start_index = start_index + 1)
           {
-            other_offset = 0;
-            for (v1 = 0; v1 < start_index; v1++)
+            int other_offset = 0;
+            for (int v1 = 0; v1 < start_index; v1++)
             {
               PIDX_variable var1 = var_grp->variable[v1];
               other_offset = other_offset + ((var1->bpv/8) * var1->vps * n_proc_patch->particle_count);
             }
             PIDX_variable var = var_grp->variable[start_index];
-            /*
-            size_t preadc = pread(fpx, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
-            if (preadc != total_sample_count * var->vps * var->bpv/8)
+            const size_t bytes_per_sample = var->vps * var->bpv/8;
+
+            const size_t proc_particle_read_size = n_proc_patch->particle_count * bytes_per_sample;
+            if (tmp_patch_buf_size < proc_particle_read_size)
             {
-              fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bpv/8);
+              tmp_patch_read_buf = realloc(tmp_patch_read_buf, proc_particle_read_size);
+              tmp_patch_buf_size = proc_particle_read_size;
+            }
+
+            const size_t preadc = pread(fpx, tmp_patch_read_buf, proc_particle_read_size, other_offset);
+            if (preadc != proc_particle_read_size)
+            {
+              fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc,
+                  (int)proc_particle_read_size);
               return PIDX_err_rst;
             }
-            */
+
+            // TODO WILL: How do we know which variable the user has written as the "position" of
+            // particles, so that we can filter them by the box query?
+            // QUESTION for SID: the setup for the sim patch count info doesn't make much sense
+            // it seems. I'm not sure how the patches are added? 
+            // TODO FURTHERMORE: When we're reading and filtering the non-positional vars in
+            // a box query we still need to know the positions of the particles to do the filtering
+            // correctly. So regardless of what the user requests to read, we always must read the
+            // positions
+            const int patch_particle_offset = *var->sim_patch[pc1]->read_particle_count * bytes_per_sample;
+
+            *var->sim_patch[pc1]->read_particle_count += n_proc_patch->particle_count;
+            var->sim_patch[pc1]->particle_count = *var->sim_patch[pc1]->read_particle_count;
+            *var->sim_patch[pc1]->read_particle_buffer = realloc(*var->sim_patch[pc1]->read_particle_buffer,
+                *var->sim_patch[pc1]->read_particle_count * bytes_per_sample);
+
+            memcpy(*var->sim_patch[pc1]->read_particle_buffer + patch_particle_offset,
+                tmp_patch_read_buf, proc_particle_read_size);
           }
           close(fpx);
 
@@ -340,6 +357,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
       }
     }
 
+    free(tmp_patch_read_buf);
     free(local_proc_patch);
     local_proc_patch = 0;
     free(n_proc_patch);
@@ -359,12 +377,33 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
 // TODO WILL: Correct this function for intersecting the chunks
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
- {
+{
    int check_bit = 0;
    for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
      check_bit = check_bit
        || (A->physical_offset[d] + A->physical_size[d]) < B->physical_offset[d]
-       || (B->physical_offset[d] + B->physical_size[d]) < A->physical_offset[d];
+       || (B->physical_offset[d] + B->physical_size[d]) < A->physical_offset[d]; 
 
-   return !(check_bit);
+   if (!check_bit) {
+     printf("intersection found between patches:\n");
+   } else {
+     printf("No intersection found between:\n");
+   }
+   printf("A = [%f, %f, %f], [%f, %f, %f]\n",
+       A->physical_offset[0],
+       A->physical_offset[1],
+       A->physical_offset[2],
+       A->physical_offset[0] + A->physical_size[0],
+       A->physical_offset[1] + A->physical_size[1],
+       A->physical_offset[2] + A->physical_size[2]);
+
+   printf("B = [%f, %f, %f], [%f, %f, %f]\n",
+       B->physical_offset[0],
+       B->physical_offset[1],
+       B->physical_offset[2],
+       B->physical_offset[0] + B->physical_size[0],
+       B->physical_offset[1] + B->physical_size[1],
+       B->physical_offset[2] + B->physical_size[2]);
+
+   return !check_bit;
  }
