@@ -201,6 +201,7 @@ PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable,
   memcpy(variable->sim_patch[variable->sim_patch_count]->physical_size, dims, PIDX_MAX_DIMENSIONS * sizeof(double));
 
   variable->sim_patch[variable->sim_patch_count]->read_particle_buffer = write_to_this_buffer;
+  variable->sim_patch[variable->sim_patch_count]->read_particle_buffer_capacity = 0;
   *particle_count = 0;
   variable->sim_patch[variable->sim_patch_count]->read_particle_count = particle_count;
 

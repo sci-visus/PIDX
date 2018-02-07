@@ -78,6 +78,7 @@ struct PIDX_patch_struct
     /// should we have a PIDX_free_variable? Does such a function already exist?
     unsigned char** read_particle_buffer;
   };
+  size_t read_particle_buffer_capacity;
 };
 typedef struct PIDX_patch_struct* PIDX_patch;
 
