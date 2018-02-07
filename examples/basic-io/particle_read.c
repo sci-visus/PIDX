@@ -150,7 +150,19 @@ int main(int argc, char **argv)
   // of the variables that we just set
   PIDX_close(file);
 
-  printf("Loaded %d particles\n", particle_count);
+  printf("Rank %d:\nPhysical box {[%f, %f, %f], [%f, %f, %f]}\n",
+      rank,
+      physical_local_box_offset[0], physical_local_box_offset[1], physical_local_box_offset[2],
+      physical_local_box_offset[0] + physical_local_box_size[0],
+      physical_local_box_offset[1] + physical_local_box_size[1],
+      physical_local_box_offset[2] + physical_local_box_size[2]);
+
+  printf("Logical box {[%lld, %lld, %lld], [%lld, %lld, %lld]}\nLoaded %d particles\n",
+      logical_local_box_offset[0], logical_local_box_offset[1], logical_local_box_offset[2],
+      logical_local_box_offset[0] + logical_local_box_size[0],
+      logical_local_box_offset[1] + logical_local_box_size[1],
+      logical_local_box_offset[2] + logical_local_box_size[2],
+      particle_count);
 
   // Close PIDX_access
   PIDX_close_access(p_access);
@@ -243,13 +255,13 @@ static void calculate_per_process_offsets()
   logical_local_box_offset[Y] = (slice / sub_div[X]) * logical_local_box_size[Y];
   logical_local_box_offset[X] = (slice % sub_div[X]) * logical_local_box_size[X];
 
-  physical_local_box_size[X] = (logical_local_box_size[X] / logical_global_box_size[X]) * physical_global_box_size[X];
-  physical_local_box_size[Y] = (logical_local_box_size[Y] / logical_global_box_size[Y]) * physical_global_box_size[Y];
-  physical_local_box_size[Z] = (logical_local_box_size[Z] / logical_global_box_size[Z]) * physical_global_box_size[Z];
+  physical_local_box_size[X] = ((double)logical_local_box_size[X] / logical_global_box_size[X]) * physical_global_box_size[X];
+  physical_local_box_size[Y] = ((double)logical_local_box_size[Y] / logical_global_box_size[Y]) * physical_global_box_size[Y];
+  physical_local_box_size[Z] = ((double)logical_local_box_size[Z] / logical_global_box_size[Z]) * physical_global_box_size[Z];
 
-  physical_local_box_offset[X] = (logical_local_box_size[X] / logical_global_box_size[X]) * logical_local_box_offset[X];
-  physical_local_box_offset[Y] = (logical_local_box_size[Y] / logical_global_box_size[Y]) * logical_local_box_offset[Y];
-  physical_local_box_offset[Z] = (logical_local_box_size[Z] / logical_global_box_size[Z]) * logical_local_box_offset[Z];
+  physical_local_box_offset[X] = ((double)logical_local_box_offset[X] / logical_global_box_size[X]) * physical_global_box_size[X];
+  physical_local_box_offset[Y] = ((double)logical_local_box_offset[Y] / logical_global_box_size[Y]) * physical_global_box_size[Y];
+  physical_local_box_offset[Z] = ((double)logical_local_box_offset[Z] / logical_global_box_size[Z]) * physical_global_box_size[Z];
 
 }
 
