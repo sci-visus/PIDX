@@ -383,26 +383,5 @@ static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
        || (A->physical_offset[d] + A->physical_size[d]) < B->physical_offset[d]
        || (B->physical_offset[d] + B->physical_size[d]) < A->physical_offset[d]; 
 
-   if (!check_bit) {
-     printf("intersection found between patches:\n");
-   } else {
-     printf("No intersection found between:\n");
-   }
-   printf("A = [%f, %f, %f], [%f, %f, %f]\n",
-       A->physical_offset[0],
-       A->physical_offset[1],
-       A->physical_offset[2],
-       A->physical_offset[0] + A->physical_size[0],
-       A->physical_offset[1] + A->physical_size[1],
-       A->physical_offset[2] + A->physical_size[2]);
-
-   printf("B = [%f, %f, %f], [%f, %f, %f]\n",
-       B->physical_offset[0],
-       B->physical_offset[1],
-       B->physical_offset[2],
-       B->physical_offset[0] + B->physical_size[0],
-       B->physical_offset[1] + B->physical_size[1],
-       B->physical_offset[2] + B->physical_size[2]);
-
    return !check_bit;
  }
