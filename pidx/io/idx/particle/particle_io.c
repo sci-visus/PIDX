@@ -2,6 +2,7 @@
 
 static int maximum_neighbor_count = 256;
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
+static int pointInChunk(PIDX_patch p, const double *pos);
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi);
 static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, int evi);
@@ -340,13 +341,38 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
             // positions
             const int patch_particle_offset = *var->sim_patch[pc1]->read_particle_count * bytes_per_sample;
 
-            *var->sim_patch[pc1]->read_particle_count += n_proc_patch->particle_count;
+            // TODO WILL: This assumes there's only on attribute and that it's the position and that
+            // the position is a vec3d
+            double *particle_pos = (double*)tmp_patch_read_buf;
+            // TODO: Better allocation strategy which requires us to do only one pass through the data
+            // as a result. We could maybe do something clever like allocating based on the amount of
+            // overlap between the two patches, e.g. 50% overlap we probably will take 50% of the particles.
+            size_t num_intersected_particles = 0;
+            for (size_t i = 0; i < n_proc_patch->particle_count; ++i) {
+              // TODO WILL: This assumes var->vps == PIDX_MAX_DIMENSIONS
+              if (pointInChunk(local_proc_patch, particle_pos + i * var->vps)) {
+                ++num_intersected_particles;
+              }
+            }
+
+            *var->sim_patch[pc1]->read_particle_count += num_intersected_particles;
             var->sim_patch[pc1]->particle_count = *var->sim_patch[pc1]->read_particle_count;
             *var->sim_patch[pc1]->read_particle_buffer = realloc(*var->sim_patch[pc1]->read_particle_buffer,
                 *var->sim_patch[pc1]->read_particle_count * bytes_per_sample);
 
+            size_t num_copied_particles = 0;
+            for (size_t i = 0; i < n_proc_patch->particle_count; ++i) {
+              // TODO WILL: This assumes var->vps == PIDX_MAX_DIMENSIONS
+              if (pointInChunk(local_proc_patch, particle_pos + i * var->vps)) {
+                memcpy(*var->sim_patch[pc1]->read_particle_buffer + patch_particle_offset + num_copied_particles * bytes_per_sample,
+                    tmp_patch_read_buf + i * bytes_per_sample, bytes_per_sample);
+                ++num_copied_particles;
+              }
+            }
+            /*
             memcpy(*var->sim_patch[pc1]->read_particle_buffer + patch_particle_offset,
                 tmp_patch_read_buf, proc_particle_read_size);
+                */
           }
           close(fpx);
 
@@ -377,11 +403,22 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 // TODO WILL: Correct this function for intersecting the chunks
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
 {
-   int check_bit = 0;
-   for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-     check_bit = check_bit
-       || (A->physical_offset[d] + A->physical_size[d]) < B->physical_offset[d]
-       || (B->physical_offset[d] + B->physical_size[d]) < A->physical_offset[d]; 
+  int check_bit = 0;
+  for (int d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
+    check_bit = check_bit
+      || (A->physical_offset[d] + A->physical_size[d]) < B->physical_offset[d]
+      || (B->physical_offset[d] + B->physical_size[d]) < A->physical_offset[d]; 
 
-   return !check_bit;
- }
+  return !check_bit;
+}
+static int pointInChunk(PIDX_patch p, const double *pos)
+{
+  int contains_point = 1;
+  for (int d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
+    contains_point = contains_point
+      && pos[d] >= p->physical_offset[d]
+      && pos[d] <= p->physical_offset[d] + p->physical_size[d];
+
+  return contains_point;
+}
+
