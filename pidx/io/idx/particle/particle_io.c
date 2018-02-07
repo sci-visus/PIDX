@@ -304,7 +304,6 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
           printf("Reading from n proc patch %d\n", n);
           sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
           int fpx = open(file_name, O_RDONLY);
-          // TODO WILL: Why was this <= evi?
           for (int start_index = svi; start_index < evi; start_index = start_index + 1)
           {
             int other_offset = 0;
