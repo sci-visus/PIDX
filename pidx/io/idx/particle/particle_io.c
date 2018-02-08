@@ -339,11 +339,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
             // a box query we still need to know the positions of the particles to do the filtering
             // correctly. So regardless of what the user requests to read, we always must read the
             // positions
-            int patch_particle_offset = *var->sim_patch[pc1]->read_particle_count * bytes_per_sample;
-
-            // TODO WILL: This assumes there's only on attribute and that it's the position and that
-            // the position is a vec3d
-            double *particle_pos = (double*)tmp_patch_read_buf;
+            size_t patch_particle_offset = *var->sim_patch[pc1]->read_particle_count * bytes_per_sample;
 
             // Always alloc space for at least half the particles in the patch to be stored
             // TODO: With better acceleration structures built on the particles within a patch,
@@ -360,11 +356,14 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
                   var->sim_patch[pc1]->read_particle_buffer_capacity);
             }
 
+            // TODO WILL: This assumes there's only on attribute and that it's the position and that
+            // the position is a vec3d
             // TODO: Will: what we need is a std::vector style struct.
             size_t patch_particles_read = 0;
             for (size_t i = 0; i < n_proc_patch->particle_count; ++i) {
               // TODO WILL: This assumes var->vps == PIDX_MAX_DIMENSIONS
-              if (pointInChunk(local_proc_patch, particle_pos + i * var->vps)) {
+              if (pointInChunk(local_proc_patch, (double*)(tmp_patch_read_buf + i * bytes_per_sample))) {
+
                 memcpy(*var->sim_patch[pc1]->read_particle_buffer + patch_particle_offset,
                     tmp_patch_read_buf + i * bytes_per_sample, bytes_per_sample);
 
