@@ -79,7 +79,7 @@ static double physical_local_box_offset[NUM_DIMS];
 static double physical_local_box_size[NUM_DIMS];
 
 static int time_step_count = 1;
-static int particle_count = 32;
+static size_t particle_count = 32;
 static int variable_count = 1;
 static char output_file_template[512];
 static char var_list[512];
@@ -259,7 +259,7 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('p'): // number of particles per patch
-      if (sscanf(optarg, "%d", &particle_count) < 0)
+      if (sscanf(optarg, "%lu", &particle_count) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 

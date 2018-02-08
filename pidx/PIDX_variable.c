@@ -99,7 +99,7 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
 
 
 
-PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, int number_of_particles, PIDX_data_layout data_layout)
+PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, size_t number_of_particles, PIDX_data_layout data_layout)
 {
   if(!variable)
     return PIDX_err_variable;
@@ -125,7 +125,7 @@ PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable
 }
 
 
-PIDX_return_code PIDX_variable_write_particle_data_physical_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, const void* read_from_this_buffer, int number_of_particles, PIDX_data_layout data_layout)
+PIDX_return_code PIDX_variable_write_particle_data_physical_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, const void* read_from_this_buffer, size_t number_of_particles, PIDX_data_layout data_layout)
 {
   if(!variable)
     return PIDX_err_variable;
@@ -189,7 +189,7 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
 }
 
 
-PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void** write_to_this_buffer, int* particle_count, PIDX_data_layout data_layout)
+PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void** write_to_this_buffer, size_t* number_of_particles, PIDX_data_layout data_layout)
 {
   if(!variable)
     return PIDX_err_variable;
@@ -202,8 +202,8 @@ PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable,
 
   variable->sim_patch[variable->sim_patch_count]->read_particle_buffer = write_to_this_buffer;
   variable->sim_patch[variable->sim_patch_count]->read_particle_buffer_capacity = 0;
-  *particle_count = 0;
-  variable->sim_patch[variable->sim_patch_count]->read_particle_count = particle_count;
+  *number_of_particles = 0;
+  variable->sim_patch[variable->sim_patch_count]->read_particle_count = number_of_particles;
 
   variable->data_layout = data_layout;
   variable->sim_patch_count = variable->sim_patch_count + 1;

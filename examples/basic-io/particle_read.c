@@ -81,7 +81,7 @@ static int current_ts = 1;
 static int variable_index = 0;
 static char output_file_template[512] = "test_idx";
 static unsigned char *data = NULL;
-static int particle_count = 0;
+static size_t particle_count = 0;
 
 static PIDX_point local_offset, local_size;
 static PIDX_physical_point physical_local_offset, physical_local_size, physical_global_bounds;
@@ -157,7 +157,7 @@ int main(int argc, char **argv)
       physical_local_box_offset[1] + physical_local_box_size[1],
       physical_local_box_offset[2] + physical_local_box_size[2]);
 
-  printf("Logical box {[%lld, %lld, %lld], [%lld, %lld, %lld]}\nLoaded %d particles\n",
+  printf("Logical box {[%lld, %lld, %lld], [%lld, %lld, %lld]}\nLoaded %lu particles\n",
       logical_local_box_offset[0], logical_local_box_offset[1], logical_local_box_offset[2],
       logical_local_box_offset[0] + logical_local_box_size[0],
       logical_local_box_offset[1] + logical_local_box_size[1],

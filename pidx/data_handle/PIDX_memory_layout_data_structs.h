@@ -66,8 +66,9 @@ struct PIDX_patch_struct
   // TODO WILL: The particles needing to modify inputs and buffer sizes
   // which were previously thought to be fixed makes this struct really now
   // a dual-mode pain to deal with. Do something better.
-  int particle_count;
-  int *read_particle_count;
+  // TODO WILL: These should be size_t
+  size_t particle_count;
+  size_t *read_particle_count;
   // TODO WILL: Do we want some other way of differentiating the particle/grid patches?
   union {
     /// The data buffer for grid variables (particle_count = 0)
