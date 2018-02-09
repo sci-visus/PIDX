@@ -56,6 +56,7 @@
 #if !defined _MSC_VER
 #include <unistd.h>
 #include <time.h>
+#include <getopt.h>
 #endif
 #include <stdarg.h>
 #include <stdint.h>

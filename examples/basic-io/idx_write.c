@@ -55,11 +55,13 @@
 */
 #if !defined _MSC_VER
 #include <unistd.h>
+#include <getopt.h>
 #endif
 #include <stdarg.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <PIDX.h>
+#include <string.h>
 
 #if defined _MSC_VER
   #include "utils/PIDX_windows_utils.h"
