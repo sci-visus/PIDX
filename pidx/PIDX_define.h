@@ -17,7 +17,7 @@ extern "C" {
 #define PIDX_HAVE_NVISUSIO 0
 
 #define PIDX_MAX_TEMPLATE_DEPTH 6
-#define DETAIL_OUTPUT 1
+#define DETAIL_OUTPUT 0
 
 #ifndef __cplusplus
 #  define _XOPEN_SOURCE 600
@@ -90,7 +90,8 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 // Calls wavelet computation code
 #define PIDX_WAVELET_IO                               6
 
-
+// Particle IO
+#define PIDX_PARTICLE_IO                              7
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256

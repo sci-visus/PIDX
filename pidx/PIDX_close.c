@@ -455,7 +455,17 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 #if DETAIL_OUTPUT
       fprintf(stderr, "XIRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #else
-      fprintf(stderr, "[%s %d %d (%d %d %d) (%d %d %d)] IRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+      PIDX_variable var0 = var_grp->variable[svi];
+      if (var0->is_particle == 1)
+      {
+        double idx_time = time->header_io_end - time->header_io_start;
+        double meta_time = time->particle_meta_data_io_end - time->particle_meta_data_io_start;
+        double data_time = time->particle_data_io_end - time->particle_data_io_start;
+        fprintf(stderr, "Timestep %d Extents %f %f %f Variables %d Time [%f + %f + %f + %f] = %f [%f]\n", file->idx->current_time_step, file->idx->physical_bounds[0], file->idx->physical_bounds[1], file->idx->physical_bounds[2], (evi - svi), idx_time, meta_time, data_time, time->SX - time->sim_start, (idx_time + meta_time + data_time + (time->SX - time->sim_start)), max_time );
+      }
+      else
+        fprintf(stderr, "[%s %d %d (%d %d %d)] IRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #endif
     }
   }

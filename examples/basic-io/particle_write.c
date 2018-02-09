@@ -66,6 +66,8 @@
   #include "utils/PIDX_windows_utils.h"
 #endif
 
+#define TYPE_COUNT 5
+#define COLOR_COUNT 2
 #define MAX_VAR_COUNT 256
 enum { X, Y, Z, NUM_DIMS };
 
@@ -78,11 +80,21 @@ static double physical_global_box_size[NUM_DIMS] = {1.0, 1.0, 1.0};
 static double physical_local_box_offset[NUM_DIMS];
 static double physical_local_box_size[NUM_DIMS];
 
+/*
+ * position double vector (3)
+ * color double scalar
+ * density double scalar
+ * volume double scalar
+ * type int scalar
+ * stress double tensor (9)
+ */
+static int variable_count = 6;
+
+
+
 static int time_step_count = 1;
 static size_t particle_count = 32;
-static int variable_count = 1;
 static char output_file_template[512];
-static char var_list[512];
 static unsigned char **data;
 static char output_file_name[512];
 static char var_name[MAX_VAR_COUNT][512];
@@ -99,7 +111,6 @@ static PIDX_variable* variable;
 
 static void init_mpi(int argc, char **argv);
 static void parse_args(int argc, char **argv);
-static int parse_var_list();
 static int generate_vars();
 static void check_args();
 static void calculate_per_process_offsets();
@@ -112,7 +123,6 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static int isNumber(char number[]);
 static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./idx_write -g 64x64x64 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
@@ -183,39 +193,11 @@ static void init_mpi(int argc, char **argv)
     terminate_with_error_msg("ERROR: MPI_Comm_rank error\n");
 }
 
-static int isNumber(char number[])
-{
-    int i = 0;
-
-    //checking for negative numbers
-    if (number[0] == '-')
-        i = 1;
-    for (; number[i] != 0; i++)
-    {
-        //if (number[i] > '9' || number[i] < '0')
-        if (!isdigit(number[i]))
-            return 0;
-    }
-    return 1;
-}
-
-int nextPow2(int v)
-{
-  v--;
-  v |= v >> 1;
-  v |= v >> 2;
-  v |= v >> 4;
-  v |= v >> 8;
-  v |= v >> 16;
-  v++;
-
-  return v;
-}
 
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:p:";
+  char flags[] = "g:l:f:t:p:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -244,20 +226,6 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('v'): // number of variables
-      if(!isNumber(optarg)){ // the param is a file with the list of variables
-        if (sprintf(var_list, "%s", optarg) > 0)
-          parse_var_list();
-        else
-          terminate_with_error_msg("Invalid variable list file\n%s", usage);
-      }else { // the param is a number of variables (default: 1*float32)
-        if(sscanf(optarg, "%d", &variable_count) > 0)
-          generate_vars();
-        else
-          terminate_with_error_msg("Invalid number of variables\n%s", usage);
-      }
-      break;
-
     case('p'): // number of particles per patch
       if (sscanf(optarg, "%lu", &particle_count) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
@@ -267,123 +235,56 @@ static void parse_args(int argc, char **argv)
       terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
   }
+
+  generate_vars();
+
 }
 
 static int generate_vars(){
 
-  int variable_counter = 0;
+ /*
+  * position double vector (3)
+  * color double scalar
+  * density double scalar
+  * volume double scalar
+  * type int scalar
+  * stress double tensor (9)
+  */
 
-  for(variable_counter = 0; variable_counter < variable_count; variable_counter++){
-    int ret;
-    int bits_per_sample = 0;
-    int sample_count = 0;
-    char temp_name[512];
-    char* temp_type_name = "1*float64";
+  bpv[0] = sizeof(double) * CHAR_BIT;
+  vps[0] = 3;
+  strcpy(type_name[0], "3*float64");
+  strcpy(var_name[0], "position");
 
-    sprintf(temp_name, "var_%d", variable_counter);
-    strcpy(var_name[variable_counter], temp_name);
-    strcpy(type_name[variable_counter], temp_type_name);
+  bpv[1] = sizeof(double) * CHAR_BIT;
+  vps[1] = 1;
+  strcpy(type_name[1], "1*float64");
+  strcpy(var_name[1], "color");
 
-    ret = PIDX_values_per_datatype(temp_type_name, &sample_count, &bits_per_sample);
-    if (ret != PIDX_success)  return PIDX_err_file;
+  bpv[2] = sizeof(double) * CHAR_BIT;
+  vps[2] = 1;
+  strcpy(type_name[2], "1*float64");
+  strcpy(var_name[2], "density");
 
-    bpv[variable_counter] = bits_per_sample;
-    vps[variable_counter] = sample_count;
+  bpv[3] = sizeof(double) * CHAR_BIT;
+  vps[3] = 1;
+  strcpy(type_name[3], "1*float64");
+  strcpy(var_name[3], "volume");
 
-    // first variable is a vector (location of the particle)
-    if (variable_counter == 0)
-    {
-      bpv[variable_counter] = sizeof(double) * CHAR_BIT;
-      vps[variable_counter] = 3;
-      strcpy(type_name[variable_counter], "3*float64");
-    }
-  }
+  bpv[4] = sizeof(int) * CHAR_BIT;
+  vps[4] = 1;
+  strcpy(type_name[4], "1*int32");
+  strcpy(var_name[4], "type");
+
+  bpv[5] = sizeof(double) * CHAR_BIT;
+  vps[5] = 9;
+  strcpy(type_name[5], "9*float64");
+  strcpy(var_name[5], "stress");
 
   return 0;
 }
 
-//----------------------------------------------------------------
-static int parse_var_list()
-{
-  FILE *fp = fopen(var_list, "r");
-  if (fp == NULL)
-  {
-    fprintf(stderr, "Error Opening %s\n", var_list);
-    return PIDX_err_file;
-  }
 
-  int variable_counter = 0, count = 0, len = 0;
-  char *pch1;
-  char line [ 512 ];
-
-  while (fgets(line, sizeof (line), fp) != NULL)
-  {
-    line[strcspn(line, "\r\n")] = 0;
-
-    if (strcmp(line, "(fields)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      count = 0;
-      variable_counter = 0;
-
-      while (line[X] != '(')
-      {
-        pch1 = strtok(line, " +");
-        while (pch1 != NULL)
-        {
-          if (count == 0)
-          {
-            char* temp_name = strdup(pch1);
-            strcpy(var_name[variable_counter], temp_name);
-            free(temp_name);
-          }
-
-          if (count == 1)
-          {
-            len = strlen(pch1) - 1;
-            if (pch1[len] == '\n')
-              pch1[len] = 0;
-
-            strcpy(type_name[variable_counter], pch1);
-            int ret;
-            int bits_per_sample = 0;
-            int sample_count = 0;
-            ret = PIDX_values_per_datatype(type_name[variable_counter], &sample_count, &bits_per_sample);
-            if (ret != PIDX_success)  return PIDX_err_file;
-
-            bpv[variable_counter] = bits_per_sample;
-            vps[variable_counter] = sample_count;
-          }
-          count++;
-          pch1 = strtok(NULL, " +");
-        }
-        count = 0;
-
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        variable_counter++;
-      }
-      variable_count = variable_counter;
-    }
-  }
-  fclose(fp);
-
-  /*
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (rank == 0)
-  {
-    int v = 0;
-    for(v = 0; v < variable_count; v++)
-      fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
-  }
-  */
-
-  return PIDX_success;
-}
 
 //----------------------------------------------------------------
 static void check_args()
@@ -428,53 +329,72 @@ static void calculate_per_process_offsets()
 //----------------------------------------------------------------
 static void create_synthetic_simulation_data()
 {
-  int k = 0;
-  int var = 0;
+  /*
+   * position double vector (3)
+   * color double scalar
+   * density double scalar
+   * volume double scalar
+   * type int scalar
+   * stress double vector (9)
+   */
+
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
   // Synthetic simulation data
+
   // data[0] corresponds to the location of the particle
   data[0] = malloc (particle_count * 3 * sizeof(double));
 
-  double dvalue_X = 0, dvalue_Y = 0, dvalue_Z = 0;
+  // data[1] corresponds to colors doubles (1)
+  data[1] = malloc (particle_count * sizeof(double));
+
+  // data[2] corresponds to density doubles (1)
+  data[2] = malloc (particle_count * sizeof(double));
+
+  // data[3] corresponds to volume doubles (1)
+  data[3] = malloc (particle_count * sizeof(double));
+
+  // data[4] corresponds to type int (1)
+  data[4] = malloc (particle_count * sizeof(int));
+
+  // data[5] corresponds to tensor volume doubles (9)
+  data[5] = malloc (particle_count * sizeof(double) * 9);
+
+  double scale;
+  double color;
+  int type;
+  int particle_type[TYPE_COUNT] = {1,2,3,4,5};
+  double particle_color[COLOR_COUNT] = {0.25, 0.75};
+
   srand((unsigned int)time(NULL));
-  for (k = 0; k < particle_count; k++)
+  for (int k = 0; k < particle_count; k++)
   {
-    double scale = rand() / (float) RAND_MAX;
-    dvalue_X = physical_local_box_offset[X] + scale * physical_local_box_size[X];
+    for (int j = 0; j < 3; j++)
+    {
+      scale = physical_local_box_offset[j] + (rand() / (float) RAND_MAX) * physical_local_box_size[j];
+      memcpy(data[0] + (k * 3 + j) * sizeof(double), &scale, sizeof(double));
+    }
+
+    color = particle_color[rand() % COLOR_COUNT];
+    memcpy(data[1] + (k) * sizeof(double), &color, sizeof(double));
 
     scale = rand() / (float) RAND_MAX;
-    dvalue_Y = physical_local_box_offset[Y] + scale * physical_local_box_size[Y];
+    memcpy(data[2] + (k) * sizeof(double), &scale, sizeof(double));
 
     scale = rand() / (float) RAND_MAX;
-    dvalue_Z = physical_local_box_offset[Z] + scale * physical_local_box_size[Z];
+    memcpy(data[3] + (k) * sizeof(double), &scale, sizeof(double));
 
-    memcpy(data[0] + (k * 3 + 0) * sizeof(double), &dvalue_X, sizeof(double));
-    memcpy(data[0] + (k * 3 + 1) * sizeof(double), &dvalue_Y, sizeof(double));
-    memcpy(data[0] + (k * 3 + 2) * sizeof(double), &dvalue_Z, sizeof(double));
+    type = particle_type[rand() % TYPE_COUNT];
+    memcpy(data[4] + (k) * sizeof(int), &type, sizeof(int));
 
+    for (int j = 0; j < 9; j++)
+    {
+      scale = rand() / (float) RAND_MAX;
+      memcpy(data[5] + (k * 9 + j) * sizeof(double), &scale, sizeof(double));
+    }
     //printf("[%d] -> %f %f %f\n", k, dvalue_X, dvalue_Y, dvalue_Z);
   }
-
-
-  // these are the remaining variables (they could be color, density....)
-  for(var = 1; var < variable_count; var++)
-  {
-    unsigned long long k, val_per_sample = 0;
-    data[var] = malloc(sizeof (double) * particle_count * vps[var]);
-
-    double dvalue = 0;
-    for (k = 0; k < particle_count; k++)
-    {
-      for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
-      {
-        dvalue = 100.0;
-        memcpy(data[var] + (k * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
-      }
-    }
-  }
-
 }
 
 //----------------------------------------------------------------
@@ -543,23 +463,6 @@ static void set_pidx_file(int ts)
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
   PIDX_set_io_mode(file, PIDX_IDX_IO); // TODO:
-
-  // Set how many blocks we want to write in a single file
-  PIDX_set_block_count(file, 256);
-
-  // Set the size of a block: how many 2^N samples we want to put in a single block
-  PIDX_set_block_size(file, 15);
-
-  // If the domain decomposition and the cores configuration do not change over time
-  // we can instruct PIDX to cache and reuse these information for the next timesteps
-  PIDX_set_cache_time_step(file, 0);
-
-  //PIDX_disable_agg(file);
-
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-  //PIDX_set_lossy_compression_bit_rate(file, 16);
 
   return;
 }

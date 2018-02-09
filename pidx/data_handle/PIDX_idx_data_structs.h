@@ -48,6 +48,9 @@ struct PIDX_timming_struct
   double partition_start, partition_end;
   double partition_cleanup_start, partition_cleanup_end;
 
+  double particle_meta_data_io_start, particle_meta_data_io_end;
+  double particle_data_io_start, particle_data_io_end;
+
   double ***w_stencil_comm_x_odd_start, ***w_stencil_comm_x_odd_end;
   double ***w_stencil_comm_y_odd_start, ***w_stencil_comm_y_odd_end;
   double ***w_stencil_comm_z_odd_start, ***w_stencil_comm_z_odd_end;
