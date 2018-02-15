@@ -31,11 +31,11 @@
 
 struct PIDX_meta_data_cache_struct
 {
-  int is_set;
-  int element_count;
-  int *xyz_mapped_index;
-  int *hz_level;
-  int *index_level;
+  int is_set;               /// flag to specify if cache buffer is populated
+  int element_count;        /// Number of elements (tuples) in the cache
+  int *xyz_mapped_index;    /// The xyz index (application row-order index)
+  int *hz_level;            /// Corresponding HZ index to the xyz index
+  int *index_level;         /// The hz index level
 };
 typedef struct PIDX_meta_data_cache_struct* PIDX_meta_data_cache;
 

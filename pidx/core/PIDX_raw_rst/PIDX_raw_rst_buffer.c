@@ -106,9 +106,9 @@ PIDX_return_code PIDX_raw_rst_aggregate_buf_create(PIDX_raw_rst_id rst_id)
       // copy the size and offset to output
       PIDX_patch out_patch = var->rst_patch_group[g]->restructured_patch;
 
-      int nx = out_patch->size[0];
-      int ny = out_patch->size[1];
-      int nz = out_patch->size[2];
+      size_t nx = out_patch->size[0];
+      size_t ny = out_patch->size[1];
+      size_t nz = out_patch->size[2];
 
       var->rst_patch_group[g]->restructured_patch->buffer = malloc(nx * ny * nz * (var->bpv/8) * var->vps);
       memset(var->rst_patch_group[g]->restructured_patch->buffer, 0, nx * ny * nz * (var->bpv/8) * var->vps);

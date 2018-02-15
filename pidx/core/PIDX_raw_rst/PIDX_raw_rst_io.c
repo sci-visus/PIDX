@@ -66,9 +66,9 @@ PIDX_return_code PIDX_raw_rst_buf_aggregate_and_write(PIDX_raw_rst_id rst_id)
       PIDX_super_patch patch_group = var_start->rst_patch_group[g];
       PIDX_patch out_patch = var_start->rst_patch_group[g]->restructured_patch;
 
-      int nx = out_patch->size[0];
-      int ny = out_patch->size[1];
-      int nz = out_patch->size[2];
+      size_t nx = out_patch->size[0];
+      size_t ny = out_patch->size[1];
+      size_t nz = out_patch->size[2];
 
       int bits = 0;
       for (v = v_start; v <= v_end; v++)
@@ -100,7 +100,7 @@ PIDX_return_code PIDX_raw_rst_buf_aggregate_and_write(PIDX_raw_rst_id rst_id)
               for (v = v_start; v <= v_end; v++)
               {
                 int v1 = 0;
-                int data_offset = 0;
+                size_t data_offset = 0;
                 for (v1 = v_start; v1 < v; v1++)
                 {
                   data_offset = data_offset + (out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var_grp->variable[v1]->vps * (var_grp->variable[v1]->bpv/8)));
@@ -113,11 +113,11 @@ PIDX_return_code PIDX_raw_rst_buf_aggregate_and_write(PIDX_raw_rst_id rst_id)
         }
       }
 
-      int data_offset = 0, v1 = 0;
+      size_t data_offset = 0, v1 = 0;
       for (v1 = 0; v1 < v_start; v1++)
         data_offset = data_offset + (out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var_grp->variable[v1]->vps * (var_grp->variable[v1]->bpv/8)));
 
-      int buffer_size =  out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * bits;
+      size_t buffer_size =  out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * bits;
       ssize_t write_count = pwrite(fp, reg_patch_buffer, buffer_size, data_offset);
       if (write_count != buffer_size)
       {
@@ -167,9 +167,9 @@ PIDX_return_code PIDX_raw_rst_buf_read_and_aggregate(PIDX_raw_rst_id rst_id)
       PIDX_super_patch patch_group = var->rst_patch_group[g];
       PIDX_patch out_patch = var->rst_patch_group[g]->restructured_patch;
 
-      int nx = out_patch->size[0];
-      int ny = out_patch->size[1];
-      int nz = out_patch->size[2];
+      size_t nx = out_patch->size[0];
+      size_t ny = out_patch->size[1];
+      size_t nz = out_patch->size[2];
 
       var->rst_patch_group[g]->restructured_patch->buffer = malloc(nx * ny * nz * (var->bpv/8) * var->vps);
       memset(var->rst_patch_group[g]->restructured_patch->buffer, 0, nx * ny * nz * (var->bpv/8) * var->vps);

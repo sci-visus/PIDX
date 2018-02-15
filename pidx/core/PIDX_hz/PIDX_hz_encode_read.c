@@ -179,7 +179,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
   return PIDX_success;
 }
 
-
+// Correct
 PIDX_return_code PIDX_hz_encode_read_inverse(PIDX_hz_encode_id id, int start_hz_index, int end_hz_index)
 {
   unsigned long long index = 0;
@@ -273,8 +273,8 @@ PIDX_return_code PIDX_hz_encode_read_inverse(PIDX_hz_encode_id id, int start_hz_
           {
             bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
 
-            memcpy(var_grp->variable[v1]->hz_buffer->buffer[j] + (hz_index * bytes_for_datatype),
-                 var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype),
+            memcpy(var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype),
+                   var_grp->variable[v1]->hz_buffer->buffer[j] + (hz_index * bytes_for_datatype),
                  bytes_for_datatype);
           }
         }
@@ -332,9 +332,9 @@ PIDX_return_code PIDX_hz_encode_read_inverse(PIDX_hz_encode_id id, int start_hz_
           {
             bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
 
-            memcpy(var_grp->variable[v1]->hz_buffer->buffer[j] + (hz_index * bytes_for_datatype),
-                 var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype),
-                 bytes_for_datatype);
+            memcpy(var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype),
+                   var_grp->variable[v1]->hz_buffer->buffer[j] + (hz_index * bytes_for_datatype),
+                   bytes_for_datatype);
           }
         }
       }

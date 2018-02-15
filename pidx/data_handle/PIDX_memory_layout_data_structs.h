@@ -93,10 +93,15 @@ typedef struct PIDX_super_patch_struct* PIDX_super_patch;
 /// Struct to store the HZ encoded data and meta-data
 struct PIDX_HZ_buffer_struct
 {
+  // Flag set if the HZ buffer comes from a boundary patch
   int is_boundary_HZ_buffer;                            ///< 1 for boundary patch 0 otherwise
+
+  // HZ related meta data
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   unsigned long long *start_hz_index;                   ///< Starting HZ index at of the data at all the HZ levels
   unsigned long long *end_hz_index;                     ///< Ending HZ index at of the data at all the HZ levels
+
+  // HZ encoded data (for every level)
   unsigned char** buffer;                               ///< data buffer at all the HZ levels
 };
 typedef struct PIDX_HZ_buffer_struct* HZ_buffer;
