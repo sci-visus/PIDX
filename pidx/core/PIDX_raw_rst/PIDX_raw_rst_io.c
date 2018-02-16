@@ -177,11 +177,11 @@ PIDX_return_code PIDX_raw_rst_buf_read_and_aggregate(PIDX_raw_rst_id rst_id)
       if (var->rst_patch_group[g]->restructured_patch->buffer == NULL)
         return PIDX_err_chunk;
 
-      int data_offset = 0, v1 = 0;
+      size_t data_offset = 0, v1 = 0;
       for (v1 = 0; v1 < v; v1++)
         data_offset = data_offset + (out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var_grp->variable[v1]->vps * (var_grp->variable[v1]->bpv/8)));
 
-      int buffer_size =  out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->vps * (var->bpv/8));
+      size_t buffer_size =  out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->vps * (var->bpv/8));
 
       char *file_name;
       file_name = malloc(PATH_MAX * sizeof(*file_name));

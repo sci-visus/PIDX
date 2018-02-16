@@ -253,7 +253,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     n_proc_patch = 0;
 
     unsigned long long k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
-    int send_c = 0;
+    size_t send_c = 0;
     unsigned long long sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
     unsigned long long sim_patch_countx[PIDX_MAX_DIMENSIONS];
 
@@ -270,7 +270,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
       for (j = 0; j < patch_count; j++)
       {
         pc_index = patch_grp->source_patch[j].rank * (max_patch_count * temp_max_dim + 1);
-        int total_sample_count = 1;
+        size_t total_sample_count = 1;
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
           total_sample_count = total_sample_count * (unsigned long long)size_buffer[pc_index + source_patch_id[j] * temp_max_dim + d + 1];
 
@@ -286,7 +286,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
       int fpx = open(file_name, O_RDONLY);
 
       pc_index = patch_grp->source_patch[i].rank * (max_patch_count * temp_max_dim + 1);
-      int total_sample_count = 1;
+      size_t total_sample_count = 1;
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
         sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
@@ -315,9 +315,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
       close(fpx);
     }
 
-    int r, recv_o;
-
-
+    size_t r, recv_o;
     for (r = 0; r < patch_count; r++)
     {
       pc_index = patch_grp->source_patch[r].rank * (max_patch_count * temp_max_dim + 1);
@@ -336,7 +334,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         {
           for (i1 = patch_grp->patch[r]->offset[0]; i1 < patch_grp->patch[r]->offset[0] + patch_grp->patch[r]->size[0]; i1 = i1 + patch_grp->patch[r]->size[0])
           {
-            int send_index = (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
+            off_t send_index = (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
                     (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
                     (i1 - sim_patch_offset[0]);
 
