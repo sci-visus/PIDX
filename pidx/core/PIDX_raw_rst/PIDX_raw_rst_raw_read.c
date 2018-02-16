@@ -1,4 +1,4 @@
-#define INVERT_ENDIANESS 1
+#define INVERT_ENDIANESS 0
 #include "../../PIDX_inc.h"
 
 static int maximum_neighbor_count = 256;
@@ -38,6 +38,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     return PIDX_err_io;
   }
 
+  fprintf(stderr, "[PIDX DEBUG] number of cores used to write this file %d\n", number_cores);
+
 #if INVERT_ENDIANESS
   uint32_t temp_number_cores = 0;
   if (rst_id->idx->flip_endian == 1)
@@ -54,6 +56,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
+
+  fprintf(stderr, "[PIDX DEBUG] number of patches per process written %d\n", max_patch_count);
 
 #if INVERT_ENDIANESS
   uint32_t temp_max_patch_count = 0;
@@ -254,8 +258,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
     unsigned long long k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
     size_t send_c = 0;
-    unsigned long long sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
-    unsigned long long sim_patch_countx[PIDX_MAX_DIMENSIONS];
+    off_t sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
+    size_t sim_patch_countx[PIDX_MAX_DIMENSIONS];
 
     unsigned char ***temp_patch_buffer2;
     temp_patch_buffer2 = malloc(sizeof(*temp_patch_buffer2) * (evi - svi + 1));
@@ -289,8 +293,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
       size_t total_sample_count = 1;
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-        sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
-        sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+        sim_patch_offsetx[d] = (off_t)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+        sim_patch_countx[d] = (size_t)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
         total_sample_count = total_sample_count * sim_patch_countx[d];
       }
 
@@ -321,12 +325,12 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
       pc_index = patch_grp->source_patch[r].rank * (max_patch_count * temp_max_dim + 1);
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-        sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[r] * temp_max_dim + d + 1];
-        sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[r] * temp_max_dim + d + 1];
+        sim_patch_offsetx[d] = (off_t)offset_buffer[pc_index + source_patch_id[r] * temp_max_dim + d + 1];
+        sim_patch_countx[d] = (size_t)size_buffer[pc_index + source_patch_id[r] * temp_max_dim + d + 1];
       }
 
-      unsigned long long *sim_patch_offset = sim_patch_offsetx;
-      unsigned long long *sim_patch_count = sim_patch_countx;
+      off_t *sim_patch_offset = sim_patch_offsetx;
+      size_t *sim_patch_count = sim_patch_countx;
 
       for (k1 = patch_grp->patch[r]->offset[2]; k1 < patch_grp->patch[r]->offset[2] + patch_grp->patch[r]->size[2]; k1++)
       {

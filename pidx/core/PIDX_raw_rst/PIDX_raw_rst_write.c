@@ -37,9 +37,10 @@ PIDX_return_code PIDX_raw_rst_staged_write(PIDX_raw_rst_id rst_id)
   unsigned long long k1 = 0, i1 = 0, j1 = 0;
   unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
-  unsigned long long send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
+  unsigned long long counter = 0, req_counter = 0, chunk_counter = 0;
+  size_t send_c;
+  off_t send_o;
   int ret = 0;
-  int pipe_length = 0;
 
   MPI_Request *req;
   MPI_Status *status;
@@ -52,10 +53,10 @@ PIDX_return_code PIDX_raw_rst_staged_write(PIDX_raw_rst_id rst_id)
 
   int end_index = 0;
   int start_index = 0;
-  for (start_index = rst_id->first_index; start_index < (rst_id->last_index + 1); start_index = start_index + pipe_length + 1)
+  for (start_index = rst_id->first_index; start_index < (rst_id->last_index + 1); start_index = start_index + 1)
   {
     send_c = 0, send_o = 0, counter = 0, req_counter = 0, chunk_counter = 0;
-    end_index = ((start_index + pipe_length) >= (rst_id->last_index + 1)) ? (rst_id->last_index) : (start_index + pipe_length);
+    end_index = ((start_index) >= (rst_id->last_index + 1)) ? (rst_id->last_index) : (start_index);
 
     req = malloc(sizeof (*req) * req_count * 2 * (end_index - start_index + 1));
     if (!req)
@@ -87,15 +88,15 @@ PIDX_return_code PIDX_raw_rst_staged_write(PIDX_raw_rst_id rst_id)
       {
         for(j = 0; j < rst_id->reg_raw_grp[i]->patch_count; j++)
         {
-          unsigned long long *reg_patch_offset = rst_id->reg_raw_grp[i]->patch[j]->offset;
-          unsigned long long *reg_patch_count  = rst_id->reg_raw_grp[i]->patch[j]->size;
+          off_t *reg_patch_offset = rst_id->reg_raw_grp[i]->patch[j]->offset;
+          size_t *reg_patch_count  = rst_id->reg_raw_grp[i]->patch[j]->size;
 
           if(rst_id->idx_c->grank == rst_id->reg_raw_grp[i]->source_patch[j].rank)
           {
             count1 = 0;
             int p_index = rst_id->reg_raw_grp[i]->source_patch[j].index;
-            unsigned long long *sim_patch_offset = var_grp->variable[start_index]->sim_patch[p_index]->offset;
-            unsigned long long *sim_patch_count = var_grp->variable[start_index]->sim_patch[p_index]->size;
+            off_t *sim_patch_offset = var_grp->variable[start_index]->sim_patch[p_index]->offset;
+            size_t *sim_patch_count = var_grp->variable[start_index]->sim_patch[p_index]->size;
 
             for (k1 = reg_patch_offset[2]; k1 < reg_patch_offset[2] + reg_patch_count[2]; k1++)
               for (j1 = reg_patch_offset[1]; j1 < reg_patch_offset[1] + reg_patch_count[1]; j1++)
@@ -161,8 +162,8 @@ PIDX_return_code PIDX_raw_rst_staged_write(PIDX_raw_rst_id rst_id)
             {
               PIDX_variable var = var_grp->variable[v];
 
-              unsigned long long *reg_patch_count = rst_id->reg_raw_grp[i]->patch[j]->size;
-              unsigned long long *reg_patch_offset = rst_id->reg_raw_grp[i]->patch[j]->offset;
+              size_t *reg_patch_count = rst_id->reg_raw_grp[i]->patch[j]->size;
+              off_t *reg_patch_offset = rst_id->reg_raw_grp[i]->patch[j]->offset;
 
               send_offset = malloc(sizeof (int) * (reg_patch_count[1] * reg_patch_count[2]));
               if (!send_offset)
@@ -182,8 +183,8 @@ PIDX_return_code PIDX_raw_rst_staged_write(PIDX_raw_rst_id rst_id)
 
               count1 = 0;
               int p_index =  rst_id->reg_raw_grp[i]->source_patch[j].index;
-              unsigned long long *sim_patch_count  = var_grp->variable[start_index]->sim_patch[p_index]->size;
-              unsigned long long *sim_patch_offset = var_grp->variable[start_index]->sim_patch[p_index]->offset;
+              size_t *sim_patch_count  = var_grp->variable[start_index]->sim_patch[p_index]->size;
+              off_t *sim_patch_offset = var_grp->variable[start_index]->sim_patch[p_index]->offset;
 
               int total_send_count = 0;
               for (k1 = reg_patch_offset[2]; k1 < reg_patch_offset[2] + reg_patch_count[2]; k1++)

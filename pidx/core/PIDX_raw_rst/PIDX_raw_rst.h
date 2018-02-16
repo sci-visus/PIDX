@@ -57,8 +57,8 @@ struct PIDX_raw_rst_struct
   PIDX_super_patch* reg_raw_grp;
 
   int sim_max_patch_group_count;
-  unsigned long long* sim_raw_r_count;
-  unsigned long long* sim_raw_r_offset;
+  size_t* sim_raw_r_count;
+  off_t* sim_raw_r_offset;
 
   int maximum_neighbor_count;
 };

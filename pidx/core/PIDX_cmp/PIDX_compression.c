@@ -61,7 +61,7 @@ static int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, 
 
   if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-    unsigned long long* chunk_dim = comp_id->idx->chunk_size;
+    size_t* chunk_dim = comp_id->idx->chunk_size;
     assert(chunk_dim[0] == 4 && chunk_dim[1] == 4 && chunk_dim[2] == 4);
     size_t total_chunk_dim = (size_t)chunk_dim[0] * (size_t)chunk_dim[1] * (size_t)chunk_dim[2];
     //size_t chunk_bytes = total_chunk_dim * bytes_per_sample;
@@ -110,7 +110,7 @@ static int decompress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx
 
    if (comp_id->idx->compression_type == PIDX_CHUNKING_ZFP)
    {
-     unsigned long long* chunk_dim = comp_id->idx->chunk_size;
+     size_t* chunk_dim = comp_id->idx->chunk_size;
      assert(chunk_dim[0] == 4 && chunk_dim[1] == 4 && chunk_dim[2] == 4);
      size_t total_chunk_dim = (size_t)chunk_dim[0] * (size_t)chunk_dim[1] * (size_t)chunk_dim[2];
 

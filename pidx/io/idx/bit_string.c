@@ -22,7 +22,7 @@
 
 PIDX_return_code populate_bit_string(PIDX_io file, int mode)
 {
-  unsigned long long* cs = file->idx->chunk_size;
+  size_t* cs = file->idx->chunk_size;
 
   if (mode == PIDX_WRITE)
   {
@@ -88,7 +88,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
 {
   int i = 0;
   unsigned long long cb[PIDX_MAX_DIMENSIONS];
-  unsigned long long* cs = file->idx->chunk_size;
+  size_t* cs = file->idx->chunk_size;
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {

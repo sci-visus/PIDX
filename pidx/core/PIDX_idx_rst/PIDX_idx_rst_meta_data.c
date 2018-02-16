@@ -82,44 +82,44 @@ static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
   MPI_Allreduce(&var_grp->variable[rst_id->first_index]->sim_patch_count, &rst_id->sim_max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_comm_metadata->global_comm);
 
   // buffer to hold the offset and size information of all patches across all processes
-  rst_id->sim_multi_patch_r_count = malloc(sizeof (unsigned long long) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
-  memset(rst_id->sim_multi_patch_r_count, 0, (sizeof (unsigned long long) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
-  rst_id->sim_multi_patch_r_offset = malloc(sizeof (unsigned long long) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
-  memset(rst_id->sim_multi_patch_r_offset, 0, (sizeof (unsigned long long) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
+  rst_id->sim_multi_patch_r_count = malloc(sizeof (size_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
+  memset(rst_id->sim_multi_patch_r_count, 0, (sizeof (size_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
+  rst_id->sim_multi_patch_r_offset = malloc(sizeof (off_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
+  memset(rst_id->sim_multi_patch_r_offset, 0, (sizeof (off_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
 
 
   // every process populates rst_id->sim_multi_patch_r_count and rst_id->sim_multi_patch_r_offset with their local information
   for(pc=0; pc < var_grp->variable[rst_id->first_index]->sim_patch_count; pc++)
   {
-    unsigned long long* tempoff = var_grp->variable[rst_id->first_index]->sim_patch[pc]->offset;
-    unsigned long long* tempsize = var_grp->variable[rst_id->first_index]->sim_patch[pc]->size;
+    off_t* tempoff = var_grp->variable[rst_id->first_index]->sim_patch[pc]->offset;
+    size_t* tempsize = var_grp->variable[rst_id->first_index]->sim_patch[pc]->size;
 
     unsigned long long index = rst_id->idx_comm_metadata->grank * (PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count) + pc*PIDX_MAX_DIMENSIONS;
-    unsigned long long* curr_patch_offset = &rst_id->sim_multi_patch_r_offset[index];
-    unsigned long long* curr_patch_size = &rst_id->sim_multi_patch_r_count[index];
+    off_t* curr_patch_offset = &rst_id->sim_multi_patch_r_offset[index];
+    size_t* curr_patch_size = &rst_id->sim_multi_patch_r_count[index];
 
-    memcpy(curr_patch_offset, tempoff,sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
-    memcpy(curr_patch_size, tempsize,sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+    memcpy(curr_patch_offset, tempoff,sizeof(off_t) * PIDX_MAX_DIMENSIONS);
+    memcpy(curr_patch_size, tempsize,sizeof(size_t) * PIDX_MAX_DIMENSIONS);
   }
 
   // making a local copy of the patch size since mpi does not allow the same buffer to be used as both a sender and a reciever
-  unsigned long long* count_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
+  size_t* count_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
   memset(count_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
 
   memcpy(count_buffer_copy, &rst_id->sim_multi_patch_r_count[rst_id->idx_comm_metadata->grank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
 
   // gather size of all patches across all processes
-  MPI_Allgather(count_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count, MPI_LONG_LONG, rst_id->idx_comm_metadata->global_comm);
+  MPI_Allgather(count_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(size_t), MPI_BYTE, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(size_t), MPI_BYTE, rst_id->idx_comm_metadata->global_comm);
   free(count_buffer_copy);
 
   // making a local copy of the patch size since mpi does not allow the same buffer to be used as both a sender and a reciever
-  unsigned long long* offset_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
+  off_t* offset_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
   memset(offset_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
 
   memcpy(offset_buffer_copy, &rst_id->sim_multi_patch_r_offset[rst_id->idx_comm_metadata->grank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
 
   // gather size of all patches across all processes
-  MPI_Allgather(offset_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count, MPI_LONG_LONG, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count, MPI_LONG_LONG, rst_id->idx_comm_metadata->global_comm);
+  MPI_Allgather(offset_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(off_t), MPI_BYTE, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(off_t), MPI_BYTE, rst_id->idx_comm_metadata->global_comm);
   free(offset_buffer_copy);
 
   return;

@@ -41,7 +41,7 @@ PIDX_return_code HELPER_raw_rst(PIDX_raw_rst_id rst_id)
   unsigned long long uvalue_1, uvalue_2;
   int vol = 0;
 
-  unsigned long long *bounds = rst_id->idx->bounds;
+  size_t *bounds = rst_id->idx->bounds;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
 
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
@@ -53,8 +53,8 @@ PIDX_return_code HELPER_raw_rst(PIDX_raw_rst_id rst_id)
     {
       for(n = 0; n < var->rst_patch_group[m]->patch_count; n++)
       {
-        unsigned long long *count_ptr = var->rst_patch_group[m]->patch[n]->size;
-        unsigned long long *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
+        size_t *count_ptr = var->rst_patch_group[m]->patch[n]->size;
+        off_t *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
         vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
 
         for (k = 0; k < count_ptr[2]; k++)

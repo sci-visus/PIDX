@@ -49,8 +49,8 @@ struct PIDX_idx_rst_struct
   PIDX_super_patch* intersected_restructured_super_patch;
 
   unsigned long long sim_max_patch_count;
-  unsigned long long* sim_multi_patch_r_count;
-  unsigned long long* sim_multi_patch_r_offset;
+  size_t* sim_multi_patch_r_count;
+  off_t* sim_multi_patch_r_offset;
 
   int maximum_neighbor_count;
 };
