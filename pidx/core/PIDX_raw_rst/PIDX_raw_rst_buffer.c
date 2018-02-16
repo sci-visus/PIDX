@@ -160,11 +160,11 @@ PIDX_return_code PIDX_raw_rst_buf_aggregate(PIDX_raw_rst_id rst_id, int mode)
       PIDX_super_patch patch_group = var->rst_patch_group[g];
       PIDX_patch out_patch = var->rst_patch_group[g]->restructured_patch;
 
-      int nx = out_patch->size[0];
-      int ny = out_patch->size[1];
-      //int nz = out_patch->size[2];
+      size_t k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
 
-      int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
+      size_t nx = out_patch->size[0];
+      size_t ny = out_patch->size[1];
+
       for (r = 0; r < var->rst_patch_group[g]->patch_count; r++)
       {
         for (k1 = patch_group->patch[r]->offset[2]; k1 < patch_group->patch[r]->offset[2] + patch_group->patch[r]->size[2]; k1++)
