@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   check_args();
 
   // Initialize per-process local domain
-  calculate_per_process_offsets();
+  //calculate_per_process_offsets();
 
   // Create variables
   create_pidx_var_point_and_access();
@@ -206,25 +206,48 @@ static void parse_args(int argc, char **argv)
     }
   }
 
-#if 0
+#if 1
   if (rank == 0)
   {
-    local_box_size[X] = 514;
-    local_box_size[Y] = 1024;
-    local_box_size[Z] = 512;
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
 
     local_box_offset[X] = 0;
     local_box_offset[Y] = 0;
     local_box_offset[Z] = 0;
   }
+
   else if (rank == 1)
   {
-    local_box_size[X] = 512;
-    local_box_size[Y] = 1024;
-    local_box_size[Z] = 512;
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
 
-    local_box_offset[X] = 512;
+    local_box_offset[X] = 1023;
     local_box_offset[Y] = 0;
+    local_box_offset[Z] = 0;
+  }
+
+  else if (rank == 2)
+  {
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
+
+    local_box_offset[X] = 0;
+    local_box_offset[Y] = 1023;
+    local_box_offset[Z] = 0;
+  }
+
+  else if (rank == 3)
+  {
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
+
+    local_box_offset[X] = 1023;
+    local_box_offset[Y] = 1023;
     local_box_offset[Z] = 0;
   }
 #endif
