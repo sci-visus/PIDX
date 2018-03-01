@@ -73,16 +73,16 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 
 
 enum PIDX_io_type {
-  PIDX_IDX_IO,                    /// Writes data in IDX format
-  PIDX_GLOBAL_PARTITION_IDX_IO,   /// Writes data in partitioned space with global indexing
-  PIDX_LOCAL_PARTITION_IDX_IO,    /// Writes data in partitioned space with local indexing
-  PIDX_RAW_IO,                    /// Writes data in raw format
-  PIDX_WAVELET_IO                 /// Calls wavelet computation code
+  PIDX_IDX_IO=0,                    /// Writes data in IDX format
+  PIDX_GLOBAL_PARTITION_IDX_IO=1,   /// Writes data in partitioned space with global indexing
+  PIDX_LOCAL_PARTITION_IDX_IO=2,    /// Writes data in partitioned space with local indexing
+  PIDX_RAW_IO=3,                    /// Writes data in raw format
+  PIDX_WAVELET_IO=4                 /// Calls wavelet computation code
 };
 
 enum PIDX_endian_type{
-  PIDX_BIG_ENDIAN,                     /// Use big endianess
-  PIDX_LITTLE_ENDIAN                   /// Use little endianess
+  PIDX_BIG_ENDIAN=0,                     /// Use big endianess
+  PIDX_LITTLE_ENDIAN=1                   /// Use little endianess
 };
   
 // Calls merge tree analysis code (in-situ mode)

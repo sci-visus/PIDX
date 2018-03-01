@@ -420,7 +420,7 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 /// \param io_type
 /// \return
 ///
-PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type);
+PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type);
 
 
 
@@ -430,7 +430,7 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type);
 /// \param io_type
 /// \return
 ///
-PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type);
+PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type);
 
 
 

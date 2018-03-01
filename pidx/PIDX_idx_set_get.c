@@ -484,7 +484,7 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 
 
 
-PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
+PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type)
 {
   if(file == NULL)
     return PIDX_err_file;
@@ -496,7 +496,7 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
 
 
 
-PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type)
+PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type)
 {
   if(file == NULL)
     return PIDX_err_file;
@@ -628,7 +628,7 @@ PIDX_return_code PIDX_save_big_endian(PIDX_file file)
 
 PIDX_return_code PIDX_save_little_endian(PIDX_file file)
 {
-  file->idx->endian = 1;
+  file->idx->endian = PIDX_LITTLE_ENDIAN;
 
   unsigned int endian = 1;
   char *c = (char*)&endian;
