@@ -132,7 +132,7 @@ int main(int argc, char **argv)
   set_pidx_variable_and_create_buffer();
 
   // Read the data into a local buffer (data) in row major order
-  printf("[INIT] %d %d %d ---- %lld %lld %lld - %lld %lld %lld\n", rank, local_offset[0], local_offset[1], local_offset[2], local_size[0], local_size[1], local_size[2]);
+  printf("[INIT] %d ---- %lld %lld %lld - %lld %lld %lld\n", rank, local_offset[0], local_offset[1], local_offset[2], local_size[0], local_size[1], local_size[2]);
   PIDX_variable_read_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
 
   // PIDX_close triggers the actual write on the disk
