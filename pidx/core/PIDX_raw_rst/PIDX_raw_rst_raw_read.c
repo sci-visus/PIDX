@@ -80,6 +80,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     return PIDX_err_io;
   }
 
+  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer size %lld\n", rst_id->idx_c->grank, (unsigned long long)read_count);
+
   close(fp);
 
 #if INVERT_ENDIANESS
@@ -104,6 +106,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
+  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer offset %lld\n", rst_id->idx_c->grank, (unsigned long long)read_count);
   close(fp1);
 
 #if INVERT_ENDIANESS
@@ -176,8 +179,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
       {
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         {
-          n_proc_patch->offset[d] = (unsigned long long)offset_buffer[pc_index + m * temp_max_dim + d + 1];
-          n_proc_patch->size[d] = (unsigned long long)size_buffer[pc_index + m * temp_max_dim + d + 1];
+          n_proc_patch->offset[d] = (off_t)offset_buffer[pc_index + m * temp_max_dim + d + 1];
+          n_proc_patch->size[d] = (size_t)size_buffer[pc_index + m * temp_max_dim + d + 1];
         }
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
@@ -310,6 +313,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
         PIDX_variable var = var_grp->variable[start_index];
         size_t preadc = pread(fpx, temp_patch_buffer2[start_index - svi][i], total_sample_count * var->vps * var->bpv/8, other_offset);
+        printf("[PIDX LOG] MAIN Buffer read size %lld", (unsigned long long) preadc);
         if (preadc != total_sample_count * var->vps * var->bpv/8)
         {
           fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bpv/8);
