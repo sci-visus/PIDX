@@ -120,6 +120,15 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id);
 
 
 ///
+/// \brief PIDX_hz_encode_fast_write
+/// \param id
+/// \return
+///
+PIDX_return_code PIDX_hz_encode_fast_write(PIDX_hz_encode_id id);
+
+
+
+///
 /// \brief PIDX_hz_encode_read
 /// \param id
 /// \return

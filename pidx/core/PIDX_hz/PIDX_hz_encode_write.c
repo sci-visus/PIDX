@@ -20,6 +20,90 @@
 #include "../../PIDX_inc.h"
 
 
+PIDX_return_code PIDX_hz_encode_fast_write(PIDX_hz_encode_id id)
+{
+  unsigned long long z_order = 0, hz_order = 0, index = 0;
+  int level = 0, cnt = 0, s = 0, number_levels = 0;
+  unsigned long long i = 0, j = 0, k = 0, l = 0;
+  int v1 = 0;
+  int bytes_for_datatype;
+  unsigned long long hz_index;
+  unsigned long long total_chunked_patch_size = 1;
+  int maxH = id->idx_d->maxh;
+  int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
+  PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
+  PIDX_variable var0 = var_grp->variable[id->first_index];
+  int index_count = 0;
+
+  // Basic checking
+  if (var0->sim_patch_count < 0)
+  {
+    fprintf(stderr, "[%s] [%d] id->idx_d->count not set.\n", __FILE__, __LINE__);
+    return PIDX_err_hz;
+  }
+
+  if (maxH <= 0)
+  {
+    fprintf(stderr, "[%s] [%d] maxH not set.\n", __FILE__, __LINE__);
+    return PIDX_err_hz;
+  }
+
+  // The process is not holding any patch after restructuring
+  if (var0->restructured_super_patch_count == 0)
+    return PIDX_success;
+
+  // adjusted patch size and offset due to zfp chunking and compression
+  int chunked_patch_offset[PIDX_MAX_DIMENSIONS] = {0, 0, 0};
+  int chunked_patch_size[PIDX_MAX_DIMENSIONS] = {0, 0, 0};
+  total_chunked_patch_size = 0;
+  for (l = 0; l < PIDX_MAX_DIMENSIONS; l++)
+  {
+    chunked_patch_offset[l] = var0->chunked_super_patch->restructured_patch->offset[l] / id->idx->chunk_size[l];
+    if (var0->chunked_super_patch->restructured_patch->size[l] % id->idx->chunk_size[l] == 0)
+      chunked_patch_size[l] = var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l];
+    else
+      chunked_patch_size[l] = (var0->chunked_super_patch->restructured_patch->size[l] / id->idx->chunk_size[l]) + 1;
+
+    total_chunked_patch_size = total_chunked_patch_size * chunked_patch_size[l];
+  }
+
+  if(var0->data_layout == PIDX_row_major)
+  {
+    size_t b = 0;
+    size_t hz_mins = 0, hz_maxes = 0;
+    size_t block_min = 0, block_max = 0;
+    for (j = 0; j < id->idx_d->maxh; j++)
+    {
+      if (var_grp->variable[id->first_index]->hz_buffer->nsamples_per_level[j][0] * var_grp->variable[id->first_index]->hz_buffer->nsamples_per_level[j][1] * var_grp->variable[id->first_index]->hz_buffer->nsamples_per_level[j][2] != 0)
+      {
+        hz_mins = var_grp->variable[id->first_index]->hz_buffer->start_hz_index[j];
+        hz_maxes = var_grp->variable[id->first_index]->hz_buffer->end_hz_index[j] + 1;
+
+        block_min = var_grp->variable[id->first_index]->hz_buffer->start_hz_index[j] / id->idx_d->samples_per_block;
+        block_max = var_grp->variable[id->first_index]->hz_buffer->end_hz_index[j] / id->idx_d->samples_per_block;
+
+        for (b = block_min; b < block_max; b++)
+        {
+          for (s = 0; s < id->idx_d->samples_per_block; s++)
+          {
+            off_t index = (chunked_patch_size[0] * chunked_patch_size[1] * (p.z - chunked_patch_offset[2])) + (chunked_patch_size[0] * (p.y - chunked_patch_offset[1])) + (p.x - chunked_patch_offset[0]);
+
+            for(v1 = id->first_index; v1 <= id->last_index; v1++)
+            {
+              bytes_for_datatype = ((var_grp->variable[v1]->bpv / 8) * chunk_size * var_grp->variable[v1]->vps) / id->idx->compression_factor;
+
+              memcpy(var_grp->variable[v1]->hz_buffer->buffer[j] + (hz_index * bytes_for_datatype),
+                   var_grp->variable[v1]->chunked_super_patch->restructured_patch->buffer + (index * bytes_for_datatype),
+                   bytes_for_datatype);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
 PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 {
   unsigned long long z_order = 0, hz_order = 0, index = 0;
