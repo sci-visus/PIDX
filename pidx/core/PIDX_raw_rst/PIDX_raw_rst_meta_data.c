@@ -59,7 +59,8 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
 
   int r, d, c;
   unsigned long long i, k, max_vol, patch_count, pc;
-  int reg_patch_count, edge_case = 0;
+  size_t reg_patch_count = 0;
+  int edge_case = 0;
 
   int start_var_index = rst_id->first_index;
 
@@ -105,7 +106,7 @@ PIDX_return_code PIDX_raw_rst_meta_data_create(PIDX_raw_rst_id rst_id)
   size_t adjusted_bounds[PIDX_MAX_DIMENSIONS];
   memcpy(adjusted_bounds, rst_id->idx->bounds, PIDX_MAX_DIMENSIONS * sizeof(size_t));
 
-  int max_found_reg_patches = 1;
+  size_t max_found_reg_patches = 1;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
     adjusted_bounds[d] = rst_id->idx->box_bounds[d];
