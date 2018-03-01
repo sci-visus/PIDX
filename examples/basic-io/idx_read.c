@@ -142,7 +142,7 @@ int main(int argc, char **argv)
   PIDX_close_access(p_access);
 
   // Compare the data that we just against the syntethic data
-  // verify_read_results();
+ verify_read_results();
 
   free(data);
   shutdown_mpi();

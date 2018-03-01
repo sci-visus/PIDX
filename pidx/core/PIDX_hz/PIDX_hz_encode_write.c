@@ -22,6 +22,7 @@
 
 PIDX_return_code PIDX_hz_encode_fast_write(PIDX_hz_encode_id id)
 {
+#if 0
   unsigned long long z_order = 0, hz_order = 0, index = 0;
   int level = 0, cnt = 0, s = 0, number_levels = 0;
   unsigned long long i = 0, j = 0, k = 0, l = 0;
@@ -101,6 +102,9 @@ PIDX_return_code PIDX_hz_encode_fast_write(PIDX_hz_encode_id id)
       }
     }
   }
+#endif
+
+  return PIDX_success;
 }
 
 
