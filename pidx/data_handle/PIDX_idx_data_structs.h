@@ -203,34 +203,32 @@ typedef struct idx_meta_data_cache_struct* idx_meta_data_cache;
 /// idx_file
 struct idx_file_struct
 {
-  int io_type;
-  int current_time_step;
+  enum PIDX_io_type io_type;              /// I/O format and layout we want to use
+  
+  int current_time_step;                  /// The current timestep selected
 
-  int variable_count;
+  int variable_count;                     /// The number of variables contained in the dataset
   int variable_group_count;
   int group_index_tracker;
   PIDX_variable_group variable_grp[16];
   
   char agg_list_filename[1024];
 
-  char filename[1024];
+  char filename[1024];                    /// The idx file path
   char filename_partition[1024];
   char filename_template[1024];
   char filename_template_partition[1024];
 
-  int first_tstep;
-  int last_tstep;
+  int first_tstep;                        /// Index of the frist timestep
+  int last_tstep;                         /// Index of the last timestep
 
-  int bits_per_block;
-  int blocks_per_file;
-  size_t bounds[PIDX_MAX_DIMENSIONS];
-  size_t box_bounds[PIDX_MAX_DIMENSIONS];
-  double transform[16];
+  int bits_per_block;                     /// Number of bits per block
+  int blocks_per_file;                    /// Number of blocks per file
+  size_t bounds[PIDX_MAX_DIMENSIONS];     /// Bounds of the dataset
+  size_t box_bounds[PIDX_MAX_DIMENSIONS]; /// Bounds of the box query
+  
   char bitSequence[512];
   char bitPattern[512];
-
-
-
 
   /// 0 No aggregation
   /// 1 Only aggregation
@@ -245,7 +243,7 @@ struct idx_file_struct
 
   /// 1 for little endian
   /// 0 for big endian
-  int endian;
+  enum PIDX_endian_type endian;                /// Endianess of the data
 
   /// 1 for flipping endian
   /// 0 for big endian

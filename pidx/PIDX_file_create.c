@@ -141,12 +141,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
-  //initialize logic_to_physic transform to identity
-  (*file)->idx->transform[0]  = 1.0;
-  (*file)->idx->transform[5]  = 1.0;
-  (*file)->idx->transform[10] = 1.0;
-  (*file)->idx->transform[15] = 1.0;
-
   (*file)->idx->variable_group_count = 1;
 
   memset((*file)->idx->bitPattern, 0, 512);
@@ -208,9 +202,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   unsigned int endian = 1;
   char *c = (char*)&endian;
   if (*c)
-    (*file)->idx->endian = 1;
+    (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
   else
-    (*file)->idx->endian = 0;
+    (*file)->idx->endian = PIDX_BIG_ENDIAN;
 
   return PIDX_success;
 }

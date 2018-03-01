@@ -101,12 +101,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->wavelet_levels = 0;
   (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
 
-  //initialize logic_to_physic transform to identity
-  (*file)->idx->transform[0]  = 1.0;
-  (*file)->idx->transform[5]  = 1.0;
-  (*file)->idx->transform[10] = 1.0;
-  (*file)->idx->transform[15] = 1.0;
-
   (*file)->idx->cached_ts = -1;
 
   memset((*file)->idx->bitPattern, 0, 512);
@@ -131,7 +125,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->idx_dbg->state_dump = PIDX_NO_META_DATA_DUMP;
 
-  (*file)->idx->endian = 1;
+  (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
 
   for (i = 0; i < 16; i++)
   {
@@ -257,15 +251,14 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
-        int mode = atoi(line);
 
-        if (mode == 1)
+        if (strcmp(line, "idx") == 0)
           (*file)->idx->io_type = PIDX_IDX_IO;
-        else if (mode == 2)
+        else if (strcmp(line, "g_part_idx") == 0)
           (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
-        else if (mode == 3)
+        else if (strcmp(line, "l_part_idx") == 0)
           (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
-        else if (mode == 4)
+        else if (strcmp(line, "raw") == 0)
           (*file)->idx->io_type = PIDX_RAW_IO;
       }
 
@@ -274,7 +267,11 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx->endian = atoi(line);
+        
+        if(strcmp(line,"little") == 0)
+          (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
+        else if(strcmp(line,"big") == 0)
+          (*file)->idx->endian = PIDX_BIG_ENDIAN;
       }
 
       if (strcmp(line, "(fields)") == 0)
@@ -627,18 +624,11 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
     sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
 #endif
 
-
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 
   (*file)->idx_d->wavelet_levels = 0;
   (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
-
-  //initialize logic_to_physic transform to identity
-  (*file)->idx->transform[0]  = 1.0;
-  (*file)->idx->transform[5]  = 1.0;
-  (*file)->idx->transform[10] = 1.0;
-  (*file)->idx->transform[15] = 1.0;
 
   (*file)->idx->cached_ts = -1;
 
@@ -664,7 +654,7 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
 
   (*file)->idx_dbg->state_dump = PIDX_NO_META_DATA_DUMP;
 
-  (*file)->idx->endian = 1;
+  (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
 
   for (i = 0; i < 16; i++)
   {
@@ -773,7 +763,7 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
 
       (*file)->idx->io_type = PIDX_RAW_IO;
       (*file)->idx_d->pidx_version = 0;
-      //(*file)->idx->endian = 0;
+      //(*file)->idx->endian = PIDX_BIG_ENDIAN;
     }
 
     if (strcmp(line, "(cores)") == 0)
@@ -806,7 +796,12 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
       if( fgets(line, sizeof line, fp) == NULL)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx->endian = atoi(line);
+      
+      if(strcmp(line,"little") == 0)
+        (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
+      else if(strcmp(line,"big") == 0)
+        (*file)->idx->endian = PIDX_BIG_ENDIAN;
+
     }
 
     if (strcmp(line, "(fields)") == 0)

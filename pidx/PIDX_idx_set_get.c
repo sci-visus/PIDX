@@ -85,32 +85,6 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
   return PIDX_success;
 }
 
-
-
-PIDX_return_code PIDX_set_transform(PIDX_file file, double transform[16])
-{
-  if(!file)
-    return PIDX_err_file;
-
-  memcpy(file->idx->transform, transform, (sizeof(double) * 16));
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16])
-{
-  if(!file)
-    return PIDX_err_file;
-
-  memcpy(transform, file->idx->transform, (sizeof(double) * 16));
-
-  return PIDX_success;
-}
-
-
-
 PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_time_step)
 {
   if(!file)
