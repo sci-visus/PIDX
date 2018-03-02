@@ -120,7 +120,7 @@ int main(int argc, char **argv)
   check_args();
 
   // Initialize per-process local domain
-  //calculate_per_process_offsets();
+  calculate_per_process_offsets();
 
   // Create variables
   create_pidx_var_point_and_access();
@@ -207,7 +207,7 @@ static void parse_args(int argc, char **argv)
     }
   }
 
-#if 1
+#if 0
   if (rank == 0)
   {
     local_box_size[X] = 1025;
