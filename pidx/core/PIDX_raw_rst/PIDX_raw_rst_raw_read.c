@@ -8,6 +8,9 @@ static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 
 PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 {
+  fprintf(stderr, "[PIDX DEBUG error] Entering function\n");
+  fprintf(stdout, "[PIDX DEBUG output] Entering function\n");
+
   int temp_max_dim = 3;
 
   if (rst_id->idx_derived->pidx_version == 0)
