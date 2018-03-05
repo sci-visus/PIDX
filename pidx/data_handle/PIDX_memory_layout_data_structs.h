@@ -37,8 +37,8 @@ struct PIDX_Ndim_empty_patch_struct
 {
   int rank;
   int is_boundary_patch;
-  unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
-  unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
+  off_t offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  size_t size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
 };
 typedef struct PIDX_Ndim_empty_patch_struct* Ndim_empty_patch;
 
@@ -47,7 +47,7 @@ typedef struct PIDX_Ndim_empty_patch_struct* Ndim_empty_patch;
 /// Struct to store the restructured grid
 struct PIDX_grid_struct
 {
-  unsigned long long patch_size[PIDX_MAX_DIMENSIONS];
+  size_t patch_size[PIDX_MAX_DIMENSIONS];
   int total_patch_count[PIDX_MAX_DIMENSIONS];
   Ndim_empty_patch* patch;
 };
@@ -57,8 +57,8 @@ typedef struct PIDX_grid_struct* PIDX_restructured_grid;
 /// Struct to store the row/column major chunk of data given by application
 struct PIDX_patch_struct
 {
-  unsigned long long offset[PIDX_MAX_DIMENSIONS];       ///< logical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
-  unsigned long long size[PIDX_MAX_DIMENSIONS];         ///< logical size (extents) in each of the dimensions for the data chunk
+  off_t offset[PIDX_MAX_DIMENSIONS];       ///< logical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
+  off_t size[PIDX_MAX_DIMENSIONS];         ///< logical size (extents) in each of the dimensions for the data chunk
 
   double physical_offset[PIDX_MAX_DIMENSIONS];       ///< physical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
   double physical_size[PIDX_MAX_DIMENSIONS];         ///< physical size (extents) in each of the dimensions for the data chunk
@@ -112,10 +112,15 @@ typedef struct PIDX_super_patch_struct* PIDX_super_patch;
 /// Struct to store the HZ encoded data and meta-data
 struct PIDX_HZ_buffer_struct
 {
+  // Flag set if the HZ buffer comes from a boundary patch
   int is_boundary_HZ_buffer;                            ///< 1 for boundary patch 0 otherwise
+
+  // HZ related meta data
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
   unsigned long long *start_hz_index;                   ///< Starting HZ index at of the data at all the HZ levels
   unsigned long long *end_hz_index;                     ///< Ending HZ index at of the data at all the HZ levels
+
+  // HZ encoded data (for every level)
   unsigned char** buffer;                               ///< data buffer at all the HZ levels
 };
 typedef struct PIDX_HZ_buffer_struct* HZ_buffer;

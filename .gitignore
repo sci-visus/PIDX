@@ -1,4 +1,7 @@
 build
 *.swp
+<<<<<<< HEAD
 tags
 
+=======
+>>>>>>> partition_develop

@@ -32,11 +32,19 @@
         *---------*---------*
 */
 
+#if !defined _MSC_VER
 #include <unistd.h>
+#include <getopt.h>
+#endif
 #include <stdarg.h>
 #include <stdint.h>
 #include <ctype.h>
 #include <PIDX.h>
+#include <string.h>
+
+#if defined _MSC_VER
+  #include "utils/PIDX_windows_utils.h"
+#endif
 
 #define MAX_VAR_COUNT 128
 enum { X, Y, Z, NUM_DIMS };
@@ -261,9 +269,9 @@ static int parse_var_list()
         {
           if (count == 0)
           {
-            char* temp_name = strdup(pch1);
-            strcpy(var_name[variable_counter], temp_name);
-            free(temp_name);
+            //char* temp_name = strdup(pch1);
+            strcpy(var_name[variable_counter], pch1);
+            //free(temp_name);
           }
 
           if (count == 1)

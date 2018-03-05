@@ -318,7 +318,7 @@ static void adjust_restructured_box_size(PIDX_io file)
   int box_size_factor_z = 1;
   int counter = 0;
 
-  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
+  size_t *ps = file->idx_d->restructured_grid->patch_size;
 
   recaliberate:
 
@@ -371,7 +371,7 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
 
   int rank_count = 0;
   int index = 0;
-  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
+  size_t *ps = file->idx_d->restructured_grid->patch_size;
   for (k = 0; k < file->idx->box_bounds[2]; k = k + ps[2])
     for (j = 0; j < file->idx->box_bounds[1]; j = j + ps[1])
       for (i = 0; i < file->idx->box_bounds[0]; i = i + ps[0])
@@ -511,7 +511,7 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   int core = (int)log2(getPowerOf2(file->idx_c->gnprocs));
   int bits;
   int counter = 1;
-  unsigned long long power_two_bound[PIDX_MAX_DIMENSIONS];
+  size_t power_two_bound[PIDX_MAX_DIMENSIONS];
   power_two_bound[0] = getPowerOf2(file->idx->box_bounds[0]);//file->idx_d->partition_count[0] * file->idx_d->partition_size[0];
   power_two_bound[1] = getPowerOf2(file->idx->box_bounds[1]);//file->idx_d->partition_count[1] * file->idx_d->partition_size[1];
   power_two_bound[2] = getPowerOf2(file->idx->box_bounds[2]);//file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
@@ -519,13 +519,13 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   //fprintf(stderr, "PTB %d %d %d BB %d %d %d\n", power_two_bound[0], power_two_bound[1], power_two_bound[2], file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
   increase_box_size:
-  memcpy(file->idx_d->restructured_grid->patch_size, power_two_bound, sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS);
+  memcpy(file->idx_d->restructured_grid->patch_size, power_two_bound, sizeof(size_t) * PIDX_MAX_DIMENSIONS);
 
   bits = core;
 
 #if 1
   counter = 1;
-  unsigned long long *ps = file->idx_d->restructured_grid->patch_size;
+  size_t *ps = file->idx_d->restructured_grid->patch_size;
   int np[3] = {1,1,1};
   while (bits != 0)
   //while (np[0] * np[1] * np[2] < file->idx_c->gnprocs)

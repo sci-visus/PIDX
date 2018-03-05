@@ -259,8 +259,6 @@ static PIDX_return_code compress_and_encode(PIDX_io file)
   time->compression_end[lgi][cvi] = PIDX_get_time();
 
 
-//
-
   // Perform HZ encoding
   if (file->idx_dbg->debug_do_hz == 1)
   {

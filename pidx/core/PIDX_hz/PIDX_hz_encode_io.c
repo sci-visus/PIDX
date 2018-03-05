@@ -23,7 +23,6 @@ static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf);
 static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf);
 
 static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout);
-
 static int read_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned long long hz_start_index, unsigned long long hz_count, unsigned char* hz_buffer, unsigned long long buffer_offset, PIDX_block_layout layout);
 
 static int opened_file_number = -1;
@@ -31,6 +30,7 @@ static uint32_t *headers;
 static int total_header_size = 0;
 static MPI_File fp = 0;
 static MPI_Status status;
+
 
 int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_layout, int MODE)
 {
@@ -47,6 +47,7 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id hz_id, PIDX_block_layout block_la
 
   index = 0, count = 0, send_index = 0;
 
+  // PROBABLY WRONG
   if (var0->hz_buffer->is_boundary_HZ_buffer == 1)
   {
     for(v = hz_id->first_index; v <= hz_id->last_index; v++)
@@ -226,6 +227,7 @@ static int write_samples(PIDX_hz_encode_id hz_id, int variable_index, unsigned l
     data_offset = file_index * bytes_per_datatype;
     data_offset += hz_id->idx_d->start_fs_block * hz_id->idx_d->fs_block_size;
 
+    // Adjusting for missing blocks
     block_negative_offset = PIDX_blocks_find_negative_offset(hz_id->idx->blocks_per_file, hz_id->idx->bits_per_block, block_number, layout);
 
     data_offset -= block_negative_offset * hz_id->idx_d->samples_per_block * bytes_per_datatype;

@@ -145,6 +145,7 @@ IF (PIDX_BUILD_DEVELOP)
 
 #  ENDIF()
 
+
   PIDX_ADD_CEXECUTABLE(single_buffer_single_variable_read "basic-io/read/single_buffer_single_variable_read.c")
   TARGET_LINK_LIBRARIES(single_buffer_single_variable_read ${EXAMPLES_LINK_LIBS})
 
@@ -159,6 +160,9 @@ IF (PIDX_BUILD_DEVELOP)
 
   PIDX_ADD_CEXECUTABLE(single_buffer_local_partitioned_idx_write "basic-io/write/local_partitioned_idx/single_buffer_local_partitioned_idx_write.c")
   TARGET_LINK_LIBRARIES(single_buffer_local_partitioned_idx_write ${EXAMPLES_LINK_LIBS})
+
+
+
 
   #PIDX_ADD_CEXECUTABLE(multi_buffer_local_partitioned_idx_write "basic-io/write/local_partitioned_idx/multi_buffer_local_partitioned_idx_write.c")
   #TARGET_LINK_LIBRARIES(multi_buffer_local_partitioned_idx_write ${EXAMPLES_LINK_LIBS})

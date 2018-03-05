@@ -81,7 +81,6 @@ static int variable_count = 1;
 static char output_file_template[512];
 static char var_list[512];
 static unsigned char **data;
-static unsigned char **data1;
 static char output_file_name[512];
 static char var_name[MAX_VAR_COUNT][512];
 static int bpv[MAX_VAR_COUNT];
@@ -283,7 +282,7 @@ static int generate_vars(){
     int bits_per_sample = 0;
     int sample_count = 0;
     char temp_name[512];
-    char* temp_type_name = "1*float64";
+    char* temp_type_name = "1*float32";
     //char* temp_type_name = "1*int8";
     sprintf(temp_name, "var_%d", variable_counter);
     strcpy(var_name[variable_counter], temp_name);
@@ -332,9 +331,9 @@ static int parse_var_list()
         {
           if (count == 0)
           {
-            char* temp_name = strdup(pch1);
-            strcpy(var_name[variable_counter], temp_name);
-            free(temp_name);
+            //char* temp_name = strdup(pch1);
+            strcpy(var_name[variable_counter], pch1);
+            //free(temp_name);
           }
 
           if (count == 1)
@@ -415,15 +414,11 @@ static void create_synthetic_simulation_data()
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
 
-  data1 = malloc(sizeof(*data) * variable_count);
-  memset(data1, 0, sizeof(*data) * variable_count);
-
   // Synthetic simulation data
   for(var = 0; var < variable_count; var++)
   {
     unsigned long long i, j, k, val_per_sample = 0;
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
-    data1[var] = malloc(sizeof (*(data1[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
 
     unsigned char cvalue = 0;
     short svalue = 0;
@@ -554,7 +549,7 @@ static void set_pidx_file(int ts)
   PIDX_set_restructuring_box(file, reg_size);
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_IDX_IO); // TODO:
+  PIDX_set_io_mode(file, PIDX_RAW_IO); // TODO:
 
   // Set how many blocks we want to write in a single file
   PIDX_set_block_count(file, 256);

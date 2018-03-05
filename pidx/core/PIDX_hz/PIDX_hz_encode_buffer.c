@@ -20,6 +20,8 @@
 #include "../../PIDX_inc.h"
 
 
+/// Allocate HZ buffer for every level
+/// Buffer size at every hz level = end_hz_index[level] - start_hz_index[level] + 1
 PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 {
 
@@ -47,9 +49,6 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
     {
       unsigned long long samples_per_level = (var->hz_buffer->end_hz_index[c] - var->hz_buffer->start_hz_index[c] + 1);
 
-      //if (id->idx_c->grank == 1)
-      //  fprintf(stderr, "[V %d] [C %d] %lld\n", v, c, samples_per_level);
-
       var->hz_buffer->buffer[c] = malloc(bytes_for_datatype * samples_per_level);
       memset(var->hz_buffer->buffer[c], 0, bytes_for_datatype * samples_per_level);
     }
@@ -59,7 +58,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
 }
 
 
-/// tear down the various buffer structs. In the case of the output structs this function should also free the memory buffers as well
+/// Free the memory buffer for every hz level
 PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
 {
   int itr = 0, v = 0;
@@ -72,12 +71,12 @@ PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
   if(var_grp->variable[id->first_index]->sim_patch_count < 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_d->sim_patch_count not set.\n", __FILE__, __LINE__);
-    return 1;
+    return PIDX_err_hz;
   }
   if(id->idx_d->maxh <= 0)
   {
     fprintf(stderr, "[%s] [%d] id->idx_d->maxh (%d) not set.\n", __FILE__, __LINE__, id->idx_d->maxh);
-    return 1;
+    return PIDX_err_hz;
   }
 
   for (v = id->first_index; v <= id->last_index; v++)

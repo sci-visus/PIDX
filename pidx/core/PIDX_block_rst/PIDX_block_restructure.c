@@ -120,7 +120,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
     int bytes_per_value = (var->bpv / CHAR_BIT) * var->vps;
 
     PIDX_super_patch out_patch = var->chunked_super_patch;
-    unsigned long long *group_size = out_patch->restructured_patch->size;
+    size_t *group_size = out_patch->restructured_patch->size;
     unsigned long long num_elems_group = 1;
     int d;
     for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d)
@@ -218,9 +218,9 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
   }
 
   // compute the intra compression block strides
-  unsigned long long *chunk_size = chunk_id->idx->chunk_size;
+  size_t *chunk_size = chunk_id->idx->chunk_size;
   //printf("Chunk size is %lld\n", *chunk_size);
-  unsigned long long  cbz = 1;
+  size_t  cbz = 1;
   for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d){
     cbz = cbz * chunk_size[d];
     //printf("some terms are %lld, %lld, %d\n", cbz, chunk_size[d], PIDX_MAX_DIMENSIONS);

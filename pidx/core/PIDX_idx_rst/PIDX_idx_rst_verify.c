@@ -42,7 +42,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
   int vol = 0;
   unsigned long long global_volume;
 
-  unsigned long long *bounds = rst_id->idx_metadata->bounds;
+  size_t *bounds = rst_id->idx_metadata->bounds;
   PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
 
@@ -56,8 +56,8 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
 
     for(n = 0; n < var->restructured_super_patch->patch_count; n++)
     {
-      unsigned long long *count_ptr = var->restructured_super_patch->patch[n]->size;
-      unsigned long long *offset_ptr = var->restructured_super_patch->patch[n]->offset;
+      size_t *count_ptr = var->restructured_super_patch->patch[n]->size;
+      off_t *offset_ptr = var->restructured_super_patch->patch[n]->offset;
       vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
 
       for (k = 0; k < count_ptr[2]; k++)

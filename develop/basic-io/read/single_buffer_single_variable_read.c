@@ -34,13 +34,19 @@
 
 */
 
+#if !defined _MSC_VER
 #include <unistd.h>
+#include <getopt.h>
+#endif
 #include <stdarg.h>
 #include <stdint.h>
+#include <ctype.h>
 #include <PIDX.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
+#include <string.h>
+
+#if defined _MSC_VER
+  #include "utils/PIDX_windows_utils.h"
+#endif
 
 enum { X, Y, Z, NUM_DIMS };
 static int process_count = 1, rank = 0;

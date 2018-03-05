@@ -48,8 +48,8 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
   // Especially when number of cores is different from number of cores
   // used to create the dataset
   time->rst_meta_data_io_start[lgi][cvi] = PIDX_get_time();
-  /*
-  if (file->idx->cached_ts == file->idx->current_time_step)
+  //
+  //if (file->idx->cached_ts == file->idx->current_time_step)
   {
     if (mode == PIDX_WRITE)
     {
@@ -57,7 +57,7 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int gi, int svi, int evi, i
       if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
     }
   }
-  */
+  //
   time->rst_meta_data_io_end[lgi][cvi] = PIDX_get_time();
 
 

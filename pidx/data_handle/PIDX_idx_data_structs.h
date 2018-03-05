@@ -226,8 +226,9 @@ struct idx_file_struct
 
   int bits_per_block;
   int blocks_per_file;
-  unsigned long long bounds[PIDX_MAX_DIMENSIONS];
-  unsigned long long box_bounds[PIDX_MAX_DIMENSIONS];
+
+  size_t bounds[PIDX_MAX_DIMENSIONS];
+  size_t box_bounds[PIDX_MAX_DIMENSIONS];
 
   double physical_bounds[PIDX_MAX_DIMENSIONS];
   double physical_box_bounds[PIDX_MAX_DIMENSIONS];
@@ -246,7 +247,7 @@ struct idx_file_struct
   int compression_type;
   int compression_factor;
   float compression_bit_rate;
-  unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];
+  size_t chunk_size[PIDX_MAX_DIMENSIONS];
 
   int file_zero_merge;
 
