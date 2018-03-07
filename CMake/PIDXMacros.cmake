@@ -23,7 +23,7 @@
 ###########################################
 
 MACRO(PIDX_SET_COMPILER_OPTIONS)
-  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
   IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # using Clang
     message("Using clang compiler")
