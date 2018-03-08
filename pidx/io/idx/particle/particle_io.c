@@ -301,13 +301,30 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
         }
 
         if (file->idx_c->grank == 0)
-          printf("[PC %d] OC %f %f %f - %f %f %f\n", n_proc_patch->particle_count, n_proc_patch->physical_offset[0], n_proc_patch->physical_offset[1], n_proc_patch->physical_offset[2], n_proc_patch->physical_size[0], n_proc_patch->physical_size[1], n_proc_patch->physical_size[2]);
+          printf("[PC %lu] OC %f %f %f - %f %f %f\n", n_proc_patch->particle_count, n_proc_patch->physical_offset[0],
+              n_proc_patch->physical_offset[1], n_proc_patch->physical_offset[2], n_proc_patch->physical_size[0],
+              n_proc_patch->physical_size[1], n_proc_patch->physical_size[2]);
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
           printf("Reading from n proc patch %d\n", n);
           sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
           int fpx = open(file_name, O_RDONLY);
+
+          // TODO WILL: For particles we need to rethink how we do this loop, we'll need to
+          // check that the particle position is inside our query box, and only then get
+          // the variable from the file. So there's a few options: we could store some mask
+          // of which particles in the patch we're reading and compute this in a pre-pass
+          // where we read (and optionally keep) the positions, and then read all the other
+          // vars based on this mask. Or, we can go through for each particle and do the
+          // test and read its data on a particle-by-particle basis (that is copying from the patch,
+          // though this will then mean we load all vars the user wants for the patch up front,
+          // and then do this loop through and copy over)
+          // The first option may be easier to extend on to doing some acceleration structures
+          // where we can then now that a whole subtree of particles are inside/outside the
+          // query. We can also compute once up front the indices to write the particles
+          // within the region to by doing a scan, then we can read the whole patch for
+          // that attrib, and copy over the data.
           for (int start_index = svi; start_index < evi; start_index = start_index + 1)
           {
             int other_offset = 0;
