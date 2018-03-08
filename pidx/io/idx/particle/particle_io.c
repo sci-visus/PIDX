@@ -1,7 +1,5 @@
 #include "../../../PIDX_inc.h"
 
-#include <vector>
-
 static int maximum_neighbor_count = 256;
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 static int pointInChunk(PIDX_patch p, const double *pos);
@@ -31,7 +29,7 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
 
 
   time->particle_data_io_start = MPI_Wtime();
-  char *directory_path = static_cast<char*>(malloc(sizeof(*directory_path) * PATH_MAX));
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
@@ -149,7 +147,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
   // right? So would we leave some unused space in the file here?
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
 
-  double *local_patch = static_cast<double*>(malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1)));
+  double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
   int pcounter = 0;
@@ -167,7 +165,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
     pcounter++;
   }
 
-  global_patch = static_cast<double*>(malloc((file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double)));
+  global_patch = malloc((file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
   memset(global_patch, 0,(file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
   MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, file->idx_c->global_comm);
@@ -177,7 +175,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
 
   char file_path[PATH_MAX];
 
-  char *directory_path = static_cast<char*>(malloc(sizeof(*directory_path) * PATH_MAX));
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
@@ -214,7 +212,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
   char size_path[PATH_MAX];
 
-  char *idx_directory_path = static_cast<char*>(malloc(sizeof(*idx_directory_path) * PATH_MAX));
+  char *idx_directory_path = malloc(sizeof(*idx_directory_path) * PATH_MAX);
   memset(idx_directory_path, 0, sizeof(*idx_directory_path) * PATH_MAX);
   strncpy(idx_directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
@@ -242,7 +240,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
   int buffer_read_size = (number_cores * ((int)max_patch_count * (2 * max_dim + 1) + 1)) * sizeof(double);
 
-  double *size_buffer = static_cast<double*>(malloc(buffer_read_size));
+  double *size_buffer = malloc(buffer_read_size);
   memset(size_buffer, 0, buffer_read_size);
 
   // TODO WILL: This would be a lot easier to follow if we pread into a structure of some kind
@@ -255,13 +253,13 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
   close(fp);
 
-  char *file_name = static_cast<char*>(malloc(PATH_MAX * sizeof(*file_name)));
+  char *file_name = malloc(PATH_MAX * sizeof(*file_name));
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-  char *directory_path = static_cast<char*>(malloc(sizeof(*directory_path) * PATH_MAX));
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
 
-  char *data_set_path = static_cast<char*>(malloc(sizeof(*data_set_path) * PATH_MAX));
+  char *data_set_path = malloc(sizeof(*data_set_path) * PATH_MAX);
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
@@ -341,8 +339,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
             const size_t proc_particle_read_size = n_proc_patch->particle_count * bytes_per_sample;
             if (tmp_patch_buf_size < proc_particle_read_size)
             {
-              tmp_patch_read_buf = static_cast<unsigned char*>(realloc(static_cast<void*>(tmp_patch_read_buf),
-                    proc_particle_read_size));
+              tmp_patch_read_buf = realloc(tmp_patch_read_buf, proc_particle_read_size);
               tmp_patch_buf_size = proc_particle_read_size;
             }
 
@@ -375,9 +372,8 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
               // Round up to a particle when allocating
               var->sim_patch[pc1]->read_particle_buffer_capacity += n_proc_patch->particle_count * bytes_per_sample / 2
                 + bytes_per_sample;
-              *var->sim_patch[pc1]->read_particle_buffer =
-                static_cast<unsigned char*>(realloc(static_cast<void*>(*var->sim_patch[pc1]->read_particle_buffer),
-                  var->sim_patch[pc1]->read_particle_buffer_capacity));
+              *var->sim_patch[pc1]->read_particle_buffer = realloc(*var->sim_patch[pc1]->read_particle_buffer,
+                  var->sim_patch[pc1]->read_particle_buffer_capacity);
             }
 
             // TODO WILL: This assumes there's only on attribute and that it's the position and that
@@ -402,9 +398,8 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
                   var->sim_patch[pc1]->read_particle_buffer_capacity +=
                     (n_proc_patch->particle_count - i) * bytes_per_sample / 2 + bytes_per_sample;
 
-                  *var->sim_patch[pc1]->read_particle_buffer =
-                    static_cast<unsigned char*>(realloc(static_cast<void*>(*var->sim_patch[pc1]->read_particle_buffer),
-                      var->sim_patch[pc1]->read_particle_buffer_capacity));
+                  *var->sim_patch[pc1]->read_particle_buffer = realloc(*var->sim_patch[pc1]->read_particle_buffer,
+                      var->sim_patch[pc1]->read_particle_buffer_capacity);
                 }
               }
             }

@@ -22,5 +22,4 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi);
 ///
 PIDX_return_code PIDX_particle_read(PIDX_io file, int gi, int svi, int evi);
 
-
 #endif

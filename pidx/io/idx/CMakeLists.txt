@@ -20,7 +20,7 @@
 # ////////////////////////////////////////
 
 FILE(GLOB PIDX_IDX_IO_SOURCES
-  particle/*.h particle/*.c particle/*.cpp
+  particle/*.h particle/*.c
   global_partition/*.h global_partition/*.c
   local_partition/*.h local_partition/*.c
   no_partition/*.h no_partition/*.c
