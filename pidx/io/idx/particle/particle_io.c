@@ -265,8 +265,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
 
-  unsigned char *tmp_patch_read_buf = NULL;
-  size_t tmp_patch_buf_size = 0;
+  PIDX_buffer tmp_patch_read_buf = PIDX_buffer_create_empty();
 
   for (int pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
   {
@@ -337,13 +336,9 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
             const size_t bytes_per_sample = var->vps * var->bpv/8;
 
             const size_t proc_particle_read_size = n_proc_patch->particle_count * bytes_per_sample;
-            if (tmp_patch_buf_size < proc_particle_read_size)
-            {
-              tmp_patch_read_buf = realloc(tmp_patch_read_buf, proc_particle_read_size);
-              tmp_patch_buf_size = proc_particle_read_size;
-            }
+            PIDX_buffer_resize(&tmp_patch_read_buf, proc_particle_read_size);
 
-            const size_t preadc = pread(fpx, tmp_patch_read_buf, proc_particle_read_size, other_offset);
+            const size_t preadc = pread(fpx, tmp_patch_read_buf.buffer, proc_particle_read_size, other_offset);
             if (preadc != proc_particle_read_size)
             {
               fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc,
@@ -382,10 +377,10 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
             size_t patch_particles_read = 0;
             for (size_t i = 0; i < n_proc_patch->particle_count; ++i) {
               // TODO WILL: This assumes var->vps == PIDX_MAX_DIMENSIONS
-              if (pointInChunk(local_proc_patch, (double*)(tmp_patch_read_buf + i * bytes_per_sample))) {
+              if (pointInChunk(local_proc_patch, (double*)(tmp_patch_read_buf.buffer + i * bytes_per_sample))) {
 
                 memcpy(*var->sim_patch[pc1]->read_particle_buffer + patch_particle_offset,
-                    tmp_patch_read_buf + i * bytes_per_sample, bytes_per_sample);
+                    tmp_patch_read_buf.buffer + i * bytes_per_sample, bytes_per_sample);
 
                 ++patch_particles_read;
                 patch_particle_offset += bytes_per_sample;
@@ -428,7 +423,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
   }
 
-  free(tmp_patch_read_buf);
+  PIDX_buffer_free(&tmp_patch_read_buf);
   free(file_name);
   free(data_set_path);
   free(directory_path);

@@ -50,6 +50,7 @@ extern "C" {
 #include "./utils/PIDX_utils.h"
 #include "./utils/PIDX_file_name.h"
 #include "./utils/PIDX_file_access_modes.h"
+#include "./utils/PIDX_buffer.h"
 
 #include "./comm/PIDX_comm.h"
 
