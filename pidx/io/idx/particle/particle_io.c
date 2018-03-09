@@ -8,6 +8,71 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi);
 static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, int evi);
 
 
+PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int gi, int svi, int evi)
+{
+  int si = 0, ei = 0;
+  PIDX_return_code ret;
+  PIDX_time time = file->idx_d->time;
+
+  // Step 0
+  time->set_reg_box_start = MPI_Wtime();
+  if (particles_set_rst_box_size_for_raw_write(file, gi, svi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  time->set_reg_box_end = MPI_Wtime();
+
+  ret = group_meta_data_init(file, gi, svi, evi);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  file->idx_d->variable_pipe_length = file->idx->variable_count;
+  for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
+  {
+    ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
+    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+
+    // Step 1: Setup restructuring buffers
+    ret = particles_restructure_setup(file, gi, si, ei, PIDX_WRITE);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    // Step 2: Perform data restructuring
+    ret = particles_restructure(file, PIDX_WRITE);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    // Step 3: Write out restructured data
+    ret = particles_restructure_io(file, PIDX_WRITE);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    // Step 4: Cleanup all buffers and ids
+    ret = particles_restructure_cleanup(file);
+    if (ret != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+  }
+
+  return PIDX_success;
+}
+
+
 PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
 {
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
