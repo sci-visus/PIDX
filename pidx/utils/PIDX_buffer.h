@@ -21,7 +21,7 @@
 
 // A resizeable buffer, similar to std::vector
 typedef struct PIDX_buffer {
-  char *buffer;
+  unsigned char *buffer;
   size_t size;
   size_t capacity;
 } PIDX_buffer;
@@ -29,7 +29,7 @@ typedef struct PIDX_buffer {
 PIDX_buffer PIDX_buffer_create_empty();
 PIDX_buffer PIDX_buffer_create_with_capacity(size_t capacity);
 void PIDX_buffer_free(PIDX_buffer *b);
-void PIDX_buffer_append(PIDX_buffer *b, const char *data, const size_t size);
+void PIDX_buffer_append(PIDX_buffer *b, const unsigned char *data, const size_t size);
 void PIDX_buffer_resize(PIDX_buffer *b, const size_t size);
 
 #endif

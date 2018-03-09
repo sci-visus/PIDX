@@ -16,7 +16,7 @@ void PIDX_buffer_free(PIDX_buffer *b)
   b->size = 0;
   b->capacity = 0;
 }
-void PIDX_buffer_append(PIDX_buffer *b, const char *data, const size_t size)
+void PIDX_buffer_append(PIDX_buffer *b, const unsigned char *data, const size_t size)
 {
   if (b->capacity - b->size < size) {
     b->capacity = Max2ab(b->capacity + size, b->capacity * 1.5);
