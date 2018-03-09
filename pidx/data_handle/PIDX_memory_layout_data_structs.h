@@ -47,6 +47,7 @@ typedef struct PIDX_Ndim_empty_patch_struct* Ndim_empty_patch;
 /// Struct to store the restructured grid
 struct PIDX_grid_struct
 {
+  double physical_patch_size[PIDX_MAX_DIMENSIONS];
   size_t patch_size[PIDX_MAX_DIMENSIONS];
   int total_patch_count[PIDX_MAX_DIMENSIONS];
   Ndim_empty_patch* patch;
@@ -58,7 +59,7 @@ typedef struct PIDX_grid_struct* PIDX_restructured_grid;
 struct PIDX_patch_struct
 {
   off_t offset[PIDX_MAX_DIMENSIONS];       ///< logical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
-  off_t size[PIDX_MAX_DIMENSIONS];         ///< logical size (extents) in each of the dimensions for the data chunk
+  size_t size[PIDX_MAX_DIMENSIONS];         ///< logical size (extents) in each of the dimensions for the data chunk
 
   double physical_offset[PIDX_MAX_DIMENSIONS];       ///< physical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
   double physical_size[PIDX_MAX_DIMENSIONS];         ///< physical size (extents) in each of the dimensions for the data chunk

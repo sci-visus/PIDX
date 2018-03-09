@@ -8,6 +8,8 @@ struct PIDX_io_descriptor
 {
   PIDX_header_io_id header_io_id;                   ///< IDX metadata id
 
+  PIDX_particles_rst_id particles_rst_id;                       ///< Multi-patch restructuring phase id for raw writes
+
   PIDX_raw_rst_id raw_rst_id;                       ///< Multi-patch restructuring phase id for raw writes
 
   PIDX_idx_rst_id idx_rst_id;                       ///< Multi-patch restructuring phase id for idx writes
