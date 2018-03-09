@@ -324,6 +324,8 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
           // query. We can also compute once up front the indices to write the particles
           // within the region to by doing a scan, then we can read the whole patch for
           // that attrib, and copy over the data.
+          // The latter will be easier to implement, and since the patches are not large
+          // it should be fine to do.
           for (int start_index = svi; start_index < evi; start_index = start_index + 1)
           {
             int other_offset = 0;
