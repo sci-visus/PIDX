@@ -22,7 +22,7 @@ void PIDX_buffer_append(PIDX_buffer *b, const unsigned char *data, const size_t 
     b->capacity = Max2ab(b->capacity + size, b->capacity * 1.5);
     b->buffer = realloc(b->buffer, b->capacity);
   }
-  memcpy(b->buffer, data, size);
+  memcpy(b->buffer + b->size, data, size);
   b->size += size;
 }
 void PIDX_buffer_resize(PIDX_buffer *b, const size_t size)
