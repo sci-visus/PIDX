@@ -330,7 +330,15 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, file->idx->current_time_step);
 
-  PIDX_buffer tmp_patch_read_buf = PIDX_buffer_create_empty();
+  const size_t num_vars_to_read = evi - svi;
+  PIDX_buffer *tmp_var_read_bufs = malloc(sizeof(PIDX_buffer) * num_vars_to_read);
+  for (size_t i = 0; i < num_vars_to_read; ++i) {
+    tmp_var_read_bufs[i] = PIDX_buffer_create_empty();
+  }
+
+  // We use a PIDX_buffer to manage growing the user provided buffers which hold
+  // the output patch information as well.
+  PIDX_buffer *read_var_buffers = malloc(sizeof(PIDX_buffer) * num_vars_to_read);
 
   for (int pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
   {
@@ -340,6 +348,14 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
     {
       local_proc_patch->physical_offset[d] = var_grp->variable[svi]->sim_patch[pc1]->physical_offset[d];
       local_proc_patch->physical_size[d] = var_grp->variable[svi]->sim_patch[pc1]->physical_size[d];
+    }
+
+    for (int i = 0; i < num_vars_to_read; ++i)
+    {
+      PIDX_variable var = var_grp->variable[i + svi];
+      read_var_buffers[i].buffer = *var->sim_patch[pc1]->read_particle_buffer;
+      read_var_buffers[i].size = 0;
+      read_var_buffers[i].capacity = var->sim_patch[pc1]->read_particle_buffer_capacity;
     }
 
     // PC - - - - - - - - - -   PC - - - - - - - - - -      PC - - - - -
@@ -371,7 +387,6 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
-          printf("Reading from n proc patch %d\n", n);
           sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
           int fpx = open(file_name, O_RDONLY);
 
@@ -391,92 +406,67 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
           // that attrib, and copy over the data.
           // The latter will be easier to implement, and since the patches are not large
           // it should be fine to do.
-          for (int start_index = svi; start_index < evi; start_index = start_index + 1)
+
+          // First read all vars from the patch that we want to read, then filter by
+          // the box query
+          for (int vid = 0; vid < num_vars_to_read; ++vid)
           {
             int other_offset = 0;
-            for (int v1 = 0; v1 < start_index; v1++)
+            for (int v1 = 0; v1 < vid; v1++)
             {
               PIDX_variable var1 = var_grp->variable[v1];
               other_offset = other_offset + ((var1->bpv/8) * var1->vps * n_proc_patch->particle_count);
             }
-            PIDX_variable var = var_grp->variable[start_index];
+            PIDX_variable var = var_grp->variable[vid + svi];
             const size_t bytes_per_sample = var->vps * var->bpv/8;
 
             const size_t proc_particle_read_size = n_proc_patch->particle_count * bytes_per_sample;
-            PIDX_buffer_resize(&tmp_patch_read_buf, proc_particle_read_size);
+            PIDX_buffer *tmp_buf = &tmp_var_read_bufs[vid];
+            PIDX_buffer_resize(tmp_buf, proc_particle_read_size);
 
-            const size_t preadc = pread(fpx, tmp_patch_read_buf.buffer, proc_particle_read_size, other_offset);
+            const size_t preadc = pread(fpx, tmp_buf->buffer, proc_particle_read_size, other_offset);
             if (preadc != proc_particle_read_size)
             {
               fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc,
                   (int)proc_particle_read_size);
               return PIDX_err_rst;
             }
+          }
 
-            // TODO WILL: How do we know which variable the user has written as the "position" of
-            // particles, so that we can filter them by the box query?
-            // QUESTION for SID: the setup for the sim patch count info doesn't make much sense
-            // it seems. I'm not sure how the patches are added? 
-            // TODO FURTHERMORE: When we're reading and filtering the non-positional vars in
-            // a box query we still need to know the positions of the particles to do the filtering
-            // correctly. So regardless of what the user requests to read, we always must read the
-            // positions
-            size_t patch_particle_offset = *var->sim_patch[pc1]->read_particle_count * bytes_per_sample;
+          // TODO WILL: How do we know which variable the user has written as the "position" of
+          // particles, so that we can filter them by the box query?
+          // QUESTION for SID: the setup for the sim patch count info doesn't make much sense
+          // it seems. I'm not sure how the patches are added? 
+          // TODO FURTHERMORE: When we're reading and filtering the non-positional vars in
+          // a box query we still need to know the positions of the particles to do the filtering
+          // correctly. So regardless of what the user requests to read, we always must read the
+          // positions
+          // TODO WILL: This assumes the first attribute being queried is the position and
+          // that it's a vec3d
+          PIDX_buffer *pos_var_buf = &tmp_var_read_bufs[0];
+          PIDX_variable pos_var = var_grp->variable[svi];
+          const size_t bytes_per_pos = pos_var->vps * pos_var->bpv/8;
 
-            // Always alloc space for at least half the particles in the patch to be stored
-            // TODO: With better acceleration structures built on the particles within a patch,
-            // we can make better estimates (or know exactly) how many particles this query will take
-            // from this patch.
-            if (var->sim_patch[pc1]->read_particle_buffer_capacity == 0
-                || var->sim_patch[pc1]->read_particle_buffer_capacity - patch_particle_offset
-                    < n_proc_patch->particle_count * bytes_per_sample / 2)
+          for (size_t i = 0; i < n_proc_patch->particle_count; ++i)
+          {
+            // TODO WILL: This assumes position_var->vps == PIDX_MAX_DIMENSIONS
+            if (pointInChunk(local_proc_patch, (double*)(pos_var_buf->buffer + i * bytes_per_pos)))
             {
-              // Round up to a particle when allocating
-              var->sim_patch[pc1]->read_particle_buffer_capacity += n_proc_patch->particle_count * bytes_per_sample / 2
-                + bytes_per_sample;
-              *var->sim_patch[pc1]->read_particle_buffer = realloc(*var->sim_patch[pc1]->read_particle_buffer,
-                  var->sim_patch[pc1]->read_particle_buffer_capacity);
-            }
+              for (int vid = 0; vid < num_vars_to_read; ++vid)
+              {
+                PIDX_variable var = var_grp->variable[vid + svi];
+                const size_t bytes_per_sample = var->vps * var->bpv/8;
+                PIDX_buffer *var_buf = &read_var_buffers[vid];
+                PIDX_buffer_append(var_buf, tmp_var_read_bufs[vid].buffer + i * bytes_per_sample,
+                    bytes_per_sample);
 
-            // TODO WILL: This assumes there's only on attribute and that it's the position and that
-            // the position is a vec3d
-            // TODO: Will: what we need is a std::vector style struct.
-            size_t patch_particles_read = 0;
-            for (size_t i = 0; i < n_proc_patch->particle_count; ++i) {
-              // TODO WILL: This assumes var->vps == PIDX_MAX_DIMENSIONS
-              if (pointInChunk(local_proc_patch, (double*)(tmp_patch_read_buf.buffer + i * bytes_per_sample))) {
-
-                memcpy(*var->sim_patch[pc1]->read_particle_buffer + patch_particle_offset,
-                    tmp_patch_read_buf.buffer + i * bytes_per_sample, bytes_per_sample);
-
-                ++patch_particles_read;
-                patch_particle_offset += bytes_per_sample;
-
-                // Have we got enough room to store the particles we may need to store if we take
-                // half of all the rest?
-                if (var->sim_patch[pc1]->read_particle_buffer_capacity - patch_particle_offset
-                    < (n_proc_patch->particle_count - i) * bytes_per_sample / 2)
-                {
-                  var->sim_patch[pc1]->read_particle_buffer_capacity +=
-                    (n_proc_patch->particle_count - i) * bytes_per_sample / 2 + bytes_per_sample;
-
-                  *var->sim_patch[pc1]->read_particle_buffer = realloc(*var->sim_patch[pc1]->read_particle_buffer,
-                      var->sim_patch[pc1]->read_particle_buffer_capacity);
-                }
+                *var->sim_patch[pc1]->read_particle_count += 1;
+                var->sim_patch[pc1]->particle_count = *var->sim_patch[pc1]->read_particle_count;
               }
             }
-
-            *var->sim_patch[pc1]->read_particle_count += patch_particles_read;
-            var->sim_patch[pc1]->particle_count = *var->sim_patch[pc1]->read_particle_count;
-
-            /*
-            printf("Capacity %lu particles, currently have read %d\n",
-                var->sim_patch[pc1]->read_particle_buffer_capacity / bytes_per_sample,
-                *var->sim_patch[pc1]->read_particle_count);
-                */
           }
-          close(fpx);
 
+          close(fpx);
           patch_count++;
         }
         p_counter++;
@@ -488,9 +478,22 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
     free(n_proc_patch);
     n_proc_patch = 0;
 
+    // Migrate back the capacity and size information. Note that
+    // these are output buffers for the final read variables so we
+    // don't free them
+    for (size_t i = 0; i < num_vars_to_read; ++i) {
+      PIDX_variable var = var_grp->variable[svi + i];
+      var->sim_patch[pc1]->read_particle_buffer_capacity = read_var_buffers[i].capacity;
+      *var->sim_patch[pc1]->read_particle_buffer = read_var_buffers[i].buffer;
+    }
   }
 
-  PIDX_buffer_free(&tmp_patch_read_buf);
+  for (size_t i = 0; i < num_vars_to_read; ++i) {
+    PIDX_buffer_free(&tmp_var_read_bufs[i]);
+  }
+  free(tmp_var_read_bufs);
+  free(read_var_buffers);
+
   free(file_name);
   free(data_set_path);
   free(directory_path);
