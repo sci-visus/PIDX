@@ -84,6 +84,7 @@ static int variable_index = 0;
 static char output_file_template[512] = "test_idx";
 static unsigned char *data = NULL;
 static size_t particle_count = 0;
+static int checkpoint_restart = 0;
 
 static PIDX_point local_offset, local_size;
 static PIDX_physical_point physical_local_offset, physical_local_size, physical_global_bounds;
@@ -96,13 +97,14 @@ static int bits_per_sample = 0;
 static int values_per_sample = 0;
 static char type_name[512];
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./idx_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./idx_read -g 32x32x32 -l 16x16x16 -f -v 0 input_idx_file_name\n"
+static char *usage = "Serial Usage: ./particle_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./particle_read -g 32x32x32 -l 16x16x16 -v 0 -f input_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX input filename\n"
                      "  -t: time step index to read\n"
-                     "  -v: variable index to read";
+                     "  -v: variable index to read\n"
+                     "  -c: read all vars to simulate checkpoint/restart";
 
 
 static void init_mpi(int argc, char **argv);
@@ -138,19 +140,52 @@ int main(int argc, char **argv)
   // Set PIDX_file for this timestep
   set_pidx_file(current_ts);
 
-  // Get all the information about the variable that we want to read
-  set_pidx_variable_and_create_buffer();
+  PIDX_variable *checkpoint_vars = NULL;
+  size_t *checkpoint_particle_counts = NULL;
+  void **checkpoint_data = NULL;
 
-  // Read the data into a local buffer (data) in row major order
-  // TODO WILL: the data should be a pointer to a pointer, since PIDX internally
-  // will be in charge of allocating the data buffer. So this data param will take
-  // a double pointer.
-  PIDX_variable_read_particle_data_layout(variable, physical_local_offset, physical_local_size,
-      (void**)&data, &particle_count, PIDX_row_major);
+  if (!checkpoint_restart)
+  {
+    // Get all the information about the variable that we want to read
+    set_pidx_variable_and_create_buffer();
+
+    // Read the data into a local buffer (data) in row major order
+    // TODO WILL: the data should be a pointer to a pointer, since PIDX internally
+    // will be in charge of allocating the data buffer. So this data param will take
+    // a double pointer.
+    PIDX_variable_read_particle_data_layout(variable, physical_local_offset, physical_local_size,
+        (void**)&data, &particle_count, PIDX_row_major);
+  }
+  else
+  {
+    printf("Reading checkpoint-restart style\n");
+
+    checkpoint_vars = calloc(variable_count, sizeof(PIDX_variable));
+    checkpoint_particle_counts = calloc(variable_count, sizeof(size_t));
+    checkpoint_data = calloc(variable_count, sizeof(void*));
+    PIDX_return_code ret = PIDX_set_current_variable_index(file, 0);
+    if (ret != PIDX_success) terminate_with_error_msg("PIDX_set_current_variable_index");
+
+    for (int i = 0; i < variable_count; ++i)
+    {
+      ret = PIDX_get_next_variable(file, &checkpoint_vars[i]);
+      if (ret != PIDX_success) terminate_with_error_msg("PIDX_get_next_variable");
+
+      ret = PIDX_variable_read_particle_data_layout(checkpoint_vars[i], physical_local_offset, physical_local_size,
+          &checkpoint_data[i], &checkpoint_particle_counts[i], PIDX_row_major);
+      if (ret != PIDX_success) terminate_with_error_msg("PIDX_variable_read_particle_data_layout");
+      if (i + 1 < variable_count)
+      {
+        ret = PIDX_read_next_variable(file, checkpoint_vars[i]);
+        if (ret != PIDX_success) terminate_with_error_msg("PIDX_read_next_variable");
+      }
+    }
+  }
 
   // PIDX_close triggers the actual write on the disk
   // of the variables that we just set
-  PIDX_close(file);
+  PIDX_return_code ret = PIDX_close(file);
+  if (ret != PIDX_success) terminate_with_error_msg("PIDX_close");
 
   printf("Rank %d:\nPhysical box {[%f, %f, %f], [%f, %f, %f]}\n",
       rank,
@@ -158,6 +193,14 @@ int main(int argc, char **argv)
       physical_local_box_offset[0] + physical_local_box_size[0],
       physical_local_box_offset[1] + physical_local_box_size[1],
       physical_local_box_offset[2] + physical_local_box_size[2]);
+
+  if (checkpoint_restart)
+  {
+    for (int i = 0; i < variable_count; ++i) {
+      printf("Read %lu attribs for variable %d\n", checkpoint_particle_counts[i], i);
+    }
+    particle_count = checkpoint_particle_counts[0];
+  }
 
   printf("Logical box {[%lld, %lld, %lld], [%lld, %lld, %lld]}\nLoaded %lu particles\n",
       logical_local_box_offset[0], logical_local_box_offset[1], logical_local_box_offset[2],
@@ -170,6 +213,16 @@ int main(int argc, char **argv)
   PIDX_close_access(p_access);
 
   free(data);
+  if (checkpoint_restart)
+  {
+    for (int i = 0; i < variable_count; ++i)
+    {
+      free(checkpoint_data[i]);
+    }
+    free(checkpoint_data);
+    free(checkpoint_vars);
+    free(checkpoint_particle_counts);
+  }
   shutdown_mpi();
 }
 
@@ -188,7 +241,7 @@ static void init_mpi(int argc, char **argv)
 
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:";
+  char flags[] = "g:l:f:t:v:c";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -222,6 +275,11 @@ static void parse_args(int argc, char **argv)
     case('v'): // number of variables
       if (sscanf(optarg, "%d", &variable_index) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('c'): // checkpoint restart style read
+      checkpoint_restart = 1;
+      printf("checkpoint restart\n");
       break;
 
     default:
