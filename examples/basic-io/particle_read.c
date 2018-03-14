@@ -187,6 +187,7 @@ int main(int argc, char **argv)
   PIDX_return_code ret = PIDX_close(file);
   if (ret != PIDX_success) terminate_with_error_msg("PIDX_close");
 
+  /*
   printf("Rank %d:\nPhysical box {[%f, %f, %f], [%f, %f, %f]}\n",
       rank,
       physical_local_box_offset[0], physical_local_box_offset[1], physical_local_box_offset[2],
@@ -201,13 +202,16 @@ int main(int argc, char **argv)
     }
     particle_count = checkpoint_particle_counts[0];
   }
+  */
 
+  /*
   printf("Logical box {[%lld, %lld, %lld], [%lld, %lld, %lld]}\nLoaded %lu particles\n",
       logical_local_box_offset[0], logical_local_box_offset[1], logical_local_box_offset[2],
       logical_local_box_offset[0] + logical_local_box_size[0],
       logical_local_box_offset[1] + logical_local_box_size[1],
       logical_local_box_offset[2] + logical_local_box_size[2],
       particle_count);
+      */
 
   // Close PIDX_access
   PIDX_close_access(p_access);
