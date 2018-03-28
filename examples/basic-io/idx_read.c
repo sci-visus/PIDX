@@ -132,6 +132,7 @@ int main(int argc, char **argv)
   set_pidx_variable_and_create_buffer();
 
   // Read the data into a local buffer (data) in row major order
+  printf("[INIT] %d ---- %lld %lld %lld - %lld %lld %lld\n", rank, local_offset[0], local_offset[1], local_offset[2], local_size[0], local_size[1], local_size[2]);
   PIDX_variable_read_data_layout(variable, local_offset, local_size, data, PIDX_row_major);
 
   // PIDX_close triggers the actual write on the disk
@@ -209,22 +210,45 @@ static void parse_args(int argc, char **argv)
 #if 0
   if (rank == 0)
   {
-    local_box_size[X] = 514;
-    local_box_size[Y] = 1024;
-    local_box_size[Z] = 512;
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
 
     local_box_offset[X] = 0;
     local_box_offset[Y] = 0;
     local_box_offset[Z] = 0;
   }
+
   else if (rank == 1)
   {
-    local_box_size[X] = 512;
-    local_box_size[Y] = 1024;
-    local_box_size[Z] = 512;
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
 
-    local_box_offset[X] = 512;
+    local_box_offset[X] = 1023;
     local_box_offset[Y] = 0;
+    local_box_offset[Z] = 0;
+  }
+
+  else if (rank == 2)
+  {
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
+
+    local_box_offset[X] = 0;
+    local_box_offset[Y] = 1023;
+    local_box_offset[Z] = 0;
+  }
+
+  else if (rank == 3)
+  {
+    local_box_size[X] = 1025;
+    local_box_size[Y] = 1025;
+    local_box_size[Z] = 2612;
+
+    local_box_offset[X] = 1023;
+    local_box_offset[Y] = 1023;
     local_box_offset[Z] = 0;
   }
 #endif
