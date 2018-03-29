@@ -789,7 +789,7 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
 /// \param cache
 /// \return
 ///
-PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache cache);
+PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_metadata_cache cache);
 
 
 
@@ -800,7 +800,7 @@ PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache c
 /// \param cache
 /// \return
 ///
-PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_meta_data_cache* cache);
+PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_metadata_cache* cache);
 
 
 

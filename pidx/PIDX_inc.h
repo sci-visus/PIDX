@@ -53,7 +53,7 @@ extern "C" {
 
 #include "./comm/PIDX_comm.h"
 
-#include "./meta_data_cache/PIDX_meta_data_cache.h"
+#include "./metadata/PIDX_metadata_cache.h"
 
 #include "./data_handle/PIDX_data_layout.h"
 #include "./data_handle/PIDX_blocks.h"

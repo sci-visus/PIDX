@@ -307,9 +307,5 @@ PIDX_return_code PIDX_metadata_parse_v6(FILE *fp, PIDX_file* file)
     }
   }
 
-  fclose(fp);
-  
-  (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
-
   return PIDX_success;
 }

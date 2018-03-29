@@ -193,11 +193,11 @@ typedef struct idx_comm_struct* idx_comm;
 
 
 /// Communicator related struct
-struct idx_meta_data_cache_struct
+struct idx_metadata_cache_struct
 {
-  PIDX_meta_data_cache meta_data_cache;
+  PIDX_metadata_cache meta_data_cache;
 };
-typedef struct idx_meta_data_cache_struct* idx_meta_data_cache;
+typedef struct idx_metadata_cache_struct* idx_metadata_cache;
 
 
 /// idx_file

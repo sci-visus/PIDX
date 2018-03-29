@@ -19,7 +19,7 @@
 #include "../PIDX_inc.h"
 
 
-PIDX_return_code PIDX_create_meta_data_cache(PIDX_meta_data_cache* cache)
+PIDX_return_code PIDX_create_metadata_cache(PIDX_metadata_cache* cache)
 {
 
   *cache = malloc(sizeof (*(*cache)));
@@ -29,7 +29,7 @@ PIDX_return_code PIDX_create_meta_data_cache(PIDX_meta_data_cache* cache)
 }
 
 
-PIDX_return_code PIDX_free_meta_data_cache(PIDX_meta_data_cache cache)
+PIDX_return_code PIDX_free_metadata_cache(PIDX_metadata_cache cache)
 {
   if (cache->is_set == 1)
   {

@@ -439,6 +439,8 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   }
   else
     return PIDX_err_metadata;
+  
+  fclose(fp);
 
   (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 

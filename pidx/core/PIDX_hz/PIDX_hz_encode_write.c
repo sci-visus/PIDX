@@ -160,7 +160,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
 
   // This is for caching HZ indices
   // If caching is enabled then meta_data_cache will not be null
-  PIDX_meta_data_cache hz_cache = id->cache->meta_data_cache;
+  PIDX_metadata_cache hz_cache = id->cache->meta_data_cache;
 
   if (hz_cache != NULL)
   {

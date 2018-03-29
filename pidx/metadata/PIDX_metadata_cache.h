@@ -17,7 +17,7 @@
  *****************************************************/
 
  /**
- * \file PIDX_meta_data_cache.h
+ * \file PIDX_metadata_cache.h
  *
  * \author Sidharth Kumar
  * \date   10/09/14
@@ -25,11 +25,11 @@
  *
  */
  
-#ifndef __PIDX_META_DATA_CACHE_H
-#define __PIDX_META_DATA_CACHE_H
+#ifndef __PIDX_METADATA_CACHE_H
+#define __PIDX_METADATA_CACHE_H
 
 
-struct PIDX_meta_data_cache_struct
+struct PIDX_metadata_cache_struct
 {
   int is_set;               /// flag to specify if cache buffer is populated
   int element_count;        /// Number of elements (tuples) in the cache
@@ -37,13 +37,13 @@ struct PIDX_meta_data_cache_struct
   int *hz_level;            /// Corresponding HZ index to the xyz index
   int *index_level;         /// The hz index level
 };
-typedef struct PIDX_meta_data_cache_struct* PIDX_meta_data_cache;
+typedef struct PIDX_metadata_cache_struct* PIDX_metadata_cache;
 
 
-PIDX_return_code PIDX_create_meta_data_cache(PIDX_meta_data_cache* cache);
+PIDX_return_code PIDX_create_metadata_cache(PIDX_metadata_cache* cache);
 
 
-PIDX_return_code PIDX_free_meta_data_cache(PIDX_meta_data_cache cache);
+PIDX_return_code PIDX_free_metadata_cache(PIDX_metadata_cache cache);
 
 
 #endif
