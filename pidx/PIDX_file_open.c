@@ -145,11 +145,23 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       fprintf(stderr, "Error Opening %s\n", (*file)->idx->filename);
       return PIDX_err_file;
     }
+    
+    (*file)->idx_d->metadata_version = PIDX_CURR_METADATA_VERSION;
 
     while (fgets(line, sizeof (line), fp) != NULL)
     {
       line[strcspn(line, "\r\n")] = 0;
 
+      // Note: assuming version is the first info in the .idx
+      if (strcmp(line, "(version)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+        
+        (*file)->idx_d->metadata_version = atoi(line);
+      }
+      
       if (strcmp(line, "(box)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
@@ -252,14 +264,30 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
 
-        if (strcmp(line, "idx") == 0)
-          (*file)->idx->io_type = PIDX_IDX_IO;
-        else if (strcmp(line, "g_part_idx") == 0)
-          (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
-        else if (strcmp(line, "l_part_idx") == 0)
-          (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
-        else if (strcmp(line, "raw") == 0)
-          (*file)->idx->io_type = PIDX_RAW_IO;
+        if((*file)->idx_d->metadata_version == PIDX_CURR_METADATA_VERSION)
+        {
+          if (strcmp(line, "idx") == 0)
+            (*file)->idx->io_type = PIDX_IDX_IO;
+          else if (strcmp(line, "g_part_idx") == 0)
+            (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
+          else if (strcmp(line, "l_part_idx") == 0)
+            (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
+          else if (strcmp(line, "raw") == 0)
+            (*file)->idx->io_type = PIDX_RAW_IO;
+        }
+        else if((*file)->idx_d->metadata_version == 6)
+        {
+          int mode = atoi(line);
+          
+          if (mode == 1)
+            (*file)->idx->io_type = PIDX_IDX_IO;
+          else if (mode == 2)
+            (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
+          else if (mode == 3)
+            (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
+          else if (mode == 4)
+            (*file)->idx->io_type = PIDX_RAW_IO;
+        }
       }
 
       if (strcmp(line, "(endian)") == 0)
@@ -268,10 +296,16 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
         
-        if(strcmp(line,"little") == 0)
-          (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
-        else if(strcmp(line,"big") == 0)
-          (*file)->idx->endian = PIDX_BIG_ENDIAN;
+        if((*file)->idx_d->metadata_version == PIDX_CURR_METADATA_VERSION)
+        {
+          if(strcmp(line,"little") == 0)
+            (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
+          else if(strcmp(line,"big") == 0)
+            (*file)->idx->endian = PIDX_BIG_ENDIAN;
+        }
+        else if((*file)->idx_d->metadata_version == 6){
+          (*file)->idx->endian = atoi(line);
+        }
       }
 
       if (strcmp(line, "(fields)") == 0)
@@ -433,9 +467,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           return PIDX_err_file;
       }
     }
+  
     fclose(fp);
   }
-
+  
   (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 
   MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
@@ -444,6 +479,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx_d->pidx_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
+  MPI_Bcast(&((*file)->idx_d->metadata_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
@@ -458,6 +494,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
 
+  //printf("reading version %d\n",(*file)->idx_d->metadata_version);
+  
   if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
     if ((*file)->idx->compression_bit_rate == 64)
