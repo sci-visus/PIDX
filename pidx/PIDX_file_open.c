@@ -303,7 +303,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           else if(strcmp(line,"big") == 0)
             (*file)->idx->endian = PIDX_BIG_ENDIAN;
         }
-        else if((*file)->idx_d->metadata_version == 6){
+        else if((*file)->idx_d->metadata_version == 6)
+        {
           (*file)->idx->endian = atoi(line);
         }
       }
@@ -574,7 +575,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   return PIDX_success;
 }
 
-
+// TODO merge serial_file_open and file_open
 
 PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file)
 {
@@ -716,6 +717,16 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   {
     line[strcspn(line, "\r\n")] = 0;
 
+    // Note: assuming version is the first info in the .idx
+    if (strcmp(line, "(version)") == 0)
+    {
+      if( fgets(line, sizeof line, fp) == NULL)
+        return PIDX_err_file;
+      line[strcspn(line, "\r\n")] = 0;
+      
+      (*file)->idx_d->metadata_version = atoi(line);
+    }
+    
     if (strcmp(line, "(box)") == 0)
     {
       if( fgets(line, sizeof line, fp) == NULL)
@@ -817,16 +828,31 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
       if( fgets(line, sizeof line, fp) == NULL)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
-      int mode = atoi(line);
 
-      if (mode == 1)
-        (*file)->idx->io_type = PIDX_IDX_IO;
-      else if (mode == 2)
-        (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
-      else if (mode == 3)
-        (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
-      else if (mode == 4)
-        (*file)->idx->io_type = PIDX_RAW_IO;
+      if((*file)->idx_d->metadata_version == PIDX_CURR_METADATA_VERSION)
+      {
+        if (strcmp(line, "idx") == 0)
+          (*file)->idx->io_type = PIDX_IDX_IO;
+        else if (strcmp(line, "g_part_idx") == 0)
+          (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
+        else if (strcmp(line, "l_part_idx") == 0)
+          (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
+        else if (strcmp(line, "raw") == 0)
+          (*file)->idx->io_type = PIDX_RAW_IO;
+      }
+      else if((*file)->idx_d->metadata_version == 6)
+      {
+        int mode = atoi(line);
+        
+        if (mode == 1)
+          (*file)->idx->io_type = PIDX_IDX_IO;
+        else if (mode == 2)
+          (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
+        else if (mode == 3)
+          (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
+        else if (mode == 4)
+          (*file)->idx->io_type = PIDX_RAW_IO;
+      }
     }
 
     if (strcmp(line, "(endian)") == 0)
@@ -835,10 +861,17 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
       
-      if(strcmp(line,"little") == 0)
-        (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
-      else if(strcmp(line,"big") == 0)
-        (*file)->idx->endian = PIDX_BIG_ENDIAN;
+      if((*file)->idx_d->metadata_version == PIDX_CURR_METADATA_VERSION)
+      {
+        if(strcmp(line,"little") == 0)
+          (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
+        else if(strcmp(line,"big") == 0)
+          (*file)->idx->endian = PIDX_BIG_ENDIAN;
+      }
+      else if((*file)->idx_d->metadata_version == 6)
+      {
+        (*file)->idx->endian = atoi(line);
+      }
 
     }
 
