@@ -7,6 +7,7 @@ extern "C" {
 
 #define PIDX_MAX_DIMENSIONS 3
 #define MULTI_BOX 0
+#define PIDX_STRING_SIZE 512
 
 #define PIDX_HAVE_ZFP 1
 #define PIDX_HAVE_PMT 0
