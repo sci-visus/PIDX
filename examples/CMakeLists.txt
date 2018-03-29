@@ -46,6 +46,8 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(idx_read "basic-io/idx_read.c")
   TARGET_LINK_LIBRARIES(idx_read ${EXAMPLES_LINK_LIBS})
 
+  PIDX_ADD_CEXECUTABLE(idx_write_partitioned "basic-io/idx_write_partitioned.c")
+  TARGET_LINK_LIBRARIES(idx_write_partitioned ${EXAMPLES_LINK_LIBS})
 
 ENDIF()
 
