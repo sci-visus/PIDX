@@ -361,7 +361,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
       return -1;
     }
 
-    fprintf(idx_file_p, "(version)\n%d\n", PIDX_CURR_METADATA_VERSION);
+    fprintf(idx_file_p, "(version)\n%s\n", PIDX_CURR_METADATA_VERSION);
 
     if (header_io->idx->io_type == PIDX_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nidx\n");
@@ -479,7 +479,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
       return -1;
     }
 
-    fprintf(idx_file_p, "(version)\n%d\n", PIDX_CURR_METADATA_VERSION);
+    fprintf(idx_file_p, "(version)\n%s\n", PIDX_CURR_METADATA_VERSION);
 
     if (header_io->idx->io_type == PIDX_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nidx\n");
@@ -604,7 +604,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
       return -1;
     }
 
-    fprintf(idx_file_p, "(version)\n%d\n", PIDX_CURR_METADATA_VERSION);
+    fprintf(idx_file_p, "(version)\n%s\n", PIDX_CURR_METADATA_VERSION);
 
     if (header_io->idx->io_type == PIDX_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nidx\n");

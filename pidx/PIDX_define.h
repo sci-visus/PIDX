@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#define PIDX_CURR_METADATA_VERSION 7
+#define PIDX_CURR_METADATA_VERSION "6.1"
   
 #define PIDX_MAX_DIMENSIONS 3
 #define MULTI_BOX 0
@@ -32,8 +32,6 @@ extern "C" {
     #define _GNU_SOURCE
 #endif
 #endif
-
-
 
 // PIDX write and read mode
 // PIDX_READ - Read only mode

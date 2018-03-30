@@ -2,14 +2,14 @@
 
 /// Function to populate file descriptor when opening an existing IDX file
 /// with the requested version
-PIDX_return_code PIDX_metadata_parse(FILE *fp, PIDX_file* file, int version)
+PIDX_return_code PIDX_metadata_parse(FILE *fp, PIDX_file* file, char* version)
 {
-  if(version == 7)
-    return PIDX_metadata_parse_v7(fp, file);
-  else if(version == 6)
-    return PIDX_metadata_parse_v6(fp, file);
+  if(strcmp(version, "6.1") == 0)
+    return PIDX_metadata_parse_v6_1(fp, file);
+  else if(strcmp(version, "6") == 0)
+    return PIDX_metadata_parse_v6_0(fp, file);
   
-  fprintf(stderr, "Metadata version %d not supported\n", version);
+  fprintf(stderr, "Metadata version %s not supported\n", version);
   
   return PIDX_err_metadata;
 }

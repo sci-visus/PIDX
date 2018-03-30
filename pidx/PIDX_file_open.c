@@ -146,8 +146,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     
     char line [512];
     
-    (*file)->idx_d->metadata_version = 0;
-    
     while (fgets(line, sizeof (line), fp) != NULL)
     {
       line[strcspn(line, "\r\n")] = 0;
@@ -159,7 +157,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
         
-        (*file)->idx_d->metadata_version = atoi(line);
+        strncpy((*file)->idx_d->metadata_version, line, 8);
         break;
       }
     }
@@ -413,8 +411,6 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
     return PIDX_err_file;
   }
   
-  (*file)->idx_d->metadata_version = 0;
-  
   while (fgets(line, sizeof (line), fp) != NULL)
   {
     line[strcspn(line, "\r\n")] = 0;
@@ -426,7 +422,8 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
       
-      (*file)->idx_d->metadata_version = atoi(line);
+      strncpy((*file)->idx_d->metadata_version, line, 8);
+
       break;
     }
   }

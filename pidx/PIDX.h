@@ -109,14 +109,14 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
  *  Implementation in PIDX_metadata_parse.c
  */
 // PIDX_metadata_parse parse the metadata .idx file (used by PIDX_file_open)
+//
 // There are different implementations for different versions of the metadata file
 // PIDX_metadata_parse will use the corresponding file_open implementation
 // for the specific version requested
 //
-PIDX_return_code PIDX_metadata_parse(FILE *fp, PIDX_file* file, int version);
-PIDX_return_code PIDX_metadata_parse_v6(FILE *fp, PIDX_file* file);
-PIDX_return_code PIDX_metadata_parse_v7(FILE *fp, PIDX_file* file);
-
+PIDX_return_code PIDX_metadata_parse(FILE *fp, PIDX_file* file, char* version);
+PIDX_return_code PIDX_metadata_parse_v6_0(FILE *fp, PIDX_file* file);
+PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file);
 
 ///
 /// \brief PIDX_serial_file_open
