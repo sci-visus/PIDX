@@ -1,13 +1,11 @@
 #include "../PIDX_file_handler.h"
 
 /// Function to populate file descriptor when opening an existing IDX file version 7
-PIDX_return_code PIDX_metadata_parse_v7(FILE *fp, PIDX_file* file)
+PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
 {
   int variable_counter = 0, count = 0, len = 0;
   char *pch, *pch1;
   char line [ 512 ];
-
-  (*file)->idx_d->metadata_version = 0;
 
   while (fgets(line, sizeof (line), fp) != NULL)
   {
@@ -20,7 +18,7 @@ PIDX_return_code PIDX_metadata_parse_v7(FILE *fp, PIDX_file* file)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
       
-      (*file)->idx_d->metadata_version = atoi(line);
+      strncpy((*file)->idx_d->metadata_version, line, 8);
     }
     
     if (strcmp(line, "(box)") == 0)
@@ -308,6 +306,8 @@ PIDX_return_code PIDX_metadata_parse_v7(FILE *fp, PIDX_file* file)
         return PIDX_err_file;
     }
   }
+
+  fclose(fp);
 
   return PIDX_success;
 }

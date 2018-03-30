@@ -140,9 +140,9 @@ int main(int argc, char **argv)
   memset(variable, 0, sizeof(*variable) * variable_count);
 
   PIDX_point global_size, local_offset, local_size;
-  PIDX_set_point_5D(global_size, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
-  PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
-  PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
+  PIDX_set_point(global_size, global_box_size[0], global_box_size[1], global_box_size[2]);
+  PIDX_set_point(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2]);
+  PIDX_set_point(local_size, local_box_size[0], local_box_size[1], local_box_size[2]);
 
   //  Creating access
   PIDX_access access;
@@ -151,11 +151,12 @@ int main(int argc, char **argv)
   PIDX_set_mpi_access(access, MPI_COMM_WORLD);
 #endif
 
+  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, global_bounds, &file);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_open\n");
+  
   for (ts = 0; ts < time_step_count; ts++)
   {
-    //  PIDX mandatory calls
-    ret = PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
-    if (ret != PIDX_success)  report_error("PIDX_file_create", __FILE__, __LINE__);
+
 
     ret = PIDX_set_dims(file, global_size);
     if (ret != PIDX_success)  report_error("PIDX_set_dims", __FILE__, __LINE__);
