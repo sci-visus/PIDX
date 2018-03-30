@@ -133,6 +133,8 @@ int main(int argc, char **argv)
   
   free(data);
   shutdown_mpi();
+  
+  return 0;
 }
 
 static void parse_args(int argc, char **argv)
