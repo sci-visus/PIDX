@@ -54,11 +54,11 @@ IF (PIDX_BUILD_EXAMPLES)
 
   # Compression
 
-#  PIDX_ADD_CEXECUTABLE(idx_compression_write "compression/PIDX_write_compressed.c")
-#  TARGET_LINK_LIBRARIES(idx_compression_write ${EXAMPLES_LINK_LIBS})
+  PIDX_ADD_CEXECUTABLE(idx_compression_write "compression/PIDX_write_compressed.c")
+  TARGET_LINK_LIBRARIES(idx_compression_write ${EXAMPLES_LINK_LIBS})
 
-#  PIDX_ADD_CEXECUTABLE(idx_compression_read "compression/PIDX_write_compressed.c")
-#  TARGET_LINK_LIBRARIES(idx_compression_read ${EXAMPLES_LINK_LIBS})
+  PIDX_ADD_CEXECUTABLE(idx_compression_read "compression/PIDX_read_compressed.c")
+  TARGET_LINK_LIBRARIES(idx_compression_read ${EXAMPLES_LINK_LIBS})
 
 ENDIF()
 

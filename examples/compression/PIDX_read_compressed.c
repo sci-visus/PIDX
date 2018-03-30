@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdio.h> 
 
 #if PIDX_HAVE_MPI
   #include <mpi.h>
@@ -44,6 +45,7 @@ int main(int argc, char **argv)
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 #endif
 
+  printf("not implemented\n");
 
 #if PIDX_HAVE_MPI
   MPI_Finalize();
