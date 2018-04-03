@@ -158,7 +158,9 @@ int main(int argc, char **argv)
   }
   else
   {
-    printf("Reading checkpoint-restart style\n");
+    if (rank == 0) {
+      printf("Reading checkpoint-restart style\n");
+    }
 
     checkpoint_vars = calloc(variable_count, sizeof(PIDX_variable));
     checkpoint_particle_counts = calloc(variable_count, sizeof(size_t));
