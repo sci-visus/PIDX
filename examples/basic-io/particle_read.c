@@ -285,7 +285,6 @@ static void parse_args(int argc, char **argv)
 
     case('c'): // checkpoint restart style read
       checkpoint_restart = 1;
-      printf("checkpoint restart\n");
       break;
 
     default:
