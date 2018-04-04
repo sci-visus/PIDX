@@ -134,8 +134,8 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
       printf("[%s] [%d] = %d %d %d\n", var->type_name, var->sim_patch[p]->particle_count * sample_count * (bits_per_sample/CHAR_BIT), var->sim_patch[p]->particle_count, sample_count, (bits_per_sample/CHAR_BIT));
 #endif
 
-      ssize_t buffer_size = var->sim_patch[p]->particle_count * sample_count * (bits_per_sample/CHAR_BIT);
-      ssize_t write_count = pwrite(fp, var->sim_patch[p]->buffer, buffer_size, data_offset);
+      size_t buffer_size = var->sim_patch[p]->particle_count * sample_count * (bits_per_sample/CHAR_BIT);
+      size_t write_count = pwrite(fp, var->sim_patch[p]->buffer, buffer_size, data_offset);
       if (write_count != buffer_size)
       {
         fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
@@ -253,7 +253,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
     //for (int i = 0; i < (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2); i++)
     //  printf("[%d] [np %d] ----> %f\n", i, file->idx_c->gnprocs, global_patch[i]);
 
-    ssize_t write_count = pwrite(fp, global_patch, (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
+    size_t write_count = pwrite(fp, global_patch, (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
     if (write_count != (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
@@ -287,7 +287,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
   double number_cores = 0;
   int fp = open(size_path, O_RDONLY);
   // TODO WILL: This would be a lot easier to follow if we pread into a structure of some kind
-  ssize_t read_count = pread(fp, &number_cores, sizeof(double), 0);
+  size_t read_count = pread(fp, &number_cores, sizeof(double), 0);
   if (read_count != sizeof(double))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
