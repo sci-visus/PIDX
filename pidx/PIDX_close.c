@@ -175,13 +175,13 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
   if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
   {
 #if 0
-    if (file->idx->io_type == PIDX_RAW_IO)
+    if (file->idx->io_type == PIDX_io_type::PIDX_RAW_IO)
       fprintf(stderr, "PIDX_RAW_IO %s\n", file->idx->filename);
-    else if (file->idx->io_type == PIDX_IDX_IO)
+    else if (file->idx->io_type == PIDX_io_type::PIDX_IDX_IO)
       fprintf(stderr, "PIDX_IDX_IO %s\n", file->idx->filename);
-    else if (file->idx->io_type == PIDX_LOCAL_PARTITION_IDX_IO)
+    else if (file->idx->io_type == PIDX_io_type::PIDX_LOCAL_PARTITION_IDX_IO)
       fprintf(stderr, "PIDX_LOCAL_PARTITION_IDX_IO %s\n", file->idx->filename);
-    else if (file->idx->io_type == PIDX_GLOBAL_PARTITION_IDX_IO)
+    else if (file->idx->io_type == PIDX_io_type::PIDX_GLOBAL_PARTITION_IDX_IO)
       fprintf(stderr, "PIDX_GLOBAL_PARTITION_IDX_IO %s\n", file->idx->filename);
 #endif
 
@@ -192,9 +192,9 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
       fprintf(stderr, "Compression Bit rate set to %f\n", file->idx->compression_bit_rate);
 
-      if (file->idx->endian == 1)
+      if (file->idx->endian == PIDX_LITTLE_ENDIAN)
         fprintf(stderr, "Little Endian | ");
-      else if (file->idx->endian == 0)
+      else if (file->idx->endian == PIDX_BIG_ENDIAN)
         fprintf(stderr, "Big Endian | ");
 
       if (file->idx->flip_endian == 1)

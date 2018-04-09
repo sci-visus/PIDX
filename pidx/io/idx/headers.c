@@ -36,6 +36,13 @@ PIDX_return_code write_headers(PIDX_io file, int group_index, int start_var_inde
   int ret = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[group_index];
 
+  // When using non-partitioned idx IO there is no need to create different IDX file per partitions
+  // so we use one single .idx file.
+  // Note: This strcpy is a little hacky, but works.
+  // The .idx file will be written exactly as a single partition file
+  if(file->idx->io_type == PIDX_IDX_IO)
+    strcpy(file->idx->filename_partition,file->idx->filename);
+  
   generate_file_name_template(file->idx_d->maxh, file->idx->bits_per_block, file->idx->filename_partition, file->idx->current_time_step, file->idx->filename_template_partition);
 
   //fprintf(stderr, "FN %s FNT %s\n", file->idx->filename_partition, file->idx->filename_template_partition);

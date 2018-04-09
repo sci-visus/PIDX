@@ -16,28 +16,34 @@
  **                                                 **
  *****************************************************/
 
-#include "../PIDX_inc.h"
+ /**
+ * \file PIDX_metadata_cache.h
+ *
+ * \author Sidharth Kumar
+ * \date   10/09/14
+ *
+ *
+ */
+ 
+#ifndef __PIDX_METADATA_CACHE_H
+#define __PIDX_METADATA_CACHE_H
 
 
-PIDX_return_code PIDX_create_meta_data_cache(PIDX_meta_data_cache* cache)
+struct PIDX_metadata_cache_struct
 {
+  int is_set;               /// flag to specify if cache buffer is populated
+  int element_count;        /// Number of elements (tuples) in the cache
+  int *xyz_mapped_index;    /// The xyz index (application row-order index)
+  int *hz_level;            /// Corresponding HZ index to the xyz index
+  int *index_level;         /// The hz index level
+};
+typedef struct PIDX_metadata_cache_struct* PIDX_metadata_cache;
 
-  *cache = malloc(sizeof (*(*cache)));
-  memset(*cache, 0, sizeof (*(*cache)));
 
-  return PIDX_success;
-}
+PIDX_return_code PIDX_create_metadata_cache(PIDX_metadata_cache* cache);
 
 
-PIDX_return_code PIDX_free_meta_data_cache(PIDX_meta_data_cache cache)
-{
-  if (cache->is_set == 1)
-  {
-      free(cache->hz_level);
-      free(cache->index_level);
-      free(cache->xyz_mapped_index);
-  }
+PIDX_return_code PIDX_free_metadata_cache(PIDX_metadata_cache cache);
 
-  free(cache);
-  return PIDX_success;
-}
+
+#endif

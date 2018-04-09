@@ -5,8 +5,11 @@
 extern "C" {
 #endif
 
+#define PIDX_CURR_METADATA_VERSION "6.1"
+  
 #define PIDX_MAX_DIMENSIONS 3
 #define MULTI_BOX 0
+#define PIDX_STRING_SIZE 512
 
 #define PIDX_HAVE_ZFP 1
 #define PIDX_HAVE_PMT 0
@@ -29,8 +32,6 @@ extern "C" {
     #define _GNU_SOURCE
 #endif
 #endif
-
-
 
 // PIDX write and read mode
 // PIDX_READ - Read only mode
@@ -72,25 +73,21 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 #define PIDX_column_major                        1
 
 
-// Writes data in IDX format
-#define PIDX_IDX_IO                                   1
+enum PIDX_io_type {
+  PIDX_IDX_IO=0,                    /// Writes data in IDX format
+  PIDX_GLOBAL_PARTITION_IDX_IO=1,   /// Writes data in partitioned space with global indexing
+  PIDX_LOCAL_PARTITION_IDX_IO=2,    /// Writes data in partitioned space with local indexing
+  PIDX_RAW_IO=3,                    /// Writes data in raw format
+  PIDX_WAVELET_IO=4                 /// Calls wavelet computation code
+};
 
-// Writes data in partitioned space with global indexing
-#define PIDX_GLOBAL_PARTITION_IDX_IO                  2
-
-// Writes data in partitioned space with local indexing
-#define PIDX_LOCAL_PARTITION_IDX_IO                   3
-
-// Writes data in raw format
-#define PIDX_RAW_IO                                   4
-
+enum PIDX_endian_type{
+  PIDX_BIG_ENDIAN=0,                     /// Use big endianess
+  PIDX_LITTLE_ENDIAN=1                   /// Use little endianess
+};
+  
 // Calls merge tree analysis code (in-situ mode)
 #define PIDX_MERGE_TREE_ANALYSIS                      5
-
-// Calls wavelet computation code
-#define PIDX_WAVELET_IO                               6
-
-
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256

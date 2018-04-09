@@ -11,7 +11,7 @@
 
 
 
-PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_meta_data_cache idx_cache)
+PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_metadata_cache idx_cache)
 {
   //Creating the restructuring ID
   PIDX_io idx_io_id;

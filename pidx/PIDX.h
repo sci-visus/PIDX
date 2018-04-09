@@ -105,11 +105,23 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 ///
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_point dims, PIDX_file* file);
 
-
-
+/*
+ *  Implementation in PIDX_metadata_parse.c
+ */
+// PIDX_metadata_parse parse the metadata .idx file (used by PIDX_file_open)
+//
+// There are different implementations for different versions of the metadata file
+// PIDX_metadata_parse will use the corresponding file_open implementation
+// for the specific version requested
+//
+PIDX_return_code PIDX_metadata_parse(FILE *fp, PIDX_file* file, char* version);
+PIDX_return_code PIDX_metadata_parse_v6_0(FILE *fp, PIDX_file* file);
+PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file);
 
 ///
 /// \brief PIDX_serial_file_open
+/// This function reads an existing IDX file in serial
+///
 /// \param filename
 /// \param flags
 /// \param dims
@@ -118,7 +130,10 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 ///
 PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file);
 
-
+// There are different implementations for different versions of the metadata file
+// PIDX_file_open will use the corresponding file_open implementation for the specific version
+PIDX_return_code PIDX_serial_file_open_v6(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file);
+PIDX_return_code PIDX_serial_file_open_v7(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file);
 
 
 ///
@@ -420,7 +435,7 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 /// \param io_type
 /// \return
 ///
-PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type);
+PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type);
 
 
 
@@ -430,7 +445,7 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type);
 /// \param io_type
 /// \return
 ///
-PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type);
+PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type);
 
 
 
@@ -774,7 +789,7 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
 /// \param cache
 /// \return
 ///
-PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache cache);
+PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_metadata_cache cache);
 
 
 
@@ -785,7 +800,7 @@ PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache c
 /// \param cache
 /// \return
 ///
-PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_meta_data_cache* cache);
+PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_metadata_cache* cache);
 
 
 

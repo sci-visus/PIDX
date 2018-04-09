@@ -16,46 +16,6 @@
  **                                                 **
  *****************************************************/
 
-/*
-  PIDX read example
-
-  In this example we show how to read data using the PIDX library.
-
-  We consider a global 3D regular grid domain that we will call
-  global domain (g).
-  This global domain represents the grid space where all the data are stored.
-
-  In a parallel environment each core (e.g. MPI rank) owns a portion of the data
-  that has to be written on the disk. We refer to this portion of the domain as
-  local domain (l).
-
-  In this example we well see how to execute parallel read with PIDX of a
-  syntethic dataset.
-
-  In the following picture is represented a sample domain decomposition
-  of the global domain (l) in per-core local domains (l), sometimes referred
-  as patches.
-  In this example all the local domains have same dimesions for simplicity.
-  PIDX supports different number and sizes of patches per core.
-  This also means that you can actually read the same data from a different
-  core configurations.
-
-                                         *---------*--------*
-                                       /         /         /| P7
-                                      *---------*---------* |
-                                     /         /         /| |
-                                    *---------*---------* | *
-                                    |         |         | |/|
-                                    |         |         | * |
-                                    | P4      | P5      |/| | P3
-        IDX Format      ------>     *---------*---------* | *
-                                    |         |         | |/
-                                    |         |         | *
-                                    | P0      | P1      |/
-                                    *---------*---------*
-
-*/
-
 #include <stdarg.h>
 #include <stdint.h>
 #include <PIDX.h>
@@ -64,7 +24,7 @@
 #include <fcntl.h>
 
 #if defined _MSC_VER
-  #include "utils/PIDX_windows_utils.h"
+#include "utils/PIDX_windows_utils.h"
 #endif
 
 #include "pidx_examples_utils.h"
@@ -78,23 +38,26 @@ PIDX_variable variable;
 char type_name[512];
 static PIDX_point global_bounds;
 unsigned char *data;
+static int compression_bit_rate = 64;
 
 static char *usage = "Serial Usage: ./idx_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./idx_read -g 32x32x32 -l 16x16x16 -f -v 0 input_idx_file_name\n"
-                     "  -g: global dimensions\n"
-                     "  -l: local (per-process) dimensions\n"
-                     "  -f: IDX input filename\n"
-                     "  -t: time step index to read\n"
-                     "  -v: variable index to read";
+"Parallel Usage: mpirun -n 8 ./idx_read -g 32x32x32 -l 16x16x16 -f -v 0 input_idx_file_name\n"
+"  -g: global dimensions\n"
+"  -l: local (per-process) dimensions\n"
+"  -f: IDX input filename\n"
+"  -t: time step index to read\n"
+"  -v: variable index to read";
 
 static void parse_args(int argc, char **argv);
 static void set_pidx_variable_and_create_buffer();
 static int verify_read_results();
 static void set_pidx_file(int ts);
 
-
+/// main
 int main(int argc, char **argv)
 {
+
+  
   // Init MPI and MPI vars (e.g. rank and process_count)
   init_mpi(argc, argv);
   
@@ -133,7 +96,7 @@ int main(int argc, char **argv)
   
   free(data);
   shutdown_mpi();
-  
+
   return 0;
 }
 
@@ -148,85 +111,43 @@ static void parse_args(int argc, char **argv)
     /* postpone error checking for after while loop */
     switch (one_opt)
     {
-    case('g'): // global dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &global_box_size[0], &global_box_size[1], &global_box_size[2]) == EOF) ||
-          (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1))
-        terminate_with_error_msg("Invalid global dimensions\n%s", usage);
-      break;
-
-    case('l'): // local dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
-          (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
-        terminate_with_error_msg("Invalid local dimension\n%s", usage);
-      break;
-
-    case('f'): // input file name
-      if (sprintf(input_file_template, "%s", optarg) < 0)
-        terminate_with_error_msg("Invalid output file name template\n%s", usage);
-      sprintf(input_file_name, "%s%s", input_file_template, ".idx");
-      break;
-
-    case('t'): // number of timesteps
-      if (sscanf(optarg, "%d", &current_ts) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
-
-    case('v'): // number of variables
-      if (sscanf(optarg, "%d", &variable_index) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
-      break;
-
-    default:
-      terminate_with_error_msg("Wrong arguments\n%s", usage);
+      case('g'): // global dimension
+        if ((sscanf(optarg, "%lldx%lldx%lld", &global_box_size[0], &global_box_size[1], &global_box_size[2]) == EOF) ||
+            (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1))
+          terminate_with_error_msg("Invalid global dimensions\n%s", usage);
+        break;
+        
+      case('l'): // local dimension
+        if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) ||
+            (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
+          terminate_with_error_msg("Invalid local dimension\n%s", usage);
+        break;
+        
+      case('f'): // input file name
+        if (sprintf(input_file_template, "%s", optarg) < 0)
+          terminate_with_error_msg("Invalid output file name template\n%s", usage);
+        sprintf(input_file_name, "%s%s", input_file_template, ".idx");
+        break;
+        
+      case('t'): // number of timesteps
+        if (sscanf(optarg, "%d", &current_ts) < 0)
+          terminate_with_error_msg("Invalid variable file\n%s", usage);
+        break;
+        
+      case('v'): // number of variables
+        if (sscanf(optarg, "%d", &variable_index) < 0)
+          terminate_with_error_msg("Invalid variable file\n%s", usage);
+        break;
+        
+      case('b'):
+        sscanf(optarg, "%d", &compression_bit_rate);
+        break;
+        
+      default:
+        terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
   }
-
-#if 0
-  if (rank == 0)
-  {
-    local_box_size[X] = 1025;
-    local_box_size[Y] = 1025;
-    local_box_size[Z] = 2612;
-
-    local_box_offset[X] = 0;
-    local_box_offset[Y] = 0;
-    local_box_offset[Z] = 0;
-  }
-
-  else if (rank == 1)
-  {
-    local_box_size[X] = 1025;
-    local_box_size[Y] = 1025;
-    local_box_size[Z] = 2612;
-
-    local_box_offset[X] = 1023;
-    local_box_offset[Y] = 0;
-    local_box_offset[Z] = 0;
-  }
-
-  else if (rank == 2)
-  {
-    local_box_size[X] = 1025;
-    local_box_size[Y] = 1025;
-    local_box_size[Z] = 2612;
-
-    local_box_offset[X] = 0;
-    local_box_offset[Y] = 1023;
-    local_box_offset[Z] = 0;
-  }
-
-  else if (rank == 3)
-  {
-    local_box_size[X] = 1025;
-    local_box_size[Y] = 1025;
-    local_box_size[Z] = 2612;
-
-    local_box_offset[X] = 1023;
-    local_box_offset[Y] = 1023;
-    local_box_offset[Z] = 0;
-  }
-#endif
-
+  
 }
 
 //----------------------------------------------------------------
@@ -242,6 +163,11 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   // Get the total number of variables
   PIDX_get_variable_count(file, &variable_count);
+  
+  /* PIDX compression related calls */
+  PIDX_set_compression_type(file, 1);
+  PIDX_set_lossy_compression_bit_rate(file, compression_bit_rate);
+
 }
 
 //----------------------------------------------------------------
@@ -359,5 +285,6 @@ static int verify_read_results()
     return 0;
   else
     return 1;
-
+  
 }
+
