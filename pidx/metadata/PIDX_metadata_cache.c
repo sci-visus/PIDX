@@ -16,37 +16,28 @@
  **                                                 **
  *****************************************************/
 
-#include <unistd.h>
-#include <stdarg.h>
-#include <stdint.h>
-#include <getopt.h>
-#include <string.h>
-#include <assert.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdlib.h>
-
-#if PIDX_HAVE_MPI
-  #include <mpi.h>
-#endif
+#include "../PIDX_inc.h"
 
 
-/// main
-int main(int argc, char **argv)
+PIDX_return_code PIDX_create_metadata_cache(PIDX_metadata_cache* cache)
 {
 
-  int nprocs, rank;
-#if PIDX_HAVE_MPI
-  /// MPI initialization
-  MPI_Init(&argc, &argv);
-  MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-#endif
+  *cache = malloc(sizeof (*(*cache)));
+  memset(*cache, 0, sizeof (*(*cache)));
+
+  return PIDX_success;
+}
 
 
-#if PIDX_HAVE_MPI
-  MPI_Finalize();
-#endif
-  return 0;
+PIDX_return_code PIDX_free_metadata_cache(PIDX_metadata_cache cache)
+{
+  if (cache->is_set == 1)
+  {
+      free(cache->hz_level);
+      free(cache->index_level);
+      free(cache->xyz_mapped_index);
+  }
+
+  free(cache);
+  return PIDX_success;
 }

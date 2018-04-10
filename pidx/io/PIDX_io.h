@@ -35,7 +35,7 @@ struct PIDX_io_descriptor
 
   idx_debug idx_dbg;                                ///<
 
-  idx_meta_data_cache idx_cache;
+  idx_metadata_cache idx_cache;
 
   int hz_from_non_shared;
   int hz_from_shared;
@@ -53,7 +53,7 @@ typedef struct PIDX_io_descriptor* PIDX_io;
 /// \param idx_dbg
 /// \return
 ///
-PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_meta_data_cache cache);
+PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_metadata_cache cache);
 
 
 

@@ -1,7 +1,7 @@
 #include "PIDX_file_handler.h"
 
 /// Function to get file descriptor when opening an existing IDX file
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_physical_point physical_dims, PIDX_file* file)
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
 {
   int i;
   char file_name_skeleton[1024];
@@ -101,12 +101,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->wavelet_levels = 0;
   (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
 
-  //initialize logic_to_physic transform to identity
-  (*file)->idx->transform[0]  = 1.0;
-  (*file)->idx->transform[5]  = 1.0;
-  (*file)->idx->transform[10] = 1.0;
-  (*file)->idx->transform[15] = 1.0;
-
   (*file)->idx->cached_ts = -1;
 
   memset((*file)->idx->bitPattern, 0, 512);
@@ -125,13 +119,12 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->fs_block_size = 0;
   (*file)->idx_d->start_fs_block = 0;
   //(*file)->idx_d->agg_buffer->agg_f = 1;
-  (*file)->idx_d->data_core_count = -1;
 
   (*file)->idx_d->pidx_version = 1;
 
   (*file)->idx_dbg->state_dump = PIDX_NO_META_DATA_DUMP;
 
-  (*file)->idx->endian = 1;
+  (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
 
   for (i = 0; i < 16; i++)
   {
@@ -139,9 +132,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     memset((*file)->idx->variable_grp[i], 0, sizeof(*((*file)->idx->variable_grp[i])));
   }
 
-  int var = 0, variable_counter = 0, count = 0, len = 0;
-  char *pch, *pch1;
-  char line [ 512 ];
+  int var = 0;
 
   if ((*file)->idx_c->grank == 0)
   {
@@ -151,328 +142,49 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
       fprintf(stderr, "Error Opening %s\n", (*file)->idx->filename);
       return PIDX_err_file;
     }
-printf("XXXXXXx\n");
+
+    char line [512];
+
     while (fgets(line, sizeof (line), fp) != NULL)
     {
       line[strcspn(line, "\r\n")] = 0;
 
-      if (strcmp(line, "(box)") == 0)
+      // find the version number in the file
+      if (strcmp(line, "(version)") == 0)
       {
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
 
-        pch = strtok(line, " ");
-        count = 0;
-        while (pch != NULL)
-        {
-          if (count % 2 == 1 && count / 2 < PIDX_MAX_DIMENSIONS)
-          {
-            (*file)->idx->bounds[count / 2] = atoi(pch) + 1;
-            (*file)->idx->box_bounds[count / 2] = atoi(pch) + 1;
-          }
-          count++;
-          pch = strtok(NULL, " ");
-        }
-      }
-
-      if (strcmp(line, "(physical box)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-
-        pch = strtok(line, " ");
-        count = 0;
-        while (pch != NULL)
-        {
-          if (count % 2 == 1 && count / 2 < PIDX_MAX_DIMENSIONS)
-          {
-            (*file)->idx->physical_bounds[count / 2] = atof(pch);
-            (*file)->idx->physical_box_bounds[count / 2] = atof(pch);
-          }
-          count++;
-          pch = strtok(NULL, " ");
-        }
-      }
-
-      if (strcmp(line, "(partition size)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-
-        pch = strtok(line, " ");
-        count = 0;
-        while (pch != NULL)
-        {
-          (*file)->idx_d->partition_size[count] = atoi(pch);
-          count++;
-          pch = strtok(NULL, " ");
-        }
-      }
-
-      if (strcmp(line, "(partition count)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-
-        pch = strtok(line, " ");
-        count = 0;
-        while (pch != NULL)
-        {
-          (*file)->idx_d->partition_count[count] = atoi(pch);
-          count++;
-          pch = strtok(NULL, " ");
-        }
-      }
-
-      if (strcmp(line, "(restructure box size)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-
-        pch = strtok(line, " ");
-        count = 0;
-        while (pch != NULL)
-        {
-          (*file)->idx_d->restructured_grid->patch_size[count] = atoi(pch);
-          count++;
-          pch = strtok(NULL, " ");
-        }
-      }
-
-      if (strcmp(line, "(raw_dump)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-
-        pch = strtok(line, " ");
-        count = 0;
-        while (pch != NULL)
-        {
-          (*file)->idx_d->restructured_grid->patch_size[count] = atoi(pch);
-          count++;
-          pch = strtok(NULL, " ");
-        }
-
-        (*file)->idx->io_type = PIDX_RAW_IO;
-        (*file)->idx_d->pidx_version = 0;
-        //(*file)->idx->endian = 0;
-      }
-
-      if (strcmp(line, "(cores)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx_d->data_core_count = atoi(line);
-      }
-
-      if (strcmp(line, "(io mode)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        int mode = atoi(line);
-
-        if (mode == 1)
-          (*file)->idx->io_type = PIDX_IDX_IO;
-        else if (mode == 2)
-          (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
-        else if (mode == 3)
-          (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
-        else if (mode == 4)
-          (*file)->idx->io_type = PIDX_RAW_IO;
-      }
-
-      if (strcmp(line, "(endian)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx->endian = atoi(line);
-      }
-
-      if (strcmp(line, "(fields)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        count = 0;
-        variable_counter = 0;
-
-        while (line[0] != '(')
-        {
-          (*file)->idx->variable_grp[0]->variable[variable_counter] = malloc(sizeof (*((*file)->idx->variable_grp[0]->variable[variable_counter])));
-          if ((*file)->idx->variable_grp[0]->variable[variable_counter] == NULL)
-            return PIDX_err_file;
-
-          memset((*file)->idx->variable_grp[0]->variable[variable_counter], 0, sizeof (*((*file)->idx->variable_grp[0]->variable[variable_counter])));
-
-          pch1 = strtok(line, " +");
-          while (pch1 != NULL)
-          {
-            if (count == 0)
-            {
-              char* temp_name = strdup(pch1);
-              strcpy((*file)->idx->variable_grp[0]->variable[variable_counter]->var_name, /*strdup(pch1)*/temp_name);
-              free(temp_name);
-            }
-
-            if (count == 1)
-            {
-              len = strlen(pch1) - 1;
-              if (pch1[len] == '\n')
-                pch1[len] = 0;
-
-              strcpy((*file)->idx->variable_grp[0]->variable[variable_counter]->type_name, pch1);
-              int ret;
-              int bits_per_sample = 0;
-              ret = PIDX_default_bits_per_datatype((*file)->idx->variable_grp[0]->variable[variable_counter]->type_name, &bits_per_sample);
-              if (ret != PIDX_success)  return PIDX_err_file;
-
-              (*file)->idx->variable_grp[0]->variable[variable_counter]->bpv = bits_per_sample;
-              (*file)->idx->variable_grp[0]->variable[variable_counter]->vps = 1;
-            }
-            count++;
-            pch1 = strtok(NULL, " +");
-          }
-          count = 0;
-
-          if( fgets(line, sizeof line, fp) == NULL)
-            return PIDX_err_file;
-          line[strcspn(line, "\r\n")] = 0;
-          variable_counter++;
-        }
-        (*file)->idx->variable_grp[0]->variable_count = variable_counter;
-      }
-
-      if (strcmp(line, "(bits)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        strcat((*file)->idx->bitSequence, line);
-      }
-
-      if (strcmp(line, "(bitsperblock)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx->bits_per_block = atoi(line);
-        (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
-      }
-
-      if (strcmp(line, "(compression type)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx->compression_type = atoi(line);
-        if ((*file)->idx->compression_type != PIDX_NO_COMPRESSION)
-        {
-          int i1 = 0;
-          for (i1 = 0; i1 < PIDX_MAX_DIMENSIONS; i1++)
-            (*file)->idx->chunk_size[i1] = 4;
-        }
-      }
-
-      if (strcmp(line, "(compressed box)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-
-        pch = strtok(line, " ");
-        count = 0;
-        while (pch != NULL)
-        {
-          (*file)->idx->chunk_size[count] = atoi(pch);
-          count++;
-          pch = strtok(NULL, " ");
-        }
-
-        //if((*file)->idx->chunk_size[0] < 0 || (*file)->idx->chunk_size[1] < 0 || (*file)->idx->chunk_size[2] < 0)
-        //  return PIDX_err_box;
-      }
-
-      if (strcmp(line, "(compression bit rate)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx->compression_bit_rate = atoi(line);
-      }
-
-      if (strcmp(line, "(blocksperfile)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx->blocks_per_file= atoi(line);
-      }
-
-      if (strcmp(line, "(file system block size)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        (*file)->idx_d->fs_block_size = atoi(line);
-      }
-
-      if (strcmp(line, "(filename_template)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-      }
-
-      if (strcmp(line, "(time)") == 0)
-      {
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-
-        line[strcspn(line, "\r\n")] = 0;
-
-        pch = strtok(line, " ");
-
-        if(pch != NULL)
-          (*file)->idx->first_tstep = atoi(pch);
-        else
-          return PIDX_err_file;
-
-        pch = strtok(NULL, " ");
-
-        if(pch != NULL)
-          (*file)->idx->last_tstep = atoi(pch);
-
-        else
-          return PIDX_err_file;
+        strncpy((*file)->idx_d->metadata_version, line, 8);
+        break;
       }
     }
-    fclose(fp);
+
+    // Parse the metadata file
+    if((*file)->idx_d->metadata_version > 0)
+    {
+      if(PIDX_metadata_parse(fp, file, (*file)->idx_d->metadata_version) != PIDX_success)
+        return PIDX_err_metadata;
+    }
+    else
+      return PIDX_err_metadata;
   }
 
   (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 
   MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx->physical_bounds, PIDX_MAX_DIMENSIONS, MPI_DOUBLE, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx->box_bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->restructured_grid->patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx_d->pidx_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
+  MPI_Bcast(&((*file)->idx_d->metadata_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->variable_grp[0]->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx_d->data_core_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->partition_offset, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
@@ -480,6 +192,8 @@ printf("XXXXXXx\n");
   MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
+
+  //printf("reading version %d\n",(*file)->idx_d->metadata_version);
 
   if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
@@ -552,16 +266,14 @@ printf("XXXXXXx\n");
   else
     (*file)->idx->flip_endian = 1;
 
-  if (dims != NULL)
-    memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
+  memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
 
-  if (physical_dims != NULL)
-    memcpy(physical_dims, (*file)->idx->physical_bounds, (sizeof(double) * PIDX_MAX_DIMENSIONS));
+
 
   return PIDX_success;
 }
 
-
+// TODO merge serial_file_open and file_open
 
 PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file)
 {
@@ -655,12 +367,6 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   (*file)->idx_d->wavelet_levels = 0;
   (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
 
-  //initialize logic_to_physic transform to identity
-  (*file)->idx->transform[0]  = 1.0;
-  (*file)->idx->transform[5]  = 1.0;
-  (*file)->idx->transform[10] = 1.0;
-  (*file)->idx->transform[15] = 1.0;
-
   (*file)->idx->cached_ts = -1;
 
   memset((*file)->idx->bitPattern, 0, 512);
@@ -679,13 +385,12 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   (*file)->idx_d->fs_block_size = 0;
   (*file)->idx_d->start_fs_block = 0;
   //(*file)->idx_d->agg_buffer->agg_f = 1;
-  (*file)->idx_d->data_core_count = -1;
 
   (*file)->idx_d->pidx_version = 1;
 
   (*file)->idx_dbg->state_dump = PIDX_NO_META_DATA_DUMP;
 
-  (*file)->idx->endian = 1;
+  (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
 
   for (i = 0; i < 16; i++)
   {
@@ -693,10 +398,8 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
     memset((*file)->idx->variable_grp[i], 0, sizeof(*((*file)->idx->variable_grp[i])));
   }
 
-  int var = 0, variable_counter = 0, count = 0, len = 0;
-  char *pch, *pch1;
-  char line [ 512 ];
-
+  int var = 0;
+  char line [512];
 
   FILE *fp = fopen((*file)->idx->filename, "r");
   if (fp == NULL)
@@ -709,288 +412,29 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   {
     line[strcspn(line, "\r\n")] = 0;
 
-    if (strcmp(line, "(box)") == 0)
+    // find the version number in the file
+    if (strcmp(line, "(version)") == 0)
     {
       if( fgets(line, sizeof line, fp) == NULL)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
 
-      pch = strtok(line, " ");
-      count = 0;
-      while (pch != NULL)
-      {
-        if (count % 2 == 1 && count / 2 < PIDX_MAX_DIMENSIONS)
-        {
-          (*file)->idx->bounds[count / 2] = atoi(pch) + 1;
-          (*file)->idx->box_bounds[count / 2] = atoi(pch) + 1;
-        }
-        count++;
-        pch = strtok(NULL, " ");
-      }
-    }
+      strncpy((*file)->idx_d->metadata_version, line, 8);
 
-    if (strcmp(line, "(partition size)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-
-      pch = strtok(line, " ");
-      count = 0;
-      while (pch != NULL)
-      {
-        (*file)->idx_d->partition_size[count] = atoi(pch);
-        count++;
-        pch = strtok(NULL, " ");
-      }
-    }
-
-    if (strcmp(line, "(partition count)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-
-      pch = strtok(line, " ");
-      count = 0;
-      while (pch != NULL)
-      {
-        (*file)->idx_d->partition_count[count] = atoi(pch);
-        count++;
-        pch = strtok(NULL, " ");
-      }
-    }
-
-    if (strcmp(line, "(restructure box size)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-
-      pch = strtok(line, " ");
-      count = 0;
-      while (pch != NULL)
-      {
-        (*file)->idx_d->restructured_grid->patch_size[count] = atoi(pch);
-        count++;
-        pch = strtok(NULL, " ");
-      }
-    }
-
-    if (strcmp(line, "(raw_dump)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-
-      pch = strtok(line, " ");
-      count = 0;
-      while (pch != NULL)
-      {
-        (*file)->idx_d->restructured_grid->patch_size[count] = atoi(pch);
-        count++;
-        pch = strtok(NULL, " ");
-      }
-
-      (*file)->idx->io_type = PIDX_RAW_IO;
-      (*file)->idx_d->pidx_version = 0;
-      //(*file)->idx->endian = 0;
-    }
-
-    if (strcmp(line, "(cores)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx_d->data_core_count = atoi(line);
-    }
-
-    if (strcmp(line, "(io mode)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      int mode = atoi(line);
-
-      if (mode == 1)
-        (*file)->idx->io_type = PIDX_IDX_IO;
-      else if (mode == 2)
-        (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
-      else if (mode == 3)
-        (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
-      else if (mode == 4)
-        (*file)->idx->io_type = PIDX_RAW_IO;
-    }
-
-    if (strcmp(line, "(endian)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx->endian = atoi(line);
-    }
-
-    if (strcmp(line, "(fields)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      count = 0;
-      variable_counter = 0;
-
-      while (line[0] != '(')
-      {
-        (*file)->idx->variable_grp[0]->variable[variable_counter] = malloc(sizeof (*((*file)->idx->variable_grp[0]->variable[variable_counter])));
-        if ((*file)->idx->variable_grp[0]->variable[variable_counter] == NULL)
-          return PIDX_err_file;
-
-        memset((*file)->idx->variable_grp[0]->variable[variable_counter], 0, sizeof (*((*file)->idx->variable_grp[0]->variable[variable_counter])));
-
-        pch1 = strtok(line, " +");
-        while (pch1 != NULL)
-        {
-          if (count == 0)
-          {
-            char* temp_name = strdup(pch1);
-            strcpy((*file)->idx->variable_grp[0]->variable[variable_counter]->var_name, /*strdup(pch1)*/temp_name);
-            free(temp_name);
-          }
-
-          if (count == 1)
-          {
-            len = strlen(pch1) - 1;
-            if (pch1[len] == '\n')
-              pch1[len] = 0;
-
-            strcpy((*file)->idx->variable_grp[0]->variable[variable_counter]->type_name, pch1);
-            int ret;
-            int bits_per_sample = 0;
-            ret = PIDX_default_bits_per_datatype((*file)->idx->variable_grp[0]->variable[variable_counter]->type_name, &bits_per_sample);
-            if (ret != PIDX_success)  return PIDX_err_file;
-
-            (*file)->idx->variable_grp[0]->variable[variable_counter]->bpv = bits_per_sample;
-            (*file)->idx->variable_grp[0]->variable[variable_counter]->vps = 1;
-          }
-          count++;
-          pch1 = strtok(NULL, " +");
-        }
-        count = 0;
-
-        if( fgets(line, sizeof line, fp) == NULL)
-          return PIDX_err_file;
-        line[strcspn(line, "\r\n")] = 0;
-        variable_counter++;
-      }
-      (*file)->idx->variable_grp[0]->variable_count = variable_counter;
-    }
-
-    if (strcmp(line, "(bits)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      strcat((*file)->idx->bitSequence, line);
-    }
-
-    if (strcmp(line, "(bitsperblock)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx->bits_per_block = atoi(line);
-      (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
-    }
-
-    if (strcmp(line, "(compression type)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx->compression_type = atoi(line);
-      if ((*file)->idx->compression_type != PIDX_NO_COMPRESSION)
-      {
-        int i1 = 0;
-        for (i1 = 0; i1 < PIDX_MAX_DIMENSIONS; i1++)
-          (*file)->idx->chunk_size[i1] = 4;
-      }
-    }
-
-    if (strcmp(line, "(compressed box)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-
-      pch = strtok(line, " ");
-      count = 0;
-      while (pch != NULL)
-      {
-        (*file)->idx->chunk_size[count] = atoi(pch);
-        count++;
-        pch = strtok(NULL, " ");
-      }
-
-      //if((*file)->idx->chunk_size[0] < 0 || (*file)->idx->chunk_size[1] < 0 || (*file)->idx->chunk_size[2] < 0)
-      //  return PIDX_err_box;
-    }
-
-    if (strcmp(line, "(compression bit rate)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx->compression_bit_rate = atoi(line);
-    }
-
-    if (strcmp(line, "(blocksperfile)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx->blocks_per_file= atoi(line);
-    }
-
-    if (strcmp(line, "(file system block size)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx_d->fs_block_size = atoi(line);
-    }
-
-    if (strcmp(line, "(filename_template)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-    }
-
-    if (strcmp(line, "(time)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-
-      line[strcspn(line, "\r\n")] = 0;
-
-      pch = strtok(line, " ");
-
-      if(pch != NULL)
-        (*file)->idx->first_tstep = atoi(pch);
-      else
-        return PIDX_err_file;
-
-      pch = strtok(NULL, " ");
-
-      if(pch != NULL)
-        (*file)->idx->last_tstep = atoi(pch);
-
-
-      else
-        return PIDX_err_file;
+      break;
     }
   }
-  fclose(fp);
 
+  // Parse the metadata file
+  if((*file)->idx_d->metadata_version > 0)
+  {
+    if(PIDX_metadata_parse(fp, file, (*file)->idx_d->metadata_version) != PIDX_success)
+      return PIDX_err_metadata;
+  }
+  else
+    return PIDX_err_metadata;
+
+  fclose(fp);
 
   (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 

@@ -6,7 +6,6 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
   int i = 0, j = 0, j1 = 0, d = 0;
 
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
-
   ab->aggregator_interval = id->idx_c->lnprocs / ((id->li - id->fi + 1) * lbl->efc * ab->agg_f);
   assert(ab->aggregator_interval != 0);
 

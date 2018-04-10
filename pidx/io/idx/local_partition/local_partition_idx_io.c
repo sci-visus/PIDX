@@ -4,6 +4,7 @@ static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, 
 static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode);
 static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
+static PIDX_return_code create_midx(PIDX_io file, int gi, int svi);
 
 
 /// local Partitioned IDX Write Steps
@@ -63,15 +64,18 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
+  // TODO make a utility print error function for all the error prints
+  
   if (var0->restructured_super_patch_count == 1)
   {
+    
     // Step 3:  Partition
     if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
     {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      fprintf(stderr,"Error [File %s Line %d]: partition\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-
+    
     ret = populate_bit_string(file, PIDX_WRITE);
     if (ret != PIDX_success)
     {
@@ -391,7 +395,192 @@ PIDX_return_code PIDX_local_partition_mapped_idx_read(PIDX_io file, int gi, int 
 
 }
 
+// TODO move this function into some utils file, it is used in too many files already
+static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
+{
+  int d = 0, check_bit = 0;
+  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
+  
+  return !(check_bit);
+}
 
+static PIDX_return_code create_midx(PIDX_io file, int gi, int svi)
+{
+  int *colors;
+  int i = 0, j = 0, k = 0, d = 0;
+  
+  int num_parts = file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2];
+  
+  colors = malloc(sizeof(*colors) * num_parts);
+  memset(colors, 0, sizeof(*colors) * num_parts);
+
+    for (k = 0; k < file->idx_d->partition_count[2]; k++)
+      for (j = 0; j < file->idx_d->partition_count[1]; j++)
+        for (i = 0; i < file->idx_d->partition_count[0]; i++)
+        {
+          colors[(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i] = (file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i;
+          
+        }
+  
+    PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+    PIDX_variable var = var_grp->variable[svi];
+
+    PIDX_patch local_p = (PIDX_patch)malloc(sizeof (*local_p));
+    memset(local_p, 0, sizeof (*local_p));
+    
+    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    {
+      local_p->offset[d] = var->restructured_super_patch->restructured_patch->offset[d];
+      local_p->size[d] = var->restructured_super_patch->restructured_patch->size[d];
+    }
+    
+    int wc = file->idx_c->lnprocs * (PIDX_MAX_DIMENSIONS);
+  
+    off_t* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
+    memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
+    
+    size_t* global_patch_size = malloc(wc * sizeof(*global_patch_size));
+    memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
+    
+    MPI_Allgather(&local_p->offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
+    
+    MPI_Allgather(&local_p->size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
+  
+    //free(local_p);
+  
+  if(file->idx_c->grank == 0)
+  {
+    // TODO make utility functions to retrieve filenames
+    // and use those in all the code for all filename template related things
+    char file_name_skeleton[PIDX_STRING_SIZE];
+    strncpy(file_name_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
+    file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
+    
+    char* partition_filenames = malloc(PIDX_STRING_SIZE * num_parts);
+    memset(partition_filenames, 0, PIDX_STRING_SIZE * num_parts);
+    int* offsets = malloc(sizeof(*offsets) * PIDX_MAX_DIMENSIONS * num_parts);
+    memset(offsets, 0, sizeof(*offsets) * PIDX_MAX_DIMENSIONS * num_parts);
+    
+    int proc=0;
+    for (proc = 0; proc < file->idx_c->lnprocs; proc++)
+    {
+      PIDX_patch curr_local_p = (PIDX_patch)malloc(sizeof (*curr_local_p));
+      
+      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      {
+        curr_local_p->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * proc + d];
+        curr_local_p->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * proc + d];
+      }
+      
+      PIDX_patch reg_patch = (PIDX_patch)malloc(sizeof (*reg_patch));
+      memset(reg_patch, 0, sizeof (*reg_patch));
+      
+      Point3D bounds_point;
+      int maxH = 0;
+      bounds_point.x = (int) file->idx_d->partition_count[0];
+      bounds_point.y = (int) file->idx_d->partition_count[1];
+      bounds_point.z = (int) file->idx_d->partition_count[2];
+      char bitSequence[512];
+      char bitPattern[512];
+      GuessBitmaskPattern(bitSequence, bounds_point);
+      maxH = strlen(bitSequence);
+      
+      for (i = 0; i <= maxH; i++)
+        bitPattern[i] = RegExBitmaskBit(bitSequence, i);
+      
+      int z_order = 0;
+      int number_levels = maxH - 1;
+      int index_i = 0, index_j = 0, index_k = 0;
+      for (i = 0, index_i = 0; i < file->idx->bounds[0]; i = i + file->idx_d->partition_size[0], index_i++)
+      {
+        for (j = 0, index_j = 0; j < file->idx->bounds[1]; j = j + file->idx_d->partition_size[1], index_j++)
+        {
+          for (k = 0, index_k = 0; k < file->idx->bounds[2]; k = k + file->idx_d->partition_size[2], index_k++)
+          {
+            reg_patch->offset[0] = i;
+            reg_patch->offset[1] = j;
+            reg_patch->offset[2] = k;
+            reg_patch->size[0] = file->idx_d->partition_size[0];
+            reg_patch->size[1] = file->idx_d->partition_size[1];
+            reg_patch->size[2] = file->idx_d->partition_size[2];
+            
+            if (intersectNDChunk(reg_patch, curr_local_p))
+            {
+              Point3D xyzuv_Index;
+              xyzuv_Index.x = index_i;
+              xyzuv_Index.y = index_j;
+              xyzuv_Index.z = index_k;
+              
+              z_order = 0;
+              Point3D zero;
+              zero.x = 0;
+              zero.y = 0;
+              zero.z = 0;
+              memset(&zero, 0, sizeof (Point3D));
+              
+              int cnt = 0;
+              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (Point3D)); cnt++, number_levels--)
+              {
+                int bit = bitPattern[number_levels];
+                z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
+                PGET(xyzuv_Index, bit) >>= 1;
+              }
+     
+              //printf("found color %d offset %d %d %d\n", colors[z_order], i, j, k);
+            
+              sprintf(&partition_filenames[colors[z_order]*PIDX_STRING_SIZE], "%s_%d.idx", file_name_skeleton, colors[z_order]);
+              
+              off_t curr_off = colors[z_order]*PIDX_MAX_DIMENSIONS;
+              offsets[curr_off+0] = i;
+              offsets[curr_off+1] = j;
+              offsets[curr_off+2] = k;
+              
+              break;
+            }
+          }
+        }
+      }
+      
+      free(curr_local_p);
+      free(reg_patch);
+      
+    }
+    
+    char midx_filename[PIDX_STRING_SIZE];
+    sprintf(midx_filename,"%s.midx", file_name_skeleton);
+    
+    FILE* midx_file = fopen(midx_filename, "w");
+    if (!midx_file)
+    {
+      fprintf(stderr, "Error [%s] [%d]: Cannot create filename %s.\n", __FILE__, __LINE__, midx_filename);
+      return -1;
+    }
+    
+    fprintf(midx_file, "<dataset typename='IdxMultipleDataset'>\n");
+    
+    for(i = 0; i < num_parts; i++)
+    {
+      off_t curr_off = i*PIDX_MAX_DIMENSIONS;
+      
+      //printf("filename %s offset  %d %d %d\n", partition_filenames+(PIDX_STRING_SIZE*i), offsets[curr_off+0],offsets[curr_off+1], offsets[curr_off+2]);
+      
+      fprintf(midx_file, "\t<dataset url=\"file://$(CurrentFileDirectory)/%s\" name=\"%s_%d\" offset=\"%d %d %d\"/>\n",
+              partition_filenames+(PIDX_STRING_SIZE*i), file_name_skeleton, i, offsets[curr_off+0],offsets[curr_off+1], offsets[curr_off+2]);
+    }
+    
+    fprintf(midx_file,"</dataset>\n");
+    
+    fclose(midx_file);
+    
+    free(colors);
+    free(global_patch_size);
+    free(global_patch_offset);
+  
+  }
+  
+  return PIDX_success;
+}
 
 
 static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
@@ -407,12 +596,19 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+  
   // assign same color to processes within the same partition
   ret = partition_setup(file, gi, svi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  // Create midx file that will point to different .idx partition files
+  if (create_midx(file, gi, svi) != PIDX_success)
+  {
+    fprintf(stderr,"Error [File %s Line %d]: create_midx\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
@@ -435,7 +631,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
   int i = 0, v = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  fprintf(stderr, "SE %d %d\n", svi, evi);
+  //fprintf(stderr, "SE %d %d\n", svi, evi);
   for (v = svi; v < evi; v++)
   {
   PIDX_variable var = var_grp->variable[v];
@@ -492,13 +688,16 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
 
   time->layout_start = PIDX_get_time();
   // calculates the block layout, given this is pure IDX only non-share block layout is populated
+  //if (file->idx_d->color == 2)
+  //{
   ret = populate_rst_block_layouts(file, gi, svi, file->hz_from_shared, file->hz_to_non_shared);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+  //}
+#if 1
   // Calculate the hz level upto which aggregation is possible
   ret = find_agg_level(file, gi, svi, evi);
   if (ret != PIDX_success)
@@ -525,7 +724,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
     return PIDX_err_file;
   }
   time->header_io_end = PIDX_get_time();
-
+#endif
   return PIDX_success;
 }
 

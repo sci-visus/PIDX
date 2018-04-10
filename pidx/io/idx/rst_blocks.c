@@ -111,7 +111,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     return PIDX_err_file;
   }
 
-  //fprintf(stderr, "MH %d BS %s F %d T %d\n", file->idx_d->maxh, file->idx->bitSequence, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
+  //fprintf(stderr, "MH %d BS %s F %d T %d [%d %d %d]\n", file->idx_d->maxh, file->idx->bitSequence, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
   ret_code = PIDX_blocks_create_layout (bounding_box, file->idx_d->maxh, file->idx->bits_per_block,  file->idx->bitPattern, per_patch_local_block_layout, file->idx_d->reduced_res_from, file->idx_d->reduced_res_to);
   if (ret_code != PIDX_success)
@@ -168,7 +168,12 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
   {
     int level_count = 1;
     for (i = block_layout->resolution_from; i <= file->idx->bits_per_block; i++)
+    {
+      //if (i >= file->idx_d->maxh)
+      //  continue;
+
       MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
+    }
 
     for (i = file->idx->bits_per_block + 1; i < (block_layout->resolution_to); i++)
     {
@@ -340,7 +345,12 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
     }
 
     for (j = lower_hz_level ; j < file->idx->bits_per_block + 1 ; j++)
+    {
+      if (j >= file->idx_d->maxh)
+        continue;
+
       memcpy(block_layout->hz_block_number_array[j], layout_by_level[0]->hz_block_number_array[j], sizeof(int));
+    }
 
     ctr = 1;
     int temp_level = file->idx->bits_per_block + log2(file->idx->blocks_per_file) + 1;

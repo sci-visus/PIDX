@@ -63,55 +63,6 @@ PIDX_return_code destroy_agg_io_buffer(PIDX_io file, int svi, int evi)
 }
 
 
-PIDX_return_code create_async_buffers(PIDX_io file, int gi)
-{
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  file->idx_d->status1 = malloc(sizeof(*(file->idx_d->status1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
-  memset(file->idx_d->status1, 0, sizeof(*(file->idx_d->status1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
-
-  file->idx_d->request1 = malloc(sizeof(*(file->idx_d->request1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
-  memset(file->idx_d->request1, 0, sizeof(*(file->idx_d->request1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
-
-  file->idx_d->fp1 = malloc(sizeof(*(file->idx_d->fp1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
-  memset(file->idx_d->fp1, 0, sizeof(*(file->idx_d->fp1)) * (var_grp->agg_level - var_grp->shared_start_layout_index));
-
-  return PIDX_success;
-}
-
-
-PIDX_return_code wait_and_destroy_async_buffers(PIDX_io file, int gi)
-{
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-
-  int sli = var_grp->shared_start_layout_index;
-  int agg_i = var_grp->agg_level;
-
-  assert (sli == 0);
-  int i = 0;
-  int ret;
-  for (i = sli; i < (agg_i); i++)
-  {
-    if (file->idx_d->request1[i - sli] != 0)
-    {
-      ret = MPI_Wait(&(file->idx_d->request1[i - sli]), &(file->idx_d->status1[i - sli]));
-      if (ret != MPI_SUCCESS)
-      {
-          fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-          return PIDX_err_file;
-      }
-
-      MPI_File_close(&(file->idx_d->fp1[i - sli]));
-    }
-  }
-
-  free(file->idx_d->status1);
-  free(file->idx_d->request1);
-  free(file->idx_d->fp1);
-
-  return PIDX_success;
-}
-
 
 PIDX_return_code finalize_aggregation(PIDX_io file, int gi, int start_index)
 {

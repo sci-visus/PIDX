@@ -26,7 +26,7 @@
 ///
 static PIDX_return_code PIDX_validate(PIDX_file file);
 
-PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache cache)
+PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_metadata_cache cache)
 {
   if(!file)
     return PIDX_err_file;
@@ -40,7 +40,7 @@ PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_meta_data_cache c
 
 
 
-PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_meta_data_cache* cache)
+PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_metadata_cache* cache)
 {
   if(!file)
     return PIDX_err_file;
@@ -87,30 +87,6 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
 
 
 
-PIDX_return_code PIDX_set_transform(PIDX_file file, double transform[16])
-{
-  if(!file)
-    return PIDX_err_file;
-
-  memcpy(file->idx->transform, transform, (sizeof(double) * 16));
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16])
-{
-  if(!file)
-    return PIDX_err_file;
-
-  memcpy(transform, file->idx->transform, (sizeof(double) * 16));
-
-  return PIDX_success;
-}
-
-
-
 PIDX_return_code PIDX_set_physical_dims(PIDX_file file, PIDX_physical_point dims)
 {
   if(!file)
@@ -132,6 +108,7 @@ PIDX_return_code PIDX_get_physical_dims(PIDX_file file, PIDX_physical_point dims
 
   return PIDX_success;
 }
+
 
 
 
@@ -432,6 +409,9 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
   if (!file)
     return PIDX_err_file;
 
+  if (file->idx->compression_type == PIDX_CHUNKING_ONLY)
+    return PIDX_success;
+
   //if (file->idx->compression_type != PIDX_CHUNKING_ZFP)
   //  return PIDX_err_unsupported_compression_type;
 
@@ -534,7 +514,7 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 
 
 
-PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
+PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type)
 {
   if(file == NULL)
     return PIDX_err_file;
@@ -546,7 +526,7 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
 
 
 
-PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type)
+PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type)
 {
   if(file == NULL)
     return PIDX_err_file;
@@ -678,7 +658,7 @@ PIDX_return_code PIDX_save_big_endian(PIDX_file file)
 
 PIDX_return_code PIDX_save_little_endian(PIDX_file file)
 {
-  file->idx->endian = 1;
+  file->idx->endian = PIDX_LITTLE_ENDIAN;
 
   unsigned int endian = 1;
   char *c = (char*)&endian;

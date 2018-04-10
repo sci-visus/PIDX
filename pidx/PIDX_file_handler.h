@@ -49,5 +49,5 @@ struct PIDX_file_descriptor
   idx_debug idx_dbg;                           ///< Contains flags for debugging
 
 
-  idx_meta_data_cache idx_cache;
+  idx_metadata_cache idx_cache;
 };

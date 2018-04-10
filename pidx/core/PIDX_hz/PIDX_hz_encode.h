@@ -47,7 +47,7 @@ struct PIDX_hz_encode_struct
 
   idx_debug idx_dbg;
 
-  idx_meta_data_cache cache;
+  idx_metadata_cache cache;
 
 
   int** index;
@@ -69,7 +69,7 @@ typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_meta_data_cache cache, int start_var_index, int end_var_index);
+PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_metadata_cache cache, int start_var_index, int end_var_index);
 
 
 

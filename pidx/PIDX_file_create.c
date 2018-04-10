@@ -105,7 +105,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx_d->color = 0;
   (*file)->idx->io_type = PIDX_IDX_IO;
-  (*file)->idx_d->data_core_count = -1;
 
   (*file)->idx_d->wavelet_levels = 0;
   (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
@@ -147,12 +146,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   sprintf((*file)->idx->filename_partition, "%s_0.idx", file_name_skeleton);
 
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
-
-  //initialize logic_to_physic transform to identity
-  (*file)->idx->transform[0]  = 1.0;
-  (*file)->idx->transform[5]  = 1.0;
-  (*file)->idx->transform[10] = 1.0;
-  (*file)->idx->transform[15] = 1.0;
 
   (*file)->idx->variable_group_count = 1;
 
@@ -215,9 +208,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   unsigned int endian = 1;
   char *c = (char*)&endian;
   if (*c)
-    (*file)->idx->endian = 1;
+    (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
   else
-    (*file)->idx->endian = 0;
+    (*file)->idx->endian = PIDX_BIG_ENDIAN;
 
   return PIDX_success;
 }
