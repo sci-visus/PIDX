@@ -75,7 +75,6 @@ extern "C" {
 #include "./io/idx/serial/serial_idx_io.h"
 #include "./io/idx/no_partition/idx_io.h"
 #include "./io/idx/local_partition/local_partition_idx_io.h"
-#include "./io/idx/global_partition/global_partition_idx_io.h"
 #include "./io/raw/raw_io.h"
 
 

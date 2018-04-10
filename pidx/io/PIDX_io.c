@@ -59,9 +59,6 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
       else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
         ret = PIDX_local_partition_idx_write(file, gi, svi, evi);
 
-      else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
-        ret = PIDX_global_partition_idx_write(file, gi, svi, evi);
-
       else if (MODE == PIDX_RAW_IO)
         ret = PIDX_raw_write(file, gi, svi, evi);
     }
@@ -92,15 +89,7 @@ PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
       ret = PIDX_idx_read(file, gi, svi, evi);
 
     else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-    {
-      if (file->idx_d->data_core_count == file->idx_c->gnprocs)
-        ret = PIDX_local_partition_idx_read(file, gi, svi, evi);
-      else
-        ret = PIDX_parallel_local_partition_idx_read(file, gi, svi, evi);
-    }
-
-    else if (MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
-      ret = PIDX_global_partition_idx_read(file, gi, svi, evi);
+      ret = PIDX_parallel_local_partition_idx_read(file, gi, svi, evi);
 
     else if (MODE == PIDX_RAW_IO)
       ret = PIDX_raw_read(file, gi, svi, evi);

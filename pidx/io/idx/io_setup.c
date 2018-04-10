@@ -130,8 +130,8 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
       var_grp->agg_level = var_grp->shared_layout_count + var_grp->nshared_layout_count;
       file->idx_d->variable_pipe_length = var_count - 1;
 
-      if (file->idx_c->lrank == 0)
-        fprintf(stderr, "[A] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
+      //if (file->idx_c->lrank == 0)
+      //  fprintf(stderr, "[A] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
     }
     else
     {
@@ -140,8 +140,8 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
         var_grp->agg_level = var_grp->shared_start_layout_index;
         file->idx_d->variable_pipe_length = var_count - 1;
 
-        if (file->idx_c->lrank == 0)
-          fprintf(stderr, "[B] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
+        //if (file->idx_c->lrank == 0)
+        //  fprintf(stderr, "[B] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
       }
       else
       {
@@ -153,8 +153,8 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
         }
         file->idx_d->variable_pipe_length = i - 1;
         var_grp->agg_level = var_grp->shared_layout_count + var_grp->nshared_layout_count;
-        if (file->idx_c->lrank == 0)
-          fprintf(stderr, "[C] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
+        //if (file->idx_c->lrank == 0)
+        //  fprintf(stderr, "[C] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
       }
     }
   }

@@ -380,6 +380,15 @@ static PIDX_return_code parse_local_partition_idx_file(PIDX_io file, int partiti
         }
       }
 
+      if (strcmp(line, "(bitsperblock)") == 0)
+      {
+        if( fgets(line, sizeof line, fp) == NULL)
+          return PIDX_err_file;
+        line[strcspn(line, "\r\n")] = 0;
+        file->idx->bits_per_block = atoi(line);
+        file->idx_d->samples_per_block = (int)pow(2, file->idx->bits_per_block);
+      }
+
       if (strcmp(line, "(bits)") == 0)
       {
         int i = 0;

@@ -250,6 +250,12 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
   for (i = 0; i <= file->idx_d->maxh; i++)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
+  if (file->idx->bits_per_block >= file->idx_d->maxh)
+  {
+    file->idx->bits_per_block = file->idx_d->maxh - 1;
+    file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
+  }
+
   //if (file->idx_c->lrank == 0)
   //  fprintf(stderr, "%d Bitstring %s maxh %d\n", file->idx_d->color, file->idx->bitSequence, file->idx_d->maxh);
 

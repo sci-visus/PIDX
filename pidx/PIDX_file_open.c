@@ -119,7 +119,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->fs_block_size = 0;
   (*file)->idx_d->start_fs_block = 0;
   //(*file)->idx_d->agg_buffer->agg_f = 1;
-  (*file)->idx_d->data_core_count = -1;
 
   (*file)->idx_d->pidx_version = 1;
 
@@ -186,7 +185,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast(&((*file)->idx->variable_grp[0]->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx_d->data_core_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
   MPI_Bcast((*file)->idx_d->partition_offset, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
@@ -387,7 +385,6 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   (*file)->idx_d->fs_block_size = 0;
   (*file)->idx_d->start_fs_block = 0;
   //(*file)->idx_d->agg_buffer->agg_f = 1;
-  (*file)->idx_d->data_core_count = -1;
 
   (*file)->idx_d->pidx_version = 1;
 

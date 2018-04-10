@@ -109,14 +109,6 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
       //(*file)->idx->endian = 0;
     }
 
-    if (strcmp(line, "(cores)") == 0)
-    {
-      if( fgets(line, sizeof line, fp) == NULL)
-        return PIDX_err_file;
-      line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx_d->data_core_count = atoi(line);
-    }
-
     if (strcmp(line, "(io mode)") == 0)
     {
       if( fgets(line, sizeof line, fp) == NULL)

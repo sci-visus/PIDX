@@ -631,7 +631,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
   int i = 0, v = 0;
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
 
-  fprintf(stderr, "SE %d %d\n", svi, evi);
+  //fprintf(stderr, "SE %d %d\n", svi, evi);
   for (v = svi; v < evi; v++)
   {
   PIDX_variable var = var_grp->variable[v];
@@ -688,13 +688,16 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
 
   time->layout_start = PIDX_get_time();
   // calculates the block layout, given this is pure IDX only non-share block layout is populated
+  //if (file->idx_d->color == 2)
+  //{
   ret = populate_rst_block_layouts(file, gi, svi, file->hz_from_shared, file->hz_to_non_shared);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-
+  //}
+#if 1
   // Calculate the hz level upto which aggregation is possible
   ret = find_agg_level(file, gi, svi, evi);
   if (ret != PIDX_success)
@@ -721,7 +724,7 @@ static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi
     return PIDX_err_file;
   }
   time->header_io_end = PIDX_get_time();
-
+#endif
   return PIDX_success;
 }
 

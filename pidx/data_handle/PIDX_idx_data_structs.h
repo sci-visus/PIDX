@@ -292,10 +292,6 @@ struct idx_dataset_derived_metadata_struct
   int start_layout_index;
   int end_layout_index;
 
-  MPI_Status *status1;
-  MPI_File *fp1;
-  MPI_Request *request1;
-
   int layout_count;
   int reduced_res_from;
   int reduced_res_to;
@@ -305,7 +301,6 @@ struct idx_dataset_derived_metadata_struct
   int raw_io_pipe_length;
 
   int aggregator_multiplier;
-  int data_core_count;
 
   //int shared_block_level;
   int total_partiton_level;
