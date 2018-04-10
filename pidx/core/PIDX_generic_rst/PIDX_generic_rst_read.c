@@ -1,46 +1,53 @@
-/*****************************************************
- **  PIDX Parallel I/O Library                      **
- **  Copyright (c) 2010-2014 University of Utah     **
- **  Scientific Computing and Imaging Institute     **
- **  72 S Central Campus Drive, Room 3750           **
- **  Salt Lake City, UT 84112                       **
- **                                                 **
- **  PIDX is licensed under the Creative Commons    **
- **  Attribution-NonCommercial-NoDerivatives 4.0    **
- **  International License. See LICENSE.md.         **
- **                                                 **
- **  For information about this project see:        **
- **  http://www.cedmav.com/pidx                     **
- **  or contact: pascucci@sci.utah.edu              **
- **  For support: PIDX-support@visus.net            **
- **                                                 **
- *****************************************************/
+/*
+ * BSD 3-Clause License
+ * 
+ * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Scientific Computing and Imaging Institute of the University of Utah
+ * 
+ * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
+ * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
+ *  
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * For additional information about this project contact: pascucci@acm.org
+ * For support: support@visus.net
+ * 
+ */
 
 
 #include "../../PIDX_inc.h"
-#if 1
+
+
 PIDX_return_code PIDX_generic_rst_read(PIDX_generic_rst_id rst_id)
 {
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   PIDX_variable var0 = var_grp->variable[rst_id->first_index];
 
-  if (rst_id->idx->enable_rst != 1)
-  {
-    int v = 0, j = 0, p = 0;
-    for (v = rst_id->first_index; v <= rst_id->last_index; v++)
-    {
-      PIDX_variable var = var_grp->variable[v];
-      for (p = 0; p < var->patch_group_count; p++)
-      {
-        Ndim_patch_group patch_group = var->rst_patch_group[p];
-        for(j = 0; j < patch_group->count; j++)
-          memcpy(var->sim_patch[p]->buffer, patch_group->patch[j]->buffer, (patch_group->patch[j]->size[0] * patch_group->patch[j]->size[1] * patch_group->patch[j]->size[2] * var->bpv/8 * var->vps));
-      }
-    }
-    return PIDX_success;
-  }
-
-#if PIDX_HAVE_MPI
   unsigned long long k1 = 0, i1 = 0, j1 = 0;
   unsigned long long i, j, v, index, count1 = 0, req_count = 0;
   int *send_count, *send_offset;
@@ -110,7 +117,7 @@ PIDX_return_code PIDX_generic_rst_read(PIDX_generic_rst_id rst_id)
                       PIDX_variable var = var_grp->variable[v];
                       send_o = index * var->vps;
                       send_c = reg_patch_count[0] * var->vps;
-                      memcpy(var->sim_patch[0]->buffer + send_o * var->bpv/8, var->rst_patch_group[counter]->patch[j]->buffer + (count1 * send_c * var->bpv/8), send_c * var->bpv/8);
+                      memcpy(var->sim_patch[0]->buffer + send_o * var->bpv/8, var->rst_patch_group->patch[j]->buffer + (count1 * send_c * var->bpv/8), send_c * var->bpv/8);
                     }
 
                     count1++;
@@ -124,7 +131,7 @@ PIDX_return_code PIDX_generic_rst_read(PIDX_generic_rst_id rst_id)
 
             int length = (reg_patch_count[0] * reg_patch_count[1] * reg_patch_count[2]) * var->vps * var->bpv/8;
 
-            ret = MPI_Isend(var->rst_patch_group[counter]->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->idx_c->global_comm, &req[req_counter]);
+            ret = MPI_Isend(var->rst_patch_group->patch[j]->buffer, length, MPI_BYTE, rst_id->reg_patch_grp[i]->source_patch_rank[j], 123, rst_id->idx_c->global_comm, &req[req_counter]);
             if (ret != MPI_SUCCESS)
             {
               fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -135,6 +142,7 @@ PIDX_return_code PIDX_generic_rst_read(PIDX_generic_rst_id rst_id)
         }
       }
       counter++;
+      assert(counter == 1);
     }
     else
     {
@@ -226,11 +234,4 @@ PIDX_return_code PIDX_generic_rst_read(PIDX_generic_rst_id rst_id)
   status = 0;
 
   return PIDX_success;
-#else
-  if (rst_id->idx->enable_rst == 1)
-    return PIDX_err_rst;
-  else
-    return PIDX_success;
-#endif
 }
-#endif

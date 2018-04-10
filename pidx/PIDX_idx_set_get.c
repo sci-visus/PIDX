@@ -1,20 +1,43 @@
-/*****************************************************
- **  PIDX Parallel I/O Library                      **
- **  Copyright (c) 2010-2014 University of Utah     **
- **  Scientific Computing and Imaging Institute     **
- **  72 S Central Campus Drive, Room 3750           **
- **  Salt Lake City, UT 84112                       **
- **                                                 **
- **  PIDX is licensed under the Creative Commons    **
- **  Attribution-NonCommercial-NoDerivatives 4.0    **
- **  International License. See LICENSE.md.         **
- **                                                 **
- **  For information about this project see:        **
- **  http://www.cedmav.com/pidx                     **
- **  or contact: pascucci@sci.utah.edu              **
- **  For support: PIDX-support@visus.net            **
- **                                                 **
- *****************************************************/
+/*
+ * BSD 3-Clause License
+ * 
+ * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Scientific Computing and Imaging Institute of the University of Utah
+ * 
+ * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
+ * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
+ *  
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * For additional information about this project contact: pascucci@acm.org
+ * For support: support@visus.net
+ * 
+ */
 
 #include "PIDX_file_handler.h"
 
@@ -26,17 +49,30 @@
 ///
 static PIDX_return_code PIDX_validate(PIDX_file file);
 
-
-PIDX_return_code PIDX_randomized_aggregators(PIDX_file file, int* agg_list, int agg_count)
+PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_metadata_cache cache)
 {
   if(!file)
     return PIDX_err_file;
 
-  file->idx->random_agg_list = malloc(sizeof(*file->idx->random_agg_list) * agg_count);
-  memset(file->idx->random_agg_list, 0, sizeof(*file->idx->random_agg_list) * agg_count);
-  file->idx->random_agg_counter = 0;
+  if(!cache)
+    return PIDX_err_file;
 
-  memcpy(file->idx->random_agg_list, agg_list, agg_count * sizeof (int));
+  file->idx_cache->meta_data_cache = cache;
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_metadata_cache* cache)
+{
+  if(!file)
+    return PIDX_err_file;
+
+  if(!cache)
+    return PIDX_err_file;
+
+  *cache = file->idx_cache->meta_data_cache;
+  return PIDX_success;
 }
 
 
@@ -50,7 +86,7 @@ PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
 
   file->idx->variable_count = variable_count;
   file->idx->variable_grp[0]->variable_count = variable_count;
-  file->idx_d->var_pipe_length = file->idx->variable_count - 1 > 1 ? file->idx->variable_count - 1 : 1;
+  //file->idx_d->var_pipe_length = file->idx->variable_count - 1 > 1 ? file->idx->variable_count - 1 : 1;
 
   int total_header_size = (10 + (10 * file->idx->blocks_per_file)) * sizeof (uint32_t) * file->idx->variable_count;
   file->idx_d->start_fs_block = total_header_size / file->idx_d->fs_block_size;
@@ -71,32 +107,6 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
 
   return PIDX_success;
 }
-
-
-
-PIDX_return_code PIDX_set_transform(PIDX_file file, double transform[16])
-{
-  if(!file)
-    return PIDX_err_file;
-
-  memcpy(file->idx->transform, transform, (sizeof(double) * 16));
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16])
-{
-  if(!file)
-    return PIDX_err_file;
-
-  memcpy(transform, file->idx->transform, (sizeof(double) * 16));
-
-  return PIDX_success;
-}
-
-
 
 PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_time_step)
 {
@@ -214,7 +224,7 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_from, int *hz_to)
 
 
 
-PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z)
+PIDX_return_code PIDX_set_partition_count(PIDX_file file, int count_x, int count_y, int count_z)
 {
   if(count_x < 0 || count_y < 0 || count_z < 0)
     return PIDX_err_box;
@@ -222,23 +232,23 @@ PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_
   if(file == NULL)
     return PIDX_err_file;
 
-  file->idx_d->partition_size[0] = count_x;
-  file->idx_d->partition_size[1] = count_y;
-  file->idx_d->partition_size[2] = count_z;
+  file->idx_d->partition_count[0] = count_x;
+  file->idx_d->partition_count[1] = count_y;
+  file->idx_d->partition_count[2] = count_z;
 
   return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_get_partition_size(PIDX_file file, int* count_x, int* count_y, int* count_z)
+PIDX_return_code PIDX_get_partition_count(PIDX_file file, int* count_x, int* count_y, int* count_z)
 {
   if(file == NULL)
     return PIDX_err_file;
 
-  *count_x = file->idx_d->partition_size[0];
-  *count_y = file->idx_d->partition_size[1];
-  *count_z = file->idx_d->partition_size[2];
+  *count_x = file->idx_d->partition_count[0];
+  *count_y = file->idx_d->partition_count[1];
+  *count_z = file->idx_d->partition_count[2];
 
   return PIDX_success;
 }
@@ -250,18 +260,14 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
   if (file == NULL)
     return PIDX_err_file;
 
-  if (file->idx->io_type != PIDX_MERGE_TREE_ANALYSIS)
-    file->idx->reg_box_set = PIDX_USER_RST_BOX;
-
   if (((reg_patch_size[0] & (reg_patch_size[0] - 1)) != 0) && ((reg_patch_size[1] & (reg_patch_size[1] - 1)) != 0) && ((reg_patch_size[2] & (reg_patch_size[2] - 1)) != 0))
   {
     if (file->idx_c->grank == 0)
-      fprintf(stderr, "Warning in %s %d restructuring box needs to be power of two in size %d %d %d (will be over written!!!!)\n", __FILE__, __LINE__, (int)reg_patch_size[0], (int)reg_patch_size[1], (int)reg_patch_size[2]);
-
-    return PIDX_err_box;
+      fprintf(stderr, "Warning in %s %d restructuring box needs to be power of two in size %d %d %d\n", __FILE__, __LINE__, (int)reg_patch_size[0], (int)reg_patch_size[1], (int)reg_patch_size[2]);
+    //return PIDX_err_box;
   }
 
-  memcpy(file->idx->reg_patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(file->idx_d->restructured_grid->patch_size, reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;
 }
@@ -273,7 +279,7 @@ PIDX_return_code PIDX_get_restructuring_box(PIDX_file file, PIDX_point reg_patch
   if (file == NULL)
     return PIDX_err_file;
 
-  memcpy(reg_patch_size, file->idx->reg_patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+  memcpy(reg_patch_size, file->idx_d->restructured_grid->patch_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
   return PIDX_success;
 }
@@ -333,22 +339,18 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   if(!file)
     return PIDX_err_file;
 
-  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP&& compression_type != PIDX_ZFP_COMPRESSION && compression_type != PIDX_CHUNKING_ZFP_63_COEFFICIENT && compression_type != PIDX_CHUNKING_AVERAGE)
+  if (compression_type != PIDX_NO_COMPRESSION && compression_type != PIDX_CHUNKING_ONLY && compression_type != PIDX_CHUNKING_ZFP)
     return PIDX_err_unsupported_compression_type;
 
   file->idx->compression_type = compression_type;
 
   if (file->idx->compression_type == PIDX_NO_COMPRESSION)
     return PIDX_success;
-  else if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP || file->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT || file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
+  else if (file->idx->compression_type == PIDX_CHUNKING_ONLY || file->idx->compression_type == PIDX_CHUNKING_ZFP)
   {
-    PIDX_point chunk_size;
-
-    chunk_size[0] = 4;
-    chunk_size[1] = 4;
-    chunk_size[2] = 4;
-
-    memcpy(file->idx->chunk_size, chunk_size, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
+    file->idx->chunk_size[0] = 4;
+    file->idx->chunk_size[1] = 4;
+    file->idx->chunk_size[2] = 4;
 
     int reduce_by_sample = 1;
     unsigned long long total_chunk_size = file->idx->chunk_size[0] * file->idx->chunk_size[1] * file->idx->chunk_size[2];
@@ -359,8 +361,8 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
 
       if (file->idx->bits_per_block <= 0)
       {
-        file->idx->bits_per_block = 1;
-        file->idx_d->samples_per_block = 2;
+        file->idx->bits_per_block = 0;
+        file->idx_d->samples_per_block = 1;
       }
     }
     else
@@ -370,16 +372,6 @@ PIDX_return_code PIDX_set_compression_type(PIDX_file file, int compression_type)
   return PIDX_success;
 }
 
-PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, float precisison)
-{
-  if(!file)
-    return PIDX_err_file;
-
-  if (file->idx->compression_type != PIDX_ZFP_COMPRESSION)
-    return PIDX_err_file;
-
-  file->idx->zfp_precisison = precisison;
-}
 
 
 PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type)
@@ -412,6 +404,9 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
 {
   if (!file)
     return PIDX_err_file;
+
+  if (file->idx->compression_type == PIDX_CHUNKING_ONLY)
+    return PIDX_success;
 
   //if (file->idx->compression_type != PIDX_CHUNKING_ZFP)
   //  return PIDX_err_unsupported_compression_type;
@@ -492,7 +487,13 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
     file->idx->compression_factor = 512;
   }
 
-  return PIDX_success;
+  if (file->idx->bits_per_block <= 0)
+  {
+    file->idx->bits_per_block = 0;
+    file->idx_d->samples_per_block = 1;
+  }
+
+  return PIDX_validate(file);
 }
 
 
@@ -509,28 +510,19 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 
 
 
-PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type)
+PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type)
 {
   if(file == NULL)
     return PIDX_err_file;
 
   file->idx->io_type = io_type;
 
-  //if (file->idx->io_type == PIDX_IDX_IO)
-  //  file->idx->reg_box_set = PIDX_CLOSEST_POWER_TWO;
-
-  if (file->idx->io_type == PIDX_MERGE_TREE_ANALYSIS)
-  {
-    file->idx->shared_face = 1;
-    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
-  }
-
   return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type)
+PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type)
 {
   if(file == NULL)
     return PIDX_err_file;
@@ -540,26 +532,6 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type)
   return PIDX_success;
 }
 
-
-
-
-PIDX_return_code PIDX_set_wavelet_implementation_type(PIDX_file file, int w_type)
-{
-  if(file == NULL)
-    return PIDX_err_file;
-
-  if (file->idx->io_type != PIDX_WAVELET_IO)
-    return PIDX_err_file;
-
-  file->idx_d->wavelet_imeplementation_type = w_type;
-
-  if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
-    file->idx->reg_box_set = PIDX_UNIFORMLY_DISTRIBUTED_BOX;
-  else if (file->idx_d->wavelet_imeplementation_type == WAVELET_RST)
-    file->idx->reg_box_set = PIDX_WAVELET_BOX;
-
-  return PIDX_success;
-}
 
 
 
@@ -593,8 +565,6 @@ PIDX_return_code PIDX_set_ROI_type(PIDX_file file, int type)
     return PIDX_err_file;
 
   file->ROI_writes = 1;
-  file->idx->enable_rst = 0;
-  //file->idx->enable_agg = 0;
 
   return PIDX_success;
 }
@@ -646,7 +616,7 @@ PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_leng
   if (var_pipe_length < 0)
     return PIDX_err_size;
 
-  file->idx_d->var_pipe_length = var_pipe_length;
+  file->idx_d->variable_pipe_length = var_pipe_length;
 
   return PIDX_success;
 }
@@ -661,7 +631,7 @@ PIDX_return_code PIDX_get_variable_pile_length(PIDX_file file, int* var_pipe_len
   if (var_pipe_length < 0)
     return PIDX_err_size;
 
-  *var_pipe_length = file->idx_d->var_pipe_length;
+  *var_pipe_length = file->idx_d->variable_pipe_length;
 
   return PIDX_success;
 }
@@ -684,7 +654,7 @@ PIDX_return_code PIDX_save_big_endian(PIDX_file file)
 
 PIDX_return_code PIDX_save_little_endian(PIDX_file file)
 {
-  file->idx->endian = 1;
+  file->idx->endian = PIDX_LITTLE_ENDIAN;
 
   unsigned int endian = 1;
   char *c = (char*)&endian;
@@ -714,29 +684,6 @@ PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts)
     return PIDX_err_file;
 
   *ts = file->idx->cached_ts;
-
-  return PIDX_success;
-}
-
-
-PIDX_return_code PIDX_set_bit_string_type(PIDX_file file, int bs_type)
-{
-  if (file == NULL)
-    return PIDX_err_file;
-
-  file->idx->bitsequence_type = bs_type;
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code PIDX_get_bit_string_type(PIDX_file file, int* bs_type)
-{
-  if (file == NULL)
-    return PIDX_err_file;
-
-  *bs_type = file->idx->bitsequence_type;
 
   return PIDX_success;
 }
@@ -772,6 +719,35 @@ PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* 
 
 
 
+PIDX_return_code PIDX_get_comm(PIDX_file file, MPI_Comm *comm)
+{
+  if(!file)
+    return PIDX_err_file;
+
+   *comm = file->idx_c->global_comm;
+
+  return PIDX_success;
+}
+
+
+PIDX_return_code PIDX_set_comm(PIDX_file file, MPI_Comm comm)
+{
+  if(!file)
+    return PIDX_err_file;
+
+   file->idx_c->global_comm = comm;
+   file->idx_c->local_comm = comm;
+
+   MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
+   MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
+   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
+   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
+
+  return PIDX_success;
+}
+
+
+
 static PIDX_return_code PIDX_validate(PIDX_file file)
 {
   unsigned long long dims;
@@ -783,6 +759,8 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
   if (PIDX_inner_product(&dims, adjusted_bounds))
     return PIDX_err_size;
 
+  //fprintf(stderr, "dims %d spb %d\n", dims, file->idx_d->samples_per_block);
+
   if (dims < file->idx_d->samples_per_block)
   {
     // ensure blocksize is a subset of the total volume.
@@ -792,8 +770,8 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
 
   if (file->idx->bits_per_block == 0)
   {
-    file->idx->bits_per_block = 1;
-    file->idx_d->samples_per_block = 2;
+    file->idx->bits_per_block = 0;
+    file->idx_d->samples_per_block = 1;
   }
 
   // other validations...

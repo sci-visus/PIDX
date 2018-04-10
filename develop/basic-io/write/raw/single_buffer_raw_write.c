@@ -1,20 +1,43 @@
-/*****************************************************
- **  PIDX Parallel I/O Library                      **
- **  Copyright (c) 2010-2014 University of Utah     **
- **  Scientific Computing and Imaging Institute     **
- **  72 S Central Campus Drive, Room 3750           **
- **  Salt Lake City, UT 84112                       **
- **                                                 **
- **  PIDX is licensed under the Creative Commons    **
- **  Attribution-NonCommercial-NoDerivatives 4.0    **
- **  International License. See LICENSE.md.         **
- **                                                 **
- **  For information about this project see:        **
- **  http://www.cedmav.com/pidx                     **
- **  or contact: pascucci@sci.utah.edu              **
- **  For support: PIDX-support@visus.net            **
- **                                                 **
- *****************************************************/
+/*
+ * BSD 3-Clause License
+ * 
+ * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Scientific Computing and Imaging Institute of the University of Utah
+ * 
+ * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
+ * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
+ *  
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * For additional information about this project contact: pascucci@acm.org
+ * For support: support@visus.net
+ * 
+ */
 
 /*
              *---------*--------*
@@ -85,9 +108,6 @@ static char var_name[MAX_VAR_COUNT][512];
 static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
-static int max_file_count = 0;
-
-static int *random_agg_list;
 
 static PIDX_point global_size, local_offset, local_size, reg_size;
 static PIDX_access p_access;
@@ -109,7 +129,6 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static void create_random_aggregators();
 
 static char *usage = "Serial Usage: ./single_buffer_raw_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./single_buffer_raw_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
@@ -130,9 +149,8 @@ int main(int argc, char **argv)
   calculate_per_process_offsets();
 
   create_synthetic_simulation_data();
-  //create_random_aggregators();
 
-  //rank_0_print("Simulation Data Created\n");
+  rank_0_print("Simulation Data Created\n");
 
   create_pidx_var_point_and_access();
 
@@ -494,55 +512,4 @@ static void shutdown_mpi()
 #if PIDX_HAVE_MPI
   MPI_Finalize();
 #endif
-}
-
-
-static void create_random_aggregators()
-{
-  unsigned long long total_reg_sample_count = (getPowerOf2(global_box_size[0]) * getPowerOf2(global_box_size[1]) * getPowerOf2(global_box_size[2]));
-  unsigned long long max_sample_per_file = (unsigned long long) 32768 * 256;
-  max_file_count = total_reg_sample_count / max_sample_per_file;
-  if (total_reg_sample_count % max_sample_per_file)
-    max_file_count++;
-
-  random_agg_list = malloc(sizeof(*random_agg_list) * max_file_count * variable_count);
-  memset(random_agg_list, 0, sizeof(*random_agg_list) * max_file_count * variable_count);
-
-  int i = 0;
-  if (rank == 0)
-  {
-    time_t t;
-    srand((unsigned) time(&t));
-
-    int M = max_file_count * variable_count;
-    int N = process_count - 1;
-
-    unsigned char *is_used;
-    is_used = malloc(sizeof(*is_used) * N);
-    memset(is_used, 0, sizeof(*is_used) * N);
-
-    int in, im;
-    im = 0;
-
-    for (in = N - M; in < N && im < M; ++in)
-    {
-      int r = rand() % (in + 1);
-      if (is_used[r])
-        r = in;
-
-      assert(!is_used[r]);
-      random_agg_list[im++] = r;
-      is_used[r] = 1;
-    }
-
-    assert(im == M);
-
-    fprintf(stderr, "\n[%d x %d]Aggs: ", max_file_count, variable_count);
-    for (i = 0; i < max_file_count * variable_count; i++)
-      fprintf(stderr, "%d ", random_agg_list[i]);
-    fprintf(stderr, "\n");
-  }
-  MPI_Bcast(random_agg_list, (max_file_count * variable_count), MPI_INT, 0, MPI_COMM_WORLD);
-
-  return;
 }

@@ -3,6 +3,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 ### Added
+- compression and decompression (zfp)
+- particle data interface
+- support for Windows build
+- continuous integration support for Windows (Appveyor)
+- serial file open (for VisIt reader)
+
+### Changed
+- improved testing scripts and autotesting for Travis CI
+
+### Fixed
+- raw read performance
+- zfp library build and deploy in CMake 
+
+## [0.9.1]
+### Added
 - Procedural testing capability using scripts
 that generate and validate the data dumped on disk
 for different configurations

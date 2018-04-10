@@ -1,20 +1,43 @@
-/*****************************************************
- **  PIDX Parallel I/O Library                      **
- **  Copyright (c) 2010-2014 University of Utah     **
- **  Scientific Computing and Imaging Institute     **
- **  72 S Central Campus Drive, Room 3750           **
- **  Salt Lake City, UT 84112                       **
- **                                                 **
- **  PIDX is licensed under the Creative Commons    **
- **  Attribution-NonCommercial-NoDerivatives 4.0    **
- **  International License. See LICENSE.md.         **
- **                                                 **
- **  For information about this project see:        **
- **  http://www.cedmav.com/pidx                     **
- **  or contact: pascucci@sci.utah.edu              **
- **  For support: PIDX-support@visus.net            **
- **                                                 **
- *****************************************************/
+/*
+ * BSD 3-Clause License
+ * 
+ * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Scientific Computing and Imaging Institute of the University of Utah
+ * 
+ * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
+ * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
+ *  
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * 
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * * Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * 
+ * For additional information about this project contact: pascucci@acm.org
+ * For support: support@visus.net
+ * 
+ */
 
 #include "../PIDX_inc.h"
 
@@ -37,7 +60,7 @@ unsigned int getLevelFromBlock (unsigned long long block, int bits_per_block)
     return 0;
   else
     return (unsigned int)floor((log2(getPowerOf2(block)))) + bits_per_block;
-  
+
   return 0;
 }
 
@@ -63,12 +86,12 @@ int isValidBox(int** box)
 
 void Deinterleave(const char* bitmask, int maxh, unsigned long long zaddress, int* point)
 {
-  //Z deinterleave (see papers!)  
-  int n = 0, bit;    
+  //Z deinterleave (see papers!)
+  int n = 0, bit;
   int* cnt_point = (int*)malloc(PIDX_MAX_DIMENSIONS*sizeof(int));
   memset(cnt_point, 0, PIDX_MAX_DIMENSIONS*sizeof(int));
 
-  for (;zaddress;zaddress >>= 1,++n,maxh--) 
+  for (;zaddress;zaddress >>= 1,++n,maxh--)
   {
     bit=bitmask[maxh];
     point[bit] |= (zaddress & 1) << cnt_point[bit];
@@ -85,7 +108,7 @@ unsigned long long ZBitmask(const char* bitmask,int maxh)
 
 unsigned long long ZStart(const char* bitmask,int maxh,int BlockingH)
 {
-  if (!BlockingH) 
+  if (!BlockingH)
     return 0;
   assert(BlockingH>=1 && BlockingH<=maxh);
   return ((unsigned long long)1)<<(maxh-BlockingH);
@@ -93,7 +116,7 @@ unsigned long long ZStart(const char* bitmask,int maxh,int BlockingH)
 
 unsigned long long ZEnd(const char* bitmask,int maxh,int BlockingH)
 {
-  if (!BlockingH) 
+  if (!BlockingH)
     return 0;
   assert(BlockingH>=1 && BlockingH<=maxh);
   return (ZBitmask(bitmask,maxh)-1)-(ZStart(bitmask,maxh,BlockingH)-1);
@@ -104,7 +127,7 @@ void ZDelta(const char* bitmask, int maxh, int BlockingH, int* point)
   int K, bit;
   for(K = 0; K < PIDX_MAX_DIMENSIONS; K++)
     point[K] = 1;
-  
+
   if (!BlockingH) return;
   assert(BlockingH>=1 && BlockingH<=maxh);
   for (K=maxh;K>=BlockingH;K--)
@@ -117,7 +140,7 @@ void ZDelta(const char* bitmask, int maxh, int BlockingH, int* point)
 void GetBoxIntersection(int** inputBox1, int** inputBox2, int** outputBox)
 {
   //returns the intersection of two boxes
-  int i;      
+  int i;
   for(i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
   {
     outputBox[0][i]=Max2ab(inputBox1[0][i], inputBox2[0][i]);
@@ -132,9 +155,9 @@ int** AlignEx(int** box, int* p0, int* delta)
     return box;
   for( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
   {
-    mod=(box[0][i]-p0[i]) % delta[i]; 
+    mod=(box[0][i]-p0[i]) % delta[i];
     if (mod) box[0][i]+=(delta[i]-mod);
-    mod=(box[1][i]-p0[i]) % delta[i]; 
+    mod=(box[1][i]-p0[i]) % delta[i];
     if (mod) box[1][i]-=mod;
   }
   return box;
@@ -143,12 +166,14 @@ int** AlignEx(int** box, int* p0, int* delta)
 void revstr(char* str)
 {
   unsigned long long i;
-  char cpstr[strlen(str)+1];
+  char* cpstr = (char*)malloc(strlen(str)+1);
+  //char cpstr[strlen(str)+1];
   for(i=0; i < (int)strlen(str); i++)
     cpstr[i] = str[strlen(str)-i-1];
-  
+
   cpstr[i] = '\0';
   strcpy(str, cpstr);
+  free(cpstr);
 }
 
 void GuessBitmaskPattern(char* _bits, Point3D dims)
@@ -156,7 +181,7 @@ void GuessBitmaskPattern(char* _bits, Point3D dims)
   int D,N,ordered;
   int dim = 1;
   char* p=_bits;
-	      
+
   Point3D id,sorted_id;
 
   *p++='V';
@@ -184,7 +209,7 @@ void GuessBitmaskPattern(char* _bits, Point3D dims)
       }
     }
   }
-  
+
   For(D)
   {
     //order in DESC order
@@ -519,7 +544,7 @@ static void freeBox(int** box)
   box[0] = 0;
   free(box[1]);
   box[1] = 0;
-  
+
   free(box);
   box = 0;
 }
@@ -529,7 +554,7 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
   int** alignedBox;
   int* h_delta;
   int** h_box;
-  
+
   if (!isValidBox(userBox))
     return;
 
@@ -538,18 +563,18 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
 
   h_delta = (int*)malloc(PIDX_MAX_DIMENSIONS *sizeof(int));
   memset(h_delta, 0, PIDX_MAX_DIMENSIONS *sizeof(int));
-  
+
   ZDelta(bitmask,maxh,H, h_delta);
-  
+
   //ZBox
   h_box = (int**)malloc(2* sizeof(int*));
   memset(h_box, 0, 2* sizeof(int*));
-  
+
   h_box[0] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
   h_box[1] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
   memset(h_box[0], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
   memset(h_box[1], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
-  
+
   if(!H)
   {
     h_box[0][0] = h_box[0][1] = h_box[0][2] = 0;
@@ -561,17 +586,17 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
     Deinterleave(bitmask,maxh,ZStart(bitmask,maxh,H), h_box[0]);
     Deinterleave(bitmask,maxh,ZEnd  (bitmask,maxh,H), h_box[1]);
   }
-  
+
   alignedBox = (int**)malloc(2* sizeof(int*));
   memset(alignedBox, 0, 2* sizeof(int*));
   alignedBox[0] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
   alignedBox[1] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
   memset(alignedBox[0], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
   memset(alignedBox[1], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
-  
+
   //calculate intersection of the query with current H box
   GetBoxIntersection(userBox, h_box, alignedBox);
-  
+
   //the box is not valid
   if (!isValidBox(alignedBox))
   {
@@ -582,10 +607,10 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
   }
 
   alignedBox = AlignEx(alignedBox, h_box[0], h_delta);
-  
+
   //invalid box
   if (!isValidBox(alignedBox))
-  {  
+  {
     freeBox(h_box);
     freeBox(alignedBox);
     free(h_delta);
@@ -598,7 +623,7 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
 
   memcpy(a_offset[H], alignedBox[0], PIDX_MAX_DIMENSIONS * sizeof(int));
   memcpy(a_count[H], alignedBox[1], PIDX_MAX_DIMENSIONS * sizeof(int));
-  
+
   freeBox(h_box);
   freeBox(alignedBox);
   free(h_delta);
@@ -611,9 +636,9 @@ int RegExBitmaskBit(const char* bitmask_pattern,int N)
   int S, L;
   assert(bitmask_pattern[0]=='V');
 
-  if (!N) 
+  if (!N)
     return bitmask_pattern[0];
-  
+
   if ((OpenRegEx=strchr(bitmask_pattern,'{')))
   {
     S = 1+OpenRegEx-bitmask_pattern;
@@ -630,12 +655,12 @@ int RegExBitmaskBit(const char* bitmask_pattern,int N)
 void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, unsigned long long* xyz)
 {
   unsigned long long lastbitmask=((unsigned long long)1)<<maxh;
-  
+
   hzaddress <<= 1;
   hzaddress  |= 1;
   while ((lastbitmask & hzaddress) == 0) hzaddress <<= 1;
     hzaddress &= lastbitmask - 1;
-  
+
   Point3D cnt;
   Point3D p  ;
   int n = 0;
@@ -643,7 +668,7 @@ void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, uns
   memset(&cnt,0,sizeof(Point3D));
   memset(&p  ,0,sizeof(Point3D));
 
-  for (;hzaddress; hzaddress >>= 1,++n, maxh--) 
+  for (;hzaddress; hzaddress >>= 1,++n, maxh--)
   {
     int bit= bitmask[maxh];
     PGET(p,bit) |= (hzaddress & 1) << PGET(cnt,bit);
@@ -668,7 +693,7 @@ unsigned long long xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz)
     zaddress |= ((unsigned long long)PGET(xyz,bit) & 1) << cnt;
     PGET(xyz,bit) >>= 1;
   }
-  
+
   unsigned long long lastbitmask=((unsigned long long)1)<<temp_maxh;
   zaddress |= lastbitmask;
   while (!(1 & zaddress)) zaddress >>= 1;
@@ -706,13 +731,12 @@ int VisusSplitFilename(const char* filename,char* dirname,char* basename)
 /// Returns elapsed time
 double PIDX_get_time()
 {
-#if PIDX_HAVE_MPI
   return MPI_Wtime();
-#else
-  struct timeval temp;
-  gettimeofday(&temp, NULL);
-  return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
-#endif
+
+//  struct timeval temp;
+//  gettimeofday(&temp, NULL);
+//  return (double)(temp.tv_sec) + (double)(temp.tv_usec)/1000000.0;
+
 }
 
 
@@ -896,3 +920,236 @@ void intersect_grid(Point3D vol_from, Point3D vol_to, Point3D from, Point3D to, 
     return;// output_from <= output_to;
 }
 #undef min
+
+
+PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int* bits)
+{
+    if (strcmp(type, INT8) == 0)
+    {
+      *bits = 8;
+      *values = 1;
+    }
+    else if (strcmp(type, INT8_GA) == 0)
+    {
+      *bits = 8;
+      *values = 2;
+    }
+    else if (strcmp(type, INT8_RGB) == 0)
+    {
+      *bits = 8;
+      *values = 3;
+    }
+    else if (strcmp(type, INT8_RGBA) == 0)
+    {
+      *bits = 8;
+      *values = 4;
+    }
+
+    else if (strcmp(type, UINT8) == 0)
+    {
+      *bits = 8;
+      *values = 1;
+    }
+    else if (strcmp(type, UINT8_GA) == 0)
+    {
+      *bits = 8;
+      *values = 2;
+    }
+    else if (strcmp(type, UINT8_RGB) == 0)
+    {
+      *bits = 8;
+      *values = 3;
+    }
+    else if (strcmp(type, UINT8_RGBA) == 0)
+    {
+      *bits = 8;
+      *values = 4;
+    }
+
+    else if (strcmp(type, INT16) == 0)
+    {
+      *bits = 16;
+      *values = 1;
+    }
+    else if (strcmp(type, INT16_GA) == 0)
+    {
+      *bits = 16;
+      *values = 2;
+    }
+    else if (strcmp(type, INT16_RGB) == 0)
+    {
+      *bits = 16;
+      *values = 3;
+    }
+    else if (strcmp(type, INT16_RGBA) == 0)
+    {
+      *bits = 16;
+      *values = 4;
+    }
+
+    else if (strcmp(type, UINT16) == 0)
+    {
+      *bits = 16;
+      *values = 1;
+    }
+    else if (strcmp(type, UINT16_GA) == 0)
+    {
+      *bits = 16;
+      *values = 2;
+    }
+    else if (strcmp(type, UINT16_RGB) == 0)
+    {
+      *bits = 16;
+      *values = 3;
+    }
+    else if (strcmp(type, UINT16_RGBA) == 0)
+    {
+      *bits = 16;
+      *values = 4;
+    }
+
+    else if (strcmp(type, INT32) == 0)
+    {
+      *bits = 32;
+      *values = 1;
+    }
+    else if (strcmp(type, INT32_GA) == 0)
+    {
+      *bits = 32;
+      *values = 2;
+    }
+    else if (strcmp(type, INT32_RGB) == 0)
+    {
+      *bits = 32;
+      *values = 3;
+    }
+    else if (strcmp(type, INT32_RGBA) == 0)
+    {
+      *bits = 32;
+      *values = 4;
+    }
+
+    else if (strcmp(type, UINT32) == 0)
+    {
+      *bits = 32;
+      *values = 1;
+    }
+    else if (strcmp(type, UINT32_GA) == 0)
+    {
+      *bits = 32;
+      *values = 2;
+    }
+    else if (strcmp(type, UINT32_RGB) == 0)
+    {
+      *bits = 32;
+      *values = 3;
+    }
+    else if (strcmp(type, UINT32_RGBA) == 0)
+    {
+      *bits = 32;
+      *values = 4;
+    }
+
+    else if (strcmp(type, INT64) == 0)
+    {
+      *bits = 64;
+      *values = 1;
+    }
+    else if (strcmp(type, INT64_GA) == 0)
+    {
+      *bits = 64;
+      *values = 2;
+    }
+    else if (strcmp(type, INT64_RGB) == 0)
+    {
+      *bits = 64;
+      *values = 3;
+    }
+    else if (strcmp(type, INT64_RGBA) == 0)
+    {
+      *bits = 64;
+      *values = 4;
+    }
+
+    else if (strcmp(type, UINT64) == 0)
+    {
+      *bits = 64;
+      *values = 1;
+    }
+    else if (strcmp(type, UINT64_GA) == 0)
+    {
+      *bits = 64;
+      *values = 2;
+    }
+    else if (strcmp(type, UINT64_RGB) == 0)
+    {
+      *values = 3;
+      *bits = 64;
+    }
+    else if (strcmp(type, UINT64_RGBA) == 0)
+    {
+      *values = 4;
+      *bits = 64;
+    }
+
+    else if (strcmp(type, FLOAT32) == 0)
+    {
+      *values = 1;
+      *bits = 32;
+    }
+    else if (strcmp(type, FLOAT32_GA) == 0)
+    {
+      *values = 2;
+      *bits = 32;
+    }
+    else if (strcmp(type, FLOAT32_RGB) == 0)
+    {
+      *values = 3;
+      *bits = 32;
+    }
+    else if (strcmp(type, FLOAT32_RGBA) == 0)
+    {
+      *values = 4;
+      *bits = 32;
+    }
+    else if (strcmp(type, FLOAT32_9TENSOR) == 0)
+    {
+      *values = 9;
+      *bits = 32;
+    }
+
+    else if (strcmp(type, FLOAT64) == 0)
+    {
+      *values = 1;
+      *bits = 64;
+    }
+    else if (strcmp(type, FLOAT64_GA) == 0)
+    {
+      *values = 2;
+      *bits = 64;
+    }
+    else if (strcmp(type, FLOAT64_RGB) == 0)
+    {
+      *values = 3;
+      *bits = 64;
+    }
+    else if (strcmp(type, FLOAT64_RGBA) == 0)
+    {
+      *values = 4;
+      *bits = 64;
+    }
+    else if (strcmp(type, FLOAT64_7STENCIL) == 0)
+    {
+      *values = 7;
+      *bits = 64;
+    }
+    else if (strcmp(type, FLOAT64_9TENSOR) == 0)
+    {
+      *values = 9;
+      *bits = 64;
+    }
+    else
+      *values = 0;
+
+    return PIDX_success;
+}
