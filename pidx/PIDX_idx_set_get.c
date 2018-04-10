@@ -382,6 +382,9 @@ PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compr
   if (!file)
     return PIDX_err_file;
 
+  if (file->idx->compression_type == PIDX_CHUNKING_ONLY)
+    return PIDX_success;
+
   //if (file->idx->compression_type != PIDX_CHUNKING_ZFP)
   //  return PIDX_err_unsupported_compression_type;
 

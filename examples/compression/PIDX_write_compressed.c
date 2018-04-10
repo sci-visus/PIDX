@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     if (ret != PIDX_success)  report_error("PIDX_set_variable_count", __FILE__, __LINE__);
 
     /* PIDX compression related calls */
-    PIDX_set_compression_type(file, 1);
+    PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
     PIDX_set_lossy_compression_bit_rate(file, compression_bit_rate);
 
     char var_name[512];

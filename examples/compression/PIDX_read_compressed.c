@@ -38,7 +38,6 @@ PIDX_variable variable;
 char type_name[512];
 static PIDX_point global_bounds;
 unsigned char *data;
-static int compression_bit_rate = 64;
 
 static char *usage = "Serial Usage: ./idx_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
 "Parallel Usage: mpirun -n 8 ./idx_read -g 32x32x32 -l 16x16x16 -f -v 0 input_idx_file_name\n"
@@ -139,10 +138,6 @@ static void parse_args(int argc, char **argv)
           terminate_with_error_msg("Invalid variable file\n%s", usage);
         break;
         
-      case('b'):
-        sscanf(optarg, "%d", &compression_bit_rate);
-        break;
-        
       default:
         terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
@@ -163,11 +158,6 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   // Get the total number of variables
   PIDX_get_variable_count(file, &variable_count);
-  
-  /* PIDX compression related calls */
-  PIDX_set_compression_type(file, 1);
-  PIDX_set_lossy_compression_bit_rate(file, compression_bit_rate);
-
 }
 
 //----------------------------------------------------------------
