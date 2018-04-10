@@ -1,4 +1,6 @@
 /*
+ * BSD 3-Clause License
+ * 
  * Copyright (c) 2010-2018 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
