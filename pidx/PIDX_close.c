@@ -34,7 +34,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
   if (file->idx->variable_count <= 0)
     return PIDX_err_variable;
 
-  file->io = PIDX_io_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg);
+  file->io = PIDX_io_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, file->idx_cache);
   if (file->io == NULL)
     return PIDX_err_flush;
 
@@ -63,6 +63,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
+
     int lvi = var_grp->local_variable_index;
     int lvc = var_grp->local_variable_count;
     PIDX_debug_output(file, i, lvi, (lvi + lvc), file->idx->io_type);
@@ -75,10 +76,10 @@ PIDX_return_code PIDX_flush(PIDX_file file)
     return PIDX_err_io;
 
 
+  int j = 0, p = 0;
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
-    /*
     for (j = var_grp->local_variable_index; j < var_grp->local_variable_index + var_grp->local_variable_count; j++)
     {
       for(p = 0; p < var_grp->variable[j]->sim_patch_count; p++)
@@ -87,7 +88,6 @@ PIDX_return_code PIDX_flush(PIDX_file file)
         var_grp->variable[j]->sim_patch[p] = 0;
       }
     }
-    */
     var_grp->local_variable_index = var_grp->variable_index_tracker;
     var_grp->local_variable_count = 0;
   }
@@ -139,22 +139,13 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
   PIDX_dump_state_finalize(file);
 
-  for (i = 0; i < file->idx_d->max_file_count; i++)
-  {
-    free(file->idx_d->block_bitmap[i]);
-    file->idx_d->block_bitmap[i] = 0;
-  }
-  free(file->idx_d->block_bitmap);
-  file->idx_d->block_bitmap = 0;
-
-  free(file->idx->random_agg_list);
-  file->idx->random_agg_list = 0;
-
-  free(file->idx);                  file->idx = 0;
-  free(file->idx_d->time);          file->idx_d->time = 0;
-  free(file->idx_d);                file->idx_d = 0;
-  free(file->idx_dbg);              file->idx_dbg = 0;
-  free(file->idx_c);                file->idx_c = 0;
+  free(file->idx);
+  free(file->idx_d->restructured_grid);
+  free(file->idx_d->time);
+  free(file->idx_d);
+  free(file->idx_dbg);
+  free(file->idx_c);
+  free(file->idx_cache);
 
   free(file);
 
@@ -164,8 +155,9 @@ PIDX_return_code PIDX_close(PIDX_file file)
 
 static int approx_maxh(PIDX_file file)
 {
-  int maxh = log2(getPowerOf2(file->idx->bounds[0])) * log2(getPowerOf2(file->idx->bounds[1])) * log2(getPowerOf2(file->idx->bounds[2])) + 1;
+  int maxh = log2(getPowerOf2(file->idx->bounds[0])) + log2(getPowerOf2(file->idx->bounds[1])) + log2(getPowerOf2(file->idx->bounds[2])) + 1;
 
+  //fprintf(stderr, "[%d %d %d] mh - bpb + bpf %d - %d + %d\n", (int)log2(getPowerOf2(file->idx->bounds[0])), file->idx->bounds[1], file->idx->bounds[2], maxh, file->idx->bits_per_block, + (int)log2(file->idx->blocks_per_file));
   int lc = maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
   if (lc < 1)
     return 1;
@@ -182,33 +174,27 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 #if DETAIL_OUTPUT
   if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
   {
-    if (file->idx->io_type == PIDX_RAW_IO)
+#if 0
+    if (file->idx->io_type == PIDX_io_type::PIDX_RAW_IO)
       fprintf(stderr, "PIDX_RAW_IO %s\n", file->idx->filename);
-    else if (file->idx->io_type == PIDX_IDX_IO)
+    else if (file->idx->io_type == PIDX_io_type::PIDX_IDX_IO)
       fprintf(stderr, "PIDX_IDX_IO %s\n", file->idx->filename);
-    else if (file->idx->io_type == PIDX_LOCAL_PARTITION_IDX_IO)
+    else if (file->idx->io_type == PIDX_io_type::PIDX_LOCAL_PARTITION_IDX_IO)
       fprintf(stderr, "PIDX_LOCAL_PARTITION_IDX_IO %s\n", file->idx->filename);
-    else if (file->idx->io_type == PIDX_GLOBAL_PARTITION_IDX_IO)
+    else if (file->idx->io_type == PIDX_io_type::PIDX_GLOBAL_PARTITION_IDX_IO)
       fprintf(stderr, "PIDX_GLOBAL_PARTITION_IDX_IO %s\n", file->idx->filename);
+#endif
 
     if (file->idx->io_type != PIDX_RAW_IO)
     {
       fprintf(stderr, "[%d : %d %d] [%d %d %d : %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count);
-
-      if (file->idx->reg_box_set == PIDX_CLOSEST_POWER_TWO)
-        fprintf(stderr, "Box set using PIDX_CLOSEST_POWER_TWO %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-      else if (file->idx->reg_box_set == PIDX_USER_RST_BOX)
-        fprintf(stderr, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-      else if (file->idx->reg_box_set == PIDX_BOX_PER_PROCESS)
-        fprintf(stderr, "Box set automatic for box per process case (PIDX_BOX_PER_PROCESS) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
-      else if (file->idx->reg_box_set == PIDX_BOX_FROM_BITSTRING)
-        fprintf(stderr, "Box set by bitstring (PIDX_BOX_FROM_BITSTRING) %d %d %d\n", (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2]);
+      fprintf(stderr, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx_d->restructured_grid->patch_size[0], (int)file->idx_d->restructured_grid->patch_size[1], (int)file->idx_d->restructured_grid->patch_size[2]);
 
       fprintf(stderr, "Compression Bit rate set to %f\n", file->idx->compression_bit_rate);
 
-      if (file->idx->endian == 1)
+      if (file->idx->endian == PIDX_LITTLE_ENDIAN)
         fprintf(stderr, "Little Endian | ");
-      else if (file->idx->endian == 0)
+      else if (file->idx->endian == PIDX_BIG_ENDIAN)
         fprintf(stderr, "Big Endian | ");
 
       if (file->idx->flip_endian == 1)
@@ -217,9 +203,9 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
         fprintf(stderr, "Endian Flipping Not Done\n");
 
       fprintf(stderr, "Partition count %d = %d x %d x %d Partitio size = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
-      fprintf(stderr, "Rst = %d Comp = %d\n", file->idx->enable_rst, file->idx->compression_type);
+      fprintf(stderr, "Comp = %d\n", file->idx->compression_type);
       fprintf(stderr, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx_d->max_file_count);
-      fprintf(stderr, "Shared Block level : Partition level : maxh = %d : %d : %d\n", file->idx_d->shared_block_level, file->idx_d->total_partiton_level, file->idx_d->maxh);
+      fprintf(stderr, "Partition level : maxh = %d : %d\n", file->idx_d->total_partiton_level, file->idx_d->maxh);
     }
   }
 #endif
@@ -339,26 +325,15 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 #endif
 
           double hz_io = 0;
-          for (i = file->idx->variable_grp[gi]->agg_l_shared; i < file->idx->variable_grp[gi]->shared_end_layout_index ; i++)
+          for (i = file->idx->variable_grp[gi]->agg_level; i < file->idx->variable_grp[gi]->shared_layout_count + file->idx->variable_grp[gi]->nshared_layout_count ; i++)
           {
             hz_io = time->hz_io_end[gi][si][i] - time->hz_io_start[gi][si][i];
             hz_io_all = hz_io_all + hz_io;
 
 #if DETAIL_OUTPUT
-            fprintf(stderr, "[HZ I/O S %d %d]  :[%d] [%d] %.4f [%.4f] \n", file->idx->variable_grp[gi]->agg_l_shared, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, hz_io, hz_io_all);
+            fprintf(stderr, "[HZ I/O S %d %d]  :[%d] [%d] %.4f [%.4f] \n", file->idx->variable_grp[gi]->agg_level, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, hz_io, hz_io_all);
 #endif
           }
-
-          for (i = file->idx->variable_grp[gi]->agg_l_nshared; i < file->idx->variable_grp[gi]->nshared_end_layout_index ; i++)
-          {
-            hz_io = time->hz_io_end[gi][si][i] - time->hz_io_start[gi][si][i];
-            hz_io_all = hz_io_all + hz_io;
-
-#if DETAIL_OUTPUT
-            fprintf(stderr, "[HZ I/O N %d %d]  :[%d] [%d] %.4f [%.4f]\n", file->idx->variable_grp[gi]->agg_l_nshared, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, hz_io, hz_io_all);
-#endif
-          }
-
         }
 
         double w_comm_s_x_odd = 0, w_comp_s_x_odd = 0, w_comm_s_x_even = 0, w_comp_s_x_even;
@@ -411,6 +386,25 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
         }
 
         double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total = 0, agg_cmp = 0;
+        for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->agg_level ; i++)
+        {
+          agg_init = time->agg_init_end[gi][si][i] - time->agg_init_start[gi][si][i];
+          agg_meta = time->agg_meta_end[gi][si][i] - time->agg_meta_start[gi][si][i];
+          agg_buf = time->agg_buf_end[gi][si][i] - time->agg_buf_start[gi][si][i];
+          agg = time->agg_end[gi][si][i] - time->agg_start[gi][si][i];
+          agg_cmp = time->agg_compress_end[gi][si][i] - time->agg_compress_start[gi][si][i];
+          agg_meta_cleanup = time->agg_meta_cleanup_end[gi][si][i] - time->agg_meta_cleanup_start[gi][si][i];
+          agg_total = agg_init + agg_meta + agg_buf + agg + agg_cmp + agg_meta_cleanup;
+          agg_all = agg_all + agg_total;
+
+          //fprintf(stderr, "[S] [%d %d] Agg meta + Agg Buf + Agg + AGG I/O + Per-Process I/O = %f + %f + %f + %f + 0 = %f\n", si, i, agg_init + agg_meta, agg_buf, agg, agg_meta_cleanup, agg_total);
+
+#if DETAIL_OUTPUT
+          fprintf(stderr, "[AGG S %d %d]   :[%d] [%d] %f + %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->shared_start_layout_index, file->idx->variable_grp[gi]->shared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_cmp, agg_meta_cleanup, agg_total, agg_all);
+#endif
+        }
+
+#if 0
         for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->agg_l_shared ; i++)
         {
           agg_init = time->agg_init_end[gi][si][i] - time->agg_init_start[gi][si][i];
@@ -447,6 +441,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           fprintf(stderr, "[AGG N %d %d]   :[%d] [%d] %f + %f + %f + %f + %f + %f = %f [%f]\n", file->idx->variable_grp[gi]->nshared_start_layout_index, file->idx->variable_grp[gi]->nshared_end_layout_index, si, i, agg_init, agg_meta, agg_buf, agg, agg_cmp, agg_meta_cleanup, agg_total, agg_all);
 #endif
         }
+#endif
 
         io = time->io_end[gi][si] - time->io_start[gi][si];
         io_all = io_all + io;
@@ -458,15 +453,10 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + w_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
 
 #if DETAIL_OUTPUT
-      //if (file->idx->compression_type == PIDX_CHUNKING_ZFP_63_COEFFICIENT)
       fprintf(stderr, "XIRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #else
-      fprintf(stderr, "[%s %d %d (%d %d %d) (%d %d %d)] IRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2], pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      fprintf(stderr, "[%s %d %d (%d %d %d)] IRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #endif
-
-      //if (file->idx->compression_type == PIDX_CHUNKING_AVERAGE)
-      //fprintf(stderr, "YIRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f] %f %f\n", pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time, (time->a2 - time->a1), (time->a4 - time->a3));
-
     }
   }
   else
@@ -515,7 +505,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       }
 
       //grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all;
-      fprintf(stderr, "[RAW] [%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx->reg_patch_size[0], (int)file->idx->reg_patch_size[1], (int)file->idx->reg_patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
+      fprintf(stderr, "[RAW] [%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx_d->restructured_grid->patch_size[0], (int)file->idx_d->restructured_grid->patch_size[1], (int)file->idx_d->restructured_grid->patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
              group_total,
              rst_all,
              r1 + r2 + r3,

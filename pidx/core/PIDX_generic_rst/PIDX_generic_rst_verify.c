@@ -28,13 +28,13 @@
  */
 
 #include "../../PIDX_inc.h"
-#if 1
+
 PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
 {
-#if !SIMULATE_IO
-  int i, j, k, v = 0, s = 0, m, n, bytes_for_datatype;
+  int i, j, k, v = 0, s = 0, n, bytes_for_datatype;
   unsigned long long element_count = 0;
   unsigned long long lost_element_count = 0;
+  unsigned long long global_volume;
 
   float fvalue_1, fvalue_2;
   double dvalue_1, dvalue_2;
@@ -43,18 +43,21 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
 
   unsigned long long *bounds = rst_id->idx->bounds;
   PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
+  PIDX_variable var0 = var_grp->variable[rst_id->first_index];
+
+  // This process does not have any patch to process (after restructuring)
+  if (var0->patch_group_count == 0)
+      goto verify;
 
   for(v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = var_grp->variable[v];
     bytes_for_datatype = var->bpv / 8;
 
-    for (m = 0; m < var->patch_group_count; m++)
-    {
-      for(n = 0; n < var->rst_patch_group[m]->count; n++)
+      for(n = 0; n < var->rst_patch_group->count; n++)
       {
-        unsigned long long *count_ptr = var->rst_patch_group[m]->patch[n]->size;
-        unsigned long long *offset_ptr = var->rst_patch_group[m]->patch[n]->offset;
+        unsigned long long *count_ptr = var->rst_patch_group->patch[n]->size;
+        unsigned long long *offset_ptr = var->rst_patch_group->patch[n]->offset;
         vol = vol + (count_ptr[0] * count_ptr[1] * count_ptr[2]);
 
         for (k = 0; k < count_ptr[2]; k++)
@@ -68,14 +71,13 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
                 if (strcmp(var->type_name, FLOAT32) == 0)
                 {
                   fvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i;
-                  memcpy(&fvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
-                  //fprintf(stderr, "VAL: %f %f\n", fvalue_1, fvalue_2);
+                  memcpy(&fvalue_2, var->rst_patch_group->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
                   check_bit = check_bit && (fvalue_1 == fvalue_2);
                 }
                 else if (strcmp(var->type_name, FLOAT64) == 0)
                 {
                   dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_d->color * bounds[0] * bounds[1] * bounds[2]);
-                  memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
+                  memcpy(&dvalue_2, var->rst_patch_group->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
                   check_bit = check_bit && (dvalue_1 == dvalue_2);
                 }
@@ -85,7 +87,7 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
                   {
                     dvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_d->color * bounds[0] * bounds[1] * bounds[2]);
 
-                    memcpy(&dvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * 3) + s) * sizeof(double), sizeof(double));
+                    memcpy(&dvalue_2, var->rst_patch_group->patch[n]->buffer + ((index * 3) + s) * sizeof(double), sizeof(double));
                     check_bit = check_bit && (dvalue_1  == dvalue_2);
                   }
                 }
@@ -93,7 +95,7 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
                 {
                   uvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_d->color * bounds[0] * bounds[1] * bounds[2]);
 
-                  memcpy(&uvalue_2, var->rst_patch_group[m]->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
+                  memcpy(&uvalue_2, var->rst_patch_group->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
                   check_bit = check_bit && (uvalue_1 == uvalue_2);
                 }
@@ -109,18 +111,10 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
               }
             }
       }
-    }
   }
 
-  unsigned long long global_volume;
-#if PIDX_HAVE_MPI
-  if (rst_id->idx_d->parallel_mode == 1)
-    MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_c->global_comm);
-  else
-    global_volume = element_count;
-#else
-  global_volume = element_count;
-#endif
+  verify:
+  MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_c->global_comm);
 
   if (global_volume != (unsigned long long) bounds[0] * bounds[1] * bounds[2] * (rst_id->last_index - rst_id->first_index + 1))
   {
@@ -135,7 +129,6 @@ PIDX_return_code HELPER_generic_rst(PIDX_generic_rst_id rst_id)
   else
     if (rst_id->idx_c->grank == 0)
       fprintf(stderr, "[RST Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_d->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
-#endif
+
   return PIDX_success;
 }
-#endif

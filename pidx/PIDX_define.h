@@ -1,14 +1,16 @@
 #ifndef __PIDX_DEFINE_H
 #define __PIDX_DEFINE_H
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#define PIDX_CURR_METADATA_VERSION "6.1"
+  
 #define PIDX_MAX_DIMENSIONS 3
+#define MULTI_BOX 0
+#define PIDX_STRING_SIZE 512
 
-#define PIDX_HAVE_MPI 1
 #define PIDX_HAVE_ZFP 1
 #define PIDX_HAVE_PMT 0
 #define PIDX_HAVE_VTK 0
@@ -31,21 +33,12 @@ extern "C" {
 #endif
 #endif
 
-
-
 // PIDX write and read mode
 // PIDX_READ - Read only mode
 // PIDX_WRITE - Write only mode
 enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
 
-
-// Types of restructuring boxes
-// PIDX_USER_RST_BOX - Box size ste by user/application
-// PIDX_BOX_PER_PROCESS - Box size set automatically such that at the end of restructuring every process has at max only one box to process
-// PIDX_BOX_FROM_BITSTRING - Box size set automatically suing the bitstring
-// PIDX_CLOSEST_POWER_TWO - Box size is closest power in two in every dimension of the per process box size
-enum RST_BOX {PIDX_USER_RST_BOX, PIDX_BOX_PER_PROCESS, PIDX_BOX_FROM_BITSTRING, PIDX_CLOSEST_POWER_TWO, PIDX_UNIFORMLY_DISTRIBUTED_BOX, PIDX_WAVELET_BOX};
 
 
 
@@ -72,10 +65,6 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 #define PIDX_NO_COMPRESSION 0
 #define PIDX_CHUNKING_ONLY 1
 #define PIDX_CHUNKING_ZFP 2
-#define PIDX_CHUNKING_ZFP_ACCURACY 3
-#define PIDX_ZFP_COMPRESSION 4
-#define PIDX_CHUNKING_ZFP_63_COEFFICIENT 5
-#define PIDX_CHUNKING_AVERAGE 6
 
 // Data in buffer is in row order
 #define PIDX_row_major                           0
@@ -84,25 +73,21 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 #define PIDX_column_major                        1
 
 
-// Writes data in IDX format
-#define PIDX_IDX_IO                                   1
+enum PIDX_io_type {
+  PIDX_IDX_IO=0,                    /// Writes data in IDX format
+  PIDX_GLOBAL_PARTITION_IDX_IO=1,   /// Writes data in partitioned space with global indexing
+  PIDX_LOCAL_PARTITION_IDX_IO=2,    /// Writes data in partitioned space with local indexing
+  PIDX_RAW_IO=3,                    /// Writes data in raw format
+  PIDX_WAVELET_IO=4                 /// Calls wavelet computation code
+};
 
-// Writes data in partitioned space with global indexing
-#define PIDX_GLOBAL_PARTITION_IDX_IO                  2
-
-// Writes data in partitioned space with local indexing
-#define PIDX_LOCAL_PARTITION_IDX_IO                   3
-
-// Writes data in raw format
-#define PIDX_RAW_IO                                   4
-
+enum PIDX_endian_type{
+  PIDX_BIG_ENDIAN=0,                     /// Use big endianess
+  PIDX_LITTLE_ENDIAN=1                   /// Use little endianess
+};
+  
 // Calls merge tree analysis code (in-situ mode)
 #define PIDX_MERGE_TREE_ANALYSIS                      5
-
-// Calls wavelet computation code
-#define PIDX_WAVELET_IO                               6
-
-
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256
@@ -177,12 +162,14 @@ extern PIDX_data_type FLOAT32;
 extern PIDX_data_type FLOAT32_GA;
 extern PIDX_data_type FLOAT32_RGB;
 extern PIDX_data_type FLOAT32_RGBA;
+extern PIDX_data_type FLOAT32_9TENSOR;
 
 extern PIDX_data_type FLOAT64;
 extern PIDX_data_type FLOAT64_GA;
 extern PIDX_data_type FLOAT64_RGB;
 extern PIDX_data_type FLOAT64_RGBA;
 extern PIDX_data_type FLOAT64_7STENCIL;
+extern PIDX_data_type FLOAT64_9TENSOR;
 
 #ifdef __cplusplus
 }

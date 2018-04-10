@@ -48,7 +48,6 @@ static int partition_box_size[NUM_DIMS];
 int sub_div[NUM_DIMS];
 static int time_step_count = 1;
 static int variable_count = 1;
-static int bit_string_type = 0;
 static int blocks_per_file = 256;
 static char output_file_template[512];
 static char var_list[512];
@@ -103,7 +102,7 @@ int main(int argc, char **argv)
 
 
 #if 1
-  //rank_0_print("Simulation Data Created\n");
+  rank_0_print("Simulation Data Created\n");
 
   MPI_Barrier(MPI_COMM_WORLD);
   create_pidx_var_point_and_access();
@@ -138,7 +137,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:c:f:t:v:b:a:w:x:p:";
+  char flags[] = "g:l:c:f:t:v:a:w:x:p:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -176,11 +175,6 @@ static void parse_args(int argc, char **argv)
       if (sprintf(var_list, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
       parse_var_list();
-      break;
-
-    case('b'): // bit string type
-      if (sscanf(optarg, "%d", &bit_string_type) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
     case('a'): // blocks per file
@@ -320,8 +314,6 @@ static void calculate_per_process_offsets()
 //----------------------------------------------------------------
 static void create_synthetic_simulation_data()
 {
-  int i1, j1, k1;
-  int index = 0;
   int var = 0;
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
@@ -511,11 +503,10 @@ static void set_pidx_file(int ts)
 
   PIDX_set_process_decomposition(file, global_box_size[X]/local_box_size[X], global_box_size[Y]/local_box_size[Y], global_box_size[Z]/local_box_size[Z]);
   //fprintf(stderr, "XYZ %lld / %lld   %lld / %lld    %lld / %lld\n", global_box_size[X], local_box_size[X], global_box_size[Y], local_box_size[Y], global_box_size[Z], local_box_size[Z]);
-  PIDX_set_partition_size(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
+  PIDX_set_partition_count(file, partition_box_size[0], partition_box_size[1], partition_box_size[2]);
 
   PIDX_set_block_count(file, blocks_per_file);
   PIDX_set_block_size(file, 15);
-  PIDX_set_bit_string_type(file, bit_string_type);
 
   // Selecting idx I/O mode
   PIDX_set_io_mode(file, PIDX_IDX_IO);

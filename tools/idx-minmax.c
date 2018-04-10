@@ -60,7 +60,7 @@ static int bits_per_sample = 0;
 static int values_per_sample = 0;
 static char type_name[512];
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./minmax file_name variable_index time_step_index\n";
+static char *usage = "Serial Usage: ./minmax file_name variable_index\n";
 
                      //"Parallel Usage: mpirun -n 8 ./restart -g 32x32x32 -l 16x16x16 -f output_idx_file_name\n"
                      //"  -g: global dimensions\n"
@@ -334,7 +334,7 @@ static void verify_read_results()
     memcpy(max_temp, data, values_per_sample * sizeof (*min_temp));
   }
 
-  //printf("values_per_sample = %d %d [ %f %f %f ] [ %f %f %f ]\n", values_per_sample, bits_per_sample, min_temp[X], min_temp[Y], min_temp[Z], max_temp[X], max_temp[Y], max_temp[Z]);
+  //fprintf(stderr, "values_per_sample = %d %d [ %f %f %f ] [ %f %f %f ]\n", values_per_sample, bits_per_sample, min_temp[X], min_temp[Y], min_temp[Z], max_temp[X], max_temp[Y], max_temp[Z]);
 
 
   for (k = 0; k < local_box_size[2]; k++)
@@ -426,7 +426,7 @@ static void verify_read_results()
     int_final_max = int_max;
 #endif
     if (rank == 0)
-      printf("[INT] Min %d Max %d\n", int_final_min, int_final_max);
+      fprintf(stderr, "[INT] Min %d Max %d\n", int_final_min, int_final_max);
   }
   else if (strcmp(type_name, FLOAT32) == 0)
   {
@@ -439,7 +439,7 @@ static void verify_read_results()
     float_final_max = float_max;
 #endif
     if (rank == 0)
-      printf("[FLOAT32] Min %.13f Max %f\n", float_final_min, float_final_max);
+      fprintf(stderr, "[FLOAT32] Min %.13f Max %f\n", float_final_min, float_final_max);
   }
   else if (strcmp(type_name, FLOAT64) == 0)
   {
@@ -452,13 +452,13 @@ static void verify_read_results()
     double_final_min = final_min;
 #endif
     if (rank == 0)
-      printf("Min %f Max %f\n", double_final_min, double_final_max);
+      fprintf(stderr, "Min %f Max %f\n", double_final_min, double_final_max);
   }
 
   else if (strcmp(type_name, FLOAT64_RGB) == 0)
   {
     if (rank == 0)
-      printf("Min %f %f %f Max %f %f %f\n", min_temp[0], min_temp[1], min_temp[2], max_temp[0], max_temp[1], max_temp[2]);
+      fprintf(stderr, "Min %f %f %f Max %f %f %f\n", min_temp[0], min_temp[1], min_temp[2], max_temp[0], max_temp[1], max_temp[2]);
 
     free(min_temp);
     free(max_temp);

@@ -17,15 +17,17 @@
 # *****************************************************/
 
 IF (WIN32)
-    MESSAGE(ERROR, "Unsupported platform. PIDX is designed for Unix.")
+  SET(OS_SPECIFIC_LIBS ws2_32)
 ELSE()
   SITE_NAME(HOSTNAME)
 	MESSAGE("Configuring PIDX for ${CMAKE_SYSTEM_NAME} (${CMAKE_SYSTEM})")
 
-  if (NOT CMAKE_BUILD_TYPE)
+  SET(OS_SPECIFIC_LIBS m)
+
+  IF (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Choose the type of build." FORCE)
     set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS "Debug" "Release")
-  endif()
+  ENDIF()
 
   IF (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     ADD_DEFINITIONS(-D_DEBUG=1)

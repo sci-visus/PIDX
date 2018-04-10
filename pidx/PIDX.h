@@ -105,6 +105,35 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 ///
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_point dims, PIDX_file* file);
 
+/*
+ *  Implementation in PIDX_metadata_parse.c
+ */
+// PIDX_metadata_parse parse the metadata .idx file (used by PIDX_file_open)
+//
+// There are different implementations for different versions of the metadata file
+// PIDX_metadata_parse will use the corresponding file_open implementation
+// for the specific version requested
+//
+PIDX_return_code PIDX_metadata_parse(FILE *fp, PIDX_file* file, char* version);
+PIDX_return_code PIDX_metadata_parse_v6_0(FILE *fp, PIDX_file* file);
+PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file);
+
+///
+/// \brief PIDX_serial_file_open
+/// This function reads an existing IDX file in serial
+///
+/// \param filename
+/// \param flags
+/// \param dims
+/// \param file
+/// \return
+///
+PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file);
+
+// There are different implementations for different versions of the metadata file
+// PIDX_file_open will use the corresponding file_open implementation for the specific version
+PIDX_return_code PIDX_serial_file_open_v6(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file);
+PIDX_return_code PIDX_serial_file_open_v7(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file);
 
 
 ///
@@ -141,11 +170,6 @@ PIDX_return_code PIDX_close(PIDX_file file);
 /*
  * Implementation in PIDX_idx_set_get.c
  */
-
-
-PIDX_return_code PIDX_randomized_aggregators(PIDX_file file, int* agg_list, int agg_count);
-
-
 ///
 /// Sets the number of variables in the IDX file.
 /// \param file The IDX file handler.
@@ -272,26 +296,26 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *
 
 
 ///
-/// \brief PIDX_set_partition_size
+/// \brief PIDX_set_partition_count
 /// \param file
 /// \param count_x
 /// \param count_y
 /// \param count_z
 /// \return
 ///
-PIDX_return_code PIDX_set_partition_size(PIDX_file file, int count_x, int count_y, int count_z);
+PIDX_return_code PIDX_set_partition_count(PIDX_file file, int count_x, int count_y, int count_z);
 
 
 
 ///
-/// \brief PIDX_get_partition_size
+/// \brief PIDX_get_partition_count
 /// \param file
 /// \param count_x
 /// \param count_y
 /// \param count_z
 /// \return
 ///
-PIDX_return_code PIDX_get_partition_size(PIDX_file file, int* count_x, int* count_y, int* count_z);
+PIDX_return_code PIDX_get_partition_count(PIDX_file file, int* count_x, int* count_y, int* count_z);
 
 
 
@@ -373,14 +397,6 @@ PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type
 
 
 
-///
-/// \brief PIDX_set_zfp_precisison
-/// \param file
-/// \param precisison
-/// \return
-///
-PIDX_return_code PIDX_set_zfp_precisison(PIDX_file file, float precisison);
-
 
 
 ///
@@ -419,7 +435,7 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 /// \param io_type
 /// \return
 ///
-PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type);
+PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type);
 
 
 
@@ -429,18 +445,7 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, int io_type);
 /// \param io_type
 /// \return
 ///
-PIDX_return_code PIDX_get_io_mode(PIDX_file file, int* io_type);
-
-
-
-
-///
-/// \brief PIDX_set_wavelet_implementation_type
-/// \param file
-/// \param io_type
-/// \return
-///
-PIDX_return_code PIDX_set_wavelet_implementation_type(PIDX_file file, int w_type);
+PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type);
 
 
 
@@ -563,25 +568,6 @@ PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts);
 
 
 
-///
-/// \brief PIDX_set_bit_string_type
-/// \param file
-/// \param bs_type
-/// \return
-///
-PIDX_return_code PIDX_set_bit_string_type(PIDX_file file, int bs_type);
-
-
-
-///
-/// \brief PIDX_get_bit_string_type
-/// \param file
-/// \param bs_type
-/// \return
-///
-PIDX_return_code PIDX_get_bit_string_type(PIDX_file file, int* bs_type);
-
-
 
 ///
 /// \brief PIDX_set_process_decomposition
@@ -604,6 +590,24 @@ PIDX_return_code PIDX_set_process_decomposition(PIDX_file file, int np_x, int np
 /// \return
 ///
 PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* np_y, int* np_z);
+
+
+///
+/// \brief PIDX_set_comm
+/// \param file
+/// \param comm
+/// \return
+///
+PIDX_return_code PIDX_set_comm(PIDX_file file, MPI_Comm comm);
+
+
+///
+/// \brief PIDX_get_comm
+/// \param file
+/// \param comm
+/// \return
+///
+PIDX_return_code PIDX_get_comm(PIDX_file file, MPI_Comm *comm);
 /*
  * Implementation in PIDX_variable.c
  */
@@ -629,6 +633,20 @@ PIDX_return_code PIDX_variable_create(char* variable_name, unsigned int bits_per
 /// \return
 ///
 PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
+
+///
+/// \brief PIDX_variable_write_particle_data_layout
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param read_from_this_buffer
+/// \param number_of_particles
+/// \param data_layout
+/// \return
+///
+PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, int number_of_particles, PIDX_data_layout data_layout);
 
 
 
@@ -765,6 +783,28 @@ PIDX_return_code PIDX_write_variable(PIDX_file file, PIDX_variable variable, PID
 /*
  * Implementation in PIDX_meta_data.c
  */
+///
+/// \brief PIDX_set_meta_data_cache
+/// \param file
+/// \param cache
+/// \return
+///
+PIDX_return_code PIDX_set_meta_data_cache(PIDX_file file, PIDX_metadata_cache cache);
+
+
+
+
+///
+/// \brief PIDX_set_meta_data_cache
+/// \param file
+/// \param cache
+/// \return
+///
+PIDX_return_code PIDX_get_meta_data_cache(PIDX_file file, PIDX_metadata_cache* cache);
+
+
+
+
 ///
 /// Gets the number of boxes.
 /// This function gets the number of boxes written by all the processes.
@@ -910,15 +950,6 @@ PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst);
 /// \return
 ///
 PIDX_return_code PIDX_debug_hz(PIDX_file file, int debug_hz);
-
-
-///
-/// \brief PIDX_disable_rst
-/// \param file
-/// \return
-///
-PIDX_return_code PIDX_disable_rst(PIDX_file file);
-
 
 
 ///

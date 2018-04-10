@@ -47,4 +47,7 @@ struct PIDX_file_descriptor
                                                ///< number of files, files that are ging to be populated
 
   idx_debug idx_dbg;                           ///< Contains flags for debugging
+
+
+  idx_metadata_cache idx_cache;
 };

@@ -25,13 +25,15 @@ ADD_SUBDIRECTORY(comm)
 ADD_SUBDIRECTORY(data_handle)
 ADD_SUBDIRECTORY(core)
 ADD_SUBDIRECTORY(io)
+ADD_SUBDIRECTORY(metadata)
 
-FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./data_handle/*.h ./data_handle/*.c ./core/PIDX_in_situ_interface/*.h ./core/PIDX_in_situ_interface/*.c ./core/PIDX_in_transit_interface/*.h ./core/PIDX_in_transit_interface/*.c ./core/PIDX_agg/*.h ./core/PIDX_agg/*.c ./core/PIDX_shared_block_agg/*.h ./core/PIDX_shared_block_agg/*.c ./core/PIDX_block_rst/*.h ./core/PIDX_block_rst/*.c ./core/PIDX_cmp/*.h ./core/PIDX_cmp/*.c ./core/PIDX_file_io/*.h ./core/PIDX_file_io/*.c ./core/PIDX_header/*.h ./core/PIDX_header/*.c ./core/PIDX_hz/*.h ./core/PIDX_hz/*.c ./core/PIDX_rst/*.h ./core/PIDX_rst/*.c ./core/PIDX_multi_patch_rst/*.h ./core/PIDX_multi_patch_rst/*.c ./core/PIDX_generic_rst/*.h ./core/PIDX_wavelet_rst/*.h ./core/PIDX_wavelet_rst/*.c ./core/PIDX_generic_rst/*.c ./io/*.h ./io/*.c)
+FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./meta_data_access/*.h ./meta_data_access/*.c ./data_handle/*.h ./data_handle/*.c ./core/PIDX_in_transit_interface/*.h ./core/PIDX_in_transit_interface/*.c ./core/PIDX_agg/*.h ./core/PIDX_agg/*.c ./core/PIDX_block_rst/*.h ./core/PIDX_block_rst/*.c ./core/PIDX_cmp/*.h ./core/PIDX_cmp/*.c ./core/PIDX_file_io/*.h ./core/PIDX_file_io/*.c ./core/PIDX_header/*.h ./core/PIDX_header/*.c ./core/PIDX_hz/*.h ./core/PIDX_hz/*.c ./core/PIDX_idx_rst/*.h ./core/PIDX_idx_rst/*.c ./core/PIDX_raw_rst/*.c ./core/PIDX_raw_rst/*.h ./core/PIDX_wavelet/*.h ./core/PIDX_wavelet/*.c ./io/*.h ./io/*.c ./io/raw/*.c ./io/raw/*.h ./io/idx/*.c ./io/idx/*.h ./io/idx/local_partition/*.c ./io/idx/no_partition/*.c ./io/idx/serial/*.c ./io/idx/particle/*.c metadata/*.h metadata/*.c)
 
 #FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./data_handle/*.h ./data_handle/*.c ./core/PIDX_agg/PIDX_global_agg/*.h ./core/PIDX_agg/PIDX_global_agg/*.c ./core/PIDX_agg/PIDX_local_agg/*.h ./core/PIDX_agg/PIDX_local_agg/*.c ./core/PIDX_agg/*.h ./core/PIDX_agg/*.c ./core/PIDX_block_rst/*.h ./core/PIDX_block_rst/*.c ./core/PIDX_cmp/*.h ./core/PIDX_cmp/*.c ./core/PIDX_file_io/*.h ./core/PIDX_file_io/*.c ./core/PIDX_header/*.h ./core/PIDX_header/*.c ./core/PIDX_hz/*.h ./core/PIDX_hz/*.c ./core/PIDX_rst/*.h ./core/PIDX_rst/*.c ./io/*.h ./io/*.c ./io/PIDX_global_idx_io/*.h ./io/PIDX_global_idx_io/*.c ./io/PIDX_io/*.h ./io/PIDX_io/*.c ./io/PIDX_idx_io/*.h ./io/PIDX_idx_io/*.c ./io/PIDX_multi_patch_idx_io/*.h ./io/PIDX_multi_patch_idx_io/*.c ./io/PIDX_partitioned_idx_io/*.h ./io/PIDX_partitioned_idx_io/*.c ./io/PIDX_partition_merge_idx_io/*.h ./io/PIDX_partition_merge_idx_io/*.c ./io/PIDX_raw_io/*.h ./io/PIDX_raw_io/*.c)
 
 #FILE(GLOB PIDX_SOURCES *.h *.c)
 
+MESSAGE("using OS_SPECIFIC_LIBS: ${OS_SPECIFIC_LIBS}")
 
 # ////////////////////////////////////////
 # includes
@@ -40,7 +42,7 @@ FILE(GLOB PIDX_SOURCES *.h *.c ./utils/*.h ./utils/*.c ./comm/*.h ./comm/*.c ./d
 IF (MPI_C_FOUND)
   MESSAGE("Configuring pidx with MPI support")
   INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
-  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${MPI_C_LIBRARIES})
+  SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${OS_SPECIFIC_LIBS} ${MPI_C_LIBRARIES})
 ENDIF()
 
 IF (ZFP_FOUND)
@@ -64,7 +66,7 @@ ENDIF()
 # library
 # ////////////////////////////////////////
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx m pidx_comm pidx_data_handle pidx_utils pidx_core pidx_io ${PIDX_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx ${OS_SPECIFIC_LIBS} pidx_comm pidx_metadata pidx_data_handle pidx_utils pidx_core pidx_io zfp ${PIDX_LINK_LIBS})
 
 
 SET_TARGET_PROPERTIES(pidx PROPERTIES LINKER_LANGUAGE CXX)

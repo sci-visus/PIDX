@@ -47,6 +47,8 @@ struct PIDX_hz_encode_struct
 
   idx_debug idx_dbg;
 
+  idx_metadata_cache cache;
+
 
   int** index;
 
@@ -67,7 +69,7 @@ typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, int start_var_index, int end_var_index);
+PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_metadata_cache cache, int start_var_index, int end_var_index);
 
 
 
@@ -118,20 +120,13 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id);
 
 
 ///
-/// \brief PIDX_hz_encode_row_major_write
+/// \brief PIDX_hz_encode_fast_write
 /// \param id
 /// \return
 ///
-PIDX_return_code PIDX_hz_encode_row_major_write(PIDX_hz_encode_id id);
+PIDX_return_code PIDX_hz_encode_fast_write(PIDX_hz_encode_id id);
 
 
-
-///
-/// \brief PIDX_hz_encode_compress
-/// \param id
-/// \return
-///
-PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id);
 
 ///
 /// \brief PIDX_hz_encode_read
@@ -140,14 +135,6 @@ PIDX_return_code PIDX_hz_encode_compress(PIDX_hz_encode_id id);
 ///
 PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id);
 
-
-
-///
-/// \brief PIDX_hz_encode_block_wise_compress
-/// \param id
-/// \return
-///
-PIDX_return_code PIDX_hz_encode_block_wise_compress(PIDX_hz_encode_id id);
 
 
 

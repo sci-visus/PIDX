@@ -57,9 +57,7 @@ static char var_name[MAX_VAR_COUNT][512];
 static int bpv[MAX_VAR_COUNT];
 static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
-static int max_file_count = 0;
 
-static int *random_agg_list;
 
 static PIDX_point global_size, local_offset, local_size, reg_size;
 static PIDX_access p_access;
@@ -81,7 +79,7 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static void create_random_aggregators();
+//static void create_random_aggregators();
 
 static char *usage = "Serial Usage: ./single_buffer_raw_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./single_buffer_raw_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
@@ -104,7 +102,7 @@ int main(int argc, char **argv)
   create_synthetic_simulation_data();
   //create_random_aggregators();
 
-  //rank_0_print("Simulation Data Created\n");
+  rank_0_print("Simulation Data Created\n");
 
   create_pidx_var_point_and_access();
 
@@ -467,7 +465,7 @@ static void shutdown_mpi()
 #endif
 }
 
-
+#if 0
 static void create_random_aggregators()
 {
   unsigned long long total_reg_sample_count = (getPowerOf2(global_box_size[0]) * getPowerOf2(global_box_size[1]) * getPowerOf2(global_box_size[2]));
@@ -517,3 +515,4 @@ static void create_random_aggregators()
 
   return;
 }
+#endif

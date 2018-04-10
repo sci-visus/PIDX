@@ -48,7 +48,7 @@ static char input_file[512];
 static char **file_name;
 static double **buffer;
 static int *values_per_sample;    // Example: 1 for scalar 3 for vector
-static int64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
+static uint64_t restructured_box_size[5] = {32, 32, 32, 1, 1};
 
 int main(int argc, char **argv)
 {
@@ -108,9 +108,9 @@ int main(int argc, char **argv)
 
 #if PIDX_IO
   PIDX_point global_bounding_box, local_offset, local_size;
-  PIDX_set_point_5D(global_bounding_box, global_box_size[0], global_box_size[1], global_box_size[2], 1, 1);
-  PIDX_set_point_5D(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2], 0, 0);
-  PIDX_set_point_5D(local_size, local_box_size[0], local_box_size[1], local_box_size[2], 1, 1);
+  PIDX_set_point(global_bounding_box, global_box_size[0], global_box_size[1], global_box_size[2]);
+  PIDX_set_point(local_offset, local_box_offset[0], local_box_offset[1], local_box_offset[2]);
+  PIDX_set_point(local_size, local_box_size[0], local_box_size[1], local_box_size[2]);
 
   PIDX_file file;
   PIDX_access access;
@@ -153,11 +153,16 @@ int main(int argc, char **argv)
 #if PIDX_IO
     variable = malloc(sizeof(*variable) * variable_count);
     memset(variable, 0, sizeof(*variable) * variable_count);
-    PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, &file);
+    PIDX_file_create(output_file_name, PIDX_MODE_CREATE, access, global_bounding_box, &file);
     PIDX_set_variable_count(file, variable_count);
-    PIDX_set_dims(file, global_bounding_box);
     PIDX_set_current_time_step(file, t);
-    PIDX_set_restructuring_box(file, restructured_box_size);
+
+	PIDX_point rst_box_size;
+	PIDX_set_point(rst_box_size, restructured_box_size[0], restructured_box_size[1],
+			restructured_box_size[2]);
+    PIDX_set_restructuring_box(file, rst_box_size);
+
+	PIDX_set_io_mode(file, PIDX_RAW_IO);
     for(var = 0; var < variable_count; var++)
     {
       ret = PIDX_variable_create(var_name[var], sizeof(double) * 8, "1*float64", &variable[var]);

@@ -40,11 +40,7 @@ extern "C" {
 /// PIDX_file_create() or PIDX_file_open().
 struct PIDX_access_struct
 {
-  int parallel;
-  
-#if PIDX_HAVE_MPI
   MPI_Comm comm;
-#endif
 };
 typedef struct PIDX_access_struct* PIDX_access;
 

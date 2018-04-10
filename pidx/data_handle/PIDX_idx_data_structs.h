@@ -33,7 +33,6 @@
 
 #include "PIDX_memory_layout_data_structs.h"
 
-
 struct PIDX_timming_struct
 {
   //double a1, a2, a3, a4, a5;
@@ -111,7 +110,9 @@ typedef struct PIDX_timming_struct* PIDX_time;
 
 
 struct PIDX_variable_struct
-{
+{  
+  int is_particle;
+
   // General Info
   char var_name[1024];                                       ///< Variable name
   int vps;                                                   ///< values per sample, Vector(3), scalar(1), or n
@@ -121,15 +122,16 @@ struct PIDX_variable_struct
 
   // buffer (before, after HZ encoding phase)
   int sim_patch_count;                                       ///< The actual number of patches (application layout), most probably more than 1 in uintah
-  Ndim_patch sim_patch[1024];                                ///< Pointer to the patches
-  HZ_buffer* hz_buffer;                                      ///< HZ encoded buffer of the patches
+  PIDX_patch sim_patch[1024];                                ///< Pointer to the patches
 
   // buffer before aggregation
-  int patch_group_count;                                     ///< Number of groups of patches to be passed to aggregation phase
-  Ndim_patch_group* rst_patch_group;                         ///< Pointer to the patch groups
-  Ndim_patch_group* chunk_patch_group;                       ///< Pointer to the patch group after block restructuring
+  int restructured_super_patch_count;                        ///< Number of groups of patches to be passed to aggregation phase
+  PIDX_super_patch restructured_super_patch;                 ///< Pointer to the patch groups
+  PIDX_super_patch chunked_super_patch;                      ///< Pointer to the patch group after block restructuring
+  HZ_buffer hz_buffer;                                       ///< HZ encoded buffer of the patches
 
-  //Ndim_patch rst_wavelet_patch;
+  int patch_group_count;
+  PIDX_super_patch* rst_patch_group;
 };
 typedef struct PIDX_variable_struct* PIDX_variable;
 
@@ -145,32 +147,19 @@ struct PIDX_variable_group_struct
   int local_variable_index;
   int local_variable_count;
 
-  int agg_l_f0;
-  int f0_start_layout_index;
-  int f0_end_layout_index;
-  int f0_layout_count;
-
-  int agg_l_shared;
+  //int agg_l_shared;
   int shared_start_layout_index;
   int shared_end_layout_index;
   int shared_layout_count;
 
-  int agg_l_nshared;
+  //int agg_l_nshared;
   int nshared_start_layout_index;
   int nshared_end_layout_index;
   int nshared_layout_count;
 
-  int *rank_buffer;
-
-  // Block level layout
-  PIDX_block_layout f0_block_layout;
-  PIDX_block_layout* f0_block_layout_by_level;
-
-  PIDX_block_layout shared_block_layout;
-  PIDX_block_layout* shared_block_layout_by_level;
-
-  PIDX_block_layout nshared_block_layout;
-  PIDX_block_layout* nshared_block_layout_by_level;
+  int agg_level;
+  PIDX_block_layout block_layout;
+  PIDX_block_layout* block_layout_by_level;
 };
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
@@ -191,70 +180,70 @@ struct idx_comm_struct
   int gnproc_y;
   int gnproc_z;
 
+  int rrank;
+  int rnprocs;
+
+  /// Names
   MPI_Comm global_comm;
   MPI_Comm local_comm;
+  MPI_Comm rst_comm;
 };
 typedef struct idx_comm_struct* idx_comm;
+
+
+
+/// Communicator related struct
+struct idx_metadata_cache_struct
+{
+  PIDX_metadata_cache meta_data_cache;
+};
+typedef struct idx_metadata_cache_struct* idx_metadata_cache;
 
 
 /// idx_file
 struct idx_file_struct
 {
-  int io_type;
-  int current_time_step;
+  enum PIDX_io_type io_type;              /// I/O format and layout we want to use
+  
+  int current_time_step;                  /// The current timestep selected
 
-  int variable_pipe_length;
-  int variable_count;
+  int variable_count;                     /// The number of variables contained in the dataset
   int variable_group_count;
   int group_index_tracker;
   PIDX_variable_group variable_grp[16];
   
   char agg_list_filename[1024];
 
-  char filename[1024];
-  char filename_global[1024];
+  char filename[1024];                    /// The idx file path
   char filename_partition[1024];
-  char filename_file_zero[1024];
-  char filename_template_global[1024];
-  char filename_template_partition[1024];
   char filename_template[1024];
-  char filename_template_file_zero[1024];
+  char filename_template_partition[1024];
 
-  int first_tstep;
-  int last_tstep;
+  int first_tstep;                        /// Index of the frist timestep
+  int last_tstep;                         /// Index of the last timestep
 
-  int bits_per_block;
-  int blocks_per_file;
-  unsigned long long bounds[PIDX_MAX_DIMENSIONS];
-  unsigned long long box_bounds[PIDX_MAX_DIMENSIONS];
-  double transform[16];
-  int bitsequence_type;
+  int bits_per_block;                     /// Number of bits per block
+  int blocks_per_file;                    /// Number of blocks per file
+  size_t bounds[PIDX_MAX_DIMENSIONS];     /// Bounds of the dataset
+  size_t box_bounds[PIDX_MAX_DIMENSIONS]; /// Bounds of the box query
+  
   char bitSequence[512];
   char bitPattern[512];
-  
-  int reg_box_set;
-  int number_processes[PIDX_MAX_DIMENSIONS];
-  Ndim_empty_patch* new_box_set;
-  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
-
-  double zfp_precisison;
-  int compression_type;
-  int enable_rst;
 
   /// 0 No aggregation
   /// 1 Only aggregation
   int enable_agg;
 
-  int compression_start_level;
+  int compression_type;
   int compression_factor;
   float compression_bit_rate;
-  unsigned long long chunk_size[PIDX_MAX_DIMENSIONS];
+  size_t chunk_size[PIDX_MAX_DIMENSIONS];
 
   int file_zero_merge;
 
   /// 1 for little endian
   /// 0 for big endian
-  int endian;
+  enum PIDX_endian_type endian;                /// Endianess of the data
 
   /// 1 for flipping endian
   /// 0 for big endian
@@ -263,14 +252,6 @@ struct idx_file_struct
   int agg_counter;
 
   int cached_ts;
-
-  int shared_face;
-
-  unsigned long long* all_offset;
-  unsigned long long* all_size;
-
-  int random_agg_counter;
-  int *random_agg_list;
 };
 typedef struct idx_file_struct* idx_dataset;
 
@@ -279,7 +260,8 @@ typedef struct idx_file_struct* idx_dataset;
 struct idx_dataset_derived_metadata_struct
 {
   int pidx_version;
-  int io_mode;
+  char metadata_version[8];
+  //int io_mode;
 
   int w_nx;
   int w_px;
@@ -290,6 +272,8 @@ struct idx_dataset_derived_metadata_struct
   int wavelet_levels;
   int wavelet_imeplementation_type;
 
+  PIDX_restructured_grid restructured_grid;
+
   int dimension;
   int samples_per_block;
   int maxh;
@@ -298,37 +282,15 @@ struct idx_dataset_derived_metadata_struct
   int fs_block_size;
   off_t start_fs_block;
 
-  unsigned char* shared_block_agg_buffer;
-
-  Agg_buffer **f0_agg_buffer;
-  Agg_buffer **shared_agg_buffer;
-  Agg_buffer **nshared_agg_buffer;
+  Agg_buffer **agg_buffer;
 
   int color;
   int partition_count[PIDX_MAX_DIMENSIONS];
   int partition_size[PIDX_MAX_DIMENSIONS];
   int partition_offset[PIDX_MAX_DIMENSIONS];
-
-  int var_pipe_length;
-  int parallel_mode;  
   
   int start_layout_index;
   int end_layout_index;
-
-  MPI_Status *status_non_shared;
-  MPI_File *fp_non_shared;
-  MPI_Request *request_non_shared;
-
-  MPI_Status *status_shared;
-  MPI_File *fp_shared;
-  MPI_Request *request_shared;
-
-  MPI_Status *status_file_zero;
-  MPI_File *fp_file_zero;
-  MPI_Request *request_file_zero;
-
-  MPI_File *fp;
-  MPI_Request *request;
 
   int layout_count;
   int reduced_res_from;
@@ -339,12 +301,14 @@ struct idx_dataset_derived_metadata_struct
   int raw_io_pipe_length;
 
   int aggregator_multiplier;
-  int data_core_count;
 
-  int shared_block_level;
+  //int shared_block_level;
   int total_partiton_level;
 
   int **block_bitmap;
+  int ***block_offset_bitmap;
+
+  int variable_pipe_length;
 };
 typedef struct idx_dataset_derived_metadata_struct* idx_dataset_derived_metadata;
 

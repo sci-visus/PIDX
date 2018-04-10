@@ -10,22 +10,24 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <limits.h>
-#include <arpa/inet.h>
 #include <stdio.h>
 #include <math.h>
 #include <assert.h>
 
 #include <fcntl.h>
-#include <unistd.h>
+#include <stdint.h>
 
-#if PIDX_HAVE_MPI
-  #include <mpi.h>
+#if defined _MSC_VER
+  #include "PIDX_windows_define.h"
 #else
-  #include <sys/time.h>
+  #include <unistd.h>
+  #include <arpa/inet.h>
 #endif
 
+#include <mpi.h>
+
 #if PIDX_HAVE_ZFP
-  #include <zfp.h>  
+  #include <zfp.h>
 #endif
 
 #if PIDX_HAVE_PMT
@@ -40,6 +42,8 @@
 extern "C" {
 #endif
 
+#define PIDX_MIN(a,b) (((a)<(b))?(a):(b))
+
 
 #include "./utils/PIDX_error_codes.h"
 #include "./utils/PIDX_point.h"
@@ -49,45 +53,43 @@ extern "C" {
 
 #include "./comm/PIDX_comm.h"
 
+#include "./metadata/PIDX_metadata_cache.h"
+
 #include "./data_handle/PIDX_data_layout.h"
 #include "./data_handle/PIDX_blocks.h"
 #include "./data_handle/PIDX_idx_data_structs.h"
 
 #include "./core/PIDX_header/PIDX_header_io.h"
-#include "./core/PIDX_rst/PIDX_rst.h"
-#include "./core/PIDX_generic_rst/PIDX_generic_rst.h"
-#include "./core/PIDX_wavelet_rst/PIDX_wavelet_rst.h"
-#include "./core/PIDX_multi_patch_rst/PIDX_multi_patch_rst.h"
+#include "./core/PIDX_raw_rst/PIDX_raw_rst.h"
+#include "./core/PIDX_idx_rst/PIDX_idx_rst.h"
 #include "./core/PIDX_hz/PIDX_hz_encode.h"
-#include "./core/PIDX_in_situ_interface/PIDX_in_situ_interface.h"
-#include "./core/PIDX_in_transit_interface/PIDX_in_transit_interface.h"
 #include "./core/PIDX_block_rst/PIDX_block_restructure.h"
 #include "./core/PIDX_cmp/PIDX_compression.h"
 #include "./core/PIDX_agg/PIDX_agg.h"
-#include "./core/PIDX_shared_block_agg/PIDX_shared_block_agg.h"
 #include "./core/PIDX_file_io/PIDX_file_io.h"
+#include "./core/PIDX_wavelet/PIDX_wavelet.h"
+
 
 #include "./io/PIDX_io.h"
-#include "./io/idx_insitu.h"
-#include "./io/wavelet_io.h"
-#include "./io/idx_io.h"
-#include "./io/local_partition_idx_io.h"
-#include "./io/global_partition_idx_io.h"
-#include "./io/raw_io.h"
+#include "./io/idx/particle/particle_io.h"
+#include "./io/idx/serial/serial_idx_io.h"
+#include "./io/idx/no_partition/idx_io.h"
+#include "./io/idx/local_partition/local_partition_idx_io.h"
+#include "./io/raw/raw_io.h"
 
-#include "./io/wavelet_idx_rst.h"
-#include "./io/wavelet_idx_stencil.h"
-#include "./io/wavelet_rst.h"
-#include "./io/wavelet_stencil.h"
-#include "./io/restructure.h"
-#include "./io/partition.h"
-#include "./io/local_buffer.h"
-#include "./io/headers.h"
-#include "./io/blocks.h"
-#include "./io/hz_buffer.h"
-#include "./io/agg_io.h"
-#include "./io/initialize.h"
-#include "./io/timming.h"
+
+#include "./io/idx/io_setup.h"
+#include "./io/idx/bit_string.h"
+#include "./io/idx/idx_restructure.h"
+#include "./io/raw/raw_restructure.h"
+#include "./io/idx/partition.h"
+#include "./io/idx/local_buffer.h"
+#include "./io/idx/headers.h"
+#include "./io/idx/rst_blocks.h"
+#include "./io/idx/sim_blocks.h"
+#include "./io/idx/hz_buffer.h"
+#include "./io/idx/agg_io.h"
+#include "./io/idx/timming.h"
 
 #ifdef __cplusplus
 }

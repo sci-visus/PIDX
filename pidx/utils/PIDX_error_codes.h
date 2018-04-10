@@ -63,5 +63,6 @@ extern PIDX_return_code PIDX_err_close;
 extern PIDX_return_code PIDX_err_flush;
 extern PIDX_return_code PIDX_err_header;
 extern PIDX_return_code PIDX_err_wavelet;
+extern PIDX_return_code PIDX_err_metadata;
 
 #endif
