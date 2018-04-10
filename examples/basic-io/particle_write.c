@@ -454,7 +454,8 @@ static void set_pidx_file(int ts)
   PIDX_set_physical_dims(file, physical_global_size);
 
   // Set the current timestep
-  PIDX_set_current_time_step(file, ts);
+  // WILL: Always set it to 0, to reduce disk consumption
+  PIDX_set_current_time_step(file, 0);
   // Set the number of variables
   PIDX_set_variable_count(file, variable_count);
 
