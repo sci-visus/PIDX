@@ -48,17 +48,24 @@ from test_config import *
 #
 #   Test and profile PIDX
 #   
+class ExecType(object):
+        idx  = 0
+        partitioned  = 1
+        compressed = 2
 
 if platform.system() == "Darwin":
-  write_executable = write_executable+".app/Contents/MacOS/idx_write"
-  read_executable = read_executable+".app/Contents/MacOS/idx_read"
+  write_idx_executable = write_idx_executable+".app/Contents/MacOS/idx_write"
+  read_idx_executable = read_idx_executable+".app/Contents/MacOS/idx_read"
+  write_compressed_executable = write_compressed_executable+".app/Contents/MacOS/idx_compression_write"
+  read_compressed_executable = read_compressed_executable+".app/Contents/MacOS/idx_compression_read"
+  write_partitioned_executable = write_partitioned_executable+".app/Contents/MacOS/idx_write_partitioned"
 
-if not(os.path.isfile(write_executable)):
-  print "ERROR: write executable not found!", write_executable
+if not(os.path.isfile(write_idx_executable)):
+  print "ERROR: write executable not found!", write_idx_executable
   sys.exit(2)
 
-if not(os.path.isfile(read_executable)):
-  print "ERROR: read executable not found!", read_executable
+if not(os.path.isfile(read_idx_executable)):
+  print "ERROR: read executable not found!", read_idx_executable
   sys.exit(2)
 
 profiling = 0
@@ -67,7 +74,7 @@ profile_file_read = "pidx_read.prof"
 
 vars_file = "VARS"
 
-def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars, var_type):
+def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars, var_type, exec_type):
 
   g_box = "%dx%dx%d" % (g_box_n[0], g_box_n[1], g_box_n[2])
   l_box = "%dx%dx%d" % (l_box_n[0], l_box_n[1], l_box_n[2])
@@ -75,6 +82,15 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
 
   l_box_read = l_box
   l_box_read_n = l_box_n
+
+  write_executable = write_idx_executable
+  read_executable = read_idx_executable
+
+  if(exec_type==ExecType.partitioned):
+    write_executable = write_partitioned_executable
+  elif(exec_type==ExecType.compressed):
+    write_executable = write_compressed_executable
+    read_executable = read_compressed_executable
 
   #pconf = procs_conf[n_cores_read][0]
 
@@ -149,7 +165,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
 
   return n_tests - success
 
-def pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
+def run_tests(n_cores, n_cores_read, var_type, n_vars, n_ts, exec_type):
   print "---RUN TESTS---"
   
   #even_factor = int(n_cores ** (1. / 3))
@@ -163,7 +179,7 @@ def pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
     r_box = l_box
     #print "r == l", r_box
     
-    succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
+    succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type, exec_type)
 
   #r_box = (l_box[0]/2, l_box[1]/2, l_box[2]/2)
   #print "r < l", r_box
@@ -178,30 +194,30 @@ def pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
   
   return succ
 
-def non_pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
-  print "---NON-POW 2 TESTS---"
+# def non_pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
+#   print "---NON-POW 2 TESTS---"
 
-  pconf = procs_conf[n_cores][0] #int(n_cores ** (1. / 3))
+#   pconf = procs_conf[n_cores][0] #int(n_cores ** (1. / 3))
 
-  g_box = (124, 48, 36)
-  l_box = (g_box[0]/pconf[0], g_box[1]/pconf[1], g_box[2]/pconf[2])
+#   g_box = (124, 48, 36)
+#   l_box = (g_box[0]/pconf[0], g_box[1]/pconf[1], g_box[2]/pconf[2])
 
-  r_box = (64, 32, 32)
-  print "r == l", r_box
-  succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
+#   r_box = (64, 32, 32)
+#   print "r == l", r_box
+#   succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
-  r_box = (64, 32, 16)
-  print "r < l", r_box
-  succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
+#   r_box = (64, 32, 16)
+#   print "r < l", r_box
+#   succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
-  r_box = (l_box[0]*2, l_box[1]*2, l_box[2]*2)
-  print "r > l", r_box
-  succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
+#   r_box = (l_box[0]*2, l_box[1]*2, l_box[2]*2)
+#   print "r > l", r_box
+#   succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
 
-  if succ == 0:
-    print "TEST PASSED"
+#   if succ == 0:
+#     print "TEST PASSED"
   
-  return succ
+#   return succ
 
 def print_usage():
   print 'test.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
@@ -255,8 +271,7 @@ def main(argv):
     sys.exit(2)
   
   for var in var_types:
-    succ = succ + pow_2(n_cores, n_cores_read, var, 1, 1)
-  #  succ = succ + non_pow_2(n_cores, n_cores_read, var, 1, 1)
+    succ = succ + run_tests(n_cores, n_cores_read, var, 1, 1, ExecType.idx)
 
   #print "latest outputs:"
   #os.popen("cat _out_write.txt")

@@ -6,7 +6,7 @@ branches:
   only:
     - master
     - partition_develop
-    - fileopen
+    - testing
 
 cache:
   directories:
