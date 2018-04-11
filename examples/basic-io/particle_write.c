@@ -106,7 +106,7 @@ static int vps[MAX_VAR_COUNT];
 static PIDX_point logical_global_size;
 static PIDX_physical_point physical_global_size, physical_local_offset, physical_local_size;
 static PIDX_access p_access;
-static PIDX_meta_data_cache cache;
+static PIDX_metadata_cache cache;
 static PIDX_file file;
 static PIDX_variable* variable;
 
@@ -437,7 +437,7 @@ static void create_pidx_var_point_and_access()
   PIDX_create_access(&p_access);
   PIDX_set_mpi_access(p_access, MPI_COMM_WORLD);
 
-  PIDX_create_meta_data_cache(&cache);
+  PIDX_create_metadata_cache(&cache);
 
   return;
 }
@@ -496,8 +496,8 @@ static void destroy_pidx_var_point_and_access()
   if (PIDX_close_access(p_access) != PIDX_success)
     terminate_with_error_msg("PIDX_close_access");
 
-  if (PIDX_free_meta_data_cache(cache) != PIDX_success)
-    terminate_with_error_msg("PIDX_free_meta_data_cache");
+  if (PIDX_free_metadata_cache(cache) != PIDX_success)
+    terminate_with_error_msg("PIDX_free_metadata_cache");
 
   free(variable);
   variable = 0;
