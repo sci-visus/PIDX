@@ -126,7 +126,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// \return PIDX_return_code: The error code returned by the function.
 /// It is PIDX_success if the task is completed correctly.
 ///
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_point dims, PIDX_physical_point physical_dims, PIDX_file* file);
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access, PIDX_point dims, PIDX_file* file);
 
 /*
  *  Implementation in PIDX_metadata_parse.c
