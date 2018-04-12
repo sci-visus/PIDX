@@ -270,14 +270,41 @@ def main(argv):
     print "Procs configuration not available use one these: ", sorted(procs_conf.keys()), "\nOr add a new configuration to idx_utils.py"
     sys.exit(2)
   
+  failed = 0
+
   for var in var_types:
     succ = succ + run_tests(n_cores, n_cores_read, var, 1, 1, ExecType.idx)
+
+  if(succ == 0):
+    print " ***** IDX test SUCCESS *****"
+  else:
+    print "***** IDX test FAILED *****"
+    failed = 1
+
+  succ = 0
+  for var in var_types:
+    succ = succ + run_tests(n_cores, n_cores_read, var, 1, 1, ExecType.partitioned)
+
+  if(succ == 0):
+    print "***** IDX_PARTITIONED test SUCCESS *****"
+  else:
+    print "***** IDX_PARTITIONED test FAILED *****"
+    failed = 1
+
+  succ = 0
+  succ = run_tests(n_cores, n_cores_read, var, 1, 1, ExecType.compressed)
+
+  if(succ == 0):
+    print "***** IDX_COMPRESSED test SUCCESS *****"
+  else:
+    print "***** IDX_COMPRESSED test FAILED *****"
+    failed = 1
 
   #print "latest outputs:"
   #os.popen("cat _out_write.txt")
   #os.popen("cat _out_read.txt")
 
-  sys.exit(succ)
+  sys.exit(failed)
 
 if __name__ == "__main__":
   main(sys.argv[1:])

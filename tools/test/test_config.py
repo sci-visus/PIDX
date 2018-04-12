@@ -57,7 +57,7 @@ var_types = ["1*float32", "1*int32", "1*float64",
              "2*float32", "2*int32", "2*float64", 
              "3*float32", "3*int32", "3*float64"]
 
-#var_types = ["3*float64"]
+var_types = ["3*float64"]
 
 vars_file = "VARS"
 
