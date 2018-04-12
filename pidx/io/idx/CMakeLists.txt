@@ -45,6 +45,7 @@ FILE(GLOB PIDX_IDX_IO_SOURCES
   local_partition/*.h local_partition/*.c
   no_partition/*.h no_partition/*.c
   serial/*.h serial/*.c
+  particle/*.h particle/*.c
   *.h *.c)
 
 
@@ -70,5 +71,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_idx_io "${PIDX_IDX_IO_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_idx_io ${OS_SPECIFIC_LIBS} ${PIDX_IDX_IO_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_idx_io ${OS_SPECIFIC_LIBS} ${PIDX_IDX_IO_LINK_LIBS} pidx_particles_rst)
 SET_TARGET_PROPERTIES(pidx_idx_io PROPERTIES LINKER_LANGUAGE CXX)

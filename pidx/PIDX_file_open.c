@@ -41,7 +41,7 @@
 #include "PIDX_file_handler.h"
 
 /// Function to get file descriptor when opening an existing IDX file
-PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
+PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_physical_point physical_dims, PIDX_file* file)
 {
   int i;
   char file_name_skeleton[1024];
@@ -306,9 +306,11 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   else
     (*file)->idx->flip_endian = 1;
 
-  memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
+  if (dims != NULL)
+    memcpy(dims, (*file)->idx->bounds, (sizeof(unsigned long long) * PIDX_MAX_DIMENSIONS));
 
-
+  if (physical_dims != NULL)
+    memcpy(physical_dims, (*file)->idx->physical_bounds, (sizeof(double) * PIDX_MAX_DIMENSIONS));
 
   return PIDX_success;
 }
