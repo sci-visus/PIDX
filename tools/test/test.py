@@ -56,8 +56,7 @@ class ExecType(object):
 if platform.system() == "Darwin":
   write_idx_executable = write_idx_executable+".app/Contents/MacOS/idx_write"
   read_idx_executable = read_idx_executable+".app/Contents/MacOS/idx_read"
-  write_compressed_executable = write_compressed_executable+".app/Contents/MacOS/idx_compression_write"
-  read_compressed_executable = read_compressed_executable+".app/Contents/MacOS/idx_compression_read"
+  write_compressed_executable = write_compressed_executable+".app/Contents/MacOS/idx_write_compressed"
   write_partitioned_executable = write_partitioned_executable+".app/Contents/MacOS/idx_write_partitioned"
 
 if not(os.path.isfile(write_idx_executable)):
@@ -90,7 +89,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
     write_executable = write_partitioned_executable
   elif(exec_type==ExecType.compressed):
     write_executable = write_compressed_executable
-    read_executable = read_compressed_executable
+    #read_executable = read_compressed_executable
 
   #pconf = procs_conf[n_cores_read][0]
 
@@ -194,31 +193,6 @@ def run_tests(n_cores, n_cores_read, var_type, n_vars, n_ts, exec_type):
   
   return succ
 
-# def non_pow_2(n_cores, n_cores_read, var_type, n_vars, n_ts):
-#   print "---NON-POW 2 TESTS---"
-
-#   pconf = procs_conf[n_cores][0] #int(n_cores ** (1. / 3))
-
-#   g_box = (124, 48, 36)
-#   l_box = (g_box[0]/pconf[0], g_box[1]/pconf[1], g_box[2]/pconf[2])
-
-#   r_box = (64, 32, 32)
-#   print "r == l", r_box
-#   succ = execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
-
-#   r_box = (64, 32, 16)
-#   print "r < l", r_box
-#   succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
-
-#   r_box = (l_box[0]*2, l_box[1]*2, l_box[2]*2)
-#   print "r > l", r_box
-#   succ = succ + execute_test(n_cores, n_cores_read, g_box, l_box, r_box, n_ts, n_vars, var_type)
-
-#   if succ == 0:
-#     print "TEST PASSED"
-  
-#   return succ
-
 def print_usage():
   print 'test.py -w <wcores> -r <rcores> -p <profilefile> -m <mpirun>'
 
@@ -234,6 +208,9 @@ def main(argv):
   # defaults
   n_cores = 8
   n_cores_read = 8
+
+  n_ts = 1
+  n_vars = 1
 
   try:
     opts, args = getopt.getopt(argv,"h:w:r:m:p:t",["pfile="])
@@ -273,17 +250,19 @@ def main(argv):
   failed = 0
 
   for var in var_types:
-    succ = succ + run_tests(n_cores, n_cores_read, var, 1, 1, ExecType.idx)
+    succ = succ + run_tests(n_cores, n_cores_read, var, n_ts, n_vars, ExecType.idx)
+    os.popen("rm -R data*")
 
   if(succ == 0):
-    print " ***** IDX test SUCCESS *****"
+    print "***** IDX test SUCCESS *****"
   else:
     print "***** IDX test FAILED *****"
     failed = 1
 
   succ = 0
   for var in var_types:
-    succ = succ + run_tests(n_cores, n_cores_read, var, 1, 1, ExecType.partitioned)
+    succ = succ + run_tests(n_cores, n_cores_read, var, n_ts, n_vars, ExecType.partitioned)
+    os.popen("rm -R data*")
 
   if(succ == 0):
     print "***** IDX_PARTITIONED test SUCCESS *****"
@@ -291,8 +270,12 @@ def main(argv):
     print "***** IDX_PARTITIONED test FAILED *****"
     failed = 1
 
+  os.popen("rm -R data*")
+
   succ = 0
-  succ = run_tests(n_cores, n_cores_read, var, 1, 1, ExecType.compressed)
+  for var in var_types:
+    succ = run_tests(n_cores, n_cores_read, var, n_ts, n_vars, ExecType.compressed)
+    os.popen("rm -R data*")
 
   if(succ == 0):
     print "***** IDX_COMPRESSED test SUCCESS *****"
