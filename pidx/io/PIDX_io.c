@@ -119,8 +119,10 @@ PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
 
   file->idx_d->time->SX = PIDX_get_time();
 
+
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
+
   if (var0->is_particle == 1)
     ret = PIDX_particle_restart_read(file, gi, svi, evi);
   else

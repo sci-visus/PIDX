@@ -110,7 +110,7 @@ static size_t particle_count = 0;
 static int checkpoint_restart = 0;
 
 static PIDX_point local_offset, local_size;
-static PIDX_physical_point physical_local_offset, physical_local_size, physical_global_bounds;
+static PIDX_physical_point physical_local_offset, physical_local_size;
 
 static PIDX_access p_access;
 static int variable_count;
@@ -396,7 +396,7 @@ static void set_pidx_file(int ts)
   PIDX_return_code ret;
 
   // Open IDX file
-  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, NULL, physical_global_bounds, &file);
+  ret = PIDX_file_open(output_file_name, PIDX_MODE_RDONLY, p_access, NULL, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_open\n");
 
   // Set the current timestep
