@@ -45,6 +45,7 @@ static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 static int pointInChunk(PIDX_patch p, const double *pos);
 static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi);
 static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi);
+static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int gi, int svi);
 static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, int evi);
 
 
@@ -194,6 +195,73 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
 }
 
 
+PIDX_return_code PIDX_particle_restart_read(PIDX_io file, int gi, int svi, int evi)
+{
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+  PIDX_time time = file->idx_d->time;
+
+  //if (group_meta_data_init(file, gi, svi, evi) != PIDX_success)
+  //{
+  //  fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+  //  return PIDX_err_file;
+  //}
+
+  time->particle_meta_data_io_start = MPI_Wtime();
+  if (PIDX_meta_data_read(file, gi, svi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  time->particle_meta_data_io_end = MPI_Wtime();
+
+  time->particle_data_io_start = MPI_Wtime();
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+  strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
+
+  PIDX_variable var0 = var_grp->variable[svi];
+  for (int p = 0; p < var0->sim_patch_count; p++)
+  {
+    char file_name[PATH_MAX];
+    memset(file_name, 0, PATH_MAX * sizeof(*file_name));
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->grank, p);
+
+    int fp = open(file_name, O_RDONLY);
+
+    off_t data_offset = 0;
+    for (int si = svi; si < evi; si++)
+    {
+      PIDX_variable var = var_grp->variable[si];
+
+      int sample_count;
+      int bits_per_sample;
+      PIDX_get_datatype_details(var->type_name, &sample_count, &bits_per_sample);
+
+      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+
+      size_t buffer_size = var0->sim_patch[p]->particle_count * sample_count * (bits_per_sample/CHAR_BIT);
+
+      *(var->sim_patch[p]->read_particle_buffer) = malloc(buffer_size);
+      size_t write_count = pread(fp, *var->sim_patch[p]->read_particle_buffer, buffer_size, data_offset);
+      if (write_count != buffer_size)
+      {
+        fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+        return PIDX_err_io;
+      }
+      data_offset = data_offset + buffer_size;
+    }
+
+    close(fp);
+  }
+
+  free (directory_path);
+  time->particle_data_io_end = MPI_Wtime();
+
+  return PIDX_success;
+}
+
+
+
 
 PIDX_return_code PIDX_particle_read(PIDX_io file, int gi, int svi, int evi)
 {
@@ -307,6 +375,76 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
 
   return PIDX_success;
 }
+
+
+
+static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int gi, int svi)
+{
+  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+
+  double *global_patch;
+  PIDX_variable var0 = var_grp->variable[svi];
+
+  int max_patch_count;
+  int patch_count = var0->sim_patch_count;
+  // TODO WILL: Why the max patch count across all ranks? Ranks could have differing numbers of patches
+  // right? So would we leave some unused space in the file here?
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
+
+  double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
+  memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
+
+  global_patch = malloc((file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+  memset(global_patch, 0,(file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+
+  char file_path[PATH_MAX];
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+  strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
+
+  sprintf(file_path, "%s_OFFSET_SIZE", directory_path);
+  free(directory_path);
+  if (file->idx_c->grank == 0 || file->idx_c->gnprocs == 1)
+  {
+    int fp = open(file_path, O_RDONLY);
+    size_t write_count = pread(fp, global_patch, (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
+    if (write_count != (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
+    {
+      fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+      return PIDX_err_io;
+    }
+    close(fp);
+  }
+
+
+  MPI_Scatter(global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, 0, file->idx_c->global_comm);
+
+  global_patch[0] = (double)file->idx_c->gnprocs;
+  global_patch[1] = (double)max_patch_count;
+
+  int pcounter = 0;
+  local_patch[0] = (double)patch_count;
+  for (int i = 0; i < patch_count; i++)
+  {
+    //for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    //  local_patch[i * PIDX_MAX_DIMENSIONS + d + 1] = var0->sim_patch[i]->physical_offset[d];
+
+    //for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    //  local_patch[i * PIDX_MAX_DIMENSIONS + PIDX_MAX_DIMENSIONS + d + 1] = var0->sim_patch[i]->physical_size[d];
+
+    var0->sim_patch[i]->particle_count = local_patch[i * PIDX_MAX_DIMENSIONS + 2*PIDX_MAX_DIMENSIONS + 1];
+    printf("Particle count = %d\n", var0->sim_patch[i]->particle_count);
+
+    pcounter++;
+  }
+
+
+  free(local_patch);
+  free(global_patch);
+
+  return PIDX_success;
+}
+
 
 
 
