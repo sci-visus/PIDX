@@ -155,7 +155,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
     }
 
     // malloc the storage for all elements in the output array
-    // printf("[Chunking] Buffer size of %d = %d\n", chunk_id->idx_c->grank, num_elems_group);
+    // printf("[Chunking] Buffer size of %d = %d\n", chunk_id->idx_c->simulation_rank, num_elems_group);
     out_patch->restructured_patch->buffer = malloc(bytes_per_value * num_elems_group);
     memset(out_patch->restructured_patch->buffer, 0, bytes_per_value * num_elems_group);
     //printf("\n \n Out Patch is before chunking: \n");

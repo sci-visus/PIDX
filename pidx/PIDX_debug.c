@@ -186,7 +186,7 @@ static PIDX_return_code dump_debug_data_init(PIDX_file file)
     char mpi_file_name[1024];
     char local_file_name[1024];
 
-    if (file->idx_c->grank == 0)
+    if (file->idx_c->simulation_rank == 0)
     {
 #if 1
       char mkdir_line1[1024];
@@ -217,9 +217,9 @@ static PIDX_return_code dump_debug_data_init(PIDX_file file)
 #endif
     }
 
-    MPI_Barrier(file->idx_c->global_comm);
+    MPI_Barrier(file->idx_c->simulation_comm);
 
-    sprintf(mpi_file_name, "%s/rank_%d", mpi_state_dump_dir_name, file->idx_c->grank);
+    sprintf(mpi_file_name, "%s/rank_%d", mpi_state_dump_dir_name, file->idx_c->simulation_rank);
     file->idx_dbg->mpi_dump_fp = fopen(mpi_file_name, "a+");
     if (!file->idx_dbg->mpi_dump_fp)
     {
@@ -227,7 +227,7 @@ static PIDX_return_code dump_debug_data_init(PIDX_file file)
       return PIDX_err_io;
     }
 
-    sprintf(local_file_name, "%s/rank_%d", local_state_dump_dir_name, file->idx_c->grank);
+    sprintf(local_file_name, "%s/rank_%d", local_state_dump_dir_name, file->idx_c->simulation_rank);
     file->idx_dbg->local_dump_fp = fopen(local_file_name, "a+");
     if (!file->idx_dbg->local_dump_fp)
     {

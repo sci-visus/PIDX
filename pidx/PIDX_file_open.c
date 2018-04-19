@@ -76,12 +76,12 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_d->restructured_grid = malloc(sizeof(*(*file)->idx_d->restructured_grid ));
   memset((*file)->idx_d->restructured_grid , 0, sizeof(*(*file)->idx_d->restructured_grid));
 
-  (*file)->idx_c->global_comm = access_type->comm;
-  (*file)->idx_c->local_comm = access_type->comm;
-  MPI_Comm_rank((*file)->idx_c->global_comm, &((*file)->idx_c->grank));
-  MPI_Comm_size((*file)->idx_c->global_comm, &((*file)->idx_c->gnprocs));
-  MPI_Comm_rank((*file)->idx_c->local_comm, &((*file)->idx_c->lrank));
-  MPI_Comm_size((*file)->idx_c->local_comm, &((*file)->idx_c->lnprocs));
+  (*file)->idx_c->simulation_comm = access_type->comm;
+  (*file)->idx_c->partition_comm = access_type->comm;
+  MPI_Comm_rank((*file)->idx_c->simulation_comm, &((*file)->idx_c->simulation_rank));
+  MPI_Comm_size((*file)->idx_c->simulation_comm, &((*file)->idx_c->simulation_nprocs));
+  MPI_Comm_rank((*file)->idx_c->partition_comm, &((*file)->idx_c->partition_rank));
+  MPI_Comm_size((*file)->idx_c->partition_comm, &((*file)->idx_c->partition_nprocs));
 
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
@@ -109,7 +109,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->idx_d->raw_io_pipe_length = 0;
 
-  (*file)->idx_d->color = 0;
+  (*file)->idx_c->color = 0;
   (*file)->idx->agg_counter = 0;
 
   (*file)->idx->io_type = PIDX_IDX_IO;
@@ -132,14 +132,11 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   if ((*file)->idx_d->partition_count[0] == 1 && (*file)->idx_d->partition_count[1] == 1 && (*file)->idx_d->partition_count[2] == 1)
     sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   else
-    sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
+    sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_c->color);
 #endif
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
-
-  (*file)->idx_d->wavelet_levels = 0;
-  (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
 
   (*file)->idx->cached_ts = -1;
 
@@ -174,7 +171,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   int var = 0;
 
-  if ((*file)->idx_c->grank == 0)
+  if ((*file)->idx_c->simulation_rank == 0)
   {
     FILE *fp = fopen((*file)->idx->filename, "r");
     if (fp == NULL)
@@ -213,25 +210,25 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   (*file)->idx->variable_count = (*file)->idx->variable_grp[0]->variable_count;
 
-  MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx->box_bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx_d->restructured_grid->patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx_d->pidx_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx_d->metadata_version), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->variable_grp[0]->variable_count), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx_d->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx_d->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast((*file)->idx_d->partition_offset, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->compression_bit_rate), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-  MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
+  MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx->box_bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx_d->restructured_grid->patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx->chunk_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->endian), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx_d->pidx_version), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx_d->metadata_version), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->variable_grp[0]->variable_count), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx_d->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx_d->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx_d->partition_offset, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->compression_bit_rate), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
 
   //printf("reading version %d\n",(*file)->idx_d->metadata_version);
 
@@ -256,7 +253,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   if ((*file)->idx->io_type != PIDX_RAW_IO)
     (*file)->idx_d->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
 
-  if((*file)->idx_c->grank != 0)
+  if((*file)->idx_c->simulation_rank != 0)
   {
     for (var = 0; var < (*file)->idx->variable_count; var++)
     {
@@ -267,16 +264,16 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   for (var = 0; var < (*file)->idx->variable_count; var++)
   {
-    MPI_Bcast(&((*file)->idx->variable_grp[0]->variable[var]->bpv), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-    MPI_Bcast(&((*file)->idx->variable_grp[0]->variable[var]->vps), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
-    MPI_Bcast((*file)->idx->variable_grp[0]->variable[var]->var_name, 512, MPI_CHAR, 0, (*file)->idx_c->global_comm);
-    MPI_Bcast((*file)->idx->variable_grp[0]->variable[var]->type_name, 512, MPI_CHAR, 0, (*file)->idx_c->global_comm);
+    MPI_Bcast(&((*file)->idx->variable_grp[0]->variable[var]->bpv), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+    MPI_Bcast(&((*file)->idx->variable_grp[0]->variable[var]->vps), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+    MPI_Bcast((*file)->idx->variable_grp[0]->variable[var]->var_name, 512, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+    MPI_Bcast((*file)->idx->variable_grp[0]->variable[var]->type_name, 512, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
 
     (*file)->idx->variable_grp[0]->variable[var]->sim_patch_count = 0;
   }
 
 #if 0
-  if ((*file)->idx_c->grank == 0)
+  if ((*file)->idx_c->simulation_rank == 0)
   {
     int ret;
     struct stat stat_buf;
@@ -289,7 +286,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx_d->fs_block_size = stat_buf.st_blksize;
   }
 
-  MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->global_comm);
+  MPI_Bcast(&((*file)->idx_d->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
 #endif
   (*file)->idx->flip_endian = 0;
 
@@ -377,7 +374,7 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
 
   (*file)->idx_d->raw_io_pipe_length = 0;
 
-  (*file)->idx_d->color = 0;
+  (*file)->idx_c->color = 0;
   (*file)->idx->agg_counter = 0;
 
   (*file)->idx->io_type = PIDX_IDX_IO;
@@ -400,14 +397,11 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   if ((*file)->idx_d->partition_count[0] == 1 && (*file)->idx_d->partition_count[1] == 1 && (*file)->idx_d->partition_count[2] == 1)
     sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   else
-    sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_d->color);
+    sprintf((*file)->idx->filename, "%s_%d.idx", file_name_skeleton, (*file)->idx_c->color);
 #endif
 
   (*file)->idx->bits_per_block = PIDX_default_bits_per_block;
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
-
-  (*file)->idx_d->wavelet_levels = 0;
-  (*file)->idx_d->wavelet_imeplementation_type = -1;//WAVELET_STENCIL;
 
   (*file)->idx->cached_ts = -1;
 

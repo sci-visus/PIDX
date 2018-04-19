@@ -48,7 +48,6 @@ ADD_SUBDIRECTORY(PIDX_hz)
 ADD_SUBDIRECTORY(PIDX_agg)
 ADD_SUBDIRECTORY(PIDX_file_io)
 ADD_SUBDIRECTORY(PIDX_header)
-ADD_SUBDIRECTORY(PIDX_wavelet)
 
 
 FILE(GLOB PIDX_CORE_SOURCES *.h *.c)
@@ -76,5 +75,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_core "${PIDX_CORE_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_core ${OS_SPECIFIC_LIBS} pidx_utils pidx_data_handle pidx_header pidx_idx_rst pidx_raw_rst pidx_wavelet pidx_cmp pidx_hz pidx_agg pidx_file_io ${PIDX_CORE_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_core ${OS_SPECIFIC_LIBS} pidx_utils pidx_data_handle pidx_header pidx_idx_rst pidx_raw_rst pidx_cmp pidx_hz pidx_agg pidx_file_io ${PIDX_CORE_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_core PROPERTIES LINKER_LANGUAGE CXX)

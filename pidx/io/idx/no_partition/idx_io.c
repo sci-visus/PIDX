@@ -101,7 +101,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  idx_restructure_copy_rst_comm_to_local_comm(file, gi, svi);
+  idx_restructure_copy_rst_comm_to_partition_comm(file, gi, svi);
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
@@ -141,7 +141,7 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi)
         return PIDX_err_file;
       }
 
-      if (file->idx_c->lrank == 0)
+      if (file->idx_c->partition_rank == 0)
         fprintf(stderr, "SI and EI %d and %d\n", si, ei);
 
       // Step 5: Setup aggregation buffers
@@ -244,7 +244,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  idx_restructure_copy_rst_comm_to_local_comm(file, gi, svi);
+  idx_restructure_copy_rst_comm_to_partition_comm(file, gi, svi);
 
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
@@ -276,7 +276,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-      //if (file->idx_c->lrank == 0)
+      //if (file->idx_c->partition_rank == 0)
       //  fprintf(stderr, "SI and EI %d and %d\n", si, ei);
 
       // Step 3: Setup aggregation buffers
@@ -398,7 +398,7 @@ static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int gi, 
     {
       if (file->idx_d->block_bitmap[i][j] != 0)
       {
-        if (file->idx_c->grank == 0)
+        if (file->idx_c->simulation_rank == 0)
           fprintf(stderr, "File [%d] Block [%d]\n", i, j);
       }
     }

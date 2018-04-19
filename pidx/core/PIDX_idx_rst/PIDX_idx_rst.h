@@ -40,7 +40,7 @@
  */
 
 /**
- * \file PIDX_multi_patch_rst.h
+ * \file PIDX_idx_rst.h
  *
  * \author Steve Petruzza
  * \author Sidharth Kumar

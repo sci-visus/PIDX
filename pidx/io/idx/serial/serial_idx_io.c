@@ -401,7 +401,7 @@ static PIDX_return_code parse_local_partition_idx_file(PIDX_io file, int partiti
         if( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
-        file->idx_d->color = atoi(line);
+        file->idx_c->color = atoi(line);
       }
 
       if (strcmp(line, "(partition size)") == 0)

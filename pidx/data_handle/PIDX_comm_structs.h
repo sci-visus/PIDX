@@ -39,51 +39,29 @@
  *
  */
 
-/**
- * \file PIDX_rst.c
- *
- * \author Steve Petruzza
- * \author Sidharth Kumar
- * \date   10/09/14
- *
- * Implementation of all the functions
- * declared in PIDX_idx_rst.h
- *
- */
-
-#include "../../PIDX_inc.h"
+#ifndef __PIDX_COMM_STRUCTS_H
+#define __PIDX_COMM_STRUCTS_H
 
 
-PIDX_particles_rst_id PIDX_particles_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index)
+/// Communicator related struct
+struct idx_comm_struct
 {
-  PIDX_particles_rst_id particles_rst_id;
-  particles_rst_id = (PIDX_particles_rst_id)malloc(sizeof (*particles_rst_id));
-  memset(particles_rst_id, 0, sizeof (*particles_rst_id));
 
-  particles_rst_id->idx_metadata = idx_meta_data;
-  particles_rst_id->idx_derived_metadata = idx_derived;
-  particles_rst_id->idx_comm_metadata = idx_c;
-  particles_rst_id->idx_debug_metadata = idx_dbg;
-
-  particles_rst_id->group_index = 0;
-  particles_rst_id->first_index = var_start_index;
-  particles_rst_id->last_index = var_end_index;
-
-  particles_rst_id->maximum_neighbor_count = 256;
-
-  particles_rst_id->intersected_restructured_super_patch_count = 0;
-  particles_rst_id->sim_max_patch_count = 0;
-
-  return (particles_rst_id);
-}
+  MPI_Comm simulation_comm;     /// Communicator passed by the application (simulation)
+  int simulation_rank;          /// rank of a process within global_comm
+  int simulation_nprocs;        /// number of processes in global_comm
 
 
-PIDX_return_code PIDX_particles_rst_finalize(PIDX_particles_rst_id particles_rst_id)
-{
-  particles_rst_id->intersected_restructured_super_patch_count = 0;
-  particles_rst_id->sim_max_patch_count = 0;
-  free(particles_rst_id);
-  particles_rst_id = 0;
+  MPI_Comm rst_comm;            /// Communicator grouping the active processes after data restructuring
+  int rrank;                    /// rank of a process within rst_comm
+  int rnprocs;                  /// number of processes in rst_comm
 
-  return PIDX_success;
-}
+
+  int color;                    /// unique identifier distinguishing partitions
+  MPI_Comm partition_comm;      /// Communicator associated with every partition
+  int partition_rank;           /// rank of a process within partition_comm
+  int partition_nprocs;         /// number of processes in partition_comm
+};
+typedef struct idx_comm_struct* idx_comm;
+
+#endif

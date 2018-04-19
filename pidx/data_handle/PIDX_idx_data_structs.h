@@ -55,84 +55,9 @@
 #define __PIDX_IDX_DATA_STRUCTS_H
 
 #include "PIDX_memory_layout_data_structs.h"
+#include "PIDX_timming_data_structs.h"
+#include "PIDX_comm_structs.h"
 
-struct PIDX_timming_struct
-{
-  //double a1, a2, a3, a4, a5;
-  double SX, EX;
-  double sim_start, sim_end;
-
-  double init_start, init_end;
-  double set_reg_box_start, set_reg_box_end;
-  double bit_string_start, bit_string_end;
-  double layout_start, layout_end;
-  double header_io_start, header_io_end;
-  double group_cleanup_start, group_cleanup_end;
-  double partition_start, partition_end;
-  double partition_cleanup_start, partition_cleanup_end;
-
-  double particle_meta_data_io_start, particle_meta_data_io_end;
-  double particle_data_io_start, particle_data_io_end;
-
-  double ***w_stencil_comm_x_odd_start, ***w_stencil_comm_x_odd_end;
-  double ***w_stencil_comm_y_odd_start, ***w_stencil_comm_y_odd_end;
-  double ***w_stencil_comm_z_odd_start, ***w_stencil_comm_z_odd_end;
-
-  double ***w_stencil_comm_x_even_start, ***w_stencil_comm_x_even_end;
-  double ***w_stencil_comm_y_even_start, ***w_stencil_comm_y_even_end;
-  double ***w_stencil_comm_z_even_start, ***w_stencil_comm_z_even_end;
-
-  double ***w_stencil_comp_x_odd_start, ***w_stencil_comp_x_odd_end;
-  double ***w_stencil_comp_y_odd_start, ***w_stencil_comp_y_odd_end;
-  double ***w_stencil_comp_z_odd_start, ***w_stencil_comp_z_odd_end;
-
-  double ***w_stencil_comp_x_even_start, ***w_stencil_comp_x_even_end;
-  double ***w_stencil_comp_y_even_start, ***w_stencil_comp_y_even_end;
-  double ***w_stencil_comp_z_even_start, ***w_stencil_comp_z_even_end;
-
-  double ***w_rst_comp_x_start, ***w_rst_comp_x_end;
-  double ***w_rst_comp_y_start, ***w_rst_comp_y_end;
-  double ***w_rst_comp_z_start, ***w_rst_comp_z_end;
-
-  double **rst_init_start, **rst_init_end;
-  double **rst_meta_data_create_start, **rst_meta_data_create_end;
-  double **rst_meta_data_io_start, **rst_meta_data_io_end;
-  double **rst_buffer_start, **rst_buffer_end;
-  double **rst_write_read_start, **rst_write_read_end;
-  double **rst_buff_agg_start, **rst_buff_agg_end;
-  double **rst_buff_agg_free_start, **rst_buff_agg_free_end;
-  double **rst_buff_agg_io_start, **rst_buff_agg_io_end;
-  double **rst_cleanup_start, **rst_cleanup_end;
-
-  double **hz_init_start, **hz_init_end;
-  double **hz_meta_start, **hz_meta_end;
-  double **hz_buffer_start, **hz_buffer_end;
-  double **hz_start, **hz_end;
-  double **hz_compress_start, **hz_compress_end;
-  double **hz_buffer_free_start, **hz_buffer_free_end;
-  double **hz_cleanup_start, **hz_cleanup_end;
-  double ***hz_io_start, ***hz_io_end;
-
-  double **chunk_init_start, **chunk_init_end;
-  double **chunk_meta_start, **chunk_meta_end;
-  double **chunk_buffer_start, **chunk_buffer_end;
-  double **chunk_start, **chunk_end;
-  double **chunk_buffer_free_start, **chunk_buffer_free_end;
-  double **chunk_cleanup_start, **chunk_cleanup_end;
-
-  double **compression_init_start, **compression_init_end;
-  double **compression_start, **compression_end;
-
-  double ***agg_init_start, ***agg_init_end;
-  double ***agg_meta_start, ***agg_meta_end;
-  double ***agg_buf_start, ***agg_buf_end;
-  double ***agg_start, ***agg_end;
-  double ***agg_compress_start, ***agg_compress_end;
-  double ***agg_meta_cleanup_start, ***agg_meta_cleanup_end;
-
-  double **io_start, **io_end;
-};
-typedef struct PIDX_timming_struct* PIDX_time;
 
 
 struct PIDX_variable_struct
@@ -190,35 +115,10 @@ struct PIDX_variable_group_struct
 typedef struct PIDX_variable_group_struct* PIDX_variable_group;
 
 
-/// Communicator related struct
-struct idx_comm_struct
-{
-  int lrank;
-  int lnprocs;
-
-  int grank;
-  int grank_x;
-  int grank_y;
-  int grank_z;
-
-  int gnprocs;
-  int gnproc_x;
-  int gnproc_y;
-  int gnproc_z;
-
-  int rrank;
-  int rnprocs;
-
-  /// Names
-  MPI_Comm global_comm;
-  MPI_Comm local_comm;
-  MPI_Comm rst_comm;
-};
-typedef struct idx_comm_struct* idx_comm;
 
 
 
-/// Communicator related struct
+
 struct idx_metadata_cache_struct
 {
   PIDX_metadata_cache meta_data_cache;
@@ -291,14 +191,6 @@ struct idx_dataset_derived_metadata_struct
   char metadata_version[8];
   //int io_mode;
 
-  int w_nx;
-  int w_px;
-  int w_ny;
-  int w_py;
-  int w_nz;
-  int w_pz;
-  int wavelet_levels;
-  int wavelet_imeplementation_type;
 
   PIDX_restructured_grid restructured_grid;
 
@@ -312,7 +204,6 @@ struct idx_dataset_derived_metadata_struct
 
   Agg_buffer **agg_buffer;
 
-  int color;
   int partition_count[PIDX_MAX_DIMENSIONS];
   int partition_size[PIDX_MAX_DIMENSIONS];
   int partition_offset[PIDX_MAX_DIMENSIONS];

@@ -113,7 +113,7 @@ int PIDX_header_io_idx_file_create(PIDX_header_io_id header_io_id, PIDX_block_la
 
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
-    if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
+    if (i % header_io_id->idx_c->partition_nprocs == header_io_id->idx_c->partition_rank && block_layout->file_bitmap[i] == 1)
     {
       ret = generate_file_name(header_io_id->idx->blocks_per_file, filename_template, /*adjusted_file_index*/ i, bin_file, PATH_MAX);
       if (ret == 1)
@@ -158,7 +158,7 @@ int PIDX_header_io_idx_file_create(PIDX_header_io_id header_io_id, PIDX_block_la
     }
   }
 
-  MPI_Barrier(header_io_id->idx_c->local_comm);
+  MPI_Barrier(header_io_id->idx_c->partition_comm);
 
   return PIDX_success;
 }
@@ -186,7 +186,7 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
   sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
   free(directory_path);
 
-  if (header_io_id->idx_c->lrank == 0)
+  if (header_io_id->idx_c->partition_rank == 0)
   {
     //TODO: the logic for creating the subdirectory hierarchy could
     //be made to be more efficient than this. This implementation
@@ -224,7 +224,7 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
       }
     }
   }
-  MPI_Barrier(header_io_id->idx_c->local_comm);
+  MPI_Barrier(header_io_id->idx_c->partition_comm);
 
   free(data_set_path);
 
@@ -243,15 +243,15 @@ PIDX_return_code PIDX_header_io_idx_file_write(PIDX_header_io_id header_io_id, P
   {
     if (block_layout->file_bitmap[i] == 1)
     {
-      if (header_io_id->idx_c->grank == 0)
-        fprintf(stderr, "[%d] File %d being populated\n", header_io_id->idx_c->lnprocs, i);
+      if (header_io_id->idx_c->simulation_rank == 0)
+        fprintf(stderr, "[%d] File %d being populated\n", header_io_id->idx_c->partition_nprocs, i);
     }
   }
 #endif
 
   for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
   {
-    if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
+    if (i % header_io_id->idx_c->partition_nprocs == header_io_id->idx_c->partition_rank && block_layout->file_bitmap[i] == 1)
     {
       ret = generate_file_name(header_io_id->idx->blocks_per_file, filename_template, i, bin_file, PATH_MAX);
       if (ret == 1)
@@ -341,7 +341,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
     return 1;
   }
 
-  if (header_io->idx_c->lrank == 0)
+  if (header_io->idx_c->partition_rank == 0)
   {
     int ret = 0, j = 0;
     char last_path[PATH_MAX] = {0};
@@ -494,7 +494,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     return 1;
   }
 
-  if (header_io->idx_c->lrank == 0)
+  if (header_io->idx_c->partition_rank == 0)
   {
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p)
@@ -520,7 +520,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
 
     fprintf(idx_file_p, "(partition offset)\n%d %d %d\n", header_io->idx_d->partition_offset[0], header_io->idx_d->partition_offset[1], header_io->idx_d->partition_offset[2]);
 
-    fprintf(idx_file_p, "(partition index)\n%d\n", header_io->idx_d->color);
+    fprintf(idx_file_p, "(partition index)\n%d\n", header_io->idx_c->color);
 
     if(header_io->idx->endian == PIDX_LITTLE_ENDIAN)
       fprintf(idx_file_p, "(endian)\nlittle\n");
@@ -528,7 +528,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
       fprintf(idx_file_p, "(endian)\nbig\n");
     
     fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx_d->restructured_grid->patch_size[0], (long long)header_io->idx_d->restructured_grid->patch_size[1], (long long)header_io->idx_d->restructured_grid->patch_size[2]);
-    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->gnprocs);
+    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->simulation_nprocs);
 
     fprintf(idx_file_p, "(compression bit rate)\n%f\n", header_io->idx->compression_bit_rate);
     fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
@@ -619,7 +619,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
     return 1;
   }
 
-  if (header_io->idx_c->lrank == 0)
+  if (header_io->idx_c->partition_rank == 0)
   {
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p)
@@ -648,7 +648,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
       fprintf(idx_file_p, "(endian)\nbig\n");
     
     fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx_d->restructured_grid->patch_size[0], (long long)header_io->idx_d->restructured_grid->patch_size[1], (long long)header_io->idx_d->restructured_grid->patch_size[2]);
-    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->gnprocs);
+    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->simulation_nprocs);
 
     fprintf(idx_file_p, "(compression bit rate)\n%f\n", header_io->idx->compression_bit_rate);
     fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
@@ -720,7 +720,7 @@ static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout blo
     }
 
 #if 0
-    fprintf(stderr, "writing the header %d\n", header_io_id->idx_c->grank);
+    fprintf(stderr, "writing the header %d\n", header_io_id->idx_c->simulation_rank);
 #endif
 
     ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);

@@ -218,7 +218,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
 
     // Step 13: Partition cleanup
     time->partition_cleanup_start = MPI_Wtime();
-    if (destroy_local_comm(file) != PIDX_success)
+    if (destroy_partition_comm(file) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
@@ -396,7 +396,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, in
 
     // Step 12: Partition cleanup
     time->partition_cleanup_start = MPI_Wtime();
-    if (destroy_local_comm(file) != PIDX_success)
+    if (destroy_partition_comm(file) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
@@ -475,7 +475,7 @@ static PIDX_return_code create_midx(PIDX_io file, int gi, int svi)
       local_p->size[d] = var->restructured_super_patch->restructured_patch->size[d];
     }
     
-    int wc = file->idx_c->lnprocs * (PIDX_MAX_DIMENSIONS);
+    int wc = file->idx_c->partition_nprocs * (PIDX_MAX_DIMENSIONS);
   
     off_t* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
     memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
@@ -483,13 +483,13 @@ static PIDX_return_code create_midx(PIDX_io file, int gi, int svi)
     size_t* global_patch_size = malloc(wc * sizeof(*global_patch_size));
     memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
     
-    MPI_Allgather(&local_p->offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
+    MPI_Allgather(&local_p->offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
     
-    MPI_Allgather(&local_p->size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
+    MPI_Allgather(&local_p->size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
   
     //free(local_p);
   
-  if(file->idx_c->grank == 0)
+  if(file->idx_c->simulation_rank == 0)
   {
     // TODO make utility functions to retrieve filenames
     // and use those in all the code for all filename template related things
@@ -503,7 +503,7 @@ static PIDX_return_code create_midx(PIDX_io file, int gi, int svi)
     memset(offsets, 0, sizeof(*offsets) * PIDX_MAX_DIMENSIONS * num_parts);
     
     int proc=0;
-    for (proc = 0; proc < file->idx_c->lnprocs; proc++)
+    for (proc = 0; proc < file->idx_c->partition_nprocs; proc++)
     {
       PIDX_patch curr_local_p = (PIDX_patch)malloc(sizeof (*curr_local_p));
       
@@ -653,7 +653,7 @@ static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
   }
 
   // Splits the local communicator into local communicators
-  ret = create_local_comm(file);
+  ret = create_partition_comm(file);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -699,7 +699,7 @@ static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
 
   memcpy(file->idx->bounds, file->idx->box_bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
 
-  //fprintf(stderr, "%d - %d %d %d -- PO %d %d %d\n", file->idx_c->grank, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2]);
+  //fprintf(stderr, "%d - %d %d %d -- PO %d %d %d\n", file->idx_c->simulation_rank, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2]);
 
   return PIDX_success;
 }

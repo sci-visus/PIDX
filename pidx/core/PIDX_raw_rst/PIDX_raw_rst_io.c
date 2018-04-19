@@ -74,7 +74,7 @@ PIDX_return_code PIDX_raw_rst_buf_aggregate_and_write(PIDX_raw_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->grank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0, v_end = 0;
@@ -210,7 +210,7 @@ PIDX_return_code PIDX_raw_rst_buf_read_and_aggregate(PIDX_raw_rst_id rst_id)
       file_name = malloc(PATH_MAX * sizeof(*file_name));
       memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->grank, g);
+      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
 
       MPI_Status status;
       int ret = 0;
@@ -280,7 +280,7 @@ PIDX_return_code PIDX_raw_rst_buf_aggregated_write(PIDX_raw_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->grank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0;
@@ -335,7 +335,7 @@ PIDX_return_code PIDX_raw_rst_buf_aggregated_read(PIDX_raw_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->grank, g);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0;

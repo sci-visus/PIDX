@@ -190,23 +190,6 @@ PIDX_return_code particles_restructure_cleanup(PIDX_io file)
 }
 
 
-PIDX_return_code particles_restructure_forced_read(PIDX_io file, int svi, int evi)
-{
-  int ret = 0;
-
-  file->particles_rst_id = PIDX_particles_rst_init(file->idx, file->idx_d, file->idx_c, file->idx_dbg, svi, evi);
-
-  ret = PIDX_particles_rst_forced_raw_read(file->particles_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-
-  ret = PIDX_particles_rst_finalize(file->particles_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-
-  return PIDX_success;
-}
-
-
-
 
 PIDX_return_code particles_set_rst_box_size_for_raw_write(PIDX_io file, int gi, int svi)
 {

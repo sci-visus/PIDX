@@ -259,12 +259,12 @@ PIDX_return_code idx_restructure_rst_comm_create(PIDX_io file, int gi, int svi)
   PIDX_variable_group var_grp = file->idx->variable_grp[gi];
   PIDX_variable var0 = var_grp->variable[svi];
 
-  MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
+  MPI_Comm_rank(file->idx_c->simulation_comm, &(file->idx_c->simulation_rank));
 
-  MPI_Comm_split(file->idx_c->global_comm, var0->restructured_super_patch_count, file->idx_c->grank, &(file->idx_c->rst_comm));
+  MPI_Comm_split(file->idx_c->simulation_comm, var0->restructured_super_patch_count, file->idx_c->simulation_rank, &(file->idx_c->rst_comm));
 
-  MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
-  MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
+  MPI_Comm_rank(file->idx_c->partition_comm, &(file->idx_c->partition_rank));
+  MPI_Comm_size(file->idx_c->partition_comm, &(file->idx_c->partition_nprocs));
 
   MPI_Comm_rank(file->idx_c->rst_comm, &(file->idx_c->rrank));
   MPI_Comm_size(file->idx_c->rst_comm, &(file->idx_c->rnprocs));
@@ -272,12 +272,12 @@ PIDX_return_code idx_restructure_rst_comm_create(PIDX_io file, int gi, int svi)
   return PIDX_success;
 }
 
-PIDX_return_code idx_restructure_copy_rst_comm_to_local_comm(PIDX_io file, int gi, int svi)
+PIDX_return_code idx_restructure_copy_rst_comm_to_partition_comm(PIDX_io file, int gi, int svi)
 {
-  file->idx_c->local_comm = file->idx_c->rst_comm;
+  file->idx_c->partition_comm = file->idx_c->rst_comm;
 
-  MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
-  MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
+  MPI_Comm_rank(file->idx_c->partition_comm, &(file->idx_c->partition_rank));
+  MPI_Comm_size(file->idx_c->partition_comm, &(file->idx_c->partition_nprocs));
 
   return PIDX_success;
 }
@@ -322,9 +322,9 @@ static void guess_restructured_box_size(PIDX_io file, int gi, int svi)
     patch_size_z = file->idx->variable_grp[gi]->variable[svi]->sim_patch[0]->size[2];
   }
 
-  MPI_Allreduce(&patch_size_x, &max_patch_size_x, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
-  MPI_Allreduce(&patch_size_y, &max_patch_size_y, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
-  MPI_Allreduce(&patch_size_z, &max_patch_size_z, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
+  MPI_Allreduce(&patch_size_x, &max_patch_size_x, 1, MPI_INT, MPI_MAX, file->idx_c->simulation_comm);
+  MPI_Allreduce(&patch_size_y, &max_patch_size_y, 1, MPI_INT, MPI_MAX, file->idx_c->simulation_comm);
+  MPI_Allreduce(&patch_size_z, &max_patch_size_z, 1, MPI_INT, MPI_MAX, file->idx_c->simulation_comm);
 
   file->idx_d->restructured_grid->patch_size[0] = getPowerOf2(max_patch_size_x);
   file->idx_d->restructured_grid->patch_size[1] = getPowerOf2(max_patch_size_y);
@@ -356,7 +356,7 @@ static void adjust_restructured_box_size(PIDX_io file)
 
   //fprintf(stderr, "BB %d %d %d -> tpc %d %d %d\n", file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], tpc[0], tpc[1], tpc[2]);
 
-  if (tpc[0] * tpc[1] * tpc[2] > file->idx_c->gnprocs)
+  if (tpc[0] * tpc[1] * tpc[2] > file->idx_c->simulation_nprocs)
   {
     if (counter % 3 == 0)
       box_size_factor_x = box_size_factor_x * 2;
@@ -447,7 +447,7 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
         if (patch[index]->size[2] % file->idx->chunk_size[2] != 0)
           patch[index]->size[2] = (ceil((float)patch[index]->size[2] / file->idx->chunk_size[2])) * file->idx->chunk_size[2];
 
-        patch[index]->rank = rank_count * (file->idx_c->gnprocs / (total_patch_count));
+        patch[index]->rank = rank_count * (file->idx_c->simulation_nprocs / (total_patch_count));
         rank_count++;
       }
 #if 0
@@ -466,11 +466,11 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
 
           patch[index]->rank = (nz * file->idx_c->gnproc_x * file->idx_c->gnproc_y) + (ny * file->idx_c->gnproc_x) + nx;
 
-          if (file->idx_c->grank == patch[index]->rank)
+          if (file->idx_c->simulation_rank == patch[index]->rank)
           {
-            file->idx_c->grank_x = nx;
-            file->idx_c->grank_y = ny;
-            file->idx_c->grank_z = nz;
+            file->idx_c->simulation_rank_x = nx;
+            file->idx_c->simulation_rank_y = ny;
+            file->idx_c->simulation_rank_z = nz;
             //fprintf(stderr, "patch[index]->rank %d [%d %d %d]\n", patch[index]->rank, nx, ny, nz);
           }
         }
@@ -478,7 +478,7 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file, int gi, int svi
 #endif
 
 #if 0
-  if (file->idx_c->grank == 0)
+  if (file->idx_c->simulation_rank == 0)
   {
     for (k = 0; k < rgp[2]; k++)
       for (j = 0; j < rgp[1]; j++)
@@ -531,7 +531,7 @@ static PIDX_return_code free_idx_rst_box(PIDX_io file)
 
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
 {
-  int core = (int)log2(getPowerOf2(file->idx_c->gnprocs));
+  int core = (int)log2(getPowerOf2(file->idx_c->simulation_nprocs));
   int bits;
   int counter = 1;
   size_t power_two_bound[PIDX_MAX_DIMENSIONS];
@@ -551,7 +551,7 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   size_t *ps = file->idx_d->restructured_grid->patch_size;
   int np[3] = {1,1,1};
   while (bits != 0)
-  //while (np[0] * np[1] * np[2] < file->idx_c->gnprocs)
+  //while (np[0] * np[1] * np[2] < file->idx_c->simulation_nprocs)
   {
     if (file->idx->bitSequence[counter] == '0')
       ps[0] = ps[0] / 2;
@@ -566,8 +566,8 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
     //np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
     //np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
 
-    //if (file->idx_c->grank == 0)
-    //  fprintf(stderr, "[%c] : %d %d %d -> %d (np: %d) BB %d %d %d\n", file->idx->bitSequence[counter], ps[0], ps[1], ps[2], bits, file->idx_c->gnprocs, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
+    //if (file->idx_c->simulation_rank == 0)
+    //  fprintf(stderr, "[%c] : %d %d %d -> %d (np: %d) BB %d %d %d\n", file->idx->bitSequence[counter], ps[0], ps[1], ps[2], bits, file->idx_c->simulation_nprocs, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2]);
 
     counter++;
     bits--;
@@ -578,10 +578,10 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
   np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
   np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
 
-  //if (file->idx_c->grank == 0)
+  //if (file->idx_c->simulation_rank == 0)
   //  fprintf(stderr, "np %d (%d / %d) %d %d\n", np[0], file->idx->box_bounds[0], ps[0], np[1], np[2]);
 
-  if (np[0] * np[1] * np[2] > file->idx_c->gnprocs)
+  if (np[0] * np[1] * np[2] > file->idx_c->simulation_nprocs)
   {
     core = core - 1;
     goto increase_box_size;

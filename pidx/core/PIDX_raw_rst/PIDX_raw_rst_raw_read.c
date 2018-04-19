@@ -123,7 +123,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     return PIDX_err_io;
   }
 
-  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer size %lld\n", rst_id->idx_c->grank, (unsigned long long)read_count);
+  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer size %lld\n", rst_id->idx_c->simulation_rank, (unsigned long long)read_count);
 
   close(fp);
 
@@ -149,7 +149,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
-  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer offset %lld\n", rst_id->idx_c->grank, (unsigned long long)read_count);
+  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer offset %lld\n", rst_id->idx_c->simulation_rank, (unsigned long long)read_count);
   close(fp1);
 
 #if INVERT_ENDIANESS
@@ -319,7 +319,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
       for (i = 0; i < patch_count; i++)
       {
-        if (rst_id->idx_c->grank == 0)
+        if (rst_id->idx_c->simulation_rank == 0)
           fprintf(stderr, "[PIDX DEBUG] Processing patch [%d] %d\n", patch_count, i);
 
         pc_index = patch_grp->source_patch[i].rank * (max_patch_count * temp_max_dim + 1);

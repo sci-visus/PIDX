@@ -190,7 +190,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
     // sets up the HZ cache (this is only done once)
     if (hz_cache->is_set == 0)
     { 
-      //if (id->idx_c->lrank == 0)
+      //if (id->idx_c->partition_rank == 0)
       //  fprintf(stderr, "Cache Setup\n");
 
       // The number of elements equals to the number of sample in the patch
@@ -336,7 +336,7 @@ PIDX_return_code PIDX_hz_encode_write(PIDX_hz_encode_id id)
     // This condition is for using the cache
     else
     {
-      //if (id->idx_c->lrank == 0)
+      //if (id->idx_c->partition_rank == 0)
       //  fprintf(stderr, "Cache Used\n");
 
       if(var0->data_layout == PIDX_row_major)

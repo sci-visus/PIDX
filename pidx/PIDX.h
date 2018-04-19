@@ -470,7 +470,7 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type);
 
 
 
-
+#if 0
 ///
 /// \brief PIDX_set_wavelet_level
 /// \param file
@@ -488,7 +488,7 @@ PIDX_return_code PIDX_set_wavelet_level(PIDX_file file, int w_type);
 /// \return
 ///
 PIDX_return_code PIDX_get_wavelet_level(PIDX_file file, int* w_type);
-
+#endif
 
 
 ///
@@ -589,7 +589,7 @@ PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts);
 
 
 
-
+#if 0
 ///
 /// \brief PIDX_set_process_decomposition
 /// \param file
@@ -611,7 +611,7 @@ PIDX_return_code PIDX_set_process_decomposition(PIDX_file file, int np_x, int np
 /// \return
 ///
 PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* np_y, int* np_z);
-
+#endif
 
 ///
 /// \brief PIDX_set_comm

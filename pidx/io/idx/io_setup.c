@@ -127,12 +127,12 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
     {
       no_of_aggregators = var_grp->block_layout_by_level[i]->efc;
       total_aggregator = total_aggregator + no_of_aggregators;
-      if (no_of_aggregators <= file->idx_c->lnprocs)
+      if (no_of_aggregators <= file->idx_c->partition_nprocs)
         var_grp->agg_level = i + 1;
     }
   }
 
-  if (total_aggregator > file->idx_c->lnprocs)
+  if (total_aggregator > file->idx_c->partition_nprocs)
     var_grp->agg_level = var_grp->shared_start_layout_index;
 #endif
 
@@ -147,23 +147,23 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
     for (i = 0; i < var_grp->shared_layout_count + var_grp->nshared_layout_count ; i++)
       total_aggregator = total_aggregator + var_grp->block_layout_by_level[i]->efc;
 
-    //fprintf(stderr, "npocs %d agg %d vc %d\n", file->idx_c->lnprocs, total_aggregator, var_count);
-    if (file->idx_c->lnprocs >= total_aggregator * var_count)
+    //fprintf(stderr, "npocs %d agg %d vc %d\n", file->idx_c->partition_nprocs, total_aggregator, var_count);
+    if (file->idx_c->partition_nprocs >= total_aggregator * var_count)
     {
       var_grp->agg_level = var_grp->shared_layout_count + var_grp->nshared_layout_count;
       file->idx_d->variable_pipe_length = var_count - 1;
 
-      //if (file->idx_c->lrank == 0)
+      //if (file->idx_c->partition_rank == 0)
       //  fprintf(stderr, "[A] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
     }
     else
     {
-      if (file->idx_c->lnprocs < total_aggregator)
+      if (file->idx_c->partition_nprocs < total_aggregator)
       {
         var_grp->agg_level = var_grp->shared_start_layout_index;
         file->idx_d->variable_pipe_length = var_count - 1;
 
-        //if (file->idx_c->lrank == 0)
+        //if (file->idx_c->partition_rank == 0)
         //  fprintf(stderr, "[B] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
       }
       else
@@ -171,18 +171,18 @@ PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi)
         assert(var_count > 1);
         for (i = 0; i < var_count; i++)
         {
-          if ((i + 1) * total_aggregator > file->idx_c->lnprocs)
+          if ((i + 1) * total_aggregator > file->idx_c->partition_nprocs)
             break;
         }
         file->idx_d->variable_pipe_length = i - 1;
         var_grp->agg_level = var_grp->shared_layout_count + var_grp->nshared_layout_count;
-        //if (file->idx_c->lrank == 0)
+        //if (file->idx_c->partition_rank == 0)
         //  fprintf(stderr, "[C] agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
       }
     }
   }
 
-  //if (file->idx_c->lrank == 0)
+  //if (file->idx_c->partition_rank == 0)
   //  fprintf(stderr, "agg level %d pipe length %d\n", var_grp->agg_level, file->idx_d->variable_pipe_length);
 
   return PIDX_success;

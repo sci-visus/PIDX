@@ -82,7 +82,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               fvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0];
               fvalue_2 = *(*((float**)var->hz_buffer->buffer + i) + ((k * var->vps) + s));
 
-              //if (file->idx_c->lrank == 0)
+              //if (file->idx_c->partition_rank == 0)
               //fprintf(stderr, "%f %f\n", fvalue_1, fvalue_2);
               check_bit = check_bit && (fvalue_1 == fvalue_2);
             }
@@ -99,7 +99,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
             }
             if (strcmp(var->type_name, UINT64) == 0)
             {
-              uvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+              uvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_c->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
               uvalue_2 = *(*((unsigned long long**)var->hz_buffer->buffer + i) + ((k * var->vps) + s));
               check_bit = check_bit && (uvalue_1  == uvalue_2);
             }
@@ -107,7 +107,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
             {
               for (s = 0; s < 3; s++)
               {
-                uvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_d->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
+                uvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_c->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
                 memcpy(&uvalue_2, var->hz_buffer->buffer[i] + ((k * 3) + s) * sizeof(double), sizeof(double));
 
                 check_bit = check_bit && (uvalue_1  == uvalue_2);
@@ -126,24 +126,24 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
   }
 
   unsigned long long global_volume = 0;
-  MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, id->idx_c->local_comm);
+  MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, id->idx_c->partition_comm);
 
   //fprintf(stderr, "[HZ] Volume [%lld] and Volume [%lld]\n", global_volume, (unsigned long long)(id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1)));
 
   if (global_volume != (unsigned long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1))
   {
-    if (id->idx_c->lrank == 0)
-      fprintf(stderr, "[HZ Debug FAILED!!!!] [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
+    if (id->idx_c->partition_rank == 0)
+      fprintf(stderr, "[HZ Debug FAILED!!!!] [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", id->idx_c->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1));
 
-    if (id->idx_c->lrank == 0)
-      fprintf(stderr, "[HZ]  file->idx_c->lrank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", id->idx_c->lrank,  id->idx_d->color, (long long) lost_element_count, (long long) element_count, (long long) (id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]) * (id->last_index - id->first_index + 1));
+    if (id->idx_c->partition_rank == 0)
+      fprintf(stderr, "[HZ]  file->idx_c->partition_rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] \n", id->idx_c->partition_rank,  id->idx_c->color, (long long) lost_element_count, (long long) element_count, (long long) (id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]) * (id->last_index - id->first_index + 1));
 
     return PIDX_err_hz;
   }
   else
   {
-    if (id->idx_c->lrank == 0)
-      fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld] [Lost Elemet COunt %lld]\n", id->idx_d->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1), (long long) lost_element_count);
+    if (id->idx_c->partition_rank == 0)
+      fprintf(stderr, "[HZ Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld] [Lost Elemet COunt %lld]\n", id->idx_c->color, (long long) global_volume, (long long) id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2] * (id->last_index - id->first_index + 1), (long long) lost_element_count);
   }
 
   return PIDX_success;

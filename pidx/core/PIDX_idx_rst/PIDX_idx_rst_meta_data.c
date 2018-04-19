@@ -102,13 +102,13 @@ static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
 
 
   // rst_id->sim_max_patch_count will contain the maximum number of patch a process is holding
-  MPI_Allreduce(&var_grp->variable[rst_id->first_index]->sim_patch_count, &rst_id->sim_max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_comm_metadata->global_comm);
+  MPI_Allreduce(&var_grp->variable[rst_id->first_index]->sim_patch_count, &rst_id->sim_max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_comm_metadata->simulation_comm);
 
   // buffer to hold the offset and size information of all patches across all processes
-  rst_id->sim_multi_patch_r_count = malloc(sizeof (size_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
-  memset(rst_id->sim_multi_patch_r_count, 0, (sizeof (size_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
-  rst_id->sim_multi_patch_r_offset = malloc(sizeof (off_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
-  memset(rst_id->sim_multi_patch_r_offset, 0, (sizeof (off_t) * rst_id->idx_comm_metadata->gnprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
+  rst_id->sim_multi_patch_r_count = malloc(sizeof (size_t) * rst_id->idx_comm_metadata->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
+  memset(rst_id->sim_multi_patch_r_count, 0, (sizeof (size_t) * rst_id->idx_comm_metadata->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
+  rst_id->sim_multi_patch_r_offset = malloc(sizeof (off_t) * rst_id->idx_comm_metadata->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
+  memset(rst_id->sim_multi_patch_r_offset, 0, (sizeof (off_t) * rst_id->idx_comm_metadata->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
 
 
   // every process populates rst_id->sim_multi_patch_r_count and rst_id->sim_multi_patch_r_offset with their local information
@@ -117,7 +117,7 @@ static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
     off_t* tempoff = var_grp->variable[rst_id->first_index]->sim_patch[pc]->offset;
     size_t* tempsize = var_grp->variable[rst_id->first_index]->sim_patch[pc]->size;
 
-    unsigned long long index = rst_id->idx_comm_metadata->grank * (PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count) + pc*PIDX_MAX_DIMENSIONS;
+    unsigned long long index = rst_id->idx_comm_metadata->simulation_rank * (PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count) + pc*PIDX_MAX_DIMENSIONS;
     off_t* curr_patch_offset = &rst_id->sim_multi_patch_r_offset[index];
     size_t* curr_patch_size = &rst_id->sim_multi_patch_r_count[index];
 
@@ -129,20 +129,20 @@ static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
   size_t* count_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
   memset(count_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
 
-  memcpy(count_buffer_copy, &rst_id->sim_multi_patch_r_count[rst_id->idx_comm_metadata->grank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
+  memcpy(count_buffer_copy, &rst_id->sim_multi_patch_r_count[rst_id->idx_comm_metadata->simulation_rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
 
   // gather size of all patches across all processes
-  MPI_Allgather(count_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(size_t), MPI_BYTE, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(size_t), MPI_BYTE, rst_id->idx_comm_metadata->global_comm);
+  MPI_Allgather(count_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(size_t), MPI_BYTE, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(size_t), MPI_BYTE, rst_id->idx_comm_metadata->simulation_comm);
   free(count_buffer_copy);
 
   // making a local copy of the patch size since mpi does not allow the same buffer to be used as both a sender and a reciever
   off_t* offset_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
   memset(offset_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
 
-  memcpy(offset_buffer_copy, &rst_id->sim_multi_patch_r_offset[rst_id->idx_comm_metadata->grank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
+  memcpy(offset_buffer_copy, &rst_id->sim_multi_patch_r_offset[rst_id->idx_comm_metadata->simulation_rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
 
   // gather size of all patches across all processes
-  MPI_Allgather(offset_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(off_t), MPI_BYTE, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(off_t), MPI_BYTE, rst_id->idx_comm_metadata->global_comm);
+  MPI_Allgather(offset_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(off_t), MPI_BYTE, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(off_t), MPI_BYTE, rst_id->idx_comm_metadata->simulation_comm);
   free(offset_buffer_copy);
 
   return;
@@ -168,7 +168,7 @@ static void calculate_number_of_intersecting_boxes(PIDX_idx_rst_id rst_id)
   // If I am the reciever (holder) of a super patch
   for (i = 0; i < tpc[0] * tpc[1] * tpc[2]; i++)
   {
-    if (rst_id->idx_comm_metadata->grank == idm->restructured_grid->patch[i]->rank)
+    if (rst_id->idx_comm_metadata->simulation_rank == idm->restructured_grid->patch[i]->rank)
       rst_id->intersected_restructured_super_patch_count++;
   }
 
@@ -198,7 +198,7 @@ static void calculate_number_of_intersecting_boxes(PIDX_idx_rst_id rst_id)
 
       if (intersectNDChunk(reg_patch, local_proc_patch))
       {
-        if (rst_id->idx_comm_metadata->grank == idm->restructured_grid->patch[i]->rank)
+        if (rst_id->idx_comm_metadata->simulation_rank == idm->restructured_grid->patch[i]->rank)
         {
           free(reg_patch);
           continue;
@@ -281,7 +281,7 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
       }
 
       // If local process intersects with regular patch, then find all other process that intersects with the regular patch.
-      if (rst_id->idx_comm_metadata->grank == ep->rank || (rst_id->idx_comm_metadata->grank != ep->rank && intersectNDChunk(reg_patch, local_proc_patch)))
+      if (rst_id->idx_comm_metadata->simulation_rank == ep->rank || (rst_id->idx_comm_metadata->simulation_rank != ep->rank && intersectNDChunk(reg_patch, local_proc_patch)))
       {
         if (!contains_patch(reg_patch, found_reg_patches, found_reg_patches_count))
         {
@@ -306,11 +306,11 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
           patch_grp->is_boundary_patch = ep->is_boundary_patch;
 
           // Iterate through all processes
-          for (r = 0; r < rst_id->idx_comm_metadata->gnprocs; r++)
+          for (r = 0; r < rst_id->idx_comm_metadata->simulation_nprocs; r++)
           {
             for(pc = 0; pc < rst_id->sim_max_patch_count; pc++)
             {
-              // Extent of process with rst_id->idx_comm_metadata->grank r
+              // Extent of process with rst_id->idx_comm_metadata->simulation_rank r
               PIDX_patch curr_patch = malloc(sizeof (*curr_patch));
               memset(curr_patch, 0, sizeof (*curr_patch));
 
@@ -388,7 +388,7 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
                   else
                     patch_grp->patch = temp_buffer3;
 
-                  if (rst_id->idx_comm_metadata->grank == 0)
+                  if (rst_id->idx_comm_metadata->simulation_rank == 0)
                     fprintf(stderr, "[ERROR] rst_id->maximum_neighbor_count needs to be increased\n");
                 }
 
@@ -399,7 +399,7 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
           }
 
           patch_grp->max_patch_rank = ep->rank;
-          if(rst_id->idx_comm_metadata->grank == patch_grp->max_patch_rank)
+          if(rst_id->idx_comm_metadata->simulation_rank == patch_grp->max_patch_rank)
           {
             var0->restructured_super_patch_count = var0->restructured_super_patch_count + 1;
             assert (var0->restructured_super_patch_count <= 1);
@@ -448,7 +448,7 @@ static PIDX_return_code copy_reciever_patch_info(PIDX_idx_rst_id rst_id)
     for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     {
       PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
-      if (rst_id->idx_comm_metadata->grank == irsp->max_patch_rank)
+      if (rst_id->idx_comm_metadata->simulation_rank == irsp->max_patch_rank)
       {
         PIDX_super_patch patch_group = var->restructured_super_patch;
         patch_group->patch_count = irsp->patch_count;
@@ -521,19 +521,17 @@ PIDX_return_code PIDX_idx_rst_meta_data_write(PIDX_idx_rst_id rst_id)
     pcounter++;
   }
 
-  global_patch_offset = malloc((rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
-  memset(global_patch_offset, 0,(rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  global_patch_offset = malloc((rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  memset(global_patch_offset, 0,(rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
 
-  global_patch_size = malloc((rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
-  memset(global_patch_size, 0, (rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  global_patch_size = malloc((rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  memset(global_patch_size, 0, (rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
 
+  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS + 1, MPI_INT, global_patch_offset + 2, PIDX_MAX_DIMENSIONS + 1, MPI_INT, rst_id->idx_comm_metadata->simulation_comm);
+  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS + 1, MPI_INT, global_patch_size + 2, PIDX_MAX_DIMENSIONS + 1, MPI_INT, rst_id->idx_comm_metadata->simulation_comm);
 
-  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS + 1, MPI_INT, global_patch_offset + 2, PIDX_MAX_DIMENSIONS + 1, MPI_INT, rst_id->idx_comm_metadata->global_comm);
-  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS + 1, MPI_INT, global_patch_size + 2, PIDX_MAX_DIMENSIONS + 1, MPI_INT, rst_id->idx_comm_metadata->global_comm);
-
-
-  global_patch_size[0] = rst_id->idx_comm_metadata->gnprocs;
-  global_patch_offset[0] = rst_id->idx_comm_metadata->gnprocs;
+  global_patch_size[0] = rst_id->idx_comm_metadata->simulation_nprocs;
+  global_patch_offset[0] = rst_id->idx_comm_metadata->simulation_nprocs;
   global_patch_size[1] = 1;
   global_patch_offset[1] = 1;
 
@@ -548,11 +546,11 @@ PIDX_return_code PIDX_idx_rst_meta_data_write(PIDX_idx_rst_id rst_id)
   sprintf(offset_path, "%s_OFFSET", directory_path);
   sprintf(size_path, "%s_SIZE", directory_path);
   free(directory_path);
-  if (rst_id->idx_comm_metadata->grank == 1 || rst_id->idx_comm_metadata->gnprocs == 1)
+  if (rst_id->idx_comm_metadata->simulation_rank == 1 || rst_id->idx_comm_metadata->simulation_nprocs == 1)
   {
     int fp = open(offset_path, O_CREAT | O_WRONLY, 0664);
-    ssize_t write_count = pwrite(fp, global_patch_offset, (rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
-    if (write_count != (rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
+    ssize_t write_count = pwrite(fp, global_patch_offset, (rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
+    if (write_count != (rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -560,8 +558,8 @@ PIDX_return_code PIDX_idx_rst_meta_data_write(PIDX_idx_rst_id rst_id)
     close(fp);
 
     fp = open(size_path, O_CREAT | O_WRONLY, 0664);
-    write_count = pwrite(fp, global_patch_size, (rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
-    if (write_count != (rst_id->idx_comm_metadata->gnprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
+    write_count = pwrite(fp, global_patch_size, (rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
+    if (write_count != (rst_id->idx_comm_metadata->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -625,9 +623,9 @@ PIDX_return_code PIDX_idx_rst_meta_data_destroy(PIDX_idx_rst_id rst_id)
   free(rst_id->intersected_restructured_super_patch);
   rst_id->intersected_restructured_super_patch = 0;
 
-
   return PIDX_success;
 }
+
 
 // Function to check if patches A and B intersects
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B)

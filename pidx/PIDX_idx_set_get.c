@@ -289,7 +289,7 @@ PIDX_return_code PIDX_set_restructuring_box(PIDX_file file, PIDX_point reg_patch
 
   if (((reg_patch_size[0] & (reg_patch_size[0] - 1)) != 0) && ((reg_patch_size[1] & (reg_patch_size[1] - 1)) != 0) && ((reg_patch_size[2] & (reg_patch_size[2] - 1)) != 0))
   {
-    if (file->idx_c->grank == 0)
+    if (file->idx_c->simulation_rank == 0)
       fprintf(stderr, "Warning in %s %d restructuring box needs to be power of two in size %d %d %d\n", __FILE__, __LINE__, (int)reg_patch_size[0], (int)reg_patch_size[1], (int)reg_patch_size[2]);
     //return PIDX_err_box;
   }
@@ -561,7 +561,7 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type)
 
 
 
-
+#if 0
 PIDX_return_code PIDX_set_wavelet_level(PIDX_file file, int w_level)
 {
   if(file == NULL)
@@ -583,7 +583,7 @@ PIDX_return_code PIDX_get_wavelet_level(PIDX_file file, int* w_level)
 
   return PIDX_success;
 }
-
+#endif
 
 
 PIDX_return_code PIDX_set_ROI_type(PIDX_file file, int type)
@@ -716,7 +716,7 @@ PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts)
 }
 
 
-
+/*
 PIDX_return_code PIDX_set_process_decomposition(PIDX_file file, int np_x, int np_y, int np_z)
 {
   if (file == NULL)
@@ -743,7 +743,7 @@ PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* 
 
   return PIDX_success;
 }
-
+*/
 
 
 PIDX_return_code PIDX_get_comm(PIDX_file file, MPI_Comm *comm)
@@ -751,7 +751,7 @@ PIDX_return_code PIDX_get_comm(PIDX_file file, MPI_Comm *comm)
   if(!file)
     return PIDX_err_file;
 
-   *comm = file->idx_c->global_comm;
+   *comm = file->idx_c->simulation_comm;
 
   return PIDX_success;
 }
@@ -762,13 +762,13 @@ PIDX_return_code PIDX_set_comm(PIDX_file file, MPI_Comm comm)
   if(!file)
     return PIDX_err_file;
 
-   file->idx_c->global_comm = comm;
-   file->idx_c->local_comm = comm;
+   file->idx_c->simulation_comm = comm;
+   file->idx_c->partition_comm = comm;
 
-   MPI_Comm_rank(file->idx_c->global_comm, &(file->idx_c->grank));
-   MPI_Comm_size(file->idx_c->global_comm, &(file->idx_c->gnprocs));
-   MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
-   MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
+   MPI_Comm_rank(file->idx_c->simulation_comm, &(file->idx_c->simulation_rank));
+   MPI_Comm_size(file->idx_c->simulation_comm, &(file->idx_c->simulation_nprocs));
+   MPI_Comm_rank(file->idx_c->partition_comm, &(file->idx_c->partition_rank));
+   MPI_Comm_size(file->idx_c->partition_comm, &(file->idx_c->partition_nprocs));
 
   return PIDX_success;
 }

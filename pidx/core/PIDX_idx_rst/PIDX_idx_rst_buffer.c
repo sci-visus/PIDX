@@ -72,7 +72,7 @@ PIDX_return_code PIDX_idx_rst_buf_create(PIDX_idx_rst_id rst_id)
     for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     {
       // If the process is the target rank of a super patch then allocate buffer for the patches of the super patch
-      if (rst_id->idx_comm_metadata->grank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
+      if (rst_id->idx_comm_metadata->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
       {
         PIDX_super_patch patch_group = var->restructured_super_patch;
         // Iterate through all the patches of the super patch and allocate buffer for them
@@ -156,7 +156,7 @@ PIDX_return_code PIDX_idx_rst_aggregate_buf_create(PIDX_idx_rst_id rst_id)
     var->restructured_super_patch->restructured_patch->buffer = malloc(out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->bpv/8) * var->vps);
     memset(var->restructured_super_patch->restructured_patch->buffer, 0, out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (var->bpv/8) * var->vps);
 
-    //fprintf(stderr, "[Restructuring] Buffer size of %d = %d x %d x %d\n", rst_id->idx_comm_metadata->grank, out_patch->size[0], out_patch->size[1], out_patch->size[2]);
+    //fprintf(stderr, "[Restructuring] Buffer size of %d = %d x %d x %d\n", rst_id->idx_comm_metadata->simulation_rank, out_patch->size[0], out_patch->size[1], out_patch->size[2]);
 
     if (var->restructured_super_patch->restructured_patch->buffer == NULL)
     {

@@ -99,7 +99,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
               }
               else if (strcmp(var->type_name, FLOAT64) == 0)
               {
-                dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_metadata->color * bounds[0] * bounds[1] * bounds[2]);
+                dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_comm_metadata->color * bounds[0] * bounds[1] * bounds[2]);
                 memcpy(&dvalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
                 check_bit = check_bit && (dvalue_1 == dvalue_2);
@@ -108,7 +108,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
               {
                 for (s = 0; s < 3; s++)
                 {
-                  dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_metadata->color * bounds[0] * bounds[1] * bounds[2]);
+                  dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_comm_metadata->color * bounds[0] * bounds[1] * bounds[2]);
 
                   memcpy(&dvalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * 3) + s) * sizeof(double), sizeof(double));
                   check_bit = check_bit && (dvalue_1  == dvalue_2);
@@ -116,7 +116,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
               }
               else if (strcmp(var->type_name, UINT64) == 0)
               {
-                uvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_metadata->color * bounds[0] * bounds[1] * bounds[2]);
+                uvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_comm_metadata->color * bounds[0] * bounds[1] * bounds[2]);
 
                 memcpy(&uvalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
@@ -124,7 +124,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
               }
               else if (strcmp(var->type_name, INT32) == 0)
               {
-                ivalue_1 = 100 + v + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_derived_metadata->color * bounds[0] * bounds[1] * bounds[2]);
+                ivalue_1 = 100 + v + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_comm_metadata->color * bounds[0] * bounds[1] * bounds[2]);
 
                 memcpy(&ivalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
@@ -146,21 +146,21 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
   }
 
 skip_verify:
-  MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_comm_metadata->global_comm);
+  MPI_Allreduce(&element_count, &global_volume, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_comm_metadata->simulation_comm);
 
   if (global_volume != (unsigned long long) bounds[0] * bounds[1] * bounds[2] * (rst_id->last_index - rst_id->first_index + 1))
   {
-    if (rst_id->idx_comm_metadata->grank == 0)
-      fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived_metadata->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
+    if (rst_id->idx_comm_metadata->simulation_rank == 0)
+      fprintf(stderr, "[RST Debug FAILED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_comm_metadata->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
 
-    if (rst_id->idx_comm_metadata->grank == 0)
-      fprintf(stderr, "[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rst_id->idx_comm_metadata->grank, rst_id->idx_derived_metadata->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2]) * (rst_id->last_index - rst_id->first_index + 1), vol);
+    if (rst_id->idx_comm_metadata->simulation_rank == 0)
+      fprintf(stderr, "[RST]  Rank %d Color %d [LOST ELEMENT COUNT %lld] [FOUND ELEMENT COUNT %lld] [TOTAL ELEMNTS %lld] [LV %d]\n", rst_id->idx_comm_metadata->simulation_rank, rst_id->idx_comm_metadata->color, (long long) lost_element_count, (long long) element_count, (long long) (bounds[0] * bounds[1] * bounds[2]) * (rst_id->last_index - rst_id->first_index + 1), vol);
 
     return PIDX_err_rst;
   }
   else
-    if (rst_id->idx_comm_metadata->grank == 0)
-      fprintf(stderr, "[RST Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_derived_metadata->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
+    if (rst_id->idx_comm_metadata->simulation_rank == 0)
+      fprintf(stderr, "[RST Debug PASSED!!!!]  [Color %d] [Recorded Volume %lld] [Actual Volume %lld]\n", rst_id->idx_comm_metadata->color, (long long) global_volume, (long long) bounds[0] * bounds[1] * bounds[2]  * (rst_id->last_index - rst_id->first_index + 1));
 
 
   return PIDX_success;

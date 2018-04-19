@@ -66,7 +66,7 @@ PIDX_return_code PIDX_raw_rst_buf_create(PIDX_raw_rst_id rst_id)
     cnt = 0;
     for (i = 0; i < rst_id->reg_raw_grp_count; i++)
     {
-      if (rst_id->idx_c->grank == rst_id->reg_raw_grp[i]->max_patch_rank)
+      if (rst_id->idx_c->simulation_rank == rst_id->reg_raw_grp[i]->max_patch_rank)
       {
         PIDX_super_patch patch_group = var->rst_patch_group[cnt]; // here use patch_group
 

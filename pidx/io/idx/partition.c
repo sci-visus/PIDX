@@ -51,7 +51,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 
   colors = malloc(sizeof(*colors) * file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
   memset(colors, 0, sizeof(*colors) * file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]);
-  file->idx_d->color = (file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]) + 1;
+  file->idx_c->color = (file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2]) + 1;
 
   for (k = 0; k < file->idx_d->partition_count[2]; k++)
     for (j = 0; j < file->idx_d->partition_count[1]; j++)
@@ -127,7 +127,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
               PGET(xyzuv_Index, bit) >>= 1;
             }
 
-            file->idx_d->color = colors[z_order];
+            file->idx_c->color = colors[z_order];
 
             file->idx_d->partition_offset[0] = i;
             file->idx_d->partition_offset[1] = j;
@@ -150,7 +150,7 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
   file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
 
   //if (file->idx_d->partition_count[0] != 1 || file->idx_d->partition_count[1] != 1 || file->idx_d->partition_count[2] != 1)
-  sprintf(file->idx->filename_partition, "%s_%d.idx", file_name_skeleton, file->idx_d->color);
+  sprintf(file->idx->filename_partition, "%s_%d.idx", file_name_skeleton, file->idx_c->color);
   //else
   //  strcpy(file->idx->filename_partition, file->idx->filename);
 
@@ -160,29 +160,29 @@ PIDX_return_code partition_setup(PIDX_io file, int gi, int svi)
 }
 
 
-PIDX_return_code create_local_comm(PIDX_io file)
+PIDX_return_code create_partition_comm(PIDX_io file)
 {
   int ret;
-  ret = MPI_Comm_split(file->idx_c->rst_comm, file->idx_d->color, file->idx_c->rrank, &(file->idx_c->local_comm));
+  ret = MPI_Comm_split(file->idx_c->rst_comm, file->idx_c->color, file->idx_c->rrank, &(file->idx_c->partition_comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  MPI_Comm_size(file->idx_c->local_comm, &(file->idx_c->lnprocs));
-  MPI_Comm_rank(file->idx_c->local_comm, &(file->idx_c->lrank));
+  MPI_Comm_size(file->idx_c->partition_comm, &(file->idx_c->partition_nprocs));
+  MPI_Comm_rank(file->idx_c->partition_comm, &(file->idx_c->partition_rank));
 
-  //fprintf(stderr, "[%d %d] [%d %d]\n", file->idx_c->gnprocs, file->idx_c->grank, file->idx_c->lnprocs, file->idx_c->lrank);
+  //fprintf(stderr, "[%d %d] [%d %d]\n", file->idx_c->simulation_nprocs, file->idx_c->simulation_rank, file->idx_c->partition_nprocs, file->idx_c->partition_rank);
 
   return PIDX_success;
 }
 
 
-PIDX_return_code destroy_local_comm(PIDX_io file)
+PIDX_return_code destroy_partition_comm(PIDX_io file)
 {
   int ret;
-  ret = MPI_Comm_free(&(file->idx_c->local_comm));
+  ret = MPI_Comm_free(&(file->idx_c->partition_comm));
   if (ret != MPI_SUCCESS)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -229,7 +229,7 @@ PIDX_return_code find_partition_count(PIDX_io file)
     file->idx_d->samples_per_block = 1;
   }
 
-  //fprintf(stderr, "Rank %d Partition size %d %d %d\n", file->idx_c->grank, file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
+  //fprintf(stderr, "Rank %d Partition size %d %d %d\n", file->idx_c->simulation_rank, file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
 
   return PIDX_success;
 }

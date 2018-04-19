@@ -63,7 +63,7 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
   int block_layout_count = approx_maxh(file);
 
-  PIDX_init_timming_buffers1(time, vgc, file->idx->variable_count, block_layout_count, file->idx_d->wavelet_levels);
+  PIDX_init_timming_buffers1(time, vgc, file->idx->variable_count, block_layout_count);
   for (i = file->local_group_index; i < file->local_group_index + file->local_group_count; i++)
   {
     PIDX_variable_group var_grp = file->idx->variable_grp[i];
@@ -195,7 +195,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
   pidx_global_variable++;
 
 #if DETAIL_OUTPUT
-  if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+  if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
   {
 #if 0
     if (file->idx->io_type == PIDX_io_type::PIDX_RAW_IO)
@@ -210,7 +210,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
     if (file->idx->io_type != PIDX_RAW_IO)
     {
-      fprintf(stderr, "[%d : %d %d] [%d %d %d : %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count);
+      fprintf(stderr, "[%d : %d %d] [%d %d %d : %d]\n", file->idx->current_time_step, file->idx_c->simulation_rank, file->idx_c->simulation_nprocs, (int) file->idx->bounds[0], (int) file->idx->bounds[1], (int) file->idx->bounds[2], file->idx->variable_count);
       fprintf(stderr, "Box set by user (PIDX_USER_RST_BOX) %d %d %d\n", (int)file->idx_d->restructured_grid->patch_size[0], (int)file->idx_d->restructured_grid->patch_size[1], (int)file->idx_d->restructured_grid->patch_size[2]);
 
       fprintf(stderr, "Compression Bit rate set to %f\n", file->idx->compression_bit_rate);
@@ -238,7 +238,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 
   double total_time = time->sim_end - time->sim_start;
   double max_time = total_time;
-  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->global_comm);
+  MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
 
   if (io_type != PIDX_RAW_IO)
   {
@@ -255,7 +255,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       double post_group_total = group_bitstring + group_block_layout + header_io;
 
 #if DETAIL_OUTPUT
-      fprintf(stderr, "\n[T %d R %d N %d G %d]\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable);
+      fprintf(stderr, "\n[T %d R %d N %d G %d]\n", file->idx->current_time_step, file->idx_c->simulation_rank, file->idx_c->simulation_nprocs, pidx_global_variable);
       fprintf(stderr, "PRE INIT          :[%.4f + %.4f] = %.4f\n\n", group_init, group_reg_box, pre_group_total);
       fprintf(stderr, "POST INIT         :[%.4f + %.4f + %.4f] = %.4f\n\n", group_bitstring, group_block_layout, header_io, post_group_total);
 #endif
@@ -359,55 +359,6 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
           }
         }
 
-        double w_comm_s_x_odd = 0, w_comp_s_x_odd = 0, w_comm_s_x_even = 0, w_comp_s_x_even;
-        double w_comm_s_y_odd = 0, w_comp_s_y_odd = 0, w_comm_s_y_even = 0, w_comp_s_y_even;
-        double w_comm_s_z_odd = 0, w_comp_s_z_odd = 0, w_comm_s_z_even = 0, w_comp_s_z_even;
-        double w_comm_total = 0, w_comp_total = 0;
-        double w_comp_s_x = 0, w_comp_s_y = 0, w_comp_s_z = 0;
-        for (i = 0; i < file->idx_d->wavelet_levels ; i++)
-        {
-          if (file->idx_d->wavelet_imeplementation_type == WAVELET_STENCIL)
-          {
-            w_comm_s_x_odd = time->w_stencil_comm_x_odd_end[gi][si][i] - time->w_stencil_comm_x_odd_start[gi][si][i];
-            w_comp_s_x_odd = time->w_stencil_comp_x_odd_end[gi][si][i] - time->w_stencil_comp_x_odd_start[gi][si][i];
-            w_comm_s_x_even = time->w_stencil_comm_x_even_end[gi][si][i] - time->w_stencil_comm_x_even_start[gi][si][i];
-            w_comp_s_x_even = time->w_stencil_comp_x_even_end[gi][si][i] - time->w_stencil_comp_x_even_start[gi][si][i];
-
-            w_comm_s_y_odd = time->w_stencil_comm_y_odd_end[gi][si][i] - time->w_stencil_comm_y_odd_start[gi][si][i];
-            w_comp_s_y_odd = time->w_stencil_comp_y_odd_end[gi][si][i] - time->w_stencil_comp_y_odd_start[gi][si][i];
-            w_comm_s_y_even = time->w_stencil_comm_y_even_end[gi][si][i] - time->w_stencil_comm_y_even_start[gi][si][i];
-            w_comp_s_y_even = time->w_stencil_comp_y_even_end[gi][si][i] - time->w_stencil_comp_y_even_start[gi][si][i];
-
-            w_comm_s_z_odd = time->w_stencil_comm_z_odd_end[gi][si][i] - time->w_stencil_comm_z_odd_start[gi][si][i];
-            w_comp_s_z_odd = time->w_stencil_comp_z_odd_end[gi][si][i] - time->w_stencil_comp_z_odd_start[gi][si][i];
-            w_comm_s_z_even = time->w_stencil_comm_z_even_end[gi][si][i] - time->w_stencil_comm_z_even_start[gi][si][i];
-            w_comp_s_z_even = time->w_stencil_comp_z_even_end[gi][si][i] - time->w_stencil_comp_z_even_start[gi][si][i];
-
-            w_comm_total = w_comm_s_x_odd + w_comm_s_x_even + w_comm_s_y_odd + w_comm_s_y_even + w_comm_s_z_odd + w_comm_s_z_even;
-            w_comp_total = w_comp_s_x_odd + w_comp_s_x_even + w_comp_s_y_odd + w_comp_s_y_even + w_comp_s_z_odd + w_comp_s_z_even;
-            w_all = w_all + w_comm_total + w_comp_total;
-
-#if DETAIL_OUTPUT
-            fprintf(stderr, "[WAVELET STENCIL COMM][%d]   :[%d] [%f + %f] + [%f + %f] + [%f + %f] = %f [%f]\n", i, si, w_comm_s_x_odd, w_comm_s_x_even, w_comm_s_y_odd, w_comm_s_y_even, w_comm_s_z_odd, w_comm_s_z_even, w_comm_total, w_all);
-            fprintf(stderr, "[WAVELET STENCIL COMP][%d]   :[%d] [%f + %f] + [%f + %f] + [%f + %f] = %f [%f]\n", i, si, w_comp_s_x_odd, w_comp_s_x_even, w_comp_s_y_odd, w_comp_s_y_even, w_comp_s_z_odd, w_comp_s_z_even, w_comp_total, w_all);
-#endif
-          }
-          else
-          {
-            w_comp_s_x = time->w_rst_comp_x_end[gi][si][i] - time->w_rst_comp_x_start[gi][si][i];
-            w_comp_s_y = time->w_rst_comp_y_end[gi][si][i] - time->w_rst_comp_y_start[gi][si][i];
-            w_comp_s_z = time->w_rst_comp_z_end[gi][si][i] - time->w_rst_comp_z_start[gi][si][i];
-
-            w_comp_total = w_comp_s_x + w_comp_s_y + w_comp_s_z;
-            w_all = w_all + w_comm_total + w_comp_total;
-
-#if DETAIL_OUTPUT
-            fprintf(stderr, "[WAVELET RST COMP][%d]       :[%d] [%f + %f + %f] = %f [%f]\n", i, si, w_comp_s_x, w_comp_s_y, w_comp_s_z, w_comp_total, w_all);
-#endif
-
-          }
-        }
-
         double agg_init = 0, agg_meta = 0, agg_buf = 0, agg = 0, agg_meta_cleanup = 0, agg_total = 0, agg_cmp = 0;
         for (i = file->idx->variable_grp[gi]->shared_start_layout_index; i < file->idx->variable_grp[gi]->agg_level ; i++)
         {
@@ -473,10 +424,10 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
 #endif
       }
 
-      grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + w_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
+      grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all + hz_all + hz_io_all + chunk_all + compression_all + agg_all + io_all;
 
 #if DETAIL_OUTPUT
-      fprintf(stderr, "XIRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      fprintf(stderr, "XIRPICCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", pre_group_total, rst_all, partition_time, post_group_total, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #else
       PIDX_variable_group var_grp = file->idx->variable_grp[gi];
       PIDX_variable var0 = var_grp->variable[svi];
@@ -488,7 +439,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
         fprintf(stderr, "Timestep %d Extents %f %f %f Variables %d Time [%f + %f + %f + %f] = %f [%f]\n", file->idx->current_time_step, file->idx->physical_bounds[0], file->idx->physical_bounds[1], file->idx->physical_bounds[2], (evi - svi), idx_time, meta_time, data_time, time->SX - time->sim_start, (idx_time + meta_time + data_time + (time->SX - time->sim_start)), max_time );
       }
       else
-        fprintf(stderr, "[%s %d %d (%d %d %d)] IRPIWCCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], pre_group_total, rst_all, partition_time, post_group_total, w_all, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+        fprintf(stderr, "[%s %d %d (%d %d %d)] IRPICCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], pre_group_total, rst_all, partition_time, post_group_total, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #endif
     }
   }
@@ -504,7 +455,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       double header_io = time->header_io_end - time->header_io_start;
       double group_total = group_init + group_bitstring + group_reg_box + group_block_layout + header_io;
 
-      //fprintf(stderr, "[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
+      //fprintf(stderr, "[T %d R %d N %d G %d] INIT          :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", file->idx->current_time_step, file->idx_c->simulation_rank, file->idx_c->simulation_nprocs, pidx_global_variable, group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
       //fprintf(stderr, "INIT      :[%.4f + %.4f + %.4f + %.4f + %.4f] = %.4f\n", group_init, group_bitstring, group_reg_box, group_block_layout, header_io, group_total);
 
@@ -538,7 +489,7 @@ static void PIDX_debug_output(PIDX_file file, int gi, int svi, int evi, int io_t
       }
 
       //grp_rst_hz_chunk_agg_io = grp_rst_hz_chunk_agg_io + rst_all;
-      fprintf(stderr, "[RAW] [%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx_d->restructured_grid->patch_size[0], (int)file->idx_d->restructured_grid->patch_size[1], (int)file->idx_d->restructured_grid->patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->grank, file->idx_c->gnprocs, (evi - svi),
+      fprintf(stderr, "[RAW] [%s] [%d %d %d : %d %d %d] [%d] [T %d R %d N %d V %d] : [%.4f + %.4f (%.4f = %.4f + %.4f + %.4f) = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], (int)file->idx_d->restructured_grid->patch_size[0], (int)file->idx_d->restructured_grid->patch_size[1], (int)file->idx_d->restructured_grid->patch_size[2],  pidx_global_variable, file->idx->current_time_step, file->idx_c->simulation_rank, file->idx_c->simulation_nprocs, (evi - svi),
              group_total,
              rst_all,
              r1 + r2 + r3,

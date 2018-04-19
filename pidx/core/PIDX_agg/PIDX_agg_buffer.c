@@ -54,7 +54,7 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
   PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
 
   int rank_counter = 0;
-  int aggregator_interval = id->idx_c->lnprocs / ((id->fi - id->li + 1) * lbl->efc);
+  int aggregator_interval = id->idx_c->partition_nprocs / ((id->fi - id->li + 1) * lbl->efc);
 
   for (k = 0; k < lbl->efc; k++)
   {
@@ -65,7 +65,7 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
         id->agg_r[k][i - id->fi][j] = rank_counter;
         rank_counter = rank_counter + aggregator_interval;
 
-        if(id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
+        if(id->idx_c->partition_rank == id->agg_r[k][i - id->fi][j])
         {
           ab->file_number = lbl->existing_file_index[k];
           ab->var_number = i;
@@ -111,7 +111,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
     local_patch_size[d] = var0->restructured_super_patch->restructured_patch->size[d];
   }
 
-  int wc = id->idx_c->lnprocs * (PIDX_MAX_DIMENSIONS);
+  int wc = id->idx_c->partition_nprocs * (PIDX_MAX_DIMENSIONS);
 
   unsigned long long* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
   memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
@@ -119,15 +119,15 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
   unsigned long long* global_patch_size = malloc(wc * sizeof(*global_patch_size));
   memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
 
-  MPI_Allgather(&local_patch_offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+  MPI_Allgather(&local_patch_offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->partition_comm);
 
-  MPI_Allgather(&local_patch_size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+  MPI_Allgather(&local_patch_size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->partition_comm);
 
 #if 0
-  if (id->idx_c->grank == 0 && agg_offset == 0)
+  if (id->idx_c->simulation_rank == 0 && agg_offset == 0)
   {
-    for (i = 0; i < id->idx_c->lnprocs; i++)
-      fprintf(stderr, "[%d] (%d) -----> %d %d %d - %d %d %d\n", i, id->idx_c->lnprocs, (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 0], (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 1], (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 2], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 0], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 1], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 2]);
+    for (i = 0; i < id->idx_c->partition_nprocs; i++)
+      fprintf(stderr, "[%d] (%d) -----> %d %d %d - %d %d %d\n", i, id->idx_c->partition_nprocs, (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 0], (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 1], (int)global_patch_offset[PIDX_MAX_DIMENSIONS * i + 2], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 0], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 1], (int)global_patch_size[PIDX_MAX_DIMENSIONS * i + 2]);
   }
 #endif
 
@@ -176,7 +176,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
             Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
 
             // check to see if the sample is within bounds.
-            for (i1 = 0; i1 < id->idx_c->lnprocs * max_patch_count; i1++)
+            for (i1 = 0; i1 < id->idx_c->partition_nprocs * max_patch_count; i1++)
             {
               if (ZYX[0] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] && ZYX[0] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 0]) &&
                   ZYX[1] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] && ZYX[1] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 1]) &&
@@ -217,7 +217,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
             Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, first_index, ZYX);
 
             // check to see if the sample is within bounds.
-            for (i1 = 0; i1 < id->idx_c->lnprocs * max_patch_count; i1++)
+            for (i1 = 0; i1 < id->idx_c->partition_nprocs * max_patch_count; i1++)
             {
               if (ZYX[0] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] && ZYX[0] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 0] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 0]) &&
                   ZYX[1] >= id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] && ZYX[1] < (id->idx->all_offset[PIDX_MAX_DIMENSIONS * i1 + 1] + id->idx->all_size[PIDX_MAX_DIMENSIONS * i1 + 1]) &&
@@ -269,7 +269,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
 
         int r = 0, d = 0, m = 0;
         int break_counter = 0;
-        for (r = 0; r < id->idx_c->lnprocs; r++)
+        for (r = 0; r < id->idx_c->partition_nprocs; r++)
         {
           if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
               global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
@@ -307,7 +307,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
 
         break_counter = 0;
         memset(rank_r_patch, 0, sizeof (*rank_r_patch));
-        for (r = 0; r < id->idx_c->lnprocs; r++)
+        for (r = 0; r < id->idx_c->partition_nprocs; r++)
         {
           if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
               global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
@@ -348,7 +348,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
           id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->fi) * range) + (range/2);
 
 
-        if (id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
+        if (id->idx_c->partition_rank == id->agg_r[k][i - id->fi][j])
         {
           ab->file_number = lbl->existing_file_index[k];
           ab->var_number = i;
@@ -365,8 +365,8 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
                agg_offset, id->idx->current_time_step,
                id->agg_r[k][i - id->fi][j],
                id->idx_d->color,
-               id->idx_c->grank, id->idx_c->gnprocs,
-               id->idx_c->lrank, id->idx_c->lnprocs,
+               id->idx_c->simulation_rank, id->idx_c->simulation_nprocs,
+               id->idx_c->partition_rank, id->idx_c->partition_nprocs,
                start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
                end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
                range,
@@ -419,10 +419,10 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
       local_patch_size[d] = (local_patch_size[d] / id->idx->chunk_size[d]) + 1;
   }
 
-  int wc = id->idx_c->lnprocs * PIDX_MAX_DIMENSIONS;
+  int wc = id->idx_c->partition_nprocs * PIDX_MAX_DIMENSIONS;
 
   //if (id->idx_d->color == 1)
-  //fprintf(stderr, "[%d] [%d] O : S :: %d %d %d - %d %d %d\n", id->idx_d->color, id->idx_c->lrank, local_patch_offset[0], local_patch_offset[1], local_patch_offset[2], local_patch_size[0], local_patch_size[1], local_patch_size[2]);
+  //fprintf(stderr, "[%d] [%d] O : S :: %d %d %d - %d %d %d\n", id->idx_d->color, id->idx_c->partition_rank, local_patch_offset[0], local_patch_offset[1], local_patch_offset[2], local_patch_size[0], local_patch_size[1], local_patch_size[2]);
 
   unsigned long long* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
   memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
@@ -430,11 +430,11 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
   unsigned long long* global_patch_size = malloc(wc * sizeof(*global_patch_size));
   memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
 
-  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->partition_comm);
 
-  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->local_comm);
+  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, id->idx_c->partition_comm);
 
-  //fprintf(stderr, "[%d : %d] - %d %d %d - %d %d %d\n", id->idx_c->lrank, id->idx_c->grank, (int)local_patch_offset[0], (int)local_patch_offset[1], (int)local_patch_offset[2], (int)local_patch_size[0], (int)local_patch_size[1], (int)local_patch_size[2]);
+  //fprintf(stderr, "[%d : %d] - %d %d %d - %d %d %d\n", id->idx_c->partition_rank, id->idx_c->simulation_rank, (int)local_patch_offset[0], (int)local_patch_offset[1], (int)local_patch_offset[2], (int)local_patch_size[0], (int)local_patch_size[1], (int)local_patch_size[2]);
 
   //fprintf(stderr, "Fi Li %d %d\n", id->fi, id->li);
   for (k = 0; k < lbl->efc; k++)
@@ -483,7 +483,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
             // xyz index of the last sample of the block.
             Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
 
-            if (id->idx_c->lrank == 0)
+            if (id->idx_c->partition_rank == 0)
               fprintf(stderr, "[%d] ZYX: %d %d %d\n", x, ZYX[0], ZYX[1], ZYX[2]);
 
             // check to see if the sample is within bounds.
@@ -503,7 +503,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
           // xyz index of the last sample of the block.
           Hz_to_xyz(id->idx->bitPattern, id->idx_d->maxh - 1, last_index, ZYX);
 
-          //if (id->idx_c->lrank == 0)
+          //if (id->idx_c->partition_rank == 0)
           //  fprintf(stderr, "ZYX: %d %d %d\n", ZYX[0], ZYX[1], ZYX[2]);
 
           // check to see if the sample is within bounds.
@@ -552,7 +552,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
 
         int r = 0, d = 0, m = 0;
         int break_counter = 0;
-        for (r = 0; r < id->idx_c->lnprocs; r++)
+        for (r = 0; r < id->idx_c->partition_nprocs; r++)
         {
           if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
               global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
@@ -590,7 +590,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
 
         break_counter = 0;
         memset(rank_r_patch, 0, sizeof (*rank_r_patch));
-        for (r = 0; r < id->idx_c->lnprocs; r++)
+        for (r = 0; r < id->idx_c->partition_nprocs; r++)
         {
           if (global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 0] == 0 &&
               global_patch_size[PIDX_MAX_DIMENSIONS * r + m * PIDX_MAX_DIMENSIONS + 1] == 0 &&
@@ -629,7 +629,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
         else
             id->agg_r[k][i - id->fi][j] = start_rank + (int)((float)(i - id->fi) * range) + (range/2);
 
-        if (id->idx_c->lrank == id->agg_r[k][i - id->fi][j])
+        if (id->idx_c->partition_rank == id->agg_r[k][i - id->fi][j])
         {
           ab->file_number = lbl->existing_file_index[k];
           ab->var_number = i;
@@ -646,8 +646,8 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
                agg_offset, id->idx->current_time_step,
                id->agg_r[k][i - id->fi][j],
                id->idx_d->color,
-               id->idx_c->grank, id->idx_c->gnprocs,
-               id->idx_c->lrank, id->idx_c->lnprocs,
+               id->idx_c->simulation_rank, id->idx_c->simulation_nprocs,
+               id->idx_c->partition_rank, id->idx_c->partition_nprocs,
                start_rank, global_start_hz, global_start_ZYX[0], global_start_ZYX[1], global_start_ZYX[2],
                end_rank, global_end_hz, global_end_ZYX[0], global_end_ZYX[1], global_end_ZYX[2],
                range,

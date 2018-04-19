@@ -97,7 +97,7 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
     int tcs = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
     int bpdt = tcs * (var->bpv/8) / (id->idx->compression_factor);
 
-    ret = MPI_Win_create(ab->buffer, ab->buffer_size, bpdt, MPI_INFO_NULL, id->idx_c->local_comm, &(id->win));
+    ret = MPI_Win_create(ab->buffer, ab->buffer_size, bpdt, MPI_INFO_NULL, id->idx_c->partition_comm, &(id->win));
     if (ret != MPI_SUCCESS)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -106,7 +106,7 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
   }
   else
   {
-    ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->local_comm, &(id->win));
+    ret = MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->partition_comm, &(id->win));
     if (ret != MPI_SUCCESS)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -310,7 +310,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
   if (start_agg_index != end_agg_index)
   {
-    if (target_rank != id->idx_c->lrank)
+    if (target_rank != id->idx_c->partition_rank)
     {
 #ifndef PIDX_ACTIVE_TARGET
       MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , id->win);
@@ -354,7 +354,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
 
     for (itr = 0; itr < end_agg_index - start_agg_index - 1; itr++)
     {
-      if (target_rank != id->idx_c->lrank)
+      if (target_rank != id->idx_c->partition_rank)
       {
 #ifndef PIDX_ACTIVE_TARGET
         MPI_Win_lock(MPI_LOCK_SHARED, target_rank + ab->aggregator_interval, 0, id->win);
@@ -395,7 +395,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
       }
     }
 
-    if (target_rank + ab->aggregator_interval != id->idx_c->lrank)
+    if (target_rank + ab->aggregator_interval != id->idx_c->partition_rank)
     {
 #ifndef PIDX_ACTIVE_TARGET
       MPI_Win_lock(MPI_LOCK_SHARED, target_rank + ab->aggregator_interval, 0, id->win);
@@ -437,7 +437,7 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, unsigned l
   }
   else
   {
-    if(target_rank != id->idx_c->lrank)
+    if(target_rank != id->idx_c->partition_rank)
     {
 #ifndef PIDX_ACTIVE_TARGET
       MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , id->win);

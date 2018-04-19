@@ -65,7 +65,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     guess_bit_string_ZYX(reg_patch_bs, rpp);
 
 #if DETAIL_OUTPUT
-    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+    if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       fprintf(stderr, "[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 #endif
 
@@ -80,7 +80,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     guess_bit_string_Z(process_bs, prcp);
 
 #if DETAIL_OUTPUT
-    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+    if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       fprintf(stderr, "[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 #endif
 
@@ -92,7 +92,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     guess_bit_string(partition_bs, pcp);
 
 #if DETAIL_OUTPUT
-    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+    if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       fprintf(stderr, "[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 #endif
 
@@ -139,7 +139,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     guess_bit_string_ZYX(reg_patch_bs, rpp);
 
 #if DETAIL_OUTPUT
-    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+    if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       fprintf(stderr, "[1] %s : %d %d %d\n", reg_patch_bs, rpp.x, rpp.y, rpp.z);
 #endif
 
@@ -154,7 +154,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     guess_bit_string_Z(process_bs, prcp);
 
 #if DETAIL_OUTPUT
-    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+    if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       fprintf(stderr, "[2] %s : %d %d %d\n", process_bs, prcp.x, prcp.y, prcp.z);
 #endif
 
@@ -166,7 +166,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     guess_bit_string(partition_bs, pcp);
 
 #if DETAIL_OUTPUT
-    if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+    if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
       fprintf(stderr, "[3] %s : %d %d %d\n", partition_bs, pcp.x, pcp.y, pcp.z);
 #endif
 
@@ -183,7 +183,7 @@ PIDX_return_code populate_global_bit_string(PIDX_io file, int mode)
     file->idx->bitPattern[i] = RegExBitmaskBit(file->idx->bitSequence, i);
 
 #if DETAIL_OUTPUT
-  if (file->idx_c->grank == 0 && file->idx->cached_ts == file->idx->current_time_step)
+  if (file->idx_c->simulation_rank == 0 && file->idx->cached_ts == file->idx->current_time_step)
     fprintf(stderr, "Bitstring %s maxh %d\n", file->idx->bitSequence, file->idx_d->maxh);
 #endif
 
@@ -240,7 +240,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     rpp.y = (int) file->idx_d->restructured_grid->patch_size[1];
     rpp.z = (int) file->idx_d->restructured_grid->patch_size[2];
     guess_bit_string_ZYX(reg_patch_bs, rpp);
-    //if (file->idx_c->lrank == 0)
+    //if (file->idx_c->partition_rank == 0)
     //  fprintf(stderr, "[1X %d] %s : %d %d %d\n", file->idx_d->color, reg_patch_bs, rpp.x, rpp.y, rpp.z);
 
     // Middle part of the bitstring
@@ -279,7 +279,7 @@ PIDX_return_code populate_local_bit_string(PIDX_io file, int mode)
     file->idx_d->samples_per_block = pow(2, file->idx->bits_per_block);
   }
 
-  //if (file->idx_c->lrank == 0)
+  //if (file->idx_c->partition_rank == 0)
   //  fprintf(stderr, "%d Bitstring %s maxh %d\n", file->idx_d->color, file->idx->bitSequence, file->idx_d->maxh);
 
   unsigned long long total_reg_sample_count = (getPowerOf2(cb[0]) * getPowerOf2(cb[1]) * getPowerOf2(cb[2]));

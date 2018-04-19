@@ -144,7 +144,7 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
   {
     char file_name[PATH_MAX];
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->grank, p);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->simulation_rank, p);
 
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
@@ -160,7 +160,7 @@ PIDX_return_code PIDX_particle_write(PIDX_io file, int gi, int svi, int evi)
       file->idx->variable_grp[gi]->variable_tracker[si] = 1;
 
 #if 0
-      fprintf(stderr, "[Inside PIDX] Rank %d has %d particles [%lld %lld %lld - %lld %lld %lld]\n", file->idx_c->grank, var->sim_patch[p]->particle_count, var->sim_patch[p]->offset[0], var->sim_patch[p]->offset[1], var->sim_patch[p]->offset[2], var->sim_patch[p]->size[0], var->sim_patch[p]->size[1], var->sim_patch[p]->size[2]);
+      fprintf(stderr, "[Inside PIDX] Rank %d has %d particles [%lld %lld %lld - %lld %lld %lld]\n", file->idx_c->simulation_rank, var->sim_patch[p]->particle_count, var->sim_patch[p]->offset[0], var->sim_patch[p]->offset[1], var->sim_patch[p]->offset[2], var->sim_patch[p]->size[0], var->sim_patch[p]->size[1], var->sim_patch[p]->size[2]);
       if (si == 0)
       {
         double particle_x = 0, particle_y, particle_z = 0;
@@ -224,7 +224,7 @@ PIDX_return_code PIDX_particle_restart_read(PIDX_io file, int gi, int svi, int e
   {
     char file_name[PATH_MAX];
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->grank, p);
+    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->simulation_rank, p);
 
     int fp = open(file_name, O_RDONLY);
 
@@ -318,7 +318,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
   int patch_count = var0->sim_patch_count;
   // TODO WILL: Why the max patch count across all ranks? Ranks could have differing numbers of patches
   // right? So would we leave some unused space in the file here?
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->simulation_comm);
 
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
@@ -338,12 +338,12 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
     pcounter++;
   }
 
-  global_patch = malloc((file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
-  memset(global_patch, 0,(file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+  global_patch = malloc((file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+  memset(global_patch, 0,(file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
-  MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, file->idx_c->global_comm);
+  MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, file->idx_c->simulation_comm);
 
-  global_patch[0] = (double)file->idx_c->gnprocs;
+  global_patch[0] = (double)file->idx_c->simulation_nprocs;
   global_patch[1] = (double)max_patch_count;
 
   char file_path[PATH_MAX];
@@ -354,15 +354,15 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int gi, int svi)
 
   sprintf(file_path, "%s_OFFSET_SIZE", directory_path);
   free(directory_path);
-  if (file->idx_c->grank == 1 || file->idx_c->gnprocs == 1)
+  if (file->idx_c->simulation_rank == 1 || file->idx_c->simulation_nprocs == 1)
   {
     int fp = open(file_path, O_CREAT | O_WRONLY, 0664);
 
-    //for (int i = 0; i < (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2); i++)
-    //  printf("[%d] [np %d] ----> %f\n", i, file->idx_c->gnprocs, global_patch[i]);
+    //for (int i = 0; i < (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2); i++)
+    //  printf("[%d] [np %d] ----> %f\n", i, file->idx_c->simulation_nprocs, global_patch[i]);
 
-    size_t write_count = pwrite(fp, global_patch, (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
-    if (write_count != (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
+    size_t write_count = pwrite(fp, global_patch, (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
+    if (write_count != (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -389,13 +389,13 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int gi, int svi)
   int patch_count = var0->sim_patch_count;
   // TODO WILL: Why the max patch count across all ranks? Ranks could have differing numbers of patches
   // right? So would we leave some unused space in the file here?
-  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->global_comm);
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->simulation_comm);
 
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
-  global_patch = malloc((file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
-  memset(global_patch, 0,(file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+  global_patch = malloc((file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+  memset(global_patch, 0,(file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
   char file_path[PATH_MAX];
   char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
@@ -404,11 +404,11 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int gi, int svi)
 
   sprintf(file_path, "%s_OFFSET_SIZE", directory_path);
   free(directory_path);
-  if (file->idx_c->grank == 0 || file->idx_c->gnprocs == 1)
+  if (file->idx_c->simulation_rank == 0 || file->idx_c->simulation_nprocs == 1)
   {
     int fp = open(file_path, O_RDONLY);
-    size_t write_count = pread(fp, global_patch, (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
-    if (write_count != (file->idx_c->gnprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
+    size_t write_count = pread(fp, global_patch, (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
+    if (write_count != (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -417,9 +417,9 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int gi, int svi)
   }
 
 
-  MPI_Scatter(global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, 0, file->idx_c->global_comm);
+  MPI_Scatter(global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, 0, file->idx_c->simulation_comm);
 
-  global_patch[0] = (double)file->idx_c->gnprocs;
+  global_patch[0] = (double)file->idx_c->simulation_nprocs;
   global_patch[1] = (double)max_patch_count;
 
   int pcounter = 0;
@@ -547,7 +547,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
     {
       int pc = (int)size_buffer[n * ((int)max_patch_count * (2 * max_dim + 1) + 1)];
       int pc_index = n * ((int)max_patch_count * (2 * max_dim + 1) + 1);
-      //if (file->idx_c->grank == 0)
+      //if (file->idx_c->simulation_rank == 0)
       //  printf("Index %d PC %d\n", n * ((int)max_patch_count * (2 * max_dim + 1) + 1), pc);
       for (int m = 0; m < pc; m++)
       {
@@ -558,7 +558,7 @@ static PIDX_return_code PIDX_particle_raw_read(PIDX_io file, int gi, int svi, in
           n_proc_patch->particle_count = (int)size_buffer[pc_index + m * (2 * max_dim + 1) + max_dim + d + 1 + 1];
         }
 
-        if (file->idx_c->grank == 0)
+        if (file->idx_c->simulation_rank == 0)
           printf("[PC %lu] OC %f %f %f - %f %f %f\n", n_proc_patch->particle_count, n_proc_patch->physical_offset[0],
               n_proc_patch->physical_offset[1], n_proc_patch->physical_offset[2], n_proc_patch->physical_size[0],
               n_proc_patch->physical_size[1], n_proc_patch->physical_size[2]);

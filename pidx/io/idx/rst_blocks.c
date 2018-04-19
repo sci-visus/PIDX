@@ -212,12 +212,12 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       //if (i >= file->idx_d->maxh)
       //  continue;
 
-      MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
+      MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->partition_comm);
     }
 
     for (i = file->idx->bits_per_block + 1; i < (block_layout->resolution_to); i++)
     {
-      MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
+      MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->partition_comm);
       level_count = level_count * 2;
     }
   }
@@ -228,7 +228,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
     {
       if (i >= block_layout->resolution_from)
       {
-        MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->local_comm);
+        MPI_Allreduce(all_patch_local_block_layout->hz_block_number_array[i], block_layout->hz_block_number_array[i], level_count, MPI_INT, MPI_BOR, file->idx_c->partition_comm);
       }
       level_count = level_count * 2;
     }
@@ -286,7 +286,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int gi, int start_var_
       ctr = ctr * 2;
     }
 
-    //if (file->idx_c->lnprocsrank == 4)
+    //if (file->idx_c->partition_nprocsrank == 4)
     //  PIDX_blocks_print_layout(block_layout);
   }
   else
@@ -550,7 +550,7 @@ static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layou
     }
   }
 
-  //if (file->idx_c->grank == 0)
+  //if (file->idx_c->simulation_rank == 0)
   //  PIDX_blocks_print_layout(block_layout, file->idx->bits_per_block);
 
   return PIDX_success;
