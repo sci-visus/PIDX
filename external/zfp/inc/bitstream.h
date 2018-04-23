@@ -7,7 +7,7 @@
 /* forward declaration of opaque type */
 typedef struct bitstream bitstream;
 
-extern const size_t stream_word_bits; /* bit stream granularity */
+extern const uint64_t stream_word_bits; /* bit stream granularity */
 
 #ifndef _inline
 #ifdef __cplusplus
@@ -15,7 +15,7 @@ extern "C" {
 #endif
 
 /* allocate and initialize bit stream */
-bitstream* stream_open(void* buffer, size_t bytes);
+bitstream* stream_open(void* buffer, uint64_t bytes);
 
 /* close and deallocate bit stream */
 void stream_close(bitstream* stream);
@@ -24,13 +24,13 @@ void stream_close(bitstream* stream);
 void* stream_data(const bitstream* stream);
 
 /* current byte size of stream (if flushed) */
-size_t stream_size(const bitstream* stream);
+uint64_t stream_size(const bitstream* stream);
 
 /* byte capacity of stream */
-size_t stream_capacity(const bitstream* stream);
+uint64_t stream_capacity(const bitstream* stream);
 
 /* number of words per block */
-size_t stream_block(const bitstream* stream);
+uint64_t stream_block(const bitstream* stream);
 
 /* number of blocks between consecutive blocks */
 int stream_delta(const bitstream* stream);
@@ -48,19 +48,19 @@ uint64 stream_read_bits(bitstream* stream, uint n);
 uint64 stream_write_bits(bitstream* stream, uint64 value, uint n);
 
 /* return bit offset to next bit to be read */
-size_t stream_rtell(const bitstream* stream);
+uint64_t stream_rtell(const bitstream* stream);
 
 /* return bit offset to next bit to be written */
-size_t stream_wtell(const bitstream* stream);
+uint64_t stream_wtell(const bitstream* stream);
 
 /* rewind stream to beginning */
 void stream_rewind(bitstream* stream);
 
 /* position stream for reading at given bit offset */
-void stream_rseek(bitstream* stream, size_t offset);
+void stream_rseek(bitstream* stream, uint64_t offset);
 
 /* position stream for writing at given bit offset */
-void stream_wseek(bitstream* stream, size_t offset);
+void stream_wseek(bitstream* stream, uint64_t offset);
 
 /* skip over the next n bits */
 void stream_skip(bitstream* stream, uint n);

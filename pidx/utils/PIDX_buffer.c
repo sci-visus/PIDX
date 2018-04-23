@@ -5,7 +5,7 @@ PIDX_buffer PIDX_buffer_create_empty()
   PIDX_buffer b = { NULL, 0, 0 };
   return b;
 }
-PIDX_buffer PIDX_buffer_create_with_capacity(size_t capacity)
+PIDX_buffer PIDX_buffer_create_with_capacity(uint64_t capacity)
 {
   PIDX_buffer b = { malloc(capacity), 0, capacity };
   return b;
@@ -16,7 +16,7 @@ void PIDX_buffer_free(PIDX_buffer *b)
   b->size = 0;
   b->capacity = 0;
 }
-void PIDX_buffer_append(PIDX_buffer *b, const unsigned char *data, const size_t size)
+void PIDX_buffer_append(PIDX_buffer *b, const unsigned char *data, const uint64_t size)
 {
   if (b->capacity - b->size < size) {
     b->capacity = Max2ab(b->capacity + size, b->capacity * 1.5);
@@ -25,7 +25,7 @@ void PIDX_buffer_append(PIDX_buffer *b, const unsigned char *data, const size_t 
   memcpy(b->buffer + b->size, data, size);
   b->size += size;
 }
-void PIDX_buffer_resize(PIDX_buffer *b, const size_t size)
+void PIDX_buffer_resize(PIDX_buffer *b, const uint64_t size)
 {
   if (b->capacity < size) {
     b->capacity = size;

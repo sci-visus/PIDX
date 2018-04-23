@@ -56,13 +56,7 @@
 
 struct PIDX_hz_encode_struct
 {
-  /// Contains all relevant IDX file info
-  /// Blocks per file, samples per block, bitmask, patch, file name template and more
   idx_dataset idx;
-
-  /// Contains all derieved IDX file info
-  /// number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_d;
 
 
   idx_comm idx_c;
@@ -70,12 +64,12 @@ struct PIDX_hz_encode_struct
 
   idx_debug idx_dbg;
 
-  idx_metadata_cache cache;
+  PIDX_metadata_cache meta_data_cache;
+  //idx_metadata_cache cache;
 
+  int fs_block_size;
 
   int** index;
-
-  int group_index;
 
   int first_index;
   int last_index;
@@ -92,7 +86,7 @@ typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_metadata_cache cache, int start_var_index, int end_var_index);
+PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_metadata_cache meta_data_cache, int fs_block_size, int start_var_index, int end_var_index);
 
 
 

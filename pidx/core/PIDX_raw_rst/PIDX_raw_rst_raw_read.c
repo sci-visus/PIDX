@@ -41,9 +41,12 @@
 #define INVERT_ENDIANESS 0
 #include "../../PIDX_inc.h"
 
-static int maximum_neighbor_count = 1024;
+#if INVERT_ENDIANESS
 static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf);
 static void bit32_reverse_endian(unsigned char* val, unsigned char *outbuf);
+#endif
+
+static int maximum_neighbor_count = 1024;
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 
 PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
@@ -53,10 +56,9 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
   int temp_max_dim = 3;
 
-  if (rst_id->idx_derived->pidx_version == 0)
+  if (rst_id->idx->pidx_version == 0)
     temp_max_dim = 5;
 
-  PIDX_variable_group var_grp = rst_id->idx->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;
 
@@ -74,7 +76,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
   uint32_t number_cores = 0;
   int fp = open(size_path, O_RDONLY);
-  ssize_t read_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
+  uint64_t read_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
   if (read_count != sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
@@ -123,13 +125,12 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     return PIDX_err_io;
   }
 
-  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer size %lld\n", rst_id->idx_c->simulation_rank, (unsigned long long)read_count);
 
   close(fp);
 
 #if INVERT_ENDIANESS
   int buff_i;
-  for(buff_i = 0; buff_i < (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
+  for (buff_i = 0; buff_i < (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
     uint32_t temp_value = 0;
     if (rst_id->idx->flip_endian == 1)
     {
@@ -149,11 +150,10 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
-  fprintf(stderr, "[%d] [PIDX DEBUG] Read buffer offset %lld\n", rst_id->idx_c->simulation_rank, (unsigned long long)read_count);
   close(fp1);
 
 #if INVERT_ENDIANESS
-  for(buff_i = 0; buff_i<  (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
+  for (buff_i = 0; buff_i<  (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
     uint32_t temp_value = 0;
     if (rst_id->idx->flip_endian == 1)
     {
@@ -179,17 +179,14 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, rst_id->idx->current_time_step);
 
-
-  int pc1 = 0;
-  for (pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
+  for (int pc1 = 0; pc1 < rst_id->idx->variable[svi]->sim_patch_count; pc1++)
   {
-    int n = 0, m = 0, d = 0;
     PIDX_patch local_proc_patch = (PIDX_patch)malloc(sizeof (*local_proc_patch));
     memset(local_proc_patch, 0, sizeof (*local_proc_patch));
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+    for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_proc_patch->offset[d] = var_grp->variable[svi]->sim_patch[pc1]->offset[d];
-      local_proc_patch->size[d] = var_grp->variable[svi]->sim_patch[pc1]->size[d];
+      local_proc_patch->offset[d] = rst_id->idx->variable[svi]->sim_patch[pc1]->offset[d];
+      local_proc_patch->size[d] = rst_id->idx->variable[svi]->sim_patch[pc1]->size[d];
     }
 
     // PC - - - - - - - - - -   PC - - - - - - - - - -  PC - - - - -
@@ -214,16 +211,16 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     memset(patch_grp->restructured_patch, 0, sizeof(*patch_grp->restructured_patch));
 
     int patch_count = 0;
-    for (n = 0; n < number_cores; n++)
+    for (int n = 0; n < number_cores; n++)
     {
       pc = (int)offset_buffer[n * (max_patch_count * temp_max_dim + 1)];
       pc_index = n * (max_patch_count * temp_max_dim + 1);
-      for (m = 0; m < pc; m++)
+      for (int m = 0; m < pc; m++)
       {
-        for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         {
-          n_proc_patch->offset[d] = (off_t)offset_buffer[pc_index + m * temp_max_dim + d + 1];
-          n_proc_patch->size[d] = (size_t)size_buffer[pc_index + m * temp_max_dim + d + 1];
+          n_proc_patch->offset[d] = (uint64_t)offset_buffer[pc_index + m * temp_max_dim + d + 1];
+          n_proc_patch->size[d] = (uint64_t)size_buffer[pc_index + m * temp_max_dim + d + 1];
         }
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
@@ -231,7 +228,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
           //sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, n, m);
           patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
           memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
-          for (d = 0; d < 3; d++)
+          for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
           {
             //STEP 5 : offset and count of intersecting chunk of process with rank r and regular patch
             if (n_proc_patch->offset[d] <= local_proc_patch->offset[d] && (n_proc_patch->offset[d] + n_proc_patch->size[d] - 1) <= (local_proc_patch->offset[d] + local_proc_patch->size[d] - 1))
@@ -302,50 +299,46 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     free(n_proc_patch);
     n_proc_patch = 0;
 
-    unsigned long long k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
-    size_t send_c = 0;
-    off_t sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
-    size_t sim_patch_countx[PIDX_MAX_DIMENSIONS];
+    uint64_t send_c = 0;
+    uint64_t sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
+    uint64_t sim_patch_countx[PIDX_MAX_DIMENSIONS];
 
     unsigned char **temp_patch_buffer2;
     temp_patch_buffer2 = malloc(sizeof(*temp_patch_buffer2) * (evi - svi + 1));
     memset(temp_patch_buffer2, 0, sizeof(*temp_patch_buffer2) * (evi - svi + 1));
 
-    int start_index = 0, other_offset = 0, v1 = 0;
-    for (start_index = svi; start_index <= evi; start_index = start_index + 1)
+    int other_offset = 0;
+    for (int start_index = svi; start_index <= evi; start_index = start_index + 1)
     {
       int index = start_index - svi;
-      PIDX_variable var = var_grp->variable[start_index];
+      PIDX_variable var = rst_id->idx->variable[start_index];
 
-      for (i = 0; i < patch_count; i++)
+      for (uint64_t i = 0; i < patch_count; i++)
       {
-        if (rst_id->idx_c->simulation_rank == 0)
-          fprintf(stderr, "[PIDX DEBUG] Processing patch [%d] %d\n", patch_count, i);
-
         pc_index = patch_grp->source_patch[i].rank * (max_patch_count * temp_max_dim + 1);
-        size_t total_sample_count = 1;
-        for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        uint64_t total_sample_count = 1;
+        for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         {
-          sim_patch_offsetx[d] = (off_t)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
-          sim_patch_countx[d] = (size_t)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
-          total_sample_count = total_sample_count * (size_t)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+          sim_patch_offsetx[d] = (uint64_t)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+          sim_patch_countx[d] = (uint64_t)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+          total_sample_count = total_sample_count * (uint64_t)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
         }
 
-        temp_patch_buffer2[index] = malloc((size_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
-        memset(temp_patch_buffer2[index], 0, (size_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
+        temp_patch_buffer2[index] = malloc((uint64_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
+        memset(temp_patch_buffer2[index], 0, (uint64_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
 
         sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
 
         int fpx = open(file_name, O_RDONLY);
         other_offset = 0;
-        for (v1 = 0; v1 < start_index; v1++)
+        for (int v1 = 0; v1 < start_index; v1++)
         {
-          PIDX_variable var1 = var_grp->variable[v1];
+          PIDX_variable var1 = rst_id->idx->variable[v1];
           other_offset = other_offset + ((var1->bpv/8) * var1->vps * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
         }
 
-        PIDX_variable var = var_grp->variable[start_index];
-        size_t preadc = pread(fpx, temp_patch_buffer2[index], total_sample_count * var->vps * var->bpv/8, other_offset);
+        PIDX_variable var = rst_id->idx->variable[start_index];
+        uint64_t preadc = pread(fpx, temp_patch_buffer2[index], total_sample_count * var->vps * var->bpv/8, other_offset);
         if (preadc != total_sample_count * var->vps * var->bpv/8)
         {
           fprintf(stderr, "[%s] [%d] Error in pread [%d %d]\n", __FILE__, __LINE__, (int)preadc, (int)send_c * var->bpv/8);
@@ -353,52 +346,50 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         }
         close(fpx);
 
-        size_t recv_o;
-        for (k1 = patch_grp->patch[i]->offset[2]; k1 < patch_grp->patch[i]->offset[2] + patch_grp->patch[i]->size[2]; k1++)
+        uint64_t recv_o;
+        for (uint64_t k1 = patch_grp->patch[i]->offset[2]; k1 < patch_grp->patch[i]->offset[2] + patch_grp->patch[i]->size[2]; k1++)
         {
-          for (j1 = patch_grp->patch[i]->offset[1]; j1 < patch_grp->patch[i]->offset[1] + patch_grp->patch[i]->size[1]; j1++)
+          for (uint64_t j1 = patch_grp->patch[i]->offset[1]; j1 < patch_grp->patch[i]->offset[1] + patch_grp->patch[i]->size[1]; j1++)
           {
-            for (i1 = patch_grp->patch[i]->offset[0]; i1 < patch_grp->patch[i]->offset[0] + patch_grp->patch[i]->size[0]; i1 = i1 + patch_grp->patch[i]->size[0])
+            for (uint64_t i1 = patch_grp->patch[i]->offset[0]; i1 < patch_grp->patch[i]->offset[0] + patch_grp->patch[i]->size[0]; i1 = i1 + patch_grp->patch[i]->size[0])
             {
-              off_t send_index = (sim_patch_countx[0] * sim_patch_countx[1] * (k1 - sim_patch_offsetx[2])) +
+              uint64_t send_index = (sim_patch_countx[0] * sim_patch_countx[1] * (k1 - sim_patch_offsetx[2])) +
                   (sim_patch_countx[0] * (j1 - sim_patch_offsetx[1])) +
                   (i1 - sim_patch_offsetx[0]);
 
 
-              PIDX_variable var = var_grp->variable[start_index];
+              PIDX_variable var = rst_id->idx->variable[start_index];
 
               send_c = (patch_grp->patch[i]->size[0]);
-              recv_o = (var_grp->variable[start_index]->sim_patch[pc1]->size[0] * var_grp->variable[start_index]->sim_patch[pc1]->size[1] * (k1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[2])) + (var_grp->variable[start_index]->sim_patch[pc1]->size[0] * (j1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[1])) + (i1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[0]);
+              recv_o = (rst_id->idx->variable[start_index]->sim_patch[pc1]->size[0] * rst_id->idx->variable[start_index]->sim_patch[pc1]->size[1] * (k1 - rst_id->idx->variable[start_index]->sim_patch[pc1]->offset[2])) + (rst_id->idx->variable[start_index]->sim_patch[pc1]->size[0] * (j1 - rst_id->idx->variable[start_index]->sim_patch[pc1]->offset[1])) + (i1 - rst_id->idx->variable[start_index]->sim_patch[pc1]->offset[0]);
 
-              memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + ((unsigned long long) recv_o * var->vps * (var->bpv/8)), temp_patch_buffer2[index] + send_index * var->vps * (var->bpv/8), send_c * var->vps * (var->bpv/8));
+              memcpy(rst_id->idx->variable[start_index]->sim_patch[pc1]->buffer + ((uint64_t) recv_o * var->vps * (var->bpv/8)), temp_patch_buffer2[index] + send_index * var->vps * (var->bpv/8), send_c * var->vps * (var->bpv/8));
 
 #if INVERT_ENDIANESS
               if (rst_id->idx->flip_endian == 1)
               {
                 if (var->bpv/8 == 4 || var->bpv/8 == 12)
                 {
-                  int y = 0;
                   float temp;
                   float temp2;
 
-                  for (y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(float); y++)
+                  for (int y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(float); y++)
                   {
-                    memcpy(&temp, var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), sizeof(float));
+                    memcpy(&temp, rst_id->idx->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), sizeof(float));
                     bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
-                    memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), &temp2, sizeof(float));
+                    memcpy(rst_id->idx->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), &temp2, sizeof(float));
                   }
                 }
                 else if (var->bpv/8 == 8 || var->bpv/8 == 24)
                 {
-                  int y = 0;
                   double temp;
                   double temp2;
 
-                  for (y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(double); y++)
+                  for (int y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(double); y++)
                   {
-                    memcpy(&temp, var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), sizeof(double));
+                    memcpy(&temp, rst_id->idx->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), sizeof(double));
                     bit64_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
-                    memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), &temp2, sizeof(double));
+                    memcpy(rst_id->idx->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), &temp2, sizeof(double));
                   }
                 }
               }
@@ -436,8 +427,8 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
 {
-  int d = 0, check_bit = 0;
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  int check_bit = 0;
+  for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
 
   return !(check_bit);

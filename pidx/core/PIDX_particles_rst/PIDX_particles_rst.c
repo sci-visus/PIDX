@@ -54,18 +54,16 @@
 #include "../../PIDX_inc.h"
 
 
-PIDX_particles_rst_id PIDX_particles_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index)
+PIDX_particles_rst_id PIDX_particles_rst_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_restructured_grid restructured_grid, int var_start_index, int var_end_index)
 {
   PIDX_particles_rst_id particles_rst_id;
   particles_rst_id = (PIDX_particles_rst_id)malloc(sizeof (*particles_rst_id));
   memset(particles_rst_id, 0, sizeof (*particles_rst_id));
 
   particles_rst_id->idx_metadata = idx_meta_data;
-  particles_rst_id->idx_derived_metadata = idx_derived;
-  particles_rst_id->idx_comm_metadata = idx_c;
+  particles_rst_id->idx_c = idx_c;
   particles_rst_id->idx_debug_metadata = idx_dbg;
 
-  particles_rst_id->group_index = 0;
   particles_rst_id->first_index = var_start_index;
   particles_rst_id->last_index = var_end_index;
 
@@ -73,6 +71,8 @@ PIDX_particles_rst_id PIDX_particles_rst_init(idx_dataset idx_meta_data, idx_dat
 
   particles_rst_id->intersected_restructured_super_patch_count = 0;
   particles_rst_id->sim_max_patch_count = 0;
+
+  particles_rst_id->restructured_grid = restructured_grid;
 
   return (particles_rst_id);
 }

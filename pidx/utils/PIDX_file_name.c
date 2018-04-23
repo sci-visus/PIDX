@@ -97,7 +97,7 @@ void adjust_file_name(char* bin_file, char* adjusted_name)
 
 int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) 
 {
-  unsigned long long address = 0;
+  uint64_t address = 0;
   unsigned int segs[PIDX_MAX_TEMPLATE_DEPTH] = {0};
   int seg_count = 0;
   char* pos;

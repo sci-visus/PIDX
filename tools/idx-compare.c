@@ -71,12 +71,12 @@ int main(int argc, char **argv)
   int i, j, var;
   int fd1, fd2;
   int blocks_per_file = 0, variable_count = 0;
-  size_t binheader_count;
+  uint64_t binheader_count;
   uint32_t *binheader1, *binheader2;
-  size_t data_length1, data_length2;
-  off_t data_offset1, data_offset2;
+  uint64_t data_length1, data_length2;
+  uint64_t data_offset1, data_offset2;
   double *data_buffer1, *data_buffer2;
-  unsigned long long *zero_count = 0, *non_zero_equal_count = 0, *non_zero_unequal_count = 0;
+  uint64_t *zero_count = 0, *non_zero_equal_count = 0, *non_zero_unequal_count = 0;
 
   if ( argv[1] == NULL || argv[2] == NULL || argv[3] == NULL || argv[4] == NULL )
   {
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
   }
   
   fd1 = open(argv[1], O_RDONLY); 
-  if(fd1 < 0)
+  if (fd1 < 0)
   {
     fprintf(stderr, "Invalid input binary file %s\n", argv[1]);
     return(-1);
@@ -101,18 +101,18 @@ int main(int argc, char **argv)
   blocks_per_file = atoi(argv[3]);
   variable_count = atoi(argv[4]);
   
-  zero_count = malloc(sizeof(unsigned long long) * variable_count);
-  non_zero_equal_count = malloc(sizeof(unsigned long long) * variable_count);
-  non_zero_unequal_count = malloc(sizeof(unsigned long long) * variable_count);
-  memset(zero_count, 0, sizeof(unsigned long long) * variable_count);
-  memset(non_zero_equal_count, 0, sizeof(unsigned long long) * variable_count);
-  memset(non_zero_unequal_count, 0, sizeof(unsigned long long) * variable_count);
+  zero_count = malloc(sizeof(uint64_t) * variable_count);
+  non_zero_equal_count = malloc(sizeof(uint64_t) * variable_count);
+  non_zero_unequal_count = malloc(sizeof(uint64_t) * variable_count);
+  memset(zero_count, 0, sizeof(uint64_t) * variable_count);
+  memset(non_zero_equal_count, 0, sizeof(uint64_t) * variable_count);
+  memset(non_zero_unequal_count, 0, sizeof(uint64_t) * variable_count);
   
   binheader_count = 10 + 10 * blocks_per_file * variable_count;
   binheader1 = malloc(sizeof(*binheader1)*(binheader_count));
   binheader2 = malloc(sizeof(*binheader2)*(binheader_count));
   
-  ssize_t rc = 0;
+  uint64_t rc = 0;
   rc = read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
   if (rc != (sizeof(*binheader1) * binheader_count))
   {
@@ -154,7 +154,7 @@ int main(int argc, char **argv)
       //fprintf(stderr, "I O %d %d\n", ret2, data_length2);
       assert(ret2 == data_length2);
       
-      if(data_length1 != ret2)
+      if (data_length1 != ret2)
       {
         fprintf(stderr, "Different block length for block %d (%ld %ld)\n", j, data_length1, data_length2);
         return -1;

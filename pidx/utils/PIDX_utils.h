@@ -45,29 +45,29 @@
 
 #define Min2ab(a,b)      (((a)<=(b))?(a):(b))
 #define Max2ab(a,b)      (((a)> (b))?(a):(b))
-#define OffsetFor(_D_,_From_,_Off_) for ((_D_)=(_From_);(_D_)<(PIDX_MAX_DIMENSIONS+(_Off_));(_D_)++)
-#define For(_D_) for ((_D_)=0;(_D_)<PIDX_MAX_DIMENSIONS;(_D_)++)
+#define OffsetFor(_D_,_From_,_Off_) for((_D_)=(_From_);(_D_)<(PIDX_MAX_DIMENSIONS+(_Off_));(_D_)++)
+#define For(_D_) for((_D_)=0;(_D_)<PIDX_MAX_DIMENSIONS;(_D_)++)
 #define PGET(_Point_,_Coordinate_) ((&((_Point_).x))[(_Coordinate_)])
 
 typedef struct {int x,y,z;} Point3D;
 
 unsigned int getNumBits ( unsigned int v );
 
-unsigned long long getPowerOf2(int x);
+uint64_t getPowerOf2(int x);
 
-unsigned int getLevelFromBlock (unsigned long long block, int bits_per_block);
+unsigned int getLevelFromBlock (uint64_t block, int bits_per_block);
 
-unsigned int getLeveL (unsigned long long index);
+unsigned int getLeveL (uint64_t index);
 
 int isValidBox(int** box);
 
-void Deinterleave(const char* bitmask, int maxh, unsigned long long zaddress, int* point);
+void Deinterleave(const char* bitmask, int maxh, uint64_t zaddress, int* point);
 
-unsigned long long ZBitmask(const char* bitmask,int maxh);
+uint64_t ZBitmask(const char* bitmask,int maxh);
 
-unsigned long long ZStart(const char* bitmask,int maxh,int BlockingH);
+uint64_t ZStart(const char* bitmask,int maxh,int BlockingH);
 
-unsigned long long ZEnd(const char* bitmask,int maxh,int BlockingH);
+uint64_t ZEnd(const char* bitmask,int maxh,int BlockingH);
 
 void ZDelta(const char* bitmask, int maxh, int BlockingH, int* point);
 
@@ -83,9 +83,9 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
 
 int RegExBitmaskBit(const char* bitmask_pattern,int N);
 
-unsigned long long xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz);
+uint64_t xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz);
 
-void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, unsigned long long* xyz);
+void Hz_to_xyz(const char* bitmask,  int maxh, uint64_t hzaddress, uint64_t* xyz);
 
 int VisusSplitFilename(const char* filename,char* dirname,char* basename);
 

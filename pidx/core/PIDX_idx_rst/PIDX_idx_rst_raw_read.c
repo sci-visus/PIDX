@@ -50,10 +50,9 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
 {
   int temp_max_dim = 3;
 
-  if (rst_id->idx_derived_metadata->pidx_version == 0)
+  if (rst_id->idx_metadata->pidx_version == 0)
     temp_max_dim = 5;
 
-  PIDX_variable_group var_grp = rst_id->idx_metadata->variable_grp[rst_id->group_index];
   int svi = rst_id->first_index;
   int evi = rst_id->last_index;
 
@@ -71,7 +70,7 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
 
   uint32_t number_cores = 0;
   int fp = open(size_path, O_RDONLY);
-  ssize_t read_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
+  uint64_t read_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
   if (read_count != sizeof(uint32_t))
   {
     fprintf(stderr, "[%s] [%d] pread() failed.\n", __FILE__, __LINE__);
@@ -120,7 +119,7 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
 
 #if INVERT_ENDIANESS
   int buff_i;
-  for(buff_i = 0; buff_i < (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
+  for (buff_i = 0; buff_i < (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
     uint32_t temp_value = 0;
     if (rst_id->idx_metadata->flip_endian == 1)
     {
@@ -143,7 +142,7 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
   close(fp1);
 
 #if INVERT_ENDIANESS
-  for(buff_i = 0; buff_i<  (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
+  for (buff_i = 0; buff_i<  (number_cores * (max_patch_count * temp_max_dim + 1)); buff_i++){
     uint32_t temp_value = 0;
     if (rst_id->idx_metadata->flip_endian == 1)
     {
@@ -171,15 +170,15 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
 
 
   int pc1 = 0;
-  for (pc1 = 0; pc1 < var_grp->variable[svi]->sim_patch_count; pc1++)
+  for (pc1 = 0; pc1 < rst_id->idx_metadata->variable[svi]->sim_patch_count; pc1++)
   {
     int n = 0, m = 0, d = 0;
     PIDX_patch local_proc_patch = (PIDX_patch)malloc(sizeof (*local_proc_patch));
     memset(local_proc_patch, 0, sizeof (*local_proc_patch));
     for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
-      local_proc_patch->offset[d] = var_grp->variable[svi]->sim_patch[pc1]->offset[d];
-      local_proc_patch->size[d] = var_grp->variable[svi]->sim_patch[pc1]->size[d];
+      local_proc_patch->offset[d] = rst_id->idx_metadata->variable[svi]->sim_patch[pc1]->offset[d];
+      local_proc_patch->size[d] = rst_id->idx_metadata->variable[svi]->sim_patch[pc1]->size[d];
     }
 
     // PC - - - - - - - - - -   PC - - - - - - - - - -      PC - - - - -
@@ -212,8 +211,8 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
       {
         for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
         {
-          n_proc_patch->offset[d] = (unsigned long long)offset_buffer[pc_index + m * temp_max_dim + d + 1];
-          n_proc_patch->size[d] = (unsigned long long)size_buffer[pc_index + m * temp_max_dim + d + 1];
+          n_proc_patch->offset[d] = (uint64_t)offset_buffer[pc_index + m * temp_max_dim + d + 1];
+          n_proc_patch->size[d] = (uint64_t)size_buffer[pc_index + m * temp_max_dim + d + 1];
         }
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
@@ -292,10 +291,10 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
     free(n_proc_patch);
     n_proc_patch = 0;
 
-    unsigned long long k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
+    uint64_t k1 = 0, j1 = 0, i1 = 0, i = 0, j = 0;
     int count1 = 0, send_o = 0, send_c = 0, index = 0;
-    unsigned long long sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
-    unsigned long long sim_patch_countx[PIDX_MAX_DIMENSIONS];
+    uint64_t sim_patch_offsetx[PIDX_MAX_DIMENSIONS];
+    uint64_t sim_patch_countx[PIDX_MAX_DIMENSIONS];
 
     unsigned char ***temp_patch_buffer;
     temp_patch_buffer = malloc(sizeof(*temp_patch_buffer) * (evi - svi + 1));
@@ -303,7 +302,7 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
 
     for (i = 0; i <= (evi - svi); i++)
     {
-      PIDX_variable var = var_grp->variable[i + svi];
+      PIDX_variable var = rst_id->idx_metadata->variable[i + svi];
       temp_patch_buffer[i] = malloc(sizeof(*(temp_patch_buffer[i])) * patch_count);
       memset(temp_patch_buffer[i], 0, sizeof(*(temp_patch_buffer[i])) * patch_count);
 
@@ -322,8 +321,8 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
       pc_index = patch_grp->source_patch[i].rank * (max_patch_count * temp_max_dim + 1);
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       {
-        sim_patch_offsetx[d] = (unsigned long long)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
-        sim_patch_countx[d] = (unsigned long long)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+        sim_patch_offsetx[d] = (uint64_t)offset_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
+        sim_patch_countx[d] = (uint64_t)size_buffer[pc_index + source_patch_id[i] * temp_max_dim + d + 1];
       }
 
       count1 = 0;
@@ -334,8 +333,8 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
         {
           for (i1 = patch_grp->patch[i]->offset[0]; i1 < patch_grp->patch[i]->offset[0] + patch_grp->patch[i]->size[0]; i1 = i1 + patch_grp->patch[i]->size[0])
           {
-            unsigned long long *sim_patch_offset = sim_patch_offsetx;// var_grp->variable[svi]->sim_patch[pc1]->offset;
-            unsigned long long *sim_patch_count = sim_patch_countx;// var_grp->variable[svi]->sim_patch[pc1]->size;
+            uint64_t *sim_patch_offset = sim_patch_offsetx;// rst_id->idx_metadata->variable[svi]->sim_patch[pc1]->offset;
+            uint64_t *sim_patch_count = sim_patch_countx;// rst_id->idx_metadata->variable[svi]->sim_patch[pc1]->size;
 
             index = (sim_patch_count[0] * sim_patch_count[1] * (k1 - sim_patch_offset[2])) +
                 (sim_patch_count[0] * (j1 - sim_patch_offset[1])) +
@@ -347,15 +346,15 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
               other_offset = 0;
               for (v1 = 0; v1 < start_index; v1++)
               {
-                PIDX_variable var1 = var_grp->variable[v1];
+                PIDX_variable var1 = rst_id->idx_metadata->variable[v1];
                 other_offset = other_offset + ((var1->bpv/8) * var1->vps * sim_patch_countx[0] * sim_patch_countx[1] * sim_patch_countx[2]);
               }
 
-              PIDX_variable var = var_grp->variable[start_index];
+              PIDX_variable var = rst_id->idx_metadata->variable[start_index];
               send_o = index * var->vps;
               send_c = patch_grp->patch[i]->size[0] * var->vps;
 
-              size_t preadc = pread(fp, temp_patch_buffer[start_index - svi][i] + (count1 * send_c * var->bpv/8), send_c * var->bpv/8, other_offset + (send_o * var->bpv/8));
+              uint64_t preadc = pread(fp, temp_patch_buffer[start_index - svi][i] + (count1 * send_c * var->bpv/8), send_c * var->bpv/8, other_offset + (send_o * var->bpv/8));
 
               if (preadc != send_c * var->bpv/8)
               {
@@ -384,13 +383,13 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
             int start_index;
             for (start_index = svi; start_index <= evi; start_index = start_index + 1)
             {
-              PIDX_variable var = var_grp->variable[start_index];
+              PIDX_variable var = rst_id->idx_metadata->variable[start_index];
 
               send_o = index * var->vps * (var->bpv/8);
               send_c = (patch_grp->patch[r]->size[0]);
-              recv_o = (var_grp->variable[start_index]->sim_patch[pc1]->size[0] * var_grp->variable[start_index]->sim_patch[pc1]->size[1] * (k1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[2])) + (var_grp->variable[start_index]->sim_patch[pc1]->size[0] * (j1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[1])) + (i1 - var_grp->variable[start_index]->sim_patch[pc1]->offset[0]);
+              recv_o = (rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->size[0] * rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->size[1] * (k1 - rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->offset[2])) + (rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->size[0] * (j1 - rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->offset[1])) + (i1 - rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->offset[0]);
 
-              memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)), temp_patch_buffer[start_index - svi][r] + send_o, send_c * var->vps * (var->bpv/8));
+              memcpy(rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)), temp_patch_buffer[start_index - svi][r] + send_o, send_c * var->vps * (var->bpv/8));
 
 #if INVERT_ENDIANESS
               if (rst_id->idx_metadata->flip_endian == 1)
@@ -403,9 +402,9 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
 
                   for (y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(float); y++)
                   {
-                    memcpy(&temp, var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), sizeof(float));
+                    memcpy(&temp, rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), sizeof(float));
                     bit32_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
-                    memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), &temp2, sizeof(float));
+                    memcpy(rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(float)), &temp2, sizeof(float));
                   }
                 }
                 else if (var->bpv/8 == 8 || var->bpv/8 == 24)
@@ -416,9 +415,9 @@ PIDX_return_code PIDX_idx_rst_forced_raw_read(PIDX_idx_rst_id rst_id)
 
                   for (y = 0; y < send_c * var->vps * (var->bpv/8) / sizeof(double); y++)
                   {
-                    memcpy(&temp, var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), sizeof(double));
+                    memcpy(&temp, rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), sizeof(double));
                     bit64_reverse_endian((unsigned char*)&temp, (unsigned char*)&temp2);
-                    memcpy(var_grp->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), &temp2, sizeof(double));
+                    memcpy(rst_id->idx_metadata->variable[start_index]->sim_patch[pc1]->buffer + (recv_o * var->vps * (var->bpv/8)) + (y * sizeof(double)), &temp2, sizeof(double));
                   }
                 }
               }

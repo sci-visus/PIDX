@@ -60,20 +60,20 @@
 struct PIDX_particles_rst_struct
 {
   idx_dataset idx_metadata;
-  idx_dataset_derived_metadata idx_derived_metadata;
   idx_debug idx_debug_metadata;
-  idx_comm idx_comm_metadata;
+  idx_comm idx_c;
+
+  PIDX_restructured_grid restructured_grid;
 
   int first_index;
   int last_index;
-  int group_index;
 
   int intersected_restructured_super_patch_count;
   PIDX_super_patch* intersected_restructured_super_patch;
 
-  unsigned long long sim_max_patch_count;
-  size_t* sim_multi_patch_r_count;
-  off_t* sim_multi_patch_r_offset;
+  int sim_max_patch_count;
+  double* sim_multi_patch_r_count;
+  double* sim_multi_patch_r_offset;
 
   int maximum_neighbor_count;
 };
@@ -91,7 +91,7 @@ typedef struct PIDX_particles_rst_struct* PIDX_particles_rst_id;
 /// \param var_end_index
 /// \return
 ///
-PIDX_particles_rst_id PIDX_particles_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index);
+PIDX_particles_rst_id PIDX_particles_rst_init( idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_restructured_grid restructured_grid, int var_start_index, int var_end_index);
 
 
 

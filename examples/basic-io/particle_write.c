@@ -117,7 +117,7 @@ static int variable_count = 6;
 
 
 static int time_step_count = 1;
-static size_t particle_count = 32;
+static uint64_t particle_count = 32;
 static char output_file_template[512];
 static unsigned char **data;
 static char output_file_name[512];
@@ -319,7 +319,7 @@ static void check_args()
   int brick_count = (int)((logical_global_box_size[X] + logical_local_box_size[X] - 1) / logical_local_box_size[X]) *
                     (int)((logical_global_box_size[Y] + logical_local_box_size[Y] - 1) / logical_local_box_size[Y]) *
                     (int)((logical_global_box_size[Z] + logical_local_box_size[Z] - 1) / logical_local_box_size[Z]);
-  if(brick_count != process_count)
+  if (brick_count != process_count)
     terminate_with_error_msg("ERROR: Number of sub-blocks (%d) doesn't match number of processes (%d)\n", brick_count, process_count);
 }
 
@@ -343,10 +343,10 @@ static void calculate_per_process_offsets()
   physical_local_box_offset[Y] = (slice / sub_div[X]) * physical_local_box_size[Y];
   physical_local_box_offset[X] = (slice % sub_div[X]) * physical_local_box_size[X];
 
-  printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f]\n", rank,
-         logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z], physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z],
-         logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z], logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z],
-         physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z], physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z]);
+  //printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f]\n", rank,
+  //       logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z], physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z],
+  //       logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z], logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z],
+  //       physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z], physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z]);
 }
 
 //----------------------------------------------------------------
@@ -522,7 +522,7 @@ static void destroy_pidx_var_point_and_access()
 static void destroy_synthetic_simulation_data()
 {
   int var = 0;
-  for(var = 0; var < variable_count; var++)
+  for (var = 0; var < variable_count; var++)
   {
     free(data[var]);
     data[var] = 0;

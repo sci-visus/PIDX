@@ -38,12 +38,42 @@
  * For support: support@visus.net
  * 
  */
-#ifndef __SIM_BLOCKS_H
-#define __SIM_BLOCKS_H
 
+/**
+ * \file PIDX_idx_data_structs.h
+ *
+ * \author Sidharth Kumar
+ * \author Cameron Christensen
+ *
+ * IDX related data structs:
+ * -- PIDX_variable
+ * -- idx_dataset
+ * -- idx_dataset_derived_metadata
+ */
 
-PIDX_return_code delete_sim_block_layout(PIDX_io file, int gi);
+#ifndef __PIDX_IDX_DATA_STRUCTS_H
+#define __PIDX_IDX_DATA_STRUCTS_H
 
-PIDX_return_code populate_sim_block_layouts(PIDX_io file, int gi, int svi, int hz_from_shared, int hz_to_non_shared);
+// data structs for containers like patch, super patch and hz buffer
+#include "PIDX_memory_layout_structs.h"
+
+// timming related struct, detailed profiling of every phase
+#include "PIDX_timming_structs.h"
+
+// communicator related struct, simulation comm, partiitoned comm and restructured comm
+#include "PIDX_comm_structs.h"
+
+// idx block, file specific struct
+#include "PIDX_idx_blocks_structs.h"
+
+// debugging flags
+#include "PIDX_debug_structs.h"
+
+// idx variable related
+#include "PIDX_variable_structs.h"
+
+// idx file related
+#include "PIDX_idx_file_structs.h"
+
 
 #endif

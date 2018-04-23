@@ -10,7 +10,7 @@
 /// \param evi
 /// \return
 ///
-PIDX_return_code particles_restructure_setup(PIDX_io file, int gi, int svi, int evi, int mode);
+PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi, int mode);
 
 
 
@@ -44,6 +44,6 @@ PIDX_return_code particles_restructure_io(PIDX_io file, int mode);
 PIDX_return_code particles_restructure_cleanup(PIDX_io file);
 
 
-PIDX_return_code particles_set_rst_box_size_for_raw_write(PIDX_io file, int gi, int svi);
+PIDX_return_code particles_set_rst_box_size_for_raw_write(PIDX_io file, int svi);
 
 #endif

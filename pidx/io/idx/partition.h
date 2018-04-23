@@ -61,7 +61,7 @@
 /// \param evi
 /// \return
 ///
-PIDX_return_code partition_setup(PIDX_io file, int gi, int svi);
+PIDX_return_code partition_setup(PIDX_io file, int svi);
 
 
 

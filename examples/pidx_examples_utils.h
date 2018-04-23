@@ -58,7 +58,6 @@
 enum { X, Y, Z, NUM_DIMS };
 
 static int process_count = 1, rank = 0;
-static unsigned long long rst_box_size[NUM_DIMS];
 static unsigned long long global_box_size[NUM_DIMS];
 static unsigned long long local_box_offset[NUM_DIMS];
 static unsigned long long local_box_size[NUM_DIMS];
@@ -66,7 +65,7 @@ int sub_div[NUM_DIMS];
 static int time_step_count = 1;
 static int variable_count = 1;
 
-static PIDX_point global_size, local_offset, local_size, reg_size;
+static PIDX_point global_size, local_offset, local_size;
 static PIDX_access p_access;
 static PIDX_metadata_cache cache;
 static PIDX_file file;
@@ -91,6 +90,8 @@ static void create_pidx_point_and_access()
   //  Creating access
   PIDX_create_access(&p_access);
   PIDX_set_mpi_access(p_access, MPI_COMM_WORLD);
+
+  PIDX_create_metadata_cache(&cache);
   
   return;
 }

@@ -164,13 +164,13 @@ zfp_stream_params(
 );
 
 /* byte size of sequentially compressed stream (call after compression) */
-size_t                     /* actual number of bytes of compressed storage */
+uint64_t                     /* actual number of bytes of compressed storage */
 zfp_stream_compressed_size(
   const zfp_stream* stream /* compressed stream */
 );
 
 /* conservative estimate of compressed size in bytes */
-size_t                      /* maximum number of bytes of compressed storage */
+uint64_t                      /* maximum number of bytes of compressed storage */
 zfp_stream_maximum_size(
   const zfp_stream* stream, /* compressed stream */
   const zfp_field* field    /* array to compress */
@@ -294,7 +294,7 @@ zfp_field_dimensionality(
 );
 
 /* field size in number of array elements */
-size_t                    /* total number of scalars */
+uint64_t                    /* total number of scalars */
 zfp_field_size(
   const zfp_field* field, /* field metadata */
   uint* size              /* number of elements per dimension (may be NULL) */
@@ -387,13 +387,13 @@ zfp_field_set_metadata(
 /* high-level API: compression and decompression --------------------------- */
 
 /* compress entire field (nonzero return value upon success) */
-size_t                   /* actual number of bytes of compressed storage */
+uint64_t                   /* actual number of bytes of compressed storage */
 zfp_compress(
   zfp_stream* stream,    /* compressed stream */
   const zfp_field* field /* field metadata */
 );
 
-size_t                   /* actual number of bytes of compressed storage */
+uint64_t                   /* actual number of bytes of compressed storage */
 zfp_compress2(
   zfp_stream* stream,    /* compressed stream */
   const zfp_field* field /* field metadata */
@@ -425,7 +425,7 @@ zfp_decompress2_double(
 );
 
 /* write compression parameters and field metadata (optional) */
-size_t                    /* number of bits written or zero upon failure */
+uint64_t                    /* number of bits written or zero upon failure */
 zfp_write_header(
   zfp_stream* stream,     /* compressed stream */
   const zfp_field* field, /* field metadata */
@@ -433,7 +433,7 @@ zfp_write_header(
 );
 
 /* read compression parameters and field metadata when previously written */
-size_t                /* number of bits read or zero upon failure */
+uint64_t                /* number of bits read or zero upon failure */
 zfp_read_header(
   zfp_stream* stream, /* compressed stream */
   zfp_field* field,   /* field metadata */

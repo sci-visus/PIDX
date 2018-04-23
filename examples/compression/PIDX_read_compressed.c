@@ -224,7 +224,7 @@ static int verify_read_results()
     for (j = 0; j < local_box_size[1]; j++)
       for (i = 0; i < local_box_size[0]; i++)
       {
-        unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+        uint64_t index = (uint64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
         
         if (strcmp(type_name, INT32) == 0 || strcmp(type_name, INT32_GA) == 0 || strcmp(type_name, INT32_RGB) == 0)
         {
@@ -294,7 +294,7 @@ static int verify_read_results()
   if (rank == 0)
     printf("Correct Sample Count %d Incorrect Sample Count %d\n", total_read_count, total_read_error_count);
   
-  if(total_read_error_count == 0 && (total_read_count == global_bounds[2]*global_bounds[1]*global_bounds[0]*values_per_sample))
+  if (total_read_error_count == 0 && (total_read_count == global_bounds[2]*global_bounds[1]*global_bounds[0]*values_per_sample))
     return 0;
   else
     return 1;

@@ -49,8 +49,7 @@
 /// end_hz_index
 PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 {
-  PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
-  PIDX_variable var0 = var_grp->variable[id->first_index];
+  PIDX_variable var0 = id->idx->variable[id->first_index];
 
   if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
@@ -60,7 +59,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   int **allign_count;
   int j = 0, d = 0, v = 0;
 
-  int maxH = id->idx_d->maxh;
+  int maxH = id->idx->maxh;
 
   tpatch = (int**) malloc(2 * sizeof (int*));
   memset(tpatch, 0, 2 * sizeof (int*));
@@ -69,7 +68,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
   memset(tpatch[0], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
   memset(tpatch[1], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
 
-  if(maxH <= 0)
+  if (maxH <= 0)
   {
     fprintf(stderr, "[%s] [%d] maxH [%d] not set.\n", __FILE__, __LINE__, maxH);
     return PIDX_err_hz;
@@ -77,7 +76,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 
   for (v = id->first_index; v <= id->last_index; v++)
   {
-    PIDX_variable var = var_grp->variable[v];
+    PIDX_variable var = id->idx->variable[v];
 
     var->hz_buffer = malloc(sizeof(*(var->hz_buffer)));
     memset(var->hz_buffer, 0, sizeof(*(var->hz_buffer)));
@@ -87,10 +86,10 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
     // if the patch is an edge patch or not
     hz_buf->is_boundary_HZ_buffer = var->chunked_super_patch->is_boundary_patch;
 
-    hz_buf->start_hz_index = malloc(sizeof (unsigned long long) * maxH);
-    hz_buf->end_hz_index = malloc(sizeof (unsigned long long) * maxH);
-    memset(hz_buf->start_hz_index, 0, sizeof (unsigned long long) * maxH);
-    memset(hz_buf->end_hz_index, 0, sizeof (unsigned long long) * maxH);
+    hz_buf->start_hz_index = malloc(sizeof (uint64_t) * maxH);
+    hz_buf->end_hz_index = malloc(sizeof (uint64_t) * maxH);
+    memset(hz_buf->start_hz_index, 0, sizeof (uint64_t) * maxH);
+    memset(hz_buf->end_hz_index, 0, sizeof (uint64_t) * maxH);
 
     hz_buf->nsamples_per_level = malloc(sizeof (int*) * maxH);
     memset(hz_buf->nsamples_per_level, 0, sizeof (int*) * maxH);
@@ -168,8 +167,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
 /// free the HZ related meta data
 PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
 {
-  PIDX_variable_group var_grp = id->idx->variable_grp[id->group_index];
-  PIDX_variable var0 = var_grp->variable[id->first_index];
+  PIDX_variable var0 = id->idx->variable[id->first_index];
 
   if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
@@ -177,12 +175,12 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
   int itr = 0, v = 0;
   for (v = id->first_index; v <= id->last_index; v++)
   {
-    PIDX_variable var = var_grp->variable[v];
+    PIDX_variable var = id->idx->variable[v];
 
     free(var->hz_buffer->start_hz_index);
     free(var->hz_buffer->end_hz_index);
 
-    for (itr = 0; itr < id->idx_d->maxh; itr++)
+    for (itr = 0; itr < id->idx->maxh; itr++)
       free(var->hz_buffer->nsamples_per_level[itr]);
     free(var->hz_buffer->nsamples_per_level);
 
