@@ -50,13 +50,18 @@ struct PIDX_file_descriptor
 {
   int flags;
 
-  PIDX_io io;
+  int fs_block_size;
 
-  int local_group_index;                        ///< Starting index of the variables that needs to be written before flush or close
-  int local_group_count;                        ///< Number of variables that needs to be written out
+  int variable_index_tracker;
+  int local_variable_index;
+  int local_variable_count;
 
   int flush_used;                               ///< Flush used
   int write_on_close;                           ///< HPC Writes
+
+  PIDX_io io;
+
+  PIDX_time time;
 
   int ROI_writes;                               ///< ROI writes
 
@@ -66,11 +71,11 @@ struct PIDX_file_descriptor
   idx_dataset idx;                             ///< Contains all relevant IDX file info
                                                ///< Blocks per file, samples per block, bitmask, box, file name template
 
-  idx_dataset_derived_metadata idx_d;          ///< Contains all derieved IDX file info
-                                               ///< number of files, files that are ging to be populated
+  idx_blocks idx_b;
 
   idx_debug idx_dbg;                           ///< Contains flags for debugging
 
+  PIDX_metadata_cache meta_data_cache;
 
-  idx_metadata_cache idx_cache;
+  PIDX_restructured_grid restructured_grid;
 };

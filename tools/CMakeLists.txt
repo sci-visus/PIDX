@@ -55,13 +55,13 @@ IF (PIDX_BUILD_TOOLS)
     MESSAGE("Configuring utility with MPI support")
     INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
     SET(TOOLS_LINK_LIBS ${TOOLS_LINK_LIBS} ${MPI_C_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   IF (ZFP_FOUND)
     MESSAGE("Configuring profiling with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
     SET(TOOLS_LINK_LIBS ${TOOLS_LINK_LIBS} ${ZFP_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   # ////////////////////////////////////////
   # includes
@@ -82,4 +82,4 @@ IF (PIDX_BUILD_TOOLS)
   TARGET_LINK_LIBRARIES(idxverify m ${TOOLS_LINK_LIBS})
   TARGET_LINK_LIBRARIES(minmax ${TOOLS_LINK_LIBS})
 
-ENDIF()
+ENDIF ()

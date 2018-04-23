@@ -60,8 +60,10 @@ struct PIDX_Ndim_empty_patch_struct
 {
   int rank;
   int is_boundary_patch;
-  off_t offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
-  size_t size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
+  uint64_t offset[PIDX_MAX_DIMENSIONS];       ///< offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension)
+  uint64_t size[PIDX_MAX_DIMENSIONS];         ///< size (extents) in each of the dimensions for the data chunk
+  double physical_offset[PIDX_MAX_DIMENSIONS];
+  double physical_size[PIDX_MAX_DIMENSIONS];
 };
 typedef struct PIDX_Ndim_empty_patch_struct* Ndim_empty_patch;
 
@@ -70,10 +72,10 @@ typedef struct PIDX_Ndim_empty_patch_struct* Ndim_empty_patch;
 /// Struct to store the restructured grid
 struct PIDX_grid_struct
 {
-  double physical_patch_size[PIDX_MAX_DIMENSIONS];
-  size_t patch_size[PIDX_MAX_DIMENSIONS];
-  int total_patch_count[PIDX_MAX_DIMENSIONS];
-  Ndim_empty_patch* patch;
+  double physical_patch_size[PIDX_MAX_DIMENSIONS];      /// restructured grid size (physical), used for particle simulations
+  uint64_t patch_size[PIDX_MAX_DIMENSIONS];               /// restructured grid size (logical)
+  uint64_t total_patch_count[PIDX_MAX_DIMENSIONS];           /// total number of patches forming the restructured super patch
+  Ndim_empty_patch* patch;                              /// patch contained in the super patch
 };
 typedef struct PIDX_grid_struct* PIDX_restructured_grid;
 
@@ -81,8 +83,8 @@ typedef struct PIDX_grid_struct* PIDX_restructured_grid;
 /// Struct to store the row/column major chunk of data given by application
 struct PIDX_patch_struct
 {
-  off_t offset[PIDX_MAX_DIMENSIONS];       ///< logical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
-  size_t size[PIDX_MAX_DIMENSIONS];         ///< logical size (extents) in each of the dimensions for the data chunk
+  uint64_t offset[PIDX_MAX_DIMENSIONS];       ///< logical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
+  uint64_t size[PIDX_MAX_DIMENSIONS];         ///< logical size (extents) in each of the dimensions for the data chunk
 
   double physical_offset[PIDX_MAX_DIMENSIONS];       ///< physical offset of the data chunk (of PIDX_MAX_DIMENSIONS dimension) in the 3D global space
   double physical_size[PIDX_MAX_DIMENSIONS];         ///< physical size (extents) in each of the dimensions for the data chunk
@@ -90,9 +92,9 @@ struct PIDX_patch_struct
   // TODO WILL: The particles needing to modify inputs and buffer sizes
   // which were previously thought to be fixed makes this struct really now
   // a dual-mode pain to deal with. Do something better.
-  // TODO WILL: These should be size_t
-  size_t particle_count;
-  size_t *read_particle_count;
+  // TODO WILL: These should be uint64_t
+  uint64_t particle_count;
+  uint64_t *read_particle_count;
   // TODO WILL: Do we want some other way of differentiating the particle/grid patches?
   union {
     /// The data buffer for grid variables (particle_count = 0)
@@ -103,7 +105,7 @@ struct PIDX_patch_struct
     /// should we have a PIDX_free_variable? Does such a function already exist?
     unsigned char** read_particle_buffer;
   };
-  size_t read_particle_buffer_capacity;
+  uint64_t read_particle_buffer_capacity;
 };
 typedef struct PIDX_patch_struct* PIDX_patch;
 
@@ -141,8 +143,8 @@ struct PIDX_HZ_buffer_struct
 
   // HZ related meta data
   int **nsamples_per_level;                             ///< number of samples in the hz levels (#level = HZ_level_from - HZ_level_to + 1)
-  unsigned long long *start_hz_index;                   ///< Starting HZ index at of the data at all the HZ levels
-  unsigned long long *end_hz_index;                     ///< Ending HZ index at of the data at all the HZ levels
+  uint64_t *start_hz_index;                   ///< Starting HZ index at of the data at all the HZ levels
+  uint64_t *end_hz_index;                     ///< Ending HZ index at of the data at all the HZ levels
 
   // HZ encoded data (for every level)
   unsigned char** buffer;                               ///< data buffer at all the HZ levels
@@ -162,9 +164,9 @@ struct PIDX_HZ_Agg_buffer_struct
   int aggregator_interval;
 
   int num_idx_blocks;
-  unsigned long long buffer_size;                                 ///< Aggregator buffer size
-  unsigned long long compressed_buffer_size;                      ///< Aggregator buffer size after compression
-  unsigned long long *compressed_block_size;                      ///< Compressed size of each block in the aggregator
+  uint64_t buffer_size;                                 ///< Aggregator buffer size
+  uint64_t compressed_buffer_size;                      ///< Aggregator buffer size after compression
+  uint64_t *compressed_block_size;                      ///< Compressed size of each block in the aggregator
   unsigned char* buffer;                                ///< The actual aggregator buffer
 };
 typedef struct PIDX_HZ_Agg_buffer_struct* Agg_buffer;

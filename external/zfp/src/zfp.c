@@ -123,7 +123,7 @@ zfp_field_dimensionality(const zfp_field* field)
   return field->nx ? field->ny ? field->nz ? 3 : 2 : 1 : 0;
 }
 
-size_t
+uint64_t
 zfp_field_size(const zfp_field* field, uint* size)
 {
   if (size)
@@ -138,7 +138,7 @@ zfp_field_size(const zfp_field* field, uint* size)
         size[0] = field->sx;
         break;
     }
-  return (size_t)MAX(field->nx, 1u) * (size_t)MAX(field->ny, 1u) * (size_t)MAX(field->nz, 1u);
+  return (uint64_t)MAX(field->nx, 1u) * (uint64_t)MAX(field->ny, 1u) * (uint64_t)MAX(field->nz, 1u);
 }
 
 int
@@ -363,20 +363,20 @@ zfp_stream_params(const zfp_stream* zfp, uint* minbits, uint* maxbits, uint* max
     *minexp = zfp->minexp;
 }
 
-size_t
+uint64_t
 zfp_stream_compressed_size(const zfp_stream* zfp)
 {
   return stream_size(zfp->stream);
 }
 
-size_t
+uint64_t
 zfp_stream_maximum_size(const zfp_stream* zfp, const zfp_field* field)
 {
   uint dims = zfp_field_dimensionality(field);
   uint mx = (MAX(field->nx, 1u) + 3) / 4;
   uint my = (MAX(field->ny, 1u) + 3) / 4;
   uint mz = (MAX(field->nz, 1u) + 3) / 4;
-  size_t blocks = (size_t)mx * (size_t)my * (size_t)mz;
+  uint64_t blocks = (uint64_t)mx * (uint64_t)my * (uint64_t)mz;
   uint values = 1u << (2 * dims);
   uint maxbits = 1;
 
@@ -604,7 +604,7 @@ zfp_demote_int32_to_uint16(uint16* oblock, const int32* iblock, uint dims)
 
 /* public functions: compression and decompression --------------------------*/
 
-size_t
+uint64_t
 zfp_compress(zfp_stream* zfp, const zfp_field* field)
 {
   void (*compress[2][3][2])(zfp_stream*, const zfp_field*) = {
@@ -633,7 +633,7 @@ zfp_compress(zfp_stream* zfp, const zfp_field* field)
   return stream_size(zfp->stream);
 }
 
-size_t
+uint64_t
 zfp_compress2(zfp_stream* zfp, const zfp_field* field)
 {
   void (*compress[2][3][2])(zfp_stream*, const zfp_field*) = {
@@ -731,10 +731,10 @@ zfp_decompress2_double(zfp_stream* zfp, zfp_field* field, int64* data, int* emax
   return 1;
 }
 
-size_t
+uint64_t
 zfp_write_header(zfp_stream* zfp, const zfp_field* field, uint mask)
 {
-  size_t bits = 0;
+  uint64_t bits = 0;
   /* 32-bit magic */
   if (mask & ZFP_HEADER_MAGIC) {
     stream_write_bits(zfp->stream, 'z', 8);
@@ -759,10 +759,10 @@ zfp_write_header(zfp_stream* zfp, const zfp_field* field, uint mask)
   return bits;
 }
 
-size_t
+uint64_t
 zfp_read_header(zfp_stream* zfp, zfp_field* field, uint mask)
 {
-  size_t bits = 0;
+  uint64_t bits = 0;
   if (mask & ZFP_HEADER_MAGIC) {
     if (stream_read_bits(zfp->stream, 8) != 'z' ||
         stream_read_bits(zfp->stream, 8) != 'f' ||

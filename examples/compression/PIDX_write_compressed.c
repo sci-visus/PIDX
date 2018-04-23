@@ -96,7 +96,7 @@ int main(int argc, char **argv)
   memset(data, 0, sizeof(*data) * variable_count);
 
   // Synthetic simulation data
-  for(var = 0; var < variable_count; var++)
+  for (var = 0; var < variable_count; var++)
   {
     if (var % 2  == 1)
       values_per_sample[var] =  3;
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
       for (j = 0; j < local_box_size[1]; j++)
         for (i = 0; i < local_box_size[0]; i++)
         {
-          int64_t index = (int64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+          uint64_t index = (uint64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
           for (vps = 0; vps < values_per_sample[var]; vps++)
             data[var][index * values_per_sample[var] + vps] = 100 + var + ((global_box_size[0] * global_box_size[1]*(local_box_offset[2] + k))+(global_box_size[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i));
         }
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
   if (PIDX_close_access(p_access) != PIDX_success)
     terminate_with_error_msg("PIDX_close_access");
 
-  for(var = 0; var < variable_count; var++)
+  for (var = 0; var < variable_count; var++)
   {
     free(data[var]);
     data[var] = 0;

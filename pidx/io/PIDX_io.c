@@ -51,7 +51,7 @@
 
 
 
-PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, idx_metadata_cache idx_cache)
+PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_metadata_cache meta_data_cache, idx_blocks idx_b, PIDX_restructured_grid restructured_grid, PIDX_time time, int fs_block_size, int variable_index_tracker)
 {
   //Creating the restructuring ID
   PIDX_io idx_io_id;
@@ -59,31 +59,33 @@ PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata id
   memset(idx_io_id, 0, sizeof (*idx_io_id));
 
   idx_io_id->idx = idx_meta_data;
-  idx_io_id->idx_d = idx_derived_ptr;
   idx_io_id->idx_dbg = idx_dbg;
   idx_io_id->idx_c = idx_c;
-  idx_io_id->idx_cache = idx_cache;
+  idx_io_id->idx_b = idx_b;
+  idx_io_id->meta_data_cache = meta_data_cache;
+  idx_io_id->fs_block_size = fs_block_size;
+  idx_io_id->variable_index_tracker = variable_index_tracker;
+  idx_io_id->restructured_grid = restructured_grid;
+  idx_io_id->time = time;
 
   return (idx_io_id);
 }
 
 
 
-PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
+PIDX_return_code PIDX_write(PIDX_io file, int svi, int evi, int MODE)
 {
   PIDX_return_code ret = 0;
+  file->time->SX = PIDX_get_time();
+  PIDX_variable var0 = file->idx->variable[svi];
 
-  file->idx_d->time->SX = PIDX_get_time();
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var0 = var_grp->variable[svi];
   if (var0->is_particle == 1)
-    ret = PIDX_particle_write(file, gi, svi, evi);
+    ret = PIDX_particle_rst_write(file, svi, evi);
   else
   {
 
 #if 0
-    if (file->idx_c->gnprocs == 1)
+    if (file->idx_c->simulation_nprocs == 1)
     {
       if (MODE == PIDX_IDX_IO || MODE == PIDX_LOCAL_PARTITION_IDX_IO || MODE == PIDX_GLOBAL_PARTITION_IDX_IO)
         ret = PIDX_serial_idx_write(file, gi, svi, evi);
@@ -94,53 +96,56 @@ PIDX_return_code PIDX_write(PIDX_io file, int gi, int svi, int evi, int MODE)
 #endif
     {
       if (MODE == PIDX_IDX_IO)
-        ret = PIDX_idx_write(file, gi, svi, evi);
+        ret = PIDX_idx_write(file, svi, evi);
 
       else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-        ret = PIDX_local_partition_idx_write(file, gi, svi, evi);
+        ret = PIDX_local_partition_idx_write(file, svi, evi);
 
       else if (MODE == PIDX_RAW_IO)
-        ret = PIDX_raw_write(file, gi, svi, evi);
+        ret = PIDX_raw_write(file, svi, evi);
     }
   }
 
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
 
-  file->idx_d->time->EX = PIDX_get_time();
+  file->time->EX = PIDX_get_time();
 
   return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_read(PIDX_io file, int gi, int svi, int evi, int MODE)
+PIDX_return_code PIDX_read(PIDX_io file, int svi, int evi, int MODE)
 {
   PIDX_return_code ret = 0;
-
-  file->idx_d->time->SX = PIDX_get_time();
-
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var0 = var_grp->variable[svi];
+  file->time->SX = PIDX_get_time();
+  PIDX_variable var0 = file->idx->variable[svi];
 
   if (var0->is_particle == 1)
-    ret = PIDX_particle_restart_read(file, gi, svi, evi);
+    ret = PIDX_particle_restart_read(file, svi, evi);
   else
   {
     if (MODE == PIDX_IDX_IO)
-      ret = PIDX_idx_read(file, gi, svi, evi);
+      ret = PIDX_idx_read(file, svi, evi);
 
     else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-      ret = PIDX_parallel_local_partition_idx_read(file, gi, svi, evi);
+      ret = PIDX_parallel_local_partition_idx_read(file, svi, evi);
 
     else if (MODE == PIDX_RAW_IO)
-      ret = PIDX_raw_read(file, gi, svi, evi);
+      ret = PIDX_raw_read(file, svi, evi);
   }
 
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
 
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_file;}
-
-  file->idx_d->time->EX = PIDX_get_time();
+  file->time->EX = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -155,4 +160,3 @@ PIDX_return_code PIDX_io_finalize(PIDX_io file)
 
   return PIDX_success;
 }
-

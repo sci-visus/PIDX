@@ -43,7 +43,7 @@ FILE(GLOB ZFP_SRC ./inc/*.h ./src/*.c)
 
 IF (${BUILD_SHARED_LIBS})
   add_definitions(-DZFP_DLL)
-ENDIF()
+ENDIF ()
 PIDX_ADD_LIBRARY(zfp "${ZFP_SRC}")
 
 #set vars as in FindZFP.cmake

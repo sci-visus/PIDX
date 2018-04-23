@@ -42,7 +42,7 @@
 #include "../../PIDX_inc.h"
 
 
-PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int first_index, int last_index)
+PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_comm idx_c, int fs_block_size, int first_index, int last_index)
 {
   PIDX_file_io_id io_id;
 
@@ -51,10 +51,10 @@ PIDX_file_io_id PIDX_file_io_init(idx_dataset idx_meta_data, idx_dataset_derived
   memset(io_id, 0, sizeof (*io_id));
 
   io_id->idx = idx_meta_data;
-  io_id->idx_d = idx_d;
   io_id->idx_c = idx_c;
 
-  io_id->group_index = 0;
+  io_id->fs_block_size = fs_block_size;
+
   io_id->first_index = first_index;
   io_id->last_index = last_index;
 

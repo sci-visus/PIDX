@@ -54,29 +54,29 @@
 #include "../../PIDX_inc.h"
 
 
-PIDX_raw_rst_id PIDX_raw_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index)
+PIDX_raw_rst_id PIDX_raw_rst_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_restructured_grid restructured_grid, int var_start_index, int var_end_index)
 {
   PIDX_raw_rst_id raw_rst_id;
   raw_rst_id = (PIDX_raw_rst_id)malloc(sizeof (*raw_rst_id));
   memset(raw_rst_id, 0, sizeof (*raw_rst_id));
 
   raw_rst_id->idx = idx_meta_data;
-  raw_rst_id->idx_derived = idx_derived;
   raw_rst_id->idx_c = idx_c;
   raw_rst_id->idx_dbg = idx_dbg;
 
-  raw_rst_id->group_index = 0;
   raw_rst_id->first_index = var_start_index;
   raw_rst_id->last_index = var_end_index;
 
   raw_rst_id->maximum_neighbor_count = 256;
 
   raw_rst_id->reg_raw_grp_count = 0;
-  raw_rst_id->sim_max_patch_group_count = 0;
+  raw_rst_id->sim_max_raw_io_restructured_super_patch_count = 0;
 
-  raw_rst_id->reg_patch_size[0] = idx_derived->restructured_grid->patch_size[0];
-  raw_rst_id->reg_patch_size[1] = idx_derived->restructured_grid->patch_size[1];
-  raw_rst_id->reg_patch_size[2] = idx_derived->restructured_grid->patch_size[2];
+  raw_rst_id->restructured_grid = restructured_grid;
+
+  raw_rst_id->reg_patch_size[0] = restructured_grid->patch_size[0];
+  raw_rst_id->reg_patch_size[1] = restructured_grid->patch_size[1];
+  raw_rst_id->reg_patch_size[2] = restructured_grid->patch_size[2];
 
   return (raw_rst_id);
 }
@@ -85,7 +85,7 @@ PIDX_raw_rst_id PIDX_raw_rst_init(idx_dataset idx_meta_data, idx_dataset_derived
 PIDX_return_code PIDX_raw_rst_finalize(PIDX_raw_rst_id raw_rst_id)
 {
   raw_rst_id->reg_raw_grp_count = 0;
-  raw_rst_id->sim_max_patch_group_count = 0;
+  raw_rst_id->sim_max_raw_io_restructured_super_patch_count = 0;
   free(raw_rst_id);
   raw_rst_id = 0;
 

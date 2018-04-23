@@ -106,7 +106,7 @@ static int current_ts = 1;
 static int variable_index = 0;
 static char output_file_template[512] = "test_idx";
 static unsigned char *data = NULL;
-static size_t particle_count = 0;
+static uint64_t particle_count = 0;
 static int checkpoint_restart = 0;
 
 static PIDX_point local_offset, local_size;
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
   set_pidx_file(current_ts);
 
   PIDX_variable *checkpoint_vars = NULL;
-  size_t *checkpoint_particle_counts = NULL;
+  uint64_t *checkpoint_particle_counts = NULL;
   void **checkpoint_data = NULL;
 
   if (!checkpoint_restart)
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
     }
 
     checkpoint_vars = calloc(variable_count, sizeof(PIDX_variable));
-    checkpoint_particle_counts = calloc(variable_count, sizeof(size_t));
+    checkpoint_particle_counts = calloc(variable_count, sizeof(uint64_t));
     checkpoint_data = calloc(variable_count, sizeof(void*));
     PIDX_return_code ret = PIDX_set_current_variable_index(file, 0);
     if (ret != PIDX_success) terminate_with_error_msg("PIDX_set_current_variable_index");
@@ -327,7 +327,7 @@ static void check_args()
   int brick_count = (int)((logical_global_box_size[X] + logical_local_box_size[X] - 1) / logical_local_box_size[X]) *
                     (int)((logical_global_box_size[Y] + logical_local_box_size[Y] - 1) / logical_local_box_size[Y]) *
                     (int)((logical_global_box_size[Z] + logical_local_box_size[Z] - 1) / logical_local_box_size[Z]);
-  if(brick_count != process_count)
+  if (brick_count != process_count)
     terminate_with_error_msg("ERROR: Number of sub-blocks (%d) doesn't match number of processes (%d)\n", brick_count, process_count);
 
 }

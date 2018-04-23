@@ -1,23 +1,46 @@
-/*****************************************************
- **  PIDX Parallel I/O Library                      **
- **  Copyright (c) 2010-2014 University of Utah     **
- **  Scientific Computing and Imaging Institute     **
- **  72 S Central Campus Drive, Room 3750           **
- **  Salt Lake City, UT 84112                       **
- **                                                 **
- **  PIDX is licensed under the Creative Commons    **
- **  Attribution-NonCommercial-NoDerivatives 4.0    **
- **  International License. See LICENSE.md.         **
- **                                                 **
- **  For information about this project see:        **
- **  http://www.cedmav.com/pidx                     **
- **  or contact: pascucci@sci.utah.edu              **
- **  For support: PIDX-support@visus.net            **
- **                                                 **
- *****************************************************/
+/*
+ * BSD 3-Clause License
+ *
+ * Copyright (c) 2010-2018 ViSUS L.L.C.,
+ * Scientific Computing and Imaging Institute of the University of Utah
+ *
+ * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
+ * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
+ *
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ *
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * * Neither the name of the copyright holder nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+ * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+ * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+ * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+ * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+ * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * For additional information about this project contact: pascucci@acm.org
+ * For support: support@visus.net
+ *
+ */
 
 /**
- * \file PIDX_raw_rst.h
+ * \file PIDX_idx_rst.h
  *
  * \author Steve Petruzza
  * \author Sidharth Kumar
@@ -36,29 +59,21 @@
 //Struct for restructuring ID
 struct PIDX_particles_rst_struct
 {
-  //Contains all relevant IDX file info
-  //Blocks per file, samples per block, bitmask, patch, file name template and more
-  idx_dataset idx;
-
-  //Contains all derieved IDX file info
-  //number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_derived;
-
-  idx_debug idx_dbg;
-
+  idx_dataset idx_metadata;
+  idx_debug idx_debug_metadata;
   idx_comm idx_c;
+
+  PIDX_restructured_grid restructured_grid;
 
   int first_index;
   int last_index;
-  int group_index;
 
-  double physical_reg_patch_size[PIDX_MAX_DIMENSIONS];
-  int reg_raw_grp_count;
-  PIDX_super_patch* reg_raw_grp;
+  int intersected_restructured_super_patch_count;
+  PIDX_super_patch* intersected_restructured_super_patch;
 
-  int sim_max_patch_group_count;
-  double* sim_raw_r_count;
-  double* sim_raw_r_offset;
+  int sim_max_patch_count;
+  double* sim_multi_patch_r_count;
+  double* sim_multi_patch_r_offset;
 
   int maximum_neighbor_count;
 };
@@ -76,7 +91,7 @@ typedef struct PIDX_particles_rst_struct* PIDX_particles_rst_id;
 /// \param var_end_index
 /// \return
 ///
-PIDX_particles_rst_id PIDX_particles_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index);
+PIDX_particles_rst_id PIDX_particles_rst_init( idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_restructured_grid restructured_grid, int var_start_index, int var_end_index);
 
 
 
@@ -173,24 +188,6 @@ PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id, 
  * Implementation in PIDX_particles_rst_io.c
  */
 ///
-/// \brief PIDX_particles_rst_buf_aggregate_and_write
-/// \param rst_id
-/// \return
-///
-PIDX_return_code PIDX_particles_rst_buf_aggregate_and_write(PIDX_particles_rst_id rst_id);
-
-
-
-///
-/// \brief PIDX_particles_rst_buf_read_and_aggregate
-/// \param rst_id
-/// \return
-///
-PIDX_return_code PIDX_particles_rst_buf_read_and_aggregate(PIDX_particles_rst_id rst_id);
-
-
-
-///
 /// \brief PIDX_particles_rst_buf_aggregated_write
 /// \param rst_id
 /// \return
@@ -240,8 +237,4 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id);
 PIDX_return_code PIDX_particles_rst_read(PIDX_particles_rst_id rst_id);
 
 
-
-
-PIDX_return_code PIDX_particles_rst_forced_raw_read(PIDX_particles_rst_id rst_id);
-
-#endif // __PIDX_particles_rst_NEW_H
+#endif

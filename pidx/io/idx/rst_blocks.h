@@ -42,8 +42,8 @@
 #define __RST_BLOCKS_H
 
 
-PIDX_return_code delete_rst_block_layout(PIDX_io file, int gi);
+PIDX_return_code delete_rst_block_layout(PIDX_io file);
 
-PIDX_return_code populate_rst_block_layouts(PIDX_io file, int gi, int svi, int hz_from_shared, int hz_to_non_shared);
+PIDX_return_code populate_rst_block_layouts(PIDX_io file, int svi, int hz_file0_from, int hz_n_file0_to);
 
 #endif

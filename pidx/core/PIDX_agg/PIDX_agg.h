@@ -61,15 +61,10 @@ struct PIDX_agg_struct
 
   idx_comm idx_c;
 
-  /// Contains all relevant IDX file info
-  /// Blocks per file, samples per block, bitmask, patch, file name template and more
   idx_dataset idx;
 
-  /// Contains all derieved IDX file info
-  /// number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_d;
+  idx_blocks idx_b;
 
-  int gi;
   int fi;
   int li;
   //int lvi;
@@ -87,7 +82,7 @@ typedef struct PIDX_agg_struct* PIDX_agg_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int fi, int li);
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_blocks idx_b, int fi, int li);
 
 
 

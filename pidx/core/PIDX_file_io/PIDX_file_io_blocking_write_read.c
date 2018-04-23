@@ -47,7 +47,7 @@ static void bit64_reverse_endian(unsigned char* val, unsigned char *outbuf);
 
 PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, char* filename_template)
 {
-  unsigned long long data_offset = 0;
+  uint64_t data_offset = 0;
   char file_name[PATH_MAX];
   int i = 0;
   MPI_File fp;
@@ -67,7 +67,6 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
       return PIDX_err_io;
     }
 
-    PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
     int total_header_size = (10 + (10 * io_id->idx->blocks_per_file)) * sizeof (uint32_t) * io_id->idx->variable_count;
     headers = malloc(total_header_size);
     memset(headers, 0, total_header_size);
@@ -95,7 +94,7 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
         data_offset = htonl(headers[12 + ((i + (io_id->idx->blocks_per_file * agg_buf->var_number))*10 )]);
         data_size = htonl(headers[14 + ((i + (io_id->idx->blocks_per_file * agg_buf->var_number))*10 )]);
 
-        int buffer_index = (block_count * io_id->idx_d->samples_per_block * (var_grp->variable[agg_buf->var_number]->bpv/8) * var_grp->variable[agg_buf->var_number]->vps * tck) / io_id->idx->compression_factor;
+        int buffer_index = (block_count * io_id->idx->samples_per_block * (io_id->idx->variable[agg_buf->var_number]->bpv/8) * io_id->idx->variable[agg_buf->var_number]->vps * tck) / io_id->idx->compression_factor;
 
         //fprintf(stderr, "DO and DS %d %d\n", data_offset, data_size);
         ret = MPI_File_read_at(fp, data_offset, agg_buf->buffer + buffer_index, data_size, MPI_BYTE, &status);
@@ -133,7 +132,7 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
 
         if (io_id->idx->flip_endian == 1)
         {
-          PIDX_variable curr_var = var_grp->variable[agg_buf->var_number];
+          PIDX_variable curr_var = io_id->idx->variable[agg_buf->var_number];
           if (curr_var->bpv/8 == 4 || curr_var->bpv/8 == 12)
           {
             int y = 0;
@@ -177,13 +176,19 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
 
 PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer agg_buf, PIDX_block_layout block_layout, char* filename_template)
 {
-  unsigned long long data_offset = 0;
+  uint64_t data_offset = 0;
   char file_name[PATH_MAX];
   int i = 0, k = 0;
   int ret;
   MPI_File fh;
   MPI_Status status;
   int tck = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
+
+  uint64_t total_header_size;
+  total_header_size = (10 + (10 * io_id->idx->blocks_per_file)) * sizeof (uint32_t) * io_id->idx->variable_count;
+  uint64_t start_fs_block = total_header_size / io_id->fs_block_size;
+  if (total_header_size % io_id->fs_block_size)
+    start_fs_block++;
 
   if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
   {
@@ -195,21 +200,20 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
       return PIDX_err_io;
     }
 
-    PIDX_variable_group var_grp = io_id->idx->variable_grp[io_id->group_index];
     data_offset = 0;
-    data_offset += io_id->idx_d->start_fs_block * io_id->idx_d->fs_block_size;
+    data_offset += start_fs_block * io_id->fs_block_size;
 
     for (k = 0; k < agg_buf->var_number; k++)
     {
-      PIDX_variable vark = var_grp->variable[k];
+      PIDX_variable vark = io_id->idx->variable[k];
       int bytes_per_datatype =  ((vark->bpv/8) * tck) / (io_id->idx->compression_factor);
-      unsigned long long prev_var_sample = (unsigned long long) block_layout->bcpf[agg_buf->file_number] * io_id->idx_d->samples_per_block * bytes_per_datatype * var_grp->variable[k]->vps;
+      uint64_t prev_var_sample = (uint64_t) block_layout->bcpf[agg_buf->file_number] * io_id->idx->samples_per_block * bytes_per_datatype * io_id->idx->variable[k]->vps;
 
-      data_offset = (unsigned long long) data_offset + prev_var_sample;
+      data_offset = (uint64_t) data_offset + prev_var_sample;
     }
 
     for (i = 0; i < agg_buf->sample_number; i++)
-      data_offset = (unsigned long long) data_offset + agg_buf->buffer_size;
+      data_offset = (uint64_t) data_offset + agg_buf->buffer_size;
 
     //fprintf(stderr, "DO %d DS %d\n", data_offset, agg_buf->buffer_size);
     ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);

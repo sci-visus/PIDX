@@ -61,25 +61,25 @@
 /// \param evi
 /// \return
 ///
-PIDX_return_code partition_setup(PIDX_io file, int gi, int svi);
+PIDX_return_code partition_setup(PIDX_io file, int svi);
 
 
 
 ///
-/// \brief create_local_comm
+/// \brief create_partition_comm
 /// \param file
 /// \return
 ///
-PIDX_return_code create_local_comm(PIDX_io file);
+PIDX_return_code create_partition_comm(PIDX_io file);
 
 
 
 ///
-/// \brief destroy_local_comm
+/// \brief destroy_partition_comm
 /// \param file
 /// \return
 ///
-PIDX_return_code destroy_local_comm(PIDX_io file);
+PIDX_return_code destroy_partition_comm(PIDX_io file);
 
 
 

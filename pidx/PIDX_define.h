@@ -89,8 +89,6 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 enum AGG_MODES {AGG_SETUP, AGG_PERFORM, AGG_SETUP_AND_PERFORM};
 
 
-enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
-
 // No process dumps any meta data info
 #define PIDX_NO_META_DATA_DUMP             0
 

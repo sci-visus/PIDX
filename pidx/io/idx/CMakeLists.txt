@@ -57,13 +57,13 @@ IF (MPI_C_FOUND)
   #MESSAGE("Configuring pidx with MPI support")
   INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
   SET(PIDX_IDX_IO_LINK_LIBS ${PIDX_IDX_IO_LINK_LIBS} ${MPI_C_LIBRARIES})
-ENDIF()
+ENDIF ()
 
 IF (ZFP_FOUND)
   MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
   SET(PIDX_IDX_IO_LINK_LIBS ${PIDX_IDX_IO_LINK_LIBS} ${ZFP_LIBRARIES})
-ENDIF()
+ENDIF ()
 
 
 # ////////////////////////////////////////
