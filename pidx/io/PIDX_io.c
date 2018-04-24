@@ -38,18 +38,9 @@
  * For support: support@visus.net
  * 
  */
-/*
- * 1. One global dataset.
- * 2. Partitions in local index space.
- * 3. Partitions in global index space.
- * 4. Partition divided into non-shared, shared, file 0 (global index)
- * 5. Partition divided into non-shared, shared, file 0 (local index)
- */
 
 
 #include "../PIDX_inc.h"
-
-
 
 PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_metadata_cache meta_data_cache, idx_blocks idx_b, PIDX_restructured_grid restructured_grid, PIDX_time time, int fs_block_size, int variable_index_tracker)
 {
@@ -75,6 +66,15 @@ PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_d
 
 PIDX_return_code PIDX_write(PIDX_io file, int svi, int evi, int MODE)
 {
+  // Four IO modes are supported
+  // 1. idx io (no partitioning): does not create partitioning communicators
+  // 2. local partitioned IDX io
+  // 3. raw io: using restructuring phase
+  // 4. particle io
+
+  // current scheme of deciding between particle io and the others is not good
+  // we need to come up with a better way of sperating the two
+
   PIDX_return_code ret = 0;
   file->time->SX = PIDX_get_time();
   PIDX_variable var0 = file->idx->variable[svi];
@@ -121,6 +121,15 @@ PIDX_return_code PIDX_write(PIDX_io file, int svi, int evi, int MODE)
 
 PIDX_return_code PIDX_read(PIDX_io file, int svi, int evi, int MODE)
 {
+  // Four IO modes are supported
+  // 1. idx io (no partitioning): does not create partitioning communicators
+  // 2. local partitioned IDX io
+  // 3. raw io: using restructuring phase
+  // 4. particle io
+
+  // current scheme of deciding between particle io and the others is not good
+  // we need to come up with a better way of sperating the two
+
   PIDX_return_code ret = 0;
   file->time->SX = PIDX_get_time();
   PIDX_variable var0 = file->idx->variable[svi];
@@ -155,7 +164,6 @@ PIDX_return_code PIDX_read(PIDX_io file, int svi, int evi, int MODE)
 
   return PIDX_success;
 }
-
 
 
 

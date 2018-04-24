@@ -43,53 +43,72 @@
 
 static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type);
 static PIDX_return_code PIDX_dump_state_finalize (PIDX_file file);
-static int approx_maxh(PIDX_file file);
+static uint32_t approx_maxh(PIDX_file file);
 
 int pidx_global_variable = 0;
 
 PIDX_return_code PIDX_flush(PIDX_file file)
 {
-  int ret = PIDX_success;
   PIDX_time time = file->time;
 
+  // making sure that variables are added to the dataset
   if (file->idx->variable_count <= 0)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_variable;
+  }
 
   file->io = PIDX_io_init(file->idx, file->idx_c, file->idx_dbg, file->meta_data_cache, file->idx_b, file->restructured_grid, file->time, file->fs_block_size, file->variable_index_tracker);
   if (file->io == NULL)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_flush;
+  }
 
-  int block_layout_count = approx_maxh(file);
+  // this is an approximate calculation of total number of aggregation
+  // groups so that timming buffers can be populated properly
+  int agg_group_count = approx_maxh(file);
 
-  PIDX_init_timming_buffers1(time, file->idx->variable_count, block_layout_count);
+  // Populate all timming buffers
+  // they need to be the first ones to be populated
+  PIDX_init_timming_buffers1(time, file->idx->variable_count, agg_group_count);
 
 
+  // index range of variables within a flush
   int lvi = file->local_variable_index;
   int lvc = file->local_variable_count;
 
+  // currently only two modes are supported, one for write and other for read
   if (file->flags == MPI_MODE_CREATE)
-    ret = PIDX_write(file->io, lvi, (lvi + lvc), file->idx->io_type);
-
-  else if (file->flags == PIDX_MODE_RDONLY)
-    ret = PIDX_read(file->io, lvi, (lvi + lvc), file->idx->io_type);
-
-  if (ret != PIDX_success)
   {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_io;
+    if (PIDX_write(file->io, lvi, (lvi + lvc), file->idx->io_type) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_io;
+    }
   }
 
+  else if (file->flags == PIDX_MODE_RDONLY)
+  {
+    if (PIDX_read(file->io, lvi, (lvi + lvc), file->idx->io_type) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_io;
+    }
+  }
 
+  // Output to stderr the timmings of all the io phases
   PIDX_debug_output(file, lvi, (lvi + lvc), file->idx->io_type);
 
+  // delete timming buffers
   PIDX_delete_timming_buffers1(time, file->idx->variable_count);
 
 
-  ret = PIDX_io_finalize(file->io);
-  if (ret != PIDX_success)
-    return PIDX_err_io;
+  // finalize step
+  PIDX_io_finalize(file->io);
 
 
+  // freeing buffers
   for (int j = file->local_variable_index; j < file->local_variable_index + file->local_variable_count; j++)
   {
     for (int p = 0; p < file->idx->variable[j]->sim_patch_count; p++)
@@ -98,10 +117,10 @@ PIDX_return_code PIDX_flush(PIDX_file file)
       file->idx->variable[j]->sim_patch[p] = 0;
     }
   }
+
+  // getting ready for next phase of flush
   file->local_variable_index = file->variable_index_tracker;
   file->local_variable_count = 0;
-
-
 
   return PIDX_success;
 }
@@ -109,19 +128,18 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 
 PIDX_return_code PIDX_close(PIDX_file file)
 {
-  int ret;
-
-  ret = PIDX_flush(file);
-  if (ret != PIDX_success)
-    return PIDX_err_close;
+  if (PIDX_flush(file) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_io;
+  }
 
   PIDX_time time = file->time;
   time->sim_end = PIDX_get_time();
 
-
-  for (int j = 0; j < file->idx->variable_count; j++)
+  for (uint32_t j = 0; j < file->idx->variable_count; j++)
   {
-    for (int k = 0; k < file->idx->variable[j]->sim_patch_count; k++)
+    for (uint32_t k = 0; k < file->idx->variable[j]->sim_patch_count; k++)
     {
       free(file->idx->variable[j]->sim_patch[k]);
       file->idx->variable[j]->sim_patch[k] = 0;
@@ -129,7 +147,6 @@ PIDX_return_code PIDX_close(PIDX_file file)
     free(file->idx->variable[j]);
     file->idx->variable[j] = 0;
   }
-
 
   file->idx->variable_count = 0;
 
@@ -147,12 +164,11 @@ PIDX_return_code PIDX_close(PIDX_file file)
 }
 
 
-static int approx_maxh(PIDX_file file)
+static uint32_t approx_maxh(PIDX_file file)
 {
-  int maxh = log2(getPowerOf2(file->idx->bounds[0])) + log2(getPowerOf2(file->idx->bounds[1])) + log2(getPowerOf2(file->idx->bounds[2])) + 1;
+  uint32_t maxh = log2(getPowerOf2(file->idx->bounds[0])) + log2(getPowerOf2(file->idx->bounds[1])) + log2(getPowerOf2(file->idx->bounds[2])) + 1;
+  uint32_t lc = maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
 
-  //fprintf(stderr, "[%d %d %d] mh - bpb + bpf %d - %d + %d\n", (int)log2(getPowerOf2(file->idx->bounds[0])), file->idx->bounds[1], file->idx->bounds[2], maxh, file->idx->bits_per_block, + (int)log2(file->idx->blocks_per_file));
-  int lc = maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
   if (lc < 1)
     return 1;
   else
