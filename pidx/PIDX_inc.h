@@ -121,6 +121,7 @@ extern "C" {
 
 #include "./io/idx/restructure_box_setup.h"
 #include "./io/idx/io_setup.h"
+#include "./io/idx/idx_init.h"
 #include "./io/idx/bit_string.h"
 #include "./io/idx/idx_restructure.h"
 #include "./io/idx/particles_restructure.h"
@@ -130,7 +131,8 @@ extern "C" {
 #include "./io/idx/headers.h"
 #include "./io/idx/rst_blocks.h"
 #include "./io/idx/hz_buffer.h"
-#include "./io/idx/agg_io.h"
+#include "./io/idx/data_aggregation.h"
+#include "./io/idx/file_io.h"
 #include "./io/idx/timming.h"
 
 #ifdef __cplusplus

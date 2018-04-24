@@ -135,9 +135,6 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
-  (*file)->flush_used = 0;
-  (*file)->write_on_close = 0;
-
   (*file)->idx_c->color = 0;
   (*file)->idx->io_type = PIDX_IDX_IO;
 

@@ -80,7 +80,12 @@ PIDX_return_code set_rst_box_size_for_read(PIDX_io file, int svi)
   PIDX_time time = file->time;
   time->set_reg_box_start = PIDX_get_time();
 
+  // The bitstring is used to populate the restructuring box size
+  // we use log_2(ncores) bits of the bitstring
+  // This is the initial guess, we can use more bits to make the restructuring
+  // box bigger to make sure that a process holding only one patch at a time.
   set_reg_patch_size_from_bit_string(file);
+
   populate_restructured_grid(file);
 
   time->set_reg_box_end = MPI_Wtime();
@@ -189,10 +194,6 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file)
       {
         // access super patches is row order
         index = ((k / ps[2]) * rgp[0] * rgp[1]) + ((j / ps[1]) * rgp[0]) + (i / ps[0]);
-
-        //if (index >= total_patch_count)
-        //  fprintf(stderr, "[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", rgp[2], rgp[1], rgp[0], index, i, j, k, (int)(k / ps[2]), (int)(j / ps[1]), (int)(i / ps[0]));
-
         assert(index < total_patch_count);
 
         // assign offset and size of the super patches
@@ -262,23 +263,31 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file)
 
 static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
 {
-  int core = (int)log2(getPowerOf2(file->idx_c->simulation_nprocs));
-  int bits;
-  int counter = 1;
+  // If we do not follow the bitstring to compute the restructuring box size, then we will
+  // run into interleaved read accesses during file io, while using a fewer processes than what
+  // was used to write the idx file.
+  // With this scheme we ensure that aggregators access large contiguous chunks of data.
+
+  // initially use log_2(cores) bits to estimate the size of the restructuring box
+  uint32_t bits = (int)log2(getPowerOf2(file->idx_c->simulation_nprocs));
+  uint32_t counter = 1;
+
   uint64_t power_two_bound[PIDX_MAX_DIMENSIONS];
-  power_two_bound[0] = getPowerOf2(file->idx->box_bounds[0]);//file->idx_d->partition_count[0] * file->idx_d->partition_size[0];
-  power_two_bound[1] = getPowerOf2(file->idx->box_bounds[1]);//file->idx_d->partition_count[1] * file->idx_d->partition_size[1];
-  power_two_bound[2] = getPowerOf2(file->idx->box_bounds[2]);//file->idx_d->partition_count[2] * file->idx_d->partition_size[2];
+  power_two_bound[0] = getPowerOf2(file->idx->box_bounds[0]);
+  power_two_bound[1] = getPowerOf2(file->idx->box_bounds[1]);
+  power_two_bound[2] = getPowerOf2(file->idx->box_bounds[2]);
 
   increase_box_size:
+  // initialize the restructuring box size to the bounds of the data
+  // and then iteratively half the resolution in each dimension following the bit sequence
+  // of the "bits" number of bits of the bitsequence
   memcpy(file->restructured_grid->patch_size, power_two_bound, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
 
-  bits = core;
+  uint32_t  temp_bits = bits;
 
   counter = 1;
   uint64_t *ps = file->restructured_grid->patch_size;
-  int np[3] = {1,1,1};
-  while (bits != 0)
+  while (temp_bits != 0)
   {
     if (file->idx->bitSequence[counter] == '0')
       ps[0] = ps[0] / 2;
@@ -290,22 +299,21 @@ static PIDX_return_code set_reg_patch_size_from_bit_string(PIDX_io file)
       ps[2] = ps[2] / 2;
 
     counter++;
-    bits--;
-  }
-
-  np[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
-  np[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
-  np[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
-
-  if (np[0] * np[1] * np[2] > file->idx_c->simulation_nprocs)
-  {
-    core = core - 1;
-    goto increase_box_size;
+    temp_bits--;
   }
 
   file->restructured_grid->total_patch_count[0] = ceil((float)file->idx->box_bounds[0] / ps[0]);
   file->restructured_grid->total_patch_count[1] = ceil((float)file->idx->box_bounds[1] / ps[1]);
   file->restructured_grid->total_patch_count[2] = ceil((float)file->idx->box_bounds[2] / ps[2]);
+
+  // making sure that the total number of restructured super patches are not more than the total number of processes
+  // if total number of patches are more than to total number of patches, use one more bit of the bit string, make the
+  // restructuring box size larger, creating fewer super patches.
+  if (file->restructured_grid->total_patch_count[0] * file->restructured_grid->total_patch_count[1] * file->restructured_grid->total_patch_count[2] > file->idx_c->simulation_nprocs)
+  {
+    bits = bits - 1;
+    goto increase_box_size;
+  }
 
   return PIDX_success;
 }

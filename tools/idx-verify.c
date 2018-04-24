@@ -418,14 +418,6 @@ int main(int argc, char **argv)
   fprintf(stderr, "(box)\n0 %d 0 %d 0 %d 0 %d 0 %d\n", global_bounds[0], global_bounds[1], global_bounds[2], global_bounds[3], global_bounds[4]);
   fprintf(stderr, "compressed box size %d %d %d %d %d\n", compression_block_size[0], compression_block_size[1], compression_block_size[2], compression_block_size[3], compression_block_size[4]);
   fprintf(stderr, "compressed bit rate %d\n", compression_bit_rate);
-  fprintf(stderr, "(fields)\n");
-  for (var = 0 ; var < variable_count ; var++)
-  {
-      fprintf(stderr, "%s %d*", variable_name[var], vps[var]);
-      fprintf(stderr, "float64 ");
-      if (var != variable_count - 1)
-        fprintf(stderr, " + \n");
-  }
   fprintf(stderr, "\n(bitsperblock)\n%d\n(blocksperfile)\n%d\n", bits_per_block, blocks_per_file);
   fprintf(stderr, "(filename)\n%s\n", argv[1]);
   

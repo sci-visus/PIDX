@@ -43,8 +43,6 @@
 
 PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi);
 
-PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int svi, int evi);
-
 
 ///
 /// \brief PIDX_parallel_local_partition_idx_read

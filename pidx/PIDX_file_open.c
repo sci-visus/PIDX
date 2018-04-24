@@ -98,10 +98,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
-  (*file)->flush_used = 0;
-  (*file)->write_on_close = 0;
-  //(*file)->one_time_initializations = 0;
-
   (*file)->idx_b->reduced_res_from = 0;
   (*file)->idx_b->reduced_res_to = 0;
 
@@ -337,16 +333,12 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
-  (*file)->flush_used = 0;
-  (*file)->write_on_close = 0;
-
   (*file)->idx_b->reduced_res_from = 0;
   (*file)->idx_b->reduced_res_to = 0;
 
   (*file)->idx_c->color = 0;
 
   (*file)->idx->io_type = PIDX_IDX_IO;
-  //(*file)->enable_raw_dump = 0;
 
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;

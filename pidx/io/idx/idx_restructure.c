@@ -46,7 +46,7 @@ static int cvi = 0;
 static PIDX_return_code free_idx_rst_box(PIDX_io file);
 
 // Initialiazation of metadata and creation of buffers for restructuring phase
-PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi, int mode)
+PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi)
 {
   PIDX_time time = file->time;
   cvi = svi;
@@ -207,9 +207,8 @@ PIDX_return_code idx_restructure_cleanup(PIDX_io file)
 
   // Deleting the restructuring ID
   PIDX_idx_rst_finalize(file->idx_rst_id);
-  time->rst_cleanup_end[cvi] = PIDX_get_time();
-
   free_idx_rst_box(file);
+  time->rst_cleanup_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
 }
@@ -262,7 +261,11 @@ PIDX_return_code idx_restructure_rst_comm_create(PIDX_io file, int svi)
 
 PIDX_return_code free_restructured_communicators(PIDX_io file)
 {
-  MPI_Comm_free(&(file->idx_c->rst_comm));
+  if(MPI_Comm_free(&(file->idx_c->rst_comm)) != MPI_SUCCESS)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
   return PIDX_success;
 }

@@ -114,16 +114,12 @@ PIDX_return_code hz_encode(PIDX_io file, int mode)
 
 PIDX_return_code hz_io(PIDX_io file, int mode)
 {
-  int j = 0;
-  int ret;
-
   if (file->idx_dbg->debug_do_io == 1)
   {
-    for (j = file->idx_b->agg_level; j < file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count; j++)
+    for (uint32_t j = file->idx_b->agg_level; j < file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count; j++)
     {
       file->time->hz_io_start[cvi][j] = MPI_Wtime();
-      ret = PIDX_file_io_per_process(file->hz_id, file->idx_b->block_layout_by_agg_group[j], mode);
-      if (ret != PIDX_success)
+      if (PIDX_file_io_per_process(file->hz_id, file->idx_b->block_layout_by_agg_group[j], mode) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_io;

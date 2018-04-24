@@ -43,45 +43,41 @@
 
 ///
 /// \brief The PIDX_io_descriptor struct
+/// Contains descriptor of all io phases
 ///
 struct PIDX_io_descriptor
 {
-  int fs_block_size;
-  int variable_index_tracker;
+  // FS info
+  int fs_block_size;                                ///< file system block size which is queryed once at the beginning
 
-  PIDX_header_io_id header_io_id;                   ///< IDX metadata id
+  int variable_index_tracker;                       ///< tracking upto which variable io has been done (used for flushing)
 
-  PIDX_particles_rst_id particles_rst_id;                       ///< Multi-patch restructuring phase id for raw writes
-
-  PIDX_raw_rst_id raw_rst_id;                       ///< Multi-patch restructuring phase id for raw writes
-
-  PIDX_idx_rst_id idx_rst_id;                       ///< Multi-patch restructuring phase id for idx writes
-
+  // Different IO phases
+  PIDX_header_io_id header_io_id;                   ///< Creates the file hierarchy and populates the raw header
+  // only one of the three is activated at a time
+  PIDX_particles_rst_id particles_rst_id;           ///< Multi-patch restructuring phase id for particles
+  PIDX_raw_rst_id raw_rst_id;                       ///< Multi-patch restructuring phase id for raw io
+  PIDX_idx_rst_id idx_rst_id;                       ///< Multi-patch restructuring phase id for idx io
   PIDX_chunk_id chunk_id;                           ///< Block restructuring id (prepration for compression)
   PIDX_comp_id comp_id;                             ///< Compression (lossy and lossless) id
   PIDX_hz_encode_id hz_id;                          ///< HZ encoding phase id
+  PIDX_agg_id** agg_id;                             ///< Aggregation phase
+  PIDX_file_io_id** io_id;                          ///< File io
 
-  PIDX_agg_id** agg_id;                             ///< Aggregation phase id for all shared file
-  PIDX_file_io_id** io_id;                          ///< Aggregation phase id for all nonshared file
+  // IDX related
+  idx_dataset idx;                                  ///< Contains all IDX related info
+  idx_blocks idx_b;                                 ///< idx block related
+  idx_comm idx_c;                                   ///< MPI related
+  idx_debug idx_dbg;                                ///< Flags for debugging
 
+  // for caching HZ indices
+  PIDX_metadata_cache meta_data_cache;              ///< enables caching across time steps
 
-  idx_comm idx_c;
+  // for restructuring and partitioning
+  PIDX_restructured_grid restructured_grid;         ///< contains information of the restructured grid
 
-
-  idx_dataset idx;                                  ///< Contains all relevant IDX file info
-                                                    ///< Blocks per file, samples per block, bitmask, box, file name template
-
-
-  idx_debug idx_dbg;                                ///<
-
-
-  PIDX_metadata_cache meta_data_cache;
-
-  idx_blocks idx_b;
-
-  PIDX_restructured_grid restructured_grid;
-
-  PIDX_time time;
+  // Timming
+  PIDX_time time;                                   ///< For detailed time profiling of all phases
 };
 typedef struct PIDX_io_descriptor* PIDX_io;
 
@@ -89,21 +85,25 @@ typedef struct PIDX_io_descriptor* PIDX_io;
 ///
 /// \brief PIDX_io_init
 /// \param idx_meta_data
-/// \param idx_derived_ptr
 /// \param idx_c
 /// \param idx_dbg
+/// \param meta_data_cache
+/// \param idx_b
+/// \param restructured_grid
+/// \param time
+/// \param fs_block_size
+/// \param variable_index_tracker
 /// \return
 ///
 PIDX_io PIDX_io_init( idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_metadata_cache meta_data_cache, idx_blocks idx_b, PIDX_restructured_grid restructured_grid, PIDX_time time, int fs_block_size, int variable_index_tracker);
 
 
-
 ///
 /// \brief PIDX_write
 /// \param file
-/// \param group_index
 /// \param start_var_index
 /// \param end_var_index
+/// \param MODE
 /// \return
 ///
 PIDX_return_code PIDX_write(PIDX_io file, int start_var_index, int end_var_index, int MODE);
@@ -112,13 +112,12 @@ PIDX_return_code PIDX_write(PIDX_io file, int start_var_index, int end_var_index
 ///
 /// \brief PIDX_read
 /// \param file
-/// \param gi
 /// \param svi
 /// \param evi
+/// \param MODE
 /// \return
 ///
 PIDX_return_code PIDX_read(PIDX_io file, int svi, int evi, int MODE);
-
 
 
 ///

@@ -110,7 +110,6 @@ PIDX_return_code PIDX_flush(PIDX_file file)
 PIDX_return_code PIDX_close(PIDX_file file)
 {
   int ret;
-  file->write_on_close = 1;
 
   ret = PIDX_flush(file);
   if (ret != PIDX_success)

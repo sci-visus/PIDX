@@ -50,7 +50,7 @@
 /// \param evi
 /// \return
 ///
-PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi, int mode);
+PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi);
 
 
 

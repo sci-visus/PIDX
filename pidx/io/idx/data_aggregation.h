@@ -38,13 +38,17 @@
  * For support: support@visus.net
  * 
  */
+#ifndef __DATA_AGGREGATION_H
+#define __DATA_AGGREGATION_H
 
-#ifndef __PIDX_LOCAL_BUFFER_H
-#define __PIDX_LOCAL_BUFFER_H
+
+PIDX_return_code aggregation_setup(PIDX_io file, int svi, int evi);
 
 
-PIDX_return_code create_agg_io_buffer(PIDX_io file);
+PIDX_return_code aggregation(PIDX_io file, int svi, int mode );
 
-PIDX_return_code destroy_agg_io_buffer(PIDX_io file, int svi, int evi);
+
+PIDX_return_code aggregation_cleanup(PIDX_io file, int start_index);
+
 
 #endif

@@ -488,7 +488,7 @@ PIDX_return_code PIDX_set_wavelet_level(PIDX_file file, int w_type);
 /// \return
 ///
 PIDX_return_code PIDX_get_wavelet_level(PIDX_file file, int* w_type);
-#endif
+
 
 
 ///
@@ -508,7 +508,7 @@ PIDX_return_code PIDX_set_ROI_type(PIDX_file file, int type);
 /// \return
 ///
 PIDX_return_code PIDX_get_ROI_type(PIDX_file file, int* type);
-
+#endif
 
 
 

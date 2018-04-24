@@ -569,7 +569,7 @@ PIDX_return_code PIDX_get_wavelet_level(PIDX_file file, int* w_level)
 
   return PIDX_success;
 }
-#endif
+
 
 
 PIDX_return_code PIDX_set_ROI_type(PIDX_file file, int type)
@@ -594,7 +594,7 @@ PIDX_return_code PIDX_get_ROI_type(PIDX_file file, int* type)
 
   return PIDX_success;
 }
-
+#endif
 
 
 PIDX_return_code PIDX_set_variable_pile_length(PIDX_file file, int var_pipe_length)

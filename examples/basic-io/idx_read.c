@@ -261,6 +261,8 @@ static void set_pidx_file(int ts)
   ret = PIDX_file_open(input_file_name, PIDX_MODE_RDONLY, p_access, global_bounds, &file);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_file_open\n");
 
+  PIDX_query_box(file, global_box_size);
+
   // Set the current timestep
   PIDX_set_current_time_step(file, ts);
   // Get the total number of variables

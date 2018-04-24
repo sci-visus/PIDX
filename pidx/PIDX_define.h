@@ -80,15 +80,6 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
 
 
-
-
-// Aggregation modes
-// AGG_SETUP - Only sets the aggregation buffers
-// AGG_PERFORM - Performs aggregation phase
-// AGG_SETUP_AND_PERFORM - Sets aggregation buffers and also performs aggregation
-enum AGG_MODES {AGG_SETUP, AGG_PERFORM, AGG_SETUP_AND_PERFORM};
-
-
 // No process dumps any meta data info
 #define PIDX_NO_META_DATA_DUMP             0
 

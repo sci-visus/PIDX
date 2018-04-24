@@ -92,29 +92,8 @@ PIDX_return_code select_io_mode(PIDX_io file)
 
 PIDX_return_code find_agg_level(PIDX_io file, int svi, int evi)
 {
-  //fprintf(stderr, "svi and evi = %d and %d\n", svi, evi);
-  int i = 0;
   int total_aggregator = 0;
   int var_count = evi - svi;
-
-#if 0
-  if (file->idx_dbg->enable_agg == 0)
-    file->idx_b->agg_level = file->idx_b->file0_agg_group_from_index;
-  else
-  {
-    for (i = 0; i < file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count ; i++)
-    {
-      no_of_aggregators = file->idx->block_layout_by_agg_group[i]->efc;
-      total_aggregator = total_aggregator + no_of_aggregators;
-      if (no_of_aggregators <= file->idx_c->partition_nprocs)
-        file->idx_b->agg_level = i + 1;
-    }
-  }
-
-  if (total_aggregator > file->idx_c->partition_nprocs)
-    file->idx_b->agg_level = file->idx_b->file0_agg_group_from_index;
-#endif
-
 
   if (file->idx_dbg->enable_agg == 0)
   {
@@ -123,10 +102,9 @@ PIDX_return_code find_agg_level(PIDX_io file, int svi, int evi)
   }
   else
   {
-    for (i = 0; i < file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count ; i++)
+    for (uint32_t i = 0; i < file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count ; i++)
       total_aggregator = total_aggregator + file->idx_b->block_layout_by_agg_group[i]->efc;
 
-    //fprintf(stderr, "npocs %d agg %d vc %d\n", file->idx_c->partition_nprocs, total_aggregator, var_count);
     if (file->idx_c->partition_nprocs >= total_aggregator * var_count)
     {
       file->idx_b->agg_level = file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count;
@@ -148,6 +126,7 @@ PIDX_return_code find_agg_level(PIDX_io file, int svi, int evi)
       else
       {
         assert(var_count > 1);
+        uint32_t i;
         for (i = 0; i < var_count; i++)
         {
           if ((i + 1) * total_aggregator > file->idx_c->partition_nprocs)

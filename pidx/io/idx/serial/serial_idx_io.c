@@ -42,7 +42,7 @@
 
 
 static PIDX_return_code group_meta_data_finalize(PIDX_io file, int svi, int evi);
-static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int svi, int evi, int mode);
+static PIDX_return_code create_block_layout_and_buffers(PIDX_io file, int svi, int evi, int mode);
 static PIDX_return_code populate_idx_block_layout(PIDX_io file, PIDX_block_layout global_layout, PIDX_block_layout* layout_by_level, int start_layout_index, int end_layout_index, int layout_count, int start_index, int hz_level_from, int hz_level_to);
 static PIDX_return_code destroy_block_layout(PIDX_io file);
 static PIDX_return_code delete_sim_block_layout(PIDX_io file);
@@ -60,7 +60,7 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int svi, int evi)
   MPI_Status status;
   set_rst_box_size_for_write(file, svi);
 
-  if (populate_block_layout_and_buffers(file, svi, evi, PIDX_WRITE) != PIDX_success)
+  if (create_block_layout_and_buffers(file, svi, evi, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
@@ -143,7 +143,7 @@ PIDX_return_code PIDX_serial_idx_write(PIDX_io file, int svi, int evi)
 
 
 
-static PIDX_return_code populate_block_layout_and_buffers(PIDX_io file, int svi, int evi, int mode)
+static PIDX_return_code create_block_layout_and_buffers(PIDX_io file, int svi, int evi, int mode)
 {
   int ret;
   PIDX_time time = file->time;

@@ -43,10 +43,10 @@
 
 PIDX_return_code create_agg_io_buffer(PIDX_io file)
 {
-  int lc = 0;
+  uint32_t lc = 0;
   assert (file->idx_b->file0_agg_group_from_index == 0);
 
-  int vc =  file->idx->variable_count;// (evi - svi);
+  uint32_t vc =  file->idx->variable_count;
   if (vc <= 0)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -81,12 +81,10 @@ PIDX_return_code create_agg_io_buffer(PIDX_io file)
 
 PIDX_return_code destroy_agg_io_buffer(PIDX_io file, int svi, int evi)
 {
-  //int vc = evi - svi;
-  int vc =  file->idx->variable_count;// (evi - svi);
+  uint32_t vc =  file->idx->variable_count;
   idx_dataset idx = file->idx;
 
-  int v = 0;
-  for (v = 0; v < vc; v++)
+  for (uint32_t v = 0; v < vc; v++)
   {
     free(file->agg_id[v]);
     free(file->io_id[v]);
@@ -96,38 +94,6 @@ PIDX_return_code destroy_agg_io_buffer(PIDX_io file, int svi, int evi)
   free(file->agg_id);
   free(file->io_id);
   free(idx->agg_buffer);
-
-  return PIDX_success;
-}
-
-
-
-PIDX_return_code finalize_aggregation(PIDX_io file, int start_index)
-{
-
-  int ret;
-  int i = 0;
-  int i_1 = 0;
-  //start_index = start_index - local_var_index;
-
-  int sli = file->idx_b->file0_agg_group_from_index;
-  int agg_i = file->idx_b->agg_level;
-
-  //fprintf(stderr, "[%d] sli and agg_i %d %d si %d\n", file->idx_c->simulation_rank, sli, agg_i, start_index);
-  for (i = sli; i < agg_i; i++)
-  {
-    i_1 = i - sli;
-    ret = PIDX_agg_buf_destroy(file->idx->agg_buffer[start_index][i_1]);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_agg;
-    }
-
-    free(file->idx->agg_buffer[start_index][i_1]);
-    PIDX_agg_finalize(file->agg_id[start_index][i_1]);
-    PIDX_file_io_finalize(file->io_id[start_index][i_1]);
-  }
 
   return PIDX_success;
 }
