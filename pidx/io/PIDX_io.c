@@ -133,7 +133,13 @@ PIDX_return_code PIDX_read(PIDX_io file, int svi, int evi, int MODE)
       ret = PIDX_idx_read(file, svi, evi);
 
     else if (MODE == PIDX_LOCAL_PARTITION_IDX_IO)
-      ret = PIDX_parallel_local_partition_idx_read(file, svi, evi);
+    {
+      ret = PIDX_local_partition_idx_generic_read(file, svi, evi);
+
+      // Switch to this when you are sure that you are reading with the same number of
+      // processes you used to write the data and also the per-process configuration is same
+      //ret = PIDX_local_partition_idx_read(file, svi, evi);
+    }
 
     else if (MODE == PIDX_RAW_IO)
       ret = PIDX_raw_read(file, svi, evi);

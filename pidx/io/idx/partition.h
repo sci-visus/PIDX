@@ -49,6 +49,10 @@ PIDX_return_code partition(PIDX_io file, int svi);
 PIDX_return_code adjust_offsets(PIDX_io file, int svi, int evi);
 
 
+
+PIDX_return_code re_adjust_offsets(PIDX_io file, int svi, int evi);
+
+
 ///
 /// \brief destroy_partition_comm
 /// \param file

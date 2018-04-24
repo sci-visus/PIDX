@@ -89,6 +89,7 @@ PIDX_return_code partition(PIDX_io file, int svi)
 }
 
 
+
 PIDX_return_code adjust_offsets(PIDX_io file, int svi, int evi)
 {
   // Shifting the coordinates of super patches from the global index space to local index space
@@ -123,6 +124,19 @@ PIDX_return_code adjust_offsets(PIDX_io file, int svi, int evi)
   return PIDX_success;
 }
 
+
+
+PIDX_return_code re_adjust_offsets(PIDX_io file, int svi, int evi)
+{
+  for (uint32_t v = svi; v < evi; v++)
+  {
+    PIDX_variable var = file->idx->variable[v];
+    for (uint32_t i = 0; i < PIDX_MAX_DIMENSIONS; i++)
+      var->restructured_super_patch->restructured_patch->offset[i] = var->restructured_super_patch->restructured_patch->offset[i] + file->idx->partition_offset[i];
+  }
+
+  return PIDX_success;
+}
 
 static PIDX_return_code partition_setup(PIDX_io file, int svi)
 {
@@ -253,12 +267,17 @@ static PIDX_return_code create_partition_comm(PIDX_io file)
 
 PIDX_return_code partition_cleanup(PIDX_io file)
 {
+  PIDX_time time = file->time;
+
+  time->partition_cleanup_start = MPI_Wtime();
   // freeing the partitined comm
   if (MPI_Comm_free(&(file->idx_c->partition_comm)) != MPI_SUCCESS)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  time->partition_cleanup_end = MPI_Wtime();
+
   return PIDX_success;
 }
 

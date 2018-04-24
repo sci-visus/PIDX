@@ -44,6 +44,10 @@
 PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi);
 
 
+
+PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int svi, int evi);
+
+
 ///
 /// \brief PIDX_parallel_local_partition_idx_read
 /// \param file
@@ -52,6 +56,6 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi);
 /// \param evi
 /// \return
 ///
-PIDX_return_code PIDX_parallel_local_partition_idx_read(PIDX_io file, int svi, int evi);
+PIDX_return_code PIDX_local_partition_idx_generic_read(PIDX_io file, int svi, int evi);
 
 #endif
