@@ -51,9 +51,6 @@ static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 
 PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 {
-  fprintf(stderr, "[PIDX DEBUG error] Entering function\n");
-  fprintf(stdout, "[PIDX DEBUG output] Entering function\n");
-
   int temp_max_dim = 3;
 
   if (rst_id->idx->pidx_version == 0)
@@ -83,8 +80,6 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     return PIDX_err_io;
   }
 
-  fprintf(stderr, "[PIDX DEBUG] number of cores used to write this file %d\n", number_cores);
-
 #if INVERT_ENDIANESS
   uint32_t temp_number_cores = 0;
   if (rst_id->idx->flip_endian == 1)
@@ -102,7 +97,6 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     return PIDX_err_io;
   }
 
-  fprintf(stderr, "[PIDX DEBUG] number of patches per process written %d\n", max_patch_count);
 
 #if INVERT_ENDIANESS
   uint32_t temp_max_patch_count = 0;

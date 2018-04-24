@@ -86,6 +86,7 @@ static void create_pidx_point_and_access()
   PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
   PIDX_set_point(local_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z]);
   PIDX_set_point(local_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
+
   
   //  Creating access
   PIDX_create_access(&p_access);

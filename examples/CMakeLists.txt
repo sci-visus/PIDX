@@ -69,6 +69,9 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(idx_write "basic-io/idx_write.c" ${EXAMPLES_UTILS})
   TARGET_LINK_LIBRARIES(idx_write ${EXAMPLES_LINK_LIBS})
 
+  PIDX_ADD_CEXECUTABLE(raw_write "basic-io/raw_write.c" ${EXAMPLES_UTILS})
+  TARGET_LINK_LIBRARIES(raw_write ${EXAMPLES_LINK_LIBS})
+
   PIDX_ADD_CEXECUTABLE(idx_read "basic-io/idx_read.c" ${EXAMPLES_UTILS})
   TARGET_LINK_LIBRARIES(idx_read ${EXAMPLES_LINK_LIBS})
 
