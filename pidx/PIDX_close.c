@@ -43,7 +43,7 @@
 
 static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type);
 static PIDX_return_code PIDX_dump_state_finalize (PIDX_file file);
-static uint32_t approx_maxh(PIDX_file file);
+static int approx_maxh(PIDX_file file);
 
 int pidx_global_variable = 0;
 
@@ -164,10 +164,10 @@ PIDX_return_code PIDX_close(PIDX_file file)
 }
 
 
-static uint32_t approx_maxh(PIDX_file file)
+static int approx_maxh(PIDX_file file)
 {
-  uint32_t maxh = log2(getPowerOf2(file->idx->bounds[0])) + log2(getPowerOf2(file->idx->bounds[1])) + log2(getPowerOf2(file->idx->bounds[2])) + 1;
-  uint32_t lc = maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
+  int maxh = log2(getPowerOf2(file->idx->bounds[0])) + log2(getPowerOf2(file->idx->bounds[1])) + log2(getPowerOf2(file->idx->bounds[2])) + 1;
+  int lc = maxh - (file->idx->bits_per_block + log2(file->idx->blocks_per_file));
 
   if (lc < 1)
     return 1;

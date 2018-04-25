@@ -482,14 +482,14 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
 
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
-    if (rst_id->idx_c->simulation_rank == 8)
+    if (rst_id->idx_c->simulation_rank == 0)
     {
-    PIDX_super_patch patch_grp = rst_id->intersected_restructured_super_patch[i];
-    printf("[%d] count %d\n", i, patch_grp->patch_count);
-    for (int j = 0; j < patch_grp->patch_count; j++)
-    {
-        printf("[%d] PC %lld R %d MR %d\n", j, (unsigned long long)patch_grp->patch[j]->particle_count, patch_grp->source_patch[j].rank, patch_grp->max_patch_rank);
-    }
+      PIDX_super_patch patch_grp = rst_id->intersected_restructured_super_patch[i];
+      //printf("[%d] count %d\n", i, patch_grp->patch_count);
+      for (int j = 0; j < patch_grp->patch_count; j++)
+      {
+        //printf("[%d] PC %lld R %d MR %d\n", j, (unsigned long long)patch_grp->patch[j]->particle_count, patch_grp->source_patch[j].rank, patch_grp->max_patch_rank);
+      }
     }
   }
 
@@ -563,69 +563,64 @@ static void free_patch_extents(PIDX_particles_rst_id rst_id)
 
 PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id)
 {
-  int *global_patch_offset;
-  int *global_patch_size;
+  double *global_patch;
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
-  int patch_count =var0->restructured_super_patch_count;
+  int max_patch_count;
+  int patch_count = var0->restructured_super_patch_count;
+  MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->simulation_comm);
 
-  int *local_patch_offset = malloc(sizeof(uint32_t) * (PIDX_MAX_DIMENSIONS + 1));
-  memset(local_patch_offset, 0, sizeof(uint32_t) * (PIDX_MAX_DIMENSIONS + 1));
+  double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
+  memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
-  int *local_patch_size = malloc(sizeof(uint32_t) * (PIDX_MAX_DIMENSIONS + 1));
-  memset(local_patch_size, 0, sizeof(uint32_t) * (PIDX_MAX_DIMENSIONS + 1));
-
-  int d = 0;
-  local_patch_offset[0] = (uint32_t)patch_count;
-  local_patch_size[0] = (uint32_t)patch_count;
-
-  if (patch_count != 0)
+  int pcounter = 0;
+  local_patch[0] = (double)patch_count;
+  for (int i = 0; i < patch_count; i++)
   {
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-    {
-      local_patch_offset[d + 1] = (uint32_t)var0->restructured_super_patch->restructured_patch->offset[d];
-      local_patch_size[d + 1] = (uint32_t)var0->restructured_super_patch->restructured_patch->size[d];
-    }
+    for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      local_patch[i * PIDX_MAX_DIMENSIONS + d + 1] = var0->restructured_super_patch->restructured_patch->physical_offset[d];
+
+    for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+      local_patch[i * PIDX_MAX_DIMENSIONS + PIDX_MAX_DIMENSIONS + d + 1] = var0->restructured_super_patch->restructured_patch->physical_size[d];
+
+    local_patch[i * PIDX_MAX_DIMENSIONS + 2*PIDX_MAX_DIMENSIONS + 1] = var0->restructured_super_patch->restructured_patch->particle_count;
+
+    pcounter++;
   }
 
-  global_patch_offset = malloc((rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
-  memset(global_patch_offset, 0,(rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  /*
+  printf("[%d] - %f %f %f -- %f %f %f : %d\n", rst_id->idx_c->simulation_rank,
+         var0->restructured_super_patch->restructured_patch->physical_offset[0],
+          var0->restructured_super_patch->restructured_patch->physical_offset[1],
+          var0->restructured_super_patch->restructured_patch->physical_offset[2],
+          var0->restructured_super_patch->restructured_patch->physical_size[0],
+          var0->restructured_super_patch->restructured_patch->physical_size[1],
+          var0->restructured_super_patch->restructured_patch->physical_size[2]);
+  */
 
-  global_patch_size = malloc((rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
-  memset(global_patch_size, 0, (rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t));
+  global_patch = malloc((rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+  memset(global_patch, 0,(rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
-  MPI_Allgather(local_patch_offset, PIDX_MAX_DIMENSIONS + 1, MPI_INT, global_patch_offset + 2, PIDX_MAX_DIMENSIONS + 1, MPI_INT, rst_id->idx_c->simulation_comm);
-  MPI_Allgather(local_patch_size, PIDX_MAX_DIMENSIONS + 1, MPI_INT, global_patch_size + 2, PIDX_MAX_DIMENSIONS + 1, MPI_INT, rst_id->idx_c->simulation_comm);
+  MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, rst_id->idx_c->simulation_comm);
 
-  global_patch_size[0] = rst_id->idx_c->simulation_nprocs;
-  global_patch_offset[0] = rst_id->idx_c->simulation_nprocs;
-  global_patch_size[1] = 1;
-  global_patch_offset[1] = 1;
+  global_patch[0] = (double)rst_id->idx_c->simulation_nprocs;
+  global_patch[1] = (double)max_patch_count;
 
-  char *directory_path;
-  char offset_path[PATH_MAX];
-  char size_path[PATH_MAX];
-
-  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  char file_path[PATH_MAX];
+  char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, rst_id->idx_metadata->filename, strlen(rst_id->idx_metadata->filename) - 4);
 
-  sprintf(offset_path, "%s_OFFSET", directory_path);
-  sprintf(size_path, "%s_SIZE", directory_path);
+  sprintf(file_path, "%s_OFFSET_SIZE", directory_path);
   free(directory_path);
   if (rst_id->idx_c->simulation_rank == 1 || rst_id->idx_c->simulation_nprocs == 1)
   {
-    int fp = open(offset_path, O_CREAT | O_WRONLY, 0664);
-    uint64_t write_count = pwrite(fp, global_patch_offset, (rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
-    if (write_count != (rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
-    {
-      fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_io;
-    }
-    close(fp);
+    int fp = open(file_path, O_CREAT | O_WRONLY, 0664);
 
-    fp = open(size_path, O_CREAT | O_WRONLY, 0664);
-    write_count = pwrite(fp, global_patch_size, (rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t), 0);
-    if (write_count != (rst_id->idx_c->simulation_nprocs * (PIDX_MAX_DIMENSIONS + 1) + 2) * sizeof(uint32_t))
+    //for (int i = 0; i < (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2); i++)
+    //  printf("[%d] [np %d] ----> %f\n", i, rst_id->idx_c->simulation_nprocs, global_patch[i]);
+
+    uint64_t write_count = pwrite(fp, global_patch, (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
+    if (write_count != (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
       fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
       return PIDX_err_io;
@@ -633,14 +628,8 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
     close(fp);
   }
 
-  free(local_patch_offset);
-  free(local_patch_size);
-
-  free(global_patch_offset);
-  global_patch_offset = 0;
-
-  free(global_patch_size);
-  global_patch_size = 0;
+  free(local_patch);
+  free(global_patch);
 
   return PIDX_success;
 }

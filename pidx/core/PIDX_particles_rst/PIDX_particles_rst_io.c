@@ -90,9 +90,26 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
 
     int data_offset = 0, v1 = 0;
     for (v1 = 0; v1 < v; v1++)
-      data_offset = data_offset + (out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (rst_id->idx_metadata->variable[v1]->vps * (rst_id->idx_metadata->variable[v1]->bpv/8)));
+      data_offset = data_offset + (out_patch->particle_count * (rst_id->idx_metadata->variable[v1]->vps * (rst_id->idx_metadata->variable[v1]->bpv/8)));
 
-    int buffer_size =  out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * bits;
+
+    int buffer_size =  out_patch->particle_count * bits;
+
+    /*
+    if (v == 0)
+    {
+      for (uint32_t p = 0; p < var->restructured_super_patch->restructured_patch->particle_count; p++)
+      {
+        double px, py, pz;
+        memcpy(&px, var_start->restructured_super_patch->restructured_patch->buffer + (p * 3 + 0) * sizeof(double), sizeof(double));
+        memcpy(&py, var_start->restructured_super_patch->restructured_patch->buffer + (p * 3 + 1) * sizeof(double), sizeof(double));
+        memcpy(&pz, var_start->restructured_super_patch->restructured_patch->buffer + (p * 3 + 2) * sizeof(double), sizeof(double));
+
+        printf("D[%d] -> %f %f %f\n", p, px, py, pz);
+      }
+    }
+    printf("Particle count %d File offset %d File size %d\n", out_patch->particle_count, data_offset, buffer_size);
+    */
     uint64_t write_count = pwrite(fp, var_start->restructured_super_patch->restructured_patch->buffer, buffer_size, data_offset);
     if (write_count != buffer_size)
     {

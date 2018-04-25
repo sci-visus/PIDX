@@ -52,26 +52,20 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
 {
   int si = 0, ei = 0;
   PIDX_return_code ret;
-  PIDX_time time = file->time;
 
-  // Step 0
-  time->set_reg_box_start = MPI_Wtime();
   if (particles_set_rst_box_size_for_raw_write(file, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  time->set_reg_box_end = MPI_Wtime();
 
 #if 0
   if (file->idx_c->simulation_rank == 0)
   {
     printf("RST grid size %f %f %f\n", file->restructured_grid->physical_patch_size[0], file->restructured_grid->physical_patch_size[1], file->restructured_grid->physical_patch_size[2]);
-
     printf("Total patches %d %d %d\n", file->restructured_grid->total_patch_count[0], file->restructured_grid->total_patch_count[1], file->restructured_grid->total_patch_count[2]);
 
     for (int i = 0; i < file->restructured_grid->total_patch_count[0] * file->restructured_grid->total_patch_count[1] * file->restructured_grid->total_patch_count[2]; i++)
-
     {
       printf("[%d] Offset %f %f %f Count %f %f %f Rank %d\n", i, file->restructured_grid->patch[i]->physical_offset[0],
                                                          file->restructured_grid->patch[i]->physical_offset[1],
@@ -99,23 +93,21 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
     file->idx->variable_tracker[si] = 1;
 
     // Step 1: Setup restructuring buffers
-    ret = particles_restructure_setup(file, si, ei, PIDX_WRITE);
-    if (ret != PIDX_success)
+    if (particles_restructure_setup(file, si, ei) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
     // Step 2: Perform data restructuring
-    ret = particles_restructure(file, PIDX_WRITE);
-    if (ret != PIDX_success)
+    if (particles_restructure(file) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if 0
+
     // Step 3: Write out restructured data
-    ret = particles_restructure_io(file, PIDX_WRITE);
+    ret = particles_restructure_io(file);
     if (ret != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -129,7 +121,6 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#endif
   }
 
 
@@ -427,7 +418,7 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int svi)
     uint64_t write_count = pread(fp, global_patch, (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
     if (write_count != (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
-      fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+      fprintf(stderr, "[%s] [%d] pread() failed.  %d != %d\n", __FILE__, __LINE__, (int)write_count, (int)(file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double) );
       return PIDX_err_io;
     }
     close(fp);

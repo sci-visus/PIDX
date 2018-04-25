@@ -211,6 +211,48 @@ int main(int argc, char **argv)
   PIDX_return_code ret = PIDX_close(file);
   if (ret != PIDX_success) terminate_with_error_msg("PIDX_close");
 
+  printf("Particle count = %d\n", particle_count);
+
+  if (variable_index == 0)
+  {
+    for (uint32_t p = 0; p < particle_count; p++)
+    {
+      double px, py, pz;
+      memcpy(&px, data + (p * 3 + 0) * sizeof(double), sizeof(double));
+      memcpy(&py, data + (p * 3 + 1) * sizeof(double), sizeof(double));
+      memcpy(&pz, data + (p * 3 + 2) * sizeof(double), sizeof(double));
+
+      printf("[%d] -> %f %f %f\n", p, px, py, pz);
+    }
+  }
+  else if (variable_index == 1 || variable_index == 2 || variable_index == 3)
+  {
+    for (uint32_t p = 0; p < particle_count; p++)
+    {
+      double d1;
+      memcpy(&d1, data + (p * 3 + 0) * sizeof(double), sizeof(double));
+      printf("[%d] -> %f\n", p, d1);
+    }
+  }
+  if (variable_index == 4)
+  {
+    for (uint32_t p = 0; p < particle_count; p++)
+    {
+      double e1, e2, e3, e4, e5, e6, e7, e8, e9;
+      memcpy(&e1, data + (p * 9 + 0) * sizeof(double), sizeof(double));
+      memcpy(&e2, data + (p * 9 + 1) * sizeof(double), sizeof(double));
+      memcpy(&e3, data + (p * 9 + 2) * sizeof(double), sizeof(double));
+      memcpy(&e4, data + (p * 9 + 3) * sizeof(double), sizeof(double));
+      memcpy(&e5, data + (p * 9 + 4) * sizeof(double), sizeof(double));
+      memcpy(&e6, data + (p * 9 + 5) * sizeof(double), sizeof(double));
+      memcpy(&e7, data + (p * 9 + 6) * sizeof(double), sizeof(double));
+      memcpy(&e8, data + (p * 9 + 7) * sizeof(double), sizeof(double));
+      memcpy(&e9, data + (p * 9 + 8) * sizeof(double), sizeof(double));
+
+      printf("[%d] -> %f %f %f %f %f %f %f %f %f \n", p, e1, e2, e3, e4, e5, e6, e7, e8, e9);
+    }
+  }
+
   /*
   printf("Rank %d:\nPhysical box {[%f, %f, %f], [%f, %f, %f]}\n",
       rank,

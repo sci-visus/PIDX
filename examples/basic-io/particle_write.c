@@ -390,6 +390,11 @@ static void create_synthetic_simulation_data()
   int particle_type[TYPE_COUNT] = {1,2,3,4,5};
   double particle_color[COLOR_COUNT] = {0.25, 0.75};
 
+
+  //char rank_filename[PATH_MAX];
+  //sprintf(rank_filename, "data_%d", rank);
+  //FILE *fp = fopen(rank_filename, "w");
+
   srand((unsigned int)time(NULL));
   for (int k = 0; k < particle_count; k++)
   {
@@ -416,8 +421,37 @@ static void create_synthetic_simulation_data()
       scale = rand() / (float) RAND_MAX;
       memcpy(data[5] + (k * 9 + j) * sizeof(double), &scale, sizeof(double));
     }
-    //printf("[%d] -> %f %f %f\n", k, dvalue_X, dvalue_Y, dvalue_Z);
+#if 0
+    double px, py, pz;
+    memcpy(&px, data[0] + (k * 3 + 0) * sizeof(double), sizeof(double));
+    memcpy(&py, data[0] + (k * 3 + 1) * sizeof(double), sizeof(double));
+    memcpy(&pz, data[0] + (k * 3 + 2) * sizeof(double), sizeof(double));
+
+    double d1, d2, d3;
+    memcpy(&d1, data[1] + (k) * sizeof(double), sizeof(double));
+    memcpy(&d2, data[2] + (k) * sizeof(double), sizeof(double));
+    memcpy(&d3, data[3] + (k) * sizeof(double), sizeof(double));
+
+    int i1;
+    memcpy(&i1, data[4] + (k) * sizeof(int), sizeof(int));
+
+    double e1, e2, e3, e4, e5, e6, e7, e8, e9;
+    memcpy(&e1, data[4] + (k * 9 + 0) * sizeof(double), sizeof(double));
+    memcpy(&e2, data[4] + (k * 9 + 1) * sizeof(double), sizeof(double));
+    memcpy(&e3, data[4] + (k * 9 + 2) * sizeof(double), sizeof(double));
+    memcpy(&e4, data[4] + (k * 9 + 3) * sizeof(double), sizeof(double));
+    memcpy(&e5, data[4] + (k * 9 + 4) * sizeof(double), sizeof(double));
+    memcpy(&e6, data[4] + (k * 9 + 5) * sizeof(double), sizeof(double));
+    memcpy(&e7, data[4] + (k * 9 + 6) * sizeof(double), sizeof(double));
+    memcpy(&e8, data[4] + (k * 9 + 7) * sizeof(double), sizeof(double));
+    memcpy(&e9, data[4] + (k * 9 + 8) * sizeof(double), sizeof(double));
+
+    fprintf(fp, "[%d] -> %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f \n", k, px, py, pz, d1, d2, d3, e1, e2, e3, e4, e5, e6, e7, e8, e9);
+#endif
+
   }
+  //fclose(fp);
+
 }
 
 //----------------------------------------------------------------

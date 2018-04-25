@@ -25,7 +25,7 @@ static void adjust_restructured_box_size(PIDX_io file);
 static PIDX_return_code populate_restructured_grid(PIDX_io file);
 
 // Initialiazation and creation of buffers for restructuring phase
-PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi, int mode)
+PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
 {
   int ret = 0;
   PIDX_time time = file->time;
@@ -40,36 +40,30 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi, int
   // Populates the relevant meta-data
   time->rst_meta_data_create_start[cvi] = PIDX_get_time();
   ret = PIDX_particles_rst_meta_data_create(file->particles_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-  time->rst_meta_data_create_end[cvi] = PIDX_get_time();
-
-#if 0
-  // Saving the metadata info needed for reading back the data.
-  // Especially when number of cores is different from number of cores
-  // used to create the dataset
-  time->rst_meta_data_io_start[cvi] = PIDX_get_time();
-  //
-  if (file->idx->cached_ts == file->idx->current_time_step)
+  if (ret != PIDX_success)
   {
-    if (mode == PIDX_WRITE)
-    {
-      ret = PIDX_particles_rst_meta_data_write(file->particles_rst_id);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-    }
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
   }
-  //
-  time->rst_meta_data_io_end[cvi] = PIDX_get_time();
-#endif
+  time->rst_meta_data_create_end[cvi] = PIDX_get_time();
 
 
   // Creating the buffers required for restructurig
   time->rst_buffer_start[cvi] = PIDX_get_time();
   ret = PIDX_particles_rst_buf_create(file->particles_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
   // Aggregating the aligned small buffers after restructuring into one single buffer
   ret = PIDX_particles_rst_aggregate_buf_create(file->particles_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
   time->rst_buffer_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
@@ -77,58 +71,50 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi, int
 
 
 
-PIDX_return_code particles_restructure(PIDX_io file, int mode)
+PIDX_return_code particles_restructure(PIDX_io file)
 {
-  int ret = 0;
   PIDX_time time = file->time;
 
-  if (mode == PIDX_WRITE)
+  if (file->idx_dbg->debug_do_rst == 1)
   {
-    if (file->idx_dbg->debug_do_rst == 1)
+    // Perform data restructuring
+    time->rst_write_read_start[cvi] = PIDX_get_time();
+    if (PIDX_particles_rst_staged_write(file->particles_rst_id) != PIDX_success)
     {
-      // Perform data restructuring
-      time->rst_write_read_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_staged_write(file->particles_rst_id);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_write_read_end[cvi] = PIDX_get_time();
-
-
-      // Aggregating in memory restructured buffers into one large buffer
-      time->rst_buff_agg_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_buf_aggregate(file->particles_rst_id, PIDX_WRITE);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_buff_agg_end[cvi] = PIDX_get_time();
-
-      // Destroying the restructure buffers (as they are now combined into one large buffer)
-      time->rst_buff_agg_free_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_buf_destroy(file->particles_rst_id);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_buff_agg_free_end[cvi] = PIDX_get_time();
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_rst;
     }
-  }
+    time->rst_write_read_end[cvi] = PIDX_get_time();
 
-  else if (mode == PIDX_READ)
-  {
-    if (file->idx_dbg->debug_do_rst == 1)
+    // Aggregating in memory restructured buffers into one large buffer
+    time->rst_buff_agg_start[cvi] = PIDX_get_time();
+    if (PIDX_particles_rst_buf_aggregate(file->particles_rst_id, PIDX_WRITE) != PIDX_success)
     {
-      // Aggregating in memory restructured buffers into one large buffer
-      time->rst_buff_agg_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_buf_aggregate(file->particles_rst_id, PIDX_READ);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_buff_agg_end[cvi] = PIDX_get_time();
-
-      // Perform data restructuring
-      time->rst_write_read_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_read(file->particles_rst_id);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_write_read_end[cvi] = PIDX_get_time();
-
-      // Destroying the restructure buffers (as they are now combined into one large buffer)
-      time->rst_buff_agg_free_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_buf_destroy(file->particles_rst_id);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_buff_agg_free_end[cvi] = PIDX_get_time();
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_rst;
     }
+    time->rst_buff_agg_end[cvi] = PIDX_get_time();
+
+
+    // Saving the metadata info needed for reading back the data.
+    // Especially when number of cores is different from number of cores
+    // used to create the dataset
+    time->rst_meta_data_io_start[cvi] = PIDX_get_time();
+    if (PIDX_particles_rst_meta_data_write(file->particles_rst_id) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_rst;
+    }
+    time->rst_meta_data_io_end[cvi] = PIDX_get_time();
+
+    // Destroying the restructure buffers (as they are now combined into one large buffer)
+    time->rst_buff_agg_free_start[cvi] = PIDX_get_time();
+    if (PIDX_particles_rst_buf_destroy(file->particles_rst_id) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_rst;
+    }
+    time->rst_buff_agg_free_end[cvi] = PIDX_get_time();
   }
 
   return PIDX_success;
@@ -136,32 +122,20 @@ PIDX_return_code particles_restructure(PIDX_io file, int mode)
 
 
 
-PIDX_return_code particles_restructure_io(PIDX_io file, int mode)
+PIDX_return_code particles_restructure_io(PIDX_io file)
 {
-  int ret = 0;
   PIDX_time time = file->time;
 
-  if (mode == PIDX_WRITE)
+  if (file->idx_dbg->debug_do_rst == 1)
   {
-    if (file->idx_dbg->debug_do_rst == 1)
+    // Write out restructured data
+    time->rst_buff_agg_io_start[cvi] = PIDX_get_time();
+    if (PIDX_particles_rst_buf_aggregated_write(file->particles_rst_id) != PIDX_success)
     {
-      // Write out restructured data
-      time->rst_buff_agg_io_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_buf_aggregated_write(file->particles_rst_id);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_buff_agg_io_end[cvi] = PIDX_get_time();
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_rst;
     }
-  }
-  else if (mode == PIDX_READ)
-  {
-    if (file->idx_dbg->debug_do_rst == 1)
-    {
-      // Read restructured data
-      time->rst_buff_agg_io_start[cvi] = PIDX_get_time();
-      ret = PIDX_particles_rst_buf_aggregated_read(file->particles_rst_id);
-      if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
-      time->rst_buff_agg_io_end[cvi] = PIDX_get_time();
-    }
+    time->rst_buff_agg_io_end[cvi] = PIDX_get_time();
   }
 
   return PIDX_success;
@@ -177,10 +151,18 @@ PIDX_return_code particles_restructure_cleanup(PIDX_io file)
   // Destroy buffers allocated during restructuring phase
   time->rst_cleanup_start[cvi] = PIDX_get_time();
   ret = PIDX_particles_rst_aggregate_buf_destroy(file->particles_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
   ret = PIDX_particles_rst_meta_data_destroy(file->particles_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
   // Deleting the restructuring ID
   PIDX_particles_rst_finalize(file->particles_rst_id);
@@ -201,7 +183,11 @@ PIDX_return_code particles_set_rst_box_size_for_raw_write(PIDX_io file, int svi)
   adjust_restructured_box_size(file);
 
   int ret = populate_restructured_grid(file);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
   time->set_reg_box_end = MPI_Wtime();
 
@@ -298,11 +284,6 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file)
       {
         //Interior regular patches
         index = ((k / ps[2]) * rgp[0] * rgp[1]) + ((j / ps[1]) * rgp[0]) + (i / ps[0]);
-
-        //if (index >= total_patch_count)
-        //  fprintf(stderr, "[%d %d %d] -- %d [%d %d %d] [%d %d %d]\n", rgp[2], rgp[1], rgp[0], index, i, j, k, (int)(k / ps[2]), (int)(j / ps[1]), (int)(i / ps[0]));
-
-
         assert(index < total_patch_count);
 
         Ndim_empty_patch *patch = file->restructured_grid->patch;

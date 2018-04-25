@@ -219,7 +219,6 @@ void PIDX_init_timming_buffers1(PIDX_time time, int variable_count, int layout_c
   memset(time->agg_meta_cleanup_end, 0, sizeof(double*) * variable_count);
 
 
-
   // Aggregation phase timings
   for (int i = 0; i < variable_count; i++)
   {

@@ -76,7 +76,7 @@ PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
         // Iterate through all the patches of the super patch and allocate buffer for them
         for (j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
         {
-          patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->particle_count * var->vps * var->bpv/8);
+          patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->particle_count * var->vps * var->bpv / CHAR_BIT);
 
           if (patch_group->patch[j]->buffer == NULL)
           {
@@ -84,7 +84,7 @@ PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
             return PIDX_err_rst;
           }
 
-          memset(patch_group->patch[j]->buffer, 0, (patch_group->patch[j]->particle_count * var->vps * var->bpv/8));
+          memset(patch_group->patch[j]->buffer, 0, (patch_group->patch[j]->particle_count * var->vps * var->bpv / CHAR_BIT));
         }
 
         cnt++;
@@ -152,19 +152,20 @@ PIDX_return_code PIDX_particles_rst_aggregate_buf_create(PIDX_particles_rst_id r
       {
         PIDX_super_patch patch_group = var->restructured_super_patch;
         int total_particle_count = 0;
+
         // Iterate through all the patches of the super patch and allocate buffer for them
         for (int j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
-        {
           total_particle_count = total_particle_count + patch_group->patch[j]->particle_count;
-        }
-        patch_group->restructured_patch->buffer = malloc(total_particle_count * var->vps * var->bpv/8);
-        printf("[%d %d] my rank %d TPC %d\n", i, v, rst_id->idx_c->simulation_rank, total_particle_count);
+
+        patch_group->restructured_patch->buffer = malloc(total_particle_count * var->vps * var->bpv / CHAR_BIT);
+        patch_group->restructured_patch->particle_count = total_particle_count;
+
         if (patch_group->restructured_patch->buffer == NULL)
         {
           fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
-        memset(patch_group->restructured_patch->buffer, 0, (total_particle_count * var->vps * var->bpv/8));
+        memset(patch_group->restructured_patch->buffer, 0, (total_particle_count * var->vps * var->bpv / CHAR_BIT));
       }
     }
   }
@@ -203,41 +204,31 @@ PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id, 
   if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
-  int v = 0;
-  for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
+  for (uint32_t v = rst_id->first_index; v <= rst_id->last_index; ++v)
   {
     PIDX_variable var = rst_id->idx_metadata->variable[v];
-
-    PIDX_super_patch rst_super_patch = var->restructured_super_patch;
-    PIDX_patch out_patch = rst_super_patch->restructured_patch;
-
-    int nx = out_patch->size[0];
-    int ny = out_patch->size[1];
-
-    int k1, j1, i1, r, index = 0, recv_o = 0, send_o = 0, send_c = 0;
-
-    // Iterate through all the small patches of the super patch
-    PIDX_patch *patch = var->restructured_super_patch->patch;
-    for (r = 0; r < var->restructured_super_patch->patch_count; r++)
+    int pcount = 0;
+    for (uint32_t r = 0; r < var->restructured_super_patch->patch_count; r++)
     {
-      for (k1 = patch[r]->offset[2]; k1 < patch[r]->offset[2] + patch[r]->size[2]; k1++)
-      {
-        for (j1 = patch[r]->offset[1]; j1 < patch[r]->offset[1] + patch[r]->size[1]; j1++)
-        {
-          for (i1 = patch[r]->offset[0]; i1 < patch[r]->offset[0] + patch[r]->size[0]; i1 = i1 + patch[r]->size[0])
-          {
-            index = ((patch[r]->size[0])* (patch[r]->size[1]) * (k1 - patch[r]->offset[2])) + ((patch[r]->size[0]) * (j1 - patch[r]->offset[1])) + (i1 - patch[r]->offset[0]);
-            send_o = index * var->vps * (var->bpv/8);
-            send_c = (patch[r]->size[0]);
-            recv_o = (nx * ny * (k1 - out_patch->offset[2])) + (nx * (j1 - out_patch->offset[1])) + (i1 - out_patch->offset[0]);
+      memcpy(var->restructured_super_patch->restructured_patch->buffer + (pcount * var->vps * (var->bpv / CHAR_BIT)), var->restructured_super_patch->patch[r]->buffer, var->restructured_super_patch->patch[r]->particle_count * var->vps * (var->bpv / CHAR_BIT));
 
-            if (mode == PIDX_WRITE)
-              memcpy(rst_super_patch->restructured_patch->buffer + (recv_o * var->vps * (var->bpv/8)), patch[r]->buffer + send_o, send_c * var->vps * (var->bpv/8));
-            else
-              memcpy(patch[r]->buffer + send_o, rst_super_patch->restructured_patch->buffer + (recv_o * var->vps * (var->bpv/8)), send_c * var->vps * (var->bpv/8));
-          }
+      /*
+      if (v == 0)
+      {
+        for (uint32_t p = 0; p < var->restructured_super_patch->patch[r]->particle_count; p++)
+        {
+          double px, py, pz;
+          memcpy(&px, var->restructured_super_patch->patch[r]->buffer + (p * 3 + 0) * sizeof(double), sizeof(double));
+          memcpy(&py, var->restructured_super_patch->patch[r]->buffer + (p * 3 + 1) * sizeof(double), sizeof(double));
+          memcpy(&pz, var->restructured_super_patch->patch[r]->buffer + (p * 3 + 2) * sizeof(double), sizeof(double));
+
+          printf("B[%d] -> %f %f %f\n", p, px, py, pz);
         }
       }
+      */
+
+      pcount = pcount + var->restructured_super_patch->patch[r]->particle_count;
+      //printf("[%d] pcount %d\n", v, pcount);
     }
   }
 

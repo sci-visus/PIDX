@@ -135,7 +135,7 @@ PIDX_return_code PIDX_read(PIDX_io file, int svi, int evi, int MODE)
   PIDX_variable var0 = file->idx->variable[svi];
 
   if (var0->is_particle == 1)
-    ret = PIDX_particle_restart_read(file, svi, evi);
+    ret = PIDX_particle_read(file, svi, evi);
   else
   {
     if (MODE == PIDX_IDX_IO)

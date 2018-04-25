@@ -10,7 +10,7 @@
 /// \param evi
 /// \return
 ///
-PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi, int mode);
+PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi);
 
 
 
@@ -22,7 +22,7 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi, int
 /// \param evi
 /// \return
 ///
-PIDX_return_code particles_restructure(PIDX_io file, int mode);
+PIDX_return_code particles_restructure(PIDX_io file);
 
 
 
@@ -32,7 +32,7 @@ PIDX_return_code particles_restructure(PIDX_io file, int mode);
 /// \param mode
 /// \return
 ///
-PIDX_return_code particles_restructure_io(PIDX_io file, int mode);
+PIDX_return_code particles_restructure_io(PIDX_io file);
 
 
 
