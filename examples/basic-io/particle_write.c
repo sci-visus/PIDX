@@ -384,6 +384,7 @@ static void create_synthetic_simulation_data()
   // data[5] corresponds to tensor volume doubles (9)
   data[5] = malloc (particle_count * sizeof(double) * 9);
 
+  double p_x, p_y, p_z;
   double scale;
   double color;
   int type;
@@ -391,26 +392,31 @@ static void create_synthetic_simulation_data()
   double particle_color[COLOR_COUNT] = {0.25, 0.75};
 
 
-  //char rank_filename[PATH_MAX];
-  //sprintf(rank_filename, "data_%d", rank);
-  //FILE *fp = fopen(rank_filename, "w");
+  char rank_filename[PATH_MAX];
+  sprintf(rank_filename, "%s_w_%d", output_file_template, rank);
+  FILE *fp = fopen(rank_filename, "w");
 
   srand((unsigned int)time(NULL));
   for (int k = 0; k < particle_count; k++)
   {
-    for (int j = 0; j < 3; j++)
-    {
-      scale = physical_local_box_offset[j] + (rand() / (float) RAND_MAX) * physical_local_box_size[j];
-      memcpy(data[0] + (k * 3 + j) * sizeof(double), &scale, sizeof(double));
-    }
+
+    p_x = physical_local_box_offset[0] + (rand() / (float) RAND_MAX) * physical_local_box_size[0];
+    p_y = physical_local_box_offset[1] + (rand() / (float) RAND_MAX) * physical_local_box_size[1];
+    p_z = physical_local_box_offset[2] + (rand() / (float) RAND_MAX) * physical_local_box_size[2];
+    memcpy(data[0] + (k * 3 + 0) * sizeof(double), &p_x, sizeof(double));
+    memcpy(data[0] + (k * 3 + 1) * sizeof(double), &p_y, sizeof(double));
+    memcpy(data[0] + (k * 3 + 2) * sizeof(double), &p_z, sizeof(double));
+
 
     color = particle_color[rand() % COLOR_COUNT];
     memcpy(data[1] + (k) * sizeof(double), &color, sizeof(double));
 
     scale = rand() / (float) RAND_MAX;
+    scale = scale * p_x;
     memcpy(data[2] + (k) * sizeof(double), &scale, sizeof(double));
 
     scale = rand() / (float) RAND_MAX;
+    scale = scale * p_x;
     memcpy(data[3] + (k) * sizeof(double), &scale, sizeof(double));
 
     type = particle_type[rand() % TYPE_COUNT];
@@ -419,9 +425,10 @@ static void create_synthetic_simulation_data()
     for (int j = 0; j < 9; j++)
     {
       scale = rand() / (float) RAND_MAX;
+      scale = scale * p_x;
       memcpy(data[5] + (k * 9 + j) * sizeof(double), &scale, sizeof(double));
     }
-#if 0
+
     double px, py, pz;
     memcpy(&px, data[0] + (k * 3 + 0) * sizeof(double), sizeof(double));
     memcpy(&py, data[0] + (k * 3 + 1) * sizeof(double), sizeof(double));
@@ -436,21 +443,19 @@ static void create_synthetic_simulation_data()
     memcpy(&i1, data[4] + (k) * sizeof(int), sizeof(int));
 
     double e1, e2, e3, e4, e5, e6, e7, e8, e9;
-    memcpy(&e1, data[4] + (k * 9 + 0) * sizeof(double), sizeof(double));
-    memcpy(&e2, data[4] + (k * 9 + 1) * sizeof(double), sizeof(double));
-    memcpy(&e3, data[4] + (k * 9 + 2) * sizeof(double), sizeof(double));
-    memcpy(&e4, data[4] + (k * 9 + 3) * sizeof(double), sizeof(double));
-    memcpy(&e5, data[4] + (k * 9 + 4) * sizeof(double), sizeof(double));
-    memcpy(&e6, data[4] + (k * 9 + 5) * sizeof(double), sizeof(double));
-    memcpy(&e7, data[4] + (k * 9 + 6) * sizeof(double), sizeof(double));
-    memcpy(&e8, data[4] + (k * 9 + 7) * sizeof(double), sizeof(double));
-    memcpy(&e9, data[4] + (k * 9 + 8) * sizeof(double), sizeof(double));
+    memcpy(&e1, data[5] + (k * 9 + 0) * sizeof(double), sizeof(double));
+    memcpy(&e2, data[5] + (k * 9 + 1) * sizeof(double), sizeof(double));
+    memcpy(&e3, data[5] + (k * 9 + 2) * sizeof(double), sizeof(double));
+    memcpy(&e4, data[5] + (k * 9 + 3) * sizeof(double), sizeof(double));
+    memcpy(&e5, data[5] + (k * 9 + 4) * sizeof(double), sizeof(double));
+    memcpy(&e6, data[5] + (k * 9 + 5) * sizeof(double), sizeof(double));
+    memcpy(&e7, data[5] + (k * 9 + 6) * sizeof(double), sizeof(double));
+    memcpy(&e8, data[5] + (k * 9 + 7) * sizeof(double), sizeof(double));
+    memcpy(&e9, data[5] + (k * 9 + 8) * sizeof(double), sizeof(double));
 
-    fprintf(fp, "[%d] -> %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f \n", k, px, py, pz, d1, d2, d3, e1, e2, e3, e4, e5, e6, e7, e8, e9);
-#endif
-
+    fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9);
   }
-  //fclose(fp);
+  fclose(fp);
 
 }
 

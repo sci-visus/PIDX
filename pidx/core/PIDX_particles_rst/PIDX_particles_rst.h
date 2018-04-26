@@ -180,7 +180,7 @@ PIDX_return_code PIDX_particles_rst_aggregate_buf_destroy(PIDX_particles_rst_id 
 /// \param MODE
 /// \return
 ///
-PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id, int MODE);
+PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id);
 
 
 

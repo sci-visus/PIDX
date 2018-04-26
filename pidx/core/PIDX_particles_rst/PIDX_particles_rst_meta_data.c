@@ -286,8 +286,8 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
       // (if a process is a holder of a super patch || if a process sends data to a super patch)
       if (rst_id->idx_c->simulation_rank == ep->rank || (rst_id->idx_c->simulation_rank != ep->rank && intersectNDChunk(reg_patch, local_proc_patch)))
       {
-          if (rst_id->idx_c->simulation_rank == 8)
-              printf("reg_patch_count %d [%f %f %f]\n", reg_patch_count, reg_patch->physical_offset[0], reg_patch->physical_offset[1], reg_patch->physical_offset[2]);
+        //if (rst_id->idx_c->simulation_rank == 8)
+        // printf("reg_patch_count %d [%f %f %f]\n", reg_patch_count, reg_patch->physical_offset[0], reg_patch->physical_offset[1], reg_patch->physical_offset[2]);
         if (!contains_patch(reg_patch, found_reg_patches, found_reg_patches_count))
         {
           found_reg_patches[found_reg_patches_count] = (PIDX_patch)malloc(sizeof (*reg_patch));
@@ -465,7 +465,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
         {
           MPI_Isend(&(patch_grp->patch[j]->particle_count), 1, MPI_INT, patch_grp->max_patch_rank, 123, rst_id->idx_c->simulation_comm, &req[req_count_actual]);
           req_count_actual++;
-          //printf("My rank %d Sending to %d\n", rst_id->idx_c->simulation_rank, patch_grp->max_patch_rank);
+          //printf("My rank %d Sending to %d -> %d\n", rst_id->idx_c->simulation_rank, patch_grp->max_patch_rank, patch_grp->patch[j]->particle_count);
         }
       }
     }

@@ -196,7 +196,7 @@ PIDX_return_code PIDX_particles_rst_aggregate_buf_destroy(PIDX_particles_rst_id 
 
 
 // Combine the small patches of a super patch into a restructured patch
-PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id, int mode)
+PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id)
 {
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
 
@@ -215,6 +215,7 @@ PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id, 
       /*
       if (v == 0)
       {
+        printf("[%d] -> %d\n", r, var->restructured_super_patch->patch[r]->particle_count);
         for (uint32_t p = 0; p < var->restructured_super_patch->patch[r]->particle_count; p++)
         {
           double px, py, pz;

@@ -88,7 +88,7 @@ PIDX_return_code particles_restructure(PIDX_io file)
 
     // Aggregating in memory restructured buffers into one large buffer
     time->rst_buff_agg_start[cvi] = PIDX_get_time();
-    if (PIDX_particles_rst_buf_aggregate(file->particles_rst_id, PIDX_WRITE) != PIDX_success)
+    if (PIDX_particles_rst_buf_aggregate(file->particles_rst_id) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
@@ -212,9 +212,9 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
   MPI_Allreduce(&patch_size_y, &max_patch_size_y, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
   MPI_Allreduce(&patch_size_z, &max_patch_size_z, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
 
-  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 2;
-  file->restructured_grid->physical_patch_size[1] = max_patch_size_y * 2;
-  file->restructured_grid->physical_patch_size[2] = max_patch_size_z * 2;
+  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 8;
+  file->restructured_grid->physical_patch_size[1] = max_patch_size_y * 4;
+  file->restructured_grid->physical_patch_size[2] = max_patch_size_z * 4;
 
   return;
 }
