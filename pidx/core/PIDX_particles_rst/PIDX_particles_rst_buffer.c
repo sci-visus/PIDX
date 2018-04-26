@@ -159,6 +159,7 @@ PIDX_return_code PIDX_particles_rst_aggregate_buf_create(PIDX_particles_rst_id r
 
         patch_group->restructured_patch->buffer = malloc(total_particle_count * var->vps * var->bpv / CHAR_BIT);
         patch_group->restructured_patch->particle_count = total_particle_count;
+        //printf("var %d PC %d Buffer %d\n", v, patch_group->restructured_patch->particle_count, (total_particle_count * var->vps * var->bpv / CHAR_BIT));
 
         if (patch_group->restructured_patch->buffer == NULL)
         {
@@ -206,32 +207,93 @@ PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id)
 
   for (uint32_t v = rst_id->first_index; v <= rst_id->last_index; ++v)
   {
-    PIDX_variable var = rst_id->idx_metadata->variable[v];
     int pcount = 0;
+    PIDX_variable var = rst_id->idx_metadata->variable[v];
     for (uint32_t r = 0; r < var->restructured_super_patch->patch_count; r++)
     {
       memcpy(var->restructured_super_patch->restructured_patch->buffer + (pcount * var->vps * (var->bpv / CHAR_BIT)), var->restructured_super_patch->patch[r]->buffer, var->restructured_super_patch->patch[r]->particle_count * var->vps * (var->bpv / CHAR_BIT));
 
-      /*
+      //
       if (v == 0)
       {
-        printf("[%d] -> %d\n", r, var->restructured_super_patch->patch[r]->particle_count);
+        //printf("[%d] -> %d\n", r, var->restructured_super_patch->patch[r]->particle_count);
         for (uint32_t p = 0; p < var->restructured_super_patch->patch[r]->particle_count; p++)
         {
-          double px, py, pz;
-          memcpy(&px, var->restructured_super_patch->patch[r]->buffer + (p * 3 + 0) * sizeof(double), sizeof(double));
-          memcpy(&py, var->restructured_super_patch->patch[r]->buffer + (p * 3 + 1) * sizeof(double), sizeof(double));
-          memcpy(&pz, var->restructured_super_patch->patch[r]->buffer + (p * 3 + 2) * sizeof(double), sizeof(double));
 
+            /*
+          double px, py, pz;
+          memcpy(&px, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 0) * sizeof(double), sizeof(double));
+          memcpy(&py, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 1) * sizeof(double), sizeof(double));
+          memcpy(&pz, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 2) * sizeof(double), sizeof(double));
           printf("B[%d] -> %f %f %f\n", p, px, py, pz);
+          */
+
+
+            /*
+            double e1, e2, e3, e4, e5, e6, e7, e8, e9;
+            memcpy(&e1, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 0) * sizeof(double), sizeof(double));
+            memcpy(&e2, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 1) * sizeof(double), sizeof(double));
+            memcpy(&e3, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 2) * sizeof(double), sizeof(double));
+            memcpy(&e4, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 3) * sizeof(double), sizeof(double));
+            memcpy(&e5, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 4) * sizeof(double), sizeof(double));
+            memcpy(&e6, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 5) * sizeof(double), sizeof(double));
+            memcpy(&e7, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 6) * sizeof(double), sizeof(double));
+            memcpy(&e8, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 7) * sizeof(double), sizeof(double));
+            memcpy(&e9, var->restructured_super_patch->patch[r]->buffer + (p * 9 + 8) * sizeof(double), sizeof(double));
+
+            printf("%f %f %f %f %f %f %f %f %f\n", e1, e2, e3, e4, e5, e6, e7, e8, e9);
+            */
+
         }
       }
-      */
+      //
 
       pcount = pcount + var->restructured_super_patch->patch[r]->particle_count;
       //printf("[%d] pcount %d\n", v, pcount);
     }
   }
+
+  char rank_filename[PATH_MAX];
+  sprintf(rank_filename, "%s_b_%d", rst_id->idx_metadata->filename, rst_id->idx_c->simulation_rank);
+  FILE *fp = fopen(rank_filename, "w");
+
+  for (uint32_t p = 0; p < rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->particle_count; p++)
+  {
+    //
+    double px, py, pz;
+    memcpy(&px, rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->buffer + (p * 3 + 0) * sizeof(double), sizeof(double));
+    memcpy(&py, rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->buffer + (p * 3 + 1) * sizeof(double), sizeof(double));
+    memcpy(&pz, rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->buffer + (p * 3 + 2) * sizeof(double), sizeof(double));
+
+    double d1;
+    memcpy(&d1, rst_id->idx_metadata->variable[1]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(double), sizeof(double));
+
+    double d2;
+    memcpy(&d2, rst_id->idx_metadata->variable[2]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(double), sizeof(double));
+
+    double d3;
+    memcpy(&d3, rst_id->idx_metadata->variable[3]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(double), sizeof(double));
+
+    int i1;
+    memcpy(&i1, rst_id->idx_metadata->variable[4]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(int), sizeof(int));
+    /*
+    double e1, e2, e3, e4, e5, e6, e7, e8, e9;
+    memcpy(&e1, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 0) * sizeof(double), sizeof(double));
+    memcpy(&e2, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 1) * sizeof(double), sizeof(double));
+    memcpy(&e3, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 2) * sizeof(double), sizeof(double));
+    memcpy(&e4, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 3) * sizeof(double), sizeof(double));
+    memcpy(&e5, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 4) * sizeof(double), sizeof(double));
+    memcpy(&e6, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 5) * sizeof(double), sizeof(double));
+    memcpy(&e7, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 6) * sizeof(double), sizeof(double));
+    memcpy(&e8, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 7) * sizeof(double), sizeof(double));
+    memcpy(&e9, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 8) * sizeof(double), sizeof(double));
+    */
+    //fprintf(fp, "%f %f %f %f %f %f %f %f %f\n", e1, e2, e3, e4, e5, e6, e7, e8, e9);
+
+    fprintf(fp, "%f %f %f %f %f %f %d\n", px, py, pz, d1, d2, d3, i1);
+  }
+  fclose(fp);
+
 
   return PIDX_success;
 }

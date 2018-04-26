@@ -56,6 +56,7 @@ static int pointInChunk(PIDX_patch p, const double *pos);
 
 PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 {
+  unsigned char ** buffer;
   uint64_t req_count = 0;
   uint64_t req_counter = 0;
   int ret = 0;
@@ -101,7 +102,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           int length = (var->restructured_super_patch->patch[j]->particle_count) * var->vps * var->bpv/ CHAR_BIT;
 
           //printf("Receiving %d from %d\n", length, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank);
-          ret = MPI_Irecv(var->restructured_super_patch->patch[j]->buffer, length, MPI_BYTE, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank, v, rst_id->idx_c->simulation_comm, &req[req_counter]);
+          ret = MPI_Irecv(var->restructured_super_patch->patch[j]->buffer, length, MPI_BYTE, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank, 123, rst_id->idx_c->simulation_comm, &req[req_counter]);
           if (ret != MPI_SUCCESS)
           {
             fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -131,58 +132,55 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         for (uint64_t p = 0; p < var0->sim_patch[p_index]->particle_count; ++p)
         {
           if (pointInChunk(reg_patch, (double*)(var0->sim_patch[p_index]->buffer + p * bytes_per_pos_v0)))
-          {
-            //patch_grp->patch[patch_count]->particle_count++;
             counter++;
-          }
         }
 
+        buffer = malloc(sizeof(*buffer) * (end_index - start_index + 1));
+        memset(buffer, 0, sizeof(*buffer) * (end_index - start_index + 1));
         for (int v = start_index; v <= end_index; v++)
         {
           PIDX_variable var = rst_id->idx_metadata->variable[v];
           const uint64_t bytes_per_pos = var->vps * var->bpv/ CHAR_BIT;
-          unsigned char *buffer = malloc(counter * bytes_per_pos);
+          buffer[v] = malloc(counter * bytes_per_pos);
           uint32_t pcount = 0;
           for (uint64_t p = 0; p < var0->sim_patch[p_index]->particle_count; ++p)
           {
             if (pointInChunk(reg_patch, (double*)(var0->sim_patch[p_index]->buffer + p * bytes_per_pos_v0)))
             {
-              memcpy(buffer + pcount * bytes_per_pos, var->sim_patch[p_index]->buffer + p * bytes_per_pos, bytes_per_pos);
-              double dx, dy, dz;
-              memcpy(&dx, buffer + (pcount * 3 + 0) * sizeof(double), sizeof(double));
-              memcpy(&dy, buffer + (pcount * 3 + 1) * sizeof(double), sizeof(double));
-              memcpy(&dz, buffer + (pcount * 3 + 2) * sizeof(double), sizeof(double));
-              //if (v == 0)
-              //  printf("Buffer %f %f %f\n", dx, dy, dz);
+              memcpy(buffer[v] + pcount * bytes_per_pos, var->sim_patch[p_index]->buffer + p * bytes_per_pos, bytes_per_pos);
               pcount++;
             }
           }
           assert(pcount == counter);
-
-          //printf("[%d] Sending %d bytes to %d\n", rst_id->idx_c->simulation_rank, counter * bytes_per_pos, rst_id->intersected_restructured_super_patch[i]->max_patch_rank);
-          if (MPI_Isend(buffer, counter * bytes_per_pos, MPI_BYTE, rst_id->intersected_restructured_super_patch[i]->max_patch_rank, v, rst_id->idx_c->simulation_comm, &req[req_counter]) != MPI_SUCCESS)
+          if (MPI_Isend(buffer[v], counter * bytes_per_pos, MPI_BYTE, rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123, rst_id->idx_c->simulation_comm, &req[req_counter]) != MPI_SUCCESS)
           {
             fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
             return PIDX_err_mpi;
           }
-          free(buffer);
           req_counter++;
         }
-
-        //if (rst_id->intersected_restructured_super_patch[i]->max_patch_rank == 0)
-        //  printf("[%d] Counter %d index %d particle count %d -- %f %f %f - %f %f %f\n", rst_id->idx_c->simulation_rank, counter, p_index, var->sim_patch[p_index]->particle_count, reg_patch->physical_offset[0], reg_patch->physical_offset[1], reg_patch->physical_offset[2], reg_patch->physical_size[0], reg_patch->physical_size[1], reg_patch->physical_size[2]);
-
       }
     }
   }
 
-  //printf("[%d] [%d - %d] Req count %d\n", rst_id->idx_c->simulation_rank, start_index, end_index, req_counter);
   if (MPI_Waitall(req_counter, req, status) != MPI_SUCCESS)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
     return (-1);
   }
 
+  for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+  {
+    for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
+    {
+      if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
+      {
+        for (int v = start_index; v <= end_index; v++)
+          free(buffer[v]);
+        free(buffer);
+      }
+    }
+  }
 
   free(req);
   req = 0;

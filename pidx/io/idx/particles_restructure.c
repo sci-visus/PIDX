@@ -212,9 +212,9 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
   MPI_Allreduce(&patch_size_y, &max_patch_size_y, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
   MPI_Allreduce(&patch_size_z, &max_patch_size_z, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
 
-  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 8;
-  file->restructured_grid->physical_patch_size[1] = max_patch_size_y * 4;
-  file->restructured_grid->physical_patch_size[2] = max_patch_size_z * 4;
+  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 2;
+  file->restructured_grid->physical_patch_size[1] = max_patch_size_y * 2;
+  file->restructured_grid->physical_patch_size[2] = max_patch_size_z * 2;
 
   return;
 }
