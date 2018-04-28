@@ -42,30 +42,58 @@
 #define __PARTICLE_IO_H
 
 ///
-/// \brief PIDX_particle_write
+/// \brief PIDX_particle_file_per_process_write
 /// \param file
 /// \param gi
 /// \param svi
 /// \param evi
 /// \return
 ///
-PIDX_return_code PIDX_particle_write(PIDX_io file, int svi, int evi);
+PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int evi);
 
 
+
+///
+/// \brief PIDX_particle_file_per_process_read
+/// \param file
+/// \param svi
+/// \param evi
+/// \return
+///
+PIDX_return_code PIDX_particle_file_per_process_read(PIDX_io file, int svi, int evi);
+
+
+
+///
+/// \brief PIDX_particle_rst_write
+/// \param file
+/// \param svi
+/// \param evi
+/// \return
+///
 PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi);
 
 
+
 ///
-/// \brief PIDX_particle_read
+/// \brief PIDX_particle_rst_read
 /// \param file
-/// \param gi
 /// \param svi
 /// \param evi
 /// \return
 ///
-PIDX_return_code PIDX_particle_read(PIDX_io file, int svi, int evi);
+PIDX_return_code PIDX_particle_rst_read(PIDX_io file, int svi, int evi);
 
 
-PIDX_return_code PIDX_particle_restart_read(PIDX_io file, int svi, int evi);
+
+///
+/// \brief PIDX_particle_vis_read
+/// \param file
+/// \param svi
+/// \param evi
+/// \return
+///
+PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi);
+
 
 #endif
