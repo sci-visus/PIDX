@@ -71,7 +71,7 @@ struct PIDX_idx_rst_struct
   int intersected_restructured_super_patch_count;
   PIDX_super_patch* intersected_restructured_super_patch;
 
-  uint64_t sim_max_patch_count;
+  int sim_max_patch_count;
   uint64_t* sim_multi_patch_r_count;
   uint64_t* sim_multi_patch_r_offset;
 

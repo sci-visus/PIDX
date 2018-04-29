@@ -59,7 +59,7 @@ struct idx_file_struct
   int variable_pipe_length;                         /// pipes (combines) "variable_pipe_length" variables for io
   int variable_tracker[512];                        /// Which one of the 256 variables are present
   PIDX_variable variable[512];                      /// pointer to variable
-  uint32_t variable_count;                               /// The number of variables contained in the dataset
+  uint32_t variable_count;                          /// The number of variables contained in the dataset
 
 
   Agg_buffer **agg_buffer;                          /// aggregation related struct
@@ -96,9 +96,9 @@ struct idx_file_struct
   int flip_endian;                                  /// 1 for flipping endianness required
 
 
-  uint32_t partition_count[PIDX_MAX_DIMENSIONS];         /// number of partitions in the X, Y and Z dimesnions
-  uint32_t partition_size[PIDX_MAX_DIMENSIONS];          /// size of partitions in each of the dimensions in voxels
-  uint32_t partition_offset[PIDX_MAX_DIMENSIONS];        /// offset of each of the partition (n global index space)
+  uint32_t partition_count[PIDX_MAX_DIMENSIONS];    /// number of partitions in the X, Y and Z dimesnions
+  uint32_t partition_size[PIDX_MAX_DIMENSIONS];     /// size of partitions in each of the dimensions in voxels
+  uint32_t partition_offset[PIDX_MAX_DIMENSIONS];   /// offset of each of the partition (n global index space)
 
 
   int cached_ts;                                    /// used for raw io, to cache meta data (1) or not (0)
