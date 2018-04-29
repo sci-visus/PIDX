@@ -70,7 +70,7 @@ PIDX_return_code PIDX_idx_rst_meta_data_create(PIDX_idx_rst_id rst_id)
   // The outcome is stored in rst_id->sim_multi_patch_r_size and rst_id->sim_multi_patch_r_offset
   gather_all_patch_extents(rst_id);
 #if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
+  if (rst_id->idx_c->simulation_rank == 0)
     fprintf(stderr, "gather_all_patch_extents \n");
 #endif
 
@@ -80,7 +80,7 @@ PIDX_return_code PIDX_idx_rst_meta_data_create(PIDX_idx_rst_id rst_id)
   // The outcome is stored in rst_id->intersected_restructured_super_patch_count
   calculate_number_of_intersecting_boxes(rst_id);
 #if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
+  if (rst_id->idx_c->simulation_rank == 0)
     fprintf(stderr, "calculate_number_of_intersecting_boxes \n");
 #endif
 
@@ -89,7 +89,7 @@ PIDX_return_code PIDX_idx_rst_meta_data_create(PIDX_idx_rst_id rst_id)
   // The outcome is stored in rst_id->intersected_restructured_super_patch
   populate_all_intersecting_restructured_super_patch_meta_data(rst_id);
 #if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
+  if (rst_id->idx_c->simulation_rank == 0)
     fprintf(stderr, "populate_all_intersecting_restructured_super_patch_meta_data \n");
 #endif
 
@@ -98,7 +98,7 @@ PIDX_return_code PIDX_idx_rst_meta_data_create(PIDX_idx_rst_id rst_id)
   // rst_id->intersected_restructured_super_patch to var->restructured_super_patch
   copy_reciever_patch_info(rst_id);
 #if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
+  if (rst_id->idx_c->simulation_rank == 0)
     fprintf(stderr, "copy_reciever_patch_info \n");
 #endif
 
