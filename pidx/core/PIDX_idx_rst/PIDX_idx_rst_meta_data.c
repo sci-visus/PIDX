@@ -65,25 +65,42 @@ static void free_patch_extents(PIDX_idx_rst_id rst_id);
 
 PIDX_return_code PIDX_idx_rst_meta_data_create(PIDX_idx_rst_id rst_id)
 {
+
   // Gathers the extents of all patches
   // The outcome is stored in rst_id->sim_multi_patch_r_size and rst_id->sim_multi_patch_r_offset
   gather_all_patch_extents(rst_id);
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "gather_all_patch_extents \n");
+#endif
 
 
   // Calculates the number of restructured box a process intersects with.
   // It can intersect either as a receiver or as a sender
   // The outcome is stored in rst_id->intersected_restructured_super_patch_count
   calculate_number_of_intersecting_boxes(rst_id);
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "calculate_number_of_intersecting_boxes \n");
+#endif
 
 
   // Iterates through all the imposed restructured patches, and find all the patches that intersects with it
   // The outcome is stored in rst_id->intersected_restructured_super_patch
   populate_all_intersecting_restructured_super_patch_meta_data(rst_id);
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "populate_all_intersecting_restructured_super_patch_meta_data \n");
+#endif
 
 
   // If a processor is a reciever i.e. it holds a restructured patch, then copy all the relevant metadata from
   // rst_id->intersected_restructured_super_patch to var->restructured_super_patch
   copy_reciever_patch_info(rst_id);
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "copy_reciever_patch_info \n");
+#endif
 
 
   // Free the allocated patch extents

@@ -157,6 +157,7 @@ PIDX_return_code PIDX_close(PIDX_file file)
   free(file->time);
   free(file->idx_dbg);
   free(file->idx_c);
+  free(file->idx_b);
 
   free(file);
 

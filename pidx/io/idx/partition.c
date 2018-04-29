@@ -352,28 +352,28 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
           colors[(file->idx->partition_count[0] * file->idx->partition_count[1] * k) + (file->idx->partition_count[0] * j) + i] = (file->idx->partition_count[0] * file->idx->partition_count[1] * k) + (file->idx->partition_count[0] * j) + i;
 
 
-    PIDX_variable var = file->idx->variable[svi];
+  PIDX_variable var = file->idx->variable[svi];
 
-    PIDX_patch local_p = (PIDX_patch)malloc(sizeof (*local_p));
-    memset(local_p, 0, sizeof (*local_p));
+  PIDX_patch local_p = (PIDX_patch)malloc(sizeof (*local_p));
+  memset(local_p, 0, sizeof (*local_p));
 
-    for (uint32_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-    {
-      local_p->offset[d] = var->restructured_super_patch->restructured_patch->offset[d];
-      local_p->size[d] = var->restructured_super_patch->restructured_patch->size[d];
-    }
+  for (uint32_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  {
+    local_p->offset[d] = var->restructured_super_patch->restructured_patch->offset[d];
+    local_p->size[d] = var->restructured_super_patch->restructured_patch->size[d];
+  }
 
-    int wc = file->idx_c->partition_nprocs * (PIDX_MAX_DIMENSIONS);
+  int wc = file->idx_c->partition_nprocs * (PIDX_MAX_DIMENSIONS);
 
-    uint64_t* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
-    memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
+  uint64_t* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
+  memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
 
-    uint64_t* global_patch_size = malloc(wc * sizeof(*global_patch_size));
-    memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
+  uint64_t* global_patch_size = malloc(wc * sizeof(*global_patch_size));
+  memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
 
-    MPI_Allgather(&local_p->offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
+  MPI_Allgather(&local_p->offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
 
-    MPI_Allgather(&local_p->size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
+  MPI_Allgather(&local_p->size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
 
 
   if (file->idx_c->simulation_rank == 0)
@@ -488,11 +488,13 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
     fprintf(midx_file,"</dataset>\n");
 
     fclose(midx_file);
-
-    free(colors);
-    free(global_patch_size);
-    free(global_patch_offset);
+    free(partition_filenames);
+    free(offsets);
   }
+  free(local_p);
+  free(global_patch_size);
+  free(global_patch_offset);
+  free(colors);
 
   return PIDX_success;
 }

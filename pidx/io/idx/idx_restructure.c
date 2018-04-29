@@ -51,10 +51,19 @@ PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi)
   PIDX_time time = file->time;
   cvi = svi;
 
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "[RST metadata 0] : var range %d %d\n", svi, evi);
+#endif
+
   // Initialize the restructuring phase
   time->rst_init_start[cvi] = PIDX_get_time();
   file->idx_rst_id = PIDX_idx_rst_init(file->idx, file->idx_c, file->idx_dbg, file->restructured_grid, svi, evi);
   time->rst_init_end[cvi] = PIDX_get_time();
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "[RST metadata 1] : rst init\n");
+#endif
 
 
   // Populates the relevant meta-data
@@ -65,6 +74,10 @@ PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi)
     return PIDX_err_rst;
   }
   time->rst_meta_data_create_end[cvi] = PIDX_get_time();
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "[RST metadata 2] : rst meta data create\n");
+#endif
 
 
   // Creating the buffers required for restructurig
@@ -74,6 +87,10 @@ PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "[RST metadata 3] : rst buffer create\n");
+#endif
 
 
   // Aggregating the aligned small buffers after restructuring into one single buffer
@@ -83,6 +100,11 @@ PIDX_return_code idx_restructure_setup(PIDX_io file, int svi, int evi)
     return PIDX_err_rst;
   }
   time->rst_buffer_end[cvi] = PIDX_get_time();
+#if DEBUG_OUTPUT
+  if (file->idx_c->simulation_rank == 0)
+    fprintf(stderr, "[RST metadata 4] : rst aggregate buffer create\n");
+#endif
+
 
   return PIDX_success;
 }
