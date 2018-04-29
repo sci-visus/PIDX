@@ -65,42 +65,25 @@ static void free_patch_extents(PIDX_idx_rst_id rst_id);
 
 PIDX_return_code PIDX_idx_rst_meta_data_create(PIDX_idx_rst_id rst_id)
 {
-
   // Gathers the extents of all patches
   // The outcome is stored in rst_id->sim_multi_patch_r_size and rst_id->sim_multi_patch_r_offset
   gather_all_patch_extents(rst_id);
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "gather_all_patch_extents \n");
-#endif
 
 
   // Calculates the number of restructured box a process intersects with.
   // It can intersect either as a receiver or as a sender
   // The outcome is stored in rst_id->intersected_restructured_super_patch_count
   calculate_number_of_intersecting_boxes(rst_id);
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "calculate_number_of_intersecting_boxes \n");
-#endif
 
 
   // Iterates through all the imposed restructured patches, and find all the patches that intersects with it
   // The outcome is stored in rst_id->intersected_restructured_super_patch
   populate_all_intersecting_restructured_super_patch_meta_data(rst_id);
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "populate_all_intersecting_restructured_super_patch_meta_data \n");
-#endif
 
 
   // If a processor is a reciever i.e. it holds a restructured patch, then copy all the relevant metadata from
   // rst_id->intersected_restructured_super_patch to var->restructured_super_patch
   copy_reciever_patch_info(rst_id);
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "copy_reciever_patch_info \n");
-#endif
 
 
   // Free the allocated patch extents
@@ -113,28 +96,14 @@ PIDX_return_code PIDX_idx_rst_meta_data_create(PIDX_idx_rst_id rst_id)
 
 static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
 {
-
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[gather_all_patch_extents 0] : init\n");
-#endif
-
   // rst_id->sim_max_patch_count will contain the maximum number of patch a process is holding
   MPI_Allreduce(&rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch_count, &rst_id->sim_max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->simulation_comm);
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[gather_all_patch_extents 1] : max patch count %d\n", rst_id->sim_max_patch_count);
-#endif
 
   // buffer to hold the offset and size information of all patches across all processes
   rst_id->sim_multi_patch_r_count = malloc(sizeof (uint64_t) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
   memset(rst_id->sim_multi_patch_r_count, 0, (sizeof (uint64_t) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
   rst_id->sim_multi_patch_r_offset = malloc(sizeof (uint64_t) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
   memset(rst_id->sim_multi_patch_r_offset, 0, (sizeof (uint64_t) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[gather_all_patch_extents 2] : mallocs\n");
-#endif
 
 
   // every process populates rst_id->sim_multi_patch_r_count and rst_id->sim_multi_patch_r_offset with their local information
@@ -150,10 +119,6 @@ static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
     memcpy(curr_patch_offset, tempoff,sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
     memcpy(curr_patch_size, tempsize,sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
   }
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[gather_all_patch_extents 3] : local copy\n");
-#endif
 
   // making a local copy of the patch size since mpi does not allow the same buffer to be used as both a sender and a reciever
   uint64_t* count_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
@@ -164,10 +129,6 @@ static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
   // gather size of all patches across all processes
   MPI_Allgather(count_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(uint64_t), MPI_BYTE, rst_id->sim_multi_patch_r_count, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(uint64_t), MPI_BYTE, rst_id->idx_c->simulation_comm);
   free(count_buffer_copy);
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[gather_all_patch_extents 4] : all gather\n");
-#endif
 
   // making a local copy of the patch size since mpi does not allow the same buffer to be used as both a sender and a reciever
   uint64_t* offset_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
@@ -178,10 +139,6 @@ static void gather_all_patch_extents(PIDX_idx_rst_id rst_id)
   // gather size of all patches across all processes
   MPI_Allgather(offset_buffer_copy, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(uint64_t), MPI_BYTE, rst_id->sim_multi_patch_r_offset, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count*sizeof(uint64_t), MPI_BYTE, rst_id->idx_c->simulation_comm);
   free(offset_buffer_copy);
-#if DEBUG_OUTPUT
-  if (rst_id->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[gather_all_patch_extents 5] : all gather\n");
-#endif
 
   return;
 }

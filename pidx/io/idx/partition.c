@@ -346,11 +346,10 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
   colors = malloc(sizeof(*colors) * num_parts);
   memset(colors, 0, sizeof(*colors) * num_parts);
 
-    for (uint32_t k = 0; k < file->idx->partition_count[2]; k++)
-      for (uint32_t j = 0; j < file->idx->partition_count[1]; j++)
-        for (uint32_t i = 0; i < file->idx->partition_count[0]; i++)
-          colors[(file->idx->partition_count[0] * file->idx->partition_count[1] * k) + (file->idx->partition_count[0] * j) + i] = (file->idx->partition_count[0] * file->idx->partition_count[1] * k) + (file->idx->partition_count[0] * j) + i;
-
+  for (uint32_t k = 0; k < file->idx->partition_count[2]; k++)
+    for (uint32_t j = 0; j < file->idx->partition_count[1]; j++)
+      for (uint32_t i = 0; i < file->idx->partition_count[0]; i++)
+        colors[(file->idx->partition_count[0] * file->idx->partition_count[1] * k) + (file->idx->partition_count[0] * j) + i] = (file->idx->partition_count[0] * file->idx->partition_count[1] * k) + (file->idx->partition_count[0] * j) + i;
 
   PIDX_variable var = file->idx->variable[svi];
 
