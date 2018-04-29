@@ -340,7 +340,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
   }
 
   // making sure that the folder containing the .idx file is populated (the .idx file might be created other that ./)
-  if (header_io->idx_c->simulation_rank == 0)
+  if (header_io->idx_c->rrank == 0)
   {
     int ret = 0;
     char last_path[PATH_MAX] = {0};
@@ -363,7 +363,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
         {
           if (j > 0 && this_path[j] == '/')
           {
-            //printf("mkdir %s\n", tmp_path);
+            printf("mkdir %s\n", tmp_path);
             ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
             if (ret != 0 && errno != EEXIST)
             {
@@ -377,13 +377,12 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
       }
     }
   }
-
   // Making sure that all processes wait for the folder containing the .idx file (which will also contain data) is populated
-  MPI_Barrier(header_io->idx_c->simulation_comm);
+  MPI_Barrier(header_io->idx_c->rst_comm);
 
 
   // populte the .idx file
-  if (header_io->idx_c->simulation_rank == 0)
+  if (header_io->idx_c->rrank == 0)
   {
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p)

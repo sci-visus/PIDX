@@ -52,8 +52,12 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
 {
   int i = 0, j = 0, k = 0;
 
+  int grank=0;
+  MPI_Comm_rank(id->idx_c->simulation_comm, &grank);
+
   int rank_counter = 0;
-  int aggregator_interval = id->idx_c->partition_nprocs / ((id->fi - id->li + 1) * lbl->efc);
+  int aggregator_interval = id->idx_c->partition_nprocs / ((id->li - id->fi + 1) * lbl->efc);
+
 
   for (k = 0; k < lbl->efc; k++)
   {
@@ -73,9 +77,7 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
           uint64_t sample_count = lbl->bcpf[ab->file_number] * id->idx->samples_per_block / ab->agg_f;
 
           int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
-
-          int bpdt = 0;
-          bpdt = (chunk_size * id->idx->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
+          int bpdt = (chunk_size * id->idx->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
 
           ab->buffer_size = sample_count * bpdt;
 
@@ -86,6 +88,7 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) ab->buffer_size, __LINE__, __FILE__);
             return PIDX_err_agg;
           }
+          fprintf(stderr, "[File %d] [Variable %d] [Color %d] [n %d r %d p %d] Aggregator Partition rank %d Global rank %d\n", ab->file_number, ab->var_number, id->idx_c->color, id->idx_c->simulation_nprocs, id->idx_c->rnprocs, id->idx_c->partition_nprocs, id->idx_c->partition_rank, grank);
         }
       }
     }
@@ -392,6 +395,7 @@ PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(P
 
   return PIDX_success;
 }
+
 
 
 

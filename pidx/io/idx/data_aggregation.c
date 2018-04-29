@@ -73,7 +73,7 @@ PIDX_return_code aggregation_setup(PIDX_io file, int svi, int evi)
     if (ret != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
+      return PIDX_err_agg;
     }
     time->agg_meta_end[svi][j] = PIDX_get_time();
 
@@ -81,13 +81,14 @@ PIDX_return_code aggregation_setup(PIDX_io file, int svi, int evi)
 
     //ret = PIDX_agg_create_randomized_aggregation(file->agg_id[svi][j], idx->agg_buffer[svi][j], block_layout_by_agg_group[j], j, svi, file_status);
     //ret = PIDX_agg_create_global_partition_localized_aggregation_buffer(file->agg_id[svi][j], idx->agg_buffer[svi][j], file->idx_b->block_layout_by_agg_group[j], j);
-    ret = PIDX_agg_create_local_partition_localized_aggregation_buffer(file->agg_id[svi][j], idx->agg_buffer[svi][j], file->idx_b->block_layout_by_agg_group[j], j);
-    //ret = PIDX_agg_buf_create_local_uniform_dist(file->agg_id[svi][j], idx->agg_buffer[svi][j], block_layout_by_agg_group[j]);
+
+    //ret = PIDX_agg_create_local_partition_localized_aggregation_buffer(file->agg_id[svi][j], idx->agg_buffer[svi][j], file->idx_b->block_layout_by_agg_group[j], j);
+    ret = PIDX_agg_buf_create_local_uniform_dist(file->agg_id[svi][j], idx->agg_buffer[svi][j], file->idx_b->block_layout_by_agg_group[j]);
 
     if (ret != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
+      return PIDX_err_agg;
     }
     time->agg_buf_end[svi][j] = PIDX_get_time();
   }
@@ -112,7 +113,7 @@ PIDX_return_code aggregation(PIDX_io file, int svi, int mode )
       if (ret != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_rst;
+        return PIDX_err_agg;
       }
       time->agg_end[svi][j] = PIDX_get_time();
     }
@@ -122,7 +123,7 @@ PIDX_return_code aggregation(PIDX_io file, int svi, int mode )
     if (ret != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
+      return PIDX_err_agg;
     }
     time->agg_meta_cleanup_end[svi][j] = PIDX_get_time();
   }
