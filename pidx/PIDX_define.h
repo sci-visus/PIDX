@@ -60,7 +60,10 @@ extern "C" {
 #define PIDX_HAVE_NVISUSIO 0
 
 #define PIDX_MAX_TEMPLATE_DEPTH 6
+
 #define DETAIL_OUTPUT 0
+
+#define DEBUG_OUTPUT 1
 
 #ifndef __cplusplus
 #  define _XOPEN_SOURCE 600
@@ -138,7 +141,6 @@ enum PIDX_endian_type{
 #define PIDX_MODE_APPEND            128  /* ADIO_APPEND */
 #define PIDX_MODE_SEQUENTIAL        256  /* ADIO_SEQUENTIAL */
 
-//double pa1, pa2, pa3, pa4, pa5, pa6;
 
 /// IDX specifies generic types using simple strings consisting of an unambiguous data type and
 /// C array syntax, e.g. "float32[3]".  In the PIDX library, we declare types using strings so
