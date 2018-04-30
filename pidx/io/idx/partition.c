@@ -71,10 +71,13 @@ PIDX_return_code partition(PIDX_io file, int svi)
   }
 
   // Create midx file that will point to different .idx partition files
-  if (create_midx(file, svi) != PIDX_success)
+  if (file->idx->current_time_step == 0)
   {
-    fprintf(stderr,"Error [File %s Line %d]: create_midx\n", __FILE__, __LINE__);
-    return PIDX_err_file;
+    if (create_midx(file, svi) != PIDX_success)
+    {
+      fprintf(stderr,"Error [File %s Line %d]: create_midx\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
   }
 
   // Splits the local communicator into local communicators
@@ -340,6 +343,103 @@ static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
 
 static PIDX_return_code create_midx(PIDX_io file, int svi)
 {
+
+  int N;
+  char dirname[1024], basename[1024];
+  char file_temp[1024];
+
+  int nbits_blocknumber = (file->idx->maxh - file->idx->bits_per_block - 1);
+  VisusSplitFilename(file->idx->filename, dirname, basename);
+
+  //remove suffix
+  for (N = strlen(basename) - 1; N >= 0; N--)
+  {
+    int ch = basename[N];
+    basename[N] = 0;
+    if (ch == '.') break;
+  }
+
+  //pidx does not do path remapping
+  strcpy(file_temp, file->idx->filename);
+  for (N = strlen(file_temp) - 1; N >= 0; N--)
+  {
+    int ch = file_temp[N];
+    file_temp[N] = 0;
+    if (ch == '.') break;
+  }
+
+  //can happen if I have only only one block
+  if (nbits_blocknumber == 0)
+    strcat(file_temp, "/%01x.bin");
+
+  else
+  {
+    //approximate to 4 bits
+    if (nbits_blocknumber % 4)
+    {
+      nbits_blocknumber += (4 - (nbits_blocknumber % 4));
+      //assert(!(nbits_blocknumber % 4));
+    }
+    if (nbits_blocknumber <= 8)
+      strcat(file_temp, "/%02x.bin"); //no directories, 256 files
+    else if (nbits_blocknumber <= 12)
+      strcat(file_temp, "/%03x.bin"); //no directories, 4096 files
+    else if (nbits_blocknumber <= 16)
+      strcat(file_temp, "/%04x.bin"); //no directories, 65536  files
+    else
+    {
+      while (nbits_blocknumber > 16)
+      {
+        strcat(file_temp, "/%02x"); //256 subdirectories
+        nbits_blocknumber -= 8;
+      }
+      strcat(file_temp, "/%04x.bin"); //max 65536  files
+      nbits_blocknumber -= 16;
+      //assert(nbits_blocknumber <= 0);
+    }
+  }
+
+  // making sure that the folder containing the .idx file is populated (the .idx file might be created other that ./)
+  if (file->idx_c->rrank == 0)
+  {
+    int ret = 0;
+    char last_path[PATH_MAX] = {0};
+    char this_path[PATH_MAX] = {0};
+    char tmp_path[PATH_MAX] = {0};
+    char* pos;
+    strcpy(this_path, file->idx->filename);
+    if ((pos = strrchr(this_path, '/')))
+    {
+      pos[1] = '\0';
+      if (!(strcmp(this_path, last_path) == 0))
+      {
+        //this file is in a previous directory than the last
+        //one; we need to make sure that it exists and create
+        //it if not.
+        strcpy(last_path, this_path);
+        memset(tmp_path, 0, PATH_MAX * sizeof (char));
+        //walk up path and mkdir each segment
+        for (int j = 0; j < (int)strlen(this_path); j++)
+        {
+          if (j > 0 && this_path[j] == '/')
+          {
+            //printf("mkdir %s\n", tmp_path);
+            ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
+            if (ret != 0 && errno != EEXIST)
+            {
+              //perror("mkdir");
+              fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
+              return PIDX_err_file;
+            }
+          }
+          tmp_path[j] = this_path[j];
+        }
+      }
+    }
+  }
+  // Making sure that all processes wait for the folder containing the .idx file (which will also contain data) is populated
+  MPI_Barrier(file->idx_c->rst_comm);
+
   int *colors;
   int num_parts = file->idx->partition_count[0] * file->idx->partition_count[1] * file->idx->partition_count[2];
 
@@ -371,7 +471,6 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
   memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
 
   MPI_Allgather(&local_p->offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
-
   MPI_Allgather(&local_p->size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->partition_comm);
 
 

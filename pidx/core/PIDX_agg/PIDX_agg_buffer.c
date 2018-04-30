@@ -88,7 +88,9 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
             fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) ab->buffer_size, __LINE__, __FILE__);
             return PIDX_err_agg;
           }
+#if DEBUG_OUTPUT
           fprintf(stderr, "[File %d] [Variable %d] [Color %d] [n %d r %d p %d] Aggregator Partition rank %d Global rank %d\n", ab->file_number, ab->var_number, id->idx_c->color, id->idx_c->simulation_nprocs, id->idx_c->rnprocs, id->idx_c->partition_nprocs, id->idx_c->partition_rank, grank);
+#endif
         }
       }
     }

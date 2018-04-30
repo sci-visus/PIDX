@@ -73,8 +73,6 @@ PIDX_return_code write_global_idx(PIDX_io file, int start_var_index, int end_var
 
 PIDX_return_code write_headers(PIDX_io file, int start_var_index, int end_var_index, int mode)
 {
-  int ret = 0;
-
   // When using non-partitioned idx IO there is no need to create different IDX file per partitions
   // so we use one single .idx file.
   // Note: This strcpy is a little hacky, but works.
@@ -89,8 +87,7 @@ PIDX_return_code write_headers(PIDX_io file, int start_var_index, int end_var_in
   if (mode == PIDX_READ)
     return PIDX_success;
 
-  ret = write_idx_headers_layout(file, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, file->idx_b->block_layout);
-  if (ret != PIDX_success)
+  if (write_idx_headers_layout(file, start_var_index, end_var_index, file->idx->filename_partition, file->idx->filename_template_partition, file->idx_b->block_layout) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;

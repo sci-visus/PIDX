@@ -121,6 +121,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr, "[Local partition idx io 5] : Creating partitions (count %d %d %d) (size %d %d %d) (offset %d %d %d)\n", (int)file->idx->partition_count[0], (int)file->idx->partition_count[1], (int)file->idx->partition_count[2], (int)file->idx->partition_size[0], (int)file->idx->partition_size[1], (int)file->idx->partition_size[2], (int)file->idx->partition_offset[0], (int)file->idx->partition_offset[1], (int)file->idx->partition_offset[2]);
 #endif
     
+
     // Step 6: Populate the bit string of the global dataset
     if (populate_bit_string(file, PIDX_WRITE) != PIDX_success)
     {
@@ -167,6 +168,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
     if (file->idx_c->simulation_rank == 0)
       fprintf(stderr, "[Local partition idx io 9] : Populating blocks maxh %d max file count %d\n", file->idx->maxh, file->idx->max_file_count);
 #endif
+
 
     // Iterate through the variables, variable_pipe_length at a point
     // variable_pipe_length is computed based on the configuration of the run. If there are enough number of processes

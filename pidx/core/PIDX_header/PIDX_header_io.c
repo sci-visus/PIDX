@@ -142,9 +142,9 @@ int PIDX_header_io_idx_file_create(PIDX_header_io_id header_io_id, PIDX_block_la
               ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
               if (ret != 0 && errno != EEXIST)
               {
-                perror("mkdir");
+                //perror("mkdir");
                 fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
-                return 1;
+                return PIDX_err_file;
               }
             }
             tmp_path[j] = this_path[j];
@@ -214,9 +214,9 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
             ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
             if (ret != 0 && errno != EEXIST)
             {
-              perror("mkdir");
+              //perror("mkdir");
               fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
-              return 1;
+              return PIDX_err_file;
             }
           }
           tmp_path[j] = this_path[j];
@@ -363,13 +363,13 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
         {
           if (j > 0 && this_path[j] == '/')
           {
-            printf("mkdir %s\n", tmp_path);
+            //printf("mkdir %s\n", tmp_path);
             ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
             if (ret != 0 && errno != EEXIST)
             {
-              perror("mkdir");
+              //perror("mkdir");
               fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
-              return 1;
+              return PIDX_err_file;
             }
           }
           tmp_path[j] = this_path[j];
