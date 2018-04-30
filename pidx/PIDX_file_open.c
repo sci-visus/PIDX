@@ -290,40 +290,46 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
 {
   int i;
   char file_name_skeleton[1024];
-
+  
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;
-
+  
   *file = malloc(sizeof (*(*file)) );
   memset(*file, 0, sizeof (*(*file)) );
-
+  
   (*file)->flags = flags;
-
+  
   (*file)->idx = (idx_dataset)malloc(sizeof (*((*file)->idx)));
   memset((*file)->idx, 0, sizeof (*((*file)->idx)));
-
+  
   (*file)->idx_c = malloc(sizeof (*((*file)->idx_c)));
   memset((*file)->idx_c, 0, sizeof (*((*file)->idx_c)));
-
+  
+  (*file)->idx_b = malloc(sizeof (*((*file)->idx_b)));
+  memset((*file)->idx_b, 0, sizeof (*((*file)->idx_b)));
+  
   (*file)->idx_dbg = malloc(sizeof (*((*file)->idx_dbg)));
   memset((*file)->idx_dbg, 0, sizeof (*((*file)->idx_dbg)));
-
+  
   (*file)->time = malloc(sizeof (*((*file)->time)));
   memset((*file)->time, 0, sizeof (*((*file)->time)));
-  (*file)->time->sim_start = 0; //PIDX_get_time();
-
+  (*file)->time->sim_start = 0;
+  
   (*file)->meta_data_cache = malloc(sizeof (*((*file)->meta_data_cache)));
   memset((*file)->meta_data_cache, 0, sizeof (*((*file)->meta_data_cache)));
-
+  
   (*file)->restructured_grid = malloc(sizeof(*(*file)->restructured_grid ));
   memset((*file)->restructured_grid , 0, sizeof(*(*file)->restructured_grid));
-
+  
+//  (*file)->idx_c->simulation_comm = access_type->comm;
+//  (*file)->idx_c->partition_comm = access_type->comm;
+  
   for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
     (*file)->idx->partition_count[i] = 1;
     (*file)->idx->partition_offset[i] = 0;
   }
-
+  
   (*file)->idx_dbg->debug_do_rst = 1;
   (*file)->idx_dbg->debug_do_chunk = 1;
   (*file)->idx_dbg->debug_do_compress = 1;
@@ -332,19 +338,20 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   (*file)->idx_dbg->debug_do_io = 1;
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
-
+  
   (*file)->idx_b->reduced_res_from = 0;
   (*file)->idx_b->reduced_res_to = 0;
-
+  
   (*file)->idx_c->color = 0;
-
+  
   (*file)->idx->io_type = PIDX_IDX_IO;
-
+  //(*file)->enable_raw_dump = 0;
+  
   (*file)->idx->current_time_step = 0;
   (*file)->idx->variable_count = -1;
   (*file)->idx_dbg->enable_agg = 1;
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
-
+  
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
   file_name_skeleton[strlen(filename) - 4] = '\0';
 
@@ -441,7 +448,6 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
 
   if ((*file)->idx->io_type != PIDX_RAW_IO)
     (*file)->idx->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
-
 
   for (var = 0; var < (*file)->idx->variable_count; var++)
     (*file)->idx->variable[var]->sim_patch_count = 0;
