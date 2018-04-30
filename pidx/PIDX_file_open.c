@@ -313,7 +313,7 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   
   (*file)->time = malloc(sizeof (*((*file)->time)));
   memset((*file)->time, 0, sizeof (*((*file)->time)));
-  (*file)->time->sim_start = PIDX_get_time();
+  (*file)->time->sim_start = 0;
   
   (*file)->meta_data_cache = malloc(sizeof (*((*file)->meta_data_cache)));
   memset((*file)->meta_data_cache, 0, sizeof (*((*file)->meta_data_cache)));
