@@ -359,7 +359,5 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
     }
   }
 
-  fclose(fp);
-
   return PIDX_success;
 }
