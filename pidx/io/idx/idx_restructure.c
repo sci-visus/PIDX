@@ -195,16 +195,21 @@ PIDX_return_code idx_restructure_io(PIDX_io file, int mode)
 
 PIDX_return_code idx_restructure_cleanup(PIDX_io file)
 {
-  int ret = 0;
   PIDX_time time = file->time;
 
   // Destroy buffers allocated during restructuring phase
   time->rst_cleanup_start[cvi] = PIDX_get_time();
-  ret = PIDX_idx_rst_aggregate_buf_destroy(file->idx_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  if (PIDX_idx_rst_aggregate_buf_destroy(file->idx_rst_id) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
-  ret = PIDX_idx_rst_meta_data_destroy(file->idx_rst_id);
-  if (ret != PIDX_success) {fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__); return PIDX_err_rst;}
+  if (PIDX_idx_rst_meta_data_destroy(file->idx_rst_id) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_rst;
+  }
 
   // Deleting the restructuring ID
   PIDX_idx_rst_finalize(file->idx_rst_id);

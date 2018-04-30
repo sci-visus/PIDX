@@ -41,14 +41,14 @@
 #include "../../../PIDX_inc.h"
 
 
+// function to log the status (complete or not) of each of the steps
+static void log_status(char* log_message, char* file_name, int line_number, MPI_Comm comm);
+
 /// local Partitioned IDX Write Steps
 PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
 {
 
-#if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[Local partition idx io 0] : var range %d %d\n", svi, evi);
-#endif
+  log_status("[Local partition idx io Step 0]: Entering\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
 
 
   // Step 1: Compute the restructuring box (grid) size
@@ -59,10 +59,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[Local partition idx io 1] : rst box size %lld %lld %lld\n", (unsigned long long)file->restructured_grid->patch_size[0], (unsigned long long)file->restructured_grid->patch_size[1], (unsigned long long)file->restructured_grid->patch_size[2]);
-#endif
+  log_status("[Local partition idx io 1] : Setting the restructuring box\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
 
 
   // Step 2: Setting the stage for restructuring (meta data)
@@ -71,10 +68,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[Local partition idx io 2] : Setting up the restructuring phase\n");
-#endif
+  log_status("[Local partition idx io 2] : Setting up the restructuring phase\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
 
 
   // Step 3: Perform data restructuring
@@ -85,10 +79,8 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[Local partition idx io 3] : Restructuring phase\n");
-#endif
+  log_status("[Local partition idx io 3] : Restructuring phase\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
+
 
 
   // Step 4: Group the processes holding the super patch into new communicator rst_comm
@@ -98,10 +90,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[Local partition idx io 4] : Creating restructuring communicator\n");
-#endif
+  log_status("[Local partition idx io 4] : Creating restructuring communicator\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
 
 
   // proceed only if a process holds a superpatch, others just wait at completion of io
@@ -116,10 +105,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"Error [File %s Line %d]: partition\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if DEBUG_OUTPUT
-    if (file->idx_c->simulation_rank == 0)
-      fprintf(stderr, "[Local partition idx io 5] : Creating partitions (count %d %d %d) (size %d %d %d) (offset %d %d %d)\n", (int)file->idx->partition_count[0], (int)file->idx->partition_count[1], (int)file->idx->partition_count[2], (int)file->idx->partition_size[0], (int)file->idx->partition_size[1], (int)file->idx->partition_size[2], (int)file->idx->partition_offset[0], (int)file->idx->partition_offset[1], (int)file->idx->partition_offset[2]);
-#endif
+    log_status("[Local partition idx io 5] : Creating partitions\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
     
 
     // Step 6: Populate the bit string of the global dataset
@@ -128,10 +114,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if DEBUG_OUTPUT
-    if (file->idx_c->simulation_rank == 0)
-      fprintf(stderr, "[Local partition idx io 6] : bounds %lld %lld %lld bitstring %s\n", (unsigned long long)file->idx->bounds[0], (unsigned long long)file->idx->bounds[1], (unsigned long long)file->idx->bounds[2], file->idx->bitSequence);
-#endif
+    log_status("[Local partition idx io 6] : Populating bit string\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
     // Step 7: write the global .idx file
@@ -140,10 +123,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if DEBUG_OUTPUT
-    if (file->idx_c->simulation_rank == 0)
-      fprintf(stderr, "[Local partition idx io 7] : Writing global idx file\n");
-#endif
+    log_status("[Local partition idx io 7] : Writing global idx file\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
     // Step 8: Adjust per process offsets and global bounds as per the partition
@@ -152,10 +132,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if DEBUG_OUTPUT
-    if (file->idx_c->simulation_rank == 0)
-      fprintf(stderr, "[Local partition idx io 8] : Adjusting the offset of boxes\n");
-#endif
+    log_status("[Local partition idx io 8] : Adjusting the offset of boxes\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
     // Step 9:  Populate block layout for the partitions (this is a local step, from now onwards the processes work within its partition only)
@@ -164,10 +141,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if DEBUG_OUTPUT
-    if (file->idx_c->simulation_rank == 0)
-      fprintf(stderr, "[Local partition idx io 9] : Populating blocks maxh %d max file count %d\n", file->idx->maxh, file->idx->max_file_count);
-#endif
+    log_status("[Local partition idx io 9] : Populating blocks\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
     // Iterate through the variables, variable_pipe_length at a point
@@ -185,10 +159,8 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 10]: Setting up hz phase %d %d\n", si, ei);
-#endif
+      log_status("[Local partition idx io 10]: Setting up hz phase\n", __FILE__, __LINE__, file->idx_c->partition_comm);
+
 
       // Step 11: Perform HZ encoding
       if (hz_encode(file, PIDX_WRITE) != PIDX_success)
@@ -196,10 +168,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 11]: Performing hz phase\n");
-#endif
+      log_status("[Local partition idx io 11]: Performing hz phase\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
       // Step 12: This is not performed by default, it only happens when aggregation is
@@ -209,10 +178,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 12]: Performing hz io\n");
-#endif
+      log_status("[Local partition idx io 12]: Performing hz io\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
       // Setup 13: Setup aggregation buffers
@@ -221,10 +187,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 13]: Setting up aggregation phase\n");
-#endif
+      log_status("[Local partition idx io 13]: Setting up aggregation phase\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
       // Setup 14: Performs data aggregation
@@ -233,10 +196,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 14]: Performing aggregation\n");
-#endif
+      log_status("[Local partition idx io 14]: Performing aggregation\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
       // Setup 15: Performs actual file io
@@ -245,10 +205,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 15]: Performing file io\n");
-#endif
+      log_status("[Local partition idx io 15]: Performing file io\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
       // Step 16: free aggregation buffers
@@ -257,10 +214,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 16]: Cleaning up aggregation phase\n");
-#endif
+      log_status("[Local partition idx io 16]: Cleaning up aggregation phase\n", __FILE__, __LINE__, file->idx_c->partition_comm);
 
 
       // Step 17: Cleanup HZ buffers
@@ -269,10 +223,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
-#if DEBUG_OUTPUT
-      if (file->idx_c->simulation_rank == 0)
-        fprintf(stderr, "[Local partition idx io 17]: Cleaning up hz phase\n");
-#endif
+      log_status("[Local partition idx io 17]: Cleaning up hz phase\n", __FILE__, __LINE__, file->idx_c->partition_comm);
     }
 
     // Step 18: free block layout and agg related buffer
@@ -281,10 +232,8 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if DEBUG_OUTPUT
-    if (file->idx_c->simulation_rank == 0)
-      fprintf(stderr, "[Local partition idx io 18]: Cleaning up block layout\n");
-#endif
+    log_status("[Local partition idx io 18]: Cleaning up block layout\n", __FILE__, __LINE__, file->idx_c->partition_comm);
+
 
     // Step 19: free partitioning buffer
     if (partition_cleanup(file) != PIDX_success)
@@ -292,10 +241,7 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if DEBUG_OUTPUT
-    if (file->idx_c->simulation_rank == 0)
-      fprintf(stderr, "[Local partition idx io 18]: Cleaning up partition\n");
-#endif
+    log_status("[Local partition idx io 19]: Cleaning up partition\n", __FILE__, __LINE__, file->idx_c->rst_comm);
   }
 
   // Step 20: free the restructured communicator
@@ -304,10 +250,8 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[Local partition idx io 18]: Freeing up restructuring communicators\n");
-#endif
+  log_status("[Local partition idx io 20]: Freeing up restructuring communicators\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
+
 
   // Step 21: Restructuring cleanup
   if (idx_restructure_cleanup(file) != PIDX_success)
@@ -315,11 +259,9 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#if DEBUG_OUTPUT
-  if (file->idx_c->simulation_rank == 0)
-    fprintf(stderr, "[Local partition idx io 18]: Cleaning restructuring phase\n");
-#endif
+  log_status("[Local partition idx io 21]: Cleaning restructuring phase\n", __FILE__, __LINE__, file->idx_c->simulation_comm);
 
+  //fprintf(stderr, "here %d\n", file->idx_c->simulation_rank);
 
   return PIDX_success;
 }
@@ -490,4 +432,17 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int svi, int evi)
 
 
 
+static void log_status(char* log_message, char* file_name, int line_number, MPI_Comm comm)
+{
+  MPI_Barrier(comm);
 
+  int rank;
+  int size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
+  if (rank == 0)
+    fprintf(stderr, "[%d] [%s] [%d] Log message: %s", size, file_name, line_number, log_message);
+
+  return;
+}

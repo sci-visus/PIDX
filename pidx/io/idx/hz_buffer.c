@@ -116,7 +116,7 @@ PIDX_return_code hz_io(PIDX_io file, int mode)
 {
   if (file->idx_dbg->debug_do_io == 1)
   {
-    for (uint32_t j = file->idx_b->agg_level; j < file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count; j++)
+    for (int j = file->idx_b->agg_level; j < file->idx_b->file0_agg_group_count + file->idx_b->nfile0_agg_group_count; j++)
     {
       file->time->hz_io_start[cvi][j] = MPI_Wtime();
       if (PIDX_file_io_per_process(file->hz_id, file->idx_b->block_layout_by_agg_group[j], mode) != PIDX_success)
@@ -374,7 +374,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
   }
   time->compression_end[cvi] = PIDX_get_time();
 
-#if 1
+
   time->chunk_start[cvi] = PIDX_get_time();
   // Perform Chunking
   if (file->idx_dbg->debug_do_chunk == 1)
@@ -398,7 +398,7 @@ static PIDX_return_code encode_and_uncompress(PIDX_io file)
     return PIDX_err_chunk;
   }
   time->chunk_buffer_free_end[cvi] = PIDX_get_time();
-#endif
+
   return PIDX_success;
 }
 

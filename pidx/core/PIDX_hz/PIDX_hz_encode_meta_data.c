@@ -148,8 +148,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
     }
     free(allign_offset);
     free(allign_count);
-
-
   }
 
   free(tpatch[0]);
@@ -172,15 +170,14 @@ PIDX_return_code PIDX_hz_encode_meta_data_destroy(PIDX_hz_encode_id id)
   if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
-  int itr = 0, v = 0;
-  for (v = id->first_index; v <= id->last_index; v++)
+  for (uint32_t v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = id->idx->variable[v];
 
     free(var->hz_buffer->start_hz_index);
     free(var->hz_buffer->end_hz_index);
 
-    for (itr = 0; itr < id->idx->maxh; itr++)
+    for (int itr = 0; itr < id->idx->maxh; itr++)
       free(var->hz_buffer->nsamples_per_level[itr]);
     free(var->hz_buffer->nsamples_per_level);
 
