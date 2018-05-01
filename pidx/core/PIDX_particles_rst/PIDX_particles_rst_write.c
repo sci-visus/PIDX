@@ -132,29 +132,44 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         const uint64_t bytes_per_pos_v0 = var0->vps * var0->bpv/ CHAR_BIT;
         const int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
 
-        // TODO WILL: I'm pretty sure this is leaked for all but the last run of the loops
         buffer = malloc(sizeof(*buffer) * (end_index - start_index + 1));
         memset(buffer, 0, sizeof(*buffer) * (end_index - start_index + 1));
 
         const size_t particles_to_send = rst_id->intersected_restructured_super_patch[i]->patch[j]->particle_count;
-        // TODO WILL: Shift this variable loop inside the particle loop, we only need to check
-        // once per-particle not per-var.
+
+        // Allocate buffers for each var to hold the data we're sending
         for (int v = start_index; v <= end_index; v++)
         {
           PIDX_variable var = rst_id->idx_metadata->variable[v];
-          const uint64_t bytes_per_pos = var->vps * var->bpv/ CHAR_BIT;
-          buffer[v] = malloc(particles_to_send * bytes_per_pos);
-          uint32_t pcount = 0;
-          for (uint64_t p = 0; p < var0->sim_patch[p_index]->particle_count; ++p)
+          const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+          buffer[v] = malloc(particles_to_send * bytes_per_var);
+        }
+
+        // Populate each variable buffer we're going to send
+        uint32_t pcount = 0;
+        for (uint64_t p = 0; p < var0->sim_patch[p_index]->particle_count; ++p)
+        {
+          if (pointInChunk(reg_patch, (double*)(var0->sim_patch[p_index]->buffer + p * bytes_per_pos_v0)))
           {
-            if (pointInChunk(reg_patch, (double*)(var0->sim_patch[p_index]->buffer + p * bytes_per_pos_v0)))
+            for (int v = start_index; v <= end_index; v++)
             {
-              memcpy(buffer[v] + pcount * bytes_per_pos, var->sim_patch[p_index]->buffer + p * bytes_per_pos, bytes_per_pos);
-              pcount++;
+              PIDX_variable var = rst_id->idx_metadata->variable[v];
+              const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+              memcpy(buffer[v] + pcount * bytes_per_var,
+                  var->sim_patch[p_index]->buffer + p * bytes_per_var, bytes_per_var);
             }
+            pcount++;
           }
-          assert(pcount == particles_to_send);
-          const int ret = MPI_Isend(buffer[v], particles_to_send * bytes_per_pos, MPI_BYTE,
+        }
+
+        // Send the populated buffers over to the owner of this restructured patch
+        assert(pcount == particles_to_send);
+        for (int v = start_index; v <= end_index; v++)
+        {
+          PIDX_variable var = rst_id->idx_metadata->variable[v];
+          const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+
+          const int ret = MPI_Isend(buffer[v], particles_to_send * bytes_per_var, MPI_BYTE,
               rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
               rst_id->idx_c->simulation_comm, &req[req_counter]);
           if (ret != MPI_SUCCESS)
