@@ -214,6 +214,8 @@ PIDX_return_code idx_restructure_cleanup(PIDX_io file)
   // Deleting the restructuring ID
   PIDX_idx_rst_finalize(file->idx_rst_id);
   free_idx_rst_box(file);
+
+
   time->rst_cleanup_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
