@@ -57,8 +57,6 @@ struct PIDX_agg_struct
 {
   MPI_Win win;
 
-  MPI_Win shard_block_win;
-
   idx_comm idx_c;
 
   idx_dataset idx;

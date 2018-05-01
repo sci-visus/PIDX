@@ -40,7 +40,7 @@
  */
 #include "../../PIDX_inc.h"
 
-static void log_status(char* log_message, int step, int line_number, MPI_Comm comm);
+
 
 PIDX_return_code aggregation_setup(PIDX_io file, int svi, int evi)
 {
@@ -115,9 +115,6 @@ PIDX_return_code aggregation(PIDX_io file, int svi, int mode )
       }
       time->agg_end[svi][j] = PIDX_get_time();
     }
-    char log_message[1024];
-    sprintf(log_message, "[Aggregation] Done for agg group %d\n", j);
-    log_status(log_message, file->idx_c->color,  __LINE__, file->idx_c->partition_comm);
 
     time->agg_meta_cleanup_start[svi][j] = PIDX_get_time();
     if (PIDX_agg_meta_data_destroy(file->agg_id[svi][j], file->idx_b->block_layout_by_agg_group[j]) != PIDX_success)
@@ -126,9 +123,6 @@ PIDX_return_code aggregation(PIDX_io file, int svi, int mode )
       return PIDX_err_agg;
     }
     time->agg_meta_cleanup_end[svi][j] = PIDX_get_time();
-
-    sprintf(log_message, "[Aggregation] meta data cleanup for agg group %d\n", j);
-    log_status(log_message, file->idx_c->color,  __LINE__, file->idx_c->partition_comm);
   }
 
   return PIDX_success;
@@ -155,17 +149,3 @@ PIDX_return_code aggregation_cleanup(PIDX_io file, int start_index)
 }
 
 
-static void log_status(char* log_message, int step, int line_number, MPI_Comm comm)
-{
-  int rank;
-  int size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
-
-  MPI_Barrier(comm);
-
-  if (rank == 0)
-    fprintf(stderr, "[nprocs %d] R%d Color %d [%d] Log message: %s", size, rank, step, line_number, log_message);
-
-  return;
-}
