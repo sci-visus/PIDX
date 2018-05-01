@@ -325,7 +325,6 @@ static PIDX_return_code read_block(PIDX_io file, int vi, int p, int block_number
   }
   
   char *directory_path;
-  char *data_set_path;
 
   directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
@@ -402,6 +401,7 @@ static PIDX_return_code read_block(PIDX_io file, int vi, int p, int block_number
   // free buffers
   free(headers);
   free(block_buffer);
+  free (directory_path);
 
   return PIDX_success;
 }
