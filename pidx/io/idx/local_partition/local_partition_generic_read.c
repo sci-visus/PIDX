@@ -330,7 +330,7 @@ static PIDX_return_code read_block(PIDX_io file, int vi, int p, int block_number
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
 
   char *lastdir = strrchr(file->idx->filename, '/');
-  if (lastdir != NULL) {
+  if (lastdir != NULL && file_name[0] == '.') { // if using relative paths use absolute path
     strncpy(directory_path, file->idx->filename, lastdir - file->idx->filename + 1);
   }
   else
@@ -401,7 +401,7 @@ static PIDX_return_code read_block(PIDX_io file, int vi, int p, int block_number
   // free buffers
   free(headers);
   free(block_buffer);
-  free (directory_path);
+  free(directory_path);
 
   return PIDX_success;
 }
