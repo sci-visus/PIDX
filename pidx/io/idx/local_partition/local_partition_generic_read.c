@@ -323,11 +323,27 @@ static PIDX_return_code read_block(PIDX_io file, int vi, int p, int block_number
     fprintf(stderr, "[%s] [%d] generate_file_name() failed.\n", __FILE__, __LINE__);
     return PIDX_err_io;
   }
+  
+  char *directory_path;
+  char *data_set_path;
+
+  directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
+  memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
+
+  char *lastdir = strrchr(file->idx->filename, '/');
+  if (lastdir != NULL) {
+    strncpy(directory_path, file->idx->filename, lastdir - file->idx->filename + 1);
+  }
+  else
+    strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4); 
+
+  char full_path_file_name[PATH_MAX];
+  sprintf(full_path_file_name, "%s/%s", directory_path,file_name);
 
   // open the binary file
-  if (MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fp) != MPI_SUCCESS)
+  if (MPI_File_open(MPI_COMM_SELF, full_path_file_name, MPI_MODE_RDONLY, MPI_INFO_NULL, &fp) != MPI_SUCCESS)
   {
-    fprintf(stderr, "[%s] [%d] MPI_File_open() block number %d file number %d filename %s failed.\n", __FILE__, __LINE__, block_number, file_number, file_name);
+    fprintf(stderr, "[%s] [%d] MPI_File_open() block number %d file number %d filename %s failed.\n", __FILE__, __LINE__, block_number, file_number, full_path_file_name);
     return PIDX_err_io;
   }
 
