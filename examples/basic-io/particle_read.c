@@ -97,7 +97,7 @@ static unsigned long long logical_local_box_offset[3];
 static unsigned long long logical_global_box_size[3] = {0, 0, 0};
 static unsigned long long logical_local_box_size[3] = {0, 0, 0};
 
-static double physical_global_box_size[NUM_DIMS] = {1.0, 1.0, 1.0};
+static double physical_global_box_size[NUM_DIMS] = {0};
 static double physical_local_box_offset[NUM_DIMS] = {0};
 static double physical_local_box_size[NUM_DIMS] = {0};
 
@@ -380,6 +380,10 @@ static void calculate_per_process_offsets()
   int slice = rank % (sub_div[X] * sub_div[Y]);
   logical_local_box_offset[Y] = (slice / sub_div[X]) * logical_local_box_size[Y];
   logical_local_box_offset[X] = (slice % sub_div[X]) * logical_local_box_size[X];
+
+  physical_global_box_size[X] = logical_global_box_size[X];
+  physical_global_box_size[Y] = logical_global_box_size[Y];
+  physical_global_box_size[Z] = logical_global_box_size[Z];
 
   physical_local_box_size[X] = ((double)logical_local_box_size[X] / logical_global_box_size[X]) * physical_global_box_size[X];
   physical_local_box_size[Y] = ((double)logical_local_box_size[Y] / logical_global_box_size[Y]) * physical_global_box_size[Y];
