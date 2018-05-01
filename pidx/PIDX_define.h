@@ -63,7 +63,7 @@ extern "C" {
 
 #define DETAIL_OUTPUT 0
 
-#define DEBUG_OUTPUT 0
+#define DEBUG_OUTPUT 1
 
 #ifndef __cplusplus
 #  define _XOPEN_SOURCE 600

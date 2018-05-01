@@ -439,7 +439,6 @@ static void log_status(char* log_message, int step, int line_number, MPI_Comm co
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
 
-
   MPI_Barrier(comm);
 
   if (rank == 0)

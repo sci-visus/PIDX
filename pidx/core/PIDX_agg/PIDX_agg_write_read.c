@@ -40,8 +40,9 @@
  */
 #include "../../PIDX_inc.h"
 
-#define PIDX_ACTIVE_TARGET 1
+//#define PIDX_ACTIVE_TARGET 1
 
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm);
 static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode);
 static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, int buffer_offset, Agg_buffer ab, PIDX_block_layout lbl, int MODE, int layout_id);
@@ -53,6 +54,9 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+  char log_message[1024];
+  sprintf(log_message, "[AGG Phase] Creat window for layout %d\n", layout_id);
+  log_status(log_message, id->idx_c->color,  __LINE__, id->idx_c->partition_comm);
 
 #ifdef PIDX_ACTIVE_TARGET
   if (MPI_Win_fence(0, id->win) != MPI_SUCCESS)
@@ -67,6 +71,8 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+  sprintf(log_message, "[AGG Phase] One sided call for for layout %d\n", layout_id);
+  log_status(log_message, id->idx_c->color,  __LINE__, id->idx_c->partition_comm);
 
 #ifdef PIDX_ACTIVE_TARGET
   if (MPI_Win_fence(0, id->win) != MPI_SUCCESS)
@@ -80,6 +86,8 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_agg;
   }
+  sprintf(log_message, "[AGG Phase] Comm free for layout %d\n", layout_id);
+  log_status(log_message, id->idx_c->color,  __LINE__, id->idx_c->partition_comm);
 
   return PIDX_success;
 }
@@ -503,4 +511,20 @@ static PIDX_return_code aggregate(PIDX_agg_id id, int variable_index, uint64_t h
   }
 
   return PIDX_success;
+}
+
+
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm)
+{
+  int rank;
+  int size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
+  MPI_Barrier(comm);
+
+  if (rank == 0)
+    fprintf(stderr, "[nprocs %d] R%d Color %d [%d] Log message: %s", size, rank, step, line_number, log_message);
+
+  return;
 }
