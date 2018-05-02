@@ -434,6 +434,7 @@ PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int svi, int evi)
 
 static void log_status(char* log_message, int step, int line_number, MPI_Comm comm)
 {
+/*
   int rank;
   int size;
   MPI_Comm_rank(comm, &rank);
@@ -443,6 +444,6 @@ static void log_status(char* log_message, int step, int line_number, MPI_Comm co
 
   if (rank == 0)
     fprintf(stderr, "[nprocs %d] R%d S%d [%d] Log message: %s", size, rank, step, line_number, log_message);
-
+*/
   return;
 }

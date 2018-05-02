@@ -111,14 +111,14 @@ PIDX_return_code adjust_offsets(PIDX_io file, int svi, int evi)
   // Adjusting the size of the bounding box (query), making it equal to the partition size
   for (uint32_t i = 0; i < PIDX_MAX_DIMENSIONS; i++)
   {
-    if (file->idx->partition_offset[i] + file->idx->partition_size[i] <= file->idx->box_bounds[i])
+    //if (file->idx->partition_offset[i] + file->idx->partition_size[i] <= file->idx->box_bounds[i])
       file->idx->box_bounds[i] = file->idx->partition_size[i];
-    else
-      file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx->partition_offset[i];
+    //else
+    //  file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx->partition_offset[i];
 
     // Edge case when after partitioning the edge partitions have super patch size greater that the entire partition
-    if (file->restructured_grid->patch_size[i] > file->idx->box_bounds[i])
-      file->restructured_grid->patch_size[i] = getPowerOf2(file->idx->box_bounds[i]);
+    //if (file->restructured_grid->patch_size[i] > file->idx->box_bounds[i])
+    //  file->restructured_grid->patch_size[i] = getPowerOf2(file->idx->box_bounds[i]);
   }
 
   // Also adjusting the size of entire bounding box
