@@ -56,25 +56,18 @@ static int pointInChunk(PIDX_patch p, const double *pos);
 
 PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 {
-  unsigned char ** buffer;
   uint64_t req_count = 0;
-  uint64_t req_counter = 0;
-  int ret = 0;
 
-  MPI_Request *req;
-  MPI_Status *status;
-
-  //creating ample requests and statuses
+  // creating ample requests and statuses
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
       req_count++;
 
-  int end_index = rst_id->idx_metadata->variable_count - 1;
-  int start_index = 0;
-  req_counter = 0;
+  const int end_index = rst_id->idx_metadata->variable_count - 1;
+  const int start_index = 0;
+  unsigned char **buffer = malloc(sizeof(*buffer) * (end_index - start_index + 1));
 
-
-  req = malloc(sizeof (*req) * req_count * 2 * (end_index - start_index + 1));
+  MPI_Request *req = malloc(sizeof (*req) * req_count * 2 * (end_index - start_index + 1));
   if (!req)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -82,7 +75,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
   }
   memset(req, 0, sizeof (*req) * req_count * 2 * (end_index - start_index + 1));
 
-  status = malloc(sizeof (*status) * req_count * 2 * (end_index - start_index + 1));
+  MPI_Status *status = malloc(sizeof (*status) * req_count * 2 * (end_index - start_index + 1));
   if (!status)
   {
     fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -92,6 +85,10 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
+    uint64_t req_counter = 0;
+    memset(buffer, 0, sizeof(*buffer) * (end_index - start_index + 1));
+
+    // If we're the receiver of this restructured patch, queue up recvs for everyone sending us data
     if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
     {
       for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
@@ -99,10 +96,14 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         for (uint64_t v = start_index; v <= end_index; v++)
         {
           PIDX_variable var = rst_id->idx_metadata->variable[v];
-          int length = (var->restructured_super_patch->patch[j]->particle_count) * var->vps * var->bpv/ CHAR_BIT;
+          // TODO WILL: How is the length computed? How does the receiver of the restructured patch know
+          // the number of particles they're getting?
+          const int length = (var->restructured_super_patch->patch[j]->particle_count) * var->vps * var->bpv/ CHAR_BIT;
 
           //printf("Receiving %d from %d\n", length, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank);
-          ret = MPI_Irecv(var->restructured_super_patch->patch[j]->buffer, length, MPI_BYTE, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank, 123, rst_id->idx_c->simulation_comm, &req[req_counter]);
+          const int ret = MPI_Irecv(var->restructured_super_patch->patch[j]->buffer, length, MPI_BYTE,
+              rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank, 123,
+              rst_id->idx_c->simulation_comm, &req[req_counter]);
           if (ret != MPI_SUCCESS)
           {
             fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -113,6 +114,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
       }
     }
 
+    // If we're a sender for any patches in this restructured patch, send the data to the owner
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
     {
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
@@ -125,68 +127,93 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           reg_patch->physical_size[d] = rst_id->intersected_restructured_super_patch[i]->restructured_patch->physical_size[d];
         }
 
-        int counter = 0;
         PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
         const uint64_t bytes_per_pos_v0 = var0->vps * var0->bpv/ CHAR_BIT;
-        int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
-        for (uint64_t p = 0; p < var0->sim_patch[p_index]->particle_count; ++p)
-        {
-          if (pointInChunk(reg_patch, (double*)(var0->sim_patch[p_index]->buffer + p * bytes_per_pos_v0)))
-            counter++;
-        }
+        const int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
+        const size_t particles_to_send = rst_id->intersected_restructured_super_patch[i]->patch[j]->particle_count;
 
-        buffer = malloc(sizeof(*buffer) * (end_index - start_index + 1));
-        memset(buffer, 0, sizeof(*buffer) * (end_index - start_index + 1));
-        for (int v = start_index; v <= end_index; v++)
+#if 0
+        // Optional: Do a validation check that we're writing the right number of particles
         {
-          PIDX_variable var = rst_id->idx_metadata->variable[v];
-          const uint64_t bytes_per_pos = var->vps * var->bpv/ CHAR_BIT;
-          buffer[v] = malloc(counter * bytes_per_pos);
-          uint32_t pcount = 0;
+          int counter = 0;
           for (uint64_t p = 0; p < var0->sim_patch[p_index]->particle_count; ++p)
           {
             if (pointInChunk(reg_patch, (double*)(var0->sim_patch[p_index]->buffer + p * bytes_per_pos_v0)))
-            {
-              memcpy(buffer[v] + pcount * bytes_per_pos, var->sim_patch[p_index]->buffer + p * bytes_per_pos, bytes_per_pos);
-              pcount++;
-            }
+              counter++;
           }
-          assert(pcount == counter);
-          if (MPI_Isend(buffer[v], counter * bytes_per_pos, MPI_BYTE, rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123, rst_id->idx_c->simulation_comm, &req[req_counter]) != MPI_SUCCESS)
+          assert(counter == particles_to_send);
+        }
+#endif
+
+        // Allocate buffers for each var to hold the data we're sending
+        for (int v = start_index; v <= end_index; v++)
+        {
+          PIDX_variable var = rst_id->idx_metadata->variable[v];
+          const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+          buffer[v] = malloc(particles_to_send * bytes_per_var);
+        }
+
+        // Populate each variable buffer we're going to send
+        uint32_t pcount = 0;
+        for (uint64_t p = 0; p < var0->sim_patch[p_index]->particle_count; ++p)
+        {
+          if (pointInChunk(reg_patch, (double*)(var0->sim_patch[p_index]->buffer + p * bytes_per_pos_v0)))
+          {
+            for (int v = start_index; v <= end_index; v++)
+            {
+              PIDX_variable var = rst_id->idx_metadata->variable[v];
+              const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+              memcpy(buffer[v] + pcount * bytes_per_var,
+                  var->sim_patch[p_index]->buffer + p * bytes_per_var, bytes_per_var);
+            }
+            pcount++;
+          }
+        }
+
+        // Send the populated buffers over to the owner of this restructured patch
+        assert(pcount == particles_to_send);
+        for (int v = start_index; v <= end_index; v++)
+        {
+          PIDX_variable var = rst_id->idx_metadata->variable[v];
+          const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+
+          const int ret = MPI_Isend(buffer[v], particles_to_send * bytes_per_var, MPI_BYTE,
+              rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
+              rst_id->idx_c->simulation_comm, &req[req_counter]);
+          if (ret != MPI_SUCCESS)
           {
             fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
             return PIDX_err_mpi;
           }
           req_counter++;
         }
+        free(reg_patch);
       }
     }
-  }
 
-  if (MPI_Waitall(req_counter, req, status) != MPI_SUCCESS)
-  {
-    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
-    return (-1);
-  }
+    // Wait for the pending sends/recvs for this restructured patch to complete
+    if (MPI_Waitall(req_counter, req, status) != MPI_SUCCESS)
+    {
+      fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
+      return (-1);
+    }
 
-  for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
-  {
+    // Clean up the particle variable buffers
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
     {
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
       {
         for (int v = start_index; v <= end_index; v++)
+        {
           free(buffer[v]);
-        free(buffer);
+        }
       }
     }
   }
 
+  free(buffer);
   free(req);
-  req = 0;
   free(status);
-  status = 0;
-  req_counter = 0;
 
   return PIDX_success;
 }

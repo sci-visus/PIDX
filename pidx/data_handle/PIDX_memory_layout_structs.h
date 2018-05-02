@@ -92,7 +92,6 @@ struct PIDX_patch_struct
   // TODO WILL: The particles needing to modify inputs and buffer sizes
   // which were previously thought to be fixed makes this struct really now
   // a dual-mode pain to deal with. Do something better.
-  // TODO WILL: These should be uint64_t
   uint64_t particle_count;
   uint64_t *read_particle_count;
   // TODO WILL: Do we want some other way of differentiating the particle/grid patches?

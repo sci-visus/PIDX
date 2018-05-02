@@ -100,7 +100,7 @@ static unsigned long long logical_global_box_size[NUM_DIMS];
 static unsigned long long logical_local_box_offset[NUM_DIMS];
 static unsigned long long logical_local_box_size[NUM_DIMS];
 
-static double physical_global_box_size[NUM_DIMS] = {1.0, 1.0, 1.0};
+static double physical_global_box_size[NUM_DIMS];
 static double physical_local_box_offset[NUM_DIMS];
 static double physical_local_box_size[NUM_DIMS];
 
@@ -335,6 +335,10 @@ static void calculate_per_process_offsets()
   logical_local_box_offset[Y] = (slice / sub_div[X]) * logical_local_box_size[Y];
   logical_local_box_offset[X] = (slice % sub_div[X]) * logical_local_box_size[X];
 
+  physical_global_box_size[X] = logical_global_box_size[X];
+  physical_global_box_size[Y] = logical_global_box_size[Y];
+  physical_global_box_size[Z] = logical_global_box_size[Z];
+
   physical_local_box_size[X] = physical_global_box_size[X] / sub_div[X];
   physical_local_box_size[Y] = physical_global_box_size[Y] / sub_div[Y];
   physical_local_box_size[Z] = physical_global_box_size[Z] / sub_div[Z];
@@ -343,10 +347,15 @@ static void calculate_per_process_offsets()
   physical_local_box_offset[Y] = (slice / sub_div[X]) * physical_local_box_size[Y];
   physical_local_box_offset[X] = (slice % sub_div[X]) * physical_local_box_size[X];
 
-  //printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f]\n", rank,
-  //       logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z], physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z],
-  //       logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z], logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z],
-  //       physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z], physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z]);
+  /*
+  printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f]\n", rank,
+         logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z],
+         physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z],
+         logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z],
+         logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z],
+         physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z],
+         physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z]);
+   */
 }
 
 //----------------------------------------------------------------
