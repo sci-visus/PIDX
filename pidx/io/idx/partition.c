@@ -576,7 +576,7 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
       return -1;
     }
 
-    fprintf(midx_file, "<dataset typename='IdxMultipleDataset'>\n");
+    fprintf(midx_file, "<dataset typename='IdxMultipleDataset' mosaic='true'>\n");
     for (uint32_t i = 0; i < num_parts; i++)
     {
       uint64_t curr_off = i*PIDX_MAX_DIMENSIONS;
