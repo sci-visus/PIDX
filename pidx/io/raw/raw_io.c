@@ -82,7 +82,6 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int svi, int evi)
     return PIDX_err_file;
   }
 
-  file->idx->variable_pipe_length = file->idx->variable_count;
   for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
     ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
