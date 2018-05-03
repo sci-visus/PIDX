@@ -253,6 +253,7 @@ PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id)
     }
   }
 
+#if 0
   char rank_filename[PATH_MAX];
   sprintf(rank_filename, "%s_b_%d", rst_id->idx_metadata->filename, rst_id->idx_c->simulation_rank);
   FILE *fp = fopen(rank_filename, "w");
@@ -293,6 +294,7 @@ PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id)
     fprintf(fp, "%f %f %f %f %f %f %d\n", px, py, pz, d1, d2, d3, i1);
   }
   fclose(fp);
+#endif
 
 
   return PIDX_success;
