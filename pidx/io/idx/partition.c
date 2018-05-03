@@ -579,7 +579,7 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
     fprintf(midx_file, "<dataset typename='IdxMultipleDataset' mosaic='true'>\n");
     for (uint32_t i = 0; i < num_parts; i++)
     {
-      if(strcmp(file_name_skeleton,"") == 0) // skipe empty partitions
+      if(strcmp(file_name_skeleton,"") == 0) // skip empty partitions
         continue;
       
       uint64_t curr_off = i*PIDX_MAX_DIMENSIONS;

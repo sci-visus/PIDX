@@ -42,10 +42,10 @@ uint stream_read_bit(bitstream* stream);
 uint stream_write_bit(bitstream* stream, uint bit);
 
 /* read 0 <= n <= 64 bits */
-uint64 stream_read_bits(bitstream* stream, uint n);
+zfp_uint64 stream_read_bits(bitstream* stream, uint n);
 
 /* write 0 <= n <= 64 low bits of value and return remaining bits */
-uint64 stream_write_bits(bitstream* stream, uint64 value, uint n);
+zfp_uint64 stream_write_bits(bitstream* stream, zfp_uint64 value, uint n);
 
 /* return bit offset to next bit to be read */
 size_t stream_rtell(const bitstream* stream);
