@@ -128,14 +128,14 @@ _t1(encode_ints, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec, 
   uint kmin = intprec > maxprec ? intprec - maxprec : 0;
   uint bits = maxbits;
   uint i, k, m, n;
-  uint64 x;
+  zfp_uint64 x;
 
   /* encode one bit plane at a time from MSB to LSB */
   for (k = intprec, n = 0; bits && k-- > kmin;) {
     /* step 1: extract bit plane #k to x */
     x = 0;
     for (i = 0; i < size; i++)
-      x += (uint64)((data[i] >> k) & 1u) << i;
+      x += (zfp_uint64)((data[i] >> k) & 1u) << i;
     /* step 2: encode first n bits of bit plane */
     m = MIN(n, bits);
     bits -= m;
@@ -160,14 +160,14 @@ _t1(encode_ints2, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec,
   uint kmin = intprec > maxprec ? intprec - maxprec : 0;
   uint bits = maxbits;
   uint i, k, m, n;
-  uint64 x;
+  zfp_uint64 x;
 
   /* encode one bit plane at a time from MSB to LSB */
   for (k = intprec, n = 0; bits && k-- > kmin;) {
     /* step 1: extract bit plane #k to x */
     x = 0;
     for (i = 1; i < size; i++)
-      x += (uint64)((data[i] >> k) & 1u) << (i-1);
+      x += (zfp_uint64)((data[i] >> k) & 1u) << (i-1);
     /* step 2: encode first n bits of bit plane */
     m = MIN(n, bits);
     bits -= m;
