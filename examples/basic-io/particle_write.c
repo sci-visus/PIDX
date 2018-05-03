@@ -201,7 +201,7 @@ int main(int argc, char **argv)
     // of the variables that we just set
     PIDX_close(file);
 
-    simulate_particle_motion();
+    //simulate_particle_motion();
   }
 
   // Clean up our mess
