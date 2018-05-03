@@ -90,6 +90,8 @@
   #include "utils/PIDX_windows_utils.h"
 #endif
 
+#include <math.h>
+
 #define TYPE_COUNT 5
 #define COLOR_COUNT 2
 #define MAX_VAR_COUNT 256
@@ -138,6 +140,11 @@ static int generate_vars();
 static void check_args();
 static void calculate_per_process_offsets();
 static void create_synthetic_simulation_data();
+// WILL: Sort of a hack, shuffle the particles around within the process
+// with some random velocities. To simulate a real simulation they should
+// be sent to other ranks when they cross boundaries. In this code I just
+// clamp them within the local bounds
+static void simulate_particle_motion();
 static void terminate_with_error_msg(const char *format, ...);
 static void terminate();
 static void set_pidx_file(int ts);
@@ -193,6 +200,8 @@ int main(int argc, char **argv)
     // PIDX_close triggers the actual write on the disk
     // of the variables that we just set
     PIDX_close(file);
+
+    simulate_particle_motion();
   }
 
   // Clean up our mess
@@ -468,6 +477,33 @@ static void create_synthetic_simulation_data()
 
 }
 
+
+//----------------------------------------------------------------
+static void simulate_particle_motion()
+{
+  const float travel_size = 0.01 * fmax(fmax(physical_local_box_size[0], physical_local_box_size[1]),
+      physical_local_box_size[2]);
+
+  for (size_t k = 0; k < particle_count; k++)
+  {
+    double pos[3];
+    memcpy(pos, data[0] + k * 3 * sizeof(double), 3 * sizeof(double));
+    for (size_t i = 0; i < 3; ++i)
+    {
+      const float v = ((2.f * (rand() / (float)RAND_MAX)) - 1.f) * travel_size;
+      pos[i] += v;
+      // Keep the particle in the box for now, so we don't need to do any communication
+      // TODO: A real simulation of a simulation should send them on to other ranks
+      if (pos[i] >= physical_local_box_offset[i] + physical_local_box_size[i]) {
+        pos[i] = physical_local_box_offset[i] + physical_local_box_size[i] - 0.001;
+      } else if (pos[i] <= physical_local_box_offset[i]) {
+        pos[i] = physical_local_box_offset[i] + 0.001;
+      }
+    }
+    memcpy(data[0] + k * 3 * sizeof(double), pos, 3 * sizeof(double));
+  }
+}
+
 //----------------------------------------------------------------
 static void terminate()
 {
@@ -522,8 +558,7 @@ static void set_pidx_file(int ts)
   PIDX_set_physical_dims(file, physical_global_size);
 
   // Set the current timestep
-  // WILL: Always set it to 0, to reduce disk consumption
-  PIDX_set_current_time_step(file, 0);
+  PIDX_set_current_time_step(file, ts);
   // Set the number of variables
   PIDX_set_variable_count(file, variable_count);
 
