@@ -579,6 +579,9 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
     fprintf(midx_file, "<dataset typename='IdxMultipleDataset' mosaic='true'>\n");
     for (uint32_t i = 0; i < num_parts; i++)
     {
+      if(strcmp(file_name_skeleton,"") == 0) // skipe empty partitions
+        continue;
+      
       uint64_t curr_off = i*PIDX_MAX_DIMENSIONS;
       fprintf(midx_file, "\t<dataset url=\"file://$(CurrentFileDirectory)/%s\" name=\"%s_%d\" offset=\"%d %d %d\"/>\n",
               partition_filenames+(PIDX_STRING_SIZE*i), file_name_skeleton, i, offsets[curr_off+0],offsets[curr_off+1], offsets[curr_off+2]);
