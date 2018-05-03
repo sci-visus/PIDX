@@ -113,7 +113,7 @@ The following assumptions and restrictions apply:
   typedef BIT_STREAM_WORD_TYPE word;
 #else
   /* use maximum word size by default for highest speed */
-  typedef uint64 word;
+  typedef zfp_uint64 word;
 #endif
 
 /* number of bits in a buffered word */
@@ -220,16 +220,16 @@ stream_write_bit(bitstream* s, uint bit)
 }
 
 /* read 0 <= n <= 64 bits */
-_inline uint64
+_inline zfp_uint64
 stream_read_bits(bitstream* s, uint n)
 {
-  uint64 value = s->buffer;
+  zfp_uint64 value = s->buffer;
   if (s->bits < n) {
     /* keep fetching wsize bits until enough bits are buffered */
     do {
       /* assert: 0 <= s->bits < n <= 64 */
       s->buffer = stream_read_word(s);
-      value += (uint64)s->buffer << s->bits;
+      value += (zfp_uint64)s->buffer << s->bits;
       s->bits += wsize;
     } while (sizeof(s->buffer) < sizeof(value) && s->bits < n);
     /* assert: 1 <= n <= s->bits < n + wsize */
@@ -242,21 +242,21 @@ stream_read_bits(bitstream* s, uint n)
       /* assert: 1 <= s->bits < wsize */
       s->buffer >>= wsize - s->bits;
       /* assert: 1 <= n <= 64 */
-      value &= ((uint64)2 << (n - 1)) - 1;
+      value &= ((zfp_uint64)2 << (n - 1)) - 1;
     }
   }
   else {
     /* assert: 0 <= n <= s->bits < wsize <= 64 */
     s->bits -= n;
     s->buffer >>= n;
-    value &= ((uint64)1 << n) - 1;
+    value &= ((zfp_uint64)1 << n) - 1;
   }
   return value;
 }
 
 /* write 0 <= n <= 64 low bits of value and return remaining bits */
-_inline uint64
-stream_write_bits(bitstream* s, uint64 value, uint n)
+_inline zfp_uint64
+stream_write_bits(bitstream* s, zfp_uint64 value, uint n)
 {
   /* append bit string to buffer */
   s->buffer += value << s->bits;
