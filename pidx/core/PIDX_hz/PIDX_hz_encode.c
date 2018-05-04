@@ -43,12 +43,11 @@
 
 
 
-PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_from, int resolution_to)
+PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_to)
 {
-  if (resolution_from < 0 || resolution_from < 0)
+  if (resolution_to < 0)
     return PIDX_err_hz;
 
-  id->resolution_from = resolution_from;
   id->resolution_to = resolution_to;
 
   return PIDX_success;
@@ -70,8 +69,6 @@ PIDX_hz_encode_id PIDX_hz_encode_init(idx_dataset idx_meta_data, idx_comm idx_c,
   hz_id->last_index = last_index;
   
   hz_id->fs_block_size = fs_block_size;
-
-  hz_id->resolution_from = 0;
   hz_id->resolution_to = 0;
 
   return hz_id;

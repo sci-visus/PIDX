@@ -138,8 +138,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx_c->color = 0;
   (*file)->idx->io_type = PIDX_IDX_IO;
 
-  (*file)->idx_b->reduced_res_from = 0;
-  (*file)->idx_b->reduced_res_to = 0;
+  (*file)->idx_b->reduced_resolution_factor = 0;
 
   (*file)->idx_c->simulation_comm = access_type->comm;
   (*file)->idx_c->partition_comm = access_type->comm;

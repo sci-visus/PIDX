@@ -122,7 +122,7 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
     }
 
     // In case we want to write a subset of the resolution and not all levels
-    for (j = id->resolution_from; j < maxH - id->resolution_to; j++)
+    for (j = 0; j < maxH - id->resolution_to; j++)
     {
       // Visus API call to compute start and end HZ for every HZ level
       Align((maxH - 1), j, id->idx->bitPattern, tpatch, allign_offset, allign_count, hz_buf->nsamples_per_level);

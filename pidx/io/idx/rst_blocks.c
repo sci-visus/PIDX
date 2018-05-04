@@ -138,7 +138,7 @@ static PIDX_return_code populate_idx_layout(PIDX_io file, int start_var_index, P
     return PIDX_err_file;
   }
 
-  ret_code = PIDX_blocks_create_layout (bounding_box, file->idx->maxh, file->idx->bits_per_block,  file->idx->bitPattern, per_patch_local_block_layout, file->idx_b->reduced_res_from, file->idx_b->reduced_res_to);
+  ret_code = PIDX_blocks_create_layout (bounding_box, file->idx->maxh, file->idx->bits_per_block,  file->idx->bitPattern, per_patch_local_block_layout, file->idx_b->reduced_resolution_factor);
   if (ret_code != PIDX_success)
   {
     fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);

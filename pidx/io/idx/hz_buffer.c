@@ -163,7 +163,7 @@ static PIDX_return_code hz_init(PIDX_io file, int svi, int evi)
   file->hz_id = PIDX_hz_encode_init(file->idx, file->idx_c, file->idx_dbg, file->meta_data_cache, file->fs_block_size, svi, evi);
 
   // resolution for HZ encoding
-  ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_b->reduced_res_from, file->idx_b->reduced_res_to);
+  ret = PIDX_hz_encode_set_resolution(file->hz_id, file->idx_b->reduced_resolution_factor);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);

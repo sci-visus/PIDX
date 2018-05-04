@@ -154,8 +154,7 @@ struct idx_blocks_struct
   PIDX_block_layout* block_layout_by_agg_group; /// block layout for every agg group (file0_agg_group_count + nfile0_agg_group_count)
 
   // for reduced resolution io
-  int reduced_res_from;                         /// skip hz levels from 0 to rediced_res_from
-  int reduced_res_to;                           /// write only upto reduced_res_to
+  int reduced_resolution_factor;                           /// write only upto reduced_resolution_factor
 
   // the bitmap stores if a block b exists within a file n; if (block_bitmap[n][b] == 1)
   int **block_bitmap;

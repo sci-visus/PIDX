@@ -220,7 +220,6 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
-  int pcounter = 0;
   local_patch[0] = (double)patch_count;
   for (int i = 0; i < patch_count; i++)
   {
@@ -231,8 +230,6 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
       local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + PIDX_MAX_DIMENSIONS + d + 1] = var0->sim_patch[i]->physical_size[d];
 
     local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + 2*PIDX_MAX_DIMENSIONS + 1] = var0->sim_patch[i]->particle_count;
-
-    pcounter++;
   }
 
   //for (int i = 0; i < (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1); i++)

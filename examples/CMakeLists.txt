@@ -84,13 +84,12 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(idx_write_partitioned "basic-io/idx_write_partitioned.c" ${EXAMPLES_UTILS})
   TARGET_LINK_LIBRARIES(idx_write_partitioned ${EXAMPLES_LINK_LIBS})
 
-  # Compression
+  PIDX_ADD_CEXECUTABLE(idx_write_compressed "basic-io/idx_write_compressed.c")
+  TARGET_LINK_LIBRARIES(idx_write_compressed ${EXAMPLES_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(idx_compression_write "compression/PIDX_write_compressed.c")
-  TARGET_LINK_LIBRARIES(idx_compression_write ${EXAMPLES_LINK_LIBS})
+  PIDX_ADD_CEXECUTABLE(idx_write_reduce_resolution "basic-io/idx_write_reduced_resolution.c")
+  TARGET_LINK_LIBRARIES(idx_write_reduce_resolution ${EXAMPLES_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(idx_compression_read "compression/PIDX_read_compressed.c")
-  TARGET_LINK_LIBRARIES(idx_compression_read ${EXAMPLES_LINK_LIBS})
 
 
 ENDIF ()

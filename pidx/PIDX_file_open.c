@@ -98,8 +98,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
 
-  (*file)->idx_b->reduced_res_from = 0;
-  (*file)->idx_b->reduced_res_to = 0;
+  (*file)->idx_b->reduced_resolution_factor = 0;
 
   (*file)->idx_c->color = 0;
 
@@ -339,8 +338,7 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   (*file)->idx_dbg->debug_rst = 0;
   (*file)->idx_dbg->debug_hz = 0;
   
-  (*file)->idx_b->reduced_res_from = 0;
-  (*file)->idx_b->reduced_res_to = 0;
+  (*file)->idx_b->reduced_resolution_factor = 0;
   
   (*file)->idx_c->color = 0;
   

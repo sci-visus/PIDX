@@ -572,19 +572,16 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
-  int pcounter = 0;
   local_patch[0] = (double)patch_count;
   for (int i = 0; i < patch_count; i++)
   {
     for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-      local_patch[i * PIDX_MAX_DIMENSIONS + d + 1] = var0->restructured_super_patch->restructured_patch->physical_offset[d];
+      local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + d + 1] = var0->sim_patch[i]->physical_offset[d];
 
     for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-      local_patch[i * PIDX_MAX_DIMENSIONS + PIDX_MAX_DIMENSIONS + d + 1] = var0->restructured_super_patch->restructured_patch->physical_size[d];
+      local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + PIDX_MAX_DIMENSIONS + d + 1] = var0->sim_patch[i]->physical_size[d];
 
-    local_patch[i * PIDX_MAX_DIMENSIONS + 2*PIDX_MAX_DIMENSIONS + 1] = var0->restructured_super_patch->restructured_patch->particle_count;
-
-    pcounter++;
+    local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + 2*PIDX_MAX_DIMENSIONS + 1] = var0->sim_patch[i]->particle_count;
   }
 
   /*

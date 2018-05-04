@@ -212,26 +212,24 @@ PIDX_return_code PIDX_get_block_count(PIDX_file file, int* blocks_per_file)
 
 
 
-PIDX_return_code PIDX_set_resolution(PIDX_file file, int hz_from, int hz_to)
+PIDX_return_code PIDX_set_resolution(PIDX_file file, int hz_to)
 {
   if (file == NULL)
     return PIDX_err_file;
 
-  file->idx_b->reduced_res_from = hz_from;
-  file->idx_b->reduced_res_to = hz_to;
+  file->idx_b->reduced_resolution_factor = hz_to;
 
   return PIDX_success;
 }
 
 
 
-PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_from, int *hz_to)
+PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_to)
 {
   if (file == NULL)
     return PIDX_err_file;
 
-  *hz_from = file->idx_b->reduced_res_from;
-  *hz_to = file->idx_b->reduced_res_to;
+  *hz_to = file->idx_b->reduced_resolution_factor;
 
   return PIDX_success;
 }

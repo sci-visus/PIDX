@@ -281,7 +281,7 @@ PIDX_return_code PIDX_get_block_count(PIDX_file file, int* block_count);
 /// \param resolution_to
 /// \return
 ///
-PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int resolution_to);
+PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_to);
 
 
 
@@ -292,7 +292,7 @@ PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int re
 /// \param resolution_to
 /// \return
 ///
-PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *resolution_to);
+PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_to);
 
 
 

@@ -141,7 +141,7 @@ PIDX_return_code PIDX_local_partition_idx_generic_read(PIDX_io file, int svi, in
             return PIDX_err_file;
           }
 
-          if (PIDX_blocks_create_layout (bounding_box, file->idx->maxh, file->idx->bits_per_block,  file->idx->bitPattern, per_patch_local_block_layout, file->idx_b->reduced_res_from, file->idx_b->reduced_res_to) != PIDX_success)
+          if (PIDX_blocks_create_layout (bounding_box, file->idx->maxh, file->idx->bits_per_block,  file->idx->bitPattern, per_patch_local_block_layout, file->idx_b->reduced_resolution_factor) != PIDX_success)
           {
             fprintf(stderr, "[%s] [%d ]Error in PIDX_blocks_create_layout", __FILE__, __LINE__);
             return PIDX_err_file;

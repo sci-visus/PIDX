@@ -74,7 +74,6 @@ struct PIDX_hz_encode_struct
   int first_index;
   int last_index;
 
-  int resolution_from;
   int resolution_to;
 };
 typedef struct PIDX_hz_encode_struct* PIDX_hz_encode_id;
@@ -179,7 +178,7 @@ PIDX_return_code PIDX_hz_encode_finalize(PIDX_hz_encode_id id);
 /// \param resolution_to
 /// \return
 ///
-PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_from, int resolution_to);
+PIDX_return_code PIDX_hz_encode_set_resolution(PIDX_hz_encode_id id, int resolution_to);
 
 
 

@@ -65,7 +65,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 
   const int end_index = rst_id->idx_metadata->variable_count - 1;
   const int start_index = 0;
-  unsigned char **buffer = malloc(sizeof(*buffer) * (end_index - start_index + 1));
+  unsigned char ***buffer = malloc(sizeof(**buffer) * (end_index - start_index + 1));
 
   MPI_Request *req = malloc(sizeof (*req) * req_count * 2 * (end_index - start_index + 1));
   if (!req)
@@ -86,7 +86,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     uint64_t req_counter = 0;
-    memset(buffer, 0, sizeof(*buffer) * (end_index - start_index + 1));
+    memset(buffer, 0, sizeof(**buffer) * (end_index - start_index + 1));
 
     // If we're the receiver of this restructured patch, queue up recvs for everyone sending us data
     if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
@@ -114,6 +114,17 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
       }
     }
 
+    int buffer_count = 0;
+    for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
+    {
+      if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
+        buffer_count++;
+    }
+    for (int v = start_index; v <= end_index; v++)
+      buffer[v] = malloc(sizeof(*buffer[v]) * buffer_count);
+
+
+    buffer_count = 0;
     // If we're a sender for any patches in this restructured patch, send the data to the owner
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
     {
@@ -150,7 +161,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         {
           PIDX_variable var = rst_id->idx_metadata->variable[v];
           const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
-          buffer[v] = malloc(particles_to_send * bytes_per_var);
+          buffer[v][buffer_count] = malloc(particles_to_send * bytes_per_var);
         }
 
         // Populate each variable buffer we're going to send
@@ -163,7 +174,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
             {
               PIDX_variable var = rst_id->idx_metadata->variable[v];
               const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
-              memcpy(buffer[v] + pcount * bytes_per_var,
+              memcpy(buffer[v][buffer_count] + pcount * bytes_per_var,
                   var->sim_patch[p_index]->buffer + p * bytes_per_var, bytes_per_var);
             }
             pcount++;
@@ -177,7 +188,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           PIDX_variable var = rst_id->idx_metadata->variable[v];
           const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
 
-          const int ret = MPI_Isend(buffer[v], particles_to_send * bytes_per_var, MPI_BYTE,
+          const int ret = MPI_Isend(buffer[v][buffer_count], particles_to_send * bytes_per_var, MPI_BYTE,
               rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
               rst_id->idx_c->simulation_comm, &req[req_counter]);
           if (ret != MPI_SUCCESS)
@@ -188,6 +199,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           req_counter++;
         }
         free(reg_patch);
+        buffer_count++;
       }
     }
 
@@ -195,19 +207,15 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
     if (MPI_Waitall(req_counter, req, status) != MPI_SUCCESS)
     {
       fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
-      return (-1);
+      return PIDX_err_rst;
     }
 
     // Clean up the particle variable buffers
-    for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
+    for (int v = start_index; v <= end_index; v++)
     {
-      if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
-      {
-        for (int v = start_index; v <= end_index; v++)
-        {
-          free(buffer[v]);
-        }
-      }
+      for (uint64_t j = 0; j < buffer_count; j++)
+        free(buffer[v][j]);
+      free(buffer[v]);
     }
   }
 

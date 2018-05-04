@@ -54,7 +54,7 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
     return PIDX_err_file;
   }
 
-#if 0
+#if 1
   if (file->idx_c->simulation_rank == 0)
   {
     printf("RST grid size %f %f %f\n", file->restructured_grid->physical_patch_size[0], file->restructured_grid->physical_patch_size[1], file->restructured_grid->physical_patch_size[2]);

@@ -66,7 +66,7 @@ PIDX_return_code PIDX_hz_encode_buf_create(PIDX_hz_encode_id id)
     memset(var->hz_buffer->buffer, 0,  maxH * sizeof (unsigned char*));
 
     bytes_for_datatype = ((var->bpv / 8) * chunk_size * var->vps) / id->idx->compression_factor;
-    for (c = id->resolution_from; c < maxH - id->resolution_to; c++)
+    for (c = 0; c < maxH - id->resolution_to; c++)
     {
       uint64_t samples_per_level = (var->hz_buffer->end_hz_index[c] - var->hz_buffer->start_hz_index[c] + 1);
 
@@ -102,7 +102,7 @@ PIDX_return_code PIDX_hz_encode_buf_destroy(PIDX_hz_encode_id id)
   for (v = id->first_index; v <= id->last_index; v++)
   {
     PIDX_variable var = id->idx->variable[v];
-    for (itr = id->resolution_from; itr < id->idx->maxh - id->resolution_to; itr++)
+    for (itr = 0; itr < id->idx->maxh - id->resolution_to; itr++)
     {
       free(var->hz_buffer->buffer[itr]);
       var->hz_buffer->buffer[itr] = 0;
