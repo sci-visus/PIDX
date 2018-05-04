@@ -70,8 +70,8 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int svi, int evi, int mode)
   // used to create the dataset
   time->rst_meta_data_io_start[cvi] = PIDX_get_time();
   //if (file->idx->cached_ts == file->idx->current_time_step)
-  if (file->idx->current_time_step == 0)
-  {
+  //if (file->idx->current_time_step == 0)
+  //{
     if (mode == PIDX_WRITE)
     {
       if (PIDX_raw_rst_meta_data_write(file->raw_rst_id) != PIDX_success)
@@ -80,7 +80,7 @@ PIDX_return_code raw_restructure_setup(PIDX_io file, int svi, int evi, int mode)
         return PIDX_err_rst;
       }
     }
-  }
+  //}
   time->rst_meta_data_io_end[cvi] = PIDX_get_time();
 
 
