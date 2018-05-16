@@ -99,12 +99,13 @@ char output_file_template[512];
 char var_list[512];
 char output_file_name[512];
 unsigned char **data;
+int max_resolution = 0;
 
-char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
+char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -r 0 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./idx_write -g 64x64x64 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -r: restructured box dimension\n"
+                     "  -r: max resolution [default 0, full res]\n"
                      "  -f: file name template (without .idx)\n"
                      "  -t: number of timesteps\n"
                      "  -v: number of variables (or file containing a list of variables)\n";
@@ -178,7 +179,7 @@ int main(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:";
+  char flags[] = "g:l:f:t:v:r:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -204,8 +205,13 @@ static void parse_args(int argc, char **argv)
 
     case('t'): // number of timesteps
       if (sscanf(optarg, "%d", &time_step_count) < 0)
-        terminate_with_error_msg("Invalid variable file\n%s", usage);
+        terminate_with_error_msg("Invalid time value\n%s", usage);
       break;
+        
+    case('r'): // resolution value
+        if (sscanf(optarg, "%d", &max_resolution) < 0)
+          terminate_with_error_msg("Invalid resolution value\n%s", usage);
+        break;
 
     case('v'): // number of variables
       if (!isNumber(optarg)){ // the param is a file with the list of variables
@@ -458,7 +464,7 @@ static void set_pidx_file(int ts)
   PIDX_set_block_size(file, 15);
 
   // The controller for setting resolution level: 0 full resolution, 1 half resolution, 2 quarter, 3 is one-eighth
-  PIDX_set_resolution(file, 0);
+  PIDX_set_resolution(file, max_resolution);
 
   // If the domain decomposition and the cores configuration do not change over time
   // we can instruct PIDX to cache and reuse these information for the next timesteps
