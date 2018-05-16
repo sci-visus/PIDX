@@ -53,7 +53,7 @@ PIDX_return_code PIDX_hz_encode_read(PIDX_hz_encode_id id)
   uint64_t total_chunked_patch_size = 1;
 
   int maxH = id->idx->maxh;
-  printf("maxH %d\n", maxH);
+
   int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
 
   PIDX_variable var0 = id->idx->variable[id->first_index];
