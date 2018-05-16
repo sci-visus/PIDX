@@ -1112,6 +1112,11 @@ PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int
       *values = 4;
       *bits = 32;
     }
+    else if (strcmp(type, FLOAT32_7STENCIL) == 0)
+    {
+      *values = 7;
+      *bits = 32;
+    }
     else if (strcmp(type, FLOAT32_9TENSOR) == 0)
     {
       *values = 9;

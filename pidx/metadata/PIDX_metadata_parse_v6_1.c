@@ -177,13 +177,12 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
 
       if (strcmp(line, "idx") == 0)
         (*file)->idx->io_type = PIDX_IDX_IO;
-      else if (strcmp(line, "g_part_idx") == 0)
-        (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
       else if (strcmp(line, "l_part_idx") == 0)
         (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
       else if (strcmp(line, "raw") == 0)
         (*file)->idx->io_type = PIDX_RAW_IO;
-    
+      else if (strcmp(line, "particle") == 0)
+        (*file)->idx->io_type = PIDX_PARTICLE_IO;
     }
 
     if (strcmp(line, "(endian)") == 0)
@@ -196,7 +195,6 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
         (*file)->idx->endian = PIDX_LITTLE_ENDIAN;
       else if (strcmp(line,"big") == 0)
         (*file)->idx->endian = PIDX_BIG_ENDIAN;
-      
     }
 
     if (strcmp(line, "(fields)") == 0)

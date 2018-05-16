@@ -52,6 +52,8 @@
 
 #include "../../PIDX_inc.h"
 
+static void returnbuffer(unsigned char * q, unsigned char * s, int cbz, int nx, int ny, int nz, uint64_t compval, int bits, int mode);
+
 //Struct for restructuring ID
 struct PIDX_chunk_id_struct
 {
@@ -155,7 +157,7 @@ PIDX_return_code PIDX_chunk_buf_create(PIDX_chunk_id chunk_id)
 }
 
 
-void returnbuffer(unsigned char * q, unsigned char * s, int cbz, int nx, int ny, int nz, int compval, int bits, int mode)
+static void returnbuffer(unsigned char * q, unsigned char * s, int cbz, int nx, int ny, int nz, uint64_t compval, int bits, int mode)
 {
   int dz = 4 * nx*(ny-(ny/4)*4);
   int dy = 4 * (nx-(nx/4)*4);
@@ -206,11 +208,10 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
   if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
-  int i = 0, j = 0, d = 0;
-  uint64_t v;
+  // when no compression is used then chunking only involves copying the input buffer to the chunked buffer
   if (chunk_id->idx->compression_type == PIDX_NO_COMPRESSION)
   {
-    for (v = chunk_id->first_index; v <= chunk_id->last_index; v++)
+    for (uint32_t v = chunk_id->first_index; v <= chunk_id->last_index; v++)
     {
       PIDX_variable var = chunk_id->idx->variable[v];
       int bytes_per_value = (var->bpv / CHAR_BIT) * var->vps;
@@ -230,16 +231,11 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
 
   // compute the intra compression block strides
   uint64_t *chunk_size = chunk_id->idx->chunk_size;
-  //printf("Chunk size is %lld\n", *chunk_size);
-  uint64_t  cbz = 1;
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; ++d){
-    cbz = cbz * chunk_size[d];
-    //printf("some terms are %lld, %lld, %d\n", cbz, chunk_size[d], PIDX_MAX_DIMENSIONS);
-  }
+  uint64_t  cbz = chunk_size[0] * chunk_size[1] * chunk_size[2];
+
 
   // loop through all variables
-  v = 0;
-  for (v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
+  for (uint32_t v = chunk_id->first_index; v <= chunk_id->last_index; ++v)
   {
     PIDX_variable var = chunk_id->idx->variable[v];
 
@@ -247,160 +243,72 @@ PIDX_return_code PIDX_chunk(PIDX_chunk_id chunk_id, int MODE)
     PIDX_super_patch in_patch = var->restructured_super_patch;
     PIDX_super_patch out_patch = var->chunked_super_patch;
 
+    // output buffers have to multiples of fours
     int nx=(int)out_patch->restructured_patch->size[0];
     if (out_patch->restructured_patch->size[0] % chunk_id->idx->chunk_size[0] != 0)
       nx = ((out_patch->restructured_patch->size[0] / chunk_id->idx->chunk_size[0]) + 1) * chunk_id->idx->chunk_size[0];
 
-    //printf("value of nx is %d\n", nx);
-
     int ny=(int)out_patch->restructured_patch->size[1];
     if (out_patch->restructured_patch->size[1] % chunk_id->idx->chunk_size[1] != 0)
       ny = ((out_patch->restructured_patch->size[1] / chunk_id->idx->chunk_size[1]) + 1) * chunk_id->idx->chunk_size[1];
-    //printf("value of ny is %d\n", ny);
+
     int nz=(int)out_patch->restructured_patch->size[2];
     if (out_patch->restructured_patch->size[2] % chunk_id->idx->chunk_size[2] != 0)
       nz = ((out_patch->restructured_patch->size[2] / chunk_id->idx->chunk_size[2]) + 1) * chunk_id->idx->chunk_size[2];
 
-    int values = 0;
+    int values_per_sample = 0;
     int bits = 0;
-    if (strcmp(var->type_name, FLOAT32) == 0)
-    {
-      values = 1;
-      bits = 32;
-    }
-    else if (strcmp(var->type_name, FLOAT32_GA) == 0)
-    {
-      values = 2;
-      bits = 32;
-    }
-    else if (strcmp(var->type_name, FLOAT32_RGB) == 0)
-    {
-      values = 3;
-      bits = 32;
-    }
-    else if (strcmp(var->type_name, FLOAT32_RGBA) == 0)
-    {
-      values = 4;
-      bits = 32;
-    }
+    PIDX_get_datatype_details(var->type_name, &values_per_sample, &bits);
 
-    else if (strcmp(var->type_name, FLOAT64) == 0)
-    {
-      values = 1;
-      bits = 64;
-    }
-    else if (strcmp(var->type_name, FLOAT64_GA) == 0)
-    {
-      values = 2;
-      bits = 64;
-    }
-    else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
-    {
-      values = 3;
-      bits = 64;
-    }
-    else if (strcmp(var->type_name, FLOAT64_RGBA) == 0)
-    {
-      values = 4;
-      bits = 64;
-    }
-    else if (strcmp(var->type_name, FLOAT64_7STENCIL) == 0)
-    {
-      values = 7;
-      bits = 64;
-    }
+    unsigned char *sdim = malloc(nx*ny*nz * (bits/CHAR_BIT));
+    unsigned char *op = malloc(nx*ny*nz * (bits/CHAR_BIT));
 
-    int dim = values;
-    int sz = dim*nx*ny*nz;
-
-    unsigned char * s = out_patch->restructured_patch->buffer;
-    unsigned char * q = in_patch->restructured_patch->buffer;
-
-    unsigned char ** sdim = malloc(dim*(bits/CHAR_BIT));
-    for (i = 0; i < dim; i++)
-      sdim[i] = malloc((sz/dim) * (bits/CHAR_BIT));
-
-    unsigned char ** op = malloc(dim*(bits/CHAR_BIT));
-    for (i = 0; i < dim; i++)
-      op[i] = malloc((sz/dim) * (bits/CHAR_BIT));
-
-    unsigned char ** qp = malloc(dim*(bits/CHAR_BIT));
-    for (i = 0; i < dim; i++)
-      qp[i] = malloc((sz/dim) * (bits/CHAR_BIT));
-
-    int compval = in_patch->restructured_patch->size[0] * in_patch->restructured_patch->size[1] * in_patch->restructured_patch->size[2];
+    uint32_t k = 0;
+    uint64_t compval = in_patch->restructured_patch->size[0] * in_patch->restructured_patch->size[1] * in_patch->restructured_patch->size[2];
     if (MODE == PIDX_WRITE)
     {
-      int k = 0;
-      for (i = 0; i < dim; i++)
+      for (uint32_t i = 0; i < values_per_sample; i++)
       {
-        k = i;
-        for (j = 0; j < (sz/dim); j++)
-        {
-          if (k < sz)
-          {
-            memcpy(sdim[i] + j*(bits/CHAR_BIT), in_patch->restructured_patch->buffer + k* (bits/CHAR_BIT), (bits/CHAR_BIT));
-            k+=dim;
-          }
-        }
-        k = 0;
-      }
-      int d = 0;
-      for (d = 0; d < dim; d++)
-        returnbuffer(sdim[d], op[d], cbz, nx, ny, nz, compval, bits, PIDX_WRITE);
+        //memset(sdim, 0, nx*ny*nz * (bits/CHAR_BIT));
+        //memset(op, 0, nx*ny*nz * (bits/CHAR_BIT));
 
-      int ctr = 0, row = 0;
-      for (i = 0; i < sz; i++)
-      {
-        if (ctr == (sz/dim) ){
-          row+=1;
-          ctr = 0;
+        k = i;
+        for (uint32_t j = 0; j < nx*ny*nz; j++)
+        {
+          memcpy(sdim + j*(bits/CHAR_BIT), in_patch->restructured_patch->buffer + k* (bits/CHAR_BIT), (bits/CHAR_BIT));
+          k+=values_per_sample;
         }
-        memcpy(s + i*(bits/CHAR_BIT), op[row] + ctr*(bits/CHAR_BIT), (bits/CHAR_BIT));
-        ctr++;
+
+        returnbuffer(sdim, op, cbz, nx, ny, nz, compval, bits, PIDX_WRITE);
+        memcpy(out_patch->restructured_patch->buffer + i * nx*ny*nz * (bits/CHAR_BIT), op, nx*ny*nz * (bits/CHAR_BIT));
       }
     }
     else
     {
-      int ctr = 0, row = 0;
-      for (i = 0; i < sz; i++)
+      k = 0;
+      for (uint32_t i = 0; i < values_per_sample; i++)
       {
-        if (ctr == (sz/dim) ){
-          row+=1;
-          ctr = 0;
-        }
-        memcpy(op[row] + ctr*(bits/CHAR_BIT), s + i*(bits/CHAR_BIT), (bits/CHAR_BIT));
-        ctr++;
-      }
+        //memset(sdim, 0, nx*ny*nz * (bits/CHAR_BIT));
+        //memset(op, 0, nx*ny*nz * (bits/CHAR_BIT));
 
-      for (d = 0; d < dim; d++)
-        returnbuffer(qp[d], op[d], cbz, nx, ny, nz, compval, bits, PIDX_READ);
+        memcpy(op, out_patch->restructured_patch->buffer + i * nx*ny*nz * (bits/CHAR_BIT), nx*ny*nz * (bits/CHAR_BIT));
+        returnbuffer(sdim, op, cbz, nx, ny, nz, compval, bits, PIDX_READ);
 
-      //copy data to the input buffer
-      ctr = 0;
-      int pos = 0;
-      for (i = 0; i < dim; i++)
-      {
-        for (j = 0; j < (sz/dim); j++)
+        k = i;
+        for (uint32_t j = 0; j < nx*ny*nz; j++)
         {
-          memcpy(q + (pos + ctr)*(bits/CHAR_BIT), qp[i] + j*(bits/CHAR_BIT), (bits/CHAR_BIT));
-          ctr+=dim;
+          //double x;
+          //memcpy(&x, sdim + j*(bits/CHAR_BIT), sizeof(double));
+          //printf("vlue = %f\n", x);
+
+          memcpy(in_patch->restructured_patch->buffer + (k)*(bits/CHAR_BIT), sdim + j*(bits/CHAR_BIT), (bits/CHAR_BIT));
+          k+=values_per_sample;
         }
-        pos+=1;
-        ctr = 0;
       }
     }
 
-    for (i = 0; i < dim; i++)
-      free(sdim[i]);
     free(sdim);
-    for (i = 0; i < dim; i++)
-      free(op[i]);
     free(op);
-    for (i = 0; i < dim; i++)
-      free(qp[i]);
-    free(qp);
-
   }
 
   return PIDX_success;

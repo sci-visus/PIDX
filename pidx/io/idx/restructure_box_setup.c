@@ -61,8 +61,7 @@ PIDX_return_code set_rst_box_size_for_write(PIDX_io file, int svi)
   adjust_restructured_box_size(file);
 
   // Assign rank to each of the restructured super patch
-  int ret = populate_restructured_grid(file);
-  if (ret != PIDX_success)
+  if (populate_restructured_grid(file) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;

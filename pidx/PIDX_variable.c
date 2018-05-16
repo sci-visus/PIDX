@@ -142,8 +142,6 @@ PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable
   variable->data_layout = data_layout;
   variable->sim_patch_count = variable->sim_patch_count + 1;
 
-  variable->is_particle = 1;
-
   return PIDX_success;
 }
 
@@ -167,8 +165,6 @@ PIDX_return_code PIDX_variable_write_particle_data_physical_layout(PIDX_variable
 
   variable->data_layout = data_layout;
   variable->sim_patch_count = variable->sim_patch_count + 1;
-
-  variable->is_particle = 1;
 
   return PIDX_success;
 }
@@ -227,8 +223,6 @@ PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable,
 
   variable->data_layout = data_layout;
   variable->sim_patch_count = variable->sim_patch_count + 1;
-
-  variable->is_particle = 1;
 
   return PIDX_success;
 }

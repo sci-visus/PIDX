@@ -214,52 +214,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
 
       int values = 0;
       int bits = 0;
-      if (strcmp(var->type_name, FLOAT32) == 0)
-      {
-        values = 1;
-        bits = 32;
-      }
-      else if (strcmp(var->type_name, FLOAT32_GA) == 0)
-      {
-        values = 2;
-        bits = 32;
-      }
-      else if (strcmp(var->type_name, FLOAT32_RGB) == 0)
-      {
-        values = 3;
-        bits = 32;
-      }
-      else if (strcmp(var->type_name, FLOAT32_RGBA) == 0)
-      {
-        values = 4;
-        bits = 32;
-      }
-
-      else if (strcmp(var->type_name, FLOAT64) == 0)
-      {
-        values = 1;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_GA) == 0)
-      {
-        values = 2;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
-      {
-        values = 3;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_RGBA) == 0)
-      {
-        values = 4;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_7STENCIL) == 0)
-      {
-        values = 7;
-        bits = 64;
-      }
+      PIDX_get_datatype_details(var->type_name, &values, &bits);
 
       int compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, bits/CHAR_BIT, values, bit_rate);
       unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
@@ -294,52 +249,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
 
       int values = 0;
       int bits = 0;
-      if (strcmp(var->type_name, FLOAT32) == 0)
-      {
-        values = 1;
-        bits = 32;
-      }
-      else if (strcmp(var->type_name, FLOAT32_GA) == 0)
-      {
-        values = 2;
-        bits = 32;
-      }
-      else if (strcmp(var->type_name, FLOAT32_RGB) == 0)
-      {
-        values = 3;
-        bits = 32;
-      }
-      else if (strcmp(var->type_name, FLOAT32_RGBA) == 0)
-      {
-        values = 4;
-        bits = 32;
-      }
-
-      else if (strcmp(var->type_name, FLOAT64) == 0)
-      {
-        values = 1;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_GA) == 0)
-      {
-        values = 2;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
-      {
-        values = 3;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_RGBA) == 0)
-      {
-        values = 4;
-        bits = 64;
-      }
-      else if (strcmp(var->type_name, FLOAT64_7STENCIL) == 0)
-      {
-        values = 7;
-        bits = 64;
-      }
+      PIDX_get_datatype_details(var->type_name, &values, &bits);
 
       ret = decompress_buffer(comp_id, buffer, nx, ny, nz, bits/CHAR_BIT, values, bit_rate);
       if (ret == -1)

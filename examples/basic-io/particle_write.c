@@ -563,7 +563,7 @@ static void set_pidx_file(int ts)
   PIDX_set_variable_count(file, variable_count);
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_IDX_IO); // TODO:
+  PIDX_set_io_mode(file, PIDX_PARTICLE_IO); // TODO:
 
   return;
 }

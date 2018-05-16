@@ -740,6 +740,7 @@ static PIDX_return_code PIDX_validate(PIDX_file file)
 {
   uint64_t dims;
   uint64_t adjusted_bounds[PIDX_MAX_DIMENSIONS];
+
   adjusted_bounds[0] = file->idx->bounds[0] / file->idx->chunk_size[0];
   adjusted_bounds[1] = file->idx->bounds[1] / file->idx->chunk_size[1];
   adjusted_bounds[2] = file->idx->bounds[2] / file->idx->chunk_size[2];

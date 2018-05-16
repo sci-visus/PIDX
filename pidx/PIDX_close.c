@@ -191,8 +191,8 @@ static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type)
       fprintf(stderr, "PIDX_IDX_IO %s\n", file->idx->filename);
     else if (file->idx->io_type == PIDX_io_type::PIDX_LOCAL_PARTITION_IDX_IO)
       fprintf(stderr, "PIDX_LOCAL_PARTITION_IDX_IO %s\n", file->idx->filename);
-    else if (file->idx->io_type == PIDX_io_type::PIDX_GLOBAL_PARTITION_IDX_IO)
-      fprintf(stderr, "PIDX_GLOBAL_PARTITION_IDX_IO %s\n", file->idx->filename);
+    else if (file->idx->io_type == PIDX_io_type::PIDX_PARTICLE_IO)
+      fprintf(stderr, "PIDX_PARTICLE_IO %s\n", file->idx->filename);
 #endif
 
     if (file->idx->io_type != PIDX_RAW_IO)
@@ -212,10 +212,10 @@ static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type)
       if (file->idx->flip_endian == 0)
         fprintf(stderr, "Endian Flipping Not Done\n");
 
-      fprintf(stderr, "Partition count %d = %d x %d x %d Partitio size = %d x %d x %d\n", file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2], file->idx_d->partition_count[0], file->idx_d->partition_count[1], file->idx_d->partition_count[2], file->idx_d->partition_size[0], file->idx_d->partition_size[1], file->idx_d->partition_size[2]);
+      fprintf(stderr, "Partition count %d = %d x %d x %d Partitio size = %d x %d x %d\n", file->idx->partition_count[0] * file->idx->partition_count[1] * file->idx->partition_count[2], file->idx->partition_count[0], file->idx->partition_count[1], file->idx->partition_count[2], file->idx->partition_size[0], file->idx->partition_size[1], file->idx->partition_size[2]);
       fprintf(stderr, "Comp = %d\n", file->idx->compression_type);
       fprintf(stderr, "Blocks Per File %d Bits per block %d File Count %d\n", file->idx->blocks_per_file, file->idx->bits_per_block, file->idx->max_file_count);
-      fprintf(stderr, "Partition level : maxh = %d : %d\n", file->idx_d->total_partiton_level, file->idx->maxh);
+      fprintf(stderr, "maxh = %d\n", file->idx->maxh);
     }
   }
 #endif
@@ -227,7 +227,7 @@ static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type)
   double max_time = total_time;
   MPI_Allreduce(&total_time, &max_time, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
 
-  if (io_type != PIDX_RAW_IO)
+  if (io_type == PIDX_IDX_IO || io_type == PIDX_LOCAL_PARTITION_IDX_IO)
   {
     if (max_time == total_time)
     {
@@ -405,7 +405,7 @@ static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type)
         io = time->io_end[si] - time->io_start[si];
         io_all = io_all + io;
 #if DETAIL_OUTPUT
-        fprintf(stderr, "IO [%d]        :[%d] %.4f\n", file->idx_b->variable_count, si, io);
+        fprintf(stderr, "IO [%d]        :[%d] %.4f\n", file->idx->variable_count, si, io);
 #endif
       }
 
@@ -415,18 +415,16 @@ static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type)
       fprintf(stderr, "XIRPICCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", pre_group_total, rst_all, partition_time, post_group_total, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #else
 
-      PIDX_variable var0 = file->idx->variable[svi];
-      if (var0->is_particle == 1)
-      {
-        double idx_time = time->header_io_end - time->header_io_start;
-        double meta_time = time->particle_meta_data_io_end - time->particle_meta_data_io_start;
-        double data_time = time->particle_data_io_end - time->particle_data_io_start;
-        fprintf(stderr, "Timestep %d Extents %f %f %f Variables %d Time [%f + %f + %f + %f] = %f [%f]\n", file->idx->current_time_step, file->idx->physical_bounds[0], file->idx->physical_bounds[1], file->idx->physical_bounds[2], (evi - svi), idx_time, meta_time, data_time, time->SX - time->sim_start, (idx_time + meta_time + data_time + (time->SX - time->sim_start)), max_time );
-      }
-      else
-        fprintf(stderr, "[%s %d %d (%d %d %d)] IRPICCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], pre_group_total, rst_all, partition_time, post_group_total, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
+      fprintf(stderr, "[%s %d %d (%d %d %d)] IRPICCHHAI      :[%.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f + %.4f = %.4f] + %.4f [%.4f %.4f]\n", file->idx->filename, file->idx->current_time_step, (evi - svi), (int)file->idx->bounds[0], (int)file->idx->bounds[1], (int)file->idx->bounds[2], pre_group_total, rst_all, partition_time, post_group_total, chunk_all, compression_all, hz_all, hz_io_all, agg_all, io_all, grp_rst_hz_chunk_agg_io, (time->SX - time->sim_start), grp_rst_hz_chunk_agg_io + (time->SX - time->sim_start), max_time);
 #endif
     }
+  }
+  else if (io_type == PIDX_PARTICLE_IO)
+  {
+    double idx_time = time->header_io_end - time->header_io_start;
+    double meta_time = time->particle_meta_data_io_end - time->particle_meta_data_io_start;
+    double data_time = time->particle_data_io_end - time->particle_data_io_start;
+    fprintf(stderr, "Timestep %d Extents %f %f %f Variables %d Time [%f + %f + %f + %f] = %f [%f]\n", file->idx->current_time_step, file->idx->physical_bounds[0], file->idx->physical_bounds[1], file->idx->physical_bounds[2], (evi - svi), idx_time, meta_time, data_time, time->SX - time->sim_start, (idx_time + meta_time + data_time + (time->SX - time->sim_start)), max_time );
   }
   else
   {

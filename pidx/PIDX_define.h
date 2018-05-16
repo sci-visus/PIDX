@@ -107,10 +107,9 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
 enum PIDX_io_type {
   PIDX_IDX_IO=0,                    /// Writes data in IDX format
-  PIDX_GLOBAL_PARTITION_IDX_IO=1,   /// Writes data in partitioned space with global indexing
-  PIDX_LOCAL_PARTITION_IDX_IO=2,    /// Writes data in partitioned space with local indexing
-  PIDX_RAW_IO=3,                    /// Writes data in raw format
-  PIDX_WAVELET_IO=4                 /// Calls wavelet computation code
+  PIDX_LOCAL_PARTITION_IDX_IO=1,    /// Writes data in partitioned space with local indexing
+  PIDX_RAW_IO=2,                    /// Writes data in raw format
+  PIDX_PARTICLE_IO=3                /// Writes particle data
 };
 
 enum PIDX_endian_type{
@@ -194,6 +193,7 @@ extern PIDX_data_type FLOAT32;
 extern PIDX_data_type FLOAT32_GA;
 extern PIDX_data_type FLOAT32_RGB;
 extern PIDX_data_type FLOAT32_RGBA;
+extern PIDX_data_type FLOAT32_7STENCIL;
 extern PIDX_data_type FLOAT32_9TENSOR;
 
 extern PIDX_data_type FLOAT64;

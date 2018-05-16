@@ -176,14 +176,14 @@ PIDX_return_code PIDX_metadata_parse_v6_0(FILE *fp, PIDX_file* file)
 
       int mode = atoi(line);
         
-      if (mode == 1)
+      if (mode == 0)
         (*file)->idx->io_type = PIDX_IDX_IO;
-      else if (mode == 2)
-        (*file)->idx->io_type = PIDX_GLOBAL_PARTITION_IDX_IO;
-      else if (mode == 3)
+      else if (mode == 1)
         (*file)->idx->io_type = PIDX_LOCAL_PARTITION_IDX_IO;
-      else if (mode == 4)
+      else if (mode == 2)
         (*file)->idx->io_type = PIDX_RAW_IO;
+      else if (mode == 3)
+        (*file)->idx->io_type = PIDX_PARTICLE_IO;
 
     }
 

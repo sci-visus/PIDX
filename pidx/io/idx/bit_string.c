@@ -97,7 +97,7 @@ PIDX_return_code populate_bit_string(PIDX_io file, int mode)
     pcp.x = (int) file->idx->partition_count[0];
     pcp.y = (int) file->idx->partition_count[1];
     pcp.z = (int) file->idx->partition_count[2];
-    guess_bit_string(partition_bs, pcp);
+    guess_bit_string_Z(partition_bs, pcp);
 
 #if DETAIL_OUTPUT
     if (file->idx_c->simulation_rank == 0)

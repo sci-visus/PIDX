@@ -45,11 +45,6 @@
 
 struct PIDX_variable_struct
 {
-  // 1 if the variable is a particle 0 otherwise
-  // TODO find a better scheme for this
-  int is_particle;
-
-
   // General Info
   char var_name[1024];                                       ///< Variable name
   int vps;                                                   ///< values per sample, Vector(3), scalar(1), or n
