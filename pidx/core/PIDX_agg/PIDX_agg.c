@@ -56,8 +56,6 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_blocks 
   id->fi = fi;
   id->li = li;
 
-  //fprintf(stderr, "fi : li : lvi :: %d : %d : %d\n", fi, li, lvi);
-
   return id;
 }
 
