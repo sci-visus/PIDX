@@ -279,6 +279,13 @@ static void set_pidx_file(int ts)
   // The controller for setting resolution level: 0 full resolution, 1 half resolution, 2 quarter, 3 is one-eighth
   PIDX_set_resolution(file, max_resolution);
 
+  printf("off %lld %lld %lld size %lld %lld %lld \n", local_offset[0], local_offset[1], local_offset[2], local_size[0],local_size[1],local_size[2]);
+  
+  uint64_t num_samples;
+  PIDX_get_box_for_resolution(file, max_resolution, local_offset, local_size, &num_samples);
+  
+  printf("buffer size: %lld\n", num_samples);
+
 }
 
 //----------------------------------------------------------------

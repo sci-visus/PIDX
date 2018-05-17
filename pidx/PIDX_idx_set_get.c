@@ -236,6 +236,93 @@ PIDX_return_code PIDX_get_resolution(PIDX_file file, int *hz_to)
 
 
 
+PIDX_return_code PIDX_get_box_for_resolution(PIDX_file file, int resolution_to, PIDX_point offset, PIDX_point size, uint64_t* buffer_size)
+{
+  // Bounding box of the super patch the process is holding
+  int **restructured_box;
+  
+  // For every HZ level what is the starting xyz coordinate
+  int **start_xyz_per_hz_level;
+  
+  // For every HZ level what is the ending xyz coordinate
+  int **end_xyz_per_hz_level;
+  
+  int maxH = strlen(file->idx->bitSequence);//file->idx->maxh;
+  
+  restructured_box = (int**) malloc(2 * sizeof (int*));
+  memset(restructured_box, 0, 2 * sizeof (int*));
+  restructured_box[0] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
+  restructured_box[1] = (int*) malloc(PIDX_MAX_DIMENSIONS * sizeof (int));
+  memset(restructured_box[0], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
+  memset(restructured_box[1], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
+  
+  for (uint32_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+  {
+    restructured_box[0][d] = offset[d];
+    restructured_box[1][d] = offset[d] + size[d] - 1;
+  }
+  
+  int** nsamples_per_level;
+  nsamples_per_level = malloc(sizeof (int*) * maxH);
+  memset(nsamples_per_level, 0, sizeof (int*) * maxH);
+  
+  uint64_t* start_hz_index = malloc(sizeof (uint64_t) * maxH);
+  uint64_t* end_hz_index = malloc(sizeof (uint64_t) * maxH);
+  memset(start_hz_index, 0, sizeof (uint64_t) * maxH);
+  memset(end_hz_index, 0, sizeof (uint64_t) * maxH);
+
+  start_xyz_per_hz_level = malloc(sizeof (int*) * maxH);
+  end_xyz_per_hz_level = malloc(sizeof (int*) * maxH);
+  memset(start_xyz_per_hz_level, 0, sizeof (int*) * maxH);
+  memset(end_xyz_per_hz_level, 0, sizeof (int*) * maxH);
+  
+  for (uint32_t j = 0; j < maxH; j++)
+  {
+    start_xyz_per_hz_level[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
+    memset(start_xyz_per_hz_level[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
+    
+    end_xyz_per_hz_level[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
+    memset(end_xyz_per_hz_level[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
+    
+    nsamples_per_level[j] = malloc(sizeof (int) * PIDX_MAX_DIMENSIONS);
+    memset(nsamples_per_level[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
+  }
+  
+  for (uint32_t j = 0; j < maxH - resolution_to; j++)
+  {
+    // Visus API call to compute start and end HZ for every HZ level
+    Align((maxH - 1), j, file->idx->bitPattern, restructured_box, start_xyz_per_hz_level, end_xyz_per_hz_level, nsamples_per_level);
+    
+//    if (file->idx_c->simulation_rank == 3)
+//      printf("Test %d : %d %d %d\n", j, nsamples_per_level[j][0], nsamples_per_level[j][1], nsamples_per_level[j][2]);
+    
+    *buffer_size = *buffer_size + nsamples_per_level[j][0]*nsamples_per_level[j][1]*nsamples_per_level[j][2];
+  }
+  
+  
+  for (uint32_t j = 0; j < maxH; j++)
+  {
+    free(start_xyz_per_hz_level[j]);
+    free(end_xyz_per_hz_level[j]);
+    free(nsamples_per_level[j]);
+  }
+  
+  free(start_xyz_per_hz_level);
+  free(end_xyz_per_hz_level);
+  free(nsamples_per_level);
+
+  free(restructured_box[0]);
+  restructured_box[0] = 0;
+  free(restructured_box[1]);
+  restructured_box[1] = 0;
+  free(restructured_box);
+  restructured_box = 0;
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_set_partition_count(PIDX_file file, int count_x, int count_y, int count_z)
 {
   if (count_x < 0 || count_y < 0 || count_z < 0)

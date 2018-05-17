@@ -294,6 +294,16 @@ PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_to);
 ///
 PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_to);
 
+  
+///
+/// \brief PIDX_get_box_for_resolution
+/// \param file
+/// \param resolution_to
+/// \param offset of the box
+/// \param size of the box
+/// \return
+///
+PIDX_return_code PIDX_get_box_for_resolution(PIDX_file file, int resolution_to, PIDX_point offset, PIDX_point size, uint64_t* buffer_size);
 
 
 ///
