@@ -113,34 +113,6 @@ PIDX_return_code PIDX_hz_encode_meta_data_create(PIDX_hz_encode_id id)
       memset(hz_buf->nsamples_per_level[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
     }
 
-#if 0
-    for (uint32_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-    {
-      restructured_box[0][d] = var->sim_patch[0]->offset[d];
-      restructured_box[1][d] = var->sim_patch[0]->offset[d] + var->sim_patch[0]->size[d] - 1;
-    }
-    // In case we want to write a subset of the resolution and not all levels
-    for (uint32_t j = 0; j < maxH - id->resolution_to; j++)
-    {
-      // Visus API call to compute start and end HZ for every HZ level
-      Align((maxH - 1), j, id->idx->bitPattern, restructured_box, start_xyz_per_hz_level, end_xyz_per_hz_level, hz_buf->nsamples_per_level);
-
-      Point3D startXYZ;
-      startXYZ.x = start_xyz_per_hz_level[j][0];
-      startXYZ.y = start_xyz_per_hz_level[j][1];
-      startXYZ.z = start_xyz_per_hz_level[j][2];
-      hz_buf->start_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, startXYZ);
-
-      Point3D endXYZ;
-      endXYZ.x = end_xyz_per_hz_level[j][0];
-      endXYZ.y = end_xyz_per_hz_level[j][1];
-      endXYZ.z = end_xyz_per_hz_level[j][2];
-
-      hz_buf->end_hz_index[j] = xyz_to_HZ(id->idx->bitPattern, maxH - 1, endXYZ);
-      if (id->idx_c->simulation_rank == 3)
-        printf("Test %d : %lld - %lld -- %d %d %d\n", j, hz_buf->start_hz_index[j], hz_buf->end_hz_index[j], hz_buf->nsamples_per_level[j][0], hz_buf->nsamples_per_level[j][1], hz_buf->nsamples_per_level[j][2]);
-    }
-#endif
 
     for (uint32_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
     {
