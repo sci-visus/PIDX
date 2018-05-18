@@ -51,6 +51,8 @@
 
 typedef struct {int x,y,z;} Point3D;
 
+void freeBox(int** box);
+
 unsigned int getNumBits ( unsigned int v );
 
 uint64_t getPowerOf2(int x);
@@ -73,11 +75,15 @@ void ZDelta(const char* bitmask, int maxh, int BlockingH, int* point);
 
 void GetBoxIntersection(int** a, int** b, int** c);
 
+void GetBoxUnion(int** a, int** b, int** c);
+
 int** AlignEx(int** box, int* p0, int* delta);
 
 void revstr(char* str);
 
 void GuessBitmaskPattern(char* _bits, Point3D dims);
+
+int AlignBox(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples, int** alignedBox);
 
 void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples);
 

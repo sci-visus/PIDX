@@ -426,7 +426,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
     fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
     fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
     fprintf(idx_file_p, "(filename_template)\n./%s\n", file_temp);
-    fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
+    fprintf(idx_file_p, "(time)\n%d %d time%%09d/", header_io->idx->first_tstep, header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
 
@@ -549,7 +549,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
     fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
     fprintf(idx_file_p, "(filename_template)\n./%s\n", file_temp);
-    fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
+    fprintf(idx_file_p, "(time)\n%d %d time%%09d/", header_io->idx->first_tstep, header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
 
@@ -665,7 +665,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
     }
 
     fprintf(idx_file_p, "\n(filename_template)\n./%s\n", file_temp);
-    fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
+    fprintf(idx_file_p, "(time)\n%d %d time%%09d/", header_io->idx->first_tstep, header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
 
