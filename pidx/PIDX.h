@@ -376,7 +376,7 @@ PIDX_return_code PIDX_get_physical_dims(PIDX_file file, PIDX_physical_point dims
 /// \param tstep
 /// \return
 ///
-PIDX_return_code PIDX_set_first_tstep(PIDX_file file, int tstep);
+PIDX_return_code PIDX_set_first_time_step(PIDX_file file, int tstep);
 
 
 
@@ -385,7 +385,7 @@ PIDX_return_code PIDX_set_first_tstep(PIDX_file file, int tstep);
 /// \param file The IDX file handler.
 /// \return The first timestep index.
 ///
-PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep);
+PIDX_return_code PIDX_get_first_time_step(PIDX_file file, int* tstep);
 
 
 
@@ -395,7 +395,7 @@ PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep);
 /// \param tstep
 /// \return
 ///
-PIDX_return_code PIDX_set_last_tstep(PIDX_file file, int tstep);
+PIDX_return_code PIDX_set_last_time_step(PIDX_file file, int tstep);
 
 
 
@@ -404,7 +404,7 @@ PIDX_return_code PIDX_set_last_tstep(PIDX_file file, int tstep);
 /// \param file The IDX file handler.
 /// \return The last timestep index.
 ///
-PIDX_return_code PIDX_get_last_tstep(PIDX_file file, int* tstep);
+PIDX_return_code PIDX_get_last_time_step(PIDX_file file, int* tstep);
 
 
 
