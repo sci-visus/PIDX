@@ -148,6 +148,17 @@ void GetBoxIntersection(int** inputBox1, int** inputBox2, int** outputBox)
   }
 }
 
+void GetBoxUnion(int** inputBox1, int** inputBox2, int** outputBox)
+{
+  //returns the union of two boxes
+  int i;
+  for (i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+  {
+    outputBox[0][i]=Min2ab(inputBox1[0][i], inputBox2[0][i]);
+    outputBox[1][i]=Max2ab(inputBox1[1][i], inputBox2[1][i]);
+  }
+}
+
 int** AlignEx(int** box, int* p0, int* delta)
 {
   int mod,i;
@@ -538,7 +549,7 @@ void guess_bit_string_X(char* bit_string, const Point3D dims)
 }
 
 
-static void freeBox(int** box)
+void freeBox(int** box)
 {
   free(box[0]);
   box[0] = 0;
@@ -547,6 +558,82 @@ static void freeBox(int** box)
 
   free(box);
   box = 0;
+}
+
+int AlignBox(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples, int** alignedBox)
+{
+  int* h_delta;
+  int** h_box;
+  
+  if (!isValidBox(userBox))
+    return PIDX_err_hz;
+  
+  if (!(H>=0 && H<=maxh))
+    return PIDX_err_hz;
+  
+  h_delta = (int*)malloc(PIDX_MAX_DIMENSIONS *sizeof(int));
+  memset(h_delta, 0, PIDX_MAX_DIMENSIONS *sizeof(int));
+  
+  ZDelta(bitmask,maxh,H, h_delta);
+  
+  //ZBox
+  h_box = (int**)malloc(2* sizeof(int*));
+  memset(h_box, 0, 2* sizeof(int*));
+  
+  h_box[0] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+  h_box[1] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+  memset(h_box[0], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+  memset(h_box[1], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+  
+  if (!H)
+  {
+    h_box[0][0] = h_box[0][1] = h_box[0][2] = 0;
+    h_box[1][0] = h_box[1][1] = h_box[1][2] = 0;
+  }
+  else
+  {
+    assert(H>=1 && H<=maxh);
+    Deinterleave(bitmask,maxh,ZStart(bitmask,maxh,H), h_box[0]);
+    Deinterleave(bitmask,maxh,ZEnd  (bitmask,maxh,H), h_box[1]);
+  }
+  
+  //calculate intersection of the query with current H box
+  GetBoxIntersection(userBox, h_box, alignedBox);
+//  printf("User box %d %d %d - %d %d %d\n", userBox[0][0], userBox[0][1], userBox[0][2],userBox[1][0], userBox[1][1], userBox[1][2]);
+//  printf("H    box %d %d %d - %d %d %d\n", h_box[0][0], h_box[0][1], h_box[0][2],h_box[1][0], h_box[1][1], h_box[1][2]);
+  
+  //the box is not valid
+  if (!isValidBox(alignedBox))
+  {
+    //fprintf(stderr, "Invalid box %d %d %d - %d %d %d\n", alignedBox[0][0], alignedBox[0][1], alignedBox[0][2],alignedBox[1][0], alignedBox[1][1], alignedBox[1][2]);
+    freeBox(h_box);
+    free(h_delta);
+    return PIDX_err_hz;
+  }
+  
+  alignedBox = AlignEx(alignedBox, h_box[0], h_delta);
+  
+  //invalid box
+  if (!isValidBox(alignedBox))
+  {
+    //fprintf(stderr, "Invalid box %d %d %d - %d %d %d\n", alignedBox[0][0], alignedBox[0][1], alignedBox[0][2],alignedBox[1][0], alignedBox[1][1], alignedBox[1][2]);
+    freeBox(h_box);
+    free(h_delta);
+    return PIDX_err_hz;
+  }
+  
+  int i;
+  for ( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+    nsamples[H][i]=1 + (alignedBox[1][i]-alignedBox[0][i])/h_delta[i];
+  
+  memcpy(a_offset[H], alignedBox[0], PIDX_MAX_DIMENSIONS * sizeof(int));
+  memcpy(a_count[H], alignedBox[1], PIDX_MAX_DIMENSIONS * sizeof(int));
+  
+  freeBox(h_box);
+  free(h_delta);
+  
+  return PIDX_success;
+
 }
 
 void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples)
