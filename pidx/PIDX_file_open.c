@@ -179,6 +179,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     }
     else
       return PIDX_err_metadata;
+
+    fclose(fp);
   }
 
   MPI_Bcast((*file)->idx->bounds, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->simulation_comm);
@@ -201,9 +203,13 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
 
-  (*file)->idx->maxh = strlen((*file)->idx->bitSequence);
-  for (uint32_t i = 0; i <= (*file)->idx->maxh; i++)
-    (*file)->idx->bitPattern[i] = RegExBitmaskBit((*file)->idx->bitSequence, i);
+  //printf("reading version %d\n",(*file)->idx->metadata_version);
+  if ((*file)->idx->io_type == PIDX_IDX_IO)
+  {
+    (*file)->idx->maxh = strlen((*file)->idx->bitSequence);
+    for (uint32_t i = 0; i <= (*file)->idx->maxh; i++)
+      (*file)->idx->bitPattern[i] = RegExBitmaskBit((*file)->idx->bitSequence, i);
+  }
 
   //printf("reading version %d\n",(*file)->idx_d->metadata_version);
 

@@ -73,6 +73,12 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
   uint32_t number_cores = 0;
   int fp = open(size_path, O_RDONLY);
+  if (fp < 0)
+  {
+    fprintf(stderr, "Error opening file %s Error code %d\n", size_path, errno);
+    return PIDX_err_io;
+  }
+
   uint64_t read_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
   if (read_count != sizeof(uint32_t))
   {
