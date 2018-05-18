@@ -256,6 +256,15 @@ PIDX_return_code PIDX_get_box_for_resolution(PIDX_file file, int resolution_to, 
   memset(restructured_box[0], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
   memset(restructured_box[1], 0, PIDX_MAX_DIMENSIONS * sizeof (int));
   
+  int** outputBox = (int**)malloc(2* sizeof(int*));
+  memset(outputBox, 0, 2* sizeof(int*));
+  outputBox[0] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+  outputBox[1] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+  memset(outputBox[0], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+  memset(outputBox[1], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+  
+  int output_set = 0;
+  
   for (uint32_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
   {
     restructured_box[0][d] = offset[d];
@@ -288,17 +297,63 @@ PIDX_return_code PIDX_get_box_for_resolution(PIDX_file file, int resolution_to, 
     memset(nsamples_per_level[j], 0, sizeof (int) * PIDX_MAX_DIMENSIONS);
   }
   
+  buffer_size[0] = 1;
+  buffer_size[1] = 1;
+  buffer_size[2] = 1;
+  
+  // In case we want to write a subset of the resolution and not all levels
   for (uint32_t j = 0; j < maxH - resolution_to; j++)
   {
+    int** alignedBox = (int**)malloc(2* sizeof(int*));
+    memset(alignedBox, 0, 2* sizeof(int*));
+    alignedBox[0] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+    alignedBox[1] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+    memset(alignedBox[0], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+    memset(alignedBox[1], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+    
     // Visus API call to compute start and end HZ for every HZ level
-    Align((maxH - 1), j, file->idx->bitPattern, restructured_box, start_xyz_per_hz_level, end_xyz_per_hz_level, nsamples_per_level);
+    int ret = AlignBox((maxH - 1), j, file->idx->bitPattern, restructured_box, start_xyz_per_hz_level, end_xyz_per_hz_level, nsamples_per_level, alignedBox);
+    
+    if(ret == PIDX_success)
+    {
+      //printf("%d BOX %d %d %d - %d %d %d\n", file->idx_c->simulation_rank, alignedBox[0][0], alignedBox[0][1], alignedBox[0][2],alignedBox[1][0], alignedBox[1][1], alignedBox[1][2]);
+      
+      if(output_set==0)
+      {
+        for (uint32_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
+        {
+          outputBox[0][d] = alignedBox[0][d];
+          outputBox[1][d] = alignedBox[1][d];
+        }
+        output_set = 1;
+      }
+    
+      GetBoxUnion(outputBox, alignedBox, outputBox);
+      freeBox(alignedBox);
+    }
     
 //    if (file->idx_c->simulation_rank == 3)
-//      printf("Test %d : %d %d %d\n", j, nsamples_per_level[j][0], nsamples_per_level[j][1], nsamples_per_level[j][2]);
+     printf("%d: Level %d : %d %d %d\n", file->idx_c->simulation_rank, j, nsamples_per_level[j][0], nsamples_per_level[j][1], nsamples_per_level[j][2]);
+
+//    printf("Level %d : %d %d %d start %lld %lld %lld end %lld %lld %lld\n", j, nsamples_per_level[j][0], nsamples_per_level[j][1], nsamples_per_level[j][2], start_xyz_per_hz_level[0], start_xyz_per_hz_level[1],start_xyz_per_hz_level[2], end_xyz_per_hz_level[0],end_xyz_per_hz_level[1],end_xyz_per_hz_level[2]);
     
-    *buffer_size = *buffer_size + nsamples_per_level[j][0]*nsamples_per_level[j][1]*nsamples_per_level[j][2];
+    //*buffer_size = *buffer_size + nsamples_per_level[j][0]*nsamples_per_level[j][1]*nsamples_per_level[j][2];
+    
+    char c = file->idx->bitSequence[j];
+    
+    if(c=='0')
+      buffer_size[0] += nsamples_per_level[j][0];
+    else if(c=='1')
+      buffer_size[1] += nsamples_per_level[j][1];
+    else if(c=='2')
+      buffer_size[2] += nsamples_per_level[j][2];
+    
+    //printf("buff size %lld\n", *buffer_size);
+    
   }
   
+  printf("%d: Output box %d %d %d - %d %d %d\n", file->idx_c->simulation_rank, outputBox[0][0], outputBox[0][1], outputBox[0][2], outputBox[1][0], outputBox[1][1], outputBox[1][2]);
+
   
   for (uint32_t j = 0; j < maxH; j++)
   {
@@ -311,12 +366,8 @@ PIDX_return_code PIDX_get_box_for_resolution(PIDX_file file, int resolution_to, 
   free(end_xyz_per_hz_level);
   free(nsamples_per_level);
 
-  free(restructured_box[0]);
-  restructured_box[0] = 0;
-  free(restructured_box[1]);
-  restructured_box[1] = 0;
-  free(restructured_box);
-  restructured_box = 0;
+  freeBox(restructured_box);
+  freeBox(outputBox);
 
   return PIDX_success;
 }
@@ -385,7 +436,7 @@ PIDX_return_code PIDX_get_restructuring_box(PIDX_file file, PIDX_point reg_patch
 
 
 
-PIDX_return_code PIDX_set_first_tstep(PIDX_file file, int tstep)
+PIDX_return_code PIDX_set_first_time_step(PIDX_file file, int tstep)
 {
   if (!file)
     return PIDX_err_file;
@@ -397,7 +448,7 @@ PIDX_return_code PIDX_set_first_tstep(PIDX_file file, int tstep)
 
 
 
-PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep)
+PIDX_return_code PIDX_get_first_time_step(PIDX_file file, int* tstep)
 {
   if (!file)
     return PIDX_err_file;
@@ -409,7 +460,7 @@ PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep)
 
 
 
-PIDX_return_code PIDX_set_last_tstep(PIDX_file file, int tstep)
+PIDX_return_code PIDX_set_last_time_step(PIDX_file file, int tstep)
 {
   if (!file)
     return PIDX_err_file;
@@ -421,7 +472,7 @@ PIDX_return_code PIDX_set_last_tstep(PIDX_file file, int tstep)
 
 
 
-PIDX_return_code PIDX_get_last_tstep(PIDX_file file, int* tstep)
+PIDX_return_code PIDX_get_last_time_step(PIDX_file file, int* tstep)
 {
   if (!file)
     return PIDX_err_file;
