@@ -87,11 +87,12 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(idx_write_compressed "basic-io/idx_write_compressed.c")
   TARGET_LINK_LIBRARIES(idx_write_compressed ${EXAMPLES_LINK_LIBS})
 
+# Experimental reduced resolution
   PIDX_ADD_CEXECUTABLE(idx_write_reduce_resolution "basic-io/idx_write_reduced_resolution.c")
   TARGET_LINK_LIBRARIES(idx_write_reduce_resolution ${EXAMPLES_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(idx_read_reduce_resolution "basic-io/idx_read_reduced_resolution.c")
-  TARGET_LINK_LIBRARIES(idx_read_reduce_resolution ${EXAMPLES_LINK_LIBS})
+#  PIDX_ADD_CEXECUTABLE(idx_read_reduce_resolution "basic-io/idx_read_reduced_resolution.c")
+#  TARGET_LINK_LIBRARIES(idx_read_reduce_resolution ${EXAMPLES_LINK_LIBS})
 
 ENDIF ()
 
