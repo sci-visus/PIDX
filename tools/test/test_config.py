@@ -38,8 +38,11 @@
 ## For support: support@visus.net
 ## 
 ##
-write_executable = "../../build/examples/idx_write"
-read_executable = "../../build/examples/idx_read"
+write_idx_executable = "../../build/examples/idx_write"
+read_idx_executable = "../../build/examples/idx_read"
+write_compressed_executable = "../../build/examples/idx_write_compressed"
+write_partitioned_executable = "../../build/examples/idx_write_partitioned"
+
 mpirun="mpirun"
 
 # enable debug prints 

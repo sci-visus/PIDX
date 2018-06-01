@@ -152,12 +152,12 @@ int main(int argc, char **argv)
   PIDX_close_access(p_access);
 
   // Compare the data that we just against the syntethic data
-  verify_read_results();
-
+  int ret = verify_read_results();
+  
   free(data);
   shutdown_mpi();
-
-  return 0;
+  
+  return ret;
 }
 
 static void parse_args(int argc, char **argv)
@@ -317,7 +317,7 @@ static int verify_read_results()
           for (vps = 0; vps < values_per_sample; vps++)
           {
             memcpy(&int_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
-            if (int_val != var + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            if (int_val != var + 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
               //if (rank == 0)
@@ -379,10 +379,12 @@ static int verify_read_results()
 
   if (rank == 0)
     printf("Correct Sample Count %d Incorrect Sample Count %d\n", total_read_count, total_read_error_count);
-
-  if (total_read_error_count == 0 && (total_read_count == global_bounds[2]*global_bounds[1]*global_bounds[0]*values_per_sample))
+  
+  if(total_read_error_count == 0 && (total_read_count == global_bounds[2]*global_bounds[1]*global_bounds[0]*values_per_sample)){
     return 0;
-  else
+  }
+  else{
     return 1;
+  }
 
 }

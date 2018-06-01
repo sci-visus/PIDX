@@ -40,8 +40,9 @@
  */
 
 #include "../../PIDX_inc.h"
-#define MAX_TEMPLATE_DEPTH 6
 
+#define MAX_TEMPLATE_DEPTH 6
+#define PIDX_USE_BASENAME_FILE_TEMPLATE 1
 
 static uint32_t* headers;
 static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode);
@@ -294,6 +295,9 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
   }
 
   //pidx does not do path remapping
+#if PIDX_USE_BASENAME_FILE_TEMPLATE
+  sprintf(file_temp, "%s", basename);
+#else
   strcpy(file_temp, data_set_path);
   for (N = strlen(file_temp) - 1; N >= 0; N--)
   {
@@ -301,6 +305,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
     file_temp[N] = 0;
     if (ch == '.') break;
   }
+#endif
 
   //can happen if I have only only one block
   if (nbits_blocknumber == 0)
@@ -454,6 +459,9 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
   }
 
   //pidx does not do path remapping
+#if PIDX_USE_BASENAME_FILE_TEMPLATE
+  sprintf(file_temp, "%s", basename);
+#else
   strcpy(file_temp, data_set_path);
   for (N = strlen(file_temp) - 1; N >= 0; N--)
   {
@@ -461,6 +469,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     file_temp[N] = 0;
     if (ch == '.') break;
   }
+#endif
 
   //can happen if I have only only one block
   if (nbits_blocknumber == 0)
@@ -577,6 +586,9 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
   }
 
   //pidx does not do path remapping
+#if PIDX_USE_BASENAME_FILE_TEMPLATE
+  sprintf(file_temp, "%s", basename);
+#else
   strcpy(file_temp, data_set_path);
   for (N = strlen(file_temp) - 1; N >= 0; N--)
   {
@@ -584,7 +596,8 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
     file_temp[N] = 0;
     if (ch == '.') break;
   }
-
+#endif
+  
   //can happen if I have only only one block
   if (nbits_blocknumber == 0)
     strcat(file_temp, "/%01x.bin");
