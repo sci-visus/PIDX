@@ -158,7 +158,11 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
           #os.popen("rm -R _out_read.txt")
           #os.popen("rm -R _out_write.txt")
 
-    #os.popen("rm -R data*")
+    if(travis_mode > 0):
+      append_travis("rm -R data*")
+    else:
+      os.popen("rm -R data*")
+      
   if(travis_mode == 0):
     print "Success %d/%d" % (success, n_tests)
 

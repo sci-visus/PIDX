@@ -68,7 +68,7 @@ char var_name[MAX_VAR_COUNT][512];
 int bpv[MAX_VAR_COUNT];
 char type_name[MAX_VAR_COUNT][512];
 int vps[MAX_VAR_COUNT];
-int parts_count[3];
+int parts_count[3]={1,1,1};
 PIDX_variable* variable;
 
 char *usage = "Serial Usage: ./idx_write_partitioned -g 32x32x32 -l 32x32x32 -p 2x1x1 -v 2 -t 4 -f output_idx_file_name\n"
