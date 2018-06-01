@@ -1,10 +1,9 @@
-The master branch is currently [![Build Status](https://travis-ci.org/sci-visus/PIDX.svg?branch=master)](https://travis-ci.org/sci-visus/PIDX) on Linux and OSX and <img src="https://ci.appveyor.com/api/projects/status/github/sci-visus/PIDX?svg=true" alt="Project Badge"/> on Windows.
-
 --------------------------------------
 PIDX
 --------------------------------------
 
 PIDX is an efficient parallel I/O library that reads and writes multiresolution IDX data files.
+The master branch is currently [![Build Status](https://travis-ci.org/sci-visus/PIDX.svg?branch=master)](https://travis-ci.org/sci-visus/PIDX) on Linux and OSX and <img src="https://ci.appveyor.com/api/projects/status/github/sci-visus/PIDX?svg=true" alt="Project Badge"/> on Windows.
 
 --------------------------------------
 Prerequisites 
