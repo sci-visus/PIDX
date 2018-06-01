@@ -57,13 +57,13 @@ IF (PIDX_BUILD_DEVELOP)
     MESSAGE("Configuring examples with MPI support")
     INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${MPI_CXX_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   IF (ZFP_FOUND)
     MESSAGE("Configuring examples with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   # ////////////////////////////////////////
   # executable
@@ -149,9 +149,9 @@ IF (PIDX_BUILD_DEVELOP)
 #        TARGET_LINK_LIBRARIES(hdf5_to_idx pidx ${HDF5_LIBRARIES})
 #      else()
 #         message(ERROR ": HDF5 library required to compile ${HDF5_TO_IDX_SOURCES}")
-#      endif()
+#      endif ()
           
-#    ENDIF()
+#    ENDIF ()
 
 #    if (PIDX_OPTION_PNETCDF)
 #      if (PNETCDF_FOUND)
@@ -163,10 +163,11 @@ IF (PIDX_BUILD_DEVELOP)
 #        TARGET_LINK_LIBRARIES(pnetcdf_to_idx ${PNETCDF_LIBRARIES})
 #      else()
 #         message(ERROR ": PnetCDF library required to compile ${PNETCDF_TO_IDX_SOURCES}")
-#      endif()
-#    ENDIF()  
+#      endif ()
+#    ENDIF ()  
 
-#  ENDIF()
+#  ENDIF ()
+
 
   PIDX_ADD_CEXECUTABLE(single_buffer_single_variable_read "basic-io/read/single_buffer_single_variable_read.c")
   TARGET_LINK_LIBRARIES(single_buffer_single_variable_read ${EXAMPLES_LINK_LIBS})
@@ -183,6 +184,9 @@ IF (PIDX_BUILD_DEVELOP)
   PIDX_ADD_CEXECUTABLE(single_buffer_local_partitioned_idx_write "basic-io/write/local_partitioned_idx/single_buffer_local_partitioned_idx_write.c")
   TARGET_LINK_LIBRARIES(single_buffer_local_partitioned_idx_write ${EXAMPLES_LINK_LIBS})
 
+
+
+
   #PIDX_ADD_CEXECUTABLE(multi_buffer_local_partitioned_idx_write "basic-io/write/local_partitioned_idx/multi_buffer_local_partitioned_idx_write.c")
   #TARGET_LINK_LIBRARIES(multi_buffer_local_partitioned_idx_write ${EXAMPLES_LINK_LIBS})
 
@@ -193,4 +197,4 @@ IF (PIDX_BUILD_DEVELOP)
   #TARGET_LINK_LIBRARIES(multi_buffer_global_partitioned_idx_write ${EXAMPLES_LINK_LIBS})
 
 
-ENDIF()
+ENDIF ()

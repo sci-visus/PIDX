@@ -46,6 +46,7 @@
 ###########################################
 
 MACRO(PIDX_SET_COMPILER_OPTIONS)
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
   IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     # using Clang
     message("Using clang compiler")
@@ -61,7 +62,7 @@ MACRO(PIDX_SET_COMPILER_OPTIONS)
     # using Visual Studio C++
     message("Using msvc compiler")
     message(WARNING "PIDX is not yet supported on Windows")
-  ENDIF()
+  ENDIF ()
 ENDMACRO()
 
 ###########################################
@@ -71,9 +72,9 @@ ENDMACRO()
 MACRO(PIDX_SET_MACHINE_SPECIFIC_OPTIONS)
   IF ($ENV{HOSTNAME} MATCHES "mira")
     #mira-specIFic options
-  ELSEIF($ENV{HOSTNAME} MATCHES "vulcan")
+  ELSEIF ($ENV{HOSTNAME} MATCHES "vulcan")
     #vulcan-specIFic options
-  ENDIF()
+  ENDIF ()
 ENDMACRO()
 
 ###########################################
@@ -108,7 +109,7 @@ MACRO(PIDX_ADD_LIBRARY targetname files)
     ADD_LIBRARY(${targetname} SHARED ${files})
   ELSE()
     ADD_LIBRARY(${targetname} STATIC ${files})
-  ENDIF()
+  ENDIF ()
   SET_TARGET_PROPERTIES(${targetname} PROPERTIES LINKER_LANGUAGE C)
   INSTALL(TARGETS ${targetname} 
                   ARCHIVE DESTINATION lib

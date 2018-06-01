@@ -45,8 +45,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
 {
   int i = 0, j = 0, j1 = 0, d = 0;
 
-  PIDX_variable_group var_grp = id->idx->variable_grp[id->gi];
-  ab->aggregator_interval = id->idx_c->lnprocs / ((id->li - id->fi + 1) * lbl->efc * ab->agg_f);
+  ab->aggregator_interval = id->idx_c->partition_nprocs / ((id->li - id->fi + 1) * lbl->efc * ab->agg_f);
   assert(ab->aggregator_interval != 0);
 
   ab->buffer_size = 0;
@@ -63,7 +62,7 @@ PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_b
     for (j = id->fi; j <= id->li; j++)
     {
       j1 = j - id->fi;
-      PIDX_variable var = var_grp->variable[j];
+      PIDX_variable var = id->idx->variable[j];
       id->agg_r[i][j1] = malloc(var->vps * sizeof (int) * ab->agg_f);
       memset(id->agg_r[i][j1], 0, var->vps * sizeof (int) * ab->agg_f);
       for (d = 0 ; d < var->vps * ab->agg_f; d++)

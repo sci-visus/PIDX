@@ -60,7 +60,10 @@ extern "C" {
 #define PIDX_HAVE_NVISUSIO 0
 
 #define PIDX_MAX_TEMPLATE_DEPTH 6
-#define DETAIL_OUTPUT 1
+
+#define DETAIL_OUTPUT 0
+
+#define DEBUG_OUTPUT 0
 
 #ifndef __cplusplus
 #  define _XOPEN_SOURCE 600
@@ -79,17 +82,6 @@ extern "C" {
 enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
 
-
-
-
-// Aggregation modes
-// AGG_SETUP - Only sets the aggregation buffers
-// AGG_PERFORM - Performs aggregation phase
-// AGG_SETUP_AND_PERFORM - Sets aggregation buffers and also performs aggregation
-enum AGG_MODES {AGG_SETUP, AGG_PERFORM, AGG_SETUP_AND_PERFORM};
-
-
-enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 
 // No process dumps any meta data info
 #define PIDX_NO_META_DATA_DUMP             0
@@ -115,10 +107,9 @@ enum WAVELET_MODES {WAVELET_STENCIL, WAVELET_RST};
 
 enum PIDX_io_type {
   PIDX_IDX_IO=0,                    /// Writes data in IDX format
-  PIDX_GLOBAL_PARTITION_IDX_IO=1,   /// Writes data in partitioned space with global indexing
-  PIDX_LOCAL_PARTITION_IDX_IO=2,    /// Writes data in partitioned space with local indexing
-  PIDX_RAW_IO=3,                    /// Writes data in raw format
-  PIDX_WAVELET_IO=4                 /// Calls wavelet computation code
+  PIDX_LOCAL_PARTITION_IDX_IO=1,    /// Writes data in partitioned space with local indexing
+  PIDX_RAW_IO=2,                    /// Writes data in raw format
+  PIDX_PARTICLE_IO=3                /// Writes particle data
 };
 
 enum PIDX_endian_type{
@@ -128,6 +119,7 @@ enum PIDX_endian_type{
   
 // Calls merge tree analysis code (in-situ mode)
 #define PIDX_MERGE_TREE_ANALYSIS                      5
+
 
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256
@@ -148,7 +140,6 @@ enum PIDX_endian_type{
 #define PIDX_MODE_APPEND            128  /* ADIO_APPEND */
 #define PIDX_MODE_SEQUENTIAL        256  /* ADIO_SEQUENTIAL */
 
-//double pa1, pa2, pa3, pa4, pa5, pa6;
 
 /// IDX specifies generic types using simple strings consisting of an unambiguous data type and
 /// C array syntax, e.g. "float32[3]".  In the PIDX library, we declare types using strings so
@@ -202,6 +193,7 @@ extern PIDX_data_type FLOAT32;
 extern PIDX_data_type FLOAT32_GA;
 extern PIDX_data_type FLOAT32_RGB;
 extern PIDX_data_type FLOAT32_RGBA;
+extern PIDX_data_type FLOAT32_7STENCIL;
 extern PIDX_data_type FLOAT32_9TENSOR;
 
 extern PIDX_data_type FLOAT64;

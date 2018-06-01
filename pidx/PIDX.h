@@ -1,28 +1,28 @@
 /*
  * BSD 3-Clause License
- * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ *
+ * Copyright (c) 2010-2018 ViSUS L.L.C.,
  * Scientific Computing and Imaging Institute of the University of Utah
- * 
+ *
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
  * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
- *  
+ *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the copyright holder nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,10 +33,10 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  * For additional information about this project contact: pascucci@acm.org
  * For support: support@visus.net
- * 
+ *
  */
 
 /*
@@ -55,9 +55,9 @@
  * \author Valerio Pascucci
  * \date   10/09/14
  *
- * PIDX is an I/O library that enables HPC applications to write distributed 
- * multi-dimensional data directly into a hierarchical multi-resolution 
- * data format (IDX) with minimal overhead. 
+ * PIDX is an I/O library that enables HPC applications to write distributed
+ * multi-dimensional data directly into a hierarchical multi-resolution
+ * data format (IDX) with minimal overhead.
  *
  */
 
@@ -93,7 +93,7 @@ typedef struct PIDX_file_descriptor* PIDX_file;
 /// flags, PIDX_FILE_RDWR and PIDX_FILE_RDONLY, respectively, are not relevant in this
 /// function. Further note that a specification of PIDX_FILE_RDONLY will be ignored;
 /// the file will be created in read-write mode, regardless.
-/// \param access Used to manage file access between processes. Must be created prior to calling 
+/// \param access Used to manage file access between processes. Must be created prior to calling
 /// this function using PIDX_create_access().
 /// \param dims The dims parameter specifies the global domain dimensions
 /// \param file Reference to PIDX_file object that will be initialized on successful completion of this function.
@@ -118,7 +118,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 /// \param filename The filename parameter specifies the name of the file to be opened.
 /// \param flags The flags parameter specifies whether the file will be opened in
 /// read-write or read-only mode, PIDX_FILE_RDWR or PIDX_FILE_RDONLY, respectively.
-/// \param access Used to manage file access between processes. Must be created prior to calling 
+/// \param access Used to manage file access between processes. Must be created prior to calling
 /// this function using PIDX_create_access().
 /// \param file Reference to PIDX_file object that will be initialized on successful completion of this function.
 /// \return file: The return value file, is a file identifier for the opened idx file; this
@@ -212,28 +212,6 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count);
 
 
 ///
-/// Sets the transformation from logical dims to the physical coordinates (commonly used to visualize the volume)
-/// \param file The IDX file handler.
-/// \param transform standard 4x4 transformation matrix (right-handed / OpenGL style), see http://www.dirsig.org/docs/new/affine.html.
-/// \return PIDX_return_code The error code returned by the function.
-/// It is PIDX_success if the task is completed correctly.
-///
-PIDX_return_code PIDX_set_transform(PIDX_file file, double transform[16]);
-
-
-
-///
-/// Gets the transformation from logical dims to the physical coordinates (commonly used to visualize the volume)
-/// \param file The IDX file handler.
-/// \return transform: will return the standard 4x4 transformation matrix (right-handed / OpenGL style), see http://www.dirsig.org/docs/new/affine.html.
-/// \return PIDX_return_code The error code returned by the function.
-/// It is PIDX_success if the task is completed correctly.
-///
-PIDX_return_code PIDX_get_transform(PIDX_file file, double transform[16]);
-
-
-
-///
 /// Sets the current time step for IDX file.
 /// The function should be used for time-varying dataset.
 /// \param file The IDX file handler.
@@ -303,7 +281,7 @@ PIDX_return_code PIDX_get_block_count(PIDX_file file, int* block_count);
 /// \param resolution_to
 /// \return
 ///
-PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int resolution_to);
+PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_to);
 
 
 
@@ -314,8 +292,18 @@ PIDX_return_code PIDX_set_resolution(PIDX_file file, int resolution_from, int re
 /// \param resolution_to
 /// \return
 ///
-PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_from, int *resolution_to);
+PIDX_return_code PIDX_get_resolution(PIDX_file file, int *resolution_to);
 
+  
+///
+/// \brief PIDX_get_box_for_resolution
+/// \param file
+/// \param resolution_to
+/// \param offset of the box
+/// \param size of the box
+/// \return
+///
+PIDX_return_code PIDX_get_box_for_resolution(PIDX_file file, int resolution_to, PIDX_point offset, PIDX_point size, uint64_t* buffer_size);
 
 
 ///
@@ -363,12 +351,32 @@ PIDX_return_code PIDX_get_restructuring_box(PIDX_file file, PIDX_point reg_patch
 
 
 ///
+/// \brief PIDX_set_physical_dims
+/// \param file
+/// \param dims
+/// \return
+///
+PIDX_return_code PIDX_set_physical_dims(PIDX_file file, PIDX_physical_point dims);
+
+
+
+///
+/// \brief PIDX_get_physical_dims
+/// \param file
+/// \param dims
+/// \return
+///
+PIDX_return_code PIDX_get_physical_dims(PIDX_file file, PIDX_physical_point dims);
+
+
+
+///
 /// \brief PIDX_set_first_tstep
 /// \param file
 /// \param tstep
 /// \return
 ///
-PIDX_return_code PIDX_set_first_tstep(PIDX_file file, int tstep);
+PIDX_return_code PIDX_set_first_time_step(PIDX_file file, int tstep);
 
 
 
@@ -377,7 +385,7 @@ PIDX_return_code PIDX_set_first_tstep(PIDX_file file, int tstep);
 /// \param file The IDX file handler.
 /// \return The first timestep index.
 ///
-PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep);
+PIDX_return_code PIDX_get_first_time_step(PIDX_file file, int* tstep);
 
 
 
@@ -387,7 +395,7 @@ PIDX_return_code PIDX_get_first_tstep(PIDX_file file, int* tstep);
 /// \param tstep
 /// \return
 ///
-PIDX_return_code PIDX_set_last_tstep(PIDX_file file, int tstep);
+PIDX_return_code PIDX_set_last_time_step(PIDX_file file, int tstep);
 
 
 
@@ -396,7 +404,7 @@ PIDX_return_code PIDX_set_last_tstep(PIDX_file file, int tstep);
 /// \param file The IDX file handler.
 /// \return The last timestep index.
 ///
-PIDX_return_code PIDX_get_last_tstep(PIDX_file file, int* tstep);
+PIDX_return_code PIDX_get_last_time_step(PIDX_file file, int* tstep);
 
 
 
@@ -472,7 +480,7 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type);
 
 
 
-
+#if 0
 ///
 /// \brief PIDX_set_wavelet_level
 /// \param file
@@ -510,26 +518,7 @@ PIDX_return_code PIDX_set_ROI_type(PIDX_file file, int type);
 /// \return
 ///
 PIDX_return_code PIDX_get_ROI_type(PIDX_file file, int* type);
-
-
-
-///
-/// \brief PIDX_set_raw_io_pipe_length
-/// \param file
-/// \param pipe_length
-/// \return
-///
-PIDX_return_code PIDX_set_raw_io_pipe_length(PIDX_file file, int pipe_length);
-
-
-
-///
-/// \brief PIDX_get_raw_io_pipe_length
-/// \param file
-/// \param pipe_length
-/// \return
-///
-PIDX_return_code PIDX_get_raw_io_pipe_length(PIDX_file file, int* pipe_length);
+#endif
 
 
 
@@ -591,7 +580,7 @@ PIDX_return_code PIDX_get_cache_time_step(PIDX_file file, int* ts);
 
 
 
-
+#if 0
 ///
 /// \brief PIDX_set_process_decomposition
 /// \param file
@@ -613,7 +602,7 @@ PIDX_return_code PIDX_set_process_decomposition(PIDX_file file, int np_x, int np
 /// \return
 ///
 PIDX_return_code PIDX_get_process_decomposition(PIDX_file file, int* np_x, int* np_y, int* np_z);
-
+#endif
 
 ///
 /// \brief PIDX_set_comm
@@ -669,7 +658,22 @@ PIDX_return_code PIDX_variable_write_data_layout(PIDX_variable variable, PIDX_po
 /// \param data_layout
 /// \return
 ///
-PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, int number_of_particles, PIDX_data_layout data_layout);
+PIDX_return_code PIDX_variable_write_particle_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, const void* read_from_this_buffer, uint64_t number_of_particles, PIDX_data_layout data_layout);
+
+
+
+
+///
+/// \brief PIDX_variable_write_particle_data_physical_layout
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param read_from_this_buffer
+/// \param number_of_particles
+/// \param data_layout
+/// \return
+///
+PIDX_return_code PIDX_variable_write_particle_data_physical_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, const void* read_from_this_buffer, uint64_t number_of_particles, PIDX_data_layout data_layout);
 
 
 
@@ -704,6 +708,23 @@ PIDX_return_code PIDX_get_next_variable(PIDX_file file, PIDX_variable* variable)
 /// \return
 ///
 PIDX_return_code PIDX_variable_read_data_layout(PIDX_variable variable, PIDX_point offset, PIDX_point dims, void* read_from_this_buffer, PIDX_data_layout data_layout);
+
+
+
+
+///
+/// \brief PIDX_variable_read_particle_data_layout
+/// \param variable
+/// \param offset
+/// \param dims
+/// \param write_to_this_buffer A buffer which will be allocated by PIDX to hold
+///           sufficient storage for the particles being loaded.
+/// \param number_of_particles The number of particles read
+/// \param data_layout
+/// \return
+///
+PIDX_return_code PIDX_variable_read_particle_data_layout(PIDX_variable variable, PIDX_physical_point offset, PIDX_physical_point dims, void** write_to_this_buffer, uint64_t* number_of_particles, PIDX_data_layout data_layout);
+
 
 
 
@@ -748,7 +769,7 @@ PIDX_return_code PIDX_set_current_variable_by_name(PIDX_file file, const char* v
 
 ///
 /// Gets the index of the variable in an IDX file.
-/// starts with index 0, to (number of variable - 1) 
+/// starts with index 0, to (number of variable - 1)
 /// \param file The IDX file handler.
 /// \return Index of the variable.
 ///
@@ -985,7 +1006,7 @@ PIDX_return_code PIDX_disable_agg(PIDX_file file);
 
 
 ///
-/// \brief PIDX_state_dump
+/// \brief PIDX_dump_state
 /// \param file
 /// \param process_state
 /// \return

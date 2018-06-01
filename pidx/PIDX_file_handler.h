@@ -48,29 +48,31 @@
 ///
 struct PIDX_file_descriptor
 {
-  int flags;
+  int flags;                                    ///< idx file open and create mode
 
-  PIDX_io io;
+  // file system info
+  int fs_block_size;                            ///< file system block size which is queryed once at the beginning
 
-  int local_group_index;                        ///< Starting index of the variables that needs to be written before flush or close
-  int local_group_count;                        ///< Number of variables that needs to be written out
+  // flush related
+  int variable_index_tracker;                   ///< tracking upto which variable io has been done (used for flushing)
+  int local_variable_index;                     ///< starting index of variable that needs to be written out before a flush
+  int local_variable_count;                     ///< total number of variables that is written out in a flush
 
-  int flush_used;                               ///< Flush used
-  int write_on_close;                           ///< HPC Writes
+  // IDX related
+  idx_dataset idx;                              ///< Contains all IDX related info
+  idx_blocks idx_b;                             ///< idx block related
+  idx_comm idx_c;                               ///< MPI related
+  idx_debug idx_dbg;                            ///< Flags for debugging
 
-  int ROI_writes;                               ///< ROI writes
+  // IO phases
+  PIDX_io io;                                   ///< this descriptor contains pointers to descriptors to all other sub-phases like restructuring, HZ encoding and aggregation
 
-  idx_comm idx_c;                               ///< MPI related info
+  // Timming
+  PIDX_time time;                               ///< For detailed time profiling of all phases
 
+  // for caching HZ indices
+  PIDX_metadata_cache meta_data_cache;          ///< enables caching across time steps
 
-  idx_dataset idx;                             ///< Contains all relevant IDX file info
-                                               ///< Blocks per file, samples per block, bitmask, box, file name template
-
-  idx_dataset_derived_metadata idx_d;          ///< Contains all derieved IDX file info
-                                               ///< number of files, files that are ging to be populated
-
-  idx_debug idx_dbg;                           ///< Contains flags for debugging
-
-
-  idx_metadata_cache idx_cache;
+  // for restructuring and partitioning
+  PIDX_restructured_grid restructured_grid;     ///< contains information of the restructured grid
 };

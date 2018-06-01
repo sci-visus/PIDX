@@ -54,18 +54,18 @@
 #include "../../PIDX_inc.h"
 
 
-PIDX_idx_rst_id PIDX_idx_rst_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index)
+PIDX_idx_rst_id PIDX_idx_rst_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_restructured_grid restructured_grid, int var_start_index, int var_end_index)
 {
   PIDX_idx_rst_id idx_rst_id;
   idx_rst_id = (PIDX_idx_rst_id)malloc(sizeof (*idx_rst_id));
   memset(idx_rst_id, 0, sizeof (*idx_rst_id));
 
   idx_rst_id->idx_metadata = idx_meta_data;
-  idx_rst_id->idx_derived_metadata = idx_derived;
-  idx_rst_id->idx_comm_metadata = idx_c;
+  idx_rst_id->idx_c = idx_c;
   idx_rst_id->idx_debug_metadata = idx_dbg;
 
-  idx_rst_id->group_index = 0;
+  idx_rst_id->restructured_grid = restructured_grid;
+
   idx_rst_id->first_index = var_start_index;
   idx_rst_id->last_index = var_end_index;
 

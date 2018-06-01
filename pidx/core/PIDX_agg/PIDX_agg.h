@@ -57,22 +57,14 @@ struct PIDX_agg_struct
 {
   MPI_Win win;
 
-  MPI_Win shard_block_win;
-
   idx_comm idx_c;
 
-  /// Contains all relevant IDX file info
-  /// Blocks per file, samples per block, bitmask, patch, file name template and more
   idx_dataset idx;
 
-  /// Contains all derieved IDX file info
-  /// number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_d;
+  idx_blocks idx_b;
 
-  int gi;
   int fi;
   int li;
-  //int lvi;
 
   int ***agg_r;
 };
@@ -87,25 +79,32 @@ typedef struct PIDX_agg_struct* PIDX_agg_id;
 /// \param start_var_index starting index of the variable on which the relevant operation is to be applied
 /// \param end_var_index ending index of the variable on which the relevant operation is to be applied
 /// \return PIDX_hz_encode_id The identifier associated with the task
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int fi, int li);
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_blocks idx_b, int fi, int li);
 
 
 
 PIDX_return_code PIDX_agg_create_randomized_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status);
 
+
 ///
 PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
-
 
 
 ///
 PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int i1, int j1, int file_status);
 
 
+///
 PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status);
 
 
+///
+PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl);
+
+
+///
 PIDX_return_code PIDX_agg_buf_destroy(Agg_buffer agg_buffer);
+
 
 ///
 PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id agg_id, Agg_buffer agg_buffer, int layout_id, PIDX_block_layout local_block_layout, int PIDX_MODE);

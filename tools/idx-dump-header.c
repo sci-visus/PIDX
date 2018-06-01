@@ -70,10 +70,10 @@ int main(int argc, char **argv)
   int j, var;
   int fd1;
   int blocks_per_file = 0, variable_count = 0;
-  size_t binheader_count;
+  uint64_t binheader_count;
   uint32_t *binheader1;
-  size_t data_length1;
-  off_t data_offset1;
+  uint64_t data_length1;
+  uint64_t data_offset1;
   
   if ( argv[1] == NULL || argv[2] == NULL || argv[3] == NULL )
   {
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
   }
   
   fd1 = open(argv[1], O_RDONLY); 
-  if(fd1 < 0)
+  if (fd1 < 0)
   {
     fprintf(stderr, "Invalid input binary file %s\n", argv[1]);
     return(-1);
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   binheader_count = 10 + 10 * blocks_per_file * variable_count;
   binheader1 = malloc(sizeof(*binheader1)*(binheader_count));
   
-  ssize_t rc = 0;
+  uint64_t rc = 0;
   rc = read(fd1, binheader1, (sizeof(*binheader1) * binheader_count));
   if (rc != (sizeof(*binheader1) * binheader_count))
   {

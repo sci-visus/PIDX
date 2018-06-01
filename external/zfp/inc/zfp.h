@@ -148,7 +148,7 @@ zfp_stream_bit_stream(
 );
 
 /* get all compression parameters in a compact representation */
-uint64                     /* 12- or 64-bit encoding of parameters */
+zfp_uint64                     /* 12- or 64-bit encoding of parameters */
 zfp_stream_mode(
   const zfp_stream* zfp    /* compressed stream */
 );
@@ -164,13 +164,13 @@ zfp_stream_params(
 );
 
 /* byte size of sequentially compressed stream (call after compression) */
-size_t                     /* actual number of bytes of compressed storage */
+uint64_t                     /* actual number of bytes of compressed storage */
 zfp_stream_compressed_size(
   const zfp_stream* stream /* compressed stream */
 );
 
 /* conservative estimate of compressed size in bytes */
-size_t                      /* maximum number of bytes of compressed storage */
+uint64_t                      /* maximum number of bytes of compressed storage */
 zfp_stream_maximum_size(
   const zfp_stream* stream, /* compressed stream */
   const zfp_field* field    /* array to compress */
@@ -215,7 +215,7 @@ zfp_stream_set_accuracy(
 int                   /* nonzero upon success */
 zfp_stream_set_mode(
   zfp_stream* stream, /* compressed stream */
-  uint64 mode         /* 12- or 64-bit encoding of parameters */
+  zfp_uint64 mode         /* 12- or 64-bit encoding of parameters */
 );
 
 /* set all compression parameters (expert mode) */
@@ -294,7 +294,7 @@ zfp_field_dimensionality(
 );
 
 /* field size in number of array elements */
-size_t                    /* total number of scalars */
+uint64_t                    /* total number of scalars */
 zfp_field_size(
   const zfp_field* field, /* field metadata */
   uint* size              /* number of elements per dimension (may be NULL) */
@@ -308,7 +308,7 @@ zfp_field_stride(
 );
 
 /* field scalar type and dimensions */
-uint64                   /* compact 52-bit encoding of metadata */
+zfp_uint64                   /* compact 52-bit encoding of metadata */
 zfp_field_metadata(
   const zfp_field* field /* field metadata */
 );
@@ -381,19 +381,19 @@ zfp_field_set_stride_3d(
 int                 /* nonzero upon success */
 zfp_field_set_metadata(
   zfp_field* field, /* field metadata */
-  uint64 meta       /* compact 52-bit encoding of metadata */
+  zfp_uint64 meta       /* compact 52-bit encoding of metadata */
 );
 
 /* high-level API: compression and decompression --------------------------- */
 
 /* compress entire field (nonzero return value upon success) */
-size_t                   /* actual number of bytes of compressed storage */
+uint64_t                   /* actual number of bytes of compressed storage */
 zfp_compress(
   zfp_stream* stream,    /* compressed stream */
   const zfp_field* field /* field metadata */
 );
 
-size_t                   /* actual number of bytes of compressed storage */
+uint64_t                   /* actual number of bytes of compressed storage */
 zfp_compress2(
   zfp_stream* stream,    /* compressed stream */
   const zfp_field* field /* field metadata */
@@ -420,12 +420,12 @@ int                   /* nonzero upon success */
 zfp_decompress2_double(
   zfp_stream* stream, /* compressed stream */
   zfp_field* field,    /* field metadata */
-  int64* data,
+  zfp_int64* data,
   int* emax
 );
 
 /* write compression parameters and field metadata (optional) */
-size_t                    /* number of bits written or zero upon failure */
+uint64_t                    /* number of bits written or zero upon failure */
 zfp_write_header(
   zfp_stream* stream,     /* compressed stream */
   const zfp_field* field, /* field metadata */
@@ -433,7 +433,7 @@ zfp_write_header(
 );
 
 /* read compression parameters and field metadata when previously written */
-size_t                /* number of bits read or zero upon failure */
+uint64_t                /* number of bits read or zero upon failure */
 zfp_read_header(
   zfp_stream* stream, /* compressed stream */
   zfp_field* field,   /* field metadata */
@@ -473,8 +473,8 @@ needed for the compressed block.
 */
 
 /* encode 1D contiguous block of 4 values */
-uint zfp_encode_block_int32_1(zfp_stream* stream, const int32* block);
-uint zfp_encode_block_int64_1(zfp_stream* stream, const int64* block);
+uint zfp_encode_block_int32_1(zfp_stream* stream, const zfp_int32* block);
+uint zfp_encode_block_int64_1(zfp_stream* stream, const zfp_int64* block);
 uint zfp_encode_block_float_1(zfp_stream* stream, const float* block);
 uint zfp_encode_block_double_1(zfp_stream* stream, const double* block);
 
@@ -485,8 +485,8 @@ uint zfp_encode_partial_block_strided_float_1(zfp_stream* stream, const float* p
 uint zfp_encode_partial_block_strided_double_1(zfp_stream* stream, const double* p, uint nx, int sx);
 
 /* encode 2D contiguous block of 4x4 values */
-uint zfp_encode_block_int32_2(zfp_stream* stream, const int32* block);
-uint zfp_encode_block_int64_2(zfp_stream* stream, const int64* block);
+uint zfp_encode_block_int32_2(zfp_stream* stream, const zfp_int32* block);
+uint zfp_encode_block_int64_2(zfp_stream* stream, const zfp_int64* block);
 uint zfp_encode_block_float_2(zfp_stream* stream, const float* block);
 uint zfp_encode_block_double_2(zfp_stream* stream, const double* block);
 
@@ -497,8 +497,8 @@ uint zfp_encode_block_strided_float_2(zfp_stream* stream, const float* p, int sx
 uint zfp_encode_block_strided_double_2(zfp_stream* stream, const double* p, int sx, int sy);
 
 /* encode 3D contiguous block of 4x4x4 values */
-uint zfp_encode_block_int32_3(zfp_stream* stream, const int32* block);
-uint zfp_encode_block_int64_3(zfp_stream* stream, const int64* block);
+uint zfp_encode_block_int32_3(zfp_stream* stream, const zfp_int32* block);
+uint zfp_encode_block_int64_3(zfp_stream* stream, const zfp_int64* block);
 uint zfp_encode_block_float_3(zfp_stream* stream, const float* block);
 uint zfp_encode_block2_float_3(zfp_stream* stream, const float* block);
 uint zfp_encode_block_double_3(zfp_stream* stream, const double* block);
@@ -523,8 +523,8 @@ further details.
 */
 
 /* decode 1D contiguous block of 4 values */
-uint zfp_decode_block_int32_1(zfp_stream* stream, int32* block);
-uint zfp_decode_block_int64_1(zfp_stream* stream, int64* block);
+uint zfp_decode_block_int32_1(zfp_stream* stream, zfp_int32* block);
+uint zfp_decode_block_int64_1(zfp_stream* stream, zfp_int64* block);
 uint zfp_decode_block_float_1(zfp_stream* stream, float* block);
 uint zfp_decode_block_double_1(zfp_stream* stream, double* block);
 
@@ -535,8 +535,8 @@ uint zfp_decode_partial_block_strided_float_1(zfp_stream* stream, float* p, uint
 uint zfp_decode_partial_block_strided_double_1(zfp_stream* stream, double* p, uint nx, int sx);
 
 /* decode 2D contiguous block of 4x4 values */
-uint zfp_decode_block_int32_2(zfp_stream* stream, int32* block);
-uint zfp_decode_block_int64_2(zfp_stream* stream, int64* block);
+uint zfp_decode_block_int32_2(zfp_stream* stream, zfp_int32* block);
+uint zfp_decode_block_int64_2(zfp_stream* stream, zfp_int64* block);
 uint zfp_decode_block_float_2(zfp_stream* stream, float* block);
 uint zfp_decode_block_double_2(zfp_stream* stream, double* block);
 
@@ -547,36 +547,36 @@ uint zfp_decode_partial_block_strided_float_2(zfp_stream* stream, float* p, uint
 uint zfp_decode_partial_block_strided_double_2(zfp_stream* stream, double* p, uint nx, uint ny, int sx, int sy);
 
 /* decode 3D contiguous block of 4x4x4 values */
-uint zfp_decode_block_int32_3(zfp_stream* stream, int32* block);
-uint zfp_decode_block_int64_3(zfp_stream* stream, int64* block);
+uint zfp_decode_block_int32_3(zfp_stream* stream, zfp_int32* block);
+uint zfp_decode_block_int64_3(zfp_stream* stream, zfp_int64* block);
 uint zfp_decode_block_float_3(zfp_stream* stream, float* block);
 uint zfp_decode_block2_float_3(zfp_stream* stream, int* block, int* emax);
 uint zfp_decode_block_double_3(zfp_stream* stream, double* block);
-uint zfp_decode_block2_double_3(zfp_stream* stream, int64* block, int* emax);
+uint zfp_decode_block2_double_3(zfp_stream* stream, zfp_int64* block, int* emax);
 
 /* decode 3D complete or partial block from strided array */
 uint zfp_decode_block_strided_float_3(zfp_stream* stream, float* p, int sx, int sy, int sz);
 uint zfp_decode_block_strided2_float_3(zfp_stream* stream, int* p, int sx, int sy, int sz, int* emax);
 uint zfp_decode_block_strided_double_3(zfp_stream* stream, double* p, int sx, int sy, int sz);
-uint zfp_decode_block_strided2_double_3(zfp_stream* stream, int64* p, int sx, int sy, int sz, int* emax);
+uint zfp_decode_block_strided2_double_3(zfp_stream* stream, zfp_int64* p, int sx, int sy, int sz, int* emax);
 uint zfp_decode_partial_block_strided_float_3(zfp_stream* stream, float* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
 uint zfp_decode_partial_block_strided2_float_3(zfp_stream* stream, int* p, uint nx, uint ny, uint nz, int sx, int sy, int sz, int* emax);
 uint zfp_decode_partial_block_strided_double_3(zfp_stream* stream, double* p, uint nx, uint ny, uint nz, int sx, int sy, int sz);
-uint zfp_decode_partial_block_strided2_double_3(zfp_stream* stream, int64* p, uint nx, uint ny, uint nz, int sx, int sy, int sz, int* emax);
+uint zfp_decode_partial_block_strided2_double_3(zfp_stream* stream, zfp_int64* p, uint nx, uint ny, uint nz, int sx, int sy, int sz, int* emax);
 
 /* low-level API: utility functions ---------------------------------------- */
 
 /* convert dims-dimensional contiguous block to 32-bit integer type */
-void zfp_promote_int8_to_int32(int32* oblock, const int8* iblock, uint dims);
-void zfp_promote_uint8_to_int32(int32* oblock, const uint8* iblock, uint dims);
-void zfp_promote_int16_to_int32(int32* oblock, const int16* iblock, uint dims);
-void zfp_promote_uint16_to_int32(int32* oblock, const uint16* iblock, uint dims);
+void zfp_promote_int8_to_int32(zfp_int32* oblock, const zfp_int8* iblock, uint dims);
+void zfp_promote_uint8_to_int32(zfp_int32* oblock, const zfp_uint8* iblock, uint dims);
+void zfp_promote_int16_to_int32(zfp_int32* oblock, const zfp_int16* iblock, uint dims);
+void zfp_promote_uint16_to_int32(zfp_int32* oblock, const zfp_uint16* iblock, uint dims);
 
 /* convert dims-dimensional contiguous block from 32-bit integer type */
-void zfp_demote_int32_to_int8(int8* oblock, const int32* iblock, uint dims);
-void zfp_demote_int32_to_uint8(uint8* oblock, const int32* iblock, uint dims);
-void zfp_demote_int32_to_int16(int16* oblock, const int32* iblock, uint dims);
-void zfp_demote_int32_to_uint16(uint16* oblock, const int32* iblock, uint dims);
+void zfp_demote_int32_to_int8(zfp_int8* oblock, const zfp_int32* iblock, uint dims);
+void zfp_demote_int32_to_uint8(zfp_uint8* oblock, const zfp_int32* iblock, uint dims);
+void zfp_demote_int32_to_int16(zfp_int16* oblock, const zfp_int32* iblock, uint dims);
+void zfp_demote_int32_to_uint16(zfp_uint16* oblock, const zfp_int32* iblock, uint dims);
 
 #ifdef __cplusplus
 }

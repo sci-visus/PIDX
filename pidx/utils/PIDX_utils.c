@@ -46,7 +46,7 @@ unsigned int getNumBits ( unsigned int v )
   return (unsigned int)floor((log2(v))) + 1;
 }
 
-unsigned long long getPowerOf2(int x)
+uint64_t getPowerOf2(int x)
 {
   /*  find the power of 2 of an integer value (example 5->8) */
   int n = 1;
@@ -54,7 +54,7 @@ unsigned long long getPowerOf2(int x)
   return n;
 }
 
-unsigned int getLevelFromBlock (unsigned long long block, int bits_per_block)
+unsigned int getLevelFromBlock (uint64_t block, int bits_per_block)
 {
   if (block == 0)
     return 0;
@@ -64,7 +64,7 @@ unsigned int getLevelFromBlock (unsigned long long block, int bits_per_block)
   return 0;
 }
 
-unsigned int getLeveL (unsigned long long index)
+unsigned int getLeveL (uint64_t index)
 {
   if (index)
     return (unsigned int)floor((log2(index))) + 1;
@@ -75,7 +75,7 @@ unsigned int getLeveL (unsigned long long index)
 int isValidBox(int** box)
 {
   int D;
-  for(D = 0 ; D < PIDX_MAX_DIMENSIONS ; D++)
+  for (D = 0 ; D < PIDX_MAX_DIMENSIONS ; D++)
   {
     //fprintf(stderr, "VFY: %d %d\n", box[0][D], box[1][D]);
     if (! (box[0][D]>=0 && box[0][D]<=box[1][D]))
@@ -84,7 +84,7 @@ int isValidBox(int** box)
   return 1;
 }
 
-void Deinterleave(const char* bitmask, int maxh, unsigned long long zaddress, int* point)
+void Deinterleave(const char* bitmask, int maxh, uint64_t zaddress, int* point)
 {
   //Z deinterleave (see papers!)
   int n = 0, bit;
@@ -101,20 +101,20 @@ void Deinterleave(const char* bitmask, int maxh, unsigned long long zaddress, in
   cnt_point = 0;
 }
 
-unsigned long long ZBitmask(const char* bitmask,int maxh)
+uint64_t ZBitmask(const char* bitmask,int maxh)
 {
-  return ((unsigned long long)1)<<maxh;
+  return ((uint64_t)1)<<maxh;
 }
 
-unsigned long long ZStart(const char* bitmask,int maxh,int BlockingH)
+uint64_t ZStart(const char* bitmask,int maxh,int BlockingH)
 {
   if (!BlockingH)
     return 0;
   assert(BlockingH>=1 && BlockingH<=maxh);
-  return ((unsigned long long)1)<<(maxh-BlockingH);
+  return ((uint64_t)1)<<(maxh-BlockingH);
 }
 
-unsigned long long ZEnd(const char* bitmask,int maxh,int BlockingH)
+uint64_t ZEnd(const char* bitmask,int maxh,int BlockingH)
 {
   if (!BlockingH)
     return 0;
@@ -125,7 +125,7 @@ unsigned long long ZEnd(const char* bitmask,int maxh,int BlockingH)
 void ZDelta(const char* bitmask, int maxh, int BlockingH, int* point)
 {
   int K, bit;
-  for(K = 0; K < PIDX_MAX_DIMENSIONS; K++)
+  for (K = 0; K < PIDX_MAX_DIMENSIONS; K++)
     point[K] = 1;
 
   if (!BlockingH) return;
@@ -141,10 +141,21 @@ void GetBoxIntersection(int** inputBox1, int** inputBox2, int** outputBox)
 {
   //returns the intersection of two boxes
   int i;
-  for(i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+  for (i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
   {
     outputBox[0][i]=Max2ab(inputBox1[0][i], inputBox2[0][i]);
     outputBox[1][i]=Min2ab(inputBox1[1][i], inputBox2[1][i]);
+  }
+}
+
+void GetBoxUnion(int** inputBox1, int** inputBox2, int** outputBox)
+{
+  //returns the union of two boxes
+  int i;
+  for (i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+  {
+    outputBox[0][i]=Min2ab(inputBox1[0][i], inputBox2[0][i]);
+    outputBox[1][i]=Max2ab(inputBox1[1][i], inputBox2[1][i]);
   }
 }
 
@@ -153,7 +164,7 @@ int** AlignEx(int** box, int* p0, int* delta)
   int mod,i;
   if (!isValidBox(box))
     return box;
-  for( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+  for ( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
   {
     mod=(box[0][i]-p0[i]) % delta[i];
     if (mod) box[0][i]+=(delta[i]-mod);
@@ -165,10 +176,10 @@ int** AlignEx(int** box, int* p0, int* delta)
 
 void revstr(char* str)
 {
-  unsigned long long i;
+  uint64_t i;
   char* cpstr = (char*)malloc(strlen(str)+1);
   //char cpstr[strlen(str)+1];
-  for(i=0; i < (int)strlen(str); i++)
+  for (i=0; i < (int)strlen(str); i++)
     cpstr[i] = str[strlen(str)-i-1];
 
   cpstr[i] = '\0';
@@ -186,7 +197,7 @@ void GuessBitmaskPattern(char* _bits, Point3D dims)
 
   *p++='V';
 
-  For(D)
+  For (D)
   {
     PGET(dims,D)=( int)getPowerOf2(PGET(dims,D));
     PGET(id,D)=D;
@@ -196,7 +207,7 @@ void GuessBitmaskPattern(char* _bits, Point3D dims)
   for (ordered=0;!ordered;)
   {
     ordered=1;
-    OffsetFor(D,0,-1)
+    OffsetFor (D,0,-1)
     {
       int ref0=PGET(id,D  ),dim0=PGET(dims,ref0);
       int ref1=PGET(id,D+1),dim1=PGET(dims,ref1);
@@ -210,13 +221,13 @@ void GuessBitmaskPattern(char* _bits, Point3D dims)
     }
   }
 
-  For(D)
+  For (D)
   {
     //order in DESC order
     for (ordered=0,sorted_id=id;!ordered;)
     {
       ordered=1;
-      OffsetFor(N,D,-1)
+      OffsetFor (N,D,-1)
       {
     if (PGET(sorted_id,N+0)<PGET(sorted_id,N+1))
     {
@@ -230,7 +241,7 @@ void GuessBitmaskPattern(char* _bits, Point3D dims)
     //while dim is not consumed
     for (;dim<PGET(dims,PGET(id,D));dim<<=1)
     {
-      OffsetFor(N,D,0)
+      OffsetFor (N,D,0)
       {
     *p++='0'+PGET(sorted_id,N);
       }
@@ -262,7 +273,7 @@ void guess_bit_string(char* bit_string, const Point3D dims)
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
 
-  size_t size = 0;
+  uint64_t size = 0;
   char buffer[65];
   while (power_2_dims.x > 1 || power_2_dims.y > 1 || power_2_dims.z > 1)
   {
@@ -286,7 +297,7 @@ void guess_bit_string(char* bit_string, const Point3D dims)
 
   //bit_string.size = size;
   assert(size >= 0);
-  size_t i = 0;
+  uint64_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
   {
@@ -304,7 +315,7 @@ void guess_bit_string_ZYX(char* bit_string, const Point3D dims)
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
 
-  size_t size = 0;
+  uint64_t size = 0;
   char buffer[65];
   while (power_2_dims.x > 1 || power_2_dims.y > 1 || power_2_dims.z > 1)
   {
@@ -328,7 +339,7 @@ void guess_bit_string_ZYX(char* bit_string, const Point3D dims)
 
   //bit_string.size = size;
   assert(size >= 0);
-  size_t i = 0;
+  uint64_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
   {
@@ -345,7 +356,7 @@ void guess_bit_string_YXZ(char* bit_string, const Point3D dims)
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
 
-  size_t size = 0;
+  uint64_t size = 0;
   char buffer[65];
   while (power_2_dims.x > 1 || power_2_dims.y > 1 || power_2_dims.z > 1)
   {
@@ -369,7 +380,7 @@ void guess_bit_string_YXZ(char* bit_string, const Point3D dims)
 
   //bit_string.size = size;
   assert(size >= 0);
-  size_t i = 0;
+  uint64_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
   {
@@ -386,7 +397,7 @@ void guess_bit_string_XZY(char* bit_string, const Point3D dims)
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
 
-  size_t size = 0;
+  uint64_t size = 0;
   char buffer[65];
   while (power_2_dims.x > 1 || power_2_dims.y > 1 || power_2_dims.z > 1)
   {
@@ -410,7 +421,7 @@ void guess_bit_string_XZY(char* bit_string, const Point3D dims)
 
   //bit_string.size = size;
   assert(size >= 0);
-  size_t i = 0;
+  uint64_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
   {
@@ -428,7 +439,7 @@ void guess_bit_string_Z(char* bit_string, const Point3D dims)
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
 
-  size_t size = 0;
+  uint64_t size = 0;
   char buffer[65];
   while (power_2_dims.z > 1)
   {
@@ -450,7 +461,7 @@ void guess_bit_string_Z(char* bit_string, const Point3D dims)
 
   //bit_string.size = size;
   assert(size >= 0);
-  size_t i = 0;
+  uint64_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
   {
@@ -466,7 +477,7 @@ void guess_bit_string_Y(char* bit_string, const Point3D dims)
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
 
-  size_t size = 0;
+  uint64_t size = 0;
   char buffer[65];
 
   while (power_2_dims.y > 1)
@@ -489,7 +500,7 @@ void guess_bit_string_Y(char* bit_string, const Point3D dims)
 
   //bit_string.size = size;
   assert(size >= 0);
-  size_t i = 0;
+  uint64_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
   {
@@ -505,7 +516,7 @@ void guess_bit_string_X(char* bit_string, const Point3D dims)
   power_2_dims.y = pow_greater_equal(2, dims.y);
   power_2_dims.z = pow_greater_equal(2, dims.z);
 
-  size_t size = 0;
+  uint64_t size = 0;
   char buffer[65];
 
   while (power_2_dims.x > 1)
@@ -528,7 +539,7 @@ void guess_bit_string_X(char* bit_string, const Point3D dims)
 
   //bit_string.size = size;
   assert(size >= 0);
-  size_t i = 0;
+  uint64_t i = 0;
   bit_string[0] = 'V';
   for ( i = 1; i < size + 1; ++i)
   {
@@ -538,7 +549,7 @@ void guess_bit_string_X(char* bit_string, const Point3D dims)
 }
 
 
-static void freeBox(int** box)
+void freeBox(int** box)
 {
   free(box[0]);
   box[0] = 0;
@@ -547,6 +558,82 @@ static void freeBox(int** box)
 
   free(box);
   box = 0;
+}
+
+int AlignBox(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples, int** alignedBox)
+{
+  int* h_delta;
+  int** h_box;
+  
+  if (!isValidBox(userBox))
+    return PIDX_err_hz;
+  
+  if (!(H>=0 && H<=maxh))
+    return PIDX_err_hz;
+  
+  h_delta = (int*)malloc(PIDX_MAX_DIMENSIONS *sizeof(int));
+  memset(h_delta, 0, PIDX_MAX_DIMENSIONS *sizeof(int));
+  
+  ZDelta(bitmask,maxh,H, h_delta);
+  
+  //ZBox
+  h_box = (int**)malloc(2* sizeof(int*));
+  memset(h_box, 0, 2* sizeof(int*));
+  
+  h_box[0] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+  h_box[1] = (int*)malloc(PIDX_MAX_DIMENSIONS * sizeof(int));
+  memset(h_box[0], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+  memset(h_box[1], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
+  
+  if (!H)
+  {
+    h_box[0][0] = h_box[0][1] = h_box[0][2] = 0;
+    h_box[1][0] = h_box[1][1] = h_box[1][2] = 0;
+  }
+  else
+  {
+    assert(H>=1 && H<=maxh);
+    Deinterleave(bitmask,maxh,ZStart(bitmask,maxh,H), h_box[0]);
+    Deinterleave(bitmask,maxh,ZEnd  (bitmask,maxh,H), h_box[1]);
+  }
+  
+  //calculate intersection of the query with current H box
+  GetBoxIntersection(userBox, h_box, alignedBox);
+//  printf("User box %d %d %d - %d %d %d\n", userBox[0][0], userBox[0][1], userBox[0][2],userBox[1][0], userBox[1][1], userBox[1][2]);
+//  printf("H    box %d %d %d - %d %d %d\n", h_box[0][0], h_box[0][1], h_box[0][2],h_box[1][0], h_box[1][1], h_box[1][2]);
+  
+  //the box is not valid
+  if (!isValidBox(alignedBox))
+  {
+    //fprintf(stderr, "Invalid box %d %d %d - %d %d %d\n", alignedBox[0][0], alignedBox[0][1], alignedBox[0][2],alignedBox[1][0], alignedBox[1][1], alignedBox[1][2]);
+    freeBox(h_box);
+    free(h_delta);
+    return PIDX_err_hz;
+  }
+  
+  alignedBox = AlignEx(alignedBox, h_box[0], h_delta);
+  
+  //invalid box
+  if (!isValidBox(alignedBox))
+  {
+    //fprintf(stderr, "Invalid box %d %d %d - %d %d %d\n", alignedBox[0][0], alignedBox[0][1], alignedBox[0][2],alignedBox[1][0], alignedBox[1][1], alignedBox[1][2]);
+    freeBox(h_box);
+    free(h_delta);
+    return PIDX_err_hz;
+  }
+  
+  int i;
+  for ( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+    nsamples[H][i]=1 + (alignedBox[1][i]-alignedBox[0][i])/h_delta[i];
+  
+  memcpy(a_offset[H], alignedBox[0], PIDX_MAX_DIMENSIONS * sizeof(int));
+  memcpy(a_count[H], alignedBox[1], PIDX_MAX_DIMENSIONS * sizeof(int));
+  
+  freeBox(h_box);
+  free(h_delta);
+  
+  return PIDX_success;
+
 }
 
 void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, int** a_count, int** nsamples)
@@ -575,7 +662,7 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
   memset(h_box[0], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
   memset(h_box[1], 0, PIDX_MAX_DIMENSIONS * sizeof(int));
 
-  if(!H)
+  if (!H)
   {
     h_box[0][0] = h_box[0][1] = h_box[0][2] = 0;
     h_box[1][0] = h_box[1][1] = h_box[1][2] = 0;
@@ -618,7 +705,7 @@ void Align(int maxh, int H, const char* bitmask, int** userBox, int** a_offset, 
   }
 
   int i;
-  for( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
+  for ( i = 0 ; i < PIDX_MAX_DIMENSIONS ; i++)
     nsamples[H][i]=1 + (alignedBox[1][i]-alignedBox[0][i])/h_delta[i];
 
   memcpy(a_offset[H], alignedBox[0], PIDX_MAX_DIMENSIONS * sizeof(int));
@@ -652,9 +739,9 @@ int RegExBitmaskBit(const char* bitmask_pattern,int N)
   return bitmask_pattern[N]-'0';
 }
 
-void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, unsigned long long* xyz)
+void Hz_to_xyz(const char* bitmask,  int maxh, uint64_t hzaddress, uint64_t* xyz)
 {
-  unsigned long long lastbitmask=((unsigned long long)1)<<maxh;
+  uint64_t lastbitmask=((uint64_t)1)<<maxh;
 
   hzaddress <<= 1;
   hzaddress  |= 1;
@@ -679,9 +766,9 @@ void Hz_to_xyz(const char* bitmask,  int maxh, unsigned long long hzaddress, uns
   xyz[2] = p.z;
 }
 
-unsigned long long xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz)
+uint64_t xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz)
 {
-  unsigned long long zaddress=0;
+  uint64_t zaddress=0;
   int cnt   = 0;
   Point3D zero;
   int temp_maxh = maxh;
@@ -690,11 +777,11 @@ unsigned long long xyz_to_HZ(const char* bitmask, int maxh, Point3D xyz)
   for (cnt=0 ; memcmp(&xyz, &zero, sizeof(Point3D)) ; cnt++, maxh--)
   {
     int bit= bitmask[maxh];
-    zaddress |= ((unsigned long long)PGET(xyz,bit) & 1) << cnt;
+    zaddress |= ((uint64_t)PGET(xyz,bit) & 1) << cnt;
     PGET(xyz,bit) >>= 1;
   }
 
-  unsigned long long lastbitmask=((unsigned long long)1)<<temp_maxh;
+  uint64_t lastbitmask=((uint64_t)1)<<temp_maxh;
   zaddress |= lastbitmask;
   while (!(1 & zaddress)) zaddress >>= 1;
     zaddress >>= 1;
@@ -744,10 +831,10 @@ double PIDX_get_time()
 #define max(a,b) ((a) > (b) ? (a) : (b))
 Point3D get_strides(const char* bit_string, int bs_len, int len)
 {
-  size_t i = 0;
+  uint64_t i = 0;
   assert(len >= 0);
   Point3D stride = { 0, 0, 0 };
-  size_t start = max(bs_len - len, 0);
+  uint64_t start = max(bs_len - len, 0);
   for (i = start; i < bs_len; ++i)
   {
     if      (bit_string[i] == '0') { ++stride.x; }
@@ -819,7 +906,7 @@ Point3D get_first_coord(const char* bit_string, int bs_len, int hz_level)
     return zero;
   }
 
-  size_t i = 0;
+  uint64_t i = 0;
   int pos = hz_level - 1; // the position of the right-most 1 bit in the bit string
   // count the number of "bits" that is the same with the one at position pos
   int count = 0;
@@ -1110,6 +1197,11 @@ PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int
     else if (strcmp(type, FLOAT32_RGBA) == 0)
     {
       *values = 4;
+      *bits = 32;
+    }
+    else if (strcmp(type, FLOAT32_7STENCIL) == 0)
+    {
+      *values = 7;
       *bits = 32;
     }
     else if (strcmp(type, FLOAT32_9TENSOR) == 0)

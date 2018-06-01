@@ -49,7 +49,7 @@
 /// \param evi
 /// \return
 ///
-PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi);
+PIDX_return_code PIDX_idx_write(PIDX_io file, int svi, int evi);
 
 
 ///
@@ -60,6 +60,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int gi, int svi, int evi);
 /// \param evi
 /// \return
 ///
-PIDX_return_code PIDX_idx_read(PIDX_io file, int gi, int svi, int evi);
+PIDX_return_code PIDX_idx_read(PIDX_io file, int svi, int evi);
 
 #endif

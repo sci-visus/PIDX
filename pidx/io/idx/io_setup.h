@@ -43,8 +43,8 @@
 #define __IO_SETUP_H
 
 
-PIDX_return_code select_io_mode(PIDX_io file, int gi);
+PIDX_return_code select_io_mode(PIDX_io file);
 
-PIDX_return_code find_agg_level(PIDX_io file, int gi, int svi, int evi);
+PIDX_return_code find_agg_level(PIDX_io file, int svi, int evi);
 
 #endif

@@ -79,7 +79,7 @@ _t1(decode_ints, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec, 
   uint kmin = intprec > maxprec ? intprec - maxprec : 0;
   uint bits = maxbits;
   uint i, k, m, n;
-  uint64 x;
+  zfp_uint64 x;
 
   /* initialize data array to all zeros */
   for (i = 0; i < size; i++)
@@ -92,7 +92,7 @@ _t1(decode_ints, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec, 
     bits -= m;
     x = stream_read_bits(&s, m);
     /* unary run-length decode remainder of bit plane */
-    for (; n < size && bits && (bits--, stream_read_bit(&s)); x += (uint64)1 << n++)
+    for (; n < size && bits && (bits--, stream_read_bit(&s)); x += (zfp_uint64)1 << n++)
       for (; n < size - 1 && bits && (bits--, !stream_read_bit(&s)); n++)
         ;
     /* deposit bit plane from x */
@@ -114,7 +114,7 @@ _t1(decode_ints2, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec,
   uint kmin = intprec > maxprec ? intprec - maxprec : 0;
   uint bits = maxbits;
   uint i, k, m, n;
-  uint64 x;
+  zfp_uint64 x;
 
   /* initialize data array to all zeros */
   for (i = 0; i < size; i++)
@@ -127,7 +127,7 @@ _t1(decode_ints2, UInt)(bitstream* _restrict stream, uint maxbits, uint maxprec,
     bits -= m;
     x = stream_read_bits(&s, m);
     /* unary run-length decode remainder of bit plane */
-    for (; n < size && bits && (bits--, stream_read_bit(&s)); x += (uint64)1 << n++)
+    for (; n < size && bits && (bits--, stream_read_bit(&s)); x += (zfp_uint64)1 << n++)
       for (; n < size - 1 && bits && (bits--, !stream_read_bit(&s)); n++)
         ;
     /* deposit bit plane from x */    

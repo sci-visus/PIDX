@@ -39,7 +39,14 @@
 ## 
 ##
 
-FILE(GLOB PIDX_IDX_IO_SOURCES particle/*.h particle/*.c global_partition/*.h global_partition/*.c local_partition/*.h local_partition/*.c no_partition/*.h no_partition/*.c serial/*.h serial/*.c *.h *.c)
+FILE(GLOB PIDX_IDX_IO_SOURCES
+  particle/*.h particle/*.c
+  global_partition/*.h global_partition/*.c
+  local_partition/*.h local_partition/*.c
+  no_partition/*.h no_partition/*.c
+  serial/*.h serial/*.c
+  particle/*.h particle/*.c
+  *.h *.c)
 
 
 # ////////////////////////////////////////
@@ -50,13 +57,13 @@ IF (MPI_C_FOUND)
   #MESSAGE("Configuring pidx with MPI support")
   INCLUDE_DIRECTORIES(${MPI_C_INCLUDE_PATH})
   SET(PIDX_IDX_IO_LINK_LIBS ${PIDX_IDX_IO_LINK_LIBS} ${MPI_C_LIBRARIES})
-ENDIF()
+ENDIF ()
 
 IF (ZFP_FOUND)
   MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
   SET(PIDX_IDX_IO_LINK_LIBS ${PIDX_IDX_IO_LINK_LIBS} ${ZFP_LIBRARIES})
-ENDIF()
+ENDIF ()
 
 
 # ////////////////////////////////////////
@@ -64,5 +71,5 @@ ENDIF()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_idx_io "${PIDX_IDX_IO_SOURCES}")
-TARGET_LINK_LIBRARIES(pidx_idx_io ${OS_SPECIFIC_LIBS} ${PIDX_IDX_IO_LINK_LIBS})
+TARGET_LINK_LIBRARIES(pidx_idx_io pidx_particles_rst ${OS_SPECIFIC_LIBS} ${PIDX_IDX_IO_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_idx_io PROPERTIES LINKER_LANGUAGE CXX)

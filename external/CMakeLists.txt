@@ -44,7 +44,7 @@
 MESSAGE("Compiling included zfp library.")
 IF (NOT ZFP_DIR)
   SET(ZFP_DIR ${CMAKE_SOURCE_DIR}/external/zfp)
-ENDIF()
+ENDIF ()
 ADD_SUBDIRECTORY(zfp)
 
 
@@ -52,7 +52,7 @@ IF (PIDX_BUILD_IN_SITU_MERGE)
   MESSAGE("Compiling included mergetree library.")
   IF (NOT MERGE_TREE_DIR)
     SET(MERGE_TREE_DIR ${CMAKE_SOURCE_DIR}/external/parallelmergetree)
-  ENDIF()
+  ENDIF ()
 
 #  set(DATAFLOW_DIR ${CMAKE_SOURCE_DIR}/external/dataflow/build)
 #  find_library(DATAFLOW_LIBRARIES NAMES dataflow HINTS ${DATAFLOW_DIR}/lib)
@@ -66,11 +66,11 @@ IF (PIDX_BUILD_IN_SITU_MERGE)
 
   ADD_SUBDIRECTORY(dataflow)
   ADD_SUBDIRECTORY(parallelmergetree)
-ENDIF()
+ENDIF ()
 
 
 
 IF (PIDX_VTK_RENDERER)
   MESSAGE("Compiling vtk renderer")
   ADD_SUBDIRECTORY(vtkRendered)
-ENDIF()
+ENDIF ()

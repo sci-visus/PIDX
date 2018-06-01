@@ -209,7 +209,7 @@ static void check_args()
   int brick_count = (int)((global_box_size[X] + local_box_size[X] - 1) / local_box_size[X]) *
                     (int)((global_box_size[Y] + local_box_size[Y] - 1) / local_box_size[Y]) *
                     (int)((global_box_size[Z] + local_box_size[Z] - 1) / local_box_size[Z]);
-  if(brick_count != process_count)
+  if (brick_count != process_count)
     terminate_with_error_msg("ERROR: Number of sub-blocks (%d) doesn't match number of processes (%d)\n", brick_count, process_count);
 
 }
@@ -364,7 +364,7 @@ static void verify_read_results()
     for (j = 0; j < local_box_size[1]; j++)
       for (i = 0; i < local_box_size[0]; i++)
       {
-        unsigned long long index = (unsigned long long) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
+        uint64_t index = (uint64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
 
         if (strcmp(type_name, INT32) == 0)
         {

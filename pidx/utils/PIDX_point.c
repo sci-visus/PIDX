@@ -42,9 +42,9 @@
 #include "../PIDX_inc.h"
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_set_point(PIDX_point point, unsigned long long  x, unsigned long long  y, unsigned long long  z)
+PIDX_return_code PIDX_set_point(PIDX_point point, uint64_t  x, uint64_t  y, uint64_t  z)
 {
-  if(point == NULL)
+  if (point == NULL)
     return PIDX_err_point;
 
   point[0] = x;
@@ -55,9 +55,9 @@ PIDX_return_code PIDX_set_point(PIDX_point point, unsigned long long  x, unsigne
 }
 
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_get_point(unsigned long long* x, unsigned long long* y, unsigned long long* z, PIDX_point point)
+PIDX_return_code PIDX_get_point(uint64_t* x, uint64_t* y, uint64_t* z, PIDX_point point)
 {
-  if(point == NULL)
+  if (point == NULL)
     return PIDX_err_point;
 
   *x = point[0];
@@ -67,8 +67,34 @@ PIDX_return_code PIDX_get_point(unsigned long long* x, unsigned long long* y, un
   return PIDX_success;
 }
 
+
+PIDX_return_code PIDX_set_physical_point(PIDX_physical_point point, double  x, double  y, double  z)
+{
+  if (point == NULL)
+    return PIDX_err_point;
+
+  point[0] = x;
+  point[1] = y;
+  point[2] = z;
+
+  return PIDX_success;
+}
+
 /////////////////////////////////////////////////
-PIDX_return_code PIDX_inner_product(unsigned long long *inner_product, PIDX_point point)
+PIDX_return_code PIDX_get_physical_point(double* x, double* y, double* z, PIDX_physical_point point)
+{
+  if (point == NULL)
+    return PIDX_err_point;
+
+  *x = point[0];
+  *y = point[1];
+  *z = point[2];
+
+  return PIDX_success;
+}
+
+/////////////////////////////////////////////////
+PIDX_return_code PIDX_inner_product(uint64_t *inner_product, PIDX_point point)
 {
   *inner_product = point[0] * point[1] * point[2];
   //safe_add, result=a+b overflow happens when (a+b)>MAX ---> b>MAX-a
