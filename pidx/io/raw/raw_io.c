@@ -40,7 +40,7 @@
  */
 #include "../../PIDX_inc.h"
 
-static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi);
+static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi);
 static PIDX_return_code dump_process_extent(PIDX_io file);
 
 /// Raw Write Steps
@@ -53,22 +53,22 @@ static PIDX_return_code dump_process_extent(PIDX_io file);
 *  Step 4: cleanup for Steps 1                          *
 *********************************************************/
 
-PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
+PIDX_return_code PIDX_raw_write(PIDX_io file, int svi, int evi)
 {  
   int si = 0, ei = 0;
   PIDX_return_code ret;
-  PIDX_time time = file->idx_d->time;
+  PIDX_time time = file->time;
 
   // Step 0
   time->set_reg_box_start = MPI_Wtime();
-  if (set_rst_box_size_for_raw_write(file, gi, svi) != PIDX_success)
+  if (set_rst_box_size_for_raw_write(file, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
   time->set_reg_box_end = MPI_Wtime();
 
-  ret = group_meta_data_init(file, gi, svi, evi);
+  ret = group_meta_data_init(file, svi, evi);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -82,14 +82,13 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
     return PIDX_err_file;
   }
 
-  file->idx_d->variable_pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
+  for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
-    ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
-    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+    ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    file->idx->variable_tracker[si] = 1;
 
     // Step 1: Setup restructuring buffers
-    ret = raw_restructure_setup(file, gi, si, ei, PIDX_WRITE);
+    ret = raw_restructure_setup(file, si, ei, PIDX_WRITE);
     if (ret != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -136,17 +135,17 @@ PIDX_return_code PIDX_raw_write(PIDX_io file, int gi, int svi, int evi)
 *  Step 4: cleanup for Steps 1                          *
 *********************************************************/
 
-PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
+PIDX_return_code PIDX_raw_read(PIDX_io file, int svi, int evi)
 {
   int si = 0, ei = 0;
   PIDX_return_code ret;
 
-  file->idx_d->variable_pipe_length = file->idx->variable_count;
+  file->idx->variable_pipe_length = file->idx->variable_count;
 
-  for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
+  for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
-    ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
-    file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+    ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    file->idx->variable_tracker[si] = 1;
 
     ret = raw_restructure_forced_read(file, si, ei);
     if (ret != PIDX_success)
@@ -160,14 +159,14 @@ PIDX_return_code PIDX_raw_read(PIDX_io file, int gi, int svi, int evi)
 }
 
 
-static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int evi)
+static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi)
 {
   int ret;
-  PIDX_time time = file->idx_d->time;
+  PIDX_time time = file->time;
 
   time->header_io_start = PIDX_get_time();
   // Creates the file heirarchy and writes the header info for all binary files
-  ret = init_raw_headers_layout(file, gi, svi, evi, file->idx->filename);
+  ret = init_raw_headers_layout(file, svi, evi, file->idx->filename);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -181,27 +180,24 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int gi, int svi, int 
 
 static PIDX_return_code dump_process_extent(PIDX_io file)
 {
-  int i, j, k;
-  for (i = 0; i < file->idx->variable_group_count; i++)
+
+  for (int j = 0; j < file->idx->variable_count; j++)
   {
-    PIDX_variable_group var_grp = file->idx->variable_grp[i];
-    for (j = 0; j < var_grp->variable_count; j++)
+    for (int k = 0; k < file->idx->variable[j]->sim_patch_count; k++)
     {
-      for (k = 0; k < var_grp->variable[j]->sim_patch_count; k++)
+      if (file->idx_dbg->debug_file_output_state == PIDX_META_DATA_DUMP_ONLY || file->idx_dbg->debug_file_output_state == PIDX_NO_IO_AND_META_DATA_DUMP)
       {
-        if (file->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || file->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
-        {
-          fprintf(file->idx_dbg->local_dump_fp, "[%d] [%d] %d %d %d %d %d %d\n", j, k, (int)var_grp->variable[j]->sim_patch[k]->offset[0], (int)var_grp->variable[j]->sim_patch[k]->offset[1], (int)var_grp->variable[j]->sim_patch[k]->offset[2], (int)var_grp->variable[j]->sim_patch[k]->size[0], (int)var_grp->variable[j]->sim_patch[k]->size[1], (int)var_grp->variable[j]->sim_patch[k]->size[2]);
-          fflush(file->idx_dbg->local_dump_fp);
-        }
-      }
-      if (file->idx_dbg->state_dump == PIDX_META_DATA_DUMP_ONLY || file->idx_dbg->state_dump == PIDX_NO_IO_AND_META_DATA_DUMP)
-      {
-        fprintf(file->idx_dbg->local_dump_fp, "\n");
-        fflush(file->idx_dbg->local_dump_fp);
+        fprintf(file->idx_dbg->debug_file_output_fp, "[%d] [%d] %d %d %d %d %d %d\n", j, k, (int)file->idx->variable[j]->sim_patch[k]->offset[0], (int)file->idx->variable[j]->sim_patch[k]->offset[1], (int)file->idx->variable[j]->sim_patch[k]->offset[2], (int)file->idx->variable[j]->sim_patch[k]->size[0], (int)file->idx->variable[j]->sim_patch[k]->size[1], (int)file->idx->variable[j]->sim_patch[k]->size[2]);
+        fflush(file->idx_dbg->debug_file_output_fp);
       }
     }
+    if (file->idx_dbg->debug_file_output_state == PIDX_META_DATA_DUMP_ONLY || file->idx_dbg->debug_file_output_state == PIDX_NO_IO_AND_META_DATA_DUMP)
+    {
+      fprintf(file->idx_dbg->debug_file_output_fp, "\n");
+      fflush(file->idx_dbg->debug_file_output_fp);
+    }
   }
+
 
   return PIDX_success;
 }

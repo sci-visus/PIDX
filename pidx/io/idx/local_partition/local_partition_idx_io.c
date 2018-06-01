@@ -40,167 +40,350 @@
  */
 #include "../../../PIDX_inc.h"
 
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi);
-static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode);
-static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi);
-static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode);
-static PIDX_return_code create_midx(PIDX_io file, int gi, int svi);
 
+// function to log the status (complete or not) of each of the steps
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm);
 
 /// local Partitioned IDX Write Steps
-/*********************************************************
-*  Step 0:  group and IDX related meta data        *
-*                            *
-*  Step 1:  Restrucure setup               *
-*  Step 2:  Restrucure                   *
-*  Step 3:  Partition                  *
-*                            *
-*  Step 4:  Adjust offset                *
-*                            *
-*  Step 5:  Post partition group meta data         *
-*                            *
-*  Step 6:  Setup HZ encoding Phase            *
-*  Step 7:  Perform HZ encoding              *
-*  Step 8:  Setup aggregation buffers          *
-*  Step 9:  Perform data aggregation           *
-*  Step 10: Perform actual file IO             *
-*  Step 11: cleanup for Steps 6              *
-*                            *
-*  Step 12: Cleanup the group and IDX related meta-data  *
-*                            *
-*  Step 13: Partition cleanup              *
-*  Step 14: Restructuring cleanup            *
-**********************************************************/
-
-PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, int evi)
+PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int svi, int evi)
 {
-  int li = 0;
-  int si = 0, ei = 0;
-  PIDX_return_code ret;
-  PIDX_time time = file->idx_d->time;
 
-  // Step 1:  Restrucure setup
-  set_rst_box_size_for_write(file, gi, svi);
+  log_status("[Local partition idx io Step 0]: Entering\n", 0, __LINE__, file->idx_c->simulation_comm);
 
-  if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_WRITE) != PIDX_success)
+
+  // Step 1: Compute the restructuring box (grid) size
+  // We need to identify the restructuring box size (super patch first because we directly use that to populate the
+  // bitstring, which is first written out to the .idx file and used in almost every phase of IO
+  if (set_rst_box_size_for_write(file, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  log_status("[Local partition idx io 1] : Setting the restructuring box\n", 1,  __LINE__, file->idx_c->simulation_comm);
 
-  // Step 2:  Restrucure
+
+  // Step 2: Setting the stage for restructuring (meta data)
+  if (idx_restructure_setup(file, svi, evi - 1) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  log_status("[Local partition idx io 2] : Setting up the restructuring phase\n", 2,  __LINE__, file->idx_c->simulation_comm);
+
+
+  // Step 3: Perform data restructuring
+  // restructuring is done keeping partitioning in mind
+  // restructuring phase ensures that a process is not holding more that one super patch
   if (idx_restructure(file, PIDX_WRITE) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  log_status("[Local partition idx io 3] : Restructuring phase\n", 3, __LINE__, file->idx_c->simulation_comm);
 
-  if (idx_restructure_rst_comm_create(file, gi, svi) != PIDX_success)
+
+
+  // Step 4: Group the processes holding the super patch into new communicator rst_comm
+  // This step is intended to reduce MPI overhead by having a comm with fewer processes
+  if (idx_restructure_rst_comm_create(file, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  log_status("[Local partition idx io 4] : Creating restructuring communicator\n", 4, __LINE__, file->idx_c->simulation_comm);
 
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var0 = var_grp->variable[svi];
 
-  // TODO make a utility print error function for all the error prints
-  
+  // proceed only if a process holds a superpatch, others just wait at completion of io
+  // essential for partitioning
+  PIDX_variable var0 = file->idx->variable[svi];
   if (var0->restructured_super_patch_count == 1)
   {
-    
-    // Step 3:  Partition
-    if (partition(file, gi, svi, PIDX_WRITE) != PIDX_success)
+    // Step 5:  Perform partitioning
+    // Create new communicator
+    if (partition(file, svi) != PIDX_success)
     {
       fprintf(stderr,"Error [File %s Line %d]: partition\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Local partition idx io 5] : Creating partitions\n", 5, __LINE__, file->idx_c->partition_comm);
     
-    ret = populate_bit_string(file, PIDX_WRITE);
-    if (ret != PIDX_success)
+
+    // Step 6: Populate the bit string of the global dataset
+    if (populate_bit_string(file, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Local partition idx io 6] : Populating bit string\n", 6, __LINE__, file->idx_c->partition_comm);
 
+
+    // Step 7: write the global .idx file
     if (write_global_idx(file, svi, evi, PIDX_WRITE) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Local partition idx io 7] : Writing global idx file\n", 7, __LINE__, file->idx_c->partition_comm);
 
-    // Step 4: Adjust per process offsets and global bounds as per the partition
-    if (adjust_offsets(file, gi, svi, evi) != PIDX_success)
+
+    // Step 8: Adjust per process offsets and global bounds as per the partition
+    if (adjust_offsets(file, svi, evi) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Local partition idx io 8] : Adjusting the offset of boxes\n", 8, __LINE__, file->idx_c->partition_comm);
 
 
-    // Step 5:  Post partition group meta data
-    ret = post_partition_group_meta_data_init(file, gi, svi, evi, PIDX_WRITE);
-    if (ret != PIDX_success)
+    // Step 9:  Populate block layout for the partitions (this is a local step, from now onwards the processes work within its partition only)
+    if (populate_block_layout_and_buffers(file, svi, evi, PIDX_WRITE, PIDX_LOCAL_PARTITION_IDX_IO) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-#if 1
-    for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
-    {
-      ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
-      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
+    log_status("[Local partition idx io 9] : Populating blocks\n", 9, __LINE__, file->idx_c->partition_comm);
 
-      // Step 6:  Setup HZ encoding Phase
-      if (hz_encode_setup(file, gi, si, ei) != PIDX_success)
+
+    // Iterate through the variables, variable_pipe_length at a point
+    // variable_pipe_length is computed based on the configuration of the run. If there are enough number of processes
+    // then all the variables are aggregated at once and then variable_pipe_length is (variable_count - 1), otherwise
+    // the variables are worked in smaller packs.
+    for (uint32_t si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
+    {
+      uint32_t ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+      file->idx->variable_tracker[si] = 1;
+
+      // Step 10:  Setup HZ encoding Phase
+      if (hz_encode_setup(file, si, ei) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+      log_status("[Local partition idx io 10]: Setting up hz phase\n", 10, __LINE__, file->idx_c->partition_comm);
 
-      // Step 7: Perform HZ encoding
+
+      // Step 11: Perform HZ encoding
       if (hz_encode(file, PIDX_WRITE) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
+      log_status("[Local partition idx io 11]: Performing hz phase\n", 11, __LINE__, file->idx_c->partition_comm);
 
-      if (hz_io(file, gi, PIDX_WRITE) != PIDX_success)
+
+      // Step 12: This is not performed by default, it only happens when aggregation is
+      // turned off or when there are a limited number of aggregators
+      if (hz_io(file, PIDX_WRITE) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+      log_status("[Local partition idx io 12]: Performing hz io\n", 12, __LINE__, file->idx_c->partition_comm);
+
+
+      // Setup 13: Setup aggregation buffers
+      if (aggregation_setup(file, si, ei) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+      log_status("[Local partition idx io 13]: Setting up aggregation phase\n", 13, __LINE__, file->idx_c->partition_comm);
+
+
+      // Setup 14: Performs data aggregation
+      if (aggregation(file, si, PIDX_WRITE) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+      log_status("[Local partition idx io 14]: Performing aggregation\n", 14, __LINE__, file->idx_c->partition_comm);
+
+
+      // Setup 15: Performs actual file io
+      if (file_io(file, si, PIDX_WRITE) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+      log_status("[Local partition idx io 15]: Performing file io\n", 15, __LINE__, file->idx_c->partition_comm);
+
+
+      // Step 16: free aggregation buffers
+      if (aggregation_cleanup(file, si) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+      log_status("[Local partition idx io 16]: Cleaning up aggregation phase\n", 16, __LINE__, file->idx_c->partition_comm);
+
+
+      // Step 17: Cleanup HZ buffers
+      if (hz_encode_cleanup(file) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+      log_status("[Local partition idx io 17]: Cleaning up hz phase\n", 17, __LINE__, file->idx_c->partition_comm);
+    }
+
+    // Step 18: free block layout and agg related buffer
+    if (destroy_block_layout_and_buffers(file, svi, evi) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+    log_status("[Local partition idx io 18]: Cleaning up block layout\n", 18, __LINE__, file->idx_c->partition_comm);
+
+    // Step 19: free partitioning buffer
+    if (partition_cleanup(file) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+    log_status("[Local partition idx io 19]: Cleaning up partition\n", 19, __LINE__, file->idx_c->rst_comm);
+  }
+
+  // Step 20: free the restructured communicator
+  if (free_restructured_communicators(file) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  log_status("[Local partition idx io 20]: Freeing up restructuring communicators\n", 20, __LINE__, file->idx_c->simulation_comm);
+
+  //fprintf(stderr, "here %d\n", file->idx_c->simulation_rank);
+
+  // Step 21: Restructuring cleanup
+  if (idx_restructure_cleanup(file) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  log_status("[Local partition idx io 21]: Cleaning restructuring phase\n", 21, __LINE__, file->idx_c->simulation_comm);
+
+  //fprintf(stderr, "here %d\n", file->idx_c->simulation_rank);
+
+  return PIDX_success;
+}
+
+
+
+
+/// local Partitioned IDX Read Steps
+PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int svi, int evi)
+{
+  // This function is called for restart styke reads only when the number of processes
+  // needed to read the data is same as the number of processes used to create the dataset
+
+
+  // Step 1: Compute the restructuring box (grid) size
+  // We need to identify the restructuring box size (super patch first because we directly use that to populate the
+  // bitstring, which is first written out to the .idx file and used in almost every phase of IO
+  // This is the same as the bix used to write the data as number of processes is same
+  if (set_rst_box_size_for_write(file, svi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  // Step 2: Setting the stage for restructuring (meta data)
+  if (idx_restructure_setup(file, svi, evi - 1) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  // Step 4: Group the processes holding the super patch into new communicator rst_comm
+  // This step is intended to reduce MPI overhead by having a comm with fewer processes
+  if (idx_restructure_rst_comm_create(file, svi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
+  // proceed only if a process holds a superpatch, others just wait at completion of io
+  // essential for partitioning
+  PIDX_variable var0 = file->idx->variable[svi];
+  if (var0->restructured_super_patch_count == 1)
+  {
+    // Step 5:  Perform partitioning
+    // Create new communicator
+    if (partition(file, svi) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    // Step 6: Adjust per process offsets and global bounds as per the partition
+    if (adjust_offsets(file, svi, evi) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    // Step 7:  Populate block layout for the partitions (this is a local step, from now onwards the processes work within its partition only)
+    if (populate_block_layout_and_buffers(file, svi, evi, PIDX_READ, PIDX_LOCAL_PARTITION_IDX_IO) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+
+    for (uint32_t si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
+    {
+      uint32_t ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+      file->idx->variable_tracker[si] = 1;
+
+      // Step 8:  Setup HZ encoding Phase
+      if (hz_encode_setup(file, si, ei) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
-      // Setup 8: Setup aggregation buffers
-      ret = data_aggregate(file, gi, si, ei, AGG_SETUP, PIDX_WRITE);
-      if (ret != PIDX_success)
+      // Step 9: This is not performed by default, it only happens when aggregation is
+      // turned off or when there are a limited number of aggregators
+      if (hz_io(file, PIDX_READ) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
-      // Setup 9: Performs data aggregation
-      ret = data_aggregate(file, gi, si, ei, AGG_PERFORM, PIDX_WRITE);
-      if (ret != PIDX_success)
+      // Setup 10: Setup aggregation buffers
+      if (aggregation_setup(file, si, ei) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
-      // Setup 10: Performs actual file io
-      time->io_start[gi][li] = PIDX_get_time();
-
-      ret = data_io(file, gi, si, ei, PIDX_WRITE);
-      if (ret != PIDX_success)
+      // Setup 11: Performs actual file io
+      if (file_io(file, si, PIDX_READ) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_file;
       }
 
-      finalize_aggregation(file, gi, si);
-      time->io_end[gi][li] = PIDX_get_time();
+      // Setup 12: Performs data aggregation
+      if (aggregation(file, si, PIDX_READ) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
 
+      // Step 13: free aggregation buffers
+      if (aggregation_cleanup(file, si) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
 
-      // Step 11: Cleanup for step 6
+      // Step 14: Perform HZ encoding
+      if (hz_encode(file, PIDX_READ) != PIDX_success)
+      {
+        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+        return PIDX_err_file;
+      }
+
+      // Step 15: Cleanup hz buffers
       if (hz_encode_cleanup(file) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -208,588 +391,59 @@ PIDX_return_code PIDX_local_partition_idx_write(PIDX_io file, int gi, int svi, i
       }
     }
 
-    // Step 12: Cleanup the group and IDX related meta-data
-    ret = group_meta_data_finalize(file, gi, svi, evi);
-    if (ret != PIDX_success)
+    // Step 16: Cleanup the group and IDX related meta-data
+    if (destroy_block_layout_and_buffers(file, svi, evi) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
-    // Step 13: Partition cleanup
-    time->partition_cleanup_start = MPI_Wtime();
-    if (destroy_local_comm(file) != PIDX_success)
+    // Step 17: Partition cleanup
+    if (partition_cleanup(file) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
-    time->partition_cleanup_end = MPI_Wtime();
-#endif
+
+    // Step 18: re-adjust the box size
+    if (re_adjust_offsets(file, svi, evi) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
   }
 
-  //free_restructured_communicators(file, gi);
-
-  // Step 14: Restructuring cleanup
-  if (idx_restructure_cleanup(file) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  return PIDX_success;
-}
-
-
-/// local Partitioned IDX Read Steps
-/*********************************************************
-*  Step 0:  group and IDX related meta data              *
-*                                                        *
-*  Step 1:  Restrucure setup                             *
-*  Step 2:  Partition                                    *
-*                                                        *
-*  Step 3:  Adjust offsets                               *
-*                                                        *
-*  Step 4:  Post partition group meta data               *
-*                                                        *
-*  Step 5:  Setup HZ encoding Phase                      *
-*  Step 6:  Setup aggregation buffers                    *
-*  Step 7:  Perform actual file IO                       *
-*  Step 8:  Perform data aggregation                     *
-*  Step 9:  Perform HZ encoding                          *
-*  Step 10:  cleanup for Steps 6                         *
-*                                                        *
-*  Step 11: Cleanup the group and IDX related meta-data  *
-*                                                        *
-*  Step 12: Partition cleanup                            *
-*  Step 13: Restrucure                                   *
-*  Step 14: Restructuring cleanup                        *
-**********************************************************/
-
-PIDX_return_code PIDX_local_partition_idx_read(PIDX_io file, int gi, int svi, int evi)
-{
-  int li = 0;
-  int si = 0, ei = 0;
-  PIDX_return_code ret;
-  PIDX_time time = file->idx_d->time;
-
-  // Step 1:  Restrucure setup
-
-  set_rst_box_size_for_write(file, gi, svi);
-
-  if (idx_restructure_setup(file, gi, svi, evi - 1, PIDX_READ) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  if (idx_restructure_rst_comm_create(file, gi, svi) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-  PIDX_variable var0 = var_grp->variable[svi];
-
-  if (var0->restructured_super_patch_count == 1)
-  {
-    // Step 2:  Partition
-    ret = partition(file, gi, svi, PIDX_READ);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    // Step 3: Adjust per process offsets and global bounds as per the partition
-    if (adjust_offsets(file, gi, svi, evi) != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    // Step 4:  Post partition group meta data
-    ret = post_partition_group_meta_data_init(file, gi, svi, evi, PIDX_READ);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    for (si = svi; si < evi; si = si + (file->idx_d->variable_pipe_length + 1))
-    {
-      ei = ((si + file->idx_d->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx_d->variable_pipe_length);
-      file->idx->variable_grp[gi]->variable_tracker[si] = 1;
-
-      // Step 5:  Setup HZ encoding Phase
-      ret = hz_encode_setup(file, gi, si, ei);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      if (hz_io(file, gi, PIDX_READ) != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      // Setup 6: Setup aggregation buffers
-      ret = data_aggregate(file, gi, si, ei, AGG_SETUP, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-
-      // Setup 7: Performs actual file io
-      time->io_start[gi][li] = PIDX_get_time();
-
-      ret = data_io(file, gi, si, ei, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-      time->io_end[gi][li] = PIDX_get_time();
-
-#if 1
-      //
-      // Setup 8: Performs data aggregation
-      ret = data_aggregate(file, gi, si, ei, AGG_PERFORM, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-      finalize_aggregation(file, gi, si);
-
-      //
-
-      // Step 9: Perform HZ encoding
-      ret = hz_encode(file, PIDX_READ);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-
-      // Step 10: Cleanup for step 6
-      ret = hz_encode_cleanup(file);
-      if (ret != PIDX_success)
-      {
-        fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-        return PIDX_err_file;
-      }
-      #endif
-    }
-
-    // Step 11: Cleanup the group and IDX related meta-data
-    ret = group_meta_data_finalize(file, gi, svi, evi);
-    if (ret != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-
-    // Step 12: Partition cleanup
-    time->partition_cleanup_start = MPI_Wtime();
-    if (destroy_local_comm(file) != PIDX_success)
-    {
-      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-      return PIDX_err_file;
-    }
-    time->partition_cleanup_end = MPI_Wtime();
-
-    int i = 0;
-    PIDX_variable var = var_grp->variable[svi];
-    for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-      var->restructured_super_patch->restructured_patch->offset[i] = var->restructured_super_patch->restructured_patch->offset[i] + file->idx_d->partition_offset[i];
-
-  }
-
-#if 1
-  // Step 13:  Restrucure
+  // Step 19:  Restrucure
   if (idx_restructure(file, PIDX_READ) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-  // Step 14: Restructuring cleanup
+  // Step 20: Restructuring cleanup
   if (idx_restructure_cleanup(file) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-#endif
-
-  return PIDX_success;
-}
-
-
-PIDX_return_code PIDX_local_partition_mapped_idx_read(PIDX_io file, int gi, int svi, int evi)
-{
-
-}
-
-// TODO move this function into some utils file, it is used in too many files already
-static int intersectNDChunk(PIDX_patch A, PIDX_patch B)
-{
-  int d = 0, check_bit = 0;
-  for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-    check_bit = check_bit || (A->offset[d] + A->size[d] - 1) < B->offset[d] || (B->offset[d] + B->size[d] - 1) < A->offset[d];
-  
-  return !(check_bit);
-}
-
-static PIDX_return_code create_midx(PIDX_io file, int gi, int svi)
-{
-  int *colors;
-  int i = 0, j = 0, k = 0, d = 0;
-  
-  int num_parts = file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * file->idx_d->partition_count[2];
-  
-  colors = malloc(sizeof(*colors) * num_parts);
-  memset(colors, 0, sizeof(*colors) * num_parts);
-
-    for (k = 0; k < file->idx_d->partition_count[2]; k++)
-      for (j = 0; j < file->idx_d->partition_count[1]; j++)
-        for (i = 0; i < file->idx_d->partition_count[0]; i++)
-        {
-          colors[(file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i] = (file->idx_d->partition_count[0] * file->idx_d->partition_count[1] * k) + (file->idx_d->partition_count[0] * j) + i;
-          
-        }
-  
-    PIDX_variable_group var_grp = file->idx->variable_grp[gi];
-    PIDX_variable var = var_grp->variable[svi];
-
-    PIDX_patch local_p = (PIDX_patch)malloc(sizeof (*local_p));
-    memset(local_p, 0, sizeof (*local_p));
-    
-    for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-    {
-      local_p->offset[d] = var->restructured_super_patch->restructured_patch->offset[d];
-      local_p->size[d] = var->restructured_super_patch->restructured_patch->size[d];
-    }
-    
-    int wc = file->idx_c->lnprocs * (PIDX_MAX_DIMENSIONS);
-  
-    off_t* global_patch_offset = malloc(wc * sizeof(*global_patch_offset));
-    memset(global_patch_offset, 0, wc * sizeof(*global_patch_offset));
-    
-    size_t* global_patch_size = malloc(wc * sizeof(*global_patch_size));
-    memset(global_patch_size, 0, wc * sizeof(*global_patch_size));
-    
-    MPI_Allgather(&local_p->offset[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_offset, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
-    
-    MPI_Allgather(&local_p->size[0], PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, global_patch_size, PIDX_MAX_DIMENSIONS, MPI_UNSIGNED_LONG_LONG, file->idx_c->local_comm);
-  
-    //free(local_p);
-  
-  if(file->idx_c->grank == 0)
-  {
-    // TODO make utility functions to retrieve filenames
-    // and use those in all the code for all filename template related things
-    char file_name_skeleton[PIDX_STRING_SIZE];
-    strncpy(file_name_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
-    file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
-    
-    char* partition_filenames = malloc(PIDX_STRING_SIZE * num_parts);
-    memset(partition_filenames, 0, PIDX_STRING_SIZE * num_parts);
-    int* offsets = malloc(sizeof(*offsets) * PIDX_MAX_DIMENSIONS * num_parts);
-    memset(offsets, 0, sizeof(*offsets) * PIDX_MAX_DIMENSIONS * num_parts);
-    
-    int proc=0;
-    for (proc = 0; proc < file->idx_c->lnprocs; proc++)
-    {
-      PIDX_patch curr_local_p = (PIDX_patch)malloc(sizeof (*curr_local_p));
-      
-      for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)
-      {
-        curr_local_p->offset[d] = global_patch_offset[PIDX_MAX_DIMENSIONS * proc + d];
-        curr_local_p->size[d] = global_patch_size[PIDX_MAX_DIMENSIONS * proc + d];
-      }
-      
-      PIDX_patch reg_patch = (PIDX_patch)malloc(sizeof (*reg_patch));
-      memset(reg_patch, 0, sizeof (*reg_patch));
-      
-      Point3D bounds_point;
-      int maxH = 0;
-      bounds_point.x = (int) file->idx_d->partition_count[0];
-      bounds_point.y = (int) file->idx_d->partition_count[1];
-      bounds_point.z = (int) file->idx_d->partition_count[2];
-      char bitSequence[512];
-      char bitPattern[512];
-      GuessBitmaskPattern(bitSequence, bounds_point);
-      maxH = strlen(bitSequence);
-      
-      for (i = 0; i <= maxH; i++)
-        bitPattern[i] = RegExBitmaskBit(bitSequence, i);
-      
-      int z_order = 0;
-      int number_levels = maxH - 1;
-      int index_i = 0, index_j = 0, index_k = 0;
-      for (i = 0, index_i = 0; i < file->idx->bounds[0]; i = i + file->idx_d->partition_size[0], index_i++)
-      {
-        for (j = 0, index_j = 0; j < file->idx->bounds[1]; j = j + file->idx_d->partition_size[1], index_j++)
-        {
-          for (k = 0, index_k = 0; k < file->idx->bounds[2]; k = k + file->idx_d->partition_size[2], index_k++)
-          {
-            reg_patch->offset[0] = i;
-            reg_patch->offset[1] = j;
-            reg_patch->offset[2] = k;
-            reg_patch->size[0] = file->idx_d->partition_size[0];
-            reg_patch->size[1] = file->idx_d->partition_size[1];
-            reg_patch->size[2] = file->idx_d->partition_size[2];
-            
-            if (intersectNDChunk(reg_patch, curr_local_p))
-            {
-              Point3D xyzuv_Index;
-              xyzuv_Index.x = index_i;
-              xyzuv_Index.y = index_j;
-              xyzuv_Index.z = index_k;
-              
-              z_order = 0;
-              Point3D zero;
-              zero.x = 0;
-              zero.y = 0;
-              zero.z = 0;
-              memset(&zero, 0, sizeof (Point3D));
-              
-              int cnt = 0;
-              for (cnt = 0; memcmp(&xyzuv_Index, &zero, sizeof (Point3D)); cnt++, number_levels--)
-              {
-                int bit = bitPattern[number_levels];
-                z_order |= ((unsigned long long) PGET(xyzuv_Index, bit) & 1) << cnt;
-                PGET(xyzuv_Index, bit) >>= 1;
-              }
-     
-              //printf("found color %d offset %d %d %d\n", colors[z_order], i, j, k);
-            
-              sprintf(&partition_filenames[colors[z_order]*PIDX_STRING_SIZE], "%s_%d.idx", file_name_skeleton, colors[z_order]);
-              
-              off_t curr_off = colors[z_order]*PIDX_MAX_DIMENSIONS;
-              offsets[curr_off+0] = i;
-              offsets[curr_off+1] = j;
-              offsets[curr_off+2] = k;
-              
-              break;
-            }
-          }
-        }
-      }
-      
-      free(curr_local_p);
-      free(reg_patch);
-      
-    }
-    
-    char midx_filename[PIDX_STRING_SIZE];
-    sprintf(midx_filename,"%s.midx", file_name_skeleton);
-    
-    FILE* midx_file = fopen(midx_filename, "w");
-    if (!midx_file)
-    {
-      fprintf(stderr, "Error [%s] [%d]: Cannot create filename %s.\n", __FILE__, __LINE__, midx_filename);
-      return -1;
-    }
-    
-    fprintf(midx_file, "<dataset typename='IdxMultipleDataset'>\n");
-    
-    for(i = 0; i < num_parts; i++)
-    {
-      off_t curr_off = i*PIDX_MAX_DIMENSIONS;
-      
-      //printf("filename %s offset  %d %d %d\n", partition_filenames+(PIDX_STRING_SIZE*i), offsets[curr_off+0],offsets[curr_off+1], offsets[curr_off+2]);
-      
-      fprintf(midx_file, "\t<dataset url=\"file://$(CurrentFileDirectory)/%s\" name=\"%s_%d\" offset=\"%d %d %d\"/>\n",
-              partition_filenames+(PIDX_STRING_SIZE*i), file_name_skeleton, i, offsets[curr_off+0],offsets[curr_off+1], offsets[curr_off+2]);
-    }
-    
-    fprintf(midx_file,"</dataset>\n");
-    
-    fclose(midx_file);
-    
-    free(colors);
-    free(global_patch_size);
-    free(global_patch_offset);
-  
-  }
-  
-  return PIDX_success;
-}
-
-
-static PIDX_return_code partition(PIDX_io file, int gi, int svi, int mode)
-{
-  int ret;
-  PIDX_time time = file->idx_d->time;
-
-  time->partition_start = MPI_Wtime();
-  // Calculates the number of partititons
-  ret = find_partition_count(file);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  
-  // assign same color to processes within the same partition
-  ret = partition_setup(file, gi, svi);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  // Create midx file that will point to different .idx partition files
-  if (create_midx(file, gi, svi) != PIDX_success)
-  {
-    fprintf(stderr,"Error [File %s Line %d]: create_midx\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  // Splits the local communicator into local communicators
-  ret = create_local_comm(file);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  time->partition_end = MPI_Wtime();
 
   return PIDX_success;
 }
 
 
 
-static PIDX_return_code adjust_offsets(PIDX_io file, int gi, int svi, int evi)
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm)
 {
-  int i = 0, v = 0;
-  PIDX_variable_group var_grp = file->idx->variable_grp[gi];
+/*
+  int rank;
+  int size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
 
-  //fprintf(stderr, "SE %d %d\n", svi, evi);
-  for (v = svi; v < evi; v++)
-  {
-  PIDX_variable var = var_grp->variable[v];
+  MPI_Barrier(comm);
 
-  if (var->restructured_super_patch_count != 1)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-    var->restructured_super_patch->restructured_patch->offset[i] = var->restructured_super_patch->restructured_patch->offset[i] - file->idx_d->partition_offset[i];
-  }
-
-  for (i = 0; i < PIDX_MAX_DIMENSIONS; i++)
-  {
-    if (file->idx_d->partition_offset[i] + file->idx_d->partition_size[i] <= file->idx->box_bounds[i])
-      file->idx->box_bounds[i] = file->idx_d->partition_size[i];
-    else
-      file->idx->box_bounds[i] = file->idx->box_bounds[i] - file->idx_d->partition_offset[i];
-
-    if (file->idx_d->restructured_grid->patch_size[i] > file->idx->box_bounds[i])
-      file->idx_d->restructured_grid->patch_size[i] = getPowerOf2(file->idx->box_bounds[i]);
-  }
-
-  memcpy(file->idx->bounds, file->idx->box_bounds, PIDX_MAX_DIMENSIONS * sizeof(unsigned long long));
-
-  //fprintf(stderr, "%d - %d %d %d -- PO %d %d %d\n", file->idx_c->grank, file->idx->box_bounds[0], file->idx->box_bounds[1], file->idx->box_bounds[2], file->idx_d->partition_offset[0], file->idx_d->partition_offset[1], file->idx_d->partition_offset[2]);
-
-  return PIDX_success;
-}
-
-
-
-static PIDX_return_code post_partition_group_meta_data_init(PIDX_io file, int gi, int svi, int evi, int mode)
-{
-  int ret;
-  PIDX_time time = file->idx_d->time;
-
-  //fprintf(stderr, "%d %d %d\n", file->idx_d->restructured_grid->patch_size[0], file->idx_d->restructured_grid->patch_size[1], file->idx_d->restructured_grid->patch_size[2]);
-
-  time->bit_string_start = PIDX_get_time();
-  // calculates maxh and bitstring
-  ret = populate_local_bit_string(file, mode);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  // selects levels based on mode and maxh
-  select_io_mode(file, gi);
-  time->bit_string_end = PIDX_get_time();
-
-  time->layout_start = PIDX_get_time();
-  // calculates the block layout, given this is pure IDX only non-share block layout is populated
-  //if (file->idx_d->color == 2)
-  //{
-  ret = populate_rst_block_layouts(file, gi, svi, file->hz_from_shared, file->hz_to_non_shared);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  //}
-#if 1
-  // Calculate the hz level upto which aggregation is possible
-  ret = find_agg_level(file, gi, svi, evi);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  // Creates the agg and io ids
-  ret = create_agg_io_buffer(file, gi, svi, evi);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  time->layout_end = PIDX_get_time();
-
-  time->header_io_start = PIDX_get_time();
-  // Creates the file heirarchy and writes the header info for all binary files
-  ret = write_headers(file, gi, svi, evi, mode);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  time->header_io_end = PIDX_get_time();
-#endif
-  return PIDX_success;
-}
-
-
-static PIDX_return_code group_meta_data_finalize(PIDX_io file, int gi, int svi, int evi)
-{
-  int ret;
-  PIDX_time time = file->idx_d->time;
-
-  time->group_cleanup_start = PIDX_get_time();
-  ret = destroy_agg_io_buffer(file, svi, evi);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  ret = delete_rst_block_layout(file, gi);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-
-  time->group_cleanup_end = PIDX_get_time();
-
-  return PIDX_success;
+  if (rank == 0)
+    fprintf(stderr, "[nprocs %d] R%d S%d [%d] Log message: %s", size, rank, step, line_number, log_message);
+*/
+  return;
 }

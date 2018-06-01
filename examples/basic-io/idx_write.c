@@ -160,12 +160,15 @@ int main(int argc, char **argv)
   // Close access and free memory
   if (PIDX_close_access(p_access) != PIDX_success)
     terminate_with_error_msg("PIDX_close_access");
-  
+
+  if (PIDX_free_metadata_cache(cache) != PIDX_success)
+    terminate_with_error_msg("PIDX_free_meta_data_cache");
+
   free(variable);
   variable = 0;
 
   destroy_synthetic_simulation_data();
-  
+
   shutdown_mpi();
 
   return 0;
@@ -175,9 +178,8 @@ int main(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:r:f:t:v:";
+  char flags[] = "g:l:f:t:v:";
   int one_opt = 0;
-  int with_rst = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
   {
@@ -194,13 +196,6 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
-    case('r'): // local dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &rst_box_size[X], &rst_box_size[Y], &rst_box_size[Z]) == EOF) ||(rst_box_size[X] < 1 || rst_box_size[Y] < 1 || rst_box_size[Z] < 1))
-        terminate_with_error_msg("Invalid restructuring box dimension\n%s", usage);
-      else
-        with_rst = 1;
-      break;
-
     case('f'): // output file name
       if (sprintf(output_file_template, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
@@ -213,13 +208,13 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('v'): // number of variables
-      if(!isNumber(optarg)){ // the param is a file with the list of variables
+      if (!isNumber(optarg)){ // the param is a file with the list of variables
         if (sprintf(var_list, "%s", optarg) > 0)
           parse_var_list();
         else
           terminate_with_error_msg("Invalid variable list file\n%s", usage);
       }else { // the param is a number of variables (default: 1*float32)
-        if(sscanf(optarg, "%d", &variable_count) > 0)
+        if (sscanf(optarg, "%d", &variable_count) > 0)
           generate_vars();
         else
           terminate_with_error_msg("Invalid number of variables\n%s", usage);
@@ -230,40 +225,33 @@ static void parse_args(int argc, char **argv)
       terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
   }
-
-  if(!with_rst){
-    // Set default restructuring box size
-    rst_box_size[X] = nextPow2(local_box_size[X]);
-    rst_box_size[Y] = nextPow2(local_box_size[Y]);
-    rst_box_size[Z] = nextPow2(local_box_size[Z]);
-  }
 }
 
 static void set_pidx_variable(int var)
 {
   PIDX_return_code ret = 0;
-  
+
   // Set variable name, number of bits, typename
   ret = PIDX_variable_create(var_name[var], bpv[var] * vps[var], type_name[var], &variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
-  
+
   // Set the variable offset and size of the local domain,
   // where the data is in memory (data) and what is its layout in memory (row major)
   ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_write_data_layout");
-  
+
   // Tell PIDX that we want to write this variable
   ret = PIDX_append_and_write_variable(file, variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
-  
+
   return;
 }
 
 static int generate_vars(){
-  
+
   int variable_counter = 0;
-  
-  for(variable_counter = 0; variable_counter < variable_count; variable_counter++){
+
+  for (variable_counter = 0; variable_counter < variable_count; variable_counter++){
     int ret;
     int bits_per_sample = 0;
     int sample_count = 0;
@@ -273,14 +261,14 @@ static int generate_vars(){
     sprintf(temp_name, "var_%d", variable_counter);
     strcpy(var_name[variable_counter], temp_name);
     strcpy(type_name[variable_counter], temp_type_name);
-    
+
     ret = PIDX_values_per_datatype(temp_type_name, &sample_count, &bits_per_sample);
     if (ret != PIDX_success)  return PIDX_err_file;
-    
+
     bpv[variable_counter] = bits_per_sample;
     vps[variable_counter] = sample_count;
   }
-  
+
   return 0;
 }
 
@@ -290,13 +278,13 @@ static void create_synthetic_simulation_data()
   int var = 0;
   data = malloc(sizeof(*data) * variable_count);
   memset(data, 0, sizeof(*data) * variable_count);
-  
+
   // Synthetic simulation data
-  for(var = 0; var < variable_count; var++)
+  for (var = 0; var < variable_count; var++)
   {
-    unsigned long long i, j, k, val_per_sample = 0;
+    uint64_t i, j, k, val_per_sample = 0;
     data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
-    
+
     unsigned char cvalue = 0;
     short svalue = 0;
     float fvalue = 0;
@@ -320,8 +308,8 @@ static void create_synthetic_simulation_data()
       for (j = 0; j < local_box_size[Y]; j++)
         for (i = 0; i < local_box_size[X]; i++)
         {
-          unsigned long long index = (unsigned long long) (local_box_size[X] * local_box_size[Y] * k) + (local_box_size[X] * j) + i;
-          
+          uint64_t index = (uint64_t) (local_box_size[X] * local_box_size[Y] * k) + (local_box_size[X] * j) + i;
+
           for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
           {
             if (strcmp(type_name[var], UINT8) == 0 || strcmp(type_name[var], UINT8_GA) == 0 || strcmp(type_name[var], UINT8_RGB) == 0)
@@ -369,23 +357,23 @@ static int parse_var_list()
     fprintf(stderr, "Error Opening %s\n", var_list);
     return PIDX_err_file;
   }
-  
+
   int variable_counter = 0, count = 0, len = 0;
   char *pch1;
   char line [ 512 ];
-  
+
   while (fgets(line, sizeof (line), fp) != NULL)
   {
     line[strcspn(line, "\r\n")] = 0;
-    
+
     if (strcmp(line, "(fields)") == 0)
     {
-      if( fgets(line, sizeof line, fp) == NULL)
+      if ( fgets(line, sizeof line, fp) == NULL)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
       count = 0;
       variable_counter = 0;
-      
+
       while (line[X] != '(')
       {
         pch1 = strtok(line, " +");
@@ -397,20 +385,20 @@ static int parse_var_list()
             strcpy(var_name[variable_counter], temp_name);
             free(temp_name);
           }
-          
+
           if (count == 1)
           {
             len = strlen(pch1) - 1;
             if (pch1[len] == '\n')
               pch1[len] = 0;
-            
+
             strcpy(type_name[variable_counter], pch1);
             int ret;
             int bits_per_sample = 0;
             int sample_count = 0;
             ret = PIDX_values_per_datatype(type_name[variable_counter], &sample_count, &bits_per_sample);
             if (ret != PIDX_success)  return PIDX_err_file;
-            
+
             bpv[variable_counter] = bits_per_sample;
             vps[variable_counter] = sample_count;
           }
@@ -418,8 +406,8 @@ static int parse_var_list()
           pch1 = strtok(NULL, " +");
         }
         count = 0;
-        
-        if( fgets(line, sizeof line, fp) == NULL)
+
+        if ( fgets(line, sizeof line, fp) == NULL)
           return PIDX_err_file;
         line[strcspn(line, "\r\n")] = 0;
         variable_counter++;
@@ -428,18 +416,18 @@ static int parse_var_list()
     }
   }
   fclose(fp);
-  
+
   /*
    int rank = 0;
    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
    if (rank == 0)
    {
    int v = 0;
-   for(v = 0; v < variable_count; v++)
+   for (v = 0; v < variable_count; v++)
    fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
    }
    */
-  
+
   return PIDX_success;
 }
 
@@ -460,14 +448,11 @@ static void set_pidx_file(int ts)
   // Advanced settings
   PIDX_set_meta_data_cache(file, cache);
 
-  // Set the restructuring box size
-  PIDX_set_restructuring_box(file, reg_size);
-
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_IDX_IO); 
+  PIDX_set_io_mode(file, PIDX_IDX_IO);
 
   // Set how many blocks we want to write in a single file
-  PIDX_set_block_count(file, 256);
+  PIDX_set_block_count(file, 128);
 
   // Set the size of a block: how many 2^N samples we want to put in a single block
   PIDX_set_block_size(file, 15);
@@ -476,20 +461,13 @@ static void set_pidx_file(int ts)
   // we can instruct PIDX to cache and reuse these information for the next timesteps
   PIDX_set_cache_time_step(file, 0);
 
-  //PIDX_disable_agg(file);
-
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-  //PIDX_set_lossy_compression_bit_rate(file, 16);
-
   return;
 }
 
 static void destroy_synthetic_simulation_data()
 {
   int var = 0;
-  for(var = 0; var < variable_count; var++)
+  for (var = 0; var < variable_count; var++)
   {
     free(data[var]);
     data[var] = 0;

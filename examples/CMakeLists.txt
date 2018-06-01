@@ -51,13 +51,13 @@ IF (PIDX_BUILD_EXAMPLES)
     MESSAGE("Configuring examples with MPI support")
     INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${MPI_C_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   IF (ZFP_FOUND)
     MESSAGE("Configuring examples with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/examples)
   SET(EXAMPLES_UTILS pidx_examples_utils.h)
@@ -69,18 +69,32 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(idx_write "basic-io/idx_write.c" ${EXAMPLES_UTILS})
   TARGET_LINK_LIBRARIES(idx_write ${EXAMPLES_LINK_LIBS})
 
+  PIDX_ADD_CEXECUTABLE(raw_write "basic-io/raw_write.c" ${EXAMPLES_UTILS})
+  TARGET_LINK_LIBRARIES(raw_write ${EXAMPLES_LINK_LIBS})
+
   PIDX_ADD_CEXECUTABLE(idx_read "basic-io/idx_read.c" ${EXAMPLES_UTILS})
   TARGET_LINK_LIBRARIES(idx_read ${EXAMPLES_LINK_LIBS})
+
+  PIDX_ADD_CEXECUTABLE(particle_write "basic-io/particle_write.c")
+  TARGET_LINK_LIBRARIES(particle_write ${EXAMPLES_LINK_LIBS})
+
+  PIDX_ADD_CEXECUTABLE(particle_read "basic-io/particle_read.c")
+  TARGET_LINK_LIBRARIES(particle_read ${EXAMPLES_LINK_LIBS})
 
   PIDX_ADD_CEXECUTABLE(idx_write_partitioned "basic-io/idx_write_partitioned.c" ${EXAMPLES_UTILS})
   TARGET_LINK_LIBRARIES(idx_write_partitioned ${EXAMPLES_LINK_LIBS})
 
-  # Compression
-
-  PIDX_ADD_CEXECUTABLE(idx_write_compressed "compression/idx_write_compressed.c")
+  PIDX_ADD_CEXECUTABLE(idx_write_compressed "basic-io/idx_write_compressed.c")
   TARGET_LINK_LIBRARIES(idx_write_compressed ${EXAMPLES_LINK_LIBS})
 
-ENDIF()
+# Experimental reduced resolution
+  PIDX_ADD_CEXECUTABLE(idx_write_reduce_resolution "basic-io/idx_write_reduced_resolution.c")
+  TARGET_LINK_LIBRARIES(idx_write_reduce_resolution ${EXAMPLES_LINK_LIBS})
+
+#  PIDX_ADD_CEXECUTABLE(idx_read_reduce_resolution "basic-io/idx_read_reduced_resolution.c")
+#  TARGET_LINK_LIBRARIES(idx_read_reduce_resolution ${EXAMPLES_LINK_LIBS})
+
+ENDIF ()
 
 IF (PIDX_BUILD_CONVERT)
   INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
@@ -89,13 +103,13 @@ IF (PIDX_BUILD_CONVERT)
     MESSAGE("Configuring examples with MPI support")
     INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${MPI_C_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   IF (ZFP_FOUND)
     MESSAGE("Configuring examples with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
-  ENDIF()
+  ENDIF ()
 
   # ////////////////////////////////////////
   # executable
@@ -104,5 +118,5 @@ IF (PIDX_BUILD_CONVERT)
   PIDX_ADD_CEXECUTABLE(raw_to_idx "convert/raw-to-idx.c")
   TARGET_LINK_LIBRARIES(raw_to_idx ${EXAMPLES_LINK_LIBS})
 
-ENDIF()
+ENDIF ()
 

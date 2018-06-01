@@ -5,8 +5,7 @@ language: c
 branches:
   only:
     - master
-    - partition_develop
-    - testing
+    - particles
 
 cache:
   directories:

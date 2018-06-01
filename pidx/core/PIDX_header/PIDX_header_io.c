@@ -40,8 +40,9 @@
  */
 
 #include "../../PIDX_inc.h"
-#define MAX_TEMPLATE_DEPTH 6
 
+#define MAX_TEMPLATE_DEPTH 6
+#define PIDX_USE_BASENAME_FILE_TEMPLATE 1
 
 static uint32_t* headers;
 static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode);
@@ -49,26 +50,24 @@ static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout blo
 
 struct PIDX_header_io_struct 
 {
-  //Contains all relevant IDX file info
-  //Blocks per file, samples per block, bitmask, box, file name template and more
   idx_dataset idx;
-
-  //Contains all derieved IDX file info
-  //number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_d;
-
 
   idx_comm idx_c;
 
+  idx_blocks idx_b;
 
-  int group_index;
+  PIDX_restructured_grid restructured_grid;
+
+  int fs_block_size;
+  int start_fs_block;
+
   int first_index;
   int last_index;
 };
 
 
 
-PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int first_index, int last_index )
+PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_blocks idx_b, PIDX_restructured_grid restructured_grid, int fs_block_size, int first_index, int last_index )
 {
   PIDX_header_io_id header_io_id;
 
@@ -77,21 +76,23 @@ PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_dataset_der
   memset(header_io_id, 0, sizeof (*header_io_id));
 
   header_io_id->idx = idx_meta_data;
-  header_io_id->idx_d = idx_d;
   header_io_id->idx_c = idx_c;
+  header_io_id->idx_b = idx_b;
 
-  header_io_id->group_index = 0;
   header_io_id->first_index = first_index;
   header_io_id->last_index = last_index;
 
+  header_io_id->restructured_grid = restructured_grid;
+
+  header_io_id->fs_block_size = fs_block_size;
+
   if (first_index == 0)
   {
-    int total_header_size;
-
+    uint64_t total_header_size;
     total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
-    header_io_id->idx_d->start_fs_block = total_header_size / header_io_id->idx_d->fs_block_size;
-    if (total_header_size % header_io_id->idx_d->fs_block_size)
-      header_io_id->idx_d->start_fs_block++;
+    header_io_id->start_fs_block = total_header_size / header_io_id->fs_block_size;
+    if (total_header_size % header_io_id->fs_block_size)
+      header_io_id->start_fs_block++;
 
     headers = (uint32_t*)malloc(total_header_size);
     memset(headers, 0, total_header_size);
@@ -111,9 +112,9 @@ int PIDX_header_io_idx_file_create(PIDX_header_io_id header_io_id, PIDX_block_la
   char tmp_path[PATH_MAX] = {0};
   char* pos;
 
-  for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
+  for (i = 0; i < header_io_id->idx->max_file_count; i++)
   {
-    if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
+    if (i % header_io_id->idx_c->partition_nprocs == header_io_id->idx_c->partition_rank && block_layout->file_bitmap[i] == 1)
     {
       ret = generate_file_name(header_io_id->idx->blocks_per_file, filename_template, /*adjusted_file_index*/ i, bin_file, PATH_MAX);
       if (ret == 1)
@@ -142,9 +143,9 @@ int PIDX_header_io_idx_file_create(PIDX_header_io_id header_io_id, PIDX_block_la
               ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
               if (ret != 0 && errno != EEXIST)
               {
-                perror("mkdir");
+                //perror("mkdir");
                 fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
-                return 1;
+                return PIDX_err_file;
               }
             }
             tmp_path[j] = this_path[j];
@@ -158,7 +159,7 @@ int PIDX_header_io_idx_file_create(PIDX_header_io_id header_io_id, PIDX_block_la
     }
   }
 
-  MPI_Barrier(header_io_id->idx_c->local_comm);
+  MPI_Barrier(header_io_id->idx_c->partition_comm);
 
   return PIDX_success;
 }
@@ -186,7 +187,7 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
   sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
   free(directory_path);
 
-  if (header_io_id->idx_c->lrank == 0)
+  if (header_io_id->idx_c->partition_rank == 0)
   {
     //TODO: the logic for creating the subdirectory hierarchy could
     //be made to be more efficient than this. This implementation
@@ -214,9 +215,9 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
             ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
             if (ret != 0 && errno != EEXIST)
             {
-              perror("mkdir");
+              //perror("mkdir");
               fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
-              return 1;
+              return PIDX_err_file;
             }
           }
           tmp_path[j] = this_path[j];
@@ -224,7 +225,7 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
       }
     }
   }
-  MPI_Barrier(header_io_id->idx_c->local_comm);
+  MPI_Barrier(header_io_id->idx_c->partition_comm);
 
   free(data_set_path);
 
@@ -239,19 +240,19 @@ PIDX_return_code PIDX_header_io_idx_file_write(PIDX_header_io_id header_io_id, P
   char bin_file[PATH_MAX];
 
 #if 0
-  for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
+  for (i = 0; i < header_io_id->idx->max_file_count; i++)
   {
     if (block_layout->file_bitmap[i] == 1)
     {
-      if (header_io_id->idx_c->grank == 0)
-        fprintf(stderr, "[%d] File %d being populated\n", header_io_id->idx_c->lnprocs, i);
+      if (header_io_id->idx_c->simulation_rank == 0)
+        fprintf(stderr, "[%d] File %d being populated\n", header_io_id->idx_c->partition_nprocs, i);
     }
   }
 #endif
 
-  for (i = 0; i < header_io_id->idx_d->max_file_count; i++)
+  for (i = 0; i < header_io_id->idx->max_file_count; i++)
   {
-    if (i % header_io_id->idx_c->lnprocs == header_io_id->idx_c->lrank && block_layout->file_bitmap[i] == 1)
+    if (i % header_io_id->idx_c->partition_nprocs == header_io_id->idx_c->partition_rank && block_layout->file_bitmap[i] == 1)
     {
       ret = generate_file_name(header_io_id->idx->blocks_per_file, filename_template, i, bin_file, PATH_MAX);
       if (ret == 1)
@@ -277,14 +278,12 @@ PIDX_return_code PIDX_header_io_idx_file_write(PIDX_header_io_id header_io_id, P
 
 PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, char* data_set_path)
 {
-  PIDX_variable_group var_grp = header_io->idx->variable_grp[header_io->group_index];
-
-  int l = 0, N;
+  int N;
   FILE* idx_file_p;
   char dirname[1024], basename[1024];
   char file_temp[1024];
 
-  int nbits_blocknumber = (header_io->idx_d->maxh - header_io->idx->bits_per_block - 1);
+  int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
 
   //remove suffix
@@ -296,6 +295,9 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
   }
 
   //pidx does not do path remapping
+#if PIDX_USE_BASENAME_FILE_TEMPLATE
+  sprintf(file_temp, "%s", basename);
+#else
   strcpy(file_temp, data_set_path);
   for (N = strlen(file_temp) - 1; N >= 0; N--)
   {
@@ -303,6 +305,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
     file_temp[N] = 0;
     if (ch == '.') break;
   }
+#endif
 
   //can happen if I have only only one block
   if (nbits_blocknumber == 0)
@@ -341,9 +344,10 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
     return 1;
   }
 
-  if (header_io->idx_c->lrank == 0)
+  // making sure that the folder containing the .idx file is populated (the .idx file might be created other that ./)
+  if (header_io->idx_c->rrank == 0)
   {
-    int ret = 0, j = 0;
+    int ret = 0;
     char last_path[PATH_MAX] = {0};
     char this_path[PATH_MAX] = {0};
     char tmp_path[PATH_MAX] = {0};
@@ -360,23 +364,31 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
         strcpy(last_path, this_path);
         memset(tmp_path, 0, PATH_MAX * sizeof (char));
         //walk up path and mkdir each segment
-        for (j = 0; j < (int)strlen(this_path); j++)
+        for (int j = 0; j < (int)strlen(this_path); j++)
         {
           if (j > 0 && this_path[j] == '/')
           {
+            //printf("mkdir %s\n", tmp_path);
             ret = mkdir(tmp_path, S_IRWXU | S_IRWXG | S_IRWXO);
             if (ret != 0 && errno != EEXIST)
             {
-              perror("mkdir");
+              //perror("mkdir");
               fprintf(stderr, "Error: failed to mkdir %s\n", tmp_path);
-              return 1;
+              return PIDX_err_file;
             }
           }
           tmp_path[j] = this_path[j];
         }
       }
     }
+  }
+  // Making sure that all processes wait for the folder containing the .idx file (which will also contain data) is populated
+  MPI_Barrier(header_io->idx_c->rst_comm);
 
+
+  // populte the .idx file
+  if (header_io->idx_c->rrank == 0)
+  {
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p)
     {
@@ -388,29 +400,30 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
 
     if (header_io->idx->io_type == PIDX_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nidx\n");
-    else if (header_io->idx->io_type == PIDX_GLOBAL_PARTITION_IDX_IO)
-      fprintf(idx_file_p, "(io mode)\ng_part_idx\n");
     else if (header_io->idx->io_type == PIDX_LOCAL_PARTITION_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO)
+      fprintf(idx_file_p, "(io mode)\nparticle\n");
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
+    fprintf(idx_file_p, "(physical box)\n0 %f 0 %f 0 %f 0 0 0 0\n", header_io->idx->physical_bounds[0], header_io->idx->physical_bounds[1], header_io->idx->physical_bounds[2]);
 
-    fprintf(idx_file_p, "(partition count)\n%d %d %d\n", header_io->idx_d->partition_count[0], header_io->idx_d->partition_count[1], header_io->idx_d->partition_count[2]);
+    fprintf(idx_file_p, "(partition count)\n%d %d %d\n", header_io->idx->partition_count[0], header_io->idx->partition_count[1], header_io->idx->partition_count[2]);
 
-    if(header_io->idx->endian == PIDX_LITTLE_ENDIAN)
+    if (header_io->idx->endian == PIDX_LITTLE_ENDIAN)
       fprintf(idx_file_p, "(endian)\nlittle\n");
-    else if(header_io->idx->endian == PIDX_BIG_ENDIAN)
+    else if (header_io->idx->endian == PIDX_BIG_ENDIAN)
       fprintf(idx_file_p, "(endian)\nbig\n");
 
     fprintf(idx_file_p, "(compression bit rate)\n%f\n", header_io->idx->compression_bit_rate);
     fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
 
     fprintf(idx_file_p, "(fields)\n");
-    for (l = 0; l < header_io->last_index; l++)
+    for (int l = 0; l < header_io->last_index; l++)
     {
-      fprintf(idx_file_p, "%s %s", var_grp->variable[l]->var_name, var_grp->variable[l]->type_name);
+      fprintf(idx_file_p, "%s %s", header_io->idx->variable[l]->var_name, header_io->idx->variable[l]->type_name);
       if (l != header_io->last_index - 1)
         fprintf(idx_file_p, " + \n");
     }
@@ -418,25 +431,23 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
     fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
     fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
     fprintf(idx_file_p, "(filename_template)\n./%s\n", file_temp);
-    fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
+    fprintf(idx_file_p, "(time)\n%d %d time%%09d/", header_io->idx->first_tstep, header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
 
-  return 0;
+  return PIDX_success;
 }
 
 
 
 PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io, char* data_set_path)
 {
-  PIDX_variable_group var_grp = header_io->idx->variable_grp[header_io->group_index];
-
   int l = 0, N;
   FILE* idx_file_p;
   char dirname[1024], basename[1024];
   char file_temp[1024];
 
-  int nbits_blocknumber = (header_io->idx_d->maxh - header_io->idx->bits_per_block - 1);
+  int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
 
   //remove suffix
@@ -448,6 +459,9 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
   }
 
   //pidx does not do path remapping
+#if PIDX_USE_BASENAME_FILE_TEMPLATE
+  sprintf(file_temp, "%s", basename);
+#else
   strcpy(file_temp, data_set_path);
   for (N = strlen(file_temp) - 1; N >= 0; N--)
   {
@@ -455,6 +469,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     file_temp[N] = 0;
     if (ch == '.') break;
   }
+#endif
 
   //can happen if I have only only one block
   if (nbits_blocknumber == 0)
@@ -493,7 +508,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     return 1;
   }
 
-  if (header_io->idx_c->lrank == 0)
+  if (header_io->idx_c->partition_rank == 0)
   {
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p)
@@ -506,28 +521,28 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
 
     if (header_io->idx->io_type == PIDX_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nidx\n");
-    else if (header_io->idx->io_type == PIDX_GLOBAL_PARTITION_IDX_IO)
-      fprintf(idx_file_p, "(io mode)\ng_part_idx\n");
     else if (header_io->idx->io_type == PIDX_LOCAL_PARTITION_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO)
+      fprintf(idx_file_p, "(io mode)\nparticle\n");
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
 
-    fprintf(idx_file_p, "(partition size)\n%d %d %d\n", header_io->idx_d->partition_size[0], header_io->idx_d->partition_size[1], header_io->idx_d->partition_size[2]);
+    fprintf(idx_file_p, "(partition size)\n%d %d %d\n", header_io->idx->partition_size[0], header_io->idx->partition_size[1], header_io->idx->partition_size[2]);
 
-    fprintf(idx_file_p, "(partition offset)\n%d %d %d\n", header_io->idx_d->partition_offset[0], header_io->idx_d->partition_offset[1], header_io->idx_d->partition_offset[2]);
+    fprintf(idx_file_p, "(partition offset)\n%d %d %d\n", header_io->idx->partition_offset[0], header_io->idx->partition_offset[1], header_io->idx->partition_offset[2]);
 
-    fprintf(idx_file_p, "(partition index)\n%d\n", header_io->idx_d->color);
+    fprintf(idx_file_p, "(partition index)\n%d\n", header_io->idx_c->color);
 
-    if(header_io->idx->endian == PIDX_LITTLE_ENDIAN)
+    if (header_io->idx->endian == PIDX_LITTLE_ENDIAN)
       fprintf(idx_file_p, "(endian)\nlittle\n");
-    else if(header_io->idx->endian == PIDX_BIG_ENDIAN)
+    else if (header_io->idx->endian == PIDX_BIG_ENDIAN)
       fprintf(idx_file_p, "(endian)\nbig\n");
     
-    fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx_d->restructured_grid->patch_size[0], (long long)header_io->idx_d->restructured_grid->patch_size[1], (long long)header_io->idx_d->restructured_grid->patch_size[2]);
-    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->gnprocs);
+    fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->restructured_grid->patch_size[0], (long long)header_io->restructured_grid->patch_size[1], (long long)header_io->restructured_grid->patch_size[2]);
+    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->simulation_nprocs);
 
     fprintf(idx_file_p, "(compression bit rate)\n%f\n", header_io->idx->compression_bit_rate);
     fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
@@ -535,7 +550,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     fprintf(idx_file_p, "(fields)\n");
     for (l = 0; l < header_io->last_index; l++)
     {
-      fprintf(idx_file_p, "%s %s", var_grp->variable[l]->var_name, var_grp->variable[l]->type_name);
+      fprintf(idx_file_p, "%s %s", header_io->idx->variable[l]->var_name, header_io->idx->variable[l]->type_name);
       if (l != header_io->last_index - 1)
         fprintf(idx_file_p, " + \n");
     }
@@ -543,7 +558,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
     fprintf(idx_file_p, "\n(bits)\n%s\n", header_io->idx->bitSequence);
     fprintf(idx_file_p, "(bitsperblock)\n%d\n(blocksperfile)\n%d\n", header_io->idx->bits_per_block, header_io->idx->blocks_per_file);
     fprintf(idx_file_p, "(filename_template)\n./%s\n", file_temp);
-    fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
+    fprintf(idx_file_p, "(time)\n%d %d time%%09d/", header_io->idx->first_tstep, header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
 
@@ -554,14 +569,12 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
 
 PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char* data_set_path)
 {
-  PIDX_variable_group var_grp = header_io->idx->variable_grp[header_io->group_index];
-
   int l = 0, N;
   FILE* idx_file_p;
   char dirname[1024], basename[1024];
   char file_temp[1024];
 
-  int nbits_blocknumber = (header_io->idx_d->maxh - header_io->idx->bits_per_block - 1);
+  int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
 
   //remove suffix
@@ -573,6 +586,9 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
   }
 
   //pidx does not do path remapping
+#if PIDX_USE_BASENAME_FILE_TEMPLATE
+  sprintf(file_temp, "%s", basename);
+#else
   strcpy(file_temp, data_set_path);
   for (N = strlen(file_temp) - 1; N >= 0; N--)
   {
@@ -580,7 +596,8 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
     file_temp[N] = 0;
     if (ch == '.') break;
   }
-
+#endif
+  
   //can happen if I have only only one block
   if (nbits_blocknumber == 0)
     strcat(file_temp, "/%01x.bin");
@@ -618,7 +635,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
     return 1;
   }
 
-  if (header_io->idx_c->lrank == 0)
+  if (header_io->idx_c->partition_rank == 0)
   {
     idx_file_p = fopen(data_set_path, "w");
     if (!idx_file_p)
@@ -631,22 +648,23 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
 
     if (header_io->idx->io_type == PIDX_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nidx\n");
-    else if (header_io->idx->io_type == PIDX_GLOBAL_PARTITION_IDX_IO)
-      fprintf(idx_file_p, "(io mode)\ng_part_idx\n");
     else if (header_io->idx->io_type == PIDX_LOCAL_PARTITION_IDX_IO)
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO)
+      fprintf(idx_file_p, "(io mode)\nparticle\n");
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
+    fprintf(idx_file_p, "(physical box)\n0 %f 0 %f 0 %f 0 0 0 0\n", header_io->idx->physical_bounds[0], header_io->idx->physical_bounds[1], header_io->idx->physical_bounds[2]);
 
-    if(header_io->idx->endian == PIDX_LITTLE_ENDIAN)
+    if (header_io->idx->endian == PIDX_LITTLE_ENDIAN)
       fprintf(idx_file_p, "(endian)\nlittle\n");
-    else if(header_io->idx->endian == PIDX_BIG_ENDIAN)
+    else if (header_io->idx->endian == PIDX_BIG_ENDIAN)
       fprintf(idx_file_p, "(endian)\nbig\n");
     
-    fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->idx_d->restructured_grid->patch_size[0], (long long)header_io->idx_d->restructured_grid->patch_size[1], (long long)header_io->idx_d->restructured_grid->patch_size[2]);
-    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->gnprocs);
+    fprintf(idx_file_p, "(restructure box size)\n%lld %lld %lld\n", (long long)header_io->restructured_grid->patch_size[0], (long long)header_io->restructured_grid->patch_size[1], (long long)header_io->restructured_grid->patch_size[2]);
+    fprintf(idx_file_p, "(cores)\n%d\n", header_io->idx_c->simulation_nprocs);
 
     fprintf(idx_file_p, "(compression bit rate)\n%f\n", header_io->idx->compression_bit_rate);
     fprintf(idx_file_p, "(compression type)\n%d\n", header_io->idx->compression_type);
@@ -654,13 +672,13 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
     fprintf(idx_file_p, "(fields)\n");
     for (l = 0; l < header_io->last_index; l++)
     {
-      fprintf(idx_file_p, "%s %s", var_grp->variable[l]->var_name, var_grp->variable[l]->type_name);
+      fprintf(idx_file_p, "%s %s", header_io->idx->variable[l]->var_name, header_io->idx->variable[l]->type_name);
       if (l != header_io->last_index - 1)
         fprintf(idx_file_p, " + \n");
     }
 
     fprintf(idx_file_p, "\n(filename_template)\n./%s\n", file_temp);
-    fprintf(idx_file_p, "(time)\n0 %d time%%09d/", header_io->idx->current_time_step);
+    fprintf(idx_file_p, "(time)\n%d %d time%%09d/", header_io->idx->first_tstep, header_io->idx->current_time_step);
     fclose(idx_file_p);
   }
 
@@ -670,37 +688,33 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
 
 static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout block_layout, int file_number, char* bin_file, int mode)
 {
-  PIDX_variable_group var_grp = header_io_id->idx->variable_grp[header_io_id->group_index];
   int block_negative_offset = 0;
-  int i = 0, j = 0, k = 0;
-  off_t data_offset = 0, base_offset = 0;
-
-  //fprintf(stderr, "[%d] File being written\n", file_number);
-  unsigned long long total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2]);
+  uint64_t data_offset = 0, base_offset = 0;
+  uint64_t total_chunk_size = (header_io_id->idx->chunk_size[0] * header_io_id->idx->chunk_size[1] * header_io_id->idx->chunk_size[2]);
 
   int total_header_size = (10 + (10 * header_io_id->idx->blocks_per_file)) * sizeof (uint32_t) * header_io_id->idx->variable_count;
   memset(headers, 0, total_header_size);
 
-  for (i = 0; i < header_io_id->idx->blocks_per_file; i++)
+  for (uint32_t i = 0; i < header_io_id->idx->blocks_per_file; i++)
   {
     if (PIDX_blocks_is_block_present((i + (header_io_id->idx->blocks_per_file * file_number)), header_io_id->idx->bits_per_block, block_layout))
     {
       block_negative_offset = PIDX_blocks_find_negative_offset(header_io_id->idx->blocks_per_file, header_io_id->idx->bits_per_block, (i + (header_io_id->idx->blocks_per_file * file_number)), block_layout);
 
-      for (j = header_io_id->first_index; j < header_io_id->last_index; j++)
+      for (uint32_t j = header_io_id->first_index; j < header_io_id->last_index; j++)
       {
         base_offset = 0;
-        for (k = 0; k < j; k++)
-          base_offset = base_offset + ((block_layout->bcpf[file_number]) * (var_grp->variable[k]->bpv / 8) * total_chunk_size * header_io_id->idx_d->samples_per_block * var_grp->variable[k]->vps) / (header_io_id->idx->compression_factor);
+        for (uint32_t k = 0; k < j; k++)
+          base_offset = base_offset + ((block_layout->bcpf[file_number]) * (header_io_id->idx->variable[k]->bpv / 8) * total_chunk_size * header_io_id->idx->samples_per_block * header_io_id->idx->variable[k]->vps) / (header_io_id->idx->compression_factor);
 
-        data_offset = ((i - block_negative_offset) * header_io_id->idx_d->samples_per_block) * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps  / (header_io_id->idx->compression_factor);
+        data_offset = ((i - block_negative_offset) * header_io_id->idx->samples_per_block) * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps  / (header_io_id->idx->compression_factor);
 
-        data_offset = base_offset + data_offset + header_io_id->idx_d->start_fs_block * header_io_id->idx_d->fs_block_size;
+        data_offset = base_offset + data_offset + header_io_id->start_fs_block * header_io_id->fs_block_size;
 
         headers[12 + ((i + (header_io_id->idx->blocks_per_file * j))*10 )] = htonl(data_offset);
-        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx_d->samples_per_block * (var_grp->variable[j]->bpv / 8) * total_chunk_size * var_grp->variable[j]->vps / (header_io_id->idx->compression_factor));
+        headers[14 + ((i + (header_io_id->idx->blocks_per_file * j))*10)] = htonl(header_io_id->idx->samples_per_block * (header_io_id->idx->variable[j]->bpv / 8) * total_chunk_size * header_io_id->idx->variable[j]->vps / (header_io_id->idx->compression_factor));
 
-        header_io_id->idx_d->block_offset_bitmap[j][file_number][i] = data_offset;
+        header_io_id->idx_b->block_offset_bitmap[j][file_number][i] = data_offset;
       }
     }
   }
@@ -718,7 +732,7 @@ static int write_meta_data(PIDX_header_io_id header_io_id, PIDX_block_layout blo
     }
 
 #if 0
-    fprintf(stderr, "writing the header %d\n", header_io_id->idx_c->grank);
+    fprintf(stderr, "writing the header %d\n", header_io_id->idx_c->simulation_rank);
 #endif
 
     ret = MPI_File_write_at(fh, 0, headers, total_header_size, MPI_BYTE, &status);

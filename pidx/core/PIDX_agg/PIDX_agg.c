@@ -42,7 +42,7 @@
 
 
 
-PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int fi, int li)
+PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_blocks idx_b, int fi, int li)
 {
   PIDX_agg_id id;
 
@@ -50,15 +50,11 @@ PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_dataset_derived_metadat
   memset(id, 0, sizeof (*id));
 
   id->idx = idx_meta_data;
-  id->idx_d = idx_d;
   id->idx_c = idx_c;
+  id->idx_b = idx_b;
 
-  id->gi = 0;
   id->fi = fi;
   id->li = li;
-  //id->lvi = lvi;
-
-  //fprintf(stderr, "fi : li : lvi :: %d : %d : %d\n", fi, li, lvi);
 
   return id;
 }

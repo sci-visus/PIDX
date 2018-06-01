@@ -55,7 +55,7 @@ typedef struct PIDX_header_io_struct* PIDX_header_io_id;
 /// \param last_index
 /// \return
 ///
-PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_d, idx_comm idx_c, int first_index, int last_index);
+PIDX_header_io_id PIDX_header_io_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_blocks idx_b, PIDX_restructured_grid restructured_grid, int fs_block_size, int first_index, int last_index);
 
 
 

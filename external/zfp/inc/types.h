@@ -7,24 +7,24 @@ typedef unsigned int uint;
 
 #if __STDC_VERSION__ >= 199901L
   #include <stdint.h>
-  typedef int8_t int8;
-  typedef uint8_t uint8;
-  typedef int16_t int16;
-  typedef uint16_t uint16;
-  typedef int32_t int32;
-  typedef uint32_t uint32;
-  typedef int64_t int64;
-  typedef uint64_t uint64;
+  typedef int8_t zfp_int8;
+  typedef uint8_t zfp_uint8;
+  typedef int16_t zfp_int16;
+  typedef uint16_t zfp_uint16;
+  typedef int32_t zfp_int32;
+  typedef uint32_t zfp_uint32;
+  typedef uint64_t zfp_int64;
+  typedef uint64_t zfp_uint64;
 #else
   /* assume common integer types in C89 */
-  typedef signed char int8;
-  typedef unsigned char uint8;
-  typedef signed short int16;
-  typedef unsigned short uint16;
-  typedef signed int int32;
-  typedef unsigned int uint32;
-  typedef signed long long int64; /* not ANSI C89 compliant */
-  typedef unsigned long long uint64; /* not ANSI C89 compliant */
+  typedef signed char zfp_int8;
+  typedef unsigned char zfp_uint8;
+  typedef signed short zfp_int16;
+  typedef unsigned short zfp_uint16;
+  typedef signed int zfp_int32;
+  typedef unsigned int zfp_uint32;
+  typedef signed long long zfp_int64; /* not ANSI C89 compliant */
+  typedef unsigned long long zfp_uint64; /* not ANSI C89 compliant */
 #endif
 
 #endif

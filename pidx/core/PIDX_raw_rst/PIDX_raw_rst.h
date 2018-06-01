@@ -63,25 +63,22 @@ struct PIDX_raw_rst_struct
   //Blocks per file, samples per block, bitmask, patch, file name template and more
   idx_dataset idx;
 
-  //Contains all derieved IDX file info
-  //number of files, files that are ging to be populated
-  idx_dataset_derived_metadata idx_derived;
-
   idx_debug idx_dbg;
 
   idx_comm idx_c;
 
+  PIDX_restructured_grid restructured_grid;
+
   int first_index;
   int last_index;
-  int group_index;
 
-  unsigned long long reg_patch_size[PIDX_MAX_DIMENSIONS];
+  uint64_t reg_patch_size[PIDX_MAX_DIMENSIONS];
   int reg_raw_grp_count;
   PIDX_super_patch* reg_raw_grp;
 
-  int sim_max_patch_group_count;
-  size_t* sim_raw_r_count;
-  off_t* sim_raw_r_offset;
+  int sim_max_raw_io_restructured_super_patch_count;
+  uint64_t* sim_raw_r_count;
+  uint64_t* sim_raw_r_offset;
 
   int maximum_neighbor_count;
 };
@@ -99,7 +96,7 @@ typedef struct PIDX_raw_rst_struct* PIDX_raw_rst_id;
 /// \param var_end_index
 /// \return
 ///
-PIDX_raw_rst_id PIDX_raw_rst_init( idx_dataset idx_meta_data, idx_dataset_derived_metadata idx_derived_ptr, idx_comm idx_c, idx_debug idx_dbg, int var_start_index, int var_end_index);
+PIDX_raw_rst_id PIDX_raw_rst_init( idx_dataset idx_meta_data, idx_comm idx_c, idx_debug idx_dbg, PIDX_restructured_grid restructured_grid, int var_start_index, int var_end_index);
 
 
 
