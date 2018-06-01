@@ -55,16 +55,24 @@
         *---------*---------*
 */
 
+#if !defined _MSC_VER
 #include <unistd.h>
+#include <getopt.h>
+#endif
 #include <stdarg.h>
 #include <stdint.h>
+#include <ctype.h>
 #include <PIDX.h>
+#include <string.h>
+
+#if defined _MSC_VER
+  #include "utils/PIDX_windows_utils.h"
+#endif
 
 #define MAX_VAR_COUNT 128
 enum { X, Y, Z, NUM_DIMS };
 
 static int process_count = 1, rank = 0;
-static unsigned long long rst_box_size[NUM_DIMS];
 static unsigned long long global_box_size[NUM_DIMS];
 static unsigned long long local_box_offset[NUM_DIMS];
 static unsigned long long local_box_size[NUM_DIMS];
@@ -84,7 +92,7 @@ static char type_name[MAX_VAR_COUNT][512];
 static int vps[MAX_VAR_COUNT];
 
 static PIDX_point **local_offset_point, **local_box_count_point;
-static PIDX_point global_size, local_offset, local_size, reg_size;
+static PIDX_point global_size, local_offset, local_size;
 static PIDX_access p_access;
 static PIDX_file file;
 static PIDX_variable* variable;
@@ -105,14 +113,17 @@ static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
 
-static char *usage = "Serial Usage: ./multi_buffer_raw_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f -p 4 output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./multi_buffer_raw_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f -p 4 output_idx_file_name\n"
+static int isNumber(char number[]);
+static int generate_vars();
+
+static char *usage = "Serial Usage: ./multi_buffer_idx_write -g 32x32x32 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./multi_buffer_idx_write -g 64x64x64 -l 32x32x32 -v VL -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -f: Raw file name template\n"
+                     "  -f: file name\n"
                      "  -t: number of timesteps\n"
                      "  -v: number of variables\n"
-                     "  -p: number of patches per process\n";
+                     "  -p: number of patches per rank (1 to 8)\n";
 
 int main(int argc, char **argv)
 {
@@ -128,7 +139,7 @@ int main(int argc, char **argv)
   create_pidx_var_point_and_access();
   for (ts = 0; ts < time_step_count; ts++)
   {
-    set_pidx_file(ts + 5);
+    set_pidx_file(ts);
     for (var = 0; var < variable_count; var++)
       set_pidx_variable(var);
     PIDX_close(file);
@@ -144,20 +155,18 @@ int main(int argc, char **argv)
 //----------------------------------------------------------------
 static void init_mpi(int argc, char **argv)
 {
-#if PIDX_HAVE_MPI
   if (MPI_Init(&argc, &argv) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Init error\n");
   if (MPI_Comm_size(MPI_COMM_WORLD, &process_count) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Comm_size error\n");
   if (MPI_Comm_rank(MPI_COMM_WORLD, &rank) != MPI_SUCCESS)
     terminate_with_error_msg("ERROR: MPI_Comm_rank error\n");
-#endif
 }
 
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:r:f:t:v:p:";
+  char flags[] = "g:l:f:t:v:p:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -175,11 +184,6 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
-    case('r'): // local dimension
-      if ((sscanf(optarg, "%lldx%lldx%lld", &rst_box_size[X], &rst_box_size[Y], &rst_box_size[Z]) == EOF) ||(rst_box_size[X] < 1 || rst_box_size[Y] < 1 || rst_box_size[Z] < 1))
-        terminate_with_error_msg("Invalid partition dimension\n%s", usage);
-      break;
-
     case('f'): // output file name
       if (sprintf(output_file_template, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
@@ -192,12 +196,20 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('v'): // number of variables
-      if (sprintf(var_list, "%s", optarg) < 0)
-        terminate_with_error_msg("Invalid output file name template\n%s", usage);
-      parse_var_list();
+      if(!isNumber(optarg)){ // the param is a file with the list of variables
+        if (sprintf(var_list, "%s", optarg) > 0)
+          parse_var_list();
+        else
+          terminate_with_error_msg("Invalid variable list file\n%s", usage);
+      }else { // the param is a number of variables (default: 1*float32)
+        if(sscanf(optarg, "%d", &variable_count) > 0)
+          generate_vars();
+        else
+          terminate_with_error_msg("Invalid number of variables\n%s", usage);
+      }
       break;
 
-    case('p'): // number of timesteps
+    case('p'): // number of patches
       if (sscanf(optarg, "%d", &patch_count) < 0)
         terminate_with_error_msg("Invalid patch count\n%s", usage);
       break;
@@ -241,9 +253,9 @@ static int parse_var_list()
         {
           if (count == 0)
           {
-            char* temp_name = strdup(pch1);
-            strcpy(var_name[variable_counter], temp_name);
-            free(temp_name);
+            //char* temp_name = strdup(pch1);
+            strcpy(var_name[variable_counter], pch1);
+            //free(temp_name);
           }
 
           if (count == 1)
@@ -282,7 +294,7 @@ static int parse_var_list()
   {
     int v = 0;
     for(v = 0; v < variable_count; v++)
-      printf("[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
+      fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
   }
 
   return PIDX_success;
@@ -305,53 +317,8 @@ static void check_args()
 //----------------------------------------------------------------
 static void calculate_per_process_offsets()
 {
-  int var = 0, i = 0, d = 0;
-
   //   Calculating every process's offset and count
-  var_count = malloc(sizeof(unsigned long long**) * variable_count);
-  var_offset = malloc(sizeof(unsigned long long**) * variable_count);
-
-  for(var = 0; var < variable_count; var++)
-  {
-    var_count[var] = malloc(sizeof(unsigned long long*) * patch_count);
-    var_offset[var] = malloc(sizeof(unsigned long long*) * patch_count);
-    for(i = 0; i < patch_count ; i++)
-    {
-      var_count[var][i] = malloc(sizeof(unsigned long long) * 3);
-      var_offset[var][i] = malloc(sizeof(unsigned long long) * 3);
-    }
-  }
-
-#if 0
-  int vi = 0;
-  int pi = 0;
-  int vo_x = 0, vo_y = 0, vo_z = 0, vc_x = 0, vc_y = 0, vc_z = 0;
-  char fn[512];
-  sprintf(fn, "/home/sid/uintah/PIDX/PIDX/build/CCVars_1_process_state_dump/rank_%d", rank);
-  //printf("FN %s\n", fn);
-  FILE *fp = fopen(fn, "r");
-  if (fp == NULL)
-    fprintf(stdout, "Error Opening %s\n", var_list);
-
-  for (i = 0; i < 16; i++)
-  {
-    assert(8 == fscanf(fp, "[%d] [%d] %d %d %d %d %d %d\n", &vi, &pi, &vo_x, &vo_y, &vo_z, &vc_x, &vc_y, &vc_z));
-    assert(pi == i);
-    assert(vi == 0);
-    for(var = 0; var < variable_count; var++)
-    {
-      var_offset[var][i][X] = vo_x;
-      var_offset[var][i][Y] = vo_y;
-      var_offset[var][i][Z] = vo_z;
-
-      var_count[var][i][X] = vc_x;
-      var_count[var][i][Y] = vc_y;
-      var_count[var][i][Z] = vc_z;
-      //printf("%d : %d %d %d %d %d %d\n", i, (int)var_offset[var][i][X], (int)var_offset[var][i][Y], (int)var_offset[var][i][Z], (int)var_count[var][i][X], (int)var_count[var][i][Y], (int)var_count[var][i][Z]);
-    }
-  }
-  fclose(fp);
-#else
+  int var = 0, d = 0, i = 0;
   int sub_div[3];
   int local_box_offset[3];
   sub_div[X] = (global_box_size[X] / local_box_size[X]);
@@ -362,8 +329,19 @@ static void calculate_per_process_offsets()
   local_box_offset[Y] = (slice / sub_div[X]) * local_box_size[Y];
   local_box_offset[X] = (slice % sub_div[X]) * local_box_size[X];
 
+  var_count = malloc(sizeof(*var_count) * variable_count);
+  var_offset = malloc(sizeof(*var_count) * variable_count);
+
   for(var = 0; var < variable_count; var++)
   {
+    var_count[var] = malloc(sizeof(*(var_count[var])) * patch_count);
+    var_offset[var] = malloc(sizeof(*(var_count[var])) * patch_count);
+    for(i = 0; i < patch_count ; i++)
+    {
+      var_count[var][i] = malloc(sizeof(*(var_count[var][i])) * 3);
+      var_offset[var][i] = malloc(sizeof(*(var_count[var][i])) * 3);
+    }
+
     // One patch for this variable
     if (patch_count == 1)
     {
@@ -373,7 +351,6 @@ static void calculate_per_process_offsets()
         var_offset[var][X][d] = local_box_offset[d];
       }
     }
-#if 1
     // two patches for this variable
     else if (patch_count == 2)
     {
@@ -384,44 +361,13 @@ static void calculate_per_process_offsets()
         var_count[var][Y][d] = local_box_size[d];
         var_offset[var][Y][d] = local_box_offset[d];
       }
-      var_count[var][X][X] = local_box_size[X]/2;
-      if(local_box_size[X] % 2 == 0)
-        var_count[var][Y][X] = local_box_size[X]/2;
+      var_count[var][X][Y] = local_box_size[Y]/2;
+      if(local_box_size[Y] % 2 == 0)
+        var_count[var][Y][Y] = local_box_size[Y]/2;
       else
-        var_count[var][Y][X] = local_box_size[X]/2 + 1;
-      var_offset[var][Y][X] = local_box_offset[X] + local_box_size[X]/2;
+        var_count[var][Y][Y] = local_box_size[Y]/2 + 1;
+      var_offset[var][Y][Y] = local_box_offset[Y] + local_box_size[Y]/2;
     }
-
-#else
-    else if (patch_count == 2)
-    {
-
-      for(d = 0; d < 3; d++)
-      {
-        var_count[var][X][d] = local_box_size[d];
-        var_offset[var][X][d] = local_box_offset[d];
-        var_count[var][Y][d] = local_box_size[d];
-        var_offset[var][Y][d] = local_box_offset[d];
-      }
-
-      var_count[var][X][X] = local_box_size[X]/2;
-
-      if(local_box_size[X] % 2 == 0)
-        var_count[var][Y][X] = local_box_size[X]/2;
-      else
-        var_count[var][Y][X] = local_box_size[X]/2 + 1;
-
-      var_offset[var][Y][X] = local_box_offset[X] + local_box_size[X]/2;
-
-      if(var_offset[var][X][X] == 0){
-        var_offset[var][X][X] = local_box_offset[X] + local_box_size[X];
-      }
-      else if(var_offset[var][X][X] == local_box_size[X]){
-        var_offset[var][X][X] = local_box_offset[X] - local_box_size[X];
-      }
-    }
-#endif
-
     // four patches for this variable
     else if (patch_count == 4)
     {
@@ -571,43 +517,61 @@ static void calculate_per_process_offsets()
       }
     }
     else
-      printf("This patch count not supported !!!!\n");
+      fprintf(stderr, "This patch count not supported !!!!\n");
   }
-#endif
 }
 
 //----------------------------------------------------------------
 static void create_synthetic_simulation_data()
 {
   int var = 0, p = 0;
-  unsigned long long i, j, k, vps = 0;
-  float fvalue = 0;
+  unsigned long long i, j, k, val_per_sample = 0;;
 
-  data = malloc(sizeof(float**) * variable_count);
+  unsigned char cvalue = 0;
+  short svalue = 0;
+  float fvalue = 0;
+  double dvalue = 0;
+  int ivalue = 0;
+
+  data = malloc(sizeof(*data) * variable_count);
   for (var = 0; var < variable_count; var++)
   {
-    int sample_count = 1;
-    if ((bpv[var]) == 32)
-      sample_count = 1;
-    else if ((bpv[var]) == 192)
-      sample_count = 3;
-    else if ((bpv[var]) == 64)
-      sample_count = 1;
-
-    data[var] = malloc(sizeof(float*) * patch_count);
+    data[var] = malloc(sizeof(*(data[var])) * patch_count);
     for(p = 0 ; p < patch_count ; p++)
     {
-      data[var][p] = malloc(sizeof (float) * var_count[var][p][X] * var_count[var][p][Y] * var_count[var][p][Z]);
+      data[var][p] = malloc(sizeof (*(data[var][p])) * var_count[var][p][X] * var_count[var][p][Y] * var_count[var][p][Z] * (bpv[var]/8) * vps[var]);
       for (k = 0; k < var_count[var][p][Z]; k++)
         for (j = 0; j < var_count[var][p][Y]; j++)
           for (i = 0; i < var_count[var][p][X]; i++)
           {
             unsigned long long index = (unsigned long long) (var_count[var][p][X] * var_count[var][p][Y] * k) + (var_count[var][p][X] * j) + i;
-            for (vps = 0; vps < sample_count; vps++)
+            for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
             {
-              fvalue = var + 100 + (global_box_size[X] * global_box_size[Y]*(var_offset[var][p][Z] + k))+(global_box_size[X]*(var_offset[var][p][Y] + j)) + (var_offset[var][p][X] + i);
-
-              memcpy(data[var][p] + (index * sample_count + vps) * sizeof(float), &fvalue, sizeof(float));
+              if (strcmp(type_name[var], UINT8) == 0 || strcmp(type_name[var], UINT8_GA) == 0 || strcmp(type_name[var], UINT8_RGB) == 0)
+              {
+                cvalue = ((int)(var + ((global_box_size[X] * global_box_size[Y]*(var_offset[var][p][Z] + k))+(global_box_size[X]*(var_offset[var][p][Y] + j)) + (var_offset[var][p][X] + i))));
+                memcpy(data[var][p] + (index * vps[var] + val_per_sample) * sizeof(unsigned char), &cvalue, sizeof(unsigned char));
+              }
+              if (strcmp(type_name[var], INT16) == 0 || strcmp(type_name[var], INT16_GA) == 0 || strcmp(type_name[var], INT16_RGB) == 0)
+              {
+                svalue = ((int)(var + ((global_box_size[X] * global_box_size[Y]*(var_offset[var][p][Z] + k))+(global_box_size[X]*(var_offset[var][p][Y] + j)) + (var_offset[var][p][X] + i))));
+                memcpy(data[var][p] + (index * vps[var] + val_per_sample) * sizeof(short), &svalue, sizeof(short));
+              }
+              if (strcmp(type_name[var], INT32) == 0 || strcmp(type_name[var], INT32_GA) == 0 || strcmp(type_name[var], INT32_RGB) == 0)
+              {
+                ivalue = ((int)(100 + var + ((global_box_size[X] * global_box_size[Y]*(var_offset[var][p][Z] + k))+(global_box_size[X]*(var_offset[var][p][Y] + j)) + (var_offset[var][p][X] + i))));
+                memcpy(data[var][p] + (index * vps[var] + val_per_sample) * sizeof(int), &ivalue, sizeof(int));
+              }
+              else if (strcmp(type_name[var], FLOAT32) == 0 || strcmp(type_name[var], FLOAT32_GA) == 0 || strcmp(type_name[var], FLOAT32_RGB) == 0)
+              {
+                fvalue = ((float)(100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(var_offset[var][p][Z] + k))+(global_box_size[X]*(var_offset[var][p][Y] + j)) + (var_offset[var][p][X] + i))));
+                memcpy(data[var][p] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
+              }
+              else if (strcmp(type_name[var], FLOAT64) == 0 || strcmp(type_name[var], FLOAT64_GA) == 0 || strcmp(type_name[var], FLOAT64_RGB) == 0)
+              {
+                dvalue = ((double)100 + var + ((global_box_size[X] * global_box_size[Y]*(var_offset[var][p][Z] + k))+(global_box_size[X]*(var_offset[var][p][Y] + j)) + (var_offset[var][p][X] + i)));
+                memcpy(data[var][p] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
+              }
             }
           }
     }
@@ -617,11 +581,7 @@ static void create_synthetic_simulation_data()
 //----------------------------------------------------------------
 static void terminate()
 {
-#if PIDX_HAVE_MPI
   MPI_Abort(MPI_COMM_WORLD, -1);
-#else
-  exit(-1);
-#endif
 }
 
 //----------------------------------------------------------------
@@ -654,7 +614,6 @@ static void create_pidx_var_point_and_access()
   PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
   PIDX_set_point(local_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z]);
   PIDX_set_point(local_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
-  PIDX_set_point(reg_size, rst_box_size[X], rst_box_size[Y], rst_box_size[Z]);
 
   local_offset_point = malloc(sizeof(PIDX_point*) * variable_count);
   local_box_count_point = malloc(sizeof(PIDX_point*) * variable_count);
@@ -688,13 +647,11 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   PIDX_set_variable_count(file, variable_count);
 
-  // Seting the restructuring box size
-  PIDX_set_restructuring_box(file, reg_size);
+  //PIDX_debug_rst(file, 1);
+  //PIDX_debug_hz(file, 1);
 
   // Selecting raw I/O mode
-  PIDX_set_io_mode(file, PIDX_RAW_IO);
-
-  PIDX_dump_state(file, PIDX_META_DATA_DUMP_ONLY);
+  PIDX_set_io_mode(file, PIDX_IDX_IO);
 
   return;
 }
@@ -748,7 +705,48 @@ static void destroy_synthetic_simulation_data()
 //----------------------------------------------------------------
 static void shutdown_mpi()
 {
-#if PIDX_HAVE_MPI
   MPI_Finalize();
-#endif
+}
+
+
+static int isNumber(char number[])
+{
+    int i = 0;
+
+    //checking for negative numbers
+    if (number[0] == '-')
+        i = 1;
+    for (; number[i] != 0; i++)
+    {
+        //if (number[i] > '9' || number[i] < '0')
+        if (!isdigit(number[i]))
+            return 0;
+    }
+    return 1;
+}
+
+
+static int generate_vars(){
+
+  int variable_counter = 0;
+
+  for(variable_counter = 0; variable_counter < variable_count; variable_counter++){
+    int ret;
+    int bits_per_sample = 0;
+    int sample_count = 0;
+    char temp_name[512];
+    char* temp_type_name = "1*float64";
+    //char* temp_type_name = "1*int8";
+    sprintf(temp_name, "var_%d", variable_counter);
+    strcpy(var_name[variable_counter], temp_name);
+    strcpy(type_name[variable_counter], temp_type_name);
+
+    ret = PIDX_values_per_datatype(temp_type_name, &sample_count, &bits_per_sample);
+    if (ret != PIDX_success)  return PIDX_err_file;
+
+    bpv[variable_counter] = bits_per_sample;
+    vps[variable_counter] = sample_count;
+  }
+
+  return 0;
 }
