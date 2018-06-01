@@ -7,7 +7,7 @@
 /* forward declaration of opaque type */
 typedef struct bitstream bitstream;
 
-extern const uint64_t stream_word_bits; /* bit stream granularity */
+extern const zfp_uint64 stream_word_bits; /* bit stream granularity */
 
 #ifndef _inline
 #ifdef __cplusplus
