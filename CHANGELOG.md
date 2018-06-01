@@ -4,17 +4,25 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased]
 ### Added
 - compression and decompression (zfp)
-- particle data interface
+- particles data read and write (file per process)
+- particles restructuring (experimental)
 - support for Windows build
 - continuous integration support for Windows (Appveyor)
 - serial file open (for VisIt reader)
+- partitioning examples
+- generate midx when local partitioned IDX is used
 
 ### Changed
+- metadata format 6.1 and support for previous (6)
+- use enums for PIDX types
+- use literal io mode, endianess
+- refactoring examples 
 - improved testing scripts and autotesting for Travis CI
 
 ### Fixed
 - raw read performance
 - zfp library build and deploy in CMake 
+- zfp types redefinition
 
 ## [0.9.1]
 ### Added
