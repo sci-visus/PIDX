@@ -55,9 +55,9 @@ to little-endian data and vice versa. These are taken from the Boost library.*/
 
 typedef long int __uint64_t;
 typedef long int __off64_t;
-typedef __uint64_t uint64_t;
+//typedef __uint64_t uint64_t;
 
-#define uint64_t uint64_t
+//#define uint64_t uint64_t
 #define PATH_MAX 256
 #define mkdir(x,y) mkdir(x) // This returns error if directory exists already
 #define PIDX_HAVE_MPI 1  // TODO: remove this later cause it is going to be deprecated
