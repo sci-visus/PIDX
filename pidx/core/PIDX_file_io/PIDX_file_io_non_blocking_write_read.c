@@ -57,7 +57,7 @@ PIDX_return_code PIDX_file_io_async_write(PIDX_file_io_id io_id, Agg_buffer agg_
 
   int tck = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
 
-  if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
+  if (agg_buf->var_number != -1 && agg_buf->file_number != -1)
   {
     generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int)agg_buf->file_number, file_name, PATH_MAX);
 
@@ -85,8 +85,8 @@ PIDX_return_code PIDX_file_io_async_write(PIDX_file_io_id io_id, Agg_buffer agg_
       data_offset = (uint64_t) data_offset + prev_var_sample;
     }
 
-    for (i = 0; i < agg_buf->sample_number; i++)
-      data_offset = (uint64_t) data_offset + agg_buf->buffer_size;
+    //for (i = 0; i < agg_buf->sample_number; i++)
+    //  data_offset = (uint64_t) data_offset + agg_buf->buffer_size;
 
     if (io_id->idx->flip_endian == 1)
     {

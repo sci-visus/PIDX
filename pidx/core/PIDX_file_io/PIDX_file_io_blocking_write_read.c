@@ -56,7 +56,7 @@ PIDX_return_code PIDX_file_io_blocking_read(PIDX_file_io_id io_id, Agg_buffer ag
   MPI_Status status;
 
   int tck = (io_id->idx->chunk_size[0] * io_id->idx->chunk_size[1] * io_id->idx->chunk_size[2]);
-  if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
+  if (agg_buf->var_number != -1 && agg_buf->file_number != -1)
   {
     generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
 
@@ -190,7 +190,7 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
   if (total_header_size % io_id->fs_block_size)
     start_fs_block++;
 
-  if (agg_buf->var_number != -1 && agg_buf->sample_number != -1 && agg_buf->file_number != -1)
+  if (agg_buf->var_number != -1 && agg_buf->file_number != -1)
   {
     generate_file_name(io_id->idx->blocks_per_file, filename_template, (unsigned int) agg_buf->file_number, file_name, PATH_MAX);
     ret = MPI_File_open(MPI_COMM_SELF, file_name, MPI_MODE_WRONLY, MPI_INFO_NULL, &fh);
@@ -212,8 +212,8 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
       data_offset = (uint64_t) data_offset + prev_var_sample;
     }
 
-    for (i = 0; i < agg_buf->sample_number; i++)
-      data_offset = (uint64_t) data_offset + agg_buf->buffer_size;
+    //for (i = 0; i < agg_buf->sample_number; i++)
+    //  data_offset = (uint64_t) data_offset + agg_buf->buffer_size;
 
     //fprintf(stderr, "DO %d DS %d\n", data_offset, agg_buf->buffer_size);
     ret = MPI_File_write_at(fh, data_offset, agg_buf->buffer, agg_buf->buffer_size , MPI_BYTE, &status);

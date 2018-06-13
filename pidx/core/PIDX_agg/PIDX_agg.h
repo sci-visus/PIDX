@@ -66,7 +66,7 @@ struct PIDX_agg_struct
   int fi;
   int li;
 
-  int ***agg_r;
+  int **agg_r;
 };
 
 struct PIDX_agg_struct;
@@ -82,20 +82,12 @@ typedef struct PIDX_agg_struct* PIDX_agg_id;
 PIDX_agg_id PIDX_agg_init(idx_dataset idx_meta_data, idx_comm idx_c, idx_blocks idx_b, int fi, int li);
 
 
-
-PIDX_return_code PIDX_agg_create_randomized_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status);
-
-
 ///
 PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout);
 
 
 ///
-PIDX_return_code PIDX_agg_buf_create_localized_aggregation(PIDX_agg_id agg_id, Agg_buffer agg_buffer, PIDX_block_layout local_block_layout, int i1, int j1, int file_status);
-
-
-///
-PIDX_return_code PIDX_agg_buf_create_multiple_level(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status);
+PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
 
 
 ///
@@ -111,12 +103,10 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id agg_id, Agg_buffer agg_bu
 
 
 ///
-PIDX_return_code PIDX_agg_meta_data_destroy(PIDX_agg_id agg_id, PIDX_block_layout local_block_layout);
-
-
 PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset);
 
 
+///
 PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset);
 
 ///

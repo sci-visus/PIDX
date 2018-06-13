@@ -277,7 +277,7 @@ static void set_pidx_file(int ts)
   PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
 
   int last_ts;
-  PIDX_get_last_tstep(file, &last_ts);
+  PIDX_get_last_time_step(file, &last_ts);
 
   if (ts != 0)
     PIDX_set_current_time_step(file, ts);

@@ -69,7 +69,6 @@ int PIDX_file_io_per_process(PIDX_hz_encode_id id, PIDX_block_layout block_layou
 
   index = 0, count = 0, send_index = 0;
 
-  // PROBABLY WRONG
   if (var0->hz_buffer->is_boundary_HZ_buffer == 1)
   {
     for (v = id->first_index; v <= id->last_index; v++)

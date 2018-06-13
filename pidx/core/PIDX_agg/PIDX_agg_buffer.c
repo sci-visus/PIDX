@@ -42,16 +42,10 @@
 
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 
-PIDX_return_code PIDX_agg_create_randomized_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset, int var_offset, int file_status)
-{
-  return PIDX_success;
-}
 
 
 PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)
 {
-  int i = 0, j = 0, k = 0;
-
   int grank=0;
   MPI_Comm_rank(id->idx_c->simulation_comm, &grank);
 
@@ -59,39 +53,35 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
   int aggregator_interval = id->idx_c->partition_nprocs / ((id->li - id->fi + 1) * lbl->efc);
 
 
-  for (k = 0; k < lbl->efc; k++)
+  for (int k = 0; k < lbl->efc; k++)
   {
-    for (i = id->fi; i <= id->li; i++)
+    for (int i = id->fi; i <= id->li; i++)
     {
-      for (j = 0; j < id->idx->variable[i]->vps * ab->agg_f; j++)
+      id->agg_r[k][i - id->fi] = rank_counter;
+      rank_counter = rank_counter + aggregator_interval;
+
+      if (id->idx_c->partition_rank == id->agg_r[k][i - id->fi])
       {
-        id->agg_r[k][i - id->fi][j] = rank_counter;
-        rank_counter = rank_counter + aggregator_interval;
+        ab->file_number = lbl->existing_file_index[k];
+        ab->var_number = i;
 
-        if (id->idx_c->partition_rank == id->agg_r[k][i - id->fi][j])
+        uint64_t sample_count = lbl->bcpf[ab->file_number] * id->idx->samples_per_block;
+
+        int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
+        int bpdt = (chunk_size * id->idx->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
+
+        ab->buffer_size = sample_count * bpdt;
+
+        ab->buffer = malloc(ab->buffer_size);
+        memset(ab->buffer, 0, ab->buffer_size);
+        if (ab->buffer == NULL)
         {
-          ab->file_number = lbl->existing_file_index[k];
-          ab->var_number = i;
-          ab->sample_number = j;
-
-          uint64_t sample_count = lbl->bcpf[ab->file_number] * id->idx->samples_per_block / ab->agg_f;
-
-          int chunk_size = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
-          int bpdt = (chunk_size * id->idx->variable[ab->var_number]->bpv/8) / (id->idx->compression_factor);
-
-          ab->buffer_size = sample_count * bpdt;
-
-          ab->buffer = malloc(ab->buffer_size);
-          memset(ab->buffer, 0, ab->buffer_size);
-          if (ab->buffer == NULL)
-          {
-            fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) ab->buffer_size, __LINE__, __FILE__);
-            return PIDX_err_agg;
-          }
-#if DEBUG_OUTPUT
-          fprintf(stderr, "[File %d] [Variable %d] [Color %d] [n %d r %d p %d] Aggregator Partition rank %d Global rank %d\n", ab->file_number, ab->var_number, id->idx_c->color, id->idx_c->simulation_nprocs, id->idx_c->rnprocs, id->idx_c->partition_nprocs, id->idx_c->partition_rank, grank);
-#endif
+          fprintf(stderr, " Error in malloc %lld: Line %d File %s\n", (long long) ab->buffer_size, __LINE__, __FILE__);
+          return PIDX_err_agg;
         }
+#if DEBUG_OUTPUT
+        fprintf(stderr, "[File %d] [Variable %d] [Color %d] [n %d r %d p %d] Aggregator Partition rank %d Global rank %d\n", ab->file_number, ab->var_number, id->idx_c->color, id->idx_c->simulation_nprocs, id->idx_c->rnprocs, id->idx_c->partition_nprocs, id->idx_c->partition_rank, grank);
+#endif
       }
     }
   }
@@ -100,6 +90,7 @@ PIDX_return_code PIDX_agg_buf_create_local_uniform_dist(PIDX_agg_id id, Agg_buff
 }
 
 
+#if 0
 PIDX_return_code PIDX_agg_create_global_partition_localized_aggregation_buffer(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl, int agg_offset)
 {
   PIDX_variable var0 = id->idx->variable[id->fi];
@@ -679,6 +670,7 @@ PIDX_return_code PIDX_agg_create_local_partition_localized_aggregation_buffer(PI
 
   return PIDX_success;
 }
+#endif
 
 
 

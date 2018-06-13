@@ -121,7 +121,7 @@ PIDX_return_code find_agg_level(PIDX_io file, int svi, int evi)
         file->idx->variable_pipe_length = var_count - 1;
 
         //if (file->idx_c->partition_rank == 0)
-        //  fprintf(stderr, "[B] agg level %d pipe length %d\n", file->idx_b->agg_level, file->idx->variable_pipe_length);
+        //  fprintf(stderr, "[B] agg level %d pipe length %d total aggregator %d total processes %d\n", file->idx_b->agg_level, file->idx->variable_pipe_length, total_aggregator, file->idx_c->partition_nprocs);
       }
       else
       {
