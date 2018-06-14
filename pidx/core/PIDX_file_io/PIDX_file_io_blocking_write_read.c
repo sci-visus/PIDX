@@ -178,7 +178,6 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
 {
   uint64_t data_offset = 0;
   char file_name[PATH_MAX];
-  int i = 0, k = 0;
   int ret;
   MPI_File fh;
   MPI_Status status;
@@ -203,7 +202,7 @@ PIDX_return_code PIDX_file_io_blocking_write(PIDX_file_io_id io_id, Agg_buffer a
     data_offset = 0;
     data_offset += start_fs_block * io_id->fs_block_size;
 
-    for (k = 0; k < agg_buf->var_number; k++)
+    for (int k = 0; k < agg_buf->var_number; k++)
     {
       PIDX_variable vark = io_id->idx->variable[k];
       int bytes_per_datatype =  ((vark->bpv/8) * tck) / (io_id->idx->compression_factor);

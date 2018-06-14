@@ -40,14 +40,35 @@
  */
 #include "../../PIDX_inc.h"
 
-#define PIDX_ACTIVE_TARGET 1
+
+// There are two modes of MPI One-sided RMA communication
+// 1 - Active target communication (using fences)
+// 2 - Passive target communication (using locks)
+
+// My observation is that RMA works best with active target communication except for some machines
+// like ash, this might be a hit and trial thing.
+// Active target communication hangs on some machines (example ash), so, on those machines it is important to
+// uncomment the following line
+// #undef PIDX_ACTIVE_TARGET
+
+#define PIDX_ACTIVE_TARGET
 
 static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab);
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode);
 static int write_samples(PIDX_agg_id id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, uint64_t buffer_offset, PIDX_block_layout layout, int mode);
 
+
+// Perform aggregation
 PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl,  int MODE)
 {
+  // Steps for aggregation
+  // Step 1: Create one sided Windows
+  // Step 2: RMA fence for synchronization - begin data transfer
+  // Step 3: Transfer data (one sided)
+  // Step 4: RMA fence for synchronization - end data transfer
+  // Step 5: Free the MPI windows
+
+  // Step 1
   if (create_window(id, ab) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -86,10 +107,12 @@ PIDX_return_code PIDX_agg_global_and_local(PIDX_agg_id id, Agg_buffer ab, int la
 }
 
 
+
 static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
 {
   PIDX_variable var = id->idx->variable[ab->var_number];
 
+  // If I am an aggregator then create a window of size buffer size
   if (ab->buffer_size != 0)
   {
     int tcs = id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2];
@@ -101,7 +124,7 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
       return PIDX_err_agg;
     }
   }
-  else
+  else // If I am not an aggregator then create an empty window
   {
     if (MPI_Win_create(0, 0, 1, MPI_INFO_NULL, id->idx_c->partition_comm, &(id->win)) != MPI_SUCCESS)
     {
@@ -117,7 +140,7 @@ static PIDX_return_code create_window(PIDX_agg_id id, Agg_buffer ab)
 
 static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int layout_id, PIDX_block_layout lbl, int mode)
 {
-  int i, v, ret = 0;
+  int ret = 0;
   uint64_t index = 0, count = 0;
 
   PIDX_variable var0 = id->idx->variable[id->fi];
@@ -125,21 +148,22 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
   if (var0->restructured_super_patch_count == 0)
     return PIDX_success;
 
-  for (v = id->fi; v <= id->li; v++)
+  for (int v = id->fi; v <= id->li; v++)
   {
     PIDX_variable var = id->idx->variable[v];
 
     index = 0, count = 0;
     HZ_buffer hz_buf = var->hz_buffer;
 
-    if (hz_buf->is_boundary_HZ_buffer == 1)
+    // if a block is power in two dimension then iterate through all samples in a level at once
+    if (hz_buf->is_boundary_HZ_buffer == power_two_block)
     {
-      for (i = lbl->resolution_from; i < lbl->resolution_to; i++)
+      for (int i = lbl->resolution_from; i < lbl->resolution_to; i++)
       {
         if (hz_buf->nsamples_per_level[i][0] * hz_buf->nsamples_per_level[i][1] * hz_buf->nsamples_per_level[i][2] != 0)
         {
           index = 0;
-          count = hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;
+          count = hz_buf->end_hz_index[i] - hz_buf->start_hz_index[i] + 1;  // all samples in the hz level local to the process
 
           ret = write_samples(id, v, hz_buf->start_hz_index[i], count, hz_buf->buffer[i], 0, lbl, mode);
           if (ret != PIDX_success)
@@ -150,9 +174,10 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
         }
       }
     }
-    else if (hz_buf->is_boundary_HZ_buffer == 2)
+    // if a block is non-power in two then iterte through samples in intervals of blocks
+    else if (hz_buf->is_boundary_HZ_buffer == non_power_two_block)
     {
-      for (i = lbl->resolution_from; i < lbl->resolution_to; i++)
+      for (int i = lbl->resolution_from; i < lbl->resolution_to; i++)
       {
         if (var0->hz_buffer->nsamples_per_level[i][0] * var0->hz_buffer->nsamples_per_level[i][1] * var0->hz_buffer->nsamples_per_level[i][2] != 0)
         {
@@ -219,7 +244,7 @@ static PIDX_return_code one_sided_data_com(PIDX_agg_id id, Agg_buffer ab, int la
 
 static int write_samples(PIDX_agg_id id, int variable_index, uint64_t hz_start_index, uint64_t hz_count, unsigned char* hz_buffer, uint64_t buffer_offset, PIDX_block_layout layout, int mode)
 {
-  int block_number, file_index, file_count, block_negative_offset = 0, file_number;
+  int block_number, file_index, file_count, block_negative_offset = 0;
   uint64_t samples_per_file = id->idx->samples_per_block * id->idx->blocks_per_file;
   uint64_t data_offset = 0;
 
@@ -228,10 +253,15 @@ static int write_samples(PIDX_agg_id id, int variable_index, uint64_t hz_start_i
   int bytes_per_datatype = (var->bpv / 8) * var->vps * (id->idx->chunk_size[0] * id->idx->chunk_size[1] * id->idx->chunk_size[2]) / id->idx->compression_factor;
   hz_buffer = hz_buffer + buffer_offset * bytes_per_datatype;
 
+  // This while loop is redundant, it will only be executed once
+  // this code is an exact replica of file per process io look at function write_samples PIDX_hz_encode_io.c
+  // this is because file-per-process io a process is allowed to write to multiple files but here we restrict
+  // one aggregator per file (the setup is already done in such a manner), look at function find_agg_level in
+  // io_setup.c
+
   while (hz_count)
   {
     block_number = hz_start_index / id->idx->samples_per_block;
-    file_number = hz_start_index / samples_per_file;
     file_index = hz_start_index % samples_per_file;
     file_count = samples_per_file - file_index;
 
@@ -251,6 +281,11 @@ static int write_samples(PIDX_agg_id id, int variable_index, uint64_t hz_start_i
     int file_no = hz_start_index / samples_per_file;
     int target_rank = id->agg_r[layout->inverse_existing_file_index[file_no]][variable_index - id->fi];
 
+
+#ifndef PIDX_ACTIVE_TARGET
+    MPI_Win_lock(MPI_LOCK_SHARED, target_rank, 0 , id->win);
+#endif
+
     if (mode == PIDX_WRITE)
     {
       if (MPI_Put(hz_buffer, file_count * bytes_per_datatype, MPI_BYTE, target_rank, data_offset / bytes_per_datatype, file_count * bytes_per_datatype, MPI_BYTE, id->win) != MPI_SUCCESS)
@@ -267,6 +302,11 @@ static int write_samples(PIDX_agg_id id, int variable_index, uint64_t hz_start_i
         return PIDX_err_agg;
       }
     }
+
+#ifndef PIDX_ACTIVE_TARGET
+    MPI_Win_unlock(target_rank, id->win);
+#endif
+
 
     hz_count -= file_count;
     hz_start_index += file_count;

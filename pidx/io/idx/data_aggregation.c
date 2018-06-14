@@ -62,8 +62,6 @@ PIDX_return_code aggregation_setup(PIDX_io file, int svi, int evi)
     idx->agg_buffer[svi][j]->file_number = -1;
     idx->agg_buffer[svi][j]->var_number = -1;
 
-    idx->agg_buffer[svi][j]->no_of_aggregators = 0;
-    idx->agg_buffer[svi][j]->aggregator_interval = 0;
     time->agg_init_end[svi][j] = PIDX_get_time();
 
     time->agg_meta_start[svi][j] = PIDX_get_time();
@@ -77,9 +75,7 @@ PIDX_return_code aggregation_setup(PIDX_io file, int svi, int evi)
 
     time->agg_buf_start[svi][j] = PIDX_get_time();
 
-    //ret = PIDX_agg_create_randomized_aggregation(file->agg_id[svi][j], idx->agg_buffer[svi][j], block_layout_by_agg_group[j], j, svi, file_status);
     //ret = PIDX_agg_create_global_partition_localized_aggregation_buffer(file->agg_id[svi][j], idx->agg_buffer[svi][j], file->idx_b->block_layout_by_agg_group[j], j);
-
     //ret = PIDX_agg_create_local_partition_localized_aggregation_buffer(file->agg_id[svi][j], idx->agg_buffer[svi][j], file->idx_b->block_layout_by_agg_group[j], j);
     ret = PIDX_agg_buf_create_local_uniform_dist(file->agg_id[svi][j], idx->agg_buffer[svi][j], file->idx_b->block_layout_by_agg_group[j]);
 

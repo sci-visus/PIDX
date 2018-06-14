@@ -77,7 +77,6 @@ PIDX_return_code PIDX_write(PIDX_io file, int svi, int evi, int MODE)
 
   PIDX_return_code ret = 0;
   file->time->SX = PIDX_get_time();
-  PIDX_variable var0 = file->idx->variable[svi];
 
 #if 0
   if (file->idx_c->simulation_nprocs == 1)

@@ -51,9 +51,6 @@ struct PIDX_HZ_Agg_buffer_struct
   int file_number;                                      ///< Target file number for the aggregator
   int var_number;                                       ///< Target variable number for the aggregator
 
-  int no_of_aggregators;                                ///< Total number of aggregators
-  int aggregator_interval;                              ///< Distance between aggregators (in terms of number of processes)
-
   uint64_t buffer_size;                                 ///< Aggregator buffer size
   unsigned char* buffer;                                ///< The actual aggregator buffer
 };

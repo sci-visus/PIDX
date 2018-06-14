@@ -81,7 +81,10 @@ extern "C" {
 // PIDX_WRITE - Write only mode
 enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
-
+// If a block (application order or HZ order is on the boundary or not, a block is on the boundary
+// if it does not align with a power in to dimension block.
+enum boundary_type {power_two_block = 1,
+                   non_power_two_block = 2};
 
 // No process dumps any meta data info
 #define PIDX_NO_META_DATA_DUMP             0
@@ -91,7 +94,6 @@ enum IO_READ_WRITE {PIDX_READ, PIDX_WRITE};
 
 // Every process writes the MPI related meta data into a seperate file while preventing any actual MPI and IO call
 #define PIDX_NO_IO_AND_META_DATA_DUMP        2
-
 
 
 #define PIDX_NO_COMPRESSION 0
