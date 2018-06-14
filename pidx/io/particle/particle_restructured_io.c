@@ -39,17 +39,20 @@
  *
  */
 
-#include "../../../PIDX_inc.h"
+#include "../../PIDX_inc.h"
 static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi);
-
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm);
 
 PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
 {
+  log_status("[Particle restructured io Step 0]: Entering\n", 0, __LINE__, file->idx_c->simulation_comm);
+
   if (particles_set_rst_box_size_for_raw_write(file, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  log_status("[Particle restructured io Step 1]: Setting restructuring box\n", 1, __LINE__, file->idx_c->simulation_comm);
 
 #if 0
   if (file->idx_c->simulation_rank == 0)
@@ -76,6 +79,7 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  log_status("[Particle restructured io Step 2]: Creating the folder structure\n", 2, __LINE__, file->idx_c->simulation_comm);
 
   file->idx->variable_pipe_length = file->idx->variable_count;
   for (int si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
@@ -89,6 +93,7 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Particle restructured io Step 2]: Particle restructuring setup\n", 3, __LINE__, file->idx_c->simulation_comm);
 
     // Step 2: Perform data restructuring
     if (particles_restructure(file) != PIDX_success)
@@ -96,6 +101,7 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Particle restructured io Step 2]: Particle restructuring\n", 4, __LINE__, file->idx_c->simulation_comm);
 
     // Step 3: Write out restructured data
     if (particles_restructure_io(file) != PIDX_success)
@@ -103,6 +109,7 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Particle restructured io Step 2]: Particle restructuring IO\n", 5, __LINE__, file->idx_c->simulation_comm);
 
     // Step 4: Cleanup all buffers and ids
     if (particles_restructure_cleanup(file) != PIDX_success)
@@ -110,6 +117,7 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
+    log_status("[Particle restructured io Step 2]: Particle restructuring cleanup\n", 6, __LINE__, file->idx_c->simulation_comm);
   }
 
   return PIDX_success;
@@ -132,4 +140,21 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi)
   time->header_io_end = PIDX_get_time();
 
   return PIDX_success;
+}
+
+
+
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm)
+{
+  int rank;
+  int size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
+  MPI_Barrier(comm);
+
+  if (rank == 0)
+    fprintf(stderr, "[nprocs %d] R%d S%d [%d] Log message: %s", size, rank, step, line_number, log_message);
+
+  return;
 }

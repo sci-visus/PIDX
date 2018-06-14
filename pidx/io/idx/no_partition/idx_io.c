@@ -186,8 +186,6 @@ PIDX_return_code PIDX_idx_write(PIDX_io file, int svi, int evi)
 // IDX Read Steps
 PIDX_return_code PIDX_idx_read(PIDX_io file, int svi, int evi)
 {
-  PIDX_return_code ret;
-
   // Step 1: Setup restructuring buffers
   if (set_rst_box_size_for_read(file, svi) != PIDX_success)
   {
@@ -306,8 +304,7 @@ PIDX_return_code PIDX_idx_read(PIDX_io file, int svi, int evi)
   }
 
   // Step 16: Cleanup of restructuring (super patch) buffers
-  ret = idx_restructure_cleanup(file);
-  if (ret != PIDX_success)
+  if (idx_restructure_cleanup(file) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;

@@ -23,6 +23,9 @@ static int cvi = 0;
 static void guess_restructured_box_size(PIDX_io file, int svi);
 static void adjust_restructured_box_size(PIDX_io file);
 static PIDX_return_code populate_restructured_grid(PIDX_io file);
+static PIDX_return_code free_particles_rst_box(PIDX_io file);
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm);
+
 
 // Initialiazation and creation of buffers for restructuring phase
 PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
@@ -33,6 +36,7 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
   // Initialize the restructuring phase
   time->rst_init_start[cvi] = PIDX_get_time();
   file->particles_rst_id = PIDX_particles_rst_init(file->idx, file->idx_c, file->idx_dbg, file->restructured_grid, svi, evi);
+  log_status("[Restructuring Step 0]: Init phase\n", 0, __LINE__, file->idx_c->simulation_comm);
   time->rst_init_end[cvi] = PIDX_get_time();
 
 
@@ -43,6 +47,7 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  log_status("[Restructuring Step 1]: Metadata create phase\n", 1, __LINE__, file->idx_c->simulation_comm);
   time->rst_meta_data_create_end[cvi] = PIDX_get_time();
 
 
@@ -53,6 +58,7 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  log_status("[Restructuring Step 2]: Buffer create phase\n", 2, __LINE__, file->idx_c->simulation_comm);
 
   // Aggregating the aligned small buffers after restructuring into one single buffer
   if (PIDX_particles_rst_aggregate_buf_create(file->particles_rst_id) != PIDX_success)
@@ -60,6 +66,7 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  log_status("[Restructuring Step 3]: Aggregation buffer create phase\n", 3, __LINE__, file->idx_c->simulation_comm);
   time->rst_buffer_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
@@ -80,6 +87,7 @@ PIDX_return_code particles_restructure(PIDX_io file)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
+    log_status("[Restructuring Step 4]: Actual restructuring phase\n", 2, __LINE__, file->idx_c->simulation_comm);
     time->rst_write_read_end[cvi] = PIDX_get_time();
 
     // Aggregating in memory restructured buffers into one large buffer
@@ -89,6 +97,7 @@ PIDX_return_code particles_restructure(PIDX_io file)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
+    log_status("[Restructuring Step 5]: Restructuring buffer aggregation phase\n", 2, __LINE__, file->idx_c->simulation_comm);
     time->rst_buff_agg_end[cvi] = PIDX_get_time();
 
 
@@ -101,6 +110,7 @@ PIDX_return_code particles_restructure(PIDX_io file)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
+    log_status("[Restructuring Step 6]: Restructuring meta data create phase\n", 2, __LINE__, file->idx_c->simulation_comm);
     time->rst_meta_data_io_end[cvi] = PIDX_get_time();
 
     // Destroying the restructure buffers (as they are now combined into one large buffer)
@@ -110,6 +120,7 @@ PIDX_return_code particles_restructure(PIDX_io file)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
+    log_status("[Restructuring Step 7]: Restructuring buffer destroy phase\n", 2, __LINE__, file->idx_c->simulation_comm);
     time->rst_buff_agg_free_end[cvi] = PIDX_get_time();
   }
 
@@ -131,6 +142,7 @@ PIDX_return_code particles_restructure_io(PIDX_io file)
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_rst;
     }
+    log_status("[Restructuring Step 8]: Restructuring IO phase\n", 2, __LINE__, file->idx_c->simulation_comm);
     time->rst_buff_agg_io_end[cvi] = PIDX_get_time();
   }
 
@@ -152,6 +164,7 @@ PIDX_return_code particles_restructure_cleanup(PIDX_io file)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  log_status("[Restructuring Step 9]: Restructuring aggregation buffer destroy\n", 2, __LINE__, file->idx_c->simulation_comm);
 
   ret = PIDX_particles_rst_meta_data_destroy(file->particles_rst_id);
   if (ret != PIDX_success)
@@ -159,9 +172,12 @@ PIDX_return_code particles_restructure_cleanup(PIDX_io file)
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
+  log_status("[Restructuring Step 10]: Restructuring meta data destroy\n", 2, __LINE__, file->idx_c->simulation_comm);
 
   // Deleting the restructuring ID
   PIDX_particles_rst_finalize(file->particles_rst_id);
+  free_particles_rst_box(file);
+  log_status("[Restructuring Step 11]: Restructuring finalize\n", 2, __LINE__, file->idx_c->simulation_comm);
   time->rst_cleanup_end[cvi] = PIDX_get_time();
 
   return PIDX_success;
@@ -322,4 +338,36 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file)
 
   return PIDX_success;
 
+}
+
+
+
+static PIDX_return_code free_particles_rst_box(PIDX_io file)
+{
+  uint64_t *rgp = file->restructured_grid->total_patch_count;
+  uint64_t total_patch_count = rgp[0] * rgp[1] * rgp[2];
+
+  for (uint64_t i = 0; i < total_patch_count; i++)
+    free(file->restructured_grid->patch[i]);
+
+  free(file->restructured_grid->patch);
+
+  return PIDX_success;
+}
+
+
+
+static void log_status(char* log_message, int step, int line_number, MPI_Comm comm)
+{
+  int rank;
+  int size;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
+
+  MPI_Barrier(comm);
+
+  if (rank == 0)
+    fprintf(stderr, "[nprocs %d] R%d S%d [%d] Log message: %s", size, rank, step, line_number, log_message);
+
+  return;
 }

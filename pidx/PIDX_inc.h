@@ -112,7 +112,7 @@ extern "C" {
 
 
 #include "./io/PIDX_io.h"
-#include "./io/idx/particle/particle_io.h"
+#include "./io/particle/particle_io.h"
 #include "./io/idx/serial/serial_idx_io.h"
 #include "./io/idx/no_partition/idx_io.h"
 #include "./io/idx/local_partition/local_partition_idx_io.h"

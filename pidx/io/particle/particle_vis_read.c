@@ -38,7 +38,7 @@
  * For support: support@visus.net
  *
  */
-#include "../../../PIDX_inc.h"
+#include "../../PIDX_inc.h"
 
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 static int pointInChunk(PIDX_patch p, const double *pos);

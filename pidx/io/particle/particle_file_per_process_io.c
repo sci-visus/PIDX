@@ -39,7 +39,7 @@
  *
  */
 
-#include "../../../PIDX_inc.h"
+#include "../../PIDX_inc.h"
 static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi);
 static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi);
 static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int svi);

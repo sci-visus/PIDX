@@ -57,6 +57,7 @@ static int pointInChunk(PIDX_patch p, const double *pos);
 PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 {
   uint64_t req_count = 0;
+  unsigned char ***buffer;
 
   // creating ample requests and statuses
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
@@ -65,7 +66,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 
   const int end_index = rst_id->idx_metadata->variable_count - 1;
   const int start_index = 0;
-  unsigned char ***buffer = malloc(sizeof(**buffer) * (end_index - start_index + 1));
+  buffer = malloc(sizeof(*buffer) * (end_index - start_index + 1));
 
   MPI_Request *req = malloc(sizeof (*req) * req_count * 2 * (end_index - start_index + 1));
   if (!req)

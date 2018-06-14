@@ -231,7 +231,7 @@ static void calculate_number_of_intersecting_boxes(PIDX_particles_rst_id rst_id)
   free(found_reg_patches);
 
   // create buffer to hold meta data for the super patches a process intersects with
-  rst_id->intersected_restructured_super_patch = (PIDX_super_patch*)malloc(sizeof(*rst_id->intersected_restructured_super_patch) * rst_id->intersected_restructured_super_patch_count);
+  rst_id->intersected_restructured_super_patch = malloc(sizeof(*rst_id->intersected_restructured_super_patch) * rst_id->intersected_restructured_super_patch_count);
   memset(rst_id->intersected_restructured_super_patch, 0, sizeof(*rst_id->intersected_restructured_super_patch) * rst_id->intersected_restructured_super_patch_count);
 
   return;
@@ -480,6 +480,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
   free(status);
 
 
+  /*
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     if (rst_id->idx_c->simulation_rank == 0)
@@ -492,6 +493,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
       }
     }
   }
+  */
 
   return PIDX_success;
 }
@@ -500,27 +502,25 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
 
 static PIDX_return_code copy_reciever_patch_info(PIDX_particles_rst_id rst_id)
 {
-  int v = 0, j = 0;
   int cnt = 0;
-  uint64_t i = 0;
 
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
 
-  for (v = rst_id->first_index; v <= rst_id->last_index; v++)
+  for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     cnt = 0;
 
     PIDX_variable var = rst_id->idx_metadata->variable[v];
     var->restructured_super_patch_count = var0->restructured_super_patch_count;
 
-    var->restructured_super_patch = malloc(var->restructured_super_patch_count * sizeof(*(var->restructured_super_patch)));
-    memset(var->restructured_super_patch, 0, var->restructured_super_patch_count * sizeof(*(var->restructured_super_patch)));
-
-    for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+    for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     {
       PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
       if (rst_id->idx_c->simulation_rank == irsp->max_patch_rank)
       {
+        var->restructured_super_patch = malloc(var->restructured_super_patch_count * sizeof(*(var->restructured_super_patch)));
+        memset(var->restructured_super_patch, 0, var->restructured_super_patch_count * sizeof(*(var->restructured_super_patch)));
+
         PIDX_super_patch patch_group = var->restructured_super_patch;
         patch_group->patch_count = irsp->patch_count;
         patch_group->is_boundary_patch = irsp->is_boundary_patch;
@@ -530,7 +530,7 @@ static PIDX_return_code copy_reciever_patch_info(PIDX_particles_rst_id rst_id)
         patch_group->restructured_patch = malloc(sizeof(*(patch_group->restructured_patch)));
         memset(patch_group->restructured_patch, 0, sizeof(*(patch_group->restructured_patch)));
 
-        for (j = 0; j < irsp->patch_count; j++)
+        for (int j = 0; j < irsp->patch_count; j++)
         {
           patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
           memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
@@ -634,16 +634,31 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
 
 PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_id)
 {
+  for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+  {
+    PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
+    for (int j = 0; j < irsp->patch_count; j++ )
+      free(irsp->patch[j]);
+
+    free(irsp->source_patch);
+    free(irsp->patch);
+    free(irsp->restructured_patch);
+    free(irsp);
+  }
+
+  free(rst_id->intersected_restructured_super_patch);
+  rst_id->intersected_restructured_super_patch = 0;
+
+
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
   if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
-  int i, j, v;
-  for (v = rst_id->first_index; v <= rst_id->last_index; v++)
+  for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = rst_id->idx_metadata->variable[v];
 
-    for (j = 0; j < rst_id->idx_metadata->variable[v]->restructured_super_patch->patch_count; j++)
+    for (int j = 0; j < rst_id->idx_metadata->variable[v]->restructured_super_patch->patch_count; j++)
     {
       free(var->restructured_super_patch->patch[j]);
       var->restructured_super_patch->patch[j] = 0;
@@ -658,21 +673,6 @@ PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_
     free(var->restructured_super_patch);
     var->restructured_super_patch = 0;
   }
-
-  for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
-  {
-    PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
-    for (j = 0; j < irsp->patch_count; j++ )
-      free(irsp->patch[j]);
-
-    free(irsp->source_patch);
-    free(irsp->patch);
-    free(irsp->restructured_patch);
-    free(irsp);
-  }
-
-  free(rst_id->intersected_restructured_super_patch);
-  rst_id->intersected_restructured_super_patch = 0;
 
   return PIDX_success;
 }

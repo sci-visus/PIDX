@@ -57,24 +57,23 @@
 // Creates the buffers for all the patches that constitutes the super patch
 PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
 {
-  int j = 0, v = 0;
-  int cnt = 0, i = 0;
+  int cnt = 0;
 
   // Allocate buffer for restructured patches (super patch) for all variables
-  for (v = rst_id->first_index; v <= rst_id->last_index; v++)
+  for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     cnt = 0;
     PIDX_variable var = rst_id->idx_metadata->variable[v];
 
     // Iterate through all the super patch a process intersects with
-    for (i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+    for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     {
       // If the process is the target rank of a super patch then allocate buffer for the patches of the super patch
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
       {
         PIDX_super_patch patch_group = var->restructured_super_patch;
         // Iterate through all the patches of the super patch and allocate buffer for them
-        for (j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
+        for (int j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
         {
           patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->particle_count * var->vps * var->bpv / CHAR_BIT);
 
@@ -113,15 +112,13 @@ PIDX_return_code PIDX_particles_rst_buf_destroy(PIDX_particles_rst_id rst_id)
   if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
-  int j, v;
-
   // Iterate through all the variables
-  for (v = rst_id->first_index; v <= rst_id->last_index; v++)
+  for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
   {
     PIDX_variable var = rst_id->idx_metadata->variable[v];
 
     // Iterate through all the patches of the super patch
-    for (j = 0; j < rst_id->idx_metadata->variable[v]->restructured_super_patch->patch_count; j++)
+    for (int j = 0; j < rst_id->idx_metadata->variable[v]->restructured_super_patch->patch_count; j++)
     {
       free(var->restructured_super_patch->patch[j]->buffer);
       var->restructured_super_patch->patch[j]->buffer = 0;
@@ -184,8 +181,7 @@ PIDX_return_code PIDX_particles_rst_aggregate_buf_destroy(PIDX_particles_rst_id 
   if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
-  int v = 0;
-  for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
+  for (int v = rst_id->first_index; v <= rst_id->last_index; ++v)
   {
     PIDX_variable var = rst_id->idx_metadata->variable[v];
     free(var->restructured_super_patch->restructured_patch->buffer);
