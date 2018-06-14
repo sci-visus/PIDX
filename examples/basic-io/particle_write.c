@@ -117,7 +117,7 @@ static double physical_local_box_size[NUM_DIMS];
 static int variable_count = 6;
 
 
-
+static int mode = 0;
 static int time_step_count = 1;
 static uint64_t particle_count = 32;
 static char output_file_template[512];
@@ -229,7 +229,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:p:";
+  char flags[] = "g:l:f:t:p:m:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -260,6 +260,11 @@ static void parse_args(int argc, char **argv)
 
     case('p'): // number of particles per patch
       if (sscanf(optarg, "%lu", &particle_count) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('m'): // number of particles per patch
+      if (sscanf(optarg, "%d", &mode) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
@@ -563,7 +568,10 @@ static void set_pidx_file(int ts)
   PIDX_set_variable_count(file, variable_count);
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  PIDX_set_io_mode(file, PIDX_PARTICLE_IO); // TODO:
+  if (mode == 0)
+    PIDX_set_io_mode(file, PIDX_PARTICLE_IO);
+  else
+    PIDX_set_io_mode(file, PIDX_RST_PARTICLE_IO);
 
   return;
 }

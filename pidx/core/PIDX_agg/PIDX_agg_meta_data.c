@@ -44,10 +44,7 @@
 
 PIDX_return_code PIDX_agg_meta_data_create(PIDX_agg_id id, Agg_buffer ab, PIDX_block_layout lbl)
 {
-
-
   ab->buffer_size = 0;
-
   ab->var_number = -1;
   ab->file_number = -1;
 

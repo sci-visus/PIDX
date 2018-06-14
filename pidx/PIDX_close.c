@@ -421,10 +421,42 @@ static void PIDX_debug_output(PIDX_file file, int svi, int evi, int io_type)
   }
   else if (io_type == PIDX_PARTICLE_IO)
   {
-    double idx_time = time->header_io_end - time->header_io_start;
-    double meta_time = time->particle_meta_data_io_end - time->particle_meta_data_io_start;
-    double data_time = time->particle_data_io_end - time->particle_data_io_start;
-    fprintf(stderr, "Timestep %d Extents %f %f %f Variables %d Time [%f + %f + %f + %f] = %f [%f]\n", file->idx->current_time_step, file->idx->physical_bounds[0], file->idx->physical_bounds[1], file->idx->physical_bounds[2], (evi - svi), idx_time, meta_time, data_time, time->SX - time->sim_start, (idx_time + meta_time + data_time + (time->SX - time->sim_start)), max_time );
+    if (max_time == total_time)
+    {
+      double init_time = time->SX - time->sim_start;
+      double idx_time = time->header_io_end - time->header_io_start;
+      double meta_time = time->particle_meta_data_io_end - time->particle_meta_data_io_start;
+      double data_time = time->particle_data_io_end - time->particle_data_io_start;
+      fprintf(stderr, "Timestep %d Variables %d Time [Init + idx file + meta + data] [%f + %f + %f + %f] = %f [%f]\n", file->idx->current_time_step, (evi - svi), init_time, idx_time, meta_time, data_time, (idx_time + meta_time + data_time + init_time), max_time );
+    }
+  }
+  else if (io_type == PIDX_RST_PARTICLE_IO)
+  {
+    if (max_time == total_time)
+    {
+      double init_time = time->SX - time->sim_start;
+      double set_box_size = time->set_reg_box_end - time->set_reg_box_start;
+      double idx_time = time->header_io_end - time->header_io_start;
+
+      double rst_total = 0;
+      for (int si = 0; si < 1; si++)
+      {
+        double rst_init = time->rst_init_end[si] - time->rst_init_start[si];
+        double rst_meta_data_create = time->rst_meta_data_create_end[si] - time->rst_meta_data_create_start[si];
+        double rst_meta_data_io = time->rst_meta_data_io_end[si] - time->rst_meta_data_io_start[si];
+        double rst_buffer = time->rst_buffer_end[si] - time->rst_buffer_start[si];
+        double rst_write_read = time->rst_write_read_end[si] - time->rst_write_read_start[si];
+        double rst_buff_agg = time->rst_buff_agg_end[si] - time->rst_buff_agg_start[si];
+        double rst_buff_agg_free = time->rst_buff_agg_free_end[si] - time->rst_buff_agg_free_start[si];
+        double rst_buff_agg_io = time->rst_buff_agg_io_end[si] - time->rst_buff_agg_io_start[si];
+        double rst_cleanup = time->rst_cleanup_end[si] - time->rst_cleanup_start[si];
+        rst_total = rst_init + rst_meta_data_create + rst_meta_data_io + rst_buffer + rst_write_read + rst_buff_agg + rst_buff_agg_free + rst_buff_agg_io + rst_cleanup;
+
+        fprintf(stderr, "RST: [%d] [%f + %f + %f + %f + %f + %f + %f + %f + %f] = %f\n", si, rst_init, rst_meta_data_create, rst_meta_data_io, rst_buffer, rst_write_read, rst_buff_agg, rst_buff_agg_free, rst_buff_agg_io, rst_cleanup, rst_total);
+      }
+
+      fprintf(stderr, "Timestep %d Variables %d Time [Init + set box size + idx file + rst_io] [%f + %f + %f + %f] = %f [%f]\n", file->idx->current_time_step, (evi - svi), init_time, set_box_size,  idx_time, rst_total, (init_time + set_box_size + idx_time + rst_total), max_time);
+    }
   }
   else
   {

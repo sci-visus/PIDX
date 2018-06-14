@@ -48,11 +48,13 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
 {
   PIDX_time time = file->time;
 
+  time->header_io_start = PIDX_get_time();
   if (group_meta_data_init(file, svi, evi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+  time->header_io_end = PIDX_get_time();
 
   time->particle_meta_data_io_start = MPI_Wtime();
   if (PIDX_meta_data_write(file, svi) != PIDX_success)
@@ -305,7 +307,7 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int svi)
     uint64_t write_count = pread(fp, global_patch, (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
     if (write_count != (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
-      fprintf(stderr, "[%s] [%d] pread() failed.  %d != %d\n", __FILE__, __LINE__, (int)write_count, (int)(file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double) );
+      fprintf(stderr, "[%s] [%d] pread() failed.  %d != %d\n", __FILE__, __LINE__, (int)write_count, (int)((file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double)) );
       return PIDX_err_io;
     }
     close(fp);
@@ -343,17 +345,12 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int svi)
 
 static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi)
 {
-  PIDX_time time = file->time;
-
-  time->header_io_start = PIDX_get_time();
   // Creates the file heirarchy and writes the header info for all binary files
-  int ret = init_raw_headers_layout(file, svi, evi, file->idx->filename);
-  if (ret != PIDX_success)
+  if (init_raw_headers_layout(file, svi, evi, file->idx->filename) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  time->header_io_end = PIDX_get_time();
 
   return PIDX_success;
 }

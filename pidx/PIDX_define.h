@@ -111,7 +111,9 @@ enum PIDX_io_type {
   PIDX_IDX_IO=0,                    /// Writes data in IDX format
   PIDX_LOCAL_PARTITION_IDX_IO=1,    /// Writes data in partitioned space with local indexing
   PIDX_RAW_IO=2,                    /// Writes data in raw format
-  PIDX_PARTICLE_IO=3                /// Writes particle data
+
+  PIDX_PARTICLE_IO=3,              /// Writes particle data using file per process io
+  PIDX_RST_PARTICLE_IO=4           /// Writes particles data after restructuring
 };
 
 enum PIDX_endian_type{

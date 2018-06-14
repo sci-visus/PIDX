@@ -463,7 +463,6 @@ static PIDX_return_code populate_idx_layout_serial(PIDX_io file, int start_var_i
       }
       ctr = ctr * 2;
     }
-
   }
   block_layout->efc = 0;
   for (i = 0; i < file->idx->max_file_count; i++)

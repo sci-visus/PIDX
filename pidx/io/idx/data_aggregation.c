@@ -46,12 +46,12 @@ PIDX_return_code aggregation_setup(PIDX_io file, int svi, int evi)
 {
   int ret = 0;
   idx_dataset idx = file->idx;
-
-  int j;
   PIDX_time time = file->time;
 
   assert(file->idx_b->file0_agg_group_from_index == 0);
-  for (j = file->idx_b->file0_agg_group_from_index; j < file->idx_b->agg_level; j++)
+
+  // aggregation happens in epochs of aggregation groups
+  for (int j = file->idx_b->file0_agg_group_from_index; j < file->idx_b->agg_level; j++)
   {
     time->agg_init_start[svi][j] = PIDX_get_time();
 

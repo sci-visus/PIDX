@@ -45,16 +45,13 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi);
 
 PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
 {
-  int si = 0, ei = 0;
-  PIDX_return_code ret;
-
   if (particles_set_rst_box_size_for_raw_write(file, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
-#if 1
+#if 0
   if (file->idx_c->simulation_rank == 0)
   {
     printf("RST grid size %f %f %f\n", file->restructured_grid->physical_patch_size[0], file->restructured_grid->physical_patch_size[1], file->restructured_grid->physical_patch_size[2]);
@@ -74,17 +71,16 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
 #endif
 
 
-  ret = group_meta_data_init(file, svi, evi);
-  if (ret != PIDX_success)
+  if (group_meta_data_init(file, svi, evi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
 
   file->idx->variable_pipe_length = file->idx->variable_count;
-  for (si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
+  for (int si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
   {
-    ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
+    int ei = ((si + file->idx->variable_pipe_length) >= (evi)) ? (evi - 1) : (si + file->idx->variable_pipe_length);
     file->idx->variable_tracker[si] = 1;
 
     // Step 1: Setup restructuring buffers
@@ -102,22 +98,19 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
     }
 
     // Step 3: Write out restructured data
-    ret = particles_restructure_io(file);
-    if (ret != PIDX_success)
+    if (particles_restructure_io(file) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
 
     // Step 4: Cleanup all buffers and ids
-    ret = particles_restructure_cleanup(file);
-    if (ret != PIDX_success)
+    if (particles_restructure_cleanup(file) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_file;
     }
   }
-
 
   return PIDX_success;
 }

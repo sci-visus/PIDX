@@ -27,7 +27,6 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file);
 // Initialiazation and creation of buffers for restructuring phase
 PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
 {
-  int ret = 0;
   PIDX_time time = file->time;
   cvi = svi;
 
@@ -39,8 +38,7 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
 
   // Populates the relevant meta-data
   time->rst_meta_data_create_start[cvi] = PIDX_get_time();
-  ret = PIDX_particles_rst_meta_data_create(file->particles_rst_id);
-  if (ret != PIDX_success)
+  if (PIDX_particles_rst_meta_data_create(file->particles_rst_id) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
@@ -50,16 +48,14 @@ PIDX_return_code particles_restructure_setup(PIDX_io file, int svi, int evi)
 
   // Creating the buffers required for restructurig
   time->rst_buffer_start[cvi] = PIDX_get_time();
-  ret = PIDX_particles_rst_buf_create(file->particles_rst_id);
-  if (ret != PIDX_success)
+  if (PIDX_particles_rst_buf_create(file->particles_rst_id) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
   }
 
   // Aggregating the aligned small buffers after restructuring into one single buffer
-  ret = PIDX_particles_rst_aggregate_buf_create(file->particles_rst_id);
-  if (ret != PIDX_success)
+  if (PIDX_particles_rst_aggregate_buf_create(file->particles_rst_id) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;

@@ -99,6 +99,9 @@ PIDX_return_code PIDX_write(PIDX_io file, int svi, int evi, int MODE)
     ret = PIDX_raw_write(file, svi, evi);
 
   else if (MODE == PIDX_PARTICLE_IO)
+    ret = PIDX_particle_file_per_process_write(file, svi, evi);
+
+  else if (MODE == PIDX_RST_PARTICLE_IO)
     ret = PIDX_particle_rst_write(file, svi, evi);
 
 
