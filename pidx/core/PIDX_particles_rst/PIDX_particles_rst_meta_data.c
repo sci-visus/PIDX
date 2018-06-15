@@ -483,20 +483,20 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
   free(status);
 
 
-  /*
+  //
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     if (rst_id->idx_c->simulation_rank == 0)
     {
       PIDX_super_patch patch_grp = rst_id->intersected_restructured_super_patch[i];
-      //printf("[%d] count %d\n", i, patch_grp->patch_count);
+      printf("[%d] count %d\n", i, patch_grp->patch_count);
       for (int j = 0; j < patch_grp->patch_count; j++)
       {
-        //printf("[%d] PC %lld R %d MR %d\n", j, (unsigned long long)patch_grp->patch[j]->particle_count, patch_grp->source_patch[j].rank, patch_grp->max_patch_rank);
+        printf("[%d] PC %lld R %d MR %d\n", j, (unsigned long long)patch_grp->patch[j]->particle_count, patch_grp->source_patch[j].rank, patch_grp->max_patch_rank);
       }
     }
   }
-  */
+  //
 
   return PIDX_success;
 }
