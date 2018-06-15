@@ -99,7 +99,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           // the number of particles they're getting?
           const int length = (int) (var->restructured_super_patch->patch[j]->particle_count) * ((var->vps * var->bpv) / CHAR_BIT);
 
-          printf("[%d] Receiving %d from %d\n", rst_id->idx_c->simulation_rank, length, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank);
+          //printf("[%d] Receiving %d from %d\n", rst_id->idx_c->simulation_rank, length, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank);
           const int ret = MPI_Irecv(var->restructured_super_patch->patch[j]->buffer, length, MPI_BYTE,
               rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank, 123,
               rst_id->idx_c->simulation_comm, &req[req_counter]);
@@ -186,7 +186,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           PIDX_variable var = rst_id->idx_metadata->variable[v];
           const uint64_t bytes_per_var = ((var->vps * var->bpv) / CHAR_BIT);
 
-          printf("[%d] Sending %d to %d\n", rst_id->idx_c->simulation_rank, (int) particles_to_send * bytes_per_var, rst_id->intersected_restructured_super_patch[i]->max_patch_rank);
+          //printf("[%d] Sending %d to %d\n", rst_id->idx_c->simulation_rank, (int) particles_to_send * bytes_per_var, rst_id->intersected_restructured_super_patch[i]->max_patch_rank);
           const int ret = MPI_Isend(buffer[v][buffer_count], (int) particles_to_send * bytes_per_var, MPI_BYTE,
               rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
               rst_id->idx_c->simulation_comm, &req[req_counter]);

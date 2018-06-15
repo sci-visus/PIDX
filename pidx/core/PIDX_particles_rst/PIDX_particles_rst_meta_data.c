@@ -483,7 +483,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
   free(status);
 
 
-  //
+  /*
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     if (rst_id->idx_c->simulation_rank == 0)
@@ -496,7 +496,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
       }
     }
   }
-  //
+  */
 
   return PIDX_success;
 }
