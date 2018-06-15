@@ -54,7 +54,7 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
   memset(idx_directory_path, 0, sizeof(*idx_directory_path) * PATH_MAX);
   strncpy(idx_directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
-  sprintf(size_path, "%s_OFFSET_SIZE", idx_directory_path);
+  sprintf(size_path, "%s/time%09d/OFFSET_SIZE", idx_directory_path, file->idx->current_time_step);
   free(idx_directory_path);
 
   double number_cores = 0;

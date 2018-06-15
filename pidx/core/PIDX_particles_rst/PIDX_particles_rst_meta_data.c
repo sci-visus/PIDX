@@ -610,7 +610,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, rst_id->idx_metadata->filename, strlen(rst_id->idx_metadata->filename) - 4);
 
-  sprintf(file_path, "%s/time%09d/OFFSET_SIZE", directory_path, rst_id->idx_metadata->current_time_step, rst_id->idx_c->simulation_rank);
+  sprintf(file_path, "%s/time%09d/OFFSET_SIZE", directory_path, rst_id->idx_metadata->current_time_step);
 
   free(directory_path);
   if (rst_id->idx_c->simulation_rank == 1 || rst_id->idx_c->simulation_nprocs == 1)

@@ -251,7 +251,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
-  sprintf(file_path, "%s_OFFSET_SIZE", directory_path);
+  sprintf(file_path, "%s/time%09d/OFFSET_SIZE", directory_path, file->idx->current_time_step);
   free(directory_path);
   if (file->idx_c->simulation_rank == 1 || file->idx_c->simulation_nprocs == 1)
   {
