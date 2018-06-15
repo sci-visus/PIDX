@@ -454,7 +454,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
       {
         if (rst_id->idx_c->simulation_rank != patch_grp->source_patch[j].rank)
         {
-          MPI_Irecv(&(patch_grp->patch[j]->particle_count), 1, MPI_INT, patch_grp->source_patch[j].rank, 123, rst_id->idx_c->simulation_comm, &req[req_count_actual]);
+          MPI_Irecv(&(patch_grp->patch[j]->particle_count), sizeof(uint64_t), MPI_BYTE, patch_grp->source_patch[j].rank, 123, rst_id->idx_c->simulation_comm, &req[req_count_actual]);
           req_count_actual++;
           //printf("My rank %d Receiving from %d\n", rst_id->idx_c->simulation_rank, patch_grp->source_patch[j].rank);
         }
@@ -466,7 +466,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
       {
         if (rst_id->idx_c->simulation_rank == patch_grp->source_patch[j].rank)
         {
-          MPI_Isend(&(patch_grp->patch[j]->particle_count), 1, MPI_INT, patch_grp->max_patch_rank, 123, rst_id->idx_c->simulation_comm, &req[req_count_actual]);
+          MPI_Isend(&(patch_grp->patch[j]->particle_count), sizeof(uint64_t), MPI_BYTE, patch_grp->max_patch_rank, 123, rst_id->idx_c->simulation_comm, &req[req_count_actual]);
           req_count_actual++;
           //printf("My rank %d Sending to %d -> %d\n", rst_id->idx_c->simulation_rank, patch_grp->max_patch_rank, patch_grp->patch[j]->particle_count);
         }

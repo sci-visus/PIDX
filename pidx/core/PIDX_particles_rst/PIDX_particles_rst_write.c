@@ -122,8 +122,6 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
     for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
       buffer[v] = malloc(sizeof(*buffer[v]) * buffer_count);
 
-
-
     buffer_count = 0;
     // If we're a sender for any patches in this restructured patch, send the data to the owner
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
