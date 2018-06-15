@@ -97,7 +97,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           PIDX_variable var = rst_id->idx_metadata->variable[v];
           // TODO WILL: How is the length computed? How does the receiver of the restructured patch know
           // the number of particles they're getting?
-          const int length = (int) (var->restructured_super_patch->patch[j]->particle_count) * var->vps * var->bpv/ CHAR_BIT;
+          const int length = (int) (var->restructured_super_patch->patch[j]->particle_count) * ((var->vps * var->bpv) / CHAR_BIT);
 
           printf("[%d] Receiving %d from %d\n", rst_id->idx_c->simulation_rank, length, rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank);
           const int ret = MPI_Irecv(var->restructured_super_patch->patch[j]->buffer, length, MPI_BYTE,
@@ -139,7 +139,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         }
 
         PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
-        const uint64_t bytes_per_pos_v0 = var0->vps * var0->bpv/ CHAR_BIT;
+        const uint64_t bytes_per_pos_v0 = ((var0->vps * var0->bpv) / CHAR_BIT);
         const int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
         const size_t particles_to_send = rst_id->intersected_restructured_super_patch[i]->patch[j]->particle_count;
 
@@ -160,7 +160,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
         {
           PIDX_variable var = rst_id->idx_metadata->variable[v];
-          const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+          const uint64_t bytes_per_var = ((var->vps * var->bpv) / CHAR_BIT);
           buffer[v][buffer_count] = malloc(particles_to_send * bytes_per_var);
         }
 
@@ -173,7 +173,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
             for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
             {
               PIDX_variable var = rst_id->idx_metadata->variable[v];
-              const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+              const uint64_t bytes_per_var = ((var->vps * var->bpv) / CHAR_BIT);
               memcpy(buffer[v][buffer_count] + pcount * bytes_per_var,
                   var->sim_patch[p_index]->buffer + p * bytes_per_var, bytes_per_var);
             }
@@ -186,7 +186,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
         {
           PIDX_variable var = rst_id->idx_metadata->variable[v];
-          const uint64_t bytes_per_var = var->vps * var->bpv/ CHAR_BIT;
+          const uint64_t bytes_per_var = ((var->vps * var->bpv) / CHAR_BIT);
 
           printf("[%d] Sending %d to %d\n", rst_id->idx_c->simulation_rank, (int) particles_to_send * bytes_per_var, rst_id->intersected_restructured_super_patch[i]->max_patch_rank);
           const int ret = MPI_Isend(buffer[v][buffer_count], (int) particles_to_send * bytes_per_var, MPI_BYTE,
