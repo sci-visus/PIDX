@@ -82,7 +82,10 @@ PIDX_return_code PIDX_particles_rst_meta_data_create(PIDX_particles_rst_id rst_i
   // The outcome is stored in rst_id->intersected_restructured_super_patch
   populate_all_intersecting_restructured_super_patch_meta_data(rst_id);
 
+
+  //
   distribute_particle_info(rst_id);
+
 
   // If a processor is a reciever i.e. it holds a restructured patch, then copy all the relevant metadata from
   // rst_id->intersected_restructured_super_patch to var->restructured_super_patch

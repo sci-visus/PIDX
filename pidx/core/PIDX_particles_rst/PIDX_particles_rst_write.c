@@ -87,7 +87,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     uint64_t req_counter = 0;
-    memset(buffer, 0, sizeof(**buffer) * (end_index - start_index + 1));
+    memset(buffer, 0, sizeof(*buffer) * (end_index - start_index + 1));
 
     // If we're the receiver of this restructured patch, queue up recvs for everyone sending us data
     if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
