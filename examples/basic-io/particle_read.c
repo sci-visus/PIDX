@@ -105,7 +105,7 @@ static int variable_index = 0;
 static char output_file_template[512] = "test_idx";
 static unsigned char *data = NULL;
 static uint64_t particle_count = 0;
-static int checkpoint_restart = 0;
+static int checkpoint_restart = 1;
 
 static PIDX_point local_offset, local_size;
 static PIDX_physical_point physical_local_offset, physical_local_size;

@@ -57,6 +57,7 @@
 // Creates the buffers for all the patches that constitutes the super patch
 PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
 {
+#if 1
   int cnt = 0;
 
   // Allocate buffer for restructured patches (super patch) for all variables
@@ -99,6 +100,7 @@ PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
     }
   }
 
+#endif
   return PIDX_success;
 }
 

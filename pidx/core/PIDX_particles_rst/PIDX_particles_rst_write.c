@@ -141,7 +141,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         const int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
         const size_t particles_to_send = rst_id->intersected_restructured_super_patch[i]->patch[j]->particle_count;
 
-#if 1
+#if 0
         // Optional: Do a validation check that we're writing the right number of particles
         {
           int counter = 0;
@@ -187,9 +187,13 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           const uint64_t bytes_per_var = ((var->vps * var->bpv) / CHAR_BIT);
 
           //printf("[%d] Sending %d to %d\n", rst_id->idx_c->simulation_rank, (int) particles_to_send * bytes_per_var, rst_id->intersected_restructured_super_patch[i]->max_patch_rank);
-          const int ret = MPI_Isend(buffer[v][buffer_count], (int) particles_to_send * bytes_per_var, MPI_BYTE,
+
+          const int ret = MPI_Isend(rst_id->intersected_restructured_super_patch[i]->patch[j]->tbuffer[v], (int) particles_to_send * bytes_per_var, MPI_BYTE,
               rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
               rst_id->idx_c->simulation_comm, &req[req_counter]);
+          //const int ret = MPI_Isend(buffer[v][buffer_count], (int) particles_to_send * bytes_per_var, MPI_BYTE,
+          //    rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
+          //    rst_id->idx_c->simulation_comm, &req[req_counter]);
           if (ret != MPI_SUCCESS)
           {
             fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);

@@ -59,11 +59,13 @@ struct PIDX_patch_struct
   // a dual-mode pain to deal with. Do something better.
   uint64_t particle_count;
   uint64_t *read_particle_count;
+
   // TODO WILL: Do we want some other way of differentiating the particle/grid patches?
   union {
     /// The data buffer for grid variables (particle_count = 0)
     /// (or a redundant case with variable->is_particle == 1)
     unsigned char* buffer;
+    unsigned char** tbuffer;
     /// The data buffer for particle variables (particle_count != 0). This
     /// buffer is allocated by PIDX. TODO: Should the user free it? Or
     /// should we have a PIDX_free_variable? Does such a function already exist?

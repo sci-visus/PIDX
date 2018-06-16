@@ -215,8 +215,6 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
   PIDX_variable var0 = file->idx->variable[svi];
   int max_patch_count;
   int patch_count = var0->sim_patch_count;
-  // TODO WILL: Why the max patch count across all ranks? Ranks could have differing numbers of patches
-  // right? So would we leave some unused space in the file here?
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, file->idx_c->simulation_comm);
 
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
@@ -234,9 +232,6 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
     local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + 2*PIDX_MAX_DIMENSIONS + 1] = var0->sim_patch[i]->particle_count;
   }
 
-  //for (int i = 0; i < (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1); i++)
-  //  printf("Local [%d] [np %d] ----> %f\n", i, file->idx_c->simulation_nprocs, local_patch[i]);
-
   global_patch = malloc((file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
   memset(global_patch, 0,(file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
@@ -246,7 +241,6 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
   global_patch[1] = (double)max_patch_count;
 
   char file_path[PATH_MAX];
-
   char *directory_path = malloc(sizeof(*directory_path) * PATH_MAX);
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);

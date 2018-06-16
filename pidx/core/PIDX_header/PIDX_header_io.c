@@ -404,7 +404,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
-    else if (header_io->idx->io_type == PIDX_PARTICLE_IO)
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO)
       fprintf(idx_file_p, "(io mode)\nparticle\n");
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
@@ -652,7 +652,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
-    else if (header_io->idx->io_type == PIDX_PARTICLE_IO)
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO)
       fprintf(idx_file_p, "(io mode)\nparticle\n");
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
