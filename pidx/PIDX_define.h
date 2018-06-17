@@ -45,6 +45,8 @@
 extern "C" {
 #endif
 
+#undef PARTICLE_OPTIMIZED
+
 #define PIDX_CURR_METADATA_VERSION "6.1"
   
 #define PIDX_MAX_DIMENSIONS 3

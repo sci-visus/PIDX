@@ -240,6 +240,7 @@ int main(int argc, char **argv)
   // Close PIDX_access
   PIDX_close_access(p_access);
 
+#if 0
   char rank_filename[PATH_MAX];
   sprintf(rank_filename, "%s_r_%d", output_file_template, rank);
   FILE *fp = fopen(rank_filename, "w");
@@ -277,6 +278,7 @@ int main(int argc, char **argv)
     fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9);
   }
   fclose(fp);
+#endif
 
   free(data);
   if (checkpoint_restart)

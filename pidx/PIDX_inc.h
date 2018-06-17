@@ -118,14 +118,15 @@ extern "C" {
 #include "./io/idx/local_partition/local_partition_idx_io.h"
 #include "./io/raw/raw_io.h"
 
+#include "./io/particle/particles_restructure.h"
+
+#include "./io/raw/raw_restructure.h"
 
 #include "./io/idx/restructure_box_setup.h"
 #include "./io/idx/io_setup.h"
 #include "./io/idx/idx_init.h"
 #include "./io/idx/bit_string.h"
 #include "./io/idx/idx_restructure.h"
-#include "./io/idx/particles_restructure.h"
-#include "./io/raw/raw_restructure.h"
 #include "./io/idx/partition.h"
 #include "./io/idx/local_buffer.h"
 #include "./io/idx/headers.h"

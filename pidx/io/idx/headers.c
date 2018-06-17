@@ -100,15 +100,12 @@ PIDX_return_code write_headers(PIDX_io file, int start_var_index, int end_var_in
 
 static PIDX_return_code write_idx_headers_layout(PIDX_io file, int start_var_index, int end_var_index, char* filename, char* filename_template, PIDX_block_layout bl)
 {
-  int ret = 0;
-
   if (file->idx_dbg->debug_do_io == 1)
   {
     /* STEP 1 */
     file->header_io_id = PIDX_header_io_init(file->idx, file->idx_c, file->idx_b, file->restructured_grid, file->fs_block_size, start_var_index, end_var_index);
 
-    ret = PIDX_header_io_idx_file_create(file->header_io_id, bl, filename_template);
-    if (ret != PIDX_success)
+    if (PIDX_header_io_idx_file_create(file->header_io_id, bl, filename_template) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_header;
@@ -118,8 +115,7 @@ static PIDX_return_code write_idx_headers_layout(PIDX_io file, int start_var_ind
     if (file->variable_index_tracker < file->idx->variable_count )
     {
       // Create the header
-      ret = PIDX_header_io_idx_file_write(file->header_io_id, bl, filename_template,  0);
-      if (ret != PIDX_success)
+      if (PIDX_header_io_idx_file_write(file->header_io_id, bl, filename_template,  0) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_header;
@@ -128,8 +124,7 @@ static PIDX_return_code write_idx_headers_layout(PIDX_io file, int start_var_ind
 
     if (file->variable_index_tracker == file->idx->variable_count)
     {
-      ret = PIDX_header_io_idx_file_write(file->header_io_id, bl, filename_template, 1);
-      if (ret != PIDX_success)
+      if (PIDX_header_io_idx_file_write(file->header_io_id, bl, filename_template, 1) != PIDX_success)
       {
         fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
         return PIDX_err_header;
@@ -137,15 +132,13 @@ static PIDX_return_code write_idx_headers_layout(PIDX_io file, int start_var_ind
     }
 
     /* STEP 3 */
-    ret = PIDX_header_io_partition_idx_write(file->header_io_id, filename);
-    if (ret != PIDX_success)
+    if (PIDX_header_io_partition_idx_write(file->header_io_id, filename) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_header;
     }
 
-    ret = PIDX_header_io_finalize(file->header_io_id);
-    if (ret != PIDX_success)
+    if (PIDX_header_io_finalize(file->header_io_id) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_header;
@@ -159,28 +152,23 @@ static PIDX_return_code write_idx_headers_layout(PIDX_io file, int start_var_ind
 
 PIDX_return_code init_raw_headers_layout(PIDX_io file, int start_var_index, int end_var_index, char* filename)
 {
-  int ret = 0;
-
   if (file->idx_dbg->debug_do_io == 1)
   {
     file->header_io_id = PIDX_header_io_init(file->idx, file->idx_c, file->idx_b, file->restructured_grid, file->fs_block_size, start_var_index, end_var_index);
 
-    ret = PIDX_header_io_raw_dir_create(file->header_io_id, filename);
-    if (ret != PIDX_success)
+    if (PIDX_header_io_raw_dir_create(file->header_io_id, filename) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_header;
     }
 
-    ret = PIDX_header_io_raw_idx_write (file->header_io_id, filename);
-    if (ret != PIDX_success)
+    if (PIDX_header_io_raw_idx_write (file->header_io_id, filename) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_header;
     }
 
-    ret = PIDX_header_io_finalize(file->header_io_id);
-    if (ret != PIDX_success)
+    if (PIDX_header_io_finalize(file->header_io_id) != PIDX_success)
     {
       fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
       return PIDX_err_header;

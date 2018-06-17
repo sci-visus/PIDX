@@ -100,7 +100,6 @@ PIDX_return_code particles_restructure(PIDX_io file)
     log_status("[Restructuring Step 5]: Restructuring buffer aggregation phase\n", 2, __LINE__, file->idx_c->simulation_comm);
     time->rst_buff_agg_end[cvi] = PIDX_get_time();
 
-
     // Saving the metadata info needed for reading back the data.
     // Especially when number of cores is different from number of cores
     // used to create the dataset
@@ -210,9 +209,12 @@ PIDX_return_code particles_set_rst_box_size_for_raw_write(PIDX_io file, int svi)
 
 static void guess_restructured_box_size(PIDX_io file, int svi)
 {
-  double patch_size_x = 0, patch_size_y = 0, patch_size_z = 0;
-  double max_patch_size_x = 0, max_patch_size_y = 0, max_patch_size_z = 0;
+  double max_patch_size_x = file->idx->variable[svi]->sim_patch[0]->physical_size[0];
+  double max_patch_size_y = file->idx->variable[svi]->sim_patch[0]->physical_size[1];
+  double max_patch_size_z = file->idx->variable[svi]->sim_patch[0]->physical_size[2];
 
+#ifdef PARTICLE_OPTIMIZED
+  double patch_size_x = 0, patch_size_y = 0, patch_size_z = 0;
   if (file->idx->variable[svi]->sim_patch_count != 0)
   {
     patch_size_x = file->idx->variable[svi]->sim_patch[0]->physical_size[0];
@@ -223,14 +225,18 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
   MPI_Allreduce(&patch_size_x, &max_patch_size_x, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
   MPI_Allreduce(&patch_size_y, &max_patch_size_y, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
   MPI_Allreduce(&patch_size_z, &max_patch_size_z, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
+#endif
+
+
 
   // This scaling factor will set how many process are aggregated to one rank
-  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 2;
+  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 4;
   file->restructured_grid->physical_patch_size[1] = max_patch_size_y * 2;
   file->restructured_grid->physical_patch_size[2] = max_patch_size_z * 2;
 
   return;
 }
+
 
 
 static void adjust_restructured_box_size(PIDX_io file)
@@ -270,6 +276,7 @@ static void adjust_restructured_box_size(PIDX_io file)
 
   return;
 }
+
 
 
 static PIDX_return_code populate_restructured_grid(PIDX_io file)

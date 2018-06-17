@@ -75,10 +75,7 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
   sprintf(file_name, "%s/time%09d/%d_0", directory_path, rst_id->idx_metadata->current_time_step, rst_id->idx_c->simulation_rank);
   int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
-  int v = 0;
-  int svi = rst_id->first_index;
-  int evi = rst_id->last_index + 1;
-  for (v = svi; v < evi; v = v + 1)
+  for (int v = rst_id->first_index; v < rst_id->last_index + 1; v = v + 1)
   {
     // copy the size and offset to output
     PIDX_variable var_start = rst_id->idx_metadata->variable[v];
@@ -88,28 +85,11 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
     PIDX_variable var = rst_id->idx_metadata->variable[v];
     bits = (var->bpv/8) * var->vps;
 
-    int data_offset = 0, v1 = 0;
-    for (v1 = 0; v1 < v; v1++)
+    int data_offset = 0;
+    for (int v1 = 0; v1 < v; v1++)
       data_offset = data_offset + (out_patch->particle_count * (rst_id->idx_metadata->variable[v1]->vps * (rst_id->idx_metadata->variable[v1]->bpv/8)));
 
-
     int buffer_size =  out_patch->particle_count * bits;
-
-    /*
-    if (v == 0)
-    {
-      for (uint32_t p = 0; p < var->restructured_super_patch->restructured_patch->particle_count; p++)
-      {
-        double px, py, pz;
-        memcpy(&px, var_start->restructured_super_patch->restructured_patch->buffer + (p * 3 + 0) * sizeof(double), sizeof(double));
-        memcpy(&py, var_start->restructured_super_patch->restructured_patch->buffer + (p * 3 + 1) * sizeof(double), sizeof(double));
-        memcpy(&pz, var_start->restructured_super_patch->restructured_patch->buffer + (p * 3 + 2) * sizeof(double), sizeof(double));
-
-        printf("D[%d] -> %f %f %f\n", p, px, py, pz);
-      }
-    }
-    printf("Particle count %d File offset %d File size %d\n", out_patch->particle_count, data_offset, buffer_size);
-    */
     uint64_t write_count = pwrite(fp, var_start->restructured_super_patch->restructured_patch->buffer, buffer_size, data_offset);
     if (write_count != buffer_size)
     {
@@ -138,7 +118,6 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_read(PIDX_particles_rst_id rs
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, rst_id->idx_metadata->filename, strlen(rst_id->idx_metadata->filename) - 4);
 
-
   char *file_name;
   file_name = malloc(PATH_MAX * sizeof(*file_name));
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
@@ -146,10 +125,7 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_read(PIDX_particles_rst_id rs
   sprintf(file_name, "%s/time%09d/%d_0", directory_path, rst_id->idx_metadata->current_time_step, rst_id->idx_c->simulation_rank);
   int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
-  int v = 0;
-  int svi = rst_id->first_index;
-  int evi = rst_id->last_index + 1;
-  for (v = svi; v < evi; v = v + 1)
+  for (int v = rst_id->first_index; v < rst_id->last_index + 1; v = v + 1)
   {
     // copy the size and offset to output
     PIDX_variable var_start = rst_id->idx_metadata->variable[v];
@@ -159,8 +135,8 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_read(PIDX_particles_rst_id rs
     PIDX_variable var = rst_id->idx_metadata->variable[v];
     bits = (var->bpv/8) * var->vps;
 
-    int data_offset = 0, v1 = 0;
-    for (v1 = 0; v1 < v; v1++)
+    int data_offset = 0;
+    for (int v1 = 0; v1 < v; v1++)
       data_offset = data_offset + (out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * (rst_id->idx_metadata->variable[v1]->vps * (rst_id->idx_metadata->variable[v1]->bpv/8)));
 
     int buffer_size =  out_patch->size[0] * out_patch->size[1] * out_patch->size[2] * bits;

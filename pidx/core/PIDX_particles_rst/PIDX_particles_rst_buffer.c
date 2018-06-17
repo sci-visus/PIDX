@@ -57,7 +57,6 @@
 // Creates the buffers for all the patches that constitutes the super patch
 PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
 {
-#if 1
   int cnt = 0;
 
   // Allocate buffer for restructured patches (super patch) for all variables
@@ -73,17 +72,16 @@ PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
       {
         PIDX_super_patch patch_group = var->restructured_super_patch;
+
         // Iterate through all the patches of the super patch and allocate buffer for them
         for (int j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
         {
           patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->particle_count * var->vps * var->bpv / CHAR_BIT);
-
           if (patch_group->patch[j]->buffer == NULL)
           {
             fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
             return PIDX_err_rst;
           }
-
           memset(patch_group->patch[j]->buffer, 0, (patch_group->patch[j]->particle_count * var->vps * var->bpv / CHAR_BIT));
         }
 
@@ -100,7 +98,6 @@ PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
     }
   }
 
-#endif
   return PIDX_success;
 }
 
@@ -150,22 +147,19 @@ PIDX_return_code PIDX_particles_rst_aggregate_buf_create(PIDX_particles_rst_id r
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
       {
         PIDX_super_patch patch_group = var->restructured_super_patch;
-        int total_particle_count = 0;
+        patch_group->restructured_patch->particle_count = 0;
 
         // Iterate through all the patches of the super patch and allocate buffer for them
         for (int j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
-          total_particle_count = total_particle_count + patch_group->patch[j]->particle_count;
+          patch_group->restructured_patch->particle_count = patch_group->restructured_patch->particle_count + patch_group->patch[j]->particle_count;
 
-        patch_group->restructured_patch->buffer = malloc(total_particle_count * var->vps * var->bpv / CHAR_BIT);
-        patch_group->restructured_patch->particle_count = total_particle_count;
-        //printf("var %d PC %d Buffer %d\n", v, patch_group->restructured_patch->particle_count, (total_particle_count * var->vps * var->bpv / CHAR_BIT));
-
+        patch_group->restructured_patch->buffer = malloc(patch_group->restructured_patch->particle_count * var->vps * var->bpv / CHAR_BIT);
         if (patch_group->restructured_patch->buffer == NULL)
         {
           fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
-        memset(patch_group->restructured_patch->buffer, 0, (total_particle_count * var->vps * var->bpv / CHAR_BIT));
+        memset(patch_group->restructured_patch->buffer, 0, (patch_group->restructured_patch->particle_count * var->vps * var->bpv / CHAR_BIT));
       }
     }
   }

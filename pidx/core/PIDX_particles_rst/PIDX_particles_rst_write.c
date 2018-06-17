@@ -52,19 +52,23 @@
  */
 
 #include "../../PIDX_inc.h"
+
+#if 0
 static int pointInChunk(PIDX_patch p, const double *pos);
+#endif
 
 PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 {
   uint64_t req_count = 0;
-  unsigned char ***buffer;
-
   // creating ample requests and statuses
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
       req_count++;
 
+#if 0
+  unsigned char ***buffer;
   buffer = malloc(sizeof(*buffer) * rst_id->idx_metadata->variable_count);
+#endif
 
   MPI_Request *req = malloc(sizeof (*req) * req_count * 2 * rst_id->idx_metadata->variable_count);
   if (!req)
@@ -85,7 +89,10 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     uint64_t req_counter = 0;
+
+#if 0
     memset(buffer, 0, sizeof(*buffer) * rst_id->idx_metadata->variable_count);
+#endif
 
     // If we're the receiver of this restructured patch, queue up recvs for everyone sending us data
     if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
@@ -113,16 +120,21 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
       }
     }
 
+#if 0
     int buffer_count = 0;
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
     {
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
         buffer_count++;
     }
+
     for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
       buffer[v] = malloc(sizeof(*buffer[v]) * buffer_count);
 
     buffer_count = 0;
+#endif
+
+
     // If we're a sender for any patches in this restructured patch, send the data to the owner
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
     {
@@ -136,12 +148,12 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           reg_patch->physical_size[d] = rst_id->intersected_restructured_super_patch[i]->restructured_patch->physical_size[d];
         }
 
-        PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
-        const uint64_t bytes_per_pos_v0 = ((var0->vps * var0->bpv) / CHAR_BIT);
-        const int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
         const size_t particles_to_send = rst_id->intersected_restructured_super_patch[i]->patch[j]->particle_count;
 
 #if 0
+        PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
+        const uint64_t bytes_per_pos_v0 = ((var0->vps * var0->bpv) / CHAR_BIT);
+        const int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
         // Optional: Do a validation check that we're writing the right number of particles
         {
           int counter = 0;
@@ -154,6 +166,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
         }
 #endif
 
+#if 0
         // Allocate buffers for each var to hold the data we're sending
         for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
         {
@@ -161,6 +174,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           const uint64_t bytes_per_var = ((var->vps * var->bpv) / CHAR_BIT);
           buffer[v][buffer_count] = malloc(particles_to_send * bytes_per_var);
         }
+
 
         // Populate each variable buffer we're going to send
         uint32_t pcount = 0;
@@ -178,9 +192,10 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
             pcount++;
           }
         }
-
         // Send the populated buffers over to the owner of this restructured patch
         assert(pcount == particles_to_send);
+#endif
+
         for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
         {
           PIDX_variable var = rst_id->idx_metadata->variable[v];
@@ -191,9 +206,11 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           const int ret = MPI_Isend(rst_id->intersected_restructured_super_patch[i]->patch[j]->tbuffer[v], (int) particles_to_send * bytes_per_var, MPI_BYTE,
               rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
               rst_id->idx_c->simulation_comm, &req[req_counter]);
-          //const int ret = MPI_Isend(buffer[v][buffer_count], (int) particles_to_send * bytes_per_var, MPI_BYTE,
-          //    rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
-          //    rst_id->idx_c->simulation_comm, &req[req_counter]);
+#if 0
+          const int ret = MPI_Isend(buffer[v][buffer_count], (int) particles_to_send * bytes_per_var, MPI_BYTE,
+              rst_id->intersected_restructured_super_patch[i]->max_patch_rank, 123,
+              rst_id->idx_c->simulation_comm, &req[req_counter]);
+#endif
           if (ret != MPI_SUCCESS)
           {
             fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
@@ -202,7 +219,9 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           req_counter++;
         }
         free(reg_patch);
+#if 0
         buffer_count++;
+#endif
       }
     }
 
@@ -213,6 +232,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
       return PIDX_err_rst;
     }
 
+#if 0
     // Clean up the particle variable buffers
     for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
     {
@@ -222,16 +242,20 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
       }
       free(buffer[v]);
     }
+#endif
   }
 
+#if 0
   free(buffer);
+#endif
+
   free(req);
   free(status);
 
   return PIDX_success;
 }
 
-
+#if 0
 static int pointInChunk(PIDX_patch p, const double *pos)
 {
   int contains_point = 1;
@@ -242,3 +266,4 @@ static int pointInChunk(PIDX_patch p, const double *pos)
 
   return contains_point;
 }
+#endif
