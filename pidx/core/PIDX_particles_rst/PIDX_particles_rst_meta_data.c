@@ -53,7 +53,7 @@
 
 #include "../../PIDX_inc.h"
 
-static int init_particle_count = 512;
+static int init_particle_count = 4096;
 static int intersectNDChunk(PIDX_patch A, PIDX_patch B);
 static int pointInChunk(PIDX_patch p, const double *pos);
 static int contains_patch(PIDX_patch reg_patch, PIDX_patch* patches, int count);
@@ -116,10 +116,7 @@ static void gather_all_patch_extents(PIDX_particles_rst_id rst_id)
 
   // buffer to hold the offset and size information of all patches across all processes
   rst_id->sim_multi_patch_r_count = malloc(sizeof (double) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
-  memset(rst_id->sim_multi_patch_r_count, 0, (sizeof (double) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
   rst_id->sim_multi_patch_r_offset = malloc(sizeof (double) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
-  memset(rst_id->sim_multi_patch_r_offset, 0, (sizeof (double) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count));
-
 
   // every process populates rst_id->sim_multi_patch_r_count and rst_id->sim_multi_patch_r_offset with their local information
   for (int pc=0; pc < rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch_count; pc++)
@@ -137,8 +134,6 @@ static void gather_all_patch_extents(PIDX_particles_rst_id rst_id)
 
   // making a local copy of the patch size since mpi does not allow the same buffer to be used as both a sender and a reciever
   double* count_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
-  memset(count_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
-
   memcpy(count_buffer_copy, &rst_id->sim_multi_patch_r_count[rst_id->idx_c->simulation_rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*count_buffer_copy));
 
   // gather size of all patches across all processes
@@ -147,8 +142,6 @@ static void gather_all_patch_extents(PIDX_particles_rst_id rst_id)
 
   // making a local copy of the patch size since mpi does not allow the same buffer to be used as both a sender and a reciever
   double* offset_buffer_copy = malloc(PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
-  memset(offset_buffer_copy, 0, PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
-
   memcpy(offset_buffer_copy, &rst_id->sim_multi_patch_r_offset[rst_id->idx_c->simulation_rank * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count], PIDX_MAX_DIMENSIONS*rst_id->sim_max_patch_count * sizeof(*offset_buffer_copy));
 
   // gather size of all patches across all processes
@@ -234,7 +227,6 @@ static void calculate_number_of_intersecting_boxes(PIDX_particles_rst_id rst_id)
 
   // create buffer to hold meta data for the super patches a process intersects with
   rst_id->intersected_restructured_super_patch = malloc(sizeof(*rst_id->intersected_restructured_super_patch) * rst_id->intersected_restructured_super_patch_count);
-  memset(rst_id->intersected_restructured_super_patch, 0, sizeof(*rst_id->intersected_restructured_super_patch) * rst_id->intersected_restructured_super_patch_count);
 
   return;
 }
@@ -256,12 +248,10 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
   int max_found_reg_patches = tpc[0] * tpc[1] * tpc[2];
 
   PIDX_patch* found_reg_patches = malloc(sizeof(PIDX_patch*)*max_found_reg_patches);
-  memset(found_reg_patches, 0, sizeof(PIDX_patch*)*max_found_reg_patches);
 
   for (uint64_t i = 0; i < tpc[0] * tpc[1] * tpc[2]; i++)
   {
     PIDX_patch reg_patch = (PIDX_patch)malloc(sizeof (*reg_patch));
-    memset(reg_patch, 0, sizeof (*reg_patch));
 
     Ndim_empty_patch ep = rst_id->restructured_grid->patch[i];
 
@@ -276,7 +266,6 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
     for (uint64_t pc0 = 0; pc0 < rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch_count; pc0++)
     {
       PIDX_patch local_proc_patch = (PIDX_patch)malloc(sizeof (*local_proc_patch));
-      memset(local_proc_patch, 0, sizeof (*local_proc_patch));
       for (uint64_t d0 = 0; d0 < PIDX_MAX_DIMENSIONS; d0++)
       {
         local_proc_patch->physical_offset[d0] = rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch[pc0]->physical_offset[d0];
@@ -294,16 +283,12 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
           found_reg_patches_count++;
 
           rst_id->intersected_restructured_super_patch[reg_patch_count] = malloc(sizeof(*(rst_id->intersected_restructured_super_patch[reg_patch_count])));
-          memset(rst_id->intersected_restructured_super_patch[reg_patch_count], 0, sizeof(*(rst_id->intersected_restructured_super_patch[reg_patch_count])));
 
           PIDX_super_patch patch_grp = rst_id->intersected_restructured_super_patch[reg_patch_count];
 
           patch_grp->source_patch = (PIDX_source_patch_index*)malloc(sizeof(PIDX_source_patch_index) * rst_id->maximum_neighbor_count);
           patch_grp->patch = malloc(sizeof(*patch_grp->patch) * rst_id->maximum_neighbor_count);
           patch_grp->restructured_patch = malloc(sizeof(*patch_grp->restructured_patch));
-          memset(patch_grp->source_patch, 0, sizeof(PIDX_source_patch_index) * rst_id->maximum_neighbor_count);
-          memset(patch_grp->patch, 0, sizeof(*patch_grp->patch) * rst_id->maximum_neighbor_count);
-          memset(patch_grp->restructured_patch, 0, sizeof(*patch_grp->restructured_patch));
 
           patch_count = 0;
           patch_grp->patch_count = 0;
@@ -316,8 +301,6 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
             {
               // Extent of process with rst_id->idx_c->simulation_rank r
               PIDX_patch curr_patch = malloc(sizeof (*curr_patch));
-              memset(curr_patch, 0, sizeof (*curr_patch));
-
               for (uint64_t d = 0; d < PIDX_MAX_DIMENSIONS; d++)
               {
                 uint64_t index = r * (PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count) + pc*PIDX_MAX_DIMENSIONS;
@@ -335,11 +318,9 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
               if (intersectNDChunk(reg_patch, curr_patch))
               {
                 patch_grp->patch[patch_count] = malloc(sizeof(*(patch_grp->patch[patch_count])));
-                memset(patch_grp->patch[patch_count], 0, sizeof(*(patch_grp->patch[patch_count])));
-
+                patch_grp->patch[patch_count]->particle_count = 0;
                 if (r == rst_id->idx_c->simulation_rank)
                 {
-
                   patch_grp->patch[patch_count]->tbuffer = malloc(sizeof(unsigned char**) * rst_id->idx_metadata->variable_count);
                   for (uint64_t v = 0; v < rst_id->idx_metadata->variable_count; v++)
                   {
@@ -471,10 +452,7 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
       req_count_estimate++;
 
   req = malloc(sizeof (*req) * req_count_estimate * 2);
-  memset(req, 0, sizeof (*req) * req_count_estimate * 2);
-
   status = malloc(sizeof (*status) * req_count_estimate * 2);
-  memset(status, 0, sizeof (*status) * req_count_estimate * 2);
 
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
@@ -537,50 +515,35 @@ static PIDX_return_code distribute_particle_info(PIDX_particles_rst_id rst_id)
 
 static PIDX_return_code copy_reciever_patch_info(PIDX_particles_rst_id rst_id)
 {
-  int cnt = 0;
-
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
 
-  for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
+  for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
-    cnt = 0;
-
-    PIDX_variable var = rst_id->idx_metadata->variable[v];
-    var->restructured_super_patch_count = var0->restructured_super_patch_count;
-
-    for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+    PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
+    if (rst_id->idx_c->simulation_rank == irsp->max_patch_rank)
     {
-      PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
-      if (rst_id->idx_c->simulation_rank == irsp->max_patch_rank)
+      for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
       {
+        PIDX_variable var = rst_id->idx_metadata->variable[v];
+        var->restructured_super_patch_count = var0->restructured_super_patch_count;
         var->restructured_super_patch = malloc(var->restructured_super_patch_count * sizeof(*(var->restructured_super_patch)));
-        memset(var->restructured_super_patch, 0, var->restructured_super_patch_count * sizeof(*(var->restructured_super_patch)));
 
         PIDX_super_patch patch_group = var->restructured_super_patch;
         patch_group->patch_count = irsp->patch_count;
         patch_group->is_boundary_patch = irsp->is_boundary_patch;
         patch_group->patch = malloc(sizeof(*(patch_group->patch)) * irsp->patch_count);
-        memset(patch_group->patch, 0, sizeof(*(patch_group->patch)) * irsp->patch_count);
 
         patch_group->restructured_patch = malloc(sizeof(*(patch_group->restructured_patch)));
-        memset(patch_group->restructured_patch, 0, sizeof(*(patch_group->restructured_patch)));
 
         for (int j = 0; j < irsp->patch_count; j++)
         {
           patch_group->patch[j] = malloc(sizeof(*(patch_group->patch[j])));
-          memset(patch_group->patch[j], 0, sizeof(*(patch_group->patch[j])));
-
           patch_group->patch[j]->particle_count = irsp->patch[j]->particle_count;
         }
         memcpy(patch_group->restructured_patch->physical_offset, irsp->restructured_patch->physical_offset, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
         memcpy(patch_group->restructured_patch->physical_size, irsp->restructured_patch->physical_size, sizeof(uint64_t) * PIDX_MAX_DIMENSIONS);
-        cnt++;
-        assert(cnt == 1);
       }
     }
-
-    if (cnt != var->restructured_super_patch_count)
-      return PIDX_err_rst;
   }
 
   return PIDX_success;

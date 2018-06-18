@@ -415,9 +415,9 @@ static void create_synthetic_simulation_data()
   double particle_color[COLOR_COUNT] = {0.25, 0.75};
 
 
-  //char rank_filename[PATH_MAX];
-  //sprintf(rank_filename, "%s_w_%d", output_file_template, rank);
-  //FILE *fp = fopen(rank_filename, "w");
+  char rank_filename[PATH_MAX];
+  sprintf(rank_filename, "%s_w_%d", output_file_template, rank);
+  FILE *fp = fopen(rank_filename, "w");
 
   srand((unsigned int)time(NULL));
   for (int k = 0; k < particle_count; k++)
@@ -476,9 +476,9 @@ static void create_synthetic_simulation_data()
     memcpy(&e8, data[5] + (k * 9 + 7) * sizeof(double), sizeof(double));
     memcpy(&e9, data[5] + (k * 9 + 8) * sizeof(double), sizeof(double));
 
-    //fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9);
+    fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9);
   }
-  //fclose(fp);
+  fclose(fp);
 
 }
 

@@ -71,20 +71,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
 #endif
 
   MPI_Request *req = malloc(sizeof (*req) * req_count * 2 * rst_id->idx_metadata->variable_count);
-  if (!req)
-  {
-    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  memset(req, 0, sizeof (*req) * req_count * 2 * rst_id->idx_metadata->variable_count);
-
   MPI_Status *status = malloc(sizeof (*status) * req_count * 2 * rst_id->idx_metadata->variable_count);
-  if (!status)
-  {
-    fprintf(stderr, "Error: File [%s] Line [%d]\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  memset(status, 0, sizeof (*status) * req_count * 2 * rst_id->idx_metadata->variable_count);
 
   for (uint64_t i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
@@ -140,6 +127,8 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
     {
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
       {
+        const size_t particles_to_send = rst_id->intersected_restructured_super_patch[i]->patch[j]->particle_count;
+#if 0
         PIDX_patch reg_patch = malloc(sizeof (*reg_patch));
         memset(reg_patch, 0, sizeof (*reg_patch));
         for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -148,9 +137,6 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           reg_patch->physical_size[d] = rst_id->intersected_restructured_super_patch[i]->restructured_patch->physical_size[d];
         }
 
-        const size_t particles_to_send = rst_id->intersected_restructured_super_patch[i]->patch[j]->particle_count;
-
-#if 0
         PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
         const uint64_t bytes_per_pos_v0 = ((var0->vps * var0->bpv) / CHAR_BIT);
         const int p_index = rst_id->intersected_restructured_super_patch[i]->source_patch[j].index;
@@ -164,9 +150,7 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           }
           assert(counter == particles_to_send);
         }
-#endif
 
-#if 0
         // Allocate buffers for each var to hold the data we're sending
         for (int v = 0; v < rst_id->idx_metadata->variable_count; v++)
         {
@@ -218,8 +202,8 @@ PIDX_return_code PIDX_particles_rst_staged_write(PIDX_particles_rst_id rst_id)
           }
           req_counter++;
         }
-        free(reg_patch);
 #if 0
+        free(reg_patch);
         buffer_count++;
 #endif
       }

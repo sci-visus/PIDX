@@ -57,44 +57,33 @@
 // Creates the buffers for all the patches that constitutes the super patch
 PIDX_return_code PIDX_particles_rst_buf_create(PIDX_particles_rst_id rst_id)
 {
-  int cnt = 0;
 
-  // Allocate buffer for restructured patches (super patch) for all variables
-  for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
+  // Iterate through all the super patch a process intersects with
+  for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
-    cnt = 0;
-    PIDX_variable var = rst_id->idx_metadata->variable[v];
-
-    // Iterate through all the super patch a process intersects with
-    for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+    // If the process is the target rank of a super patch then allocate buffer for the patches of the super patch
+    if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
     {
-      // If the process is the target rank of a super patch then allocate buffer for the patches of the super patch
-      if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
+      // Allocate buffer for restructured patches (super patch) for all variables
+      for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
       {
+        PIDX_variable var = rst_id->idx_metadata->variable[v];
         PIDX_super_patch patch_group = var->restructured_super_patch;
 
         // Iterate through all the patches of the super patch and allocate buffer for them
         for (int j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
         {
           patch_group->patch[j]->buffer = malloc(patch_group->patch[j]->particle_count * var->vps * var->bpv / CHAR_BIT);
+#if 0
           if (patch_group->patch[j]->buffer == NULL)
           {
             fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
             return PIDX_err_rst;
           }
           memset(patch_group->patch[j]->buffer, 0, (patch_group->patch[j]->particle_count * var->vps * var->bpv / CHAR_BIT));
+#endif
         }
-
-        cnt++;
-        assert(cnt == 1);  // This is gauranteed because every process can hold at max only one suoer patch
       }
-    }
-
-    // This is gauranteed because every process can hold at max only one suoer patch
-    if (cnt != var->restructured_super_patch_count)
-    {
-      fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
-      return PIDX_err_rst;
     }
   }
 
@@ -137,29 +126,31 @@ PIDX_return_code PIDX_particles_rst_aggregate_buf_create(PIDX_particles_rst_id r
   if (var0->restructured_super_patch_count == 0)
       return PIDX_success;
 
-  for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
+  for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
-    PIDX_variable var = rst_id->idx_metadata->variable[v];
-
-    for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
+    // If the process is the target rank of a super patch then allocate buffer for the patches of the super patch
+    if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
     {
-      // If the process is the target rank of a super patch then allocate buffer for the patches of the super patch
-      if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->max_patch_rank)
+      // Iterate through all the patches of the super patch and allocate buffer for them
+      uint64_t total_particle_count = 0;
+      for (int j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
+        total_particle_count = total_particle_count + var0->restructured_super_patch->patch[j]->particle_count;
+
+      for (int v = rst_id->first_index; v <= rst_id->last_index; v++)
       {
+        PIDX_variable var = rst_id->idx_metadata->variable[v];
         PIDX_super_patch patch_group = var->restructured_super_patch;
-        patch_group->restructured_patch->particle_count = 0;
+        patch_group->restructured_patch->particle_count =  total_particle_count;
 
-        // Iterate through all the patches of the super patch and allocate buffer for them
-        for (int j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
-          patch_group->restructured_patch->particle_count = patch_group->restructured_patch->particle_count + patch_group->patch[j]->particle_count;
-
-        patch_group->restructured_patch->buffer = malloc(patch_group->restructured_patch->particle_count * var->vps * var->bpv / CHAR_BIT);
+        patch_group->restructured_patch->buffer = malloc(total_particle_count * var->vps * var->bpv / CHAR_BIT);
+#if 0
         if (patch_group->restructured_patch->buffer == NULL)
         {
           fprintf(stderr, "[%s] [%d] malloc() failed.\n", __FILE__, __LINE__);
           return PIDX_err_rst;
         }
         memset(patch_group->restructured_patch->buffer, 0, (patch_group->restructured_patch->particle_count * var->vps * var->bpv / CHAR_BIT));
+#endif
       }
     }
   }
@@ -207,50 +198,6 @@ PIDX_return_code PIDX_particles_rst_buf_aggregate(PIDX_particles_rst_id rst_id)
       pcount = pcount + var->restructured_super_patch->patch[r]->particle_count;
     }
   }
-
-#if 0
-  char rank_filename[PATH_MAX];
-  sprintf(rank_filename, "%s_b_%d", rst_id->idx_metadata->filename, rst_id->idx_c->simulation_rank);
-  FILE *fp = fopen(rank_filename, "w");
-
-  for (uint32_t p = 0; p < rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->particle_count; p++)
-  {
-    //
-    double px, py, pz;
-    memcpy(&px, rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->buffer + (p * 3 + 0) * sizeof(double), sizeof(double));
-    memcpy(&py, rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->buffer + (p * 3 + 1) * sizeof(double), sizeof(double));
-    memcpy(&pz, rst_id->idx_metadata->variable[0]->restructured_super_patch->restructured_patch->buffer + (p * 3 + 2) * sizeof(double), sizeof(double));
-
-    double d1;
-    memcpy(&d1, rst_id->idx_metadata->variable[1]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(double), sizeof(double));
-
-    double d2;
-    memcpy(&d2, rst_id->idx_metadata->variable[2]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(double), sizeof(double));
-
-    double d3;
-    memcpy(&d3, rst_id->idx_metadata->variable[3]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(double), sizeof(double));
-
-    int i1;
-    memcpy(&i1, rst_id->idx_metadata->variable[4]->restructured_super_patch->restructured_patch->buffer + (p) * sizeof(int), sizeof(int));
-    /*
-    double e1, e2, e3, e4, e5, e6, e7, e8, e9;
-    memcpy(&e1, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 0) * sizeof(double), sizeof(double));
-    memcpy(&e2, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 1) * sizeof(double), sizeof(double));
-    memcpy(&e3, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 2) * sizeof(double), sizeof(double));
-    memcpy(&e4, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 3) * sizeof(double), sizeof(double));
-    memcpy(&e5, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 4) * sizeof(double), sizeof(double));
-    memcpy(&e6, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 5) * sizeof(double), sizeof(double));
-    memcpy(&e7, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 6) * sizeof(double), sizeof(double));
-    memcpy(&e8, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 7) * sizeof(double), sizeof(double));
-    memcpy(&e9, rst_id->idx_metadata->variable[5]->restructured_super_patch->restructured_patch->buffer + (p * 9 + 8) * sizeof(double), sizeof(double));
-    */
-    //fprintf(fp, "%f %f %f %f %f %f %f %f %f\n", e1, e2, e3, e4, e5, e6, e7, e8, e9);
-
-    fprintf(fp, "%f %f %f %f %f %f %d\n", px, py, pz, d1, d2, d3, i1);
-  }
-  fclose(fp);
-#endif
-
 
   return PIDX_success;
 }

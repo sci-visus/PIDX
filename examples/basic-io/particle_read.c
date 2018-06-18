@@ -240,7 +240,7 @@ int main(int argc, char **argv)
   // Close PIDX_access
   PIDX_close_access(p_access);
 
-#if 0
+#if 1
   char rank_filename[PATH_MAX];
   sprintf(rank_filename, "%s_r_%d", output_file_template, rank);
   FILE *fp = fopen(rank_filename, "w");
