@@ -239,6 +239,7 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
   int found_reg_patches_count = 0, reg_patch_count = 0;
 
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
+  init_particle_count = var0->sim_patch[0]->particle_count;
 
   // Patch group size is 1 for processes that holds a restructured patch or is 0 otherwise
   var0->restructured_super_patch_count = 0;
@@ -347,6 +348,7 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
                           const uint64_t bytes_per_var = ((var->vps * var->bpv) / CHAR_BIT);
 
                           patch_grp->patch[patch_count]->tbuffer[v] = realloc(patch_grp->patch[patch_count]->tbuffer[v], init_particle_count * bytes_per_var);
+                          printf("Need for a realloc %d\n", init_particle_count);
                           if (patch_grp->patch[patch_count]->tbuffer[v] == NULL)
                           {
                             fprintf(stderr, "[%s] [%d] realloc() failed.\n", __FILE__, __LINE__);

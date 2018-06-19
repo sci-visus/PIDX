@@ -230,7 +230,7 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
 
 
   // This scaling factor will set how many process are aggregated to one rank
-  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 4;
+  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 2;
   file->restructured_grid->physical_patch_size[1] = max_patch_size_y * 2;
   file->restructured_grid->physical_patch_size[2] = max_patch_size_z * 2;
 
