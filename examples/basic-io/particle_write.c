@@ -92,6 +92,8 @@
 
 #include <math.h>
 
+#define DEBUG_PRINT_OUTPUT 1
+
 #define TYPE_COUNT 5
 #define COLOR_COUNT 2
 #define MAX_VAR_COUNT 256
@@ -114,7 +116,7 @@ static double physical_local_box_size[NUM_DIMS];
  * type int scalar
  * stress double tensor (9)
  */
-static int variable_count = 6;
+static int variable_count = 7;
 
 
 static int mode = 0;
@@ -154,13 +156,14 @@ static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
 static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./idx_write -g 64x64x64 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./particle_write -g 64x64x64 -l 32x32x32 -p 64 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -r: restructured box dimension\n"
                      "  -f: file name template (without .idx)\n"
                      "  -t: number of timesteps\n"
-                     "  -v: number of variables (or file containing a list of variables)\n";
+                     "  -p: number of particles per patch\n"
+                     "  -m: I/O mode (0 for ffp, 1 for rst) \n";
 
 int main(int argc, char **argv)
 {
@@ -263,7 +266,7 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('m'): // number of particles per patch
+    case('m'): // I/O mode
       if (sscanf(optarg, "%d", &mode) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
@@ -317,6 +320,11 @@ static int generate_vars(){
   vps[5] = 9;
   strcpy(type_name[5], "9*float64");
   strcpy(var_name[5], "stress");
+  
+  bpv[6] = sizeof(int64_t) * CHAR_BIT;
+  vps[6] = 1;
+  strcpy(type_name[6], "1*int64");
+  strcpy(var_name[6], "id");
 
   return 0;
 }
@@ -407,18 +415,23 @@ static void create_synthetic_simulation_data()
   // data[5] corresponds to tensor volume doubles (9)
   data[5] = malloc (particle_count * sizeof(double) * 9);
 
+  // data[6] corresponds to particle id int64 (1)
+  data[6] = malloc (particle_count * sizeof(int64_t));
+  
   double p_x, p_y, p_z;
   double scale;
   double color;
   int type;
   int particle_type[TYPE_COUNT] = {1,2,3,4,5};
   double particle_color[COLOR_COUNT] = {0.25, 0.75};
+  int64_t particle_id;
 
-
-  //char rank_filename[PATH_MAX];
-  //sprintf(rank_filename, "%s_w_%d", output_file_template, rank);
-  //FILE *fp = fopen(rank_filename, "w");
-
+#if DEBUG_PRINT_OUTPUT
+  char rank_filename[PATH_MAX];
+  sprintf(rank_filename, "%s_w_%d", output_file_template, rank);
+  FILE *fp = fopen(rank_filename, "w");
+#endif
+  
   srand((unsigned int)time(NULL));
   for (int k = 0; k < particle_count; k++)
   {
@@ -429,7 +442,6 @@ static void create_synthetic_simulation_data()
     memcpy(data[0] + (k * 3 + 0) * sizeof(double), &p_x, sizeof(double));
     memcpy(data[0] + (k * 3 + 1) * sizeof(double), &p_y, sizeof(double));
     memcpy(data[0] + (k * 3 + 2) * sizeof(double), &p_z, sizeof(double));
-
 
     color = particle_color[rand() % COLOR_COUNT];
     memcpy(data[1] + (k) * sizeof(double), &color, sizeof(double));
@@ -451,6 +463,9 @@ static void create_synthetic_simulation_data()
       scale = scale * p_x;
       memcpy(data[5] + (k * 9 + j) * sizeof(double), &scale, sizeof(double));
     }
+    
+    particle_id = (int64_t)k*10241024;
+    memcpy(data[6] + (k) * sizeof(int64_t), &particle_id, sizeof(int64_t));
 
     double px, py, pz;
     memcpy(&px, data[0] + (k * 3 + 0) * sizeof(double), sizeof(double));
@@ -476,9 +491,16 @@ static void create_synthetic_simulation_data()
     memcpy(&e8, data[5] + (k * 9 + 7) * sizeof(double), sizeof(double));
     memcpy(&e9, data[5] + (k * 9 + 8) * sizeof(double), sizeof(double));
 
-    //fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9);
+    int64_t pid;
+    memcpy(&pid, data[6] + (k) * sizeof(int64_t), sizeof(int64_t));
+
+#if DEBUG_PRINT_OUTPUT
+    fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f %lld\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9, pid);
+#endif
   }
-  //fclose(fp);
+#if DEBUG_PRINT_OUTPUT
+  fclose(fp);
+#endif
 
 }
 

@@ -86,6 +86,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#define DEBUG_PRINT_OUTPUT 1 
+
 #if defined _MSC_VER
   #include "utils/PIDX_windows_utils.h"
 #endif
@@ -240,11 +242,13 @@ int main(int argc, char **argv)
   // Close PIDX_access
   PIDX_close_access(p_access);
 
-#if 0
+#if DEBUG_PRINT_OUTPUT
   char rank_filename[PATH_MAX];
   sprintf(rank_filename, "%s_r_%d", output_file_template, rank);
   FILE *fp = fopen(rank_filename, "w");
 
+  int ch1, ch2;
+  
   for (uint32_t p = 0; p < checkpoint_particle_counts[0]; p++)
   {
     double px, py, pz;
@@ -275,11 +279,48 @@ int main(int argc, char **argv)
     memcpy(&e8, (char*)checkpoint_data[5] + (p * 9 + 7) * sizeof(double), sizeof(double));
     memcpy(&e9, (char*)checkpoint_data[5] + (p * 9 + 8) * sizeof(double), sizeof(double));
 
-    fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9);
-  }
-  fclose(fp);
-#endif
+    int64_t particle_id;
+    memcpy(&particle_id, (char*)checkpoint_data[6] + (p) * sizeof(int64_t), sizeof(int64_t));
 
+    fprintf(fp, "%f %f %f %f %f %f %d %f %f %f %f %f %f %f %f %f %lld\n", px, py, pz, d1, d2, d3, i1, e1, e2, e3, e4, e5, e6, e7, e8, e9, particle_id);
+  }
+  
+  fclose(fp);
+  
+  // Verify output of read and write (TODO check for RST mode)
+  char rank_filename_verify[PATH_MAX];
+  sprintf(rank_filename_verify, "%s_w_%d", output_file_template, rank);
+  FILE *fpv = fopen(rank_filename_verify, "r");
+  fp = fopen(rank_filename, "r");
+  
+  int error_count = 0;
+  if (fpv == NULL || fp == NULL) {
+    printf("Cannot verify rank %d looking for file %s and %s for reading ", rank, rank_filename, rank_filename_verify);
+    exit(1);
+  } else {
+    ch1 = getc(fp);
+    ch2 = getc(fpv);
+    
+    while ((ch1 != EOF) && (ch2 != EOF) && (ch1 == ch2)) {
+      ch1 = getc(fp);
+      ch2 = getc(fpv);
+      
+      if(ch1 != ch2)
+        error_count++;
+    }
+    
+    fclose(fpv);
+    fclose(fp);
+  }
+  
+#endif
+  
+  int total_errors = 0;
+  MPI_Allreduce(&total_errors, &error_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  
+  if(rank == 0)
+    printf("Error Count: %d\n", error_count);
+  
   free(data);
   if (checkpoint_restart)
   {
@@ -292,6 +333,9 @@ int main(int argc, char **argv)
     free(checkpoint_particle_counts);
   }
   shutdown_mpi();
+  
+  return error_count;
+
 }
 
 //----------------------------------------------------------------
