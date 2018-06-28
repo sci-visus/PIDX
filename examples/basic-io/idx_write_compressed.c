@@ -116,7 +116,7 @@ static void create_synthetic_simulation_data();
 static void set_pidx_variable(int var);
 static void set_pidx_file(int ts);
 static void destroy_synthetic_simulation_data();
-static uint32_t bit_rate = 64;
+static uint32_t bit_rate = 0;
 
 int main(int argc, char **argv)
 {
@@ -222,7 +222,7 @@ static void parse_args(int argc, char **argv)
       }
       break;
 
-    case('b'): // number of timesteps
+    case('b'): // compression bit rate
       if (sscanf(optarg, "%d", &bit_rate) < 0)
         terminate_with_error_msg("Invalid bit rate\n%s", usage);
       break;
@@ -295,7 +295,9 @@ static void create_synthetic_simulation_data()
     float fvalue = 0;
     double dvalue = 0;
     int ivalue = 0;
-    uint64_t uivalue = 0;
+    uint64_t u64ivalue = 0;
+    int64_t i64value = 0;
+    
 #if 0
     FILE* fp = fopen("OF_data.txt", "r");
     int o = 0;
@@ -342,10 +344,15 @@ static void create_synthetic_simulation_data()
               dvalue = (double) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
+            else if (strcmp(type_name[var], INT64) == 0 || strcmp(type_name[var], INT64_GA) == 0 || strcmp(type_name[var], INT64_RGB) == 0)
+            {
+              i64value = (int64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int64_t), &i64value, sizeof(int64_t));
+            }
             else if (strcmp(type_name[var], UINT64) == 0 || strcmp(type_name[var], UINT64_GA) == 0 || strcmp(type_name[var], UINT64_RGB) == 0)
             {
-              uivalue = (uint64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(uint64_t), &uivalue, sizeof(uint64_t));
+              u64ivalue = (uint64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(uint64_t), &u64ivalue, sizeof(uint64_t));
             }
           }
         }
@@ -467,6 +474,10 @@ static void set_pidx_file(int ts)
   PIDX_set_cache_time_step(file, 0);
 
   PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
+  
+  if(!bit_rate)
+    bit_rate = bpv[0];
+  
   PIDX_set_lossy_compression_bit_rate(file, bit_rate);
 
   return;

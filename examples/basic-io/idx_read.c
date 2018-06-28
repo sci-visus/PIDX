@@ -302,6 +302,8 @@ static int verify_read_results()
   int i, j, k, vps;
   int int_val = 0;
   double double_val = 0;
+  int64_t int64_val = 0;
+  uint64_t uint64_val = 0;
   float float_val = 0;
   int var = variable_index;
 
@@ -360,14 +362,54 @@ static int verify_read_results()
             if (float_val != var + 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
             {
               read_error_count++;
-              //if (rank == 1)
-              //printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
+//              if (rank == 1)
+//                printf("W [%d] [%d %d %d] [%d] Read error %f %d Diff %f\n", rank, i,j ,k, vps, float_val, var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)), (float) (float_val - (var + vps + 100 + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))));
             }
             else
             {
               read_count++;
               //if (rank == 0)
               //  printf("C[%d %d %d] [%d] Read %f %lld\n", i,j ,k, vps, float_val, 100 + var + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
+          }
+        }
+        
+        else if (strcmp(type_name, INT64) == 0 || strcmp(type_name, INT64_RGB) == 0 || strcmp(type_name, INT64_GA) == 0)
+        {
+          for (vps = 0; vps < values_per_sample; vps++)
+          {
+            memcpy(&int64_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
+            if (int64_val != var + 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            {
+              read_error_count++;
+              if (rank == 0)
+                printf("W[%d %d %d] [%d] Read error %lld %lld\n", i,j ,k, vps, int64_val,100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
+            else
+            {
+              read_count++;
+              //if (rank == 0)
+              //  printf("W[%d %d %d] [%d] Read error %lld %lld\n", i,j ,k, vps, int64_val, var /*+ vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
+            }
+          }
+        }
+        
+        else if (strcmp(type_name, UINT64) == 0 || strcmp(type_name, UINT64_RGB) == 0 || strcmp(type_name, UINT64_GA) == 0)
+        {
+          for (vps = 0; vps < values_per_sample; vps++)
+          {
+            memcpy(&uint64_val, data + (index * values_per_sample + vps) * bits_per_sample, bits_per_sample);
+            if (uint64_val != var + 100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)))
+            {
+              read_error_count++;
+              //if (rank == 0)
+              //printf("W[%d %d %d] [%d] Read error %lld %lld\n", i,j ,k, vps, int64_val,100 + vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i)));
+            }
+            else
+            {
+              read_count++;
+              //if (rank == 0)
+              //  printf("W[%d %d %d] [%d] Read error %lld %lld\n", i,j ,k, vps, int64_val, var /*+ vps + ((global_bounds[0] * global_bounds[1]*(local_box_offset[2] + k))+(global_bounds[0]*(local_box_offset[1] + j)) + (local_box_offset[0] + i))*/);
             }
           }
         }
