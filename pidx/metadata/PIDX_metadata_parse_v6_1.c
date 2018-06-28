@@ -306,7 +306,7 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
       if ( fgets(line, sizeof line, fp) == NULL)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
-      (*file)->idx->compression_bit_rate = atoi(line);
+      (*file)->idx->compression_bit_rate = atof(line);
     }
 
     if (strcmp(line, "(blocksperfile)") == 0)
