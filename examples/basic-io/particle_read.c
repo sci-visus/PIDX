@@ -86,7 +86,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define DEBUG_PRINT_OUTPUT 1 
+#define DEBUG_PRINT_OUTPUT 1
+
+#define PARTICLES_POSITION_VAR 0
+#define PARTICLES_COLOR_VAR 1
 
 #if defined _MSC_VER
   #include "utils/PIDX_windows_utils.h"
@@ -252,12 +255,12 @@ int main(int argc, char **argv)
   for (uint32_t p = 0; p < checkpoint_particle_counts[0]; p++)
   {
     double px, py, pz;
-    memcpy(&px, (char*)checkpoint_data[0] + (p * 3 + 0) * sizeof(double), sizeof(double));
-    memcpy(&py, (char*)checkpoint_data[0] + (p * 3 + 1) * sizeof(double), sizeof(double));
-    memcpy(&pz, (char*)checkpoint_data[0] + (p * 3 + 2) * sizeof(double), sizeof(double));
+    memcpy(&px, (char*)checkpoint_data[PARTICLES_POSITION_VAR] + (p * 3 + 0) * sizeof(double), sizeof(double));
+    memcpy(&py, (char*)checkpoint_data[PARTICLES_POSITION_VAR] + (p * 3 + 1) * sizeof(double), sizeof(double));
+    memcpy(&pz, (char*)checkpoint_data[PARTICLES_POSITION_VAR] + (p * 3 + 2) * sizeof(double), sizeof(double));
 
     double d1;
-    memcpy(&d1, (char*)checkpoint_data[1] + (p) * sizeof(double), sizeof(double));
+    memcpy(&d1, (char*)checkpoint_data[PARTICLES_COLOR_VAR] + (p) * sizeof(double), sizeof(double));
 
     double d2;
     memcpy(&d2, (char*)checkpoint_data[2] + (p) * sizeof(double), sizeof(double));
@@ -315,11 +318,12 @@ int main(int argc, char **argv)
   
 #endif
   
+  // TODO fix error count
   int total_errors = 0;
-  MPI_Allreduce(&total_errors, &error_count, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  
-  if(rank == 0)
-    printf("Error Count: %d\n", error_count);
+//  MPI_Allreduce(&error_count, &total_errors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+//  
+//  if(rank == 0)
+    printf("Error Count: %d this %d\n", total_errors, error_count);
   
   free(data);
   if (checkpoint_restart)

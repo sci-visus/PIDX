@@ -94,6 +94,9 @@
 
 #define DEBUG_PRINT_OUTPUT 1
 
+#define PARTICLES_POSITION_VAR 1
+#define PARTICLES_COLOR_VAR 0
+
 #define TYPE_COUNT 5
 #define COLOR_COUNT 2
 #define MAX_VAR_COUNT 256
@@ -291,15 +294,15 @@ static int generate_vars(){
   * stress double tensor (9)
   */
 
-  bpv[0] = sizeof(double) * CHAR_BIT;
-  vps[0] = 3;
-  strcpy(type_name[0], "3*float64");
-  strcpy(var_name[0], "position");
+  bpv[PARTICLES_POSITION_VAR] = sizeof(double) * CHAR_BIT;
+  vps[PARTICLES_POSITION_VAR] = 3;
+  strcpy(type_name[PARTICLES_POSITION_VAR], "3*float64");
+  strcpy(var_name[PARTICLES_POSITION_VAR], "position");
 
-  bpv[1] = sizeof(double) * CHAR_BIT;
-  vps[1] = 1;
-  strcpy(type_name[1], "1*float64");
-  strcpy(var_name[1], "color");
+  bpv[PARTICLES_COLOR_VAR] = sizeof(double) * CHAR_BIT;
+  vps[PARTICLES_COLOR_VAR] = 1;
+  strcpy(type_name[PARTICLES_COLOR_VAR], "1*float64");
+  strcpy(var_name[PARTICLES_COLOR_VAR], "color");
 
   bpv[2] = sizeof(double) * CHAR_BIT;
   vps[2] = 1;
@@ -398,10 +401,10 @@ static void create_synthetic_simulation_data()
   // Synthetic simulation data
 
   // data[0] corresponds to the location of the particle
-  data[0] = malloc (particle_count * 3 * sizeof(double));
+  data[PARTICLES_POSITION_VAR] = malloc (particle_count * 3 * sizeof(double));
 
   // data[1] corresponds to colors doubles (1)
-  data[1] = malloc (particle_count * sizeof(double));
+  data[PARTICLES_COLOR_VAR] = malloc (particle_count * sizeof(double));
 
   // data[2] corresponds to density doubles (1)
   data[2] = malloc (particle_count * sizeof(double));
@@ -439,12 +442,12 @@ static void create_synthetic_simulation_data()
     p_x = physical_local_box_offset[0] + (rand() / (float) RAND_MAX) * physical_local_box_size[0];
     p_y = physical_local_box_offset[1] + (rand() / (float) RAND_MAX) * physical_local_box_size[1];
     p_z = physical_local_box_offset[2] + (rand() / (float) RAND_MAX) * physical_local_box_size[2];
-    memcpy(data[0] + (k * 3 + 0) * sizeof(double), &p_x, sizeof(double));
-    memcpy(data[0] + (k * 3 + 1) * sizeof(double), &p_y, sizeof(double));
-    memcpy(data[0] + (k * 3 + 2) * sizeof(double), &p_z, sizeof(double));
+    memcpy(data[PARTICLES_POSITION_VAR] + (k * 3 + 0) * sizeof(double), &p_x, sizeof(double));
+    memcpy(data[PARTICLES_POSITION_VAR] + (k * 3 + 1) * sizeof(double), &p_y, sizeof(double));
+    memcpy(data[PARTICLES_POSITION_VAR] + (k * 3 + 2) * sizeof(double), &p_z, sizeof(double));
 
-    color = particle_color[rand() % COLOR_COUNT];
-    memcpy(data[1] + (k) * sizeof(double), &color, sizeof(double));
+    color = 0.1;//particle_color[rand() % COLOR_COUNT];
+    memcpy(data[PARTICLES_COLOR_VAR] + (k) * sizeof(double), &color, sizeof(double));
 
     scale = rand() / (float) RAND_MAX;
     scale = scale * p_x;
@@ -468,12 +471,12 @@ static void create_synthetic_simulation_data()
     memcpy(data[6] + (k) * sizeof(int64_t), &particle_id, sizeof(int64_t));
 
     double px, py, pz;
-    memcpy(&px, data[0] + (k * 3 + 0) * sizeof(double), sizeof(double));
-    memcpy(&py, data[0] + (k * 3 + 1) * sizeof(double), sizeof(double));
-    memcpy(&pz, data[0] + (k * 3 + 2) * sizeof(double), sizeof(double));
+    memcpy(&px, data[PARTICLES_POSITION_VAR] + (k * 3 + 0) * sizeof(double), sizeof(double));
+    memcpy(&py, data[PARTICLES_POSITION_VAR] + (k * 3 + 1) * sizeof(double), sizeof(double));
+    memcpy(&pz, data[PARTICLES_POSITION_VAR] + (k * 3 + 2) * sizeof(double), sizeof(double));
 
     double d1, d2, d3;
-    memcpy(&d1, data[1] + (k) * sizeof(double), sizeof(double));
+    memcpy(&d1, data[PARTICLES_COLOR_VAR] + (k) * sizeof(double), sizeof(double));
     memcpy(&d2, data[2] + (k) * sizeof(double), sizeof(double));
     memcpy(&d3, data[3] + (k) * sizeof(double), sizeof(double));
 
@@ -514,7 +517,7 @@ static void simulate_particle_motion()
   for (size_t k = 0; k < particle_count; k++)
   {
     double pos[3];
-    memcpy(pos, data[0] + k * 3 * sizeof(double), 3 * sizeof(double));
+    memcpy(pos, data[PARTICLES_POSITION_VAR] + k * 3 * sizeof(double), 3 * sizeof(double));
     for (size_t i = 0; i < 3; ++i)
     {
       const float v = ((2.f * (rand() / (float)RAND_MAX)) - 1.f) * travel_size;
@@ -527,7 +530,7 @@ static void simulate_particle_motion()
         pos[i] = physical_local_box_offset[i] + 0.001;
       }
     }
-    memcpy(data[0] + k * 3 * sizeof(double), pos, 3 * sizeof(double));
+    memcpy(data[PARTICLES_POSITION_VAR] + k * 3 * sizeof(double), pos, 3 * sizeof(double));
   }
 }
 
@@ -588,6 +591,8 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   // Set the number of variables
   PIDX_set_variable_count(file, variable_count);
+  
+  PIDX_set_particles_position_variable_index(file, PARTICLES_POSITION_VAR);
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
   if (mode == 0)
