@@ -88,8 +88,8 @@
 
 #define DEBUG_PRINT_OUTPUT 1
 
-#define PARTICLES_POSITION_VAR 0
-#define PARTICLES_COLOR_VAR 1
+#define PARTICLES_POSITION_VAR 1
+#define PARTICLES_COLOR_VAR 0
 
 #if defined _MSC_VER
   #include "utils/PIDX_windows_utils.h"
@@ -249,8 +249,6 @@ int main(int argc, char **argv)
   char rank_filename[PATH_MAX];
   sprintf(rank_filename, "%s_r_%d", output_file_template, rank);
   FILE *fp = fopen(rank_filename, "w");
-
-  int ch1, ch2;
   
   for (uint32_t p = 0; p < checkpoint_particle_counts[0]; p++)
   {
@@ -290,13 +288,15 @@ int main(int argc, char **argv)
   
   fclose(fp);
   
+  int error_count = 0;
+  int ch1, ch2;
+
   // Verify output of read and write (TODO check for RST mode)
   char rank_filename_verify[PATH_MAX];
   sprintf(rank_filename_verify, "%s_w_%d", output_file_template, rank);
   FILE *fpv = fopen(rank_filename_verify, "r");
   fp = fopen(rank_filename, "r");
   
-  int error_count = 0;
   if (fpv == NULL || fp == NULL) {
     printf("Cannot verify rank %d looking for file %s and %s for reading ", rank, rank_filename, rank_filename_verify);
     exit(1);
@@ -307,10 +307,10 @@ int main(int argc, char **argv)
     while ((ch1 != EOF) && (ch2 != EOF) && (ch1 == ch2)) {
       ch1 = getc(fp);
       ch2 = getc(fpv);
-      
-      if(ch1 != ch2)
-        error_count++;
     }
+    
+    if(ch1 != ch2)
+      error_count++;
     
     fclose(fpv);
     fclose(fp);
@@ -318,12 +318,11 @@ int main(int argc, char **argv)
   
 #endif
   
-  // TODO fix error count
   int total_errors = 0;
-//  MPI_Allreduce(&error_count, &total_errors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-//  
-//  if(rank == 0)
-    printf("Error Count: %d this %d\n", total_errors, error_count);
+  MPI_Allreduce(&error_count, &total_errors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  
+  if(rank == 0)
+    printf("Test Result: %s\n", total_errors > 0 ? "failed" : "success");
   
   free(data);
   if (checkpoint_restart)

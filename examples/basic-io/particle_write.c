@@ -94,6 +94,8 @@
 
 #define DEBUG_PRINT_OUTPUT 1
 
+// these defines are to test different ordering
+// of the position variable
 #define PARTICLES_POSITION_VAR 1
 #define PARTICLES_COLOR_VAR 0
 
@@ -591,7 +593,7 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   // Set the number of variables
   PIDX_set_variable_count(file, variable_count);
-  
+  // Set which variable will be used internally as position (default 0)
   PIDX_set_particles_position_variable_index(file, PARTICLES_POSITION_VAR);
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
