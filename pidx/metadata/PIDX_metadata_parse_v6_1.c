@@ -196,6 +196,15 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
       else if (strcmp(line,"big") == 0)
         (*file)->idx->endian = PIDX_BIG_ENDIAN;
     }
+    
+    if (strcmp(line, "(particles position var index)") == 0)
+    {
+      if ( fgets(line, sizeof line, fp) == NULL)
+        return PIDX_err_file;
+      line[strcspn(line, "\r\n")] = 0;
+      
+      (*file)->idx->particles_position_variable_index = atoi(line);
+    }
 
     if (strcmp(line, "(fields)") == 0)
     {

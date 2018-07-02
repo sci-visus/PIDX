@@ -60,7 +60,7 @@ struct idx_file_struct
   int variable_tracker[512];                        /// Which one of the 256 variables are present
   PIDX_variable variable[512];                      /// pointer to variable
   uint32_t variable_count;                          /// The number of variables contained in the dataset
-
+  uint32_t particles_position_variable_index;       /// The index of the variable containing the particles position
 
   Agg_buffer **agg_buffer;                          /// aggregation related struct
 

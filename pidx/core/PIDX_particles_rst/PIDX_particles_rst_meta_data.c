@@ -333,7 +333,7 @@ static PIDX_return_code populate_all_intersecting_restructured_super_patch_meta_
                   int pcount = 0;
                   for (uint64_t prc = 0; prc < rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch[pc]->particle_count; ++prc)
                   {
-                    PIDX_variable pos_var = rst_id->idx_metadata->variable[rst_id->first_index];
+                    PIDX_variable pos_var = rst_id->idx_metadata->variable[rst_id->idx_metadata->particles_position_variable_index];
                     const uint64_t bytes_per_pos = pos_var->vps * pos_var->bpv/CHAR_BIT;
 
                     if (pointInChunk(reg_patch, (double*)(var0->sim_patch[pc]->buffer + prc * bytes_per_pos)))
