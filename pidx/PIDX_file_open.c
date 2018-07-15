@@ -213,24 +213,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   //printf("reading version %d\n",(*file)->idx_d->metadata_version);
 
-  if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
-  {
-    if ((*file)->idx->compression_bit_rate == 64)
-      (*file)->idx->compression_factor = 1;
-    if ((*file)->idx->compression_bit_rate == 32)
-      (*file)->idx->compression_factor = 2;
-    if ((*file)->idx->compression_bit_rate == 16)
-      (*file)->idx->compression_factor = 4;
-    if ((*file)->idx->compression_bit_rate == 8)
-      (*file)->idx->compression_factor = 8;
-    if ((*file)->idx->compression_bit_rate == 4)
-      (*file)->idx->compression_factor = 16;
-    if ((*file)->idx->compression_bit_rate == 2)
-      (*file)->idx->compression_factor = 32;
-    if ((*file)->idx->compression_bit_rate == 1)
-      (*file)->idx->compression_factor = 64;
-  }
-
   if ((*file)->idx->io_type != PIDX_RAW_IO)
     (*file)->idx->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
 
@@ -253,6 +235,13 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx->variable[var]->sim_patch_count = 0;
   }
 
+  if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
+  {
+    // NOTE: using firt variable to compute compression_factor
+    int bpv, vps;
+    PIDX_get_datatype_details((*file)->idx->variable[0]->type_name, &vps, &bpv);
+    (*file)->idx->compression_factor = bpv/(*file)->idx->compression_bit_rate;
+  }
 #if 0
   if ((*file)->idx_c->simulation_rank == 0)
   {
@@ -435,30 +424,19 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
 
   (*file)->idx->variable_count = (*file)->idx->variable_count;
 
-  if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
-  {
-    if ((*file)->idx->compression_bit_rate == 64)
-      (*file)->idx->compression_factor = 1;
-    if ((*file)->idx->compression_bit_rate == 32)
-      (*file)->idx->compression_factor = 2;
-    if ((*file)->idx->compression_bit_rate == 16)
-      (*file)->idx->compression_factor = 4;
-    if ((*file)->idx->compression_bit_rate == 8)
-      (*file)->idx->compression_factor = 8;
-    if ((*file)->idx->compression_bit_rate == 4)
-      (*file)->idx->compression_factor = 16;
-    if ((*file)->idx->compression_bit_rate == 2)
-      (*file)->idx->compression_factor = 32;
-    if ((*file)->idx->compression_bit_rate == 1)
-      (*file)->idx->compression_factor = 64;
-  }
-
-
   if ((*file)->idx->io_type != PIDX_RAW_IO)
     (*file)->idx->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
 
   for (var = 0; var < (*file)->idx->variable_count; var++)
     (*file)->idx->variable[var]->sim_patch_count = 0;
+
+  if ((*file)->idx->compression_type == PIDX_CHUNKING_ZFP)
+  {
+    // NOTE: using first variable to compute compression_factor
+    int bpv, vps;
+    PIDX_get_datatype_details((*file)->idx->variable[0]->type_name, &vps, &bpv);
+    (*file)->idx->compression_factor = bpv/(*file)->idx->compression_bit_rate;
+  }
 
   (*file)->idx->flip_endian = 0;
 

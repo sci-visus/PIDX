@@ -433,10 +433,11 @@ PIDX_return_code PIDX_get_compression_type(PIDX_file file, int *compression_type
 ///
 /// \brief PIDX_set_lossy_compression_bit_rate
 /// \param file
+/// \param var
 /// \param compression_bit_rate
 /// \return
 ///
-PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, float compression_bit_rate);
+PIDX_return_code PIDX_set_lossy_compression_bit_rate(PIDX_file file, PIDX_variable var, float compression_bit_rate);
 
 
 

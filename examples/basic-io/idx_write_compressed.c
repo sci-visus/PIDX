@@ -250,6 +250,11 @@ static void set_pidx_variable(int var)
   ret = PIDX_append_and_write_variable(file, variable[var]);
   if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
 
+  if(!bit_rate)
+    bit_rate = bpv[0];
+
+  PIDX_set_lossy_compression_bit_rate(file, variable[var], bit_rate);
+
   return;
 }
 
@@ -474,11 +479,6 @@ static void set_pidx_file(int ts)
   PIDX_set_cache_time_step(file, 0);
 
   PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-  
-  if(!bit_rate)
-    bit_rate = bpv[0];
-  
-  PIDX_set_lossy_compression_bit_rate(file, bit_rate);
 
   return;
 }
