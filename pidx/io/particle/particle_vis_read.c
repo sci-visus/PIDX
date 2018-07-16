@@ -206,18 +206,17 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
             }
           }
 
-          // TODO WILL: How do we know which variable the user has written as the "position" of
-          // particles, so that we can filter them by the box query?
           // QUESTION for SID: the setup for the sim patch count info doesn't make much sense
           // it seems. I'm not sure how the patches are added?
           // TODO FURTHERMORE: When we're reading and filtering the non-positional vars in
           // a box query we still need to know the positions of the particles to do the filtering
           // correctly. So regardless of what the user requests to read, we always must read the
           // positions
-          // TODO WILL: This assumes the first attribute being queried is the position and
-          // that it's a vec3d
-          PIDX_buffer *pos_var_buf = &tmp_var_read_bufs[0];
-          PIDX_variable pos_var = file->idx->variable[svi];
+          
+          // We use the "particles_position_variable_index" to know which variable contains
+          // the vector position data
+          PIDX_buffer *pos_var_buf = &tmp_var_read_bufs[file->idx->particles_position_variable_index];
+          PIDX_variable pos_var = file->idx->variable[file->idx->particles_position_variable_index];
           const uint64_t bytes_per_pos = pos_var->vps * pos_var->bpv/8;
 
           for (uint64_t i = 0; i < n_proc_patch->particle_count; ++i)

@@ -91,7 +91,6 @@ PIDX_return_code PIDX_set_variable_count(PIDX_file file, int  variable_count)
 }
 
 
-
 PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
 {
   if (!file)
@@ -102,6 +101,16 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count)
   return PIDX_success;
 }
 
+
+PIDX_return_code PIDX_set_particles_position_variable_index(PIDX_file file, uint32_t var_index)
+{
+  if (!file)
+    return PIDX_err_file;
+  
+  file->idx->particles_position_variable_index = var_index;
+  
+  return PIDX_success;
+}
 
 
 PIDX_return_code PIDX_set_physical_dims(PIDX_file file, PIDX_physical_point dims)

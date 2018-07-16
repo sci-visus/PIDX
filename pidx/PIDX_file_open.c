@@ -215,6 +215,9 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 
   if ((*file)->idx->io_type != PIDX_RAW_IO)
     (*file)->idx->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
+  
+  if ((*file)->idx->io_type != PIDX_PARTICLE_IO || (*file)->idx->io_type != PIDX_RST_PARTICLE_IO)
+    MPI_Bcast(&((*file)->idx->particles_position_variable_index), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
 
   if ((*file)->idx_c->simulation_rank != 0)
   {

@@ -1,23 +1,27 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.9.2]
 ### Added
-- compression and decompression (zfp)
-- particles data read and write (file per process)
-- particles restructuring (experimental)
 - support for Windows build
 - continuous integration support for Windows (Appveyor)
 - serial file open (for VisIt reader)
-- partitioning examples
+- partitioning, compression and particles examples
+- autotests for partitioned and compression io mode
 - generate midx when local partitioned IDX is used
+- particles data read and write (file per process)
+- particles two phase I/O (experimental)
+- compression and decompression (zfp, experimental)
+- comments on most of the code
 
 ### Changed
 - metadata format 6.1 and support for previous (6)
 - use enums for PIDX types
 - use literal io mode, endianess
 - refactoring examples 
-- improved testing scripts and autotesting for Travis CI
+- refactoring aggregation
+- license BSD-3
+- improved autotesting scripts (configuration) for Travis CI
 
 ### Fixed
 - raw read performance
