@@ -263,7 +263,7 @@ PIDX_return_code PIDX_compression(PIDX_comp_id comp_id)
       //PIDX_get_datatype_details(var->type_name, &values, &bits);
 
 
-      size_t compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, bits/CHAR_BIT, base_type, ncomps, bit_rate);
+      size_t compressed_bytes = compress_buffer(comp_id, buffer, nx, ny, nz, base_type, bits/CHAR_BIT, ncomps, bit_rate);
       unsigned char* temp_buffer = realloc(patch->buffer, compressed_bytes);
       if (temp_buffer == NULL)
         return PIDX_err_compress;
@@ -299,7 +299,7 @@ PIDX_return_code PIDX_decompression(PIDX_comp_id comp_id)
       char base_type[10];
       PIDX_decompose_type(var->type_name, base_type, &ncomps, &bits);
 
-      ret = decompress_buffer(comp_id, &patch->buffer, nx, ny, nz, bits/CHAR_BIT, base_type, ncomps, bit_rate);
+      ret = decompress_buffer(comp_id, &patch->buffer, nx, ny, nz, base_type, bits/CHAR_BIT, ncomps, bit_rate);
       if (ret == -1)
         return PIDX_err_compress;
     }
