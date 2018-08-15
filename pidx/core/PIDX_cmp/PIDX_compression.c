@@ -85,10 +85,10 @@ int compress_buffer(PIDX_comp_id comp_id, unsigned char* buffer, int nx, int ny,
     uint64_t chunk_bytes = total_chunk_dim * bps;
     zfp_type type;
     if (strcmp(base_type, "int") == 0) {
-      type = bps == 32 ? zfp_type_int32 : zfp_type_int64;
+      type = bps == 32/CHAR_BIT ? zfp_type_int32 : zfp_type_int64;
     }
     else if (strcmp(base_type, "float") == 0) {
-      type = bps == 32 ? zfp_type_float : zfp_type_double;
+      type = bps == 32/CHAR_BIT ? zfp_type_float : zfp_type_double;
     }
     else {
       assert(0);
@@ -157,10 +157,10 @@ int decompress_buffer(PIDX_comp_id comp_id, unsigned char** buffer, int nx, int 
      uint64_t chunk_bytes = total_chunk_dim * bps;
      zfp_type type;
      if (strcmp(base_type, "int") == 0) {
-       type = bps == 32 ? zfp_type_int32 : zfp_type_int64;
+       type = bps == 32/CHAR_BIT ? zfp_type_int32 : zfp_type_int64;
      }
      else if (strcmp(base_type, "float") == 0) {
-       type = bps == 32 ? zfp_type_float : zfp_type_double;
+       type = bps == 32/CHAR_BIT ? zfp_type_float : zfp_type_double;
      }
      else {
        assert(0);
