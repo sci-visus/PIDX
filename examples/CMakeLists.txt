@@ -56,6 +56,7 @@ IF (PIDX_BUILD_EXAMPLES)
   IF (ZFP_FOUND)
     MESSAGE("Configuring examples with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
+    link_directories(${ZFP_LIB_DIR})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
   ENDIF ()
 
