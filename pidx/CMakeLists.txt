@@ -65,7 +65,7 @@ IF (MPI_C_FOUND)
 ENDIF ()
 
 IF (ZFP_FOUND)
-  MESSAGE("Configuring pidx with ZFP support")
+  #MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
   SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${ZFP_LIBRARIES})
 ENDIF ()

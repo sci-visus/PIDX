@@ -39,39 +39,26 @@
 ## 
 ##
 
-
-
-MESSAGE("Preparing external zfp library.")
+MESSAGE("Preparing external ZFP library.")
 #IF (NOT ZFP_DIR)
 #  SET(ZFP_DIR ${CMAKE_SOURCE_DIR}/external/zfp)
 #ENDIF ()
 
 include(ExternalProject)
 
-#ExternalProject_Add(zfp_llnl
-#        URL https://github.com/LLNL/zfp/releases/download/0.5.3/zfp-0.5.3.tar.gz
-#        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/zfp
-#        CONFIGURE_COMMAND "cmake ."
-#        BUILD_COMMAND make
-#        INSTALL_COMMAND make install
-#        PREFIX=${CMAKE_CURRENT_BINARY_DIR}/zfp
-#        )
-
 ExternalProject_Add(zfp_llnl
         URL https://github.com/LLNL/zfp/releases/download/0.5.3/zfp-0.5.3.tar.gz
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/zfp_llnl
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DBUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}"
         )
 
 ExternalProject_Get_Property(zfp_llnl install_dir)
-add_library(zfp STATIC IMPORTED)
-set_property(TARGET zfp PROPERTY IMPORTED_LOCATION ${install_dir}/lib/libzfp.a)
-add_dependencies(zfp zfp_llnl)
 
-#set vars as in FindZFP.cmake
-#SET(ZFP_FOUND 1 )
 SET(ZFP_INCLUDE_DIR  "${install_dir}/include" PARENT_SCOPE)
 SET(ZFP_LIB_DIR "${install_dir}/lib" PARENT_SCOPE)
+
+INSTALL(DIRECTORY "${install_dir}/include/" DESTINATION include/)
+INSTALL(DIRECTORY "${install_dir}/lib/" DESTINATION lib/)
 
 IF (PIDX_BUILD_IN_SITU_MERGE)
   MESSAGE("Compiling included mergetree library.")
@@ -92,8 +79,6 @@ IF (PIDX_BUILD_IN_SITU_MERGE)
   ADD_SUBDIRECTORY(dataflow)
   ADD_SUBDIRECTORY(parallelmergetree)
 ENDIF ()
-
-
 
 IF (PIDX_VTK_RENDERER)
   MESSAGE("Compiling vtk renderer")

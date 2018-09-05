@@ -59,7 +59,7 @@ IF (PIDX_BUILD_TOOLS)
   ENDIF ()
 
   IF (ZFP_FOUND)
-    MESSAGE("Configuring profiling with ZFP support")
+    #MESSAGE("Configuring profiling with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
     SET(TOOLS_LINK_LIBS ${TOOLS_LINK_LIBS} ${ZFP_LIBRARIES})
   ENDIF ()
