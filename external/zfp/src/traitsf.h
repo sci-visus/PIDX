@@ -1,8 +1,8 @@
 /* single-precision floating-point traits */
 
 #define Scalar float       /* floating-point type */
-#define Int zfp_int32          /* corresponding signed integer type */
-#define UInt zfp_uint32        /* corresponding unsigned integer type */
+#define Int int32          /* corresponding signed integer type */
+#define UInt uint32        /* corresponding unsigned integer type */
 #define EBITS 8            /* number of exponent bits */
 #define NBMASK 0xaaaaaaaau /* negabinary mask */
 

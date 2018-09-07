@@ -7,7 +7,7 @@
 /* forward declaration of opaque type */
 typedef struct bitstream bitstream;
 
-extern const zfp_uint64 stream_word_bits; /* bit stream granularity */
+extern const size_t stream_word_bits; /* bit stream granularity */
 
 #ifndef _inline
 #ifdef __cplusplus
@@ -42,10 +42,10 @@ uint stream_read_bit(bitstream* stream);
 uint stream_write_bit(bitstream* stream, uint bit);
 
 /* read 0 <= n <= 64 bits */
-zfp_uint64 stream_read_bits(bitstream* stream, uint n);
+uint64 stream_read_bits(bitstream* stream, uint n);
 
 /* write 0 <= n <= 64 low bits of value and return remaining bits */
-zfp_uint64 stream_write_bits(bitstream* stream, zfp_uint64 value, uint n);
+uint64 stream_write_bits(bitstream* stream, uint64 value, uint n);
 
 /* return bit offset to next bit to be read */
 size_t stream_rtell(const bitstream* stream);

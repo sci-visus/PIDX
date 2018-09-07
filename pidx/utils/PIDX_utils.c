@@ -1008,6 +1008,15 @@ void intersect_grid(Point3D vol_from, Point3D vol_to, Point3D from, Point3D to, 
 }
 #undef min
 
+PIDX_return_code PIDX_decompose_type(PIDX_data_type type, char* base_type, int* ncomps, int* size)
+{
+
+  int result = sscanf(type, "%d*%[uintfloatdouble]%d", ncomps, base_type, size);
+  if (result == 3)
+    return PIDX_success;
+  return PIDX_err_not_implemented;
+}
+
 
 PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int* bits)
 {

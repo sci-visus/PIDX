@@ -130,4 +130,5 @@ Point3D get_last_coord(const char* bit_string, int bs_len, int hz_level);
 void intersect_grid(Point3D vol_from, Point3D vol_to, Point3D from, Point3D to, Point3D* stride, Point3D* output_from, Point3D* output_to);
 
 PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int* bits);
+PIDX_return_code PIDX_decompose_type(PIDX_data_type type, char* base_type, int* ncomps, int* size);
 #endif
