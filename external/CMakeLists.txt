@@ -49,7 +49,7 @@ include(ExternalProject)
 ExternalProject_Add(zfp_llnl
         URL https://github.com/LLNL/zfp/releases/download/0.5.3/zfp-0.5.3.tar.gz
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/zfp_llnl
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DBUILD_SHARED_LIBS="${BUILD_SHARED_LIBS}"
+        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DBUILD_SHARED_LIBS=OFF
         )
 
 ExternalProject_Get_Property(zfp_llnl install_dir)
