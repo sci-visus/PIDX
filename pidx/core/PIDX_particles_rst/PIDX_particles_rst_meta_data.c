@@ -628,6 +628,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
 
 PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_id)
 {
+  /* TODO is this clean redundant??
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
@@ -639,7 +640,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_
     free(irsp->restructured_patch);
     free(irsp);
   }
-
+*/
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)
