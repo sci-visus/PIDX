@@ -57,6 +57,8 @@ unsigned int getNumBits ( unsigned int v );
 
 uint64_t getPowerOf2(int x);
 
+uint64_t int_pow(uint64_t base, uint64_t exp);
+
 unsigned int getLevelFromBlock (uint64_t block, int bits_per_block);
 
 unsigned int getLeveL (uint64_t index);

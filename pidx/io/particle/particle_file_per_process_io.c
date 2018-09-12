@@ -105,6 +105,8 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
       printf("[%s] [%d] = %d %d %d\n", var->type_name, var->sim_patch[p]->particle_count * sample_count * (bits_per_sample/CHAR_BIT), var->sim_patch[p]->particle_count, sample_count, (bits_per_sample/CHAR_BIT));
 #endif
 
+      // TODO reshuffle particles here !?
+
       uint64_t buffer_size = var->sim_patch[p]->particle_count * sample_count * (bits_per_sample/CHAR_BIT);
       uint64_t write_count = pwrite(fp, var->sim_patch[p]->buffer, buffer_size, data_offset);
       if (write_count != buffer_size)

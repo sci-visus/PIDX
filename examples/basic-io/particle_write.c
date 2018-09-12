@@ -96,8 +96,8 @@
 
 // these defines are to test different ordering
 // of the position variable
-#define PARTICLES_POSITION_VAR 1
-#define PARTICLES_COLOR_VAR 0
+#define PARTICLES_POSITION_VAR 0
+#define PARTICLES_COLOR_VAR 1
 
 #define TYPE_COUNT 5
 #define COLOR_COUNT 2
@@ -160,7 +160,7 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
+static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./particle_write -g 64x64x64 -l 32x32x32 -p 64 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"

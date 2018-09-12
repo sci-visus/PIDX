@@ -206,6 +206,22 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
       (*file)->idx->particles_position_variable_index = atoi(line);
     }
 
+    if (strcmp(line, "(particle res base)") == 0)
+    {
+      if ( fgets(line, sizeof line, fp) == NULL)
+        return PIDX_err_file;
+      line[strcspn(line, "\r\n")] = 0;
+      (*file)->idx->particle_res_base= atoi(line);
+    }
+
+    if (strcmp(line, "(particle res factor)") == 0)
+    {
+      if ( fgets(line, sizeof line, fp) == NULL)
+        return PIDX_err_file;
+      line[strcspn(line, "\r\n")] = 0;
+      (*file)->idx->particle_res_factor= atoi(line);
+    }
+
     if (strcmp(line, "(fields)") == 0)
     {
       if ( fgets(line, sizeof line, fp) == NULL)
@@ -310,9 +326,8 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
       //  return PIDX_err_box;
     }
 
-    if (strcmp(line, "(compression bit rate)") == 0)
-    {
-      if ( fgets(line, sizeof line, fp) == NULL)
+    if (strcmp(line, "(compression bit rate)") == 0) {
+      if (fgets(line, sizeof line, fp) == NULL)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
       (*file)->idx->compression_bit_rate = atof(line);

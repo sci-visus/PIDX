@@ -152,6 +152,19 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_set_current_resolution(PIDX_file file, const int current_resolution)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  if (current_resolution < 0)
+    return PIDX_err_res;
+
+  file->idx->current_resolution = current_resolution;
+
+  return PIDX_success;
+}
+
 
 
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* current_time_step)

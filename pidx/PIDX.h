@@ -233,7 +233,8 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int time_step)
 ///
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
 
-
+// TODO comment
+PIDX_return_code PIDX_set_current_resolution(PIDX_file file, const int current_resolution);
 
 ///
 /// Sets the block size of the IDX file.  An IDX binary file is composed of blocks.

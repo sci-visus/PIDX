@@ -404,8 +404,11 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
-    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO)
-      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n", header_io->idx->particles_position_variable_index);
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO) {
+      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
+              header_io->idx->particles_position_variable_index);
+      fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
+    }
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
     fprintf(idx_file_p, "(physical box)\n0 %f 0 %f 0 %f 0 0 0 0\n", header_io->idx->physical_bounds[0], header_io->idx->physical_bounds[1], header_io->idx->physical_bounds[2]);
@@ -525,8 +528,11 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
-    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO)
-      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n", header_io->idx->particles_position_variable_index);
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO) {
+      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
+              header_io->idx->particles_position_variable_index);
+      fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
+    }
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
 
@@ -652,8 +658,11 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
       fprintf(idx_file_p, "(io mode)\nl_part_idx\n");
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
-    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO)
-      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n", header_io->idx->particles_position_variable_index);
+    else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO) {
+      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
+              header_io->idx->particles_position_variable_index);
+      fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
+    }
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
     fprintf(idx_file_p, "(physical box)\n0 %f 0 %f 0 %f 0 0 0 0\n", header_io->idx->physical_bounds[0], header_io->idx->physical_bounds[1], header_io->idx->physical_bounds[2]);

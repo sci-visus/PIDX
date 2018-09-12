@@ -54,6 +54,19 @@ uint64_t getPowerOf2(int x)
   return n;
 }
 
+uint64_t int_pow(uint64_t base, uint64_t exp)
+{
+  uint64_t result = 1;
+  while (exp)
+  {
+    if (exp & 1)
+      result *= base;
+    exp /= 2;
+    base *= base;
+  }
+  return result;
+}
+
 unsigned int getLevelFromBlock (uint64_t block, int bits_per_block)
 {
   if (block == 0)
