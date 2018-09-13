@@ -222,6 +222,14 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
       (*file)->idx->particle_res_factor= atoi(line);
     }
 
+    if (strcmp(line, "(particle number)") == 0)
+    {
+      if ( fgets(line, sizeof line, fp) == NULL)
+        return PIDX_err_file;
+      line[strcspn(line, "\r\n")] = 0;
+      (*file)->idx->particle_number= atoi(line);
+    }
+
     if (strcmp(line, "(fields)") == 0)
     {
       if ( fgets(line, sizeof line, fp) == NULL)

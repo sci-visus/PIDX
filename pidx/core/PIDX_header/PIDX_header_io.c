@@ -408,6 +408,7 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
       fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
               header_io->idx->particles_position_variable_index);
       fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
+      fprintf(idx_file_p, "(particle number)\n%d\n", header_io->idx->particle_number);
     }
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
@@ -532,6 +533,7 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
       fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
               header_io->idx->particles_position_variable_index);
       fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
+      fprintf(idx_file_p, "(particle number)\n%d\n", header_io->idx->particle_number);
     }
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));
@@ -662,6 +664,7 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
       fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
               header_io->idx->particles_position_variable_index);
       fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
+      fprintf(idx_file_p, "(particle number)\n%d\n", header_io->idx->particle_number);
     }
 
     fprintf(idx_file_p, "(box)\n0 %lld 0 %lld 0 %lld 0 0 0 0\n", (long long)(header_io->idx->bounds[0] - 1), (long long)(header_io->idx->bounds[1] - 1), (long long)(header_io->idx->bounds[2] - 1));

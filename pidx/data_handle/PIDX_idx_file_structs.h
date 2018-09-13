@@ -93,6 +93,7 @@ struct idx_file_struct
 
   int particle_res_base;
   int particle_res_factor;
+  uint64_t particle_number;
 
   int current_resolution;
 

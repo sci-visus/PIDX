@@ -222,6 +222,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     MPI_Bcast(&((*file)->idx->particles_position_variable_index), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
     MPI_Bcast(&((*file)->idx->particle_res_base), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
     MPI_Bcast(&((*file)->idx->particle_res_factor), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+    MPI_Bcast(&((*file)->idx->particle_number), 1, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->simulation_comm);
   }
 
   if ((*file)->idx_c->simulation_rank != 0)

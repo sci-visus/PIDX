@@ -180,6 +180,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   (*file)->idx->particles_position_variable_index = 0;
   (*file)->idx->particle_res_base = 32;
   (*file)->idx->particle_res_factor = 2;
+  (*file)->idx->particle_number = 0;
   
   (*file)->idx->maxh = 0;
   (*file)->idx->max_file_count = 0;
