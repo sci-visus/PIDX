@@ -75,6 +75,19 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
   sprintf(file_name, "%s/time%09d/%d_0", directory_path, rst_id->idx_metadata->current_time_step, rst_id->idx_c->simulation_rank);
   int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
+  // reshuffling
+  int v0np = var0->restructured_super_patch->restructured_patch->particle_count;
+  int i, x[v0np];
+
+  for (i = 0; i < v0np; i++) x[i] = i;
+//  for (printf("before:"), i = 0; i < v0np || !printf("\n"); i++)
+//    printf(" %d", x[i]);
+
+  shuffle_int(x, v0np);
+
+//  for (printf("after: "), i = 0; i < v0np || !printf("\n"); i++)
+//    printf(" %d", x[i]);
+
   for (int v = rst_id->first_index; v < rst_id->last_index + 1; v = v + 1)
   {
     // copy the size and offset to output
@@ -89,7 +102,14 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
     for (int v1 = 0; v1 < v; v1++)
       data_offset = data_offset + (out_patch->particle_count * (rst_id->idx_metadata->variable[v1]->vps * (rst_id->idx_metadata->variable[v1]->bpv/CHAR_BIT)));
 
-    // TODO reshuffle here and benchmark  <<<<
+    // create reshuffle buffer and replace original buffer
+    unsigned char* reshuffle_buffer = malloc(out_patch->particle_count*bits);
+
+    for(i =0; i< out_patch->particle_count; i++)
+      memcpy(reshuffle_buffer+(x[i]*bits),var_start->restructured_super_patch->restructured_patch->buffer, bits);
+
+    free(var_start->restructured_super_patch->restructured_patch->buffer);
+    var_start->restructured_super_patch->restructured_patch->buffer = reshuffle_buffer;
 
     int buffer_size =  out_patch->particle_count * bits;
     uint64_t write_count = pwrite(fp, var_start->restructured_super_patch->restructured_patch->buffer, buffer_size, data_offset);

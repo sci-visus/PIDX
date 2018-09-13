@@ -49,6 +49,11 @@
 #define For(_D_) for((_D_)=0;(_D_)<PIDX_MAX_DIMENSIONS;(_D_)++)
 #define PGET(_Point_,_Coordinate_) ((&((_Point_).x))[(_Coordinate_)])
 
+void shuffle_int(int *list, size_t len);
+
+/* random integer from 0 to n-1 */
+int irand(int n);
+
 typedef struct {int x,y,z;} Point3D;
 
 void freeBox(int** box);
