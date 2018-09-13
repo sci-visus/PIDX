@@ -89,6 +89,8 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
     for (int v1 = 0; v1 < v; v1++)
       data_offset = data_offset + (out_patch->particle_count * (rst_id->idx_metadata->variable[v1]->vps * (rst_id->idx_metadata->variable[v1]->bpv/CHAR_BIT)));
 
+    // TODO reshuffle here and benchmark  <<<<
+
     int buffer_size =  out_patch->particle_count * bits;
     uint64_t write_count = pwrite(fp, var_start->restructured_super_patch->restructured_patch->buffer, buffer_size, data_offset);
     if (write_count != buffer_size)
