@@ -75,6 +75,9 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
   sprintf(file_name, "%s/time%09d/%d_0", directory_path, rst_id->idx_metadata->current_time_step, rst_id->idx_c->simulation_rank);
   int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
+  double particle_reshuffling_time = 0, temp_time;
+  temp_time = PIDX_get_time();
+
   // reshuffling
   int v0np = var0->restructured_super_patch->restructured_patch->particle_count;
   int i, x[v0np];
@@ -87,6 +90,8 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
 
 //  for (printf("after: "), i = 0; i < v0np || !printf("\n"); i++)
 //    printf(" %d", x[i]);
+
+  particle_reshuffling_time += PIDX_get_time() - temp_time;
 
   for (int v = rst_id->first_index; v < rst_id->last_index + 1; v = v + 1)
   {
@@ -103,6 +108,7 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
       data_offset = data_offset + (out_patch->particle_count * (rst_id->idx_metadata->variable[v1]->vps * (rst_id->idx_metadata->variable[v1]->bpv/CHAR_BIT)));
 
     // create reshuffle buffer and replace original buffer
+    temp_time = PIDX_get_time();
     unsigned char* reshuffle_buffer = malloc(out_patch->particle_count*bits);
 
     for(i =0; i< out_patch->particle_count; i++)
@@ -110,6 +116,8 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
 
     free(var_start->restructured_super_patch->restructured_patch->buffer);
     var_start->restructured_super_patch->restructured_patch->buffer = reshuffle_buffer;
+
+    particle_reshuffling_time += PIDX_get_time() - temp_time;
 
     int buffer_size =  out_patch->particle_count * bits;
     uint64_t write_count = pwrite(fp, var_start->restructured_super_patch->restructured_patch->buffer, buffer_size, data_offset);
@@ -123,6 +131,9 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
 
   free(file_name);
   free(directory_path);
+
+  if(rst_id->idx_c->simulation_rank == 0)
+    printf("reshuffling time %.4f\n", particle_reshuffling_time);
 
   return PIDX_success;
 }

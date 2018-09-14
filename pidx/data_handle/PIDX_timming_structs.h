@@ -61,6 +61,8 @@ struct PIDX_timming_struct
   double particle_meta_data_io_start, particle_meta_data_io_end;
   double particle_data_io_start, particle_data_io_end;
 
+  double particle_reshuffling_start, particle_reshuffling_end;
+
   double *rst_init_start, *rst_init_end;
   double *rst_meta_data_create_start, *rst_meta_data_create_end;
   double *rst_meta_data_io_start, *rst_meta_data_io_end;
