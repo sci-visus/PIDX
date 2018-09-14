@@ -137,6 +137,9 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
     memset(n_proc_patch, 0, sizeof (*n_proc_patch));
     int p_counter = 1;
 
+    // LOD read stuff: read only num particles until current resolution level
+    uint64_t curr_res_pcount = file->idx->particle_res_base * int_pow(file->idx->particle_res_factor,  file->idx->current_resolution);
+
     int patch_count = 0;
     for (int n = 0; n < number_cores; n++)
     {
@@ -193,7 +196,9 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
             PIDX_variable var = file->idx->variable[vid + svi];
             const uint64_t bytes_per_sample = var->vps * var->bpv/8;
 
-            const uint64_t proc_particle_read_size = n_proc_patch->particle_count * bytes_per_sample;
+            // TODO do not use fmin with uint64_t
+            const uint64_t proc_particle_read_size = fmin(n_proc_patch->particle_count * bytes_per_sample, curr_res_pcount * bytes_per_sample);
+
             PIDX_buffer *tmp_buf = &tmp_var_read_bufs[vid];
             PIDX_buffer_resize(tmp_buf, proc_particle_read_size);
 
@@ -219,7 +224,9 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
           PIDX_variable pos_var = file->idx->variable[file->idx->particles_position_variable_index];
           const uint64_t bytes_per_pos = pos_var->vps * pos_var->bpv/8;
 
-          for (uint64_t i = 0; i < n_proc_patch->particle_count; ++i)
+          const uint64_t proc_particle_count = fmin(n_proc_patch->particle_count, curr_res_pcount);
+
+          for (uint64_t i = 0; i < proc_particle_count; ++i)
           {
             // TODO WILL: This assumes position_var->vps == PIDX_MAX_DIMENSIONS
             if (pointInChunk(local_proc_patch, (double*)(pos_var_buf->buffer + i * bytes_per_pos)))

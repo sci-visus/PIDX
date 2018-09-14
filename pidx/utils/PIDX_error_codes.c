@@ -76,3 +76,4 @@ PIDX_return_code PIDX_err_flush                         = 27;
 PIDX_return_code PIDX_err_header                        = 28;
 PIDX_return_code PIDX_err_wavelet                       = 29;
 PIDX_return_code PIDX_err_metadata                      = 30;
+PIDX_return_code PIDX_err_res                           = 31;

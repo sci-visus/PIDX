@@ -91,6 +91,11 @@ struct idx_file_struct
   float compression_bit_rate;
   uint64_t chunk_size[PIDX_MAX_DIMENSIONS];
 
+  int particle_res_base;
+  int particle_res_factor;
+  uint64_t particle_number;
+
+  int current_resolution;
 
   enum PIDX_endian_type endian;                     /// 1 for little endian and 0 for big endian
   int flip_endian;                                  /// 1 for flipping endianness required

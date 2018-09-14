@@ -576,6 +576,8 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
   local_patch[0] = (double)patch_count;
+
+  uint64_t local_pcount = 0;
   for (int i = 0; i < patch_count; i++)
   {
     for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -584,6 +586,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
     for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + PIDX_MAX_DIMENSIONS + d + 1] = var0->restructured_super_patch->restructured_patch->physical_size[d];
 
+    local_pcount += var0->restructured_super_patch->restructured_patch->particle_count;
     local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + 2*PIDX_MAX_DIMENSIONS + 1] = var0->restructured_super_patch->restructured_patch->particle_count;
   }
 
@@ -591,6 +594,8 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   memset(global_patch, 0,(rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
   MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, rst_id->idx_c->simulation_comm);
+
+  MPI_Allreduce(&local_pcount, &rst_id->idx_metadata->particle_number, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_c->simulation_comm);
 
   global_patch[0] = (double)rst_id->idx_c->simulation_nprocs;
   global_patch[1] = (double)max_patch_count;
@@ -628,6 +633,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
 
 PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_id)
 {
+  /* TODO is this clean redundant??
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
@@ -639,7 +645,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_
     free(irsp->restructured_patch);
     free(irsp);
   }
-
+*/
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)

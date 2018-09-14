@@ -48,14 +48,6 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
 {
   PIDX_time time = file->time;
 
-  time->header_io_start = PIDX_get_time();
-  if (group_meta_data_init(file, svi, evi) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  time->header_io_end = PIDX_get_time();
-
   time->particle_meta_data_io_start = MPI_Wtime();
   if (PIDX_meta_data_write(file, svi) != PIDX_success)
   {
@@ -69,6 +61,7 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
+  uint64_t local_pcount = 0;
   PIDX_variable var0 = file->idx->variable[svi];
   for (int p = 0; p < var0->sim_patch_count; p++)
   {
@@ -115,11 +108,22 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
       data_offset = data_offset + buffer_size;
     }
 
+    local_pcount += var0->sim_patch[p]->particle_count;
+    MPI_Allreduce(&local_pcount, &file->idx->particle_number, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->idx_c->simulation_comm);
+
     close(fp);
   }
 
   free (directory_path);
   time->particle_data_io_end = MPI_Wtime();
+
+  time->header_io_start = PIDX_get_time();
+  if (group_meta_data_init(file, svi, evi) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+  time->header_io_end = PIDX_get_time();
 
   return PIDX_success;
 }

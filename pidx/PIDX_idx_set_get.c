@@ -152,6 +152,45 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_set_particle_resolution_base(PIDX_file file, const int resolution_base)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  if (resolution_base < 0)
+    return PIDX_err_res;
+
+  file->idx->particle_res_base = resolution_base;
+
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_set_particle_resolution_factor(PIDX_file file, const int resolution_factor)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  if (resolution_factor < 0)
+    return PIDX_err_res;
+
+  file->idx->particle_res_factor = resolution_factor;
+
+  return PIDX_success;
+}
+
+PIDX_return_code PIDX_set_current_resolution(PIDX_file file, const int current_resolution)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  if (current_resolution < 0)
+    return PIDX_err_res;
+
+  file->idx->current_resolution = current_resolution;
+
+  return PIDX_success;
+}
+
 
 
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* current_time_step)
