@@ -109,10 +109,8 @@ static void gather_all_patch_extents(PIDX_particles_rst_id rst_id)
 {
   rst_id->sim_max_patch_count = rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch_count;
 
-#ifdef PARTICLE_OPTIMIZED
   // rst_id->sim_max_patch_count will contain the maximum number of patch a process is holding
   MPI_Allreduce(&rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch_count, &rst_id->sim_max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->simulation_comm);
-#endif
 
   // buffer to hold the offset and size information of all patches across all processes
   rst_id->sim_multi_patch_r_count = malloc(sizeof (double) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
@@ -616,7 +614,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
     uint64_t write_count = pwrite(fp, global_patch, (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
     if (write_count != (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
-      fprintf(stderr, "[%s] [%d] pwrite() failed. [%d != %d] \n", __FILE__, __LINE__, write_count, (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
+      fprintf(stderr, "[%s] [%d] pwrite() failed. [%d != %d] \n", __FILE__, __LINE__, (int)write_count, (int)(rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
       return PIDX_err_io;
     }
     close(fp);

@@ -152,6 +152,48 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int current_ti
   return PIDX_success;
 }
 
+
+
+PIDX_return_code PIDX_set_restructuing_factor(PIDX_file file, float rst_factor_x, float rst_factor_y, float rst_factor_z)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  file->idx->restructuring_factor[0] = rst_factor_x;
+  file->idx->restructuring_factor[1] = rst_factor_y;
+  file->idx->restructuring_factor[2] = rst_factor_z;
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_get_restructuing_factor(PIDX_file file, float* rst_factor_x, float* rst_factor_y, float* rst_factor_z)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  *rst_factor_x = file->idx->restructuring_factor[0];
+  *rst_factor_y = file->idx->restructuring_factor[1];
+  *rst_factor_z = file->idx->restructuring_factor[2];
+
+  return PIDX_success;
+}
+
+
+
+PIDX_return_code PIDX_set_particle_regriding_factor(PIDX_file file, int factor)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  file->idx->particle_regridding_factor = (100 / factor);
+
+  return PIDX_success;
+}
+
+
+
 PIDX_return_code PIDX_set_particle_resolution_base(PIDX_file file, const int resolution_base)
 {
   if (!file)

@@ -193,8 +193,7 @@ PIDX_return_code particles_set_rst_box_size_for_raw_write(PIDX_io file, int svi)
 
   adjust_restructured_box_size(file);
 
-  int ret = populate_restructured_grid(file);
-  if (ret != PIDX_success)
+  if (populate_restructured_grid(file) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_rst;
@@ -213,7 +212,6 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
   double max_patch_size_y = file->idx->variable[svi]->sim_patch[0]->physical_size[1];
   double max_patch_size_z = file->idx->variable[svi]->sim_patch[0]->physical_size[2];
 
-#if 1
   double patch_size_x = 0, patch_size_y = 0, patch_size_z = 0;
   if (file->idx->variable[svi]->sim_patch_count != 0)
   {
@@ -225,12 +223,11 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
   MPI_Allreduce(&patch_size_x, &max_patch_size_x, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
   MPI_Allreduce(&patch_size_y, &max_patch_size_y, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
   MPI_Allreduce(&patch_size_z, &max_patch_size_z, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
-#endif
 
   // This scaling factor will set how many process are aggregated to one rank
-  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 2;
-  file->restructured_grid->physical_patch_size[1] = max_patch_size_y * 2;
-  file->restructured_grid->physical_patch_size[2] = max_patch_size_z * 2;
+  file->restructured_grid->physical_patch_size[0] = max_patch_size_x * file->idx->restructuring_factor[0];
+  file->restructured_grid->physical_patch_size[1] = max_patch_size_y * file->idx->restructuring_factor[1];
+  file->restructured_grid->physical_patch_size[2] = max_patch_size_z * file->idx->restructuring_factor[2];
 
   return;
 }
@@ -315,7 +312,6 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file)
 
         patch[index]->is_boundary_patch = 1;
 
-
         //Edge regular patches
         if ((i + ps[0]) > file->idx->physical_box_bounds[0])
         {
@@ -336,10 +332,10 @@ static PIDX_return_code populate_restructured_grid(PIDX_io file)
         }
 
         patch[index]->rank = rank_count * (file->idx_c->simulation_nprocs / (total_patch_count));
-        rank_count++;
+        rank_count = rank_count + file->idx->particle_regridding_factor;
       }
 
-  assert(rank_count <= total_patch_count);
+  //assert(rank_count <= total_patch_count);
 
   return PIDX_success;
 

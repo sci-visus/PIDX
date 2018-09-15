@@ -598,9 +598,15 @@ static void set_pidx_file(int ts)
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
   if (mode == 0)
+  {
+    PIDX_set_restructuing_factor(file, 1,1,1);
     PIDX_set_io_mode(file, PIDX_PARTICLE_IO);
+  }
   else
+  {
+    PIDX_set_restructuing_factor(file, 2,2,2);
     PIDX_set_io_mode(file, PIDX_RST_PARTICLE_IO);
+  }
 
   return;
 }

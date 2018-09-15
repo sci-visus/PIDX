@@ -108,6 +108,7 @@ static int process_count = 1, rank = 0;
 static unsigned long long logical_global_box_size[NUM_DIMS];
 static unsigned long long logical_local_box_offset[NUM_DIMS];
 static unsigned long long logical_local_box_size[NUM_DIMS];
+static float restructuring_factor[NUM_DIMS];
 
 static double physical_global_box_size[NUM_DIMS];
 static double physical_local_box_offset[NUM_DIMS];
@@ -124,7 +125,7 @@ static double physical_local_box_size[NUM_DIMS];
 static int variable_count = 7;
 
 static int roi_rate = 100;
-static int mode = 0;
+static int grid_adjuster = 0;
 static int time_step_count = 1;
 static uint64_t particle_count = 32;
 static char output_file_template[512];
@@ -168,7 +169,7 @@ static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -t 4 -f 
                      "  -f: file name template (without .idx)\n"
                      "  -t: number of timesteps\n"
                      "  -p: number of particles per patch\n"
-                     "  -m: I/O mode (0 for ffp, 1 for rst) \n"
+                     "  -a: Grid adjuster (0 for no grid adjustment, 1 for grid adjustment) \n"
                      "  -r: Region of interest in percent \n";
 
 int main(int argc, char **argv)
@@ -238,7 +239,7 @@ static void init_mpi(int argc, char **argv)
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:p:m:r:";
+  char flags[] = "g:l:r:f:t:c:a:r:p:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -256,6 +257,12 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
 
+
+    case('r'): // restructuring factor
+      if ((sscanf(optarg, "%fx%fx%f", &restructuring_factor[X], &restructuring_factor[Y], &restructuring_factor[Z]) == EOF) ||(restructuring_factor[X] < 1 || restructuring_factor[Y] < 1 || restructuring_factor[Z] < 1))
+        terminate_with_error_msg("Invalid local dimension\n%s", usage);
+      break;
+
     case('f'): // output file name
       if (sprintf(output_file_template, "%s", optarg) < 0)
         terminate_with_error_msg("Invalid output file name template\n%s", usage);
@@ -267,17 +274,17 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('p'): // number of particles per patch
+    case('c'): // number of particles per patch
       if (sscanf(optarg, "%lu", &particle_count) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('m'): // I/O mode
-      if (sscanf(optarg, "%d", &mode) < 0)
+    case('a'): // grid adjuster
+      if (sscanf(optarg, "%d", &grid_adjuster) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('r'): // ROI rate
+    case('p'): // ROI rate
       if (sscanf(optarg, "%d", &roi_rate) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
@@ -385,22 +392,19 @@ static void calculate_per_process_offsets()
   {
     particle_count = (particle_count * 100) / roi_rate;
 
-    printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f] -- %d\n", rank,
+    /*
+    printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f] -- %d\n",      rank,
            logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z],
            physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z],
            logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z],
            logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z],
            physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z],
            physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z], particle_count);
+    */
   }
   else
   {
     particle_count = 0;
-
-    //physical_local_box_offset[X] = 0;
-    //physical_local_box_offset[Y] = 0;
-    //physical_local_box_offset[Z] = 0;
-
     physical_local_box_size[X] = 0;
     physical_local_box_size[Y] = 0;
     physical_local_box_size[Z] = 0;
@@ -451,7 +455,6 @@ static void create_synthetic_simulation_data()
   double color;
   int type;
   int particle_type[TYPE_COUNT] = {1,2,3,4,5};
-  double particle_color[COLOR_COUNT] = {0.25, 0.75};
   int64_t particle_id;
 
 #if DEBUG_PRINT_OUTPUT
@@ -620,10 +623,10 @@ static void set_pidx_file(int ts)
   PIDX_set_particles_position_variable_index(file, PARTICLES_POSITION_VAR);
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
-  if (mode == 0)
-    PIDX_set_io_mode(file, PIDX_PARTICLE_IO);
-  else
-    PIDX_set_io_mode(file, PIDX_RST_PARTICLE_IO);
+  if (grid_adjuster == 1)
+    PIDX_set_particle_regriding_factor(file, roi_rate);
+  PIDX_set_restructuing_factor(file, restructuring_factor[X], restructuring_factor[Y], restructuring_factor[Z]);
+  PIDX_set_io_mode(file, PIDX_RST_PARTICLE_IO);
 
   return;
 }

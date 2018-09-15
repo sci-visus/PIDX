@@ -86,6 +86,9 @@ struct idx_file_struct
   char bitSequence[512];                            /// bitsequence used for HZ indexing, controls the layout
   char bitPattern[512];
 
+  int particle_regridding_factor;
+  float restructuring_factor[PIDX_MAX_DIMENSIONS];    /// To be used for restructuring only (controls two phase IO)
+
   int compression_type;
   int compression_factor;
   float compression_bit_rate;
