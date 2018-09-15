@@ -49,6 +49,13 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
   PIDX_time time = file->time;
 
   time->particle_meta_data_io_start = MPI_Wtime();
+
+  if (raw_headers_create_folder_structure(file, svi, evi, file->idx->filename) != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
   if (PIDX_meta_data_write(file, svi) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
@@ -70,6 +77,11 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
     sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->simulation_rank, p);
 
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
+    if (fp < 0)
+    {
+      fprintf(stderr, "[%s] [%d] pwrite() failed Filename %s fp %d\n", __FILE__, __LINE__, file_name, fp);
+      return PIDX_err_io;
+    }
 
     uint64_t data_offset = 0;
     for (int si = svi; si < evi; si++)
@@ -102,7 +114,7 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
       uint64_t write_count = pwrite(fp, var->sim_patch[p]->buffer, buffer_size, data_offset);
       if (write_count != buffer_size)
       {
-        fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+        fprintf(stderr, "[%s] [%d] pwrite() failed Filename %s [%lld != %lld]\n", __FILE__, __LINE__, file_name, (unsigned long long)buffer_size, (unsigned long long)write_count);
         return PIDX_err_io;
       }
       data_offset = data_offset + buffer_size;
@@ -117,12 +129,14 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
   free (directory_path);
   time->particle_data_io_end = MPI_Wtime();
 
-  time->header_io_start = PIDX_get_time();
-  if (group_meta_data_init(file, svi, evi) != PIDX_success)
+  time->header_io_start = PIDX_get_time();  
+  // Creates the file heirarchy and writes the header info for all binary files
+  if (raw_headers_create_idx_file(file, svi, evi, file->idx->filename) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
   time->header_io_end = PIDX_get_time();
 
   return PIDX_success;
@@ -224,6 +238,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
+  uint64_t local_pcount = 0;
   local_patch[0] = (double)patch_count;
   for (int i = 0; i < patch_count; i++)
   {
@@ -233,6 +248,7 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
     for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + PIDX_MAX_DIMENSIONS + d + 1] = var0->sim_patch[i]->physical_size[d];
 
+    local_pcount += var0->sim_patch[i]->particle_count;
     local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + 2*PIDX_MAX_DIMENSIONS + 1] = var0->sim_patch[i]->particle_count;
   }
 
@@ -240,6 +256,8 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
   memset(global_patch, 0,(file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
   MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, file->idx_c->simulation_comm);
+
+  MPI_Allreduce(&local_pcount, &file->idx->particle_number, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, file->idx_c->simulation_comm);
 
   global_patch[0] = (double)file->idx_c->simulation_nprocs;
   global_patch[1] = (double)max_patch_count;
@@ -343,12 +361,7 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int svi)
 
 static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi)
 {
-  // Creates the file heirarchy and writes the header info for all binary files
-  if (init_raw_headers_layout(file, svi, evi, file->idx->filename) != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
+
 
   return PIDX_success;
 }

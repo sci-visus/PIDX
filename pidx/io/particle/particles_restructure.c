@@ -213,7 +213,7 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
   double max_patch_size_y = file->idx->variable[svi]->sim_patch[0]->physical_size[1];
   double max_patch_size_z = file->idx->variable[svi]->sim_patch[0]->physical_size[2];
 
-#ifdef PARTICLE_OPTIMIZED
+#if 1
   double patch_size_x = 0, patch_size_y = 0, patch_size_z = 0;
   if (file->idx->variable[svi]->sim_patch_count != 0)
   {
@@ -226,8 +226,6 @@ static void guess_restructured_box_size(PIDX_io file, int svi)
   MPI_Allreduce(&patch_size_y, &max_patch_size_y, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
   MPI_Allreduce(&patch_size_z, &max_patch_size_z, 1, MPI_DOUBLE, MPI_MAX, file->idx_c->simulation_comm);
 #endif
-
-
 
   // This scaling factor will set how many process are aggregated to one rank
   file->restructured_grid->physical_patch_size[0] = max_patch_size_x * 2;

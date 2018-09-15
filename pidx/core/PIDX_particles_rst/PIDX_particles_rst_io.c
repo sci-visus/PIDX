@@ -84,16 +84,17 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
   // reshuffling
   int v0np = var0->restructured_super_patch->restructured_patch->particle_count;
   int i;
-  int *x =malloc(sizeof(int)*v0np);
+  int *x = malloc(sizeof(int)*v0np);
 
-  for (i = 0; i < v0np; i++) x[i] = i;
-//  for (printf("before:"), i = 0; i < v0np || !printf("\n"); i++)
-//    printf(" %d", x[i]);
+  for (i = 0; i < v0np; i++)
+    x[i] = i;
+  //for (printf("before:"), i = 0; i < v0np || !printf("\n"); i++)
+  //  printf(" %d", x[i]);
 
   shuffle_int(x, v0np);
 
-//  for (printf("after: "), i = 0; i < v0np || !printf("\n"); i++)
-//    printf(" %d", x[i]);
+  //for (printf("after: "), i = 0; i < v0np || !printf("\n"); i++)
+  //  printf(" %d", x[i]);
 
   particle_reshuffling_time += PIDX_get_time() - temp_time;
 #endif
@@ -117,8 +118,8 @@ PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id r
     temp_time = PIDX_get_time();
     unsigned char* reshuffle_buffer = malloc(out_patch->particle_count*bits);
 
-    for(i =0; i< out_patch->particle_count; i++)
-      memcpy(reshuffle_buffer+(x[i]*bits),var_start->restructured_super_patch->restructured_patch->buffer, bits);
+    for(int i =0; i< out_patch->particle_count; i++)
+      memcpy(reshuffle_buffer+(x[i]*bits),var_start->restructured_super_patch->restructured_patch->buffer + i*bits, bits);
 
     free(var_start->restructured_super_patch->restructured_patch->buffer);
     var_start->restructured_super_patch->restructured_patch->buffer = reshuffle_buffer;

@@ -569,15 +569,13 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
   int max_patch_count;
   int patch_count = var0->restructured_super_patch_count;
-  assert(var0->restructured_super_patch_count <= 1);
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->simulation_comm);
 
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
-  local_patch[0] = (double)patch_count;
-
   uint64_t local_pcount = 0;
+  local_patch[0] = (double)patch_count;
   for (int i = 0; i < patch_count; i++)
   {
     for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
@@ -594,6 +592,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   memset(global_patch, 0,(rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
   MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, rst_id->idx_c->simulation_comm);
+
 
   MPI_Allreduce(&local_pcount, &rst_id->idx_metadata->particle_number, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_c->simulation_comm);
 
@@ -617,7 +616,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
     uint64_t write_count = pwrite(fp, global_patch, (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
     if (write_count != (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
-      fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+      fprintf(stderr, "[%s] [%d] pwrite() failed. [%d != %d] \n", __FILE__, __LINE__, write_count, (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
       return PIDX_err_io;
     }
     close(fp);

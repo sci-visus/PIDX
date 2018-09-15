@@ -39,7 +39,43 @@
  *
  */
 
+/*
+  PIDX write example
 
+  In this example we show how to write data using the PIDX library.
+
+  We consider a global 3D regular grid domain that we will call
+  global domain (g).
+  This global domain represents the grid space where all the data are stored.
+
+  In a parallel environment each core (e.g. MPI rank) owns a portion of the data
+  that has to be written on the disk. We refer to this portion of the domain as
+  local domain (l).
+
+  In this example we well see how to execute parallel write with PIDX of a
+  syntethic dataset.
+
+  In the following picture is represented a sample domain decomposition
+  of the global domain (l) in per-core local domains (l), sometimes referred
+  as patches.
+  In this example all the local domains have same dimesions for simplicity.
+  PIDX supports different number and sizes of patches per core.
+
+             *---------*--------*
+           /         /         /| P7
+          *---------*---------* |
+         /         /         /| |
+        *---------*---------* | *
+        |         |         | |/|           --------->        IDX Data format
+        |         |         | * |
+        | P4      | P5      |/| | P3
+        *---------*---------* | *
+        |         |         | |/
+        |         |         | *
+        | P0      | P1      |/
+        *---------*---------*
+
+*/
 #if !defined _MSC_VER
 #include <unistd.h>
 #include <time.h>
@@ -60,8 +96,8 @@
 
 // these defines are to test different ordering
 // of the position variable
-#define PARTICLES_POSITION_VAR 1
-#define PARTICLES_COLOR_VAR 0
+#define PARTICLES_POSITION_VAR 0
+#define PARTICLES_COLOR_VAR 1
 
 #define TYPE_COUNT 5
 #define COLOR_COUNT 2
@@ -87,7 +123,7 @@ static double physical_local_box_size[NUM_DIMS];
  */
 static int variable_count = 7;
 
-
+static int roi_rate = 100;
 static int mode = 0;
 static int time_step_count = 1;
 static uint64_t particle_count = 32;
@@ -124,7 +160,7 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
+static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./particle_write -g 64x64x64 -l 32x32x32 -p 64 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
@@ -132,7 +168,8 @@ static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 
                      "  -f: file name template (without .idx)\n"
                      "  -t: number of timesteps\n"
                      "  -p: number of particles per patch\n"
-                     "  -m: I/O mode (0 for ffp, 1 for rst) \n";
+                     "  -m: I/O mode (0 for ffp, 1 for rst) \n"
+                     "  -r: Region of interest in percent \n";
 
 int main(int argc, char **argv)
 {
@@ -240,6 +277,11 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
+    case('r'): // ROI rate
+      if (sscanf(optarg, "%d", &roi_rate) < 0)
+        terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
     default:
       terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
@@ -338,15 +380,32 @@ static void calculate_per_process_offsets()
   physical_local_box_offset[Y] = (slice / sub_div[X]) * physical_local_box_size[Y];
   physical_local_box_offset[X] = (slice % sub_div[X]) * physical_local_box_size[X];
 
-  /*
-  printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f]\n", rank,
-         logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z],
-         physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z],
-         logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z],
-         logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z],
-         physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z],
-         physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z]);
-   */
+
+  if (physical_local_box_offset[Z] < (roi_rate * physical_global_box_size[Z]) / 100)
+  {
+    particle_count = (particle_count * 100) / roi_rate;
+
+    printf("[%d] [%lld %lld %lld : %f %f %f] - [%lld %lld %lld - %lld %lld %lld] [%f %f %f - %f %f %f] -- %d\n", rank,
+           logical_global_box_size[X], logical_global_box_size[Y], logical_global_box_size[Z],
+           physical_global_box_size[X], physical_global_box_size[Y], physical_global_box_size[Z],
+           logical_local_box_offset[X], logical_local_box_offset[Y], logical_local_box_offset[Z],
+           logical_local_box_size[X], logical_local_box_size[Y], logical_local_box_size[Z],
+           physical_local_box_offset[X], physical_local_box_offset[Y], physical_local_box_offset[Z],
+           physical_local_box_size[X], physical_local_box_size[Y], physical_local_box_size[Z], particle_count);
+  }
+  else
+  {
+    particle_count = 0;
+
+    //physical_local_box_offset[X] = 0;
+    //physical_local_box_offset[Y] = 0;
+    //physical_local_box_offset[Z] = 0;
+
+    physical_local_box_size[X] = 0;
+    physical_local_box_size[Y] = 0;
+    physical_local_box_size[Z] = 0;
+  }
+
 }
 
 //----------------------------------------------------------------
