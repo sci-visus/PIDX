@@ -92,7 +92,7 @@
 
 #include <math.h>
 
-#define DEBUG_PRINT_OUTPUT 1
+#define DEBUG_PRINT_OUTPUT 0
 
 // these defines are to test different ordering
 // of the position variable
@@ -161,16 +161,16 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -t 4 -f output_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./particle_write -g 64x64x64 -l 32x32x32 -p 64 -t 4 -f output_idx_file_name\n"
+static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -r 1x1x1 -t 4 -c 64 -a 0 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./particle_write -g 64x64x64 -l 32x32x32 -r 1x1x1 -c 64 -a 0 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -r: restructured box dimension\n"
+                     "  -r: number of restructing box per axis\n"
                      "  -f: file name template (without .idx)\n"
                      "  -t: number of timesteps\n"
-                     "  -p: number of particles per patch\n"
+                     "  -c: number of particles per patch\n"
                      "  -a: Grid adjuster (0 for no grid adjustment, 1 for grid adjustment) \n"
-                     "  -r: Region of interest in percent \n";
+                     "  -p: Region of interest in percent \n";
 
 int main(int argc, char **argv)
 {

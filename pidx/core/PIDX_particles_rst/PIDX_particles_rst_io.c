@@ -53,7 +53,7 @@
 
 #include "../../PIDX_inc.h"
 
-#define DO_RESHUFFLING 1
+#define DO_RESHUFFLING 0
 
 // Writes out the restructured data (super patch)
 PIDX_return_code PIDX_particles_rst_buf_aggregated_write(PIDX_particles_rst_id rst_id)
