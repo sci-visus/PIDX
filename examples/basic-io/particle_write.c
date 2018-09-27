@@ -92,7 +92,7 @@
 
 #include <math.h>
 
-#define DEBUG_PRINT_OUTPUT 1
+#define DEBUG_PRINT_OUTPUT 0
 
 // these defines are to test different ordering
 // of the position variable
