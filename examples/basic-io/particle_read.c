@@ -86,7 +86,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define DEBUG_PRINT_OUTPUT 1
+#define DEBUG_PRINT_OUTPUT 0
 
 #define PARTICLES_POSITION_VAR 0
 #define PARTICLES_COLOR_VAR 1
@@ -104,7 +104,6 @@ static unsigned long long logical_local_box_size[3] = {0, 0, 0};
 static double physical_global_box_size[NUM_DIMS] = {0};
 static double physical_local_box_offset[NUM_DIMS] = {0};
 static double physical_local_box_size[NUM_DIMS] = {0};
-static float restructuring_factor[NUM_DIMS] = {1,1,1};
 
 static int current_ts = 1;
 static int variable_index = 0;
@@ -126,15 +125,14 @@ static int bits_per_sample = 0;
 static int values_per_sample = 0;
 static char type_name[512];
 static char output_file_name[512] = "test.idx";
-static char *usage = "Serial Usage: ./particle_read -g 32x32x32 -l 32x32x32 -v 0 -r 1x1x1 -f input_idx_file_name\n"
-                     "Parallel Usage: mpirun -n 8 ./particle_read -g 32x32x32 -l 16x16x16 -r 1x1x1 -v 0 -f input_idx_file_name\n"
+static char *usage = "Serial Usage: ./particle_read -g 32x32x32 -l 32x32x32 -v 0 -f input_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./particle_read -g 32x32x32 -l 16x16x16 -v 0 -f input_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
                      "  -f: IDX input filename\n"
                      "  -t: time step index to read\n"
                      "  -v: variable index to read\n"
-                     "  -r: restructuring factor\n"
-                     "  -d: max resolution\n"
+                     "  -r: max resolution\n"
                      "  -c: read all vars to simulate checkpoint/restart";
 
 
@@ -363,7 +361,7 @@ static void init_mpi(int argc, char **argv)
 
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:r:c:d:";
+  char flags[] = "g:l:f:t:v:r:c:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -399,12 +397,7 @@ static void parse_args(int argc, char **argv)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
       break;
 
-    case('r'): // restructuring factor
-      if ((sscanf(optarg, "%fx%fx%f", &restructuring_factor[X], &restructuring_factor[Y], &restructuring_factor[Z]) == EOF) ||(restructuring_factor[X] < 1 || restructuring_factor[Y] < 1 || restructuring_factor[Z] < 1))
-          terminate_with_error_msg("Invalid local dimension\n%s", usage);
-        break;
-
-    case('d'): // resolution
+    case('r'): // resolution
       if (sscanf(optarg, "%d", &resolution) <= 0)
         terminate_with_error_msg("Invalid resolution\n%s", usage);
       break;
@@ -513,8 +506,6 @@ static void set_pidx_file(int ts)
 
   if(resolution > 0)
     PIDX_set_current_resolution(file, resolution);
-
-  PIDX_set_restructuing_factor(file, restructuring_factor[X], restructuring_factor[Y], restructuring_factor[Z]);
 
   //PIDX_disable_agg(file);
   return;
