@@ -260,7 +260,7 @@ static void parse_args(int argc, char **argv)
 
     case('r'): // restructuring factor
       if ((sscanf(optarg, "%fx%fx%f", &restructuring_factor[X], &restructuring_factor[Y], &restructuring_factor[Z]) == EOF) ||(restructuring_factor[X] < 1 || restructuring_factor[Y] < 1 || restructuring_factor[Z] < 1))
-        terminate_with_error_msg("Invalid local dimension\n%s", usage);
+        terminate_with_error_msg("Invalid restructuring dimension\n%s", usage);
       break;
 
     case('f'): // output file name
