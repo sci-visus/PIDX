@@ -96,7 +96,6 @@ extern "C" {
 
 #include "./metadata/PIDX_metadata_cache.h"
 
-#include "./data_handle/PIDX_data_layout.h"
 #include "./data_handle/PIDX_blocks.h"
 #include "./data_handle/PIDX_data_structs.h"
 

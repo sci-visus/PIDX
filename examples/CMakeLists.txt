@@ -79,6 +79,12 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(particle_write "basic-io/particle_write.c")
   TARGET_LINK_LIBRARIES(particle_write ${EXAMPLES_LINK_LIBS})
 
+  PIDX_ADD_CEXECUTABLE(non_uniform_particle_write "basic-io/non_uniform_particle_write.c")
+  TARGET_LINK_LIBRARIES(non_uniform_particle_write ${EXAMPLES_LINK_LIBS})
+
+  PIDX_ADD_CEXECUTABLE(gradient_particle_write "basic-io/gradient_particle_write.c")
+  TARGET_LINK_LIBRARIES(gradient_particle_write ${EXAMPLES_LINK_LIBS})
+
   PIDX_ADD_CEXECUTABLE(particle_read "basic-io/particle_read.c")
   TARGET_LINK_LIBRARIES(particle_read ${EXAMPLES_LINK_LIBS})
 

@@ -109,10 +109,8 @@ static void gather_all_patch_extents(PIDX_particles_rst_id rst_id)
 {
   rst_id->sim_max_patch_count = rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch_count;
 
-#ifdef PARTICLE_OPTIMIZED
   // rst_id->sim_max_patch_count will contain the maximum number of patch a process is holding
   MPI_Allreduce(&rst_id->idx_metadata->variable[rst_id->first_index]->sim_patch_count, &rst_id->sim_max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->simulation_comm);
-#endif
 
   // buffer to hold the offset and size information of all patches across all processes
   rst_id->sim_multi_patch_r_count = malloc(sizeof (double) * rst_id->idx_c->simulation_nprocs * PIDX_MAX_DIMENSIONS * rst_id->sim_max_patch_count);
@@ -569,12 +567,12 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   PIDX_variable var0 = rst_id->idx_metadata->variable[rst_id->first_index];
   int max_patch_count;
   int patch_count = var0->restructured_super_patch_count;
-  assert(var0->restructured_super_patch_count <= 1);
   MPI_Allreduce(&patch_count, &max_patch_count, 1, MPI_INT, MPI_MAX, rst_id->idx_c->simulation_comm);
 
   double *local_patch = malloc(sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
   memset(local_patch, 0, sizeof(double) * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1));
 
+  uint64_t local_pcount = 0;
   local_patch[0] = (double)patch_count;
   for (int i = 0; i < patch_count; i++)
   {
@@ -584,6 +582,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
     for (int d = 0; d < PIDX_MAX_DIMENSIONS; d++)
       local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + PIDX_MAX_DIMENSIONS + d + 1] = var0->restructured_super_patch->restructured_patch->physical_size[d];
 
+    local_pcount += var0->restructured_super_patch->restructured_patch->particle_count;
     local_patch[i * (2 * PIDX_MAX_DIMENSIONS + 1) + 2*PIDX_MAX_DIMENSIONS + 1] = var0->restructured_super_patch->restructured_patch->particle_count;
   }
 
@@ -591,6 +590,9 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
   memset(global_patch, 0,(rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
 
   MPI_Allgather(local_patch, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, global_patch + 2, (2 * PIDX_MAX_DIMENSIONS + 1) * max_patch_count + 1, MPI_DOUBLE, rst_id->idx_c->simulation_comm);
+
+
+  MPI_Allreduce(&local_pcount, &rst_id->idx_metadata->particle_number, 1, MPI_UNSIGNED_LONG_LONG, MPI_SUM, rst_id->idx_c->simulation_comm);
 
   global_patch[0] = (double)rst_id->idx_c->simulation_nprocs;
   global_patch[1] = (double)max_patch_count;
@@ -612,7 +614,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
     uint64_t write_count = pwrite(fp, global_patch, (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
     if (write_count != (rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {
-      fprintf(stderr, "[%s] [%d] pwrite() failed.\n", __FILE__, __LINE__);
+      fprintf(stderr, "[%s] [%d] pwrite() failed. [%d != %d] \n", __FILE__, __LINE__, (int)write_count, (int)(rst_id->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double));
       return PIDX_err_io;
     }
     close(fp);
@@ -628,6 +630,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_write(PIDX_particles_rst_id rst_id
 
 PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_id)
 {
+  /* TODO is this clean redundant??
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
   {
     PIDX_super_patch irsp = rst_id->intersected_restructured_super_patch[i];
@@ -639,7 +642,7 @@ PIDX_return_code PIDX_particles_rst_meta_data_destroy(PIDX_particles_rst_id rst_
     free(irsp->restructured_patch);
     free(irsp);
   }
-
+*/
   for (int i = 0; i < rst_id->intersected_restructured_super_patch_count; i++)
     for (uint64_t j = 0; j < rst_id->intersected_restructured_super_patch[i]->patch_count; j++)
       if (rst_id->idx_c->simulation_rank == rst_id->intersected_restructured_super_patch[i]->source_patch[j].rank)

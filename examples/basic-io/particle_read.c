@@ -86,10 +86,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#define DEBUG_PRINT_OUTPUT 1
+#define DEBUG_PRINT_OUTPUT 0
 
-#define PARTICLES_POSITION_VAR 1
-#define PARTICLES_COLOR_VAR 0
+#define PARTICLES_POSITION_VAR 0
+#define PARTICLES_COLOR_VAR 1
 
 #if defined _MSC_VER
   #include "utils/PIDX_windows_utils.h"
@@ -107,6 +107,8 @@ static double physical_local_box_size[NUM_DIMS] = {0};
 
 static int current_ts = 1;
 static int variable_index = 0;
+static int resolution = 0;
+
 static char output_file_template[512] = "test_idx";
 static unsigned char *data = NULL;
 static uint64_t particle_count = 0;
@@ -130,6 +132,7 @@ static char *usage = "Serial Usage: ./particle_read -g 32x32x32 -l 32x32x32 -v 0
                      "  -f: IDX input filename\n"
                      "  -t: time step index to read\n"
                      "  -v: variable index to read\n"
+                     "  -r: max resolution\n"
                      "  -c: read all vars to simulate checkpoint/restart";
 
 
@@ -287,7 +290,8 @@ int main(int argc, char **argv)
   }
   
   fclose(fp);
-  
+
+#if 0
   int error_count = 0;
   int ch1, ch2;
 
@@ -315,14 +319,15 @@ int main(int argc, char **argv)
     fclose(fpv);
     fclose(fp);
   }
+#endif
   
 #endif
   
-  int total_errors = 0;
-  MPI_Allreduce(&error_count, &total_errors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+//  int total_errors = 0;
+//  MPI_Allreduce(&error_count, &total_errors, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   
-  if(rank == 0)
-    printf("Test Result: %s\n", total_errors > 0 ? "failed" : "success");
+//  if(rank == 0)
+//    printf("Test Result: %s\n", total_errors > 0 ? "failed" : "success");
   
   free(data);
   if (checkpoint_restart)
@@ -337,7 +342,7 @@ int main(int argc, char **argv)
   }
   shutdown_mpi();
   
-  return error_count;
+  return 0;
 
 }
 
@@ -356,7 +361,7 @@ static void init_mpi(int argc, char **argv)
 
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:c";
+  char flags[] = "g:l:f:t:v:r:c:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -390,6 +395,11 @@ static void parse_args(int argc, char **argv)
     case('v'): // number of variables
       if (sscanf(optarg, "%d", &variable_index) < 0)
         terminate_with_error_msg("Invalid variable file\n%s", usage);
+      break;
+
+    case('r'): // resolution
+      if (sscanf(optarg, "%d", &resolution) <= 0)
+        terminate_with_error_msg("Invalid resolution\n%s", usage);
       break;
 
     case('c'): // checkpoint restart style read
@@ -493,6 +503,9 @@ static void set_pidx_file(int ts)
   PIDX_set_current_time_step(file, ts);
   // Get the total number of variables
   PIDX_get_variable_count(file, &variable_count);
+
+  if(resolution > 0)
+    PIDX_set_current_resolution(file, resolution);
 
   //PIDX_disable_agg(file);
   return;

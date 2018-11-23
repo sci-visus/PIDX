@@ -106,6 +106,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   //(*file)->enable_raw_dump = 0;
 
   (*file)->idx->current_time_step = 0;
+  (*file)->idx->current_resolution = 32;
   (*file)->idx->variable_count = -1;
   (*file)->idx_dbg->enable_agg = 1;
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
@@ -217,7 +218,12 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
     (*file)->idx->samples_per_block = (int)pow(2, (*file)->idx->bits_per_block);
   
   if ((*file)->idx->io_type != PIDX_PARTICLE_IO || (*file)->idx->io_type != PIDX_RST_PARTICLE_IO)
+  {
     MPI_Bcast(&((*file)->idx->particles_position_variable_index), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+    MPI_Bcast(&((*file)->idx->particle_res_base), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+    MPI_Bcast(&((*file)->idx->particle_res_factor), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+    MPI_Bcast(&((*file)->idx->particle_number), 1, MPI_UNSIGNED_LONG_LONG, 0, (*file)->idx_c->simulation_comm);
+  }
 
   if ((*file)->idx_c->simulation_rank != 0)
   {
@@ -262,6 +268,8 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
 #endif
   (*file)->idx->flip_endian = 0;
+
+
 
   unsigned int endian = 1;
   int current_endian = 0;
@@ -348,6 +356,7 @@ PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, P
   //(*file)->enable_raw_dump = 0;
   
   (*file)->idx->current_time_step = 0;
+  (*file)->idx->current_resolution = 32;
   (*file)->idx->variable_count = -1;
   (*file)->idx_dbg->enable_agg = 1;
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;

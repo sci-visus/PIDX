@@ -54,6 +54,43 @@ uint64_t getPowerOf2(int x)
   return n;
 }
 
+int irand(int n)
+{
+  int r, rand_max = RAND_MAX - (RAND_MAX % n);
+  /* reroll until r falls in a range that can be evenly
+   * distributed in n bins.  Unless n is comparable to
+   * to RAND_MAX, it's not *that* important really. */
+  while ((r = rand()) >= rand_max);
+  return r / (rand_max / n);
+}
+
+void shuffle_int(int *list, size_t len) {
+  int j;
+  int tmp;
+  while(len) {
+    j = irand(len);
+    if (j != len - 1) {
+      tmp = list[j];
+      list[j] = list[len - 1];
+      list[len - 1] = tmp;
+    }
+    len--;
+  }
+}
+
+uint64_t int_pow(uint64_t base, uint64_t exp)
+{
+  uint64_t result = 1;
+  while (exp)
+  {
+    if (exp & 1)
+      result *= base;
+    exp /= 2;
+    base *= base;
+  }
+  return result;
+}
+
 unsigned int getLevelFromBlock (uint64_t block, int bits_per_block)
 {
   if (block == 0)

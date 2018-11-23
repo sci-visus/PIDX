@@ -234,6 +234,30 @@ PIDX_return_code PIDX_set_current_time_step(PIDX_file file, const int time_step)
 PIDX_return_code PIDX_get_current_time_step(PIDX_file file, int* time_step);
 
 
+///
+/// \brief PIDX_set_restructuing_factor
+/// \param file
+/// \param rst_factor
+/// \return
+///
+PIDX_return_code PIDX_set_restructuing_factor(PIDX_file file, float rst_factor_x, float rst_factor_y, float rst_factor_z);
+
+
+///
+/// \brief PIDX_get_restructuing_factor
+/// \param file
+/// \param rst_factor
+/// \return
+///
+PIDX_return_code PIDX_get_restructuing_factor(PIDX_file file, float* rst_factor_x, float* rst_factor_y, float* rst_factor_z);
+
+
+// TODO comment
+PIDX_return_code PIDX_set_particle_resolution_base(PIDX_file file, const int resolution_base);
+
+PIDX_return_code PIDX_set_particle_resolution_factor(PIDX_file file, const int resolution_factor);
+
+PIDX_return_code PIDX_set_current_resolution(PIDX_file file, const int current_resolution);
 
 ///
 /// Sets the block size of the IDX file.  An IDX binary file is composed of blocks.
@@ -254,6 +278,16 @@ PIDX_return_code PIDX_set_block_size(PIDX_file file, const int block_size);
 /// It is PIDX_success if the task is completed correctly.
 ///
 PIDX_return_code PIDX_get_block_size(PIDX_file file, int* block_size);
+
+
+
+///
+/// \brief PIDX_set_particle_regriding_factor
+/// \param file
+/// \param factor
+/// \return
+///
+PIDX_return_code PIDX_set_particle_regriding_factor(PIDX_file file, int factor);
 
 
 

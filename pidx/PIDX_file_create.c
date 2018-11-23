@@ -155,6 +155,10 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   (*file)->idx->pidx_version = 1;
 
+  (*file)->idx->restructuring_factor[0] = 1;
+  (*file)->idx->restructuring_factor[1] = 1;
+  (*file)->idx->restructuring_factor[2] = 1;
+
   (*file)->idx->compression_type = PIDX_NO_COMPRESSION;
 
   strncpy(file_name_skeleton, filename, strlen(filename) - 4);
@@ -168,6 +172,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
   memset((*file)->idx->bitPattern, 0, 512);
   memset((*file)->idx->bitSequence, 0, 512);
 
+  (*file)->idx->particle_regridding_factor = 1;
   (*file)->restructured_grid->patch_size[0] = -1;
   (*file)->restructured_grid->patch_size[1] = -1;
   (*file)->restructured_grid->patch_size[2] = -1;
@@ -178,6 +183,9 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
     (*file)->idx->chunk_size[i] = 1;
 
   (*file)->idx->particles_position_variable_index = 0;
+  (*file)->idx->particle_res_base = 32;
+  (*file)->idx->particle_res_factor = 2;
+  (*file)->idx->particle_number = 0;
   
   (*file)->idx->maxh = 0;
   (*file)->idx->max_file_count = 0;

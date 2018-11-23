@@ -45,7 +45,6 @@
 extern "C" {
 #endif
 
-#undef PARTICLE_OPTIMIZED
 
 #define PIDX_CURR_METADATA_VERSION "6.1"
   
@@ -151,6 +150,7 @@ enum PIDX_endian_type{
 /// C array syntax, e.g. "float32[3]".  In the PIDX library, we declare types using strings so
 /// users can easily override the provided defaults.
 
+typedef unsigned int PIDX_data_layout;
 typedef char PIDX_data_type[512];
 
 // PLEASE NOTE: these are example types, not a complete list of possible IDX types

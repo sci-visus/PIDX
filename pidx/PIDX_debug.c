@@ -115,7 +115,6 @@ PIDX_return_code PIDX_debug_disable_io(PIDX_file file)
 }
 
 
-
 PIDX_return_code PIDX_debug_rst(PIDX_file file, int debug_rst)
 {
   if (!file)
