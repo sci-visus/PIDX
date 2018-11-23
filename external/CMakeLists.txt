@@ -52,6 +52,8 @@ ExternalProject_Add(zfp_llnl
         CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DBUILD_SHARED_LIBS=OFF
         )
 
+add_library(zfp SHARED IMPORTED)
+
 ExternalProject_Get_Property(zfp_llnl install_dir)
 
 SET(ZFP_INCLUDE_DIR  "${install_dir}/include" PARENT_SCOPE)
@@ -76,8 +78,8 @@ IF (PIDX_BUILD_IN_SITU_MERGE)
 #  file(GLOB PMT_SRC ${PMT_SRC_DIR}/*.cpp)
 #  include_directories(${PMT_SRC_DIR}/)
 
-  ADD_SUBDIRECTORY(dataflow)
-  ADD_SUBDIRECTORY(parallelmergetree)
+#  ADD_SUBDIRECTORY(dataflow)
+#  ADD_SUBDIRECTORY(parallelmergetree)
 ENDIF ()
 
 IF (PIDX_VTK_RENDERER)
