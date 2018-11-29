@@ -85,13 +85,13 @@ ENDIF ()
 # library
 # ////////////////////////////////////////
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
-ADD_DEPENDENCIES(pidx zfp_llnl)
-ADD_DEPENDENCIES(pidx_comm zfp_llnl)
-ADD_DEPENDENCIES(pidx_metadata zfp_llnl)
-ADD_DEPENDENCIES(pidx_data_handle zfp_llnl)
-ADD_DEPENDENCIES(pidx_utils zfp_llnl)
-ADD_DEPENDENCIES(pidx_core zfp_llnl)
-ADD_DEPENDENCIES(pidx_io zfp_llnl)
+ADD_DEPENDENCIES(pidx zfp)
+ADD_DEPENDENCIES(pidx_comm zfp)
+ADD_DEPENDENCIES(pidx_metadata zfp)
+ADD_DEPENDENCIES(pidx_data_handle zfp)
+ADD_DEPENDENCIES(pidx_utils zfp)
+ADD_DEPENDENCIES(pidx_core zfp)
+ADD_DEPENDENCIES(pidx_io zfp)
 
 TARGET_LINK_LIBRARIES(pidx ${OS_SPECIFIC_LIBS} pidx_comm pidx_metadata pidx_data_handle pidx_utils pidx_core pidx_io zfp ${PIDX_LINK_LIBS})
 

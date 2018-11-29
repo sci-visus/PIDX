@@ -40,27 +40,41 @@
 ##
 
 MESSAGE("Preparing external ZFP library.")
+#add_subdirectory(zfp)
+SET(ZFP_DIR "${CMAKE_SOURCE_DIR}/external/zfp")
+SET(ZFP_INCLUDE_DIR  "${ZFP_DIR}/include" PARENT_SCOPE)
+INCLUDE_DIRECTORIES("${ZFP_DIR}/include")
+FILE(GLOB ZFP_SRC ${ZFP_DIR}/include/*.h ${ZFP_DIR}/src/*.c)
+
+IF (${BUILD_SHARED_LIBS})
+  add_definitions(-DZFP_DLL)
+ENDIF ()
+PIDX_ADD_LIBRARY(zfp "${ZFP_SRC}")
+
+INSTALL(DIRECTORY "${ZFP_DIR}/include" DESTINATION include/)
+INSTALL(TARGETS zfp DESTINATION lib)
+
 #IF (NOT ZFP_DIR)
 #  SET(ZFP_DIR ${CMAKE_SOURCE_DIR}/external/zfp)
 #ENDIF ()
 
-include(ExternalProject)
-
-ExternalProject_Add(zfp_llnl
-        URL https://github.com/LLNL/zfp/releases/download/0.5.3/zfp-0.5.3.tar.gz
-        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/zfp_llnl
-        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DBUILD_SHARED_LIBS=OFF
-        )
-
-add_library(zfp SHARED IMPORTED)
-
-ExternalProject_Get_Property(zfp_llnl install_dir)
-
-SET(ZFP_INCLUDE_DIR  "${install_dir}/include" PARENT_SCOPE)
-SET(ZFP_LIB_DIR "${install_dir}/lib" PARENT_SCOPE)
-
-INSTALL(DIRECTORY "${install_dir}/include/" DESTINATION include/)
-INSTALL(DIRECTORY "${install_dir}/lib/" DESTINATION lib/)
+#include(ExternalProject)
+#
+#ExternalProject_Add(zfp_llnl
+#        URL https://github.com/LLNL/zfp/releases/download/0.5.3/zfp-0.5.3.tar.gz
+#        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/zfp_llnl
+#        CMAKE_ARGS -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR> -DBUILD_SHARED_LIBS=OFF
+#        )
+#
+#add_library(zfp SHARED IMPORTED)
+#
+#ExternalProject_Get_Property(zfp_llnl install_dir)
+#
+#SET(ZFP_INCLUDE_DIR  "${install_dir}/include" PARENT_SCOPE)
+#SET(ZFP_LIB_DIR "${install_dir}/lib" PARENT_SCOPE)
+#
+#INSTALL(DIRECTORY "${install_dir}/include/" DESTINATION include/)
+#INSTALL(DIRECTORY "${install_dir}/lib/" DESTINATION lib/)
 
 IF (PIDX_BUILD_IN_SITU_MERGE)
   MESSAGE("Compiling included mergetree library.")
