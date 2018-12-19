@@ -43,12 +43,22 @@ MESSAGE("Preparing external ZFP library.")
 #add_subdirectory(zfp)
 SET(ZFP_DIR "${CMAKE_SOURCE_DIR}/external/zfp")
 SET(ZFP_INCLUDE_DIR  "${ZFP_DIR}/include" PARENT_SCOPE)
+
+# if zfp is not cloned automatically clone it
+if(NOT EXISTS "${ZFP_DIR}/include")
+    message("Unable to find zfp, updating submodule..")
+
+    execute_process(COMMAND git submodule update --init -- ../external/zfp
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()
+
 INCLUDE_DIRECTORIES("${ZFP_DIR}/include")
 FILE(GLOB ZFP_SRC ${ZFP_DIR}/include/*.h ${ZFP_DIR}/src/*.c)
 
 IF (${BUILD_SHARED_LIBS})
   add_definitions(-DZFP_DLL)
 ENDIF ()
+
 PIDX_ADD_LIBRARY(zfp "${ZFP_SRC}")
 
 INSTALL(DIRECTORY "${ZFP_DIR}/include" DESTINATION include/)
