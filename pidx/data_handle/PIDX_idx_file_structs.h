@@ -86,11 +86,19 @@ struct idx_file_struct
   char bitSequence[512];                            /// bitsequence used for HZ indexing, controls the layout
   char bitPattern[512];
 
+  int particle_regridding_factor;
+  float restructuring_factor[PIDX_MAX_DIMENSIONS];    /// To be used for restructuring only (controls two phase IO)
+
   int compression_type;
   int compression_factor;
   float compression_bit_rate;
   uint64_t chunk_size[PIDX_MAX_DIMENSIONS];
 
+  int particle_res_base;
+  int particle_res_factor;
+  uint64_t particle_number;
+
+  int current_resolution;
 
   enum PIDX_endian_type endian;                     /// 1 for little endian and 0 for big endian
   int flip_endian;                                  /// 1 for flipping endianness required

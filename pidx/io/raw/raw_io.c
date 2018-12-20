@@ -166,12 +166,20 @@ static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi)
 
   time->header_io_start = PIDX_get_time();
   // Creates the file heirarchy and writes the header info for all binary files
-  ret = init_raw_headers_layout(file, svi, evi, file->idx->filename);
+  ret = raw_headers_create_folder_structure(file, svi, evi, file->idx->filename);
   if (ret != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
+
+  ret = raw_headers_create_idx_file(file, svi, evi, file->idx->filename);
+  if (ret != PIDX_success)
+  {
+    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+    return PIDX_err_file;
+  }
+
   time->header_io_end = PIDX_get_time();
 
   return PIDX_success;

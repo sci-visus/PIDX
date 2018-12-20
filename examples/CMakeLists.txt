@@ -54,8 +54,9 @@ IF (PIDX_BUILD_EXAMPLES)
   ENDIF ()
 
   IF (ZFP_FOUND)
-    MESSAGE("Configuring examples with ZFP support")
+    #MESSAGE("Configuring examples with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
+    link_directories(${ZFP_LIB_DIR})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
   ENDIF ()
 
@@ -77,6 +78,12 @@ IF (PIDX_BUILD_EXAMPLES)
 
   PIDX_ADD_CEXECUTABLE(particle_write "basic-io/particle_write.c")
   TARGET_LINK_LIBRARIES(particle_write ${EXAMPLES_LINK_LIBS})
+
+  PIDX_ADD_CEXECUTABLE(non_uniform_particle_write "basic-io/non_uniform_particle_write.c")
+  TARGET_LINK_LIBRARIES(non_uniform_particle_write ${EXAMPLES_LINK_LIBS})
+
+  PIDX_ADD_CEXECUTABLE(gradient_particle_write "basic-io/gradient_particle_write.c")
+  TARGET_LINK_LIBRARIES(gradient_particle_write ${EXAMPLES_LINK_LIBS})
 
   PIDX_ADD_CEXECUTABLE(particle_read "basic-io/particle_read.c")
   TARGET_LINK_LIBRARIES(particle_read ${EXAMPLES_LINK_LIBS})
@@ -109,7 +116,7 @@ IF (PIDX_BUILD_CONVERT)
   ENDIF ()
 
   IF (ZFP_FOUND)
-    MESSAGE("Configuring examples with ZFP support")
+    #MESSAGE("Configuring examples with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
     SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
   ENDIF ()

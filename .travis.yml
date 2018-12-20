@@ -6,6 +6,7 @@ branches:
   only:
     - master
     - particles
+    - ext_zfp
 
 cache:
   directories:

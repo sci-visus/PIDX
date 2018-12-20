@@ -39,43 +39,7 @@
  *
  */
 
-/*
-  PIDX write example
 
-  In this example we show how to write data using the PIDX library.
-
-  We consider a global 3D regular grid domain that we will call
-  global domain (g).
-  This global domain represents the grid space where all the data are stored.
-
-  In a parallel environment each core (e.g. MPI rank) owns a portion of the data
-  that has to be written on the disk. We refer to this portion of the domain as
-  local domain (l).
-
-  In this example we well see how to execute parallel write with PIDX of a
-  syntethic dataset.
-
-  In the following picture is represented a sample domain decomposition
-  of the global domain (l) in per-core local domains (l), sometimes referred
-  as patches.
-  In this example all the local domains have same dimesions for simplicity.
-  PIDX supports different number and sizes of patches per core.
-
-             *---------*--------*
-           /         /         /| P7
-          *---------*---------* |
-         /         /         /| |
-        *---------*---------* | *
-        |         |         | |/|           --------->        IDX Data format
-        |         |         | * |
-        | P4      | P5      |/| | P3
-        *---------*---------* | *
-        |         |         | |/
-        |         |         | *
-        | P0      | P1      |/
-        *---------*---------*
-
-*/
 #if !defined _MSC_VER
 #include <unistd.h>
 #include <time.h>
@@ -92,12 +56,12 @@
 
 #include <math.h>
 
-#define DEBUG_PRINT_OUTPUT 0
+#define DEBUG_PRINT_OUTPUT 1
 
 // these defines are to test different ordering
 // of the position variable
-#define PARTICLES_POSITION_VAR 0
-#define PARTICLES_COLOR_VAR 1
+#define PARTICLES_POSITION_VAR 1
+#define PARTICLES_COLOR_VAR 0
 
 #define TYPE_COUNT 5
 #define COLOR_COUNT 2
@@ -160,7 +124,7 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -t 4 -f output_idx_file_name\n"
+static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -v 2 -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./particle_write -g 64x64x64 -l 32x32x32 -p 64 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
@@ -325,7 +289,7 @@ static int generate_vars(){
   vps[5] = 9;
   strcpy(type_name[5], "9*float64");
   strcpy(var_name[5], "stress");
-  
+
   bpv[6] = sizeof(int64_t) * CHAR_BIT;
   vps[6] = 1;
   strcpy(type_name[6], "1*int64");
@@ -422,7 +386,7 @@ static void create_synthetic_simulation_data()
 
   // data[6] corresponds to particle id int64 (1)
   data[6] = malloc (particle_count * sizeof(int64_t));
-  
+
   double p_x, p_y, p_z;
   double scale;
   double color;
@@ -436,7 +400,7 @@ static void create_synthetic_simulation_data()
   sprintf(rank_filename, "%s_w_%d", output_file_template, rank);
   FILE *fp = fopen(rank_filename, "w");
 #endif
-  
+
   srand((unsigned int)time(NULL));
   for (int k = 0; k < particle_count; k++)
   {
@@ -468,7 +432,7 @@ static void create_synthetic_simulation_data()
       scale = scale * p_x;
       memcpy(data[5] + (k * 9 + j) * sizeof(double), &scale, sizeof(double));
     }
-    
+
     particle_id = (int64_t)k*10241024;
     memcpy(data[6] + (k) * sizeof(int64_t), &particle_id, sizeof(int64_t));
 
@@ -598,15 +562,9 @@ static void set_pidx_file(int ts)
 
   // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
   if (mode == 0)
-  {
-    PIDX_set_restructuing_factor(file, 1,1,1);
     PIDX_set_io_mode(file, PIDX_PARTICLE_IO);
-  }
   else
-  {
-    PIDX_set_restructuing_factor(file, 2,2,2);
     PIDX_set_io_mode(file, PIDX_RST_PARTICLE_IO);
-  }
 
   return;
 }

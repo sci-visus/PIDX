@@ -45,6 +45,8 @@ PIDX_return_code write_global_idx(PIDX_io file, int start_var_index, int end_var
 
 PIDX_return_code write_headers(PIDX_io file, int start_var_index, int end_var_index, int layout_type);
 
-PIDX_return_code init_raw_headers_layout(PIDX_io file, int start_var_index, int end_var_index, char* filename);
+PIDX_return_code raw_headers_create_folder_structure(PIDX_io file, int start_var_index, int end_var_index, char* filename);
+
+PIDX_return_code raw_headers_create_idx_file(PIDX_io file, int start_var_index, int end_var_index, char* filename);
 
 #endif

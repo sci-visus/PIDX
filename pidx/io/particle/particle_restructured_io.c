@@ -40,7 +40,6 @@
  */
 
 #include "../../PIDX_inc.h"
-static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi);
 static void log_status(char* log_message, int step, int line_number, MPI_Comm comm);
 
 PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
@@ -73,13 +72,11 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
   }
 #endif
 
-
-  if (group_meta_data_init(file, svi, evi) != PIDX_success)
+  if (raw_headers_create_folder_structure(file, svi, evi, file->idx->filename) != PIDX_success)
   {
     fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
     return PIDX_err_file;
   }
-  log_status("[Particle restructured io Step 2]: Creating the folder structure\n", 2, __LINE__, file->idx_c->simulation_comm);
 
   file->idx->variable_pipe_length = file->idx->variable_count;
   for (int si = svi; si < evi; si = si + (file->idx->variable_pipe_length + 1))
@@ -103,6 +100,16 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
     }
     log_status("[Particle restructured io Step 2]: Particle restructuring\n", 4, __LINE__, file->idx_c->simulation_comm);
 
+    // write metadata header (.idx)
+    // Creates the file heirarchy and writes the header info for all binary files
+    if (raw_headers_create_idx_file(file, svi, evi, file->idx->filename) != PIDX_success)
+    {
+      fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
+      return PIDX_err_file;
+    }
+    log_status("[Particle restructured io Step 2]: Creating the folder structure\n", 2, __LINE__, file->idx_c->simulation_comm);
+
+
     // Step 3: Write out restructured data
     if (particles_restructure_io(file) != PIDX_success)
     {
@@ -119,25 +126,6 @@ PIDX_return_code PIDX_particle_rst_write(PIDX_io file, int svi, int evi)
     }
     log_status("[Particle restructured io Step 2]: Particle restructuring cleanup\n", 6, __LINE__, file->idx_c->simulation_comm);
   }
-
-  return PIDX_success;
-}
-
-
-
-static PIDX_return_code group_meta_data_init(PIDX_io file, int svi, int evi)
-{
-  PIDX_time time = file->time;
-
-  time->header_io_start = PIDX_get_time();
-  // Creates the file heirarchy and writes the header info for all binary files
-  int ret = init_raw_headers_layout(file, svi, evi, file->idx->filename);
-  if (ret != PIDX_success)
-  {
-    fprintf(stderr,"File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_file;
-  }
-  time->header_io_end = PIDX_get_time();
 
   return PIDX_success;
 }

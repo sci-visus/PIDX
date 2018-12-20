@@ -55,6 +55,7 @@ SET(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Use a verbose makefile")
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." FALSE)
 OPTION(ENABLE_MPI "Enable MPI." TRUE)
 
+SET(ZFP_FOUND 1)
 
 # ///////////////////////////////////////////////
 # external packages
