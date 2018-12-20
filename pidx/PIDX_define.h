@@ -155,59 +155,66 @@ typedef char PIDX_data_type[512];
 
 // PLEASE NOTE: these are example types, not a complete list of possible IDX types
 
-extern PIDX_data_type INT8;
-extern PIDX_data_type INT8_GA;
-extern PIDX_data_type INT8_RGB;
-extern PIDX_data_type INT8_RGBA;
+struct pidx_dtype {
+    PIDX_data_type INT8;
+    PIDX_data_type INT8_GA;
+    PIDX_data_type INT8_RGB;
+    PIDX_data_type INT8_RGBA;
 
-extern PIDX_data_type UINT8;
-extern PIDX_data_type UINT8_GA;
-extern PIDX_data_type UINT8_RGB;
-extern PIDX_data_type UINT8_RGBA;
+    PIDX_data_type UINT8;
+    PIDX_data_type UINT8_GA;
+    PIDX_data_type UINT8_RGB;
+    PIDX_data_type UINT8_RGBA;
 
-extern PIDX_data_type INT16;
-extern PIDX_data_type INT16_GA;
-extern PIDX_data_type INT16_RGB;
-extern PIDX_data_type INT16_RGBA;
+    PIDX_data_type INT16;
+    PIDX_data_type INT16_GA;
+    PIDX_data_type INT16_RGB;
+    PIDX_data_type INT16_RGBA;
 
-extern PIDX_data_type UINT16;
-extern PIDX_data_type UINT16_GA;
-extern PIDX_data_type UINT16_RGB;
-extern PIDX_data_type UINT16_RGBA;
+    PIDX_data_type UINT16;
+    PIDX_data_type UINT16_GA;
+    PIDX_data_type UINT16_RGB;
+    PIDX_data_type UINT16_RGBA;
 
-extern PIDX_data_type INT32;
-extern PIDX_data_type INT32_GA;
-extern PIDX_data_type INT32_RGB;
-extern PIDX_data_type INT32_RGBA;
+    PIDX_data_type INT32;
+    PIDX_data_type INT32_GA;
+    PIDX_data_type INT32_RGB;
+    PIDX_data_type INT32_RGBA;
 
-extern PIDX_data_type UINT32;
-extern PIDX_data_type UINT32_GA;
-extern PIDX_data_type UINT32_RGB;
-extern PIDX_data_type UINT32_RGBA;
+    PIDX_data_type UINT32;
+    PIDX_data_type UINT32_GA;
+    PIDX_data_type UINT32_RGB;
+    PIDX_data_type UINT32_RGBA;
 
-extern PIDX_data_type INT64;
-extern PIDX_data_type INT64_GA;
-extern PIDX_data_type INT64_RGB;
-extern PIDX_data_type INT64_RGBA;
+    PIDX_data_type INT64;
+    PIDX_data_type INT64_GA;
+    PIDX_data_type INT64_RGB;
+    PIDX_data_type INT64_RGBA;
 
-extern PIDX_data_type UINT64;
-extern PIDX_data_type UINT64_GA;
-extern PIDX_data_type UINT64_RGB;
-extern PIDX_data_type UINT64_RGBA;
+    PIDX_data_type UINT64;
+    PIDX_data_type UINT64_GA;
+    PIDX_data_type UINT64_RGB;
+    PIDX_data_type UINT64_RGBA;
 
-extern PIDX_data_type FLOAT32;
-extern PIDX_data_type FLOAT32_GA;
-extern PIDX_data_type FLOAT32_RGB;
-extern PIDX_data_type FLOAT32_RGBA;
-extern PIDX_data_type FLOAT32_7STENCIL;
-extern PIDX_data_type FLOAT32_9TENSOR;
+    PIDX_data_type FLOAT32;
+    PIDX_data_type FLOAT32_GA;
+    PIDX_data_type FLOAT32_RGB;
+    PIDX_data_type FLOAT32_RGBA;
+    PIDX_data_type FLOAT32_7STENCIL;
+    PIDX_data_type FLOAT32_9TENSOR;
 
-extern PIDX_data_type FLOAT64;
-extern PIDX_data_type FLOAT64_GA;
-extern PIDX_data_type FLOAT64_RGB;
-extern PIDX_data_type FLOAT64_RGBA;
-extern PIDX_data_type FLOAT64_7STENCIL;
-extern PIDX_data_type FLOAT64_9TENSOR;
+    PIDX_data_type FLOAT64;
+    PIDX_data_type FLOAT64_GA;
+    PIDX_data_type FLOAT64_RGB;
+    PIDX_data_type FLOAT64_RGBA;
+    PIDX_data_type FLOAT64_7STENCIL;
+    PIDX_data_type FLOAT64_9TENSOR;
+
+    PIDX_data_type INT64_9TENSOR;
+    PIDX_data_type INT32_9TENSOR;
+};
+
+extern struct pidx_dtype PIDX_DType;
 
 #ifdef __cplusplus
 }

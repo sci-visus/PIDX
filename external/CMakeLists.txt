@@ -48,7 +48,7 @@ SET(ZFP_INCLUDE_DIR  "${ZFP_DIR}/include" PARENT_SCOPE)
 if(NOT EXISTS "${ZFP_DIR}/include")
     message("Unable to find zfp, updating submodule..")
 
-    execute_process(COMMAND git submodule update --init -- ../external/zfp
+    execute_process(COMMAND git submodule update --init -- zfp
                     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
 

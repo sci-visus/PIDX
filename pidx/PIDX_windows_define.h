@@ -49,9 +49,13 @@ to little-endian data and vice versa. These are taken from the Boost library.*/
 #define htonl(x) _byteswap_ulong(x)
 #define ntohl(x) htonl(x)
 
+#define inline __inline
+#define snprintf _snprintf
+
 #include <io.h>
 #include <stdio.h>
 #include <string.h>
+#include <basetsd.h>
 
 typedef long int __uint64_t;
 typedef long int __off64_t;
