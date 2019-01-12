@@ -49,7 +49,7 @@ if [ "$TRAVIS_OS_NAME" == "osx" ]; then
     else
         echo "Installing OpenMPI with homebrew"
 	HOMEBREW_TEMP=$TRAVIS_BUILD_DIR/openmpi
-        brew install -v open-mpi 
+        brew install --build-from-source open-mpi 
     fi
 else
 
