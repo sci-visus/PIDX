@@ -5,8 +5,7 @@ language: c
 branches:
   only:
     - master
-    - particles
-    - ext_zfp
+    - refactor_dtypes
 
 cache:
   directories:
@@ -30,7 +29,7 @@ matrix:
         - BUILD_TYPE=Release
         - MPIRUN_CMD=$TRAVIS_BUILD_DIR/mpich/bin/mpirun
     - os: osx
-      osx_image: xcode8
+      osx_image: xcode9.4
       compiler: clang
       env:
         - CXX_COMPILER=clang++
@@ -44,7 +43,7 @@ matrix:
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then sudo apt-get update -qq; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc; fi
+  #- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install gcc; fi
   - which $CXX_COMPILER
   - which $C_COMPILER
 

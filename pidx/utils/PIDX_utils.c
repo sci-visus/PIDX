@@ -1057,231 +1057,231 @@ PIDX_return_code PIDX_decompose_type(PIDX_data_type type, char* base_type, int* 
 
 PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int* bits)
 {
-    if (strcmp(type, INT8) == 0)
+    if (strcmp(type, PIDX_DType.INT8) == 0)
     {
       *bits = 8;
       *values = 1;
     }
-    else if (strcmp(type, INT8_GA) == 0)
+    else if (strcmp(type, PIDX_DType.INT8_GA) == 0)
     {
       *bits = 8;
       *values = 2;
     }
-    else if (strcmp(type, INT8_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.INT8_RGB) == 0)
     {
       *bits = 8;
       *values = 3;
     }
-    else if (strcmp(type, INT8_RGBA) == 0)
-    {
-      *bits = 8;
-      *values = 4;
-    }
-
-    else if (strcmp(type, UINT8) == 0)
-    {
-      *bits = 8;
-      *values = 1;
-    }
-    else if (strcmp(type, UINT8_GA) == 0)
-    {
-      *bits = 8;
-      *values = 2;
-    }
-    else if (strcmp(type, UINT8_RGB) == 0)
-    {
-      *bits = 8;
-      *values = 3;
-    }
-    else if (strcmp(type, UINT8_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.INT8_RGBA) == 0)
     {
       *bits = 8;
       *values = 4;
     }
 
-    else if (strcmp(type, INT16) == 0)
+    else if (strcmp(type, PIDX_DType.UINT8) == 0)
+    {
+      *bits = 8;
+      *values = 1;
+    }
+    else if (strcmp(type, PIDX_DType.UINT8_GA) == 0)
+    {
+      *bits = 8;
+      *values = 2;
+    }
+    else if (strcmp(type, PIDX_DType.UINT8_RGB) == 0)
+    {
+      *bits = 8;
+      *values = 3;
+    }
+    else if (strcmp(type, PIDX_DType.UINT8_RGBA) == 0)
+    {
+      *bits = 8;
+      *values = 4;
+    }
+
+    else if (strcmp(type, PIDX_DType.INT16) == 0)
     {
       *bits = 16;
       *values = 1;
     }
-    else if (strcmp(type, INT16_GA) == 0)
+    else if (strcmp(type, PIDX_DType.INT16_GA) == 0)
     {
       *bits = 16;
       *values = 2;
     }
-    else if (strcmp(type, INT16_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.INT16_RGB) == 0)
     {
       *bits = 16;
       *values = 3;
     }
-    else if (strcmp(type, INT16_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.INT16_RGBA) == 0)
     {
       *bits = 16;
       *values = 4;
     }
 
-    else if (strcmp(type, UINT16) == 0)
+    else if (strcmp(type, PIDX_DType.UINT16) == 0)
     {
       *bits = 16;
       *values = 1;
     }
-    else if (strcmp(type, UINT16_GA) == 0)
+    else if (strcmp(type, PIDX_DType.UINT16_GA) == 0)
     {
       *bits = 16;
       *values = 2;
     }
-    else if (strcmp(type, UINT16_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.UINT16_RGB) == 0)
     {
       *bits = 16;
       *values = 3;
     }
-    else if (strcmp(type, UINT16_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.UINT16_RGBA) == 0)
     {
       *bits = 16;
       *values = 4;
     }
 
-    else if (strcmp(type, INT32) == 0)
+    else if (strcmp(type, PIDX_DType.INT32) == 0)
     {
       *bits = 32;
       *values = 1;
     }
-    else if (strcmp(type, INT32_GA) == 0)
+    else if (strcmp(type, PIDX_DType.INT32_GA) == 0)
     {
       *bits = 32;
       *values = 2;
     }
-    else if (strcmp(type, INT32_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.INT32_RGB) == 0)
     {
       *bits = 32;
       *values = 3;
     }
-    else if (strcmp(type, INT32_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.INT32_RGBA) == 0)
     {
       *bits = 32;
       *values = 4;
     }
 
-    else if (strcmp(type, UINT32) == 0)
+    else if (strcmp(type, PIDX_DType.UINT32) == 0)
     {
       *bits = 32;
       *values = 1;
     }
-    else if (strcmp(type, UINT32_GA) == 0)
+    else if (strcmp(type, PIDX_DType.UINT32_GA) == 0)
     {
       *bits = 32;
       *values = 2;
     }
-    else if (strcmp(type, UINT32_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.UINT32_RGB) == 0)
     {
       *bits = 32;
       *values = 3;
     }
-    else if (strcmp(type, UINT32_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.UINT32_RGBA) == 0)
     {
       *bits = 32;
       *values = 4;
     }
 
-    else if (strcmp(type, INT64) == 0)
+    else if (strcmp(type, PIDX_DType.INT64) == 0)
     {
       *bits = 64;
       *values = 1;
     }
-    else if (strcmp(type, INT64_GA) == 0)
+    else if (strcmp(type, PIDX_DType.INT64_GA) == 0)
     {
       *bits = 64;
       *values = 2;
     }
-    else if (strcmp(type, INT64_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.INT64_RGB) == 0)
     {
       *bits = 64;
       *values = 3;
     }
-    else if (strcmp(type, INT64_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.INT64_RGBA) == 0)
     {
       *bits = 64;
       *values = 4;
     }
 
-    else if (strcmp(type, UINT64) == 0)
+    else if (strcmp(type, PIDX_DType.UINT64) == 0)
     {
       *bits = 64;
       *values = 1;
     }
-    else if (strcmp(type, UINT64_GA) == 0)
+    else if (strcmp(type, PIDX_DType.UINT64_GA) == 0)
     {
       *bits = 64;
       *values = 2;
     }
-    else if (strcmp(type, UINT64_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.UINT64_RGB) == 0)
     {
       *values = 3;
       *bits = 64;
     }
-    else if (strcmp(type, UINT64_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.UINT64_RGBA) == 0)
     {
       *values = 4;
       *bits = 64;
     }
 
-    else if (strcmp(type, FLOAT32) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT32) == 0)
     {
       *values = 1;
       *bits = 32;
     }
-    else if (strcmp(type, FLOAT32_GA) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT32_GA) == 0)
     {
       *values = 2;
       *bits = 32;
     }
-    else if (strcmp(type, FLOAT32_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT32_RGB) == 0)
     {
       *values = 3;
       *bits = 32;
     }
-    else if (strcmp(type, FLOAT32_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT32_RGBA) == 0)
     {
       *values = 4;
       *bits = 32;
     }
-    else if (strcmp(type, FLOAT32_7STENCIL) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT32_7STENCIL) == 0)
     {
       *values = 7;
       *bits = 32;
     }
-    else if (strcmp(type, FLOAT32_9TENSOR) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT32_9TENSOR) == 0)
     {
       *values = 9;
       *bits = 32;
     }
 
-    else if (strcmp(type, FLOAT64) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT64) == 0)
     {
       *values = 1;
       *bits = 64;
     }
-    else if (strcmp(type, FLOAT64_GA) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT64_GA) == 0)
     {
       *values = 2;
       *bits = 64;
     }
-    else if (strcmp(type, FLOAT64_RGB) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT64_RGB) == 0)
     {
       *values = 3;
       *bits = 64;
     }
-    else if (strcmp(type, FLOAT64_RGBA) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT64_RGBA) == 0)
     {
       *values = 4;
       *bits = 64;
     }
-    else if (strcmp(type, FLOAT64_7STENCIL) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT64_7STENCIL) == 0)
     {
       *values = 7;
       *bits = 64;
     }
-    else if (strcmp(type, FLOAT64_9TENSOR) == 0)
+    else if (strcmp(type, PIDX_DType.FLOAT64_9TENSOR) == 0)
     {
       *values = 9;
       *bits = 64;

@@ -1,28 +1,28 @@
 /*
  * BSD 3-Clause License
- * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ *
+ * Copyright (c) 2010-2018 ViSUS L.L.C.,
  * Scientific Computing and Imaging Institute of the University of Utah
- * 
+ *
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
  * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
- *  
+ *
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- * 
+ *
  * * Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- * 
+ *
  * * Neither the name of the copyright holder nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,17 +33,47 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- * 
+ *
  * For additional information about this project contact: pascucci@acm.org
  * For support: support@visus.net
- * 
+ *
  */
 
 /*
-  PIDX write partitioned example
+  PIDX write example
 
-  In this example we show how to write data using the PIDX library
-  separating the data into partitions in order to speed up I/O performance.
+  In this example we show how to write data using the PIDX library.
+
+  We consider a global 3D regular grid domain that we will call
+  global domain (g).
+  This global domain represents the grid space where all the data are stored.
+
+  In a parallel environment each core (e.g. MPI rank) owns a portion of the data
+  that has to be written on the disk. We refer to this portion of the domain as
+  local domain (l).
+
+  In this example we well see how to execute parallel write with PIDX of a
+  syntethic dataset.
+
+  In the following picture is represented a sample domain decomposition
+  of the global domain (l) in per-core local domains (l), sometimes referred
+  as patches.
+  In this example all the local domains have same dimesions for simplicity.
+  PIDX supports different number and sizes of patches per core.
+
+             *---------*--------*
+           /         /         /| P7
+          *---------*---------* |
+         /         /         /| |
+        *---------*---------* | *
+        |         |         | |/|           --------->        IDX Data format
+        |         |         | * |
+        | P4      | P5      |/| | P3
+        *---------*---------* | *
+        |         |         | |/
+        |         |         | *
+        | P0      | P1      |/
+        *---------*---------*
 
 */
 #if !defined _MSC_VER
@@ -60,39 +90,35 @@
 
 #include "pidx_examples_utils.h"
 
-char output_file_template[512];
-char var_list[512];
-unsigned char **data;
-char output_file_name[512];
 char var_name[MAX_VAR_COUNT][512];
 int bpv[MAX_VAR_COUNT];
 char type_name[MAX_VAR_COUNT][512];
 int vps[MAX_VAR_COUNT];
-int parts_count[3]={1,1,1};
 PIDX_variable* variable;
+char output_file_template[512];
+char var_list[512];
+char output_file_name[512];
+unsigned char **data;
+static unsigned long long rst_box_size[PIDX_MAX_DIMENSIONS];
+static PIDX_point rst_box;
 
-char *usage = "Serial Usage: ./idx_write_partitioned -g 32x32x32 -l 32x32x32 -p 2x1x1 -v 2 -t 4 -f output_idx_file_name\n"
-"Parallel Usage: mpirun -n 8 ./idx_write -g 64x64x64 -l 32x32x32 -p 2x1x1 -v 2 -t 4 -f output_idx_file_name\n"
-"  -g: global dimensions\n"
-"  -l: local (per-process) dimensions\n"
-"  -p: number of partitions in each dimension\n"
-"  -r: restructured box dimension\n"
-"  -f: file name template (without .idx)\n"
-"  -t: number of timesteps\n"
-"  -v: number of variables (or file containing a list of variables)\n";
 
+char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -r 40x40x40 -v 2 -t 4 -f output_idx_file_name\n"
+                     "Parallel Usage: mpirun -n 8 ./idx_write -g 64x64x64 -l 32x32x32 -r 40x40x40 -v 2 -t 4 -f output_idx_file_name\n"
+                     "  -g: global dimensions\n"
+                     "  -l: local (per-process) dimensions\n"
+                     "  -r: restructured box dimension\n"
+                     "  -f: file name template (without .idx)\n"
+                     "  -t: number of timesteps\n"
+                     "  -v: number of variables (or file containing a list of variables)\n";
+
+static int generate_vars();
 static void parse_args(int argc, char **argv);
 static int parse_var_list();
-static int generate_vars();
 static void create_synthetic_simulation_data();
-
+static void set_pidx_variable(int var);
 static void set_pidx_file(int ts);
-static void set_pidx_variable();
-static void create_pidx_var_point_and_access();
-static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
-static int isNumber(char number[]);
-
 
 int main(int argc, char **argv)
 {
@@ -116,7 +142,9 @@ int main(int argc, char **argv)
   create_synthetic_simulation_data();
 
   // Create variables
-  create_pidx_var_point_and_access();
+  create_pidx_point_and_access();
+  variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
+  memset(variable, 0, sizeof(*variable) * variable_count);
 
   for (ts = 0; ts < time_step_count; ts++)
   {
@@ -132,8 +160,12 @@ int main(int argc, char **argv)
     PIDX_close(file);
   }
 
-  // Clean up our mess
-  destroy_pidx_var_point_and_access();
+  // Close access and free memory
+  if (PIDX_close_access(p_access) != PIDX_success)
+    terminate_with_error_msg("PIDX_close_access");
+
+  free(variable);
+  variable = 0;
 
   destroy_synthetic_simulation_data();
 
@@ -142,10 +174,11 @@ int main(int argc, char **argv)
   return 0;
 }
 
+
 //----------------------------------------------------------------
 static void parse_args(int argc, char **argv)
 {
-  char flags[] = "g:l:f:t:v:p:";
+  char flags[] = "g:l:r:f:t:v:";
   int one_opt = 0;
 
   while ((one_opt = getopt(argc, argv, flags)) != EOF)
@@ -162,9 +195,12 @@ static void parse_args(int argc, char **argv)
       if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[X], &local_box_size[Y], &local_box_size[Z]) == EOF) ||(local_box_size[X] < 1 || local_box_size[Y] < 1 || local_box_size[Z] < 1))
         terminate_with_error_msg("Invalid local dimension\n%s", usage);
       break;
-    case('p'): // partitions count
-      if ((sscanf(optarg, "%dx%dx%d", &parts_count[X], &parts_count[Y], &parts_count[Z]) == EOF) ||(parts_count[X] < 1 || parts_count[Y] < 1 || parts_count[Z] < 1))
-        terminate_with_error_msg("Invalid partition count dimension\n%s", usage);
+
+    case('r'): // local dimension
+      if ((sscanf(optarg, "%lldx%lldx%lld", &rst_box_size[0], &rst_box_size[1], &rst_box_size[2]) == EOF) ||
+          (rst_box_size[0] < 1 || rst_box_size[1] < 1 || rst_box_size[2] < 1))
+        terminate_with_error_msg("Invalid restructuring box dimension\n%s", usage);
+      PIDX_set_point(rst_box, rst_box_size[X], rst_box_size[Y], rst_box_size[Z]);
       break;
 
     case('f'): // output file name
@@ -196,7 +232,26 @@ static void parse_args(int argc, char **argv)
       terminate_with_error_msg("Wrong arguments\n%s", usage);
     }
   }
+}
 
+static void set_pidx_variable(int var)
+{
+  PIDX_return_code ret = 0;
+
+  // Set variable name, number of bits, typename
+  ret = PIDX_variable_create(var_name[var], bpv[var] * vps[var], type_name[var], &variable[var]);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
+
+  // Set the variable offset and size of the local domain,
+  // where the data is in memory (data) and what is its layout in memory (row major)
+  ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_write_data_layout");
+
+  // Tell PIDX that we want to write this variable
+  ret = PIDX_append_and_write_variable(file, variable[var]);
+  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
+
+  return;
 }
 
 static int generate_vars(){
@@ -222,6 +277,88 @@ static int generate_vars(){
   }
 
   return 0;
+}
+
+//----------------------------------------------------------------
+static void create_synthetic_simulation_data()
+{
+  int var = 0;
+  data = malloc(sizeof(*data) * variable_count);
+  memset(data, 0, sizeof(*data) * variable_count);
+
+  // Synthetic simulation data
+  for (var = 0; var < variable_count; var++)
+  {
+    uint64_t i, j, k, val_per_sample = 0;
+    data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
+
+    unsigned char cvalue = 0;
+    short svalue = 0;
+    float fvalue = 0;
+    double dvalue = 0;
+    int ivalue = 0;
+    uint64_t u64ivalue = 0;
+    int64_t i64value = 0;
+#if 0
+    FILE* fp = fopen("OF_data.txt", "r");
+    int o = 0;
+    /*
+     for (o = 0; o < 1400; o++)
+     {
+     fscanf(fp, "%f\n", &fvalue);
+     printf("[%d] val = %.16f\n", o, fvalue);
+     memcpy(data[var] + o * sizeof(float), &fvalue, sizeof(float));
+     }
+     */
+    fclose(fp);
+#else
+    for (k = 0; k < local_box_size[Z]; k++)
+      for (j = 0; j < local_box_size[Y]; j++)
+        for (i = 0; i < local_box_size[X]; i++)
+        {
+          uint64_t index = (uint64_t) (local_box_size[X] * local_box_size[Y] * k) + (local_box_size[X] * j) + i;
+
+          for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
+          {
+            if (strcmp(type_name[var], PIDX_DType.UINT8) == 0 || strcmp(type_name[var], PIDX_DType.UINT8_GA) == 0 || strcmp(type_name[var], PIDX_DType.UINT8_RGB) == 0)
+            {
+              cvalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(unsigned char), &cvalue, sizeof(unsigned char));
+            }
+            if (strcmp(type_name[var], PIDX_DType.INT16) == 0 || strcmp(type_name[var], PIDX_DType.INT16_GA) == 0 || strcmp(type_name[var], PIDX_DType.INT16_RGB) == 0)
+            {
+              svalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(short), &svalue, sizeof(short));
+            }
+            if (strcmp(type_name[var], PIDX_DType.INT32) == 0 || strcmp(type_name[var], PIDX_DType.INT32_GA) == 0 || strcmp(type_name[var], PIDX_DType.INT32_RGB) == 0)
+            {
+              ivalue = (int)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int), &ivalue, sizeof(int));
+            }
+            else if (strcmp(type_name[var], PIDX_DType.FLOAT32) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT32_GA) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT32_RGB) == 0)
+            {
+              fvalue = (float)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
+            }
+            else if (strcmp(type_name[var], PIDX_DType.FLOAT64) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT64_GA) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT64_RGB) == 0)
+            {
+              dvalue = (double) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
+            }
+            else if (strcmp(type_name[var], PIDX_DType.INT64) == 0 || strcmp(type_name[var], PIDX_DType.INT64_GA) == 0 || strcmp(type_name[var], PIDX_DType.INT64_RGB) == 0)
+            {
+              i64value = (int64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int64_t), &i64value, sizeof(int64_t));
+            }
+            else if (strcmp(type_name[var], PIDX_DType.UINT64) == 0 || strcmp(type_name[var], PIDX_DType.UINT64_GA) == 0 || strcmp(type_name[var], PIDX_DType.UINT64_RGB) == 0)
+            {
+              u64ivalue = (uint64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
+              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(uint64_t), &u64ivalue, sizeof(uint64_t));
+            }
+          }
+        }
+#endif
+  }
 }
 
 //----------------------------------------------------------------
@@ -294,122 +431,17 @@ static int parse_var_list()
   fclose(fp);
 
   /*
-  int rank = 0;
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (rank == 0)
-  {
-    int v = 0;
-    for (v = 0; v < variable_count; v++)
-      fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
-  }
-  */
+   int rank = 0;
+   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+   if (rank == 0)
+   {
+   int v = 0;
+   for (v = 0; v < variable_count; v++)
+   fprintf(stderr, "[%d] -> %s %d %d\n", v, var_name[v], bpv[v], vps[v]);
+   }
+   */
 
   return PIDX_success;
-}
-
-//----------------------------------------------------------------
-static void create_synthetic_simulation_data()
-{
-  int var = 0;
-  data = malloc(sizeof(*data) * variable_count);
-  memset(data, 0, sizeof(*data) * variable_count);
-
-  // Synthetic simulation data
-  for (var = 0; var < variable_count; var++)
-  {
-    uint64_t i, j, k, val_per_sample = 0;
-    data[var] = malloc(sizeof (*(data[var])) * local_box_size[X] * local_box_size[Y] * local_box_size[Z] * (bpv[var]/8) * vps[var]);
-
-    unsigned char cvalue = 0;
-    short svalue = 0;
-    float fvalue = 0;
-    double dvalue = 0;
-    int ivalue = 0;
-    uint64_t u64ivalue = 0;
-    int64_t i64value = 0;
-    
-#if 0
-    FILE* fp = fopen("OF_data.txt", "r");
-    int o = 0;
-    /*
-    for (o = 0; o < 1400; o++)
-    {
-        fscanf(fp, "%f\n", &fvalue);
-        printf("[%d] val = %.16f\n", o, fvalue);
-        memcpy(data[var] + o * sizeof(float), &fvalue, sizeof(float));
-    }
-    */
-    fclose(fp);
-#else
-    for (k = 0; k < local_box_size[Z]; k++)
-      for (j = 0; j < local_box_size[Y]; j++)
-        for (i = 0; i < local_box_size[X]; i++)
-        {
-          uint64_t index = (uint64_t) (local_box_size[X] * local_box_size[Y] * k) + (local_box_size[X] * j) + i;
-
-          for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
-          {
-            if (strcmp(type_name[var], UINT8) == 0 || strcmp(type_name[var], UINT8_GA) == 0 || strcmp(type_name[var], UINT8_RGB) == 0)
-            {
-              cvalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(unsigned char), &cvalue, sizeof(unsigned char));
-            }
-            if (strcmp(type_name[var], INT16) == 0 || strcmp(type_name[var], INT16_GA) == 0 || strcmp(type_name[var], INT16_RGB) == 0)
-            {
-              svalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(short), &svalue, sizeof(short));
-            }
-            if (strcmp(type_name[var], INT32) == 0 || strcmp(type_name[var], INT32_GA) == 0 || strcmp(type_name[var], INT32_RGB) == 0)
-            {
-              ivalue = (int)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int), &ivalue, sizeof(int));
-            }
-            else if (strcmp(type_name[var], FLOAT32) == 0 || strcmp(type_name[var], FLOAT32_GA) == 0 || strcmp(type_name[var], FLOAT32_RGB) == 0)
-            {
-              fvalue = (float)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
-            }
-            else if (strcmp(type_name[var], FLOAT64) == 0 || strcmp(type_name[var], FLOAT64_GA) == 0 || strcmp(type_name[var], FLOAT64_RGB) == 0)
-            {
-              dvalue = (double) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
-            }
-            else if (strcmp(type_name[var], INT64) == 0 || strcmp(type_name[var], INT64_GA) == 0 || strcmp(type_name[var], INT64_RGB) == 0)
-            {
-              i64value = (int64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int64_t), &i64value, sizeof(int64_t));
-            }
-            else if (strcmp(type_name[var], UINT64) == 0 || strcmp(type_name[var], UINT64_GA) == 0 || strcmp(type_name[var], UINT64_RGB) == 0)
-            {
-              u64ivalue = (uint64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
-              memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(uint64_t), &u64ivalue, sizeof(uint64_t));
-            }
-          }
-        }
-#endif
-  }
-}
-
-//----------------------------------------------------------------
-static void create_pidx_var_point_and_access()
-{
-  // Allocate a PIDX_variable array where we store the information
-  // of all the variables
-  variable = (PIDX_variable*)malloc(sizeof(*variable) * variable_count);
-  memset(variable, 0, sizeof(*variable) * variable_count);
-
-  // Set variables that define the global and local domain information
-  PIDX_set_point(global_size, global_box_size[X], global_box_size[Y], global_box_size[Z]);
-  PIDX_set_point(local_offset, local_box_offset[X], local_box_offset[Y], local_box_offset[Z]);
-  PIDX_set_point(local_size, local_box_size[X], local_box_size[Y], local_box_size[Z]);
-
-  //  Creating access
-  PIDX_create_access(&p_access);
-  PIDX_set_mpi_access(p_access, MPI_COMM_WORLD);
-
-  PIDX_create_metadata_cache(&cache);
-
-  return;
 }
 
 //----------------------------------------------------------------
@@ -426,72 +458,14 @@ static void set_pidx_file(int ts)
   // Set the number of variables
   PIDX_set_variable_count(file, variable_count);
 
-  // Advanced settings
-  PIDX_set_meta_data_cache(file, cache);
+  // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
+  PIDX_set_io_mode(file, PIDX_RAW_IO);
 
-  // Select I/O mode (Partitioned mode)
-  PIDX_set_io_mode(file, PIDX_LOCAL_PARTITION_IDX_IO);
-  
-  // Set the number of partitions for each dimension
-  PIDX_set_partition_count(file, parts_count[X], parts_count[Y], parts_count[Z]);
-
-  // Set how many blocks we want to write in a single file
-  PIDX_set_block_count(file, 256);
-
-  // Set the size of a block: how many 2^N samples we want to put in a single block
-  PIDX_set_block_size(file, 15);
-
-  // If the domain decomposition and the cores configuration do not change over time
-  // we can instruct PIDX to cache and reuse these information for the next timesteps
-  PIDX_set_cache_time_step(file, 0);
-
-  //PIDX_disable_agg(file);
-
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ONLY);
-
-  //PIDX_set_compression_type(file, PIDX_CHUNKING_ZFP);
-  //PIDX_set_lossy_compression_bit_rate(file, 16);
+  PIDX_set_restructuring_box(file, rst_box);
 
   return;
 }
 
-//----------------------------------------------------------------
-static void set_pidx_variable(int var)
-{
-  PIDX_return_code ret = 0;
-
-  // Set variable name, number of bits, typename
-  ret = PIDX_variable_create(var_name[var], bpv[var] * vps[var], type_name[var], &variable[var]);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_create");
-
-  // Set the variable offset and size of the local domain,
-  // where the data is in memory (data) and what is its layout in memory (row major)
-  ret = PIDX_variable_write_data_layout(variable[var], local_offset, local_size, data[var], PIDX_row_major);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_variable_write_data_layout");
-
-  // Tell PIDX that we want to write this variable
-  ret = PIDX_append_and_write_variable(file, variable[var]);
-  if (ret != PIDX_success)  terminate_with_error_msg("PIDX_append_and_write_variable");
-
-  return;
-}
-
-//----------------------------------------------------------------
-static void destroy_pidx_var_point_and_access()
-{
-  if (PIDX_close_access(p_access) != PIDX_success)
-    terminate_with_error_msg("PIDX_close_access");
-
-  if (PIDX_free_metadata_cache(cache) != PIDX_success)
-    terminate_with_error_msg("PIDX_free_meta_data_cache");
-
-  free(variable);
-  variable = 0;
-
-  return;
-}
-
-//----------------------------------------------------------------
 static void destroy_synthetic_simulation_data()
 {
   int var = 0;

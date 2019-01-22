@@ -68,7 +68,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
           if ((ZYX[0] < id->idx->box_bounds[0] && ZYX[1] < id->idx->box_bounds[1] && ZYX[2] < id->idx->box_bounds[2]))
           {
             check_bit = 1, s = 0;
-            if (strcmp(var->type_name, FLOAT64) == 0)
+            if (strcmp(var->type_name, PIDX_DType.FLOAT64) == 0)
             {
               dvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0];
               dvalue_2 = *(*((double**)var->hz_buffer->buffer + i) + ((k * var->vps) + s));
@@ -76,7 +76,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               //fprintf(stderr, "X[%lld]  %f %f\n", (long long)global_hz, dvalue_1, dvalue_2);
               check_bit = check_bit && (dvalue_1  == dvalue_2);
             }
-            else if (strcmp(var->type_name, FLOAT32) == 0)
+            else if (strcmp(var->type_name, PIDX_DType.FLOAT32) == 0)
             {
               fvalue_1 = 100 + v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0];
               fvalue_2 = *(*((float**)var->hz_buffer->buffer + i) + ((k * var->vps) + s));
@@ -85,7 +85,7 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
               //fprintf(stderr, "%f %f\n", fvalue_1, fvalue_2);
               check_bit = check_bit && (fvalue_1 == fvalue_2);
             }
-            else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
+            else if (strcmp(var->type_name, PIDX_DType.FLOAT64_RGB) == 0)
             {
               for (s = 0; s < 3; s++)
               {
@@ -96,13 +96,13 @@ PIDX_return_code HELPER_Hz_encode(PIDX_hz_encode_id id)
                 check_bit = check_bit && (dvalue_1  == dvalue_2);
               }
             }
-            if (strcmp(var->type_name, UINT64) == 0)
+            if (strcmp(var->type_name, PIDX_DType.UINT64) == 0)
             {
               uvalue_1 = v + s + (id->idx->bounds[0] * id->idx->bounds[1]*(ZYX[2]))+(id->idx->bounds[0]*(ZYX[1])) + ZYX[0] + (id->idx_c->color * id->idx->bounds[0] * id->idx->bounds[1] * id->idx->bounds[2]);
               uvalue_2 = *(*((uint64_t**)var->hz_buffer->buffer + i) + ((k * var->vps) + s));
               check_bit = check_bit && (uvalue_1  == uvalue_2);
             }
-            else if (strcmp(var->type_name, UINT64_RGB) == 0)
+            else if (strcmp(var->type_name, PIDX_DType.UINT64_RGB) == 0)
             {
               for (s = 0; s < 3; s++)
               {

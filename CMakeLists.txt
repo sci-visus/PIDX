@@ -136,12 +136,6 @@ MESSAGE("PIDX_BUILD_TOOLS ${PIDX_BUILD_TOOLS}")
 # PIDX_OPTION_XXXX
 # ///////////////////////////////////////////////
 
-#OPTION(PIDX_OPTION_ZFP "Enable ZFP." TRUE)
-#MESSAGE("PIDX_OPTION_ZFP ${PIDX_OPTION_ZFP}")
-#IF (PIDX_OPTION_ZFP)
-#  SET(PIDX_HAVE_ZFP 1)
-#ENDIF ()
-
 SET(PIDX_HAVE_ZFP 1)  #ZFP is embedded and installed with PIDX
 
 

@@ -85,3 +85,27 @@ IF (PIDX_BUILD_TOOLS)
   TARGET_LINK_LIBRARIES(minmax ${TOOLS_LINK_LIBS})
 
 ENDIF ()
+
+IF (PIDX_BUILD_CONVERT)
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
+  SET(EXAMPLES_LINK_LIBS pidx ${PIDX_LINK_LIBS}) 
+  IF (MPI_CXX_FOUND)
+    MESSAGE("Configuring examples with MPI support")
+    INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
+    SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${MPI_C_LIBRARIES})
+  ENDIF ()
+
+  IF (ZFP_FOUND)
+    #MESSAGE("Configuring examples with ZFP support")
+    INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
+    SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
+  ENDIF ()
+
+  # ////////////////////////////////////////
+  # executable
+  # ////////////////////////////////////////
+
+  PIDX_ADD_CEXECUTABLE(raw_to_idx "convert/raw-to-idx.c")
+  TARGET_LINK_LIBRARIES(raw_to_idx ${EXAMPLES_LINK_LIBS})
+
+ENDIF ()
