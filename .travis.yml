@@ -29,7 +29,7 @@ matrix:
         - BUILD_TYPE=Release
         - MPIRUN_CMD=$TRAVIS_BUILD_DIR/mpich/bin/mpirun
     - os: osx
-      osx_image: xcode8
+      osx_image: xcode9.4
       compiler: clang
       env:
         - CXX_COMPILER=clang++
