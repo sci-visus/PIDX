@@ -1,6 +1,18 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+### Added
+- int compression (zfp)
+- experimental adaptive aggregation example
+- experimetnal LOD read (with random reshuffling)
+
+### Changed
+- datatypes redefinition (for portability)
+- use zfp as submodule
+- refractoring examples
+- particles two phase I/O working (with results verify)
+
 ## [0.9.2]
 ### Added
 - support for Windows build
