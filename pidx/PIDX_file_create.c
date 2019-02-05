@@ -166,6 +166,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_partition, "%s_0.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_time_template, "time%%09d/");
 
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 

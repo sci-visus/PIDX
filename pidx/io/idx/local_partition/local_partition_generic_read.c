@@ -80,7 +80,9 @@ PIDX_return_code PIDX_local_partition_idx_generic_read(PIDX_io file, int svi, in
         // populate the local partition template using the current time step index
         char dirname[1024], basename[1024];
         VisusSplitFilename(file->idx->filename_template_partition, dirname, basename);
-        sprintf(file->idx->filename_template_partition, "%s/time%09d/%s", dirname, file->idx->current_time_step, basename );
+        char time_template[512];
+        sprintf(time_template, "%%s/%s/%%s", file->idx->filename_time_template);
+        sprintf(file->idx->filename_template_partition, time_template, dirname, file->idx->current_time_step, basename );
 
         // Checking if the simulation patch intersects with the partition
         int d = 0, check_bit = 0;

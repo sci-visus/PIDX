@@ -318,32 +318,32 @@ static void create_synthetic_simulation_data()
 
           for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
           {
-            if (strcmp(type_name[var], UINT8) == 0 || strcmp(type_name[var], UINT8_GA) == 0 || strcmp(type_name[var], UINT8_RGB) == 0)
+            if (strcmp(type_name[var], PIDX_DType.UINT8) == 0 || strcmp(type_name[var], PIDX_DType.UINT8_GA) == 0 || strcmp(type_name[var], PIDX_DType.UINT8_RGB) == 0)
             {
               cvalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(unsigned char), &cvalue, sizeof(unsigned char));
             }
-            if (strcmp(type_name[var], INT16) == 0 || strcmp(type_name[var], INT16_GA) == 0 || strcmp(type_name[var], INT16_RGB) == 0)
+            if (strcmp(type_name[var], PIDX_DType.INT16) == 0 || strcmp(type_name[var], PIDX_DType.INT16_GA) == 0 || strcmp(type_name[var], PIDX_DType.INT16_RGB) == 0)
             {
               svalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(short), &svalue, sizeof(short));
             }
-            if (strcmp(type_name[var], INT32) == 0 || strcmp(type_name[var], INT32_GA) == 0 || strcmp(type_name[var], INT32_RGB) == 0)
+            if (strcmp(type_name[var], PIDX_DType.INT32) == 0 || strcmp(type_name[var], PIDX_DType.INT32_GA) == 0 || strcmp(type_name[var], PIDX_DType.INT32_RGB) == 0)
             {
               ivalue = (int)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int), &ivalue, sizeof(int));
             }
-            else if (strcmp(type_name[var], FLOAT32) == 0 || strcmp(type_name[var], FLOAT32_GA) == 0 || strcmp(type_name[var], FLOAT32_RGB) == 0)
+            else if (strcmp(type_name[var], PIDX_DType.FLOAT32) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT32_GA) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT32_RGB) == 0)
             {
               fvalue = (float)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
             }
-            else if (strcmp(type_name[var], FLOAT64) == 0 || strcmp(type_name[var], FLOAT64_GA) == 0 || strcmp(type_name[var], FLOAT64_RGB) == 0)
+            else if (strcmp(type_name[var], PIDX_DType.FLOAT64) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT64_GA) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT64_RGB) == 0)
             {
               dvalue = (double) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
-            else if (strcmp(type_name[var], UINT64) == 0 || strcmp(type_name[var], UINT64_GA) == 0 || strcmp(type_name[var], UINT64_RGB) == 0)
+            else if (strcmp(type_name[var], PIDX_DType.UINT64) == 0 || strcmp(type_name[var], PIDX_DType.UINT64_GA) == 0 || strcmp(type_name[var], PIDX_DType.UINT64_RGB) == 0)
             {
               uivalue = (uint64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(uint64_t), &uivalue, sizeof(uint64_t));

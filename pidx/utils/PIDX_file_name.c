@@ -205,7 +205,7 @@ int generate_file_name(int blocks_per_file, char* filename_template, int file_nu
 
 
 /////////////////////////////////////////////////
-int generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template)
+int generate_file_name_template(int maxh, int bits_per_block, char* filename, char* time_template, int current_time_step, char* filename_template)
 {
   int N;
   char dirname[1024], basename[1024];
@@ -219,8 +219,11 @@ int generate_file_name_template(int maxh, int bits_per_block, char* filename, in
   directory_path = malloc(sizeof(*directory_path) * 1024);
   memset(directory_path, 0, sizeof(*directory_path) * 1024);
 
-  strncpy(directory_path, filename, strlen(filename) - 4);  
-  sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);
+  strncpy(directory_path, filename, strlen(filename) - 4);
+  char this_time_template[512];
+  sprintf(this_time_template, "%%s/%s.idx", time_template);
+
+  sprintf(data_set_path, this_time_template, directory_path, current_time_step);
   free(directory_path);
 
   nbits_blocknumber = (maxh - bits_per_block - 1);

@@ -69,6 +69,7 @@ struct idx_file_struct
   char filename_template[1024];
   char filename_partition[1024];
   char filename_template_partition[1024];
+  char filename_time_template[1024];
 
   int bits_per_block;                               /// Number of bits per block
   uint64_t samples_per_block;                       /// Number of samples in a block 2^bits_per_block
