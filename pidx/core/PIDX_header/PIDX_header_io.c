@@ -184,7 +184,9 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, file_name, strlen(file_name) - 4);
-  sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s", header_io_id->idx->filename_time_template);
+  sprintf(data_set_path, time_template, directory_path, header_io_id->idx->current_time_step);
   free(directory_path);
 
   if (header_io_id->idx_c->partition_rank == 0)

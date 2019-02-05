@@ -167,7 +167,9 @@ PIDX_return_code PIDX_generic_rst_forced_raw_read(PIDX_generic_rst_id rst_id)
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
-  sprintf(data_set_path, "%s/time%09d/", directory_path, rst_id->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s", rst_id->idx->filename_time_template);
+  sprintf(data_set_path, time_template, directory_path, rst_id->idx->current_time_step);
 
 
   int pc1 = 0;
@@ -314,9 +316,12 @@ PIDX_return_code PIDX_generic_rst_forced_raw_read(PIDX_generic_rst_id rst_id)
       }
     }
 
+    char time_template[512];
+    sprintf(time_template, "%%s/%s/%%d_%%d", rst_id->idx->filename_time_template);
+
     for (i = 0; i < patch_count; i++)
     {
-      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, patch_grp->source_patch_rank[i], source_patch_id[i]);
+      sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, patch_grp->source_patch_rank[i], source_patch_id[i]);
       int fpx = open(file_name, O_RDONLY);
 
       pc_index = patch_grp->source_patch_rank[i] * (max_patch_count * temp_max_dim + 1);

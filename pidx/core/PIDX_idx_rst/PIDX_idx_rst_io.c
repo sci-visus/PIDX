@@ -72,7 +72,9 @@ PIDX_return_code PIDX_idx_rst_buf_aggregated_write(PIDX_idx_rst_id rst_id)
   file_name = malloc(PATH_MAX * sizeof(*file_name));
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-  sprintf(file_name, "%s/time%09d/%d_0", directory_path, rst_id->idx_metadata->current_time_step, rst_id->idx_c->simulation_rank);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/%%d_0", rst_id->idx_metadata->filename_time_template);
+  sprintf(file_name, time_template, directory_path, rst_id->idx_metadata->current_time_step, rst_id->idx_c->simulation_rank);
   int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
   int v = 0;

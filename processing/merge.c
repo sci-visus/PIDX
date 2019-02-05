@@ -568,7 +568,10 @@ PIDX_return_code file_initialize_time_step(int current_time_step, char* file_nam
   memset(directory_path, 0, sizeof(*directory_path) * 1024);
 
   strncpy(directory_path, file_name, strlen(file_name) - 4);
-  sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);
+
+  char time_template[512];
+  sprintf(time_template, "%%s/%s.idx", file->idx->filename_time_template);
+  sprintf(data_set_path, time_template, directory_path, current_time_step);
   free(directory_path);
 
   nbits_blocknumber = (maxh - bits_per_block - 1);
