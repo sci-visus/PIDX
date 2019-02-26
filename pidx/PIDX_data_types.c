@@ -106,6 +106,8 @@ PIDX_return_code PIDX_default_bits_per_datatype(PIDX_data_type type, int* bits)
 {
   char full_typename[64];
   strncpy(full_typename, type, 64);
+  // if typename does not start with the number of components change to "1*dataype"
+  // TODO handle also case with datatype written as datatype[n_comp]
   if(!isdigit(full_typename[0])){
     sprintf(full_typename, "1*%s", type);
   }
