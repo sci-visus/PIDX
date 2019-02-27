@@ -43,7 +43,7 @@ read_idx_executable = "../../build/examples/idx_read"
 write_compressed_executable = "../../build/examples/idx_write_compressed"
 write_partitioned_executable = "../../build/examples/idx_write_partitioned"
 
-mpirun="mpirun --oversubscribe"
+mpirun="mpirun"
 
 # enable debug prints 
 debug_print=1

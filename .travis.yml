@@ -37,7 +37,7 @@ matrix:
         - HOMEBREW_CC=clang
         - HOMEBREW_CXX=clang++
         - BUILD_TYPE=Release
-        - MPIRUN_CMD="mpirun --oversubscribe"
+        - MPIRUN_CMD=mpirun
       
 
 before_install:
