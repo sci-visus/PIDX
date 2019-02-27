@@ -71,7 +71,7 @@ profiling = 0
 profile_file_write = "pidx_write.prof"
 profile_file_read = "pidx_read.prof"
 
-vars_file = "VARS"
+vars_file = "./VARS"
 
 def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars, var_type, exec_type):
 
@@ -210,8 +210,8 @@ def main(argv):
   global travis_mode
 
   # defaults
-  n_cores = 8
-  n_cores_read = 8
+  n_cores = 4
+  n_cores_read = 4
 
   n_ts = 1
   n_vars = 1
@@ -244,8 +244,9 @@ def main(argv):
       travis_mode = 1
       print "----RUNNING IN TRAVIS TEST MODE----"
 
-  if platform.system() == "Darwin":
-    mpirun += " --oversubscribe"
+  # if platform.system() == "Darwin":
+  #   mpirun += " --oversubscribe"
+
   if profiling > 0:
     os.popen("rm "+prof_file+"*.prof")
 
@@ -257,7 +258,8 @@ def main(argv):
 
   for var in var_types:
     succ = succ + run_tests(n_cores, n_cores_read, var, n_ts, n_vars, ExecType.idx)
-    os.popen("rm -R data*")
+    if(travis_mode == 0):
+      os.popen("rm -R data*")
 
   if(succ == 0):
     print "***** IDX test SUCCESS *****"
@@ -268,7 +270,8 @@ def main(argv):
   succ = 0
   for var in var_types:
     succ = succ + run_tests(n_cores, n_cores_read, var, n_ts, n_vars, ExecType.partitioned)
-    os.popen("rm -R data*")
+    if(travis_mode == 0):
+      os.popen("rm -R data*")
 
   if(succ == 0):
     print "***** IDX_PARTITIONED test SUCCESS *****"
@@ -276,7 +279,8 @@ def main(argv):
     print "***** IDX_PARTITIONED test FAILED *****"
     failed = 1
 
-  os.popen("rm -R data*")
+  if(travis_mode == 0):
+    os.popen("rm -R data*")
 
   succ = 0
 
