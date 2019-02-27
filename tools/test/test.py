@@ -118,7 +118,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
     n_tests = 0
 
     generate_vars(n_vars, var_type, var_type)
-    test_str = mpirun+" --oversubscribe -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
+    test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
     #test_str = mpirun+" -np "+str(n_cores)+" "+write_executable+" -g "+g_box+" -l "+l_box+" -r "+r_box+" -t "+str(n_ts)+" -v "+vars_file+" -f data"
     
     if(debug_print>0):
@@ -136,7 +136,7 @@ def execute_test(n_cores, n_cores_read, g_box_n, l_box_n, r_box_n, n_ts, n_vars,
       for vr in range(0, n_vars):
         n_tests = n_tests + 1
 
-        test_str= mpirun+" --oversubscribe -np "+str(n_cores_read)+" "+read_executable+" -g "+g_box+" -l "+l_box_read+" -t "+str(t-1)+" -v "+str(vr)+" -f data"
+        test_str= mpirun+" -np "+str(n_cores_read)+" "+read_executable+" -g "+g_box+" -l "+l_box_read+" -t "+str(t-1)+" -v "+str(vr)+" -f data"
 
         if(debug_print>0):
           print "EXECUTE read:", test_str
@@ -244,6 +244,8 @@ def main(argv):
       travis_mode = 1
       print "----RUNNING IN TRAVIS TEST MODE----"
 
+  if platform.system() == "Darwin":
+    mpirun += " --oversubscribe"
   if profiling > 0:
     os.popen("rm "+prof_file+"*.prof")
 
