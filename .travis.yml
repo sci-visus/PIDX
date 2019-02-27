@@ -61,7 +61,7 @@ script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_read.app/Contents/MacOS/idx_read examples/idx_read; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then ln -s idx_write.app/Contents/MacOS/idx_write examples/idx_write; fi
   - cd ../tools/test
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python test.py -w 4 -r 4 -m $MPIRUN_CMD -t; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then python test.py -w 2 -r 2 -m $MPIRUN_CMD -t; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then python test.py -w 8 -r 8 -m $MPIRUN_CMD -t; fi
   - sh travis_tests.sh
 
