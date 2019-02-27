@@ -282,8 +282,8 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
 {
   int N;
   FILE* idx_file_p;
-  char dirname[1024], basename[1024];
-  char file_temp[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
+  char file_temp[PIDX_FILE_PATH_LENGTH];
 
   int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
@@ -450,8 +450,8 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
 {
   int l = 0, N;
   FILE* idx_file_p;
-  char dirname[1024], basename[1024];
-  char file_temp[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
+  char file_temp[PIDX_FILE_PATH_LENGTH];
 
   int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
@@ -581,8 +581,8 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
 {
   int l = 0, N;
   FILE* idx_file_p;
-  char dirname[1024], basename[1024];
-  char file_temp[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
+  char file_temp[PIDX_FILE_PATH_LENGTH];
 
   int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);

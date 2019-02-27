@@ -129,6 +129,7 @@ enum PIDX_endian_type{
 #define PIDX_default_bits_per_block              15
 #define PIDX_default_blocks_per_file             256
 
+#define PIDX_FILE_PATH_LENGTH                    1024
 
 /// Create the file if it does not exist.
 #define PIDX_MODE_CREATE              1

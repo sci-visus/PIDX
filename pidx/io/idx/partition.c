@@ -239,7 +239,7 @@ static PIDX_return_code partition_setup(PIDX_io file, int svi)
 
   free(colors);
 
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
   strncpy(file_name_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
   sprintf(file->idx->filename_partition, "%s_%d.idx", file_name_skeleton, file->idx_c->color);
@@ -345,8 +345,8 @@ static PIDX_return_code create_midx(PIDX_io file, int svi)
 {
 
   int N;
-  char dirname[1024], basename[1024];
-  char file_temp[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
+  char file_temp[PIDX_FILE_PATH_LENGTH];
 
   int nbits_blocknumber = (file->idx->maxh - file->idx->bits_per_block - 1);
   VisusSplitFilename(file->idx->filename, dirname, basename);

@@ -60,7 +60,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   uint64_t i = 0;
   int ret;
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
 
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename){
     fprintf(stderr,"[%s] [%d]\n", __FILE__, __LINE__);

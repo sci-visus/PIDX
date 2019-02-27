@@ -556,16 +556,16 @@ static PIDX_return_code IDX_file_open(const char* filename)
 PIDX_return_code file_initialize_time_step(int current_time_step, char* file_name, char* file_template)
 {
   int N;
-  char dirname[1024], basename[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
   int nbits_blocknumber;
   char *directory_path;
   char *data_set_path;
 
-  data_set_path = malloc(sizeof(*data_set_path) * 1024);
-  memset(data_set_path, 0, sizeof(*data_set_path) * 1024);
+  data_set_path = malloc(sizeof(*data_set_path) * PIDX_FILE_PATH_LENGTH);
+  memset(data_set_path, 0, sizeof(*data_set_path) * PIDX_FILE_PATH_LENGTH);
 
-  directory_path = malloc(sizeof(*directory_path) * 1024);
-  memset(directory_path, 0, sizeof(*directory_path) * 1024);
+  directory_path = malloc(sizeof(*directory_path) * PIDX_FILE_PATH_LENGTH);
+  memset(directory_path, 0, sizeof(*directory_path) * PIDX_FILE_PATH_LENGTH);
 
   strncpy(directory_path, file_name, strlen(file_name) - 4);
 
@@ -668,8 +668,8 @@ int main(int argc, char **argv)
       int hz_index = (int)pow(2, level - 1);
       int file_no = hz_index / (blocks_per_file * (int)pow(2, bits_per_block));
       int file_count;
-      char existing_file_name[1024];
-      char new_file_name[1024];
+      char existing_file_name[PIDX_FILE_PATH_LENGTH];
+      char new_file_name[PIDX_FILE_PATH_LENGTH];
       int ic = 0;
       if (level <= bits_per_block + log2(blocks_per_file) + 1)
         file_count = 1;
@@ -708,7 +708,7 @@ int main(int argc, char **argv)
           off_t totl_data_offset = 0;
           for (ic = 0; ic < idx_count[0] * idx_count[1] * idx_count[2]; ic++)
           {
-            char file_name_skeleton[1024];
+            char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
             strncpy(file_name_skeleton, output_file_name, strlen(output_file_name) - 4);
             file_name_skeleton[strlen(output_file_name) - 4] = '\0';
 

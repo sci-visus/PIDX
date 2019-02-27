@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   int var;
   int slice = 0;
   int nprocs = 1, rank = 0;
-  char output_file_name[1024];
+  char output_file_name[PIDX_FILE_PATH_LENGTH];
   unsigned long long local_box_offset[3];
 
   // MPI initialization
@@ -328,7 +328,7 @@ static int parse_args(int argc, char **argv)
 
   for (i = 0; i < variable_count; i++)
   {
-    char temp_var_name[1024];
+    char temp_var_name[PIDX_FILE_PATH_LENGTH];
     ret = fscanf(fp, "%s %d", temp_var_name, &values_per_sample[i]);
     if (ret != 2 || ret == EOF)
       return (-1);
@@ -346,7 +346,7 @@ static int parse_args(int argc, char **argv)
 
   for (i = 0; i < time_step_count; i++)
   {
-    char temp_file_name[1024];
+    char temp_file_name[PIDX_FILE_PATH_LENGTH];
     ret = fscanf(fp, "%s", temp_file_name);
     if (ret != 1 || ret == EOF)
       return (-1);

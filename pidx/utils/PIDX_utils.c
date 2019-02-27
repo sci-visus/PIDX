@@ -1294,7 +1294,7 @@ PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int
 
 char *replace_str(char *str, char *orig, char *rep)
 {
-  static char buffer[1024];
+  static char buffer[PIDX_FILE_PATH_LENGTH];
   char *p;
 
   if(!(p = strstr(str, orig)))  // Is 'orig' even in 'str'?
