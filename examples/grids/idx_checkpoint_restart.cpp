@@ -41,6 +41,7 @@
 #if !defined _MSC_VER
 #include <unistd.h>
 #endif
+#include <string>
 #include <stdarg.h>
 #include <stdint.h>
 #include <ctype.h>
