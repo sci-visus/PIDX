@@ -38,11 +38,17 @@
  * For support: support@visus.net
  * 
  */
-//#include <unistd.h>
-//#include <stdarg.h>
-//#include <stdint.h>
-#include <string>
+#if !defined _MSC_VER
+#include <unistd.h>
+#endif
+#include <stdarg.h>
+#include <stdint.h>
+#include <ctype.h>
 #include <PIDX.h>
+
+#if defined _MSC_VER
+#include "utils/PIDX_windows_utils.h"
+#endif
 
 #define VIS_DUMP // << ENABLE Visualization dump with downcasting
 
