@@ -457,8 +457,6 @@ int main(int argc, char** argv){
     return 0;
 }
 
-
-///< Parse the input arguments
 static int parse_args(int argc, char **argv)
 {
     char flags[] = "g:l:r:";
@@ -469,19 +467,25 @@ static int parse_args(int argc, char **argv)
         /* postpone error checking for after while loop */
         switch (one_opt)
         {
-            case('g'):
-                sscanf(optarg, "%dx%dx%d", &global_box_size[0], &global_box_size[1], &global_box_size[2]);
-                break;
-            case('l'):
-                sscanf(optarg, "%dx%dx%d", &local_box_size[0], &local_box_size[1], &local_box_size[2]);
-                break;
-            case('r'):
-                sscanf(optarg, "%dx", &restart_time);
-                break;
-            case('?'):
-                return (-1);
+            case('g'): // global dimension
+                if ((sscanf(optarg, "%lldx%lldx%lld", &global_box_size[0], &global_box_size[1], &global_box_size[2]) == EOF) || (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1))
+                    fprintf(stderr,"Invalid global dimensions\n%s", usage);
+            break;
+
+            case('l'): // local dimension
+                if ((sscanf(optarg, "%lldx%lldx%lld", &local_box_size[0], &local_box_size[1], &local_box_size[2]) == EOF) || (local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1))
+                    fprintf(stderr,"Invalid local dimension\n%s", usage);
+            break;
+
+            case('r'): // number of variables
+                sscanf(optarg, "%d", &restart_time);
+            break;
+
+            default:
+                fprintf(stderr,"Wrong arguments\n%s", usage);
         }
     }
+
     /* need positive dimensions */
     if (global_box_size[0] < 1 || global_box_size[1] < 1 || global_box_size[2] < 1 || local_box_size[0] < 1 || local_box_size[1] < 1 || local_box_size[2] < 1)
     {
@@ -508,7 +512,7 @@ static int parse_args(int argc, char **argv)
         return (-1);
     }
 
-    return (0);
+    return 0;
 }
 
 ///< How to use this progam
