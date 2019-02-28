@@ -97,7 +97,7 @@ IF (PIDX_BUILD_EXAMPLES)
   PIDX_ADD_CEXECUTABLE(idx_write_multibuffer "grids/idx_write_multibuffer.c")
   TARGET_LINK_LIBRARIES(idx_write_multibuffer ${EXAMPLES_LINK_LIBS})
 
-  PIDX_ADD_CEXECUTABLE(idx_checkpoint_restart "grids/idx_checkpoint_restart.cpp")
+  PIDX_ADD_CXXEXECUTABLE(idx_checkpoint_restart "grids/idx_checkpoint_restart.cpp")
   TARGET_LINK_LIBRARIES(idx_checkpoint_restart ${EXAMPLES_LINK_LIBS})
 
 # Experimental reduced resolution
