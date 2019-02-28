@@ -54,7 +54,9 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
   memset(idx_directory_path, 0, sizeof(*idx_directory_path) * PATH_MAX);
   strncpy(idx_directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
-  sprintf(size_path, "%s/time%09d/OFFSET_SIZE", idx_directory_path, file->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/OFFSET_SIZE", file->idx->filename_time_template);
+  sprintf(size_path, time_template, idx_directory_path, file->idx->current_time_step);
   free(idx_directory_path);
 
   double number_cores = 0;
@@ -140,6 +142,9 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
     // LOD read stuff: read only num particles until current resolution level
     uint64_t curr_res_pcount = file->idx->particle_res_base * int_pow(file->idx->particle_res_factor,  file->idx->current_resolution);
 
+    char time_template[512];
+    sprintf(time_template, "%%s/%s/%%d_%%d", file->idx->filename_time_template);
+
     int patch_count = 0;
     for (int n = 0; n < number_cores; n++)
     {
@@ -163,7 +168,7 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
 
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
-          sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, n, m);
+          sprintf(file_name, time_template, directory_path, file->idx->current_time_step, n, m);
           int fpx = open(file_name, O_RDONLY);
 
           // TODO WILL: For particles we need to rethink how we do this loop, we'll need to

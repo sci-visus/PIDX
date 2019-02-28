@@ -14,8 +14,8 @@ diff swfile srfile
 int main(int argc, char **argv)
 {
 
-  char write_file[1024];
-  char read_file[1024];
+  char write_file[PIDX_FILE_PATH_LENGTH];
+  char read_file[PIDX_FILE_PATH_LENGTH];
 
   if ( argc != 4 )
   {
@@ -23,7 +23,7 @@ int main(int argc, char **argv)
     return 0;
   }
 
-  char wfile[1024];
+  char wfile[PIDX_FILE_PATH_LENGTH];
   sprintf(wfile, "%s", "wfile");
   int write_file_count = atoi(argv[2]);
   FILE *wfp = fopen(wfile, "w");
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
   fclose(wfp);
 
 
-  char rfile[1024];
+  char rfile[PIDX_FILE_PATH_LENGTH];
   sprintf(rfile, "%s", "rfile");
   int read_file_count = atoi(argv[3]);
   FILE *rfp = fopen(rfile, "w");

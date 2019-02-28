@@ -68,13 +68,16 @@ PIDX_return_code PIDX_particle_file_per_process_write(PIDX_io file, int svi, int
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/%%d_%%d", file->idx->filename_time_template);
+
   uint64_t local_pcount = 0;
   PIDX_variable var0 = file->idx->variable[svi];
   for (int p = 0; p < var0->sim_patch_count; p++)
   {
     char file_name[PATH_MAX];
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->simulation_rank, p);
+    sprintf(file_name, time_template, directory_path, file->idx->current_time_step, file->idx_c->simulation_rank, p);
 
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
     if (fp < 0)
@@ -267,7 +270,10 @@ static PIDX_return_code PIDX_meta_data_write(PIDX_io file, int svi)
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, file->idx->filename, strlen(file->idx->filename) - 4);
 
-  sprintf(file_path, "%s/time%09d/OFFSET_SIZE", directory_path, file->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/OFFSET_SIZE", file->idx->filename_time_template);
+
+  sprintf(file_path, time_template, directory_path, file->idx->current_time_step);
   free(directory_path);
   if (file->idx_c->simulation_rank == 1 || file->idx_c->simulation_nprocs == 1)
   {

@@ -78,9 +78,11 @@ PIDX_return_code PIDX_local_partition_idx_generic_read(PIDX_io file, int svi, in
             continue;
 
         // populate the local partition template using the current time step index
-        char dirname[1024], basename[1024];
+        char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
         VisusSplitFilename(file->idx->filename_template_partition, dirname, basename);
-        sprintf(file->idx->filename_template_partition, "%s/time%09d/%s", dirname, file->idx->current_time_step, basename );
+        char time_template[512];
+        sprintf(time_template, "%%s/%s/%%s", file->idx->filename_time_template);
+        sprintf(file->idx->filename_template_partition, time_template, dirname, file->idx->current_time_step, basename );
 
         // Checking if the simulation patch intersects with the partition
         int d = 0, check_bit = 0;
@@ -217,7 +219,7 @@ static PIDX_return_code parse_local_partition_idx_file(PIDX_io file, int partiti
 {
   // Parse the partition idx file to get partition specific meta data
 
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
   strncpy(file_name_skeleton, file->idx->filename, strlen(file->idx->filename) - 4);
   file_name_skeleton[strlen(file->idx->filename) - 4] = '\0';
   sprintf(file->idx->filename_partition, "%s_%d.idx", file_name_skeleton, partition_index);

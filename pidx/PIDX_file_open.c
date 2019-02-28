@@ -44,7 +44,7 @@
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
 {
   int i;
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
 
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;
@@ -194,7 +194,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
-  MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast((*file)->idx->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast((*file)->idx->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->simulation_comm);
@@ -203,6 +202,13 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+
+  // broadcast all filename templates
+  MPI_Bcast((*file)->idx->filename_template, PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->filename_partition), PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->filename_template_partition), PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx->filename_time_template, PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+
   
   //printf("reading version %d\n",(*file)->idx->metadata_version);
   if ((*file)->idx->io_type == PIDX_IDX_IO)
@@ -298,7 +304,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file)
 {
   int i;
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
   
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;

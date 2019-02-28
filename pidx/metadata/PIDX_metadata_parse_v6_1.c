@@ -362,6 +362,9 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
       if ( fgets(line, sizeof line, fp) == NULL)
         return PIDX_err_file;
       line[strcspn(line, "\r\n")] = 0;
+      // TODO handle filename_template
+//      strcpy((*file)->idx->filename_template, line);
+//      replace_str((*file)->idx->filename_template, "%","%%");
     }
 
     if (strcmp(line, "(time)") == 0)
@@ -382,8 +385,15 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
 
       if (pch != NULL)
         (*file)->idx->last_tstep = atoi(pch);
+      else
+        return PIDX_err_file;
 
+      pch = strtok(NULL, " ");
 
+      if (pch != NULL) {
+        strcpy((*file)->idx->filename_time_template, pch);
+        replace_str((*file)->idx->filename_time_template, "%","%%");
+      }
       else
         return PIDX_err_file;
     }

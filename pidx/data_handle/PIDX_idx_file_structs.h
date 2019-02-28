@@ -65,10 +65,11 @@ struct idx_file_struct
   Agg_buffer **agg_buffer;                          /// aggregation related struct
 
 
-  char filename[1024];                              /// The idx file path
-  char filename_template[1024];
-  char filename_partition[1024];
-  char filename_template_partition[1024];
+  char filename[PIDX_FILE_PATH_LENGTH];             /// The .idx file path
+  char filename_template[PIDX_FILE_PATH_LENGTH];    /// Filename template use to resolve the path of the .idx file and binaries
+  char filename_partition[PIDX_FILE_PATH_LENGTH];   /// The .idx file for partitioned I/O
+  char filename_template_partition[PIDX_FILE_PATH_LENGTH];/// Filename template for the binary files
+  char filename_time_template[PIDX_FILE_PATH_LENGTH];/// Filename template used to resolve the path of time folders
 
   int bits_per_block;                               /// Number of bits per block
   uint64_t samples_per_block;                       /// Number of samples in a block 2^bits_per_block

@@ -53,12 +53,12 @@ void mira_create_folder_name(char* bin_file, char* folder_name)
   
   //fprintf(stderr, "Name length = %d\n", (ch_dot - ch_slash));
   
-  char file_name[1024];
+  char file_name[PIDX_FILE_PATH_LENGTH];
   memset(file_name, 0, (ch_dot - ch_slash));
   strncpy(file_name, bin_file + (ch_slash - bin_file + 1), (ch_dot - ch_slash - 1));
   //fprintf(stderr, "File name = %s\n", file_name);
   
-  char bin_file_first_part[1024];
+  char bin_file_first_part[PIDX_FILE_PATH_LENGTH];
   strncpy(bin_file_first_part, bin_file, (ch_slash - bin_file));
   //fprintf(stderr, "File name copy %s\n", bin_file_first_part);
   
@@ -80,12 +80,12 @@ void adjust_file_name(char* bin_file, char* adjusted_name)
   
   //fprintf(stderr, "Name length = %d\n", (ch_dot - ch_slash));
   
-  char file_name[1024];
+  char file_name[PIDX_FILE_PATH_LENGTH];
   memset(file_name, 0, (ch_dot - ch_slash));
   strncpy(file_name, bin_file + (ch_slash - bin_file + 1), (ch_dot - ch_slash - 1));
   //fprintf(stderr, "File name = %s\n", file_name);
   
-  char bin_file_first_part[1024];
+  char bin_file_first_part[PIDX_FILE_PATH_LENGTH];
   strncpy(bin_file_first_part, bin_file, (ch_slash - bin_file));
   //fprintf(stderr, "File name copy %s\n", bin_file_first_part);
   
@@ -95,7 +95,7 @@ void adjust_file_name(char* bin_file, char* adjusted_name)
   return;
 }
 
-int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen) 
+int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen)
 {
   uint64_t address = 0;
   unsigned int segs[PIDX_MAX_TEMPLATE_DEPTH] = {0};
@@ -205,10 +205,10 @@ int generate_file_name(int blocks_per_file, char* filename_template, int file_nu
 
 
 /////////////////////////////////////////////////
-int generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template)
+int generate_file_name_template(int maxh, int bits_per_block, char* filename, char* time_template, int current_time_step, char* filename_template)
 {
   int N;
-  char dirname[1024], basename[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
   int nbits_blocknumber;
   char* directory_path;
   char* data_set_path;
@@ -219,8 +219,11 @@ int generate_file_name_template(int maxh, int bits_per_block, char* filename, in
   directory_path = malloc(sizeof(*directory_path) * 1024);
   memset(directory_path, 0, sizeof(*directory_path) * 1024);
 
-  strncpy(directory_path, filename, strlen(filename) - 4);  
-  sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);
+  strncpy(directory_path, filename, strlen(filename) - 4);
+  char this_time_template[512];
+  sprintf(this_time_template, "%%s/%s.idx", time_template);
+
+  sprintf(data_set_path, this_time_template, directory_path, current_time_step);
   free(directory_path);
 
   nbits_blocknumber = (maxh - bits_per_block - 1);

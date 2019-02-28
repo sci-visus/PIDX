@@ -46,7 +46,7 @@
 struct PIDX_variable_struct
 {
   // General Info
-  char var_name[1024];                                       ///< Variable name
+  char var_name[PIDX_FILE_PATH_LENGTH];                                       ///< Variable name
   int vps;                                                   ///< values per sample, Vector(3), scalar(1), or n
   int bpv;                                                   ///< Number of bits each need
   PIDX_data_type type_name;                                  ///< Name of the type uint8, bob
@@ -55,7 +55,7 @@ struct PIDX_variable_struct
 
   // buffer (before, after HZ encoding phase)
   int sim_patch_count;                                       ///< Number of patches/blocks that the simulation feeds to PIDX (application layout)
-  PIDX_patch sim_patch[1024];                                ///< Pointer to the patches
+  PIDX_patch sim_patch[PIDX_FILE_PATH_LENGTH];                                ///< Pointer to the patches
 
 
   // buffer after restructuring

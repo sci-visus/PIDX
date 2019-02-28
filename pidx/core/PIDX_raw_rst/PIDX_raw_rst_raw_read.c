@@ -177,7 +177,9 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
-  sprintf(data_set_path, "%s/time%09d/", directory_path, rst_id->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s", rst_id->idx->filename_time_template);
+  sprintf(data_set_path, time_template, directory_path, rst_id->idx->current_time_step);
 
   for (int pc1 = 0; pc1 < rst_id->idx->variable[svi]->sim_patch_count; pc1++)
   {
@@ -307,6 +309,9 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     temp_patch_buffer2 = malloc(sizeof(*temp_patch_buffer2) * (evi - svi + 1));
     memset(temp_patch_buffer2, 0, sizeof(*temp_patch_buffer2) * (evi - svi + 1));
 
+    char time_template[512];
+    sprintf(time_template, "%%s/%s/%%d_%%d", rst_id->idx->filename_time_template);
+
     int other_offset = 0;
     for (int start_index = svi; start_index <= evi; start_index = start_index + 1)
     {
@@ -327,7 +332,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         temp_patch_buffer2[index] = malloc((uint64_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
         memset(temp_patch_buffer2[index], 0, (uint64_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
 
-        sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
+        sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
 
         int fpx = open(file_name, O_RDONLY);
         other_offset = 0;

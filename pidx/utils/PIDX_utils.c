@@ -1291,3 +1291,19 @@ PIDX_return_code PIDX_get_datatype_details(PIDX_data_type type, int* values, int
 
     return PIDX_success;
 }
+
+char *replace_str(char *str, char *orig, char *rep)
+{
+  static char buffer[PIDX_FILE_PATH_LENGTH];
+  char *p;
+
+  if(!(p = strstr(str, orig)))  // Is 'orig' even in 'str'?
+    return str;
+
+  strncpy(buffer, str, p-str); // Copy characters from 'str' start to 'orig' st$
+  buffer[p-str] = '\0';
+
+  sprintf(buffer+(p-str), "%s%s", rep, p+strlen(orig));
+
+  return buffer;
+}

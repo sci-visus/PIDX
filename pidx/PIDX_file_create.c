@@ -60,7 +60,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   uint64_t i = 0;
   int ret;
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
 
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename){
     fprintf(stderr,"[%s] [%d]\n", __FILE__, __LINE__);
@@ -166,6 +166,7 @@ PIDX_return_code PIDX_file_create(const char* filename, PIDX_flags flags, PIDX_a
 
   sprintf((*file)->idx->filename, "%s.idx", file_name_skeleton);
   sprintf((*file)->idx->filename_partition, "%s_0.idx", file_name_skeleton);
+  sprintf((*file)->idx->filename_time_template, "time%%09d/");
 
   (*file)->idx->blocks_per_file = PIDX_default_blocks_per_file;
 

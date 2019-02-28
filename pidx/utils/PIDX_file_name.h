@@ -44,7 +44,7 @@
 
 int generate_file_name(int blocks_per_file, char* filename_template, int file_number, char* filename, int maxlen);
 
-int generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template);
+int generate_file_name_template(int maxh, int bits_per_block, char* filename, char* time_template, int current_time_step, char* filename_template);
 
 void adjust_file_name(char* bin_file, char* adjusted_name);
 

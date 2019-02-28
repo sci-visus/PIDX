@@ -47,7 +47,7 @@ static PIDX_return_code write_idx_headers_layout(PIDX_io file, int start_var_ind
 PIDX_return_code write_global_idx(PIDX_io file, int start_var_index, int end_var_index, int mode)
 {
   // populate the filename template
-  generate_file_name_template(file->idx->maxh, file->idx->bits_per_block, file->idx->filename, file->idx->current_time_step, file->idx->filename_template);
+  generate_file_name_template(file->idx->maxh, file->idx->bits_per_block, file->idx->filename, file->idx->filename_time_template, file->idx->current_time_step, file->idx->filename_template);
 
   if (mode != PIDX_WRITE)
     return PIDX_success;
@@ -80,7 +80,7 @@ PIDX_return_code write_headers(PIDX_io file, int start_var_index, int end_var_in
   if (file->idx->io_type == PIDX_IDX_IO)
     strcpy(file->idx->filename_partition,file->idx->filename);
   
-  generate_file_name_template(file->idx->maxh, file->idx->bits_per_block, file->idx->filename_partition, file->idx->current_time_step, file->idx->filename_template_partition);
+  generate_file_name_template(file->idx->maxh, file->idx->bits_per_block, file->idx->filename_partition, file->idx->filename_time_template, file->idx->current_time_step, file->idx->filename_template_partition);
 
   //fprintf(stderr, "(maxh %d) FN %s FNT %s\n",file->idx->maxh, file->idx->filename_partition, file->idx->filename_template_partition);
 
