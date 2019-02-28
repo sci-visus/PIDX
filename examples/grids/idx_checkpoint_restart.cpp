@@ -384,7 +384,7 @@ int main(int argc, char** argv){
     for(; t < max_t; t++){
 
         // Generate data for Checkpoint dump
-        int checkpoint_variable_count = 3;                           //< How many variables
+        const int checkpoint_variable_count = 3;            //< How many variables
         int checkpoint_vps[checkpoint_variable_count];      //< How many values per sample
         checkpoint_vps[0] = 1;
         checkpoint_vps[1] = 1;
@@ -409,7 +409,7 @@ int main(int argc, char** argv){
 #ifdef VIS_DUMP
         // Vis DUMP with downcasting
 
-        int vis_variable_count = 1;                             //< How many variables
+        const int vis_variable_count = 1;                             //< How many variables
         int vis_vps[vis_variable_count];          //< How many values per sample
         vis_vps[0] = 1;
 
