@@ -291,10 +291,11 @@ PIDX_return_code set_rst_box_size_for_raw_write(PIDX_io file, int svi)
   PIDX_time time = file->time;
   time->set_reg_box_start = PIDX_get_time();
 
-  if (file->restructured_grid->patch_size[0] == -1 || file->restructured_grid->patch_size[1] == -1 || file->restructured_grid->patch_size[2] == -1)
+  if ((file->restructured_grid->patch_size[0] == -1 || file->restructured_grid->patch_size[1] == -1 || file->restructured_grid->patch_size[2] == -1)
+        || (file->restructured_grid->patch_size[0] == 0 &&  file->restructured_grid->patch_size[1] == 0 && file->restructured_grid->patch_size[2] == 0))
   {
-    fprintf(stderr,"Restructuring box needs to be set File %s Line %d\n", __FILE__, __LINE__);
-    return PIDX_err_rst;
+    fprintf(stderr,"Warning: restructuring box is not set, using default 32x32x32 size. [File %s Line %d]\n", __FILE__, __LINE__);
+    file->restructured_grid->patch_size[0]=32;file->restructured_grid->patch_size[1]=32;file->restructured_grid->patch_size[2]=32;
   }
 
   time->set_reg_box_end = MPI_Wtime();
