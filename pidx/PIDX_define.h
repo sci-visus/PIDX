@@ -131,6 +131,10 @@ enum PIDX_endian_type{
 
 #define PIDX_FILE_PATH_LENGTH                    1024
 
+#ifndef PIDX_MAX_VARIABLE_COUNT
+#define PIDX_MAX_VARIABLE_COUNT                  768
+#endif
+
 /// Create the file if it does not exist.
 #define PIDX_MODE_CREATE              1
 

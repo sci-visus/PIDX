@@ -57,8 +57,8 @@ struct idx_file_struct
 
 
   int variable_pipe_length;                         /// pipes (combines) "variable_pipe_length" variables for io
-  int variable_tracker[512];                        /// Which one of the 256 variables are present
-  PIDX_variable variable[512];                      /// pointer to variable
+  int variable_tracker[PIDX_MAX_VARIABLE_COUNT];                        /// Which one of the 256 variables are present
+  PIDX_variable variable[PIDX_MAX_VARIABLE_COUNT];                      /// pointer to variable
   uint32_t variable_count;                          /// The number of variables contained in the dataset
   uint32_t particles_position_variable_index;       /// The index of the variable containing the particles position
 
