@@ -70,7 +70,7 @@ PIDX_return_code PIDX_generic_rst_forced_raw_read(PIDX_generic_rst_id rst_id)
   free(idx_directory_path);
 
   uint32_t number_cores = 0;
-  int fp = open(size_path, O_RDONLY);
+  int fp = open(size_path, O_RDONLY | O_BINARY);
   ssize_t read_count = pread(fp, &number_cores, sizeof(uint32_t), 0);
   if (read_count != sizeof(uint32_t))
   {
@@ -133,7 +133,7 @@ PIDX_return_code PIDX_generic_rst_forced_raw_read(PIDX_generic_rst_id rst_id)
   uint32_t *offset_buffer = malloc(buffer_read_size);
   memset(offset_buffer, 0, buffer_read_size);
 
-  int fp1 = open(offset_path, O_RDONLY);
+  int fp1 = open(offset_path, O_RDONLY | O_BINARY);
   read_count = pread(fp1, offset_buffer, buffer_read_size, 2 * sizeof(uint32_t));
   if (read_count != buffer_read_size)
   {
@@ -322,7 +322,7 @@ PIDX_return_code PIDX_generic_rst_forced_raw_read(PIDX_generic_rst_id rst_id)
     for (i = 0; i < patch_count; i++)
     {
       sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, patch_grp->source_patch_rank[i], source_patch_id[i]);
-      int fpx = open(file_name, O_RDONLY);
+      int fpx = open(file_name, O_RDONLY | O_BINARY);
 
       pc_index = patch_grp->source_patch_rank[i] * (max_patch_count * temp_max_dim + 1);
       for (d = 0; d < PIDX_MAX_DIMENSIONS; d++)

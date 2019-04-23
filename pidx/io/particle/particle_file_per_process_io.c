@@ -177,7 +177,7 @@ PIDX_return_code PIDX_particle_file_per_process_read(PIDX_io file, int svi, int 
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
     sprintf(file_name, "%s/time%09d/%d_%d", directory_path, file->idx->current_time_step, file->idx_c->simulation_rank, p);
 
-    int fp = open(file_name, O_RDONLY);
+    int fp = open(file_name, O_RDONLY | O_BINARY);
 
     uint64_t data_offset = 0;
     for (int si = svi; si < evi; si++)
@@ -325,7 +325,7 @@ static PIDX_return_code PIDX_meta_data_read(PIDX_io file, int svi)
   free(directory_path);
   if (file->idx_c->simulation_rank == 0 || file->idx_c->simulation_nprocs == 1)
   {
-    int fp = open(file_path, O_RDONLY);
+    int fp = open(file_path, O_RDONLY | O_BINARY);
     uint64_t write_count = pread(fp, global_patch, (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double), 0);
     if (write_count != (file->idx_c->simulation_nprocs * (max_patch_count * (2 * PIDX_MAX_DIMENSIONS + 1) + 1) + 2) * sizeof(double))
     {

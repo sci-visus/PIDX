@@ -388,12 +388,12 @@ static void create_synthetic_simulation_data()
           }
         }
 #else
-#if 1
+#if 0 // TODO check this code, it was enabled but should not
     //float* temp_buffer = malloc(local_box_size[0] * sizeof(*temp_buffer));
     //memset(temp_buffer, 0, local_box_size[0] * sizeof(*temp_buffer));
 
     //
-    int fp = open("magnetic-512-volume.raw", O_RDONLY);
+    int fp = open("magnetic-512-volume.raw", O_RDONLY | O_BINARY);
     //int fp = open("miranda.raw", O_RDONLY);
     int send_o = 0;
     int send_c = 0;

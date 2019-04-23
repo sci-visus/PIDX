@@ -45,6 +45,9 @@
 extern "C" {
 #endif
 
+#ifndef O_BINARY
+#define O_BINARY 0
+#endif
 
 #define PIDX_CURR_METADATA_VERSION "6.1"
   

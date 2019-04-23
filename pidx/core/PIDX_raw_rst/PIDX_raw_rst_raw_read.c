@@ -72,7 +72,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
   free(idx_directory_path);
 
   uint32_t number_cores = 0;
-  int fp = open(size_path, O_RDONLY);
+  int fp = open(size_path, O_RDONLY | O_BINARY);
   if (fp < 0)
   {
     fprintf(stderr, "Error opening file %s Error code %d\n", size_path, errno);
@@ -143,7 +143,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
   uint32_t *offset_buffer = malloc(buffer_read_size);
   memset(offset_buffer, 0, buffer_read_size);
 
-  int fp1 = open(offset_path, O_RDONLY);
+  int fp1 = open(offset_path, O_RDONLY | O_BINARY);
   read_count = pread(fp1, offset_buffer, buffer_read_size, 2 * sizeof(uint32_t));
   if (read_count != buffer_read_size)
   {
@@ -334,7 +334,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
 
         sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
 
-        int fpx = open(file_name, O_RDONLY);
+        int fpx = open(file_name, O_RDONLY | O_BINARY);
         other_offset = 0;
         for (int v1 = 0; v1 < start_index; v1++)
         {

@@ -378,7 +378,7 @@ PIDX_return_code PIDX_generic_rst_buf_aggregated_read(PIDX_generic_rst_id generi
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
   sprintf(file_name, "%s/time%09d/%d_%d", directory_path, generic_rst_id->idx->current_time_step, generic_rst_id->idx_c->grank, g);
-  int fp = open(file_name, O_RDONLY, 0664);
+  int fp = open(file_name, O_RDONLY | O_BINARY, 0664);
   if (fp == -1)
   {
     fprintf(stderr, "[%s] [%d] open() failed while trying to open %s\n", __FILE__, __LINE__, file_name);
