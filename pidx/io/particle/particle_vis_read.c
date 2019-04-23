@@ -60,7 +60,7 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
   free(idx_directory_path);
 
   double number_cores = 0;
-  int fp = open(size_path, O_RDONLY);
+  int fp = open(size_path, O_RDONLY | O_BINARY);
   // TODO WILL: This would be a lot easier to follow if we pread into a structure of some kind
   uint64_t read_count = pread(fp, &number_cores, sizeof(double), 0);
   if (read_count != sizeof(double))
@@ -169,7 +169,7 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
         if (intersectNDChunk(local_proc_patch, n_proc_patch))
         {
           sprintf(file_name, time_template, directory_path, file->idx->current_time_step, n, m);
-          int fpx = open(file_name, O_RDONLY);
+          int fpx = open(file_name, O_RDONLY | O_BINARY);
 
           // TODO WILL: For particles we need to rethink how we do this loop, we'll need to
           // check that the particle position is inside our query box, and only then get

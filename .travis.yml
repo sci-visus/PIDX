@@ -5,7 +5,7 @@ language: c
 branches:
   only:
     - master
-    - fix_time_template
+    - fix_open
 
 cache:
   directories:

@@ -8,7 +8,7 @@ branches:
   # whitelist
   only:
     - master
-    - refactor_dtypes
+    - fix_open
 
 #init:
 #  - ps: iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))

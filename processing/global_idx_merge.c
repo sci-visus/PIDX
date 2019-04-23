@@ -786,7 +786,7 @@ int main(int argc, char **argv)
               memset(read_data_buffer[ic], 0, samples_per_block * shared_block_count * bpv[var]/8);
 
               int fd;
-              fd = open(existing_file_name, O_RDONLY);
+              fd = open(existing_file_name, O_RDONLY | O_BINARY);
               if (fd < 0)
               {
                 fprintf(stderr, "[File : %s] [Line : %d] open\n", __FILE__, __LINE__);

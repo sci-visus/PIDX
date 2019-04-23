@@ -547,7 +547,7 @@ int main(int argc, char **argv)
 
         fprintf(stderr, "Parsing File : %s\n", bin_file);
 
-        fd = open(bin_file, O_RDONLY);
+        fd = open(bin_file, O_RDONLY | O_BINARY);
         if (fd < 0)
         {
           fprintf(stderr, "[File : %s] [Line : %d] open %s\n", __FILE__, __LINE__, bin_file);

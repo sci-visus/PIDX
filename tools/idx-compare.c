@@ -84,14 +84,14 @@ int main(int argc, char **argv)
     return 0;
   }
   
-  fd1 = open(argv[1], O_RDONLY); 
+  fd1 = open(argv[1], O_RDONLY | O_BINARY);
   if (fd1 < 0)
   {
     fprintf(stderr, "Invalid input binary file %s\n", argv[1]);
     return(-1);
   }
   
-  fd2 = open (argv[2], O_RDONLY); 
+  fd2 = open (argv[2], O_RDONLY | O_BINARY);
   if (fd2 < 0)
   {
     fprintf(stderr, "Invalid input binary file %s\n", argv[1]);

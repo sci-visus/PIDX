@@ -597,7 +597,7 @@ static void create_synthetic_simulation_data()
     }
     else
     {
-      int fp = open(raw_file_name, O_RDONLY);
+      int fp = open(raw_file_name, O_RDONLY | O_BINARY);
       int send_o = 0;
       int send_c = 0;
       int recv_o = 0;
