@@ -65,7 +65,11 @@ extern "C" {
 
 #define PIDX_MAX_TEMPLATE_DEPTH 6
 
+#ifndef DETAIL_OUTPUT
 #define DETAIL_OUTPUT 0
+#else
+#define DETAIL_OUTPUT 1
+#endif
 
 #define DEBUG_OUTPUT 0
 
