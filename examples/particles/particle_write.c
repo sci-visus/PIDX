@@ -160,15 +160,14 @@ static void create_pidx_var_point_and_access();
 static void destroy_pidx_var_point_and_access();
 static void destroy_synthetic_simulation_data();
 static void shutdown_mpi();
-static char *usage = "Serial Usage: ./idx_write -g 32x32x32 -l 32x32x32 -t 4 -f output_idx_file_name\n"
+static char *usage = "Serial Usage: ./particle_write -g 32x32x32 -l 32x32x32 -p 64 -t 4 -f output_idx_file_name\n"
                      "Parallel Usage: mpirun -n 8 ./particle_write -g 64x64x64 -l 32x32x32 -p 64 -t 4 -f output_idx_file_name\n"
                      "  -g: global dimensions\n"
                      "  -l: local (per-process) dimensions\n"
-                     "  -r: restructured box dimension\n"
                      "  -f: file name template (without .idx)\n"
                      "  -t: number of timesteps\n"
                      "  -p: number of particles per patch\n"
-                     "  -m: I/O mode (0 for ffp, 1 for rst) \n";
+                     "  -m: I/O mode, default 0 (0 for ffp, 1 for rst) \n";
 
 int main(int argc, char **argv)
 {
@@ -596,7 +595,6 @@ static void set_pidx_file(int ts)
   // Set which variable will be used internally as position (default 0)
   PIDX_set_particles_position_variable_index(file, PARTICLES_POSITION_VAR);
 
-  // Select I/O mode (PIDX_IDX_IO for the multires, PIDX_RAW_IO for non-multires)
   if (mode == 0)
   {
     PIDX_set_restructuing_factor(file, 1,1,1);

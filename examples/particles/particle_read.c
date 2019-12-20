@@ -184,6 +184,7 @@ int main(int argc, char **argv)
     // a double pointer.
     PIDX_variable_read_particle_data_layout(variable, physical_local_offset, physical_local_size,
         (void**)&data, &particle_count, PIDX_row_major);
+
   }
   else
   {
@@ -248,6 +249,13 @@ int main(int argc, char **argv)
   // Close PIDX_access
   PIDX_close_access(p_access);
 
+  for(int i = 0; i < particle_count; ++i)
+  {
+    double* p = (double*)data;
+    //points->GetPoint(i);
+    double* tp = &p[i*3];
+    printf("p %f %f %f\n", tp[0],tp[1],tp[2]);
+  }
 #if DEBUG_PRINT_OUTPUT
   char rank_filename[PATH_MAX];
   sprintf(rank_filename, "%s_r_%d", output_file_template, rank);
@@ -403,7 +411,8 @@ static void parse_args(int argc, char **argv)
       break;
 
     case('c'): // checkpoint restart style read
-      checkpoint_restart = 1;
+      if (sscanf(optarg, "%d", &checkpoint_restart) <= 0)
+        terminate_with_error_msg("Invalid read mode\n%s", usage);
       break;
 
     default:

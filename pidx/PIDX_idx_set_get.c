@@ -757,6 +757,16 @@ PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type)
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_get_particle_number(PIDX_file file, uint64_t* particle_number)
+{
+  if (file == NULL)
+    return PIDX_err_file;
+
+  *particle_number = file->idx->particle_number;
+
+  return PIDX_success;
+}
+
 
 
 #if 0

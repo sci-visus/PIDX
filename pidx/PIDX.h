@@ -508,8 +508,6 @@ PIDX_return_code PIDX_get_lossy_compression_bit_rate(PIDX_file file, int *compre
 ///
 PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type);
 
-
-
 ///
 /// \brief PIDX_get_io_mode
 /// \param file
@@ -518,7 +516,13 @@ PIDX_return_code PIDX_set_io_mode(PIDX_file file, enum PIDX_io_type io_type);
 ///
 PIDX_return_code PIDX_get_io_mode(PIDX_file file, enum PIDX_io_type* io_type);
 
-
+///
+/// \brief PIDX_get_particle_number
+/// \param file
+/// \param particle_number
+/// \return
+///
+PIDX_return_code PIDX_get_particle_number(PIDX_file file, uint64_t* particle_number);
 
 #if 0
 ///
