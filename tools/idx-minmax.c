@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -332,22 +332,22 @@ static void verify_read_results()
 
   bits_per_sample = bits_per_sample / 8;
 
-  if (strcmp(type_name, INT32) == 0)
+  if (strcmp(type_name, PIDX_DType.INT32) == 0)
   {
     memcpy(&int_min, data, bits_per_sample);
     memcpy(&int_max, data, bits_per_sample);
   }
-  else if (strcmp(type_name, FLOAT32) == 0)
+  else if (strcmp(type_name, PIDX_DType.FLOAT32) == 0)
   {
     memcpy(&float_min, data, bits_per_sample);
     memcpy(&float_max, data, bits_per_sample);
   }
-  else if (strcmp(type_name, FLOAT64) == 0)
+  else if (strcmp(type_name, PIDX_DType.FLOAT64) == 0)
   {
     memcpy(&double_min, data, bits_per_sample);
     memcpy(&double_max, data, bits_per_sample);
   }
-  else if (strcmp(type_name, FLOAT64_RGB) == 0)
+  else if (strcmp(type_name, PIDX_DType.FLOAT64_RGB) == 0)
   {
 
     min_temp = malloc(values_per_sample * sizeof (*min_temp));
@@ -366,7 +366,7 @@ static void verify_read_results()
       {
         uint64_t index = (uint64_t) (local_box_size[0] * local_box_size[1] * k) + (local_box_size[0] * j) + i;
 
-        if (strcmp(type_name, INT32) == 0)
+        if (strcmp(type_name, PIDX_DType.INT32) == 0)
         {
           for (vps = 0; vps < values_per_sample; vps++)
           {
@@ -379,7 +379,7 @@ static void verify_read_results()
           }
         }
 
-        else if (strcmp(type_name, FLOAT64) == 0)
+        else if (strcmp(type_name, PIDX_DType.FLOAT64) == 0)
         {
           for (vps = 0; vps < values_per_sample; vps++)
           {
@@ -392,7 +392,7 @@ static void verify_read_results()
           }
         }
 
-        else if (strcmp(type_name, FLOAT64_RGB) == 0)
+        else if (strcmp(type_name, PIDX_DType.FLOAT64_RGB) == 0)
         {
           double *temp = malloc(values_per_sample * sizeof (*temp));
 
@@ -422,7 +422,7 @@ static void verify_read_results()
 
         }
 
-        else if (strcmp(type_name, FLOAT32) == 0)
+        else if (strcmp(type_name, PIDX_DType.FLOAT32) == 0)
         {
           for (vps = 0; vps < values_per_sample; vps++)
           {
@@ -438,7 +438,7 @@ static void verify_read_results()
       }
 
 
-  if (strcmp(type_name, INT32) == 0)
+  if (strcmp(type_name, PIDX_DType.INT32) == 0)
   {
     int int_final_min = 0, int_final_max = 0;
 #if PIDX_HAVE_MPI
@@ -451,7 +451,7 @@ static void verify_read_results()
     if (rank == 0)
       fprintf(stderr, "[INT] Min %d Max %d\n", int_final_min, int_final_max);
   }
-  else if (strcmp(type_name, FLOAT32) == 0)
+  else if (strcmp(type_name, PIDX_DType.FLOAT32) == 0)
   {
     float float_final_min = 0, float_final_max = 0;
 #if PIDX_HAVE_MPI
@@ -464,7 +464,7 @@ static void verify_read_results()
     if (rank == 0)
       fprintf(stderr, "[FLOAT32] Min %.13f Max %f\n", float_final_min, float_final_max);
   }
-  else if (strcmp(type_name, FLOAT64) == 0)
+  else if (strcmp(type_name, PIDX_DType.FLOAT64) == 0)
   {
     double double_final_min = 0, double_final_max = 0;
 #if PIDX_HAVE_MPI
@@ -478,7 +478,7 @@ static void verify_read_results()
       fprintf(stderr, "Min %f Max %f\n", double_final_min, double_final_max);
   }
 
-  else if (strcmp(type_name, FLOAT64_RGB) == 0)
+  else if (strcmp(type_name, PIDX_DType.FLOAT64_RGB) == 0)
   {
     if (rank == 0)
       fprintf(stderr, "Min %f %f %f Max %f %f %f\n", min_temp[0], min_temp[1], min_temp[2], max_temp[0], max_temp[1], max_temp[2]);

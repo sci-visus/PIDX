@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -68,7 +68,9 @@ PIDX_return_code PIDX_generic_rst_buf_aggregate_and_write(PIDX_generic_rst_id ge
   file_name = malloc(PATH_MAX * sizeof(*file_name));
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-  sprintf(file_name, "%s/time%09d/%d_0", directory_path, generic_rst_id->idx->current_time_step, generic_rst_id->idx_c->grank);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/%%d_0", file->idx->filename_time_template);
+  sprintf(file_name, time_template, directory_path, generic_rst_id->idx->current_time_step, generic_rst_id->idx_c->grank);
   int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
   int v_start = 0, v_end = 0;
@@ -177,7 +179,9 @@ PIDX_return_code PIDX_generic_rst_buf_read_and_aggregate(PIDX_generic_rst_id gen
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, generic_rst_id->idx->filename, strlen(generic_rst_id->idx->filename) - 4);
-  sprintf(data_set_path, "%s/time%09d/", directory_path, generic_rst_id->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s", generic_rst_id->idx->filename_time_template);
+  sprintf(data_set_path, time_template, directory_path, generic_rst_id->idx->current_time_step);
 
   for (v = generic_rst_id->first_index; v <= generic_rst_id->last_index; ++v)
   {
@@ -280,7 +284,9 @@ PIDX_return_code PIDX_generic_rst_buf_aggregated_write(PIDX_generic_rst_id gener
   file_name = malloc(PATH_MAX * sizeof(*file_name));
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-  sprintf(file_name, "%s/time%09d/%d_0", directory_path, generic_rst_id->idx->current_time_step, generic_rst_id->idx_c->grank);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/%%d_0", generic_rst_id->idx->filename_time_template);
+  sprintf(file_name, time_template, directory_path, generic_rst_id->idx->current_time_step, generic_rst_id->idx_c->grank);
   int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
   int v_start = 0;
@@ -372,7 +378,7 @@ PIDX_return_code PIDX_generic_rst_buf_aggregated_read(PIDX_generic_rst_id generi
   memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
   sprintf(file_name, "%s/time%09d/%d_%d", directory_path, generic_rst_id->idx->current_time_step, generic_rst_id->idx_c->grank, g);
-  int fp = open(file_name, O_RDONLY, 0664);
+  int fp = open(file_name, O_RDONLY | O_BINARY, 0664);
   if (fp == -1)
   {
     fprintf(stderr, "[%s] [%d] open() failed while trying to open %s\n", __FILE__, __LINE__, file_name);

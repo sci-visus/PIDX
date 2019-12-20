@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -184,7 +184,9 @@ int PIDX_header_io_raw_dir_create(PIDX_header_io_id header_io_id, char* file_nam
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, file_name, strlen(file_name) - 4);
-  sprintf(data_set_path, "%s/time%09d/", directory_path, header_io_id->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s", header_io_id->idx->filename_time_template);
+  sprintf(data_set_path, time_template, directory_path, header_io_id->idx->current_time_step);
   free(directory_path);
 
   if (header_io_id->idx_c->partition_rank == 0)
@@ -280,8 +282,8 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
 {
   int N;
   FILE* idx_file_p;
-  char dirname[1024], basename[1024];
-  char file_temp[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
+  char file_temp[PIDX_FILE_PATH_LENGTH];
 
   int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
@@ -448,8 +450,8 @@ PIDX_return_code PIDX_header_io_partition_idx_write (PIDX_header_io_id header_io
 {
   int l = 0, N;
   FILE* idx_file_p;
-  char dirname[1024], basename[1024];
-  char file_temp[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
+  char file_temp[PIDX_FILE_PATH_LENGTH];
 
   int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);
@@ -579,8 +581,8 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
 {
   int l = 0, N;
   FILE* idx_file_p;
-  char dirname[1024], basename[1024];
-  char file_temp[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
+  char file_temp[PIDX_FILE_PATH_LENGTH];
 
   int nbits_blocknumber = (header_io->idx->maxh - header_io->idx->bits_per_block - 1);
   VisusSplitFilename(data_set_path, dirname, basename);

@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -152,7 +152,7 @@ int main(int argc, char **argv)
 
   for (t = 0; t < time_step_count; t++)
   {
-    int fp = open(file_name[t], O_RDONLY);
+    int fp = open(file_name[t], O_RDONLY | O_BINARY);
     for(var = 0; var < variable_count; var++)
     {
       values_per_sample[var] =  1;

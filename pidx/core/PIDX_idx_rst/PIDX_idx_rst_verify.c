@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -90,20 +90,20 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
             int check_bit = 1;
             for (s = 0; s < var->vps; s++)
             {
-              if (strcmp(var->type_name, FLOAT32) == 0)
+              if (strcmp(var->type_name, PIDX_DType.FLOAT32) == 0)
               {
                 fvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i;
                 memcpy(&fvalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
                 check_bit = check_bit && (fvalue_1 == fvalue_2);
               }
-              else if (strcmp(var->type_name, FLOAT64) == 0)
+              else if (strcmp(var->type_name, PIDX_DType.FLOAT64) == 0)
               {
                 dvalue_1 = 100 + v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_c->color * bounds[0] * bounds[1] * bounds[2]);
                 memcpy(&dvalue_2, var->restructured_super_patch->patch[n]->buffer + ((index * var->vps) + s) * bytes_for_datatype, bytes_for_datatype);
 
                 check_bit = check_bit && (dvalue_1 == dvalue_2);
               }
-              else if (strcmp(var->type_name, FLOAT64_RGB) == 0)
+              else if (strcmp(var->type_name, PIDX_DType.FLOAT64_RGB) == 0)
               {
                 for (s = 0; s < 3; s++)
                 {
@@ -113,7 +113,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
                   check_bit = check_bit && (dvalue_1  == dvalue_2);
                 }
               }
-              else if (strcmp(var->type_name, UINT64) == 0)
+              else if (strcmp(var->type_name, PIDX_DType.UINT64) == 0)
               {
                 uvalue_1 = v + s + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_c->color * bounds[0] * bounds[1] * bounds[2]);
 
@@ -121,7 +121,7 @@ PIDX_return_code HELPER_idx_rst(PIDX_idx_rst_id rst_id)
 
                 check_bit = check_bit && (uvalue_1 == uvalue_2);
               }
-              else if (strcmp(var->type_name, INT32) == 0)
+              else if (strcmp(var->type_name, PIDX_DType.INT32) == 0)
               {
                 ivalue_1 = 100 + v + (bounds[0] * bounds[1] * (offset_ptr[2] + k)) + (bounds[0] * (offset_ptr[1] + j)) + offset_ptr[0] + i + ( rst_id->idx_c->color * bounds[0] * bounds[1] * bounds[2]);
 

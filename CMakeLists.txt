@@ -1,7 +1,7 @@
 ##
 ## BSD 3-Clause License
 ## 
-## Copyright (c) 2010-2018 ViSUS L.L.C., 
+## Copyright (c) 2010-2019 ViSUS L.L.C., 
 ## Scientific Computing and Imaging Institute of the University of Utah
 ## 
 ## ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -55,6 +55,11 @@ SET(CMAKE_VERBOSE_MAKEFILE OFF CACHE BOOL "Use a verbose makefile")
 OPTION(BUILD_SHARED_LIBS "Build shared libraries." FALSE)
 OPTION(ENABLE_MPI "Enable MPI." TRUE)
 
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  SET(CMAKE_INSTALL_PREFIX "${CMAKE_BINARY_DIR}/install" CACHE PATH "" FORCE)
+ENDIF()
+
+SET(ZFP_FOUND 1)
 
 # ///////////////////////////////////////////////
 # external packages
@@ -104,6 +109,13 @@ MESSAGE("PIDX_BUILD_EXAMPLES ${PIDX_BUILD_EXAMPLES}")
 OPTION(PIDX_BUILD_TOOLS "Build pidx profile and testing tools" FALSE)
 MESSAGE("PIDX_BUILD_TOOLS ${PIDX_BUILD_TOOLS}")
 
+OPTION(PIDX_PROFILE_OUTPUT "Output profiling information" FALSE)
+MESSAGE("PIDX_PROFILE_OUTPUT ${PIDX_PROFILE_OUTPUT}")
+
+IF(PIDX_PROFILE_OUTPUT)
+    add_definitions(-DDETAIL_OUTPUT)
+ENDIF()
+
 #OPTION(PIDX_BUILD_CONVERT "Build pidx convert tools" FALSE)
 #MESSAGE("PIDX_BUILD_CONVERT ${PIDX_BUILD_CONVERT}")
 
@@ -134,12 +146,6 @@ MESSAGE("PIDX_BUILD_TOOLS ${PIDX_BUILD_TOOLS}")
 # ///////////////////////////////////////////////
 # PIDX_OPTION_XXXX
 # ///////////////////////////////////////////////
-
-#OPTION(PIDX_OPTION_ZFP "Enable ZFP." TRUE)
-#MESSAGE("PIDX_OPTION_ZFP ${PIDX_OPTION_ZFP}")
-#IF (PIDX_OPTION_ZFP)
-#  SET(PIDX_HAVE_ZFP 1)
-#ENDIF ()
 
 SET(PIDX_HAVE_ZFP 1)  #ZFP is embedded and installed with PIDX
 

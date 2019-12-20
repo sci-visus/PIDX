@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -72,7 +72,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
   free(idx_directory_path);
 
   uint32_t number_cores = 0;
-  int fp = open(size_path, O_RDONLY);
+  int fp = open(size_path, O_RDONLY | O_BINARY);
   if (fp < 0)
   {
     fprintf(stderr, "Error opening file %s Error code %d\n", size_path, errno);
@@ -143,7 +143,7 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
   uint32_t *offset_buffer = malloc(buffer_read_size);
   memset(offset_buffer, 0, buffer_read_size);
 
-  int fp1 = open(offset_path, O_RDONLY);
+  int fp1 = open(offset_path, O_RDONLY | O_BINARY);
   read_count = pread(fp1, offset_buffer, buffer_read_size, 2 * sizeof(uint32_t));
   if (read_count != buffer_read_size)
   {
@@ -177,7 +177,9 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
   memset(data_set_path, 0, sizeof(*data_set_path) * PATH_MAX);
 
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
-  sprintf(data_set_path, "%s/time%09d/", directory_path, rst_id->idx->current_time_step);
+  char time_template[512];
+  sprintf(time_template, "%%s/%s", rst_id->idx->filename_time_template);
+  sprintf(data_set_path, time_template, directory_path, rst_id->idx->current_time_step);
 
   for (int pc1 = 0; pc1 < rst_id->idx->variable[svi]->sim_patch_count; pc1++)
   {
@@ -307,6 +309,9 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
     temp_patch_buffer2 = malloc(sizeof(*temp_patch_buffer2) * (evi - svi + 1));
     memset(temp_patch_buffer2, 0, sizeof(*temp_patch_buffer2) * (evi - svi + 1));
 
+    char time_template[512];
+    sprintf(time_template, "%%s/%s/%%d_%%d", rst_id->idx->filename_time_template);
+
     int other_offset = 0;
     for (int start_index = svi; start_index <= evi; start_index = start_index + 1)
     {
@@ -327,9 +332,9 @@ PIDX_return_code PIDX_raw_rst_forced_raw_read(PIDX_raw_rst_id rst_id)
         temp_patch_buffer2[index] = malloc((uint64_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
         memset(temp_patch_buffer2[index], 0, (uint64_t) sizeof(*(temp_patch_buffer2[index])) * total_sample_count * var->bpv/8 * var->vps);
 
-        sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
+        sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, patch_grp->source_patch[i].rank, source_patch_id[i]);
 
-        int fpx = open(file_name, O_RDONLY);
+        int fpx = open(file_name, O_RDONLY | O_BINARY);
         other_offset = 0;
         for (int v1 = 0; v1 < start_index; v1++)
         {

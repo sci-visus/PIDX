@@ -1,28 +1,28 @@
 /*
  * BSD 3-Clause License
- *
- * Copyright (c) 2010-2018 ViSUS L.L.C.,
+ * 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
- *
+ * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
  * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
- *
+ *  
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- *
+ * 
  * * Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- *
+ * 
  * * Neither the name of the copyright holder nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,10 +33,10 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  * For additional information about this project contact: pascucci@acm.org
  * For support: support@visus.net
- *
+ * 
  */
 
 /*
@@ -318,32 +318,32 @@ static void create_synthetic_simulation_data()
 
           for (val_per_sample = 0; val_per_sample < vps[var]; val_per_sample++)
           {
-            if (strcmp(type_name[var], UINT8) == 0 || strcmp(type_name[var], UINT8_GA) == 0 || strcmp(type_name[var], UINT8_RGB) == 0)
+            if (strcmp(type_name[var], PIDX_DType.UINT8) == 0 || strcmp(type_name[var], PIDX_DType.UINT8_GA) == 0 || strcmp(type_name[var], PIDX_DType.UINT8_RGB) == 0)
             {
               cvalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(unsigned char), &cvalue, sizeof(unsigned char));
             }
-            if (strcmp(type_name[var], INT16) == 0 || strcmp(type_name[var], INT16_GA) == 0 || strcmp(type_name[var], INT16_RGB) == 0)
+            if (strcmp(type_name[var], PIDX_DType.INT16) == 0 || strcmp(type_name[var], PIDX_DType.INT16_GA) == 0 || strcmp(type_name[var], PIDX_DType.INT16_RGB) == 0)
             {
               svalue = (int)(var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(short), &svalue, sizeof(short));
             }
-            if (strcmp(type_name[var], INT32) == 0 || strcmp(type_name[var], INT32_GA) == 0 || strcmp(type_name[var], INT32_RGB) == 0)
+            if (strcmp(type_name[var], PIDX_DType.INT32) == 0 || strcmp(type_name[var], PIDX_DType.INT32_GA) == 0 || strcmp(type_name[var], PIDX_DType.INT32_RGB) == 0)
             {
               ivalue = (int)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(int), &ivalue, sizeof(int));
             }
-            else if (strcmp(type_name[var], FLOAT32) == 0 || strcmp(type_name[var], FLOAT32_GA) == 0 || strcmp(type_name[var], FLOAT32_RGB) == 0)
+            else if (strcmp(type_name[var], PIDX_DType.FLOAT32) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT32_GA) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT32_RGB) == 0)
             {
               fvalue = (float)( 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i)));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(float), &fvalue, sizeof(float));
             }
-            else if (strcmp(type_name[var], FLOAT64) == 0 || strcmp(type_name[var], FLOAT64_GA) == 0 || strcmp(type_name[var], FLOAT64_RGB) == 0)
+            else if (strcmp(type_name[var], PIDX_DType.FLOAT64) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT64_GA) == 0 || strcmp(type_name[var], PIDX_DType.FLOAT64_RGB) == 0)
             {
               dvalue = (double) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(double), &dvalue, sizeof(double));
             }
-            else if (strcmp(type_name[var], UINT64) == 0 || strcmp(type_name[var], UINT64_GA) == 0 || strcmp(type_name[var], UINT64_RGB) == 0)
+            else if (strcmp(type_name[var], PIDX_DType.UINT64) == 0 || strcmp(type_name[var], PIDX_DType.UINT64_GA) == 0 || strcmp(type_name[var], PIDX_DType.UINT64_RGB) == 0)
             {
               uivalue = (uint64_t) 100 + var + val_per_sample + ((global_box_size[X] * global_box_size[Y]*(local_box_offset[Z] + k))+(global_box_size[X]*(local_box_offset[Y] + j)) + (local_box_offset[X] + i));
               memcpy(data[var] + (index * vps[var] + val_per_sample) * sizeof(uint64_t), &uivalue, sizeof(uint64_t));

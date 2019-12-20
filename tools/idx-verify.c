@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -184,9 +184,9 @@ int main(int argc, char **argv)
   int global_bounds[PIDX_MAX_DIMENSIONS];
   int compressed_global_bounds[PIDX_MAX_DIMENSIONS];
   int vps[MAX_VARIABLE_COUNT];
-  char variable_name[MAX_VARIABLE_COUNT][1024];
-  char variable_type[MAX_VARIABLE_COUNT][1024];
-  char filename_template[1024];
+  char variable_name[MAX_VARIABLE_COUNT][PIDX_FILE_PATH_LENGTH];
+  char variable_type[MAX_VARIABLE_COUNT][PIDX_FILE_PATH_LENGTH];
+  char filename_template[PIDX_FILE_PATH_LENGTH];
   int variable_count = 0;
   int resolution = 0;
 
@@ -547,7 +547,7 @@ int main(int argc, char **argv)
 
         fprintf(stderr, "Parsing File : %s\n", bin_file);
 
-        fd = open(bin_file, O_RDONLY);
+        fd = open(bin_file, O_RDONLY | O_BINARY);
         if (fd < 0)
         {
           fprintf(stderr, "[File : %s] [Line : %d] open %s\n", __FILE__, __LINE__, bin_file);
@@ -944,18 +944,18 @@ static int generate_file_name(int blocks_per_file, char* filename_template, int 
 static int generate_file_name_template(int maxh, int bits_per_block, char* filename, int current_time_step, char* filename_template)
 {
   int N;
-  char dirname[1024], basename[1024];
+  char dirname[PIDX_FILE_PATH_LENGTH], basename[PIDX_FILE_PATH_LENGTH];
   int nbits_blocknumber;
   char* directory_path;
   char* data_set_path;
 
-  directory_path = (char*) malloc(sizeof (char) * 1024);
+  directory_path = (char*) malloc(sizeof (char) * PIDX_FILE_PATH_LENGTH);
   assert(directory_path);
-  memset(directory_path, 0, sizeof (char) * 1024);
+  memset(directory_path, 0, sizeof (char) * PIDX_FILE_PATH_LENGTH);
 
-  data_set_path = (char*) malloc(sizeof (char) * 1024);
+  data_set_path = (char*) malloc(sizeof (char) * PIDX_FILE_PATH_LENGTH);
   assert(data_set_path);
-  memset(data_set_path, 0, sizeof (char) * 1024);
+  memset(data_set_path, 0, sizeof (char) * PIDX_FILE_PATH_LENGTH);
 
   strncpy(directory_path, filename, strlen(filename) - 4);
   sprintf(data_set_path, "%s/time%09d.idx", directory_path, current_time_step);

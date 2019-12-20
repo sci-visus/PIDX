@@ -1,7 +1,7 @@
 ##
 ## BSD 3-Clause License
 ## 
-## Copyright (c) 2010-2018 ViSUS L.L.C., 
+## Copyright (c) 2010-2019 ViSUS L.L.C., 
 ## Scientific Computing and Imaging Institute of the University of Utah
 ## 
 ## ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -39,7 +39,6 @@
 ## 
 ##
 
-
 ADD_SUBDIRECTORY(utils)
 ADD_SUBDIRECTORY(comm)
 ADD_SUBDIRECTORY(data_handle)
@@ -66,7 +65,7 @@ IF (MPI_C_FOUND)
 ENDIF ()
 
 IF (ZFP_FOUND)
-  MESSAGE("Configuring pidx with ZFP support")
+  #MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
   SET(PIDX_LINK_LIBS ${PIDX_LINK_LIBS} ${ZFP_LIBRARIES})
 ENDIF ()
@@ -86,6 +85,14 @@ ENDIF ()
 # library
 # ////////////////////////////////////////
 PIDX_ADD_LIBRARY(pidx "${PIDX_SOURCES}")
+ADD_DEPENDENCIES(pidx zfp)
+ADD_DEPENDENCIES(pidx_comm zfp)
+ADD_DEPENDENCIES(pidx_metadata zfp)
+ADD_DEPENDENCIES(pidx_data_handle zfp)
+ADD_DEPENDENCIES(pidx_utils zfp)
+ADD_DEPENDENCIES(pidx_core zfp)
+ADD_DEPENDENCIES(pidx_io zfp)
+
 TARGET_LINK_LIBRARIES(pidx ${OS_SPECIFIC_LIBS} pidx_comm pidx_metadata pidx_data_handle pidx_utils pidx_core pidx_io zfp ${PIDX_LINK_LIBS})
 
 

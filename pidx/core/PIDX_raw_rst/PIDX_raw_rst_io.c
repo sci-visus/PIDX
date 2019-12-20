@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -64,6 +64,9 @@ PIDX_return_code PIDX_raw_rst_buf_aggregate_and_write(PIDX_raw_rst_id rst_id)
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
 
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/%%d_%%d", rst_id->idx->filename_time_template);
+
   int g = 0;
   PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
   for (g = 0; g < var0->raw_io_restructured_super_patch_count; ++g)
@@ -74,7 +77,7 @@ PIDX_return_code PIDX_raw_rst_buf_aggregate_and_write(PIDX_raw_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
+    sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0, v_end = 0;
@@ -177,6 +180,9 @@ PIDX_return_code PIDX_raw_rst_buf_read_and_aggregate(PIDX_raw_rst_id rst_id)
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
   sprintf(data_set_path, "%s/time%09d/", directory_path, rst_id->idx->current_time_step);
 
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/%%d_%%d", rst_id->idx->filename_time_template);
+
   for (v = rst_id->first_index; v <= rst_id->last_index; ++v)
   {
     PIDX_variable var = rst_id->idx->variable[v];
@@ -209,7 +215,7 @@ PIDX_return_code PIDX_raw_rst_buf_read_and_aggregate(PIDX_raw_rst_id rst_id)
       file_name = malloc(PATH_MAX * sizeof(*file_name));
       memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-      sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
+      sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
 
       MPI_Status status;
       int ret = 0;
@@ -324,6 +330,9 @@ PIDX_return_code PIDX_raw_rst_buf_aggregated_read(PIDX_raw_rst_id rst_id)
   memset(directory_path, 0, sizeof(*directory_path) * PATH_MAX);
   strncpy(directory_path, rst_id->idx->filename, strlen(rst_id->idx->filename) - 4);
 
+  char time_template[512];
+  sprintf(time_template, "%%s/%s/%%d_%%d", rst_id->idx->filename_time_template);
+
   PIDX_variable var0 = rst_id->idx->variable[rst_id->first_index];
   for (g = 0; g < var0->raw_io_restructured_super_patch_count; ++g)
   {
@@ -332,7 +341,7 @@ PIDX_return_code PIDX_raw_rst_buf_aggregated_read(PIDX_raw_rst_id rst_id)
     file_name = malloc(PATH_MAX * sizeof(*file_name));
     memset(file_name, 0, PATH_MAX * sizeof(*file_name));
 
-    sprintf(file_name, "%s/time%09d/%d_%d", directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
+    sprintf(file_name, time_template, directory_path, rst_id->idx->current_time_step, rst_id->idx_c->simulation_rank, g);
     int fp = open(file_name, O_CREAT | O_WRONLY, 0664);
 
     int v_start = 0;

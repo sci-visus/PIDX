@@ -1,28 +1,28 @@
 /*
  * BSD 3-Clause License
- *
- * Copyright (c) 2010-2018 ViSUS L.L.C.,
+ * 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
- *
+ * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
  * University of Utah, 72 S Central Campus Dr, Room 3750, 84112 Salt Lake City, UT
- *
+ *  
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * * Redistributions of source code must retain the above copyright notice, this
  * list of conditions and the following disclaimer.
- *
+ * 
  * * Redistributions in binary form must reproduce the above copyright notice,
  * this list of conditions and the following disclaimer in the documentation
  * and/or other materials provided with the distribution.
- *
+ * 
  * * Neither the name of the copyright holder nor the names of its
  * contributors may be used to endorse or promote products derived from
  * this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -33,10 +33,10 @@
  * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
  * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ * 
  * For additional information about this project contact: pascucci@acm.org
  * For support: support@visus.net
- *
+ * 
  */
 #include "PIDX_file_handler.h"
 
@@ -44,7 +44,7 @@
 PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_access access_type, PIDX_point dims, PIDX_file* file)
 {
   int i;
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
 
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;
@@ -194,7 +194,6 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->blocks_per_file), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->idx->bits_per_block), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
-  MPI_Bcast(&((*file)->idx->variable_count), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast((*file)->idx->bitSequence, 512, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast((*file)->idx->partition_count, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast((*file)->idx->partition_size, PIDX_MAX_DIMENSIONS, MPI_INT, 0, (*file)->idx_c->simulation_comm);
@@ -203,6 +202,13 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
   MPI_Bcast(&((*file)->idx->compression_type), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->idx->io_type), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
   MPI_Bcast(&((*file)->fs_block_size), 1, MPI_INT, 0, (*file)->idx_c->simulation_comm);
+
+  // broadcast all filename templates
+  MPI_Bcast((*file)->idx->filename_template, PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->filename_partition), PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast(&((*file)->idx->filename_template_partition), PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+  MPI_Bcast((*file)->idx->filename_time_template, PIDX_FILE_PATH_LENGTH, MPI_CHAR, 0, (*file)->idx_c->simulation_comm);
+
   
   //printf("reading version %d\n",(*file)->idx->metadata_version);
   if ((*file)->idx->io_type == PIDX_IDX_IO)
@@ -298,7 +304,7 @@ PIDX_return_code PIDX_file_open(const char* filename, PIDX_flags flags, PIDX_acc
 PIDX_return_code PIDX_serial_file_open(const char* filename, PIDX_flags flags, PIDX_point dims, PIDX_file* file)
 {
   int i;
-  char file_name_skeleton[1024];
+  char file_name_skeleton[PIDX_FILE_PATH_LENGTH];
   
   if (strncmp(".idx", &filename[strlen(filename) - 4], 4) != 0 && !filename)
     return PIDX_err_name;

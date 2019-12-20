@@ -1,7 +1,7 @@
 ##
 ## BSD 3-Clause License
 ## 
-## Copyright (c) 2010-2018 ViSUS L.L.C., 
+## Copyright (c) 2010-2019 ViSUS L.L.C., 
 ## Scientific Computing and Imaging Institute of the University of Utah
 ## 
 ## ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -59,7 +59,7 @@ IF (PIDX_BUILD_TOOLS)
   ENDIF ()
 
   IF (ZFP_FOUND)
-    MESSAGE("Configuring profiling with ZFP support")
+    #MESSAGE("Configuring profiling with ZFP support")
     INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
     SET(TOOLS_LINK_LIBS ${TOOLS_LINK_LIBS} ${ZFP_LIBRARIES})
   ENDIF ()
@@ -83,5 +83,29 @@ IF (PIDX_BUILD_TOOLS)
   
   TARGET_LINK_LIBRARIES(idxverify m ${TOOLS_LINK_LIBS})
   TARGET_LINK_LIBRARIES(minmax ${TOOLS_LINK_LIBS})
+
+ENDIF ()
+
+IF (PIDX_BUILD_CONVERT)
+  INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/pidx)
+  SET(EXAMPLES_LINK_LIBS pidx ${PIDX_LINK_LIBS}) 
+  IF (MPI_CXX_FOUND)
+    MESSAGE("Configuring examples with MPI support")
+    INCLUDE_DIRECTORIES(${MPI_CXX_INCLUDE_PATH})
+    SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${MPI_C_LIBRARIES})
+  ENDIF ()
+
+  IF (ZFP_FOUND)
+    #MESSAGE("Configuring examples with ZFP support")
+    INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
+    SET(EXAMPLES_LINK_LIBS ${EXAMPLES_LINK_LIBS} ${ZFP_LIBRARIES})
+  ENDIF ()
+
+  # ////////////////////////////////////////
+  # executable
+  # ////////////////////////////////////////
+
+  PIDX_ADD_CEXECUTABLE(raw_to_idx "convert/raw-to-idx.c")
+  TARGET_LINK_LIBRARIES(raw_to_idx ${EXAMPLES_LINK_LIBS})
 
 ENDIF ()

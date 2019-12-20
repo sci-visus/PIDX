@@ -1,7 +1,7 @@
 ##
 ## BSD 3-Clause License
 ## 
-## Copyright (c) 2010-2018 ViSUS L.L.C., 
+## Copyright (c) 2010-2019 ViSUS L.L.C., 
 ## Scientific Computing and Imaging Institute of the University of Utah
 ## 
 ## ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -53,7 +53,7 @@ IF (MPI_C_FOUND)
 ENDIF ()
 
 IF (ZFP_FOUND)
-  MESSAGE("Configuring pidx with ZFP support")
+  #MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
   SET(PIDX_RAW_IO_LINK_LIBS ${PIDX_RAW_IO_LINK_LIBS} ${ZFP_LIBRARIES})
 ENDIF ()

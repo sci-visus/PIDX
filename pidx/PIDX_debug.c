@@ -1,7 +1,7 @@
 /*
  * BSD 3-Clause License
  * 
- * Copyright (c) 2010-2018 ViSUS L.L.C., 
+ * Copyright (c) 2010-2019 ViSUS L.L.C., 
  * Scientific Computing and Imaging Institute of the University of Utah
  * 
  * ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -182,11 +182,11 @@ static PIDX_return_code dump_debug_data_init(PIDX_file file)
 {
   if (file->idx_dbg->debug_file_output_state == PIDX_META_DATA_DUMP_ONLY || file->idx_dbg->debug_file_output_state == PIDX_NO_IO_AND_META_DATA_DUMP)
   {
-    char local_file_name[1024];
+    char local_file_name[PIDX_FILE_PATH_LENGTH];
 
     if (file->idx_c->simulation_rank == 0)
     {
-      char mkdir_line2[1024];
+      char mkdir_line2[PIDX_FILE_PATH_LENGTH];
       sprintf(mkdir_line2, "mkdir -p %s", local_debug_file_output_state_dir_name);
       system(mkdir_line2);
     }

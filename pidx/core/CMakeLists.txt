@@ -1,7 +1,7 @@
 ##
 ## BSD 3-Clause License
 ## 
-## Copyright (c) 2010-2018 ViSUS L.L.C., 
+## Copyright (c) 2010-2019 ViSUS L.L.C., 
 ## Scientific Computing and Imaging Institute of the University of Utah
 ## 
 ## ViSUS L.L.C., 50 W. Broadway, Ste. 300, 84101-2044 Salt Lake City, UT
@@ -64,7 +64,7 @@ IF (MPI_C_FOUND)
 ENDIF ()
 
 IF (ZFP_FOUND)
-  MESSAGE("Configuring pidx with ZFP support")
+  #MESSAGE("Configuring pidx with ZFP support")
   INCLUDE_DIRECTORIES(${ZFP_INCLUDE_DIR})
   SET(PIDX_CORE_LINK_LIBS ${PIDX_CORE_LINK_LIBS} ${ZFP_LIBRARIES})
 ENDIF ()
@@ -75,5 +75,16 @@ ENDIF ()
 # ////////////////////////////////////////
 
 PIDX_ADD_LIBRARY(pidx_core "${PIDX_CORE_SOURCES}")
+ADD_DEPENDENCIES(pidx_core zfp)
+ADD_DEPENDENCIES(pidx_utils zfp)
+ADD_DEPENDENCIES(pidx_data_handle zfp)
+ADD_DEPENDENCIES(pidx_header zfp)
+ADD_DEPENDENCIES(pidx_idx_rst zfp)
+ADD_DEPENDENCIES(pidx_raw_rst zfp)
+ADD_DEPENDENCIES(pidx_cmp zfp)
+ADD_DEPENDENCIES(pidx_hz zfp)
+ADD_DEPENDENCIES(pidx_agg zfp)
+ADD_DEPENDENCIES(pidx_file_io zfp)
+
 TARGET_LINK_LIBRARIES(pidx_core ${OS_SPECIFIC_LIBS} pidx_utils pidx_data_handle pidx_header pidx_idx_rst pidx_particles_rst pidx_raw_rst pidx_cmp pidx_hz pidx_agg pidx_file_io ${PIDX_CORE_LINK_LIBS})
 SET_TARGET_PROPERTIES(pidx_core PROPERTIES LINKER_LANGUAGE CXX)
