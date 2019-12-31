@@ -215,7 +215,14 @@ PIDX_return_code PIDX_get_variable_count(PIDX_file file, int* variable_count);
 /// \return The variable index.
 ///
 PIDX_return_code PIDX_set_particles_position_variable_index(PIDX_file file, uint32_t var_index);
-  
+
+///
+/// Gets the the index of variable containing the particles positions
+/// \param file The IDX file handler.
+/// \param variable_index The variable index.
+///
+PIDX_return_code PIDX_get_particles_position_variable_index(PIDX_file file, uint32_t* variable_index);
+
 ///
 /// Sets the current time step for IDX file.
 /// The function should be used for time-varying dataset.

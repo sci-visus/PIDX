@@ -112,6 +112,17 @@ PIDX_return_code PIDX_set_particles_position_variable_index(PIDX_file file, uint
   return PIDX_success;
 }
 
+PIDX_return_code PIDX_get_particles_position_variable_index(PIDX_file file, uint32_t* variable_index)
+{
+  if (!file)
+    return PIDX_err_file;
+
+  *variable_index = file->idx->particles_position_variable_index;
+
+  return PIDX_success;
+}
+
+
 
 PIDX_return_code PIDX_set_physical_dims(PIDX_file file, PIDX_physical_point dims)
 {
