@@ -114,6 +114,10 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
   // We use a PIDX_buffer to manage growing the user provided buffers which hold
   // the output patch information as well.
   PIDX_buffer *read_var_buffers = malloc(sizeof(PIDX_buffer) * num_vars_to_read);
+  
+  // Initialize position variable buffer
+  PIDX_buffer *pos_var_buf = malloc(sizeof(PIDX_buffer));
+  PIDX_variable pos_var = file->idx->variable[file->idx->particles_position_variable_index];
 
   for (int pc1 = 0; pc1 < file->idx->variable[svi]->sim_patch_count; pc1++)
   {
@@ -187,7 +191,35 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
           // that attrib, and copy over the data.
           // The latter will be easier to implement, and since the patches are not large
           // it should be fine to do.
+          
+          // First read position variable
+          {
+            int other_offset = 0;
+            for (int v1 = 0; v1 < file->idx->particles_position_variable_index; v1++)
+            {
+              PIDX_variable var1 = file->idx->variable[v1];
+              other_offset = other_offset + ((var1->bpv/8) * var1->vps * n_proc_patch->particle_count);
+            }
+          
+            const uint64_t bytes_per_sample = pos_var->vps * pos_var->bpv/8;
 
+            // TODO do not use fmin with uint64_t
+            const uint64_t proc_particle_read_size = fmin(n_proc_patch->particle_count * bytes_per_sample, curr_res_pcount * bytes_per_sample);
+
+            //PIDX_buffer_resize(pos_var_buf, proc_particle_read_size);
+            pos_var_buf->capacity = proc_particle_read_size;
+            pos_var_buf->size = proc_particle_read_size;
+            pos_var_buf->buffer = malloc(proc_particle_read_size);
+
+            const uint64_t preadc = pread(fpx, pos_var_buf->buffer, proc_particle_read_size, other_offset);
+            if (preadc != proc_particle_read_size)
+            {
+              fprintf(stderr, "[%s] [%d] Error in pread [%d %d] errno %s\n", __FILE__, __LINE__, (int)preadc,
+                  (int)proc_particle_read_size, strerror(errno));
+              return PIDX_err_rst;
+            }
+          }
+          
           // First read all vars from the patch that we want to read, then filter by
           // the box query
           for (int vid = 0; vid < num_vars_to_read; ++vid)
@@ -225,8 +257,8 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
           
           // We use the "particles_position_variable_index" to know which variable contains
           // the vector position data
-          PIDX_buffer *pos_var_buf = &tmp_var_read_bufs[file->idx->particles_position_variable_index];
-          PIDX_variable pos_var = file->idx->variable[file->idx->particles_position_variable_index];
+          //PIDX_buffer *pos_var_buf = &tmp_var_read_bufs[file->idx->particles_position_variable_index];
+          //PIDX_variable pos_var = file->idx->variable[file->idx->particles_position_variable_index];
           const uint64_t bytes_per_pos = pos_var->vps * pos_var->bpv/8;
 
           const uint64_t proc_particle_count = fmin(n_proc_patch->particle_count, curr_res_pcount);
@@ -276,6 +308,7 @@ PIDX_return_code PIDX_particle_vis_read(PIDX_io file, int svi, int evi)
     PIDX_buffer_free(&tmp_var_read_bufs[i]);
   }
   free(tmp_var_read_bufs);
+  free(pos_var_buf);
   free(read_var_buffers);
 
   free(file_name);
