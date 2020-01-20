@@ -407,7 +407,10 @@ PIDX_return_code PIDX_header_io_global_idx_write (PIDX_header_io_id header_io, c
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
     else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO) {
-      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
+      if(header_io->idx->io_type == PIDX_PARTICLE_IO) fprintf(idx_file_p, "(io mode)\nparticle\n");
+      else if(header_io->idx->io_type == PIDX_RST_PARTICLE_IO) fprintf(idx_file_p, "(io mode)\nparticle_rst\n");
+  
+      fprintf(idx_file_p, "(particles position var index)\n%d\n",
               header_io->idx->particles_position_variable_index);
       fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
       fprintf(idx_file_p, "(particle number)\n%d\n", header_io->idx->particle_number);
@@ -663,8 +666,11 @@ PIDX_return_code PIDX_header_io_raw_idx_write (PIDX_header_io_id header_io, char
     else if (header_io->idx->io_type == PIDX_RAW_IO)
       fprintf(idx_file_p, "(io mode)\nraw\n");
     else if (header_io->idx->io_type == PIDX_PARTICLE_IO || header_io->idx->io_type == PIDX_RST_PARTICLE_IO) {
-      fprintf(idx_file_p, "(io mode)\nparticle\n(particles position var index)\n%d\n",
-              header_io->idx->particles_position_variable_index);
+      if(header_io->idx->io_type == PIDX_PARTICLE_IO) fprintf(idx_file_p, "(io mode)\nparticle\n");
+          else if(header_io->idx->io_type == PIDX_RST_PARTICLE_IO) fprintf(idx_file_p, "(io mode)\nparticle_rst\n");
+      
+          fprintf(idx_file_p, "(particles position var index)\n%d\n",
+                  header_io->idx->particles_position_variable_index);
       fprintf(idx_file_p, "(particle res base)\n%d\n(particle res factor)\n%d\n", header_io->idx->particle_res_base, header_io->idx->particle_res_factor);
       fprintf(idx_file_p, "(particle number)\n%d\n", header_io->idx->particle_number);
     }

@@ -183,6 +183,8 @@ PIDX_return_code PIDX_metadata_parse_v6_1(FILE *fp, PIDX_file* file)
         (*file)->idx->io_type = PIDX_RAW_IO;
       else if (strcmp(line, "particle") == 0)
         (*file)->idx->io_type = PIDX_PARTICLE_IO;
+      else if (strcmp(line, "particle_rst") == 0)
+      (*file)->idx->io_type = PIDX_RST_PARTICLE_IO;
     }
 
     if (strcmp(line, "(endian)") == 0)
